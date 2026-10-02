@@ -1,0 +1,12 @@
+{
+  "schema": "vela.simplemos.sdevice.m62_active_species_topology_intervention_contract_erratum.v1",
+  "status": "frozen_documentation_correction",
+  "created_at": "2026-09-02",
+  "contract_sha256": "411549d350201f9655eb0778a1333d2f502d0f43365ca6d35538b2ef5ac35aa3",
+  "field": "upstream.required_m58_status",
+  "original_text": "frozen",
+  "corrected_interpretation": "accepted",
+  "reason": "The hash-frozen M58 evidence uses status=accepted and classification=no_systematic_frozen_tdr_relation; frozen referred to evidence immutability, not the literal status field.",
+  "scope": "Documentation-only upstream status correction. It changes no M62 candidate, writer gate, stop rule, threshold, classification, or execution permission.",
+  "m58_evidence_sha256": "ff2b1e08f0c9e0f8304f792ddaf23821c97ec1ed438f26c3fe1a49a9fe4b685b"
+}

@@ -1,0 +1,8 @@
+metric,device_count,pearson_with_device_maximum_m46_error,rank_correlation_with_device_maximum_m46_error,interpretation
+gate_edge_max_compensation_ratio,8,0.25214807590199007,0.5,descriptive_only
+gate_edge_min_abs_net_cm3,8,-0.020624542727362166,-0.09523809523809523,descriptive_only
+gate_edge_near_compensation_node_count,8,0.36565054767351024,0.14547859349066158,descriptive_only
+gate_edge_min_contour_vertex_distance_um,8,-0.022535553659987516,-0.047619047619047616,descriptive_only
+floating_n_type_component_count,8,0.8353312517824801,0.7559289460184544,descriptive_only
+single_node_floating_n_type_component_count,8,0.8353312517824801,0.7559289460184544,descriptive_only
+global_node_count,8,-0.1569244812524136,0.0,descriptive_only

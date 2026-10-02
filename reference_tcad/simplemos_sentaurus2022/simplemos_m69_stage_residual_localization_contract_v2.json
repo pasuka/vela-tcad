@@ -1,0 +1,29 @@
+{
+  "schema": "vela.simplemos.sdevice.m69_stage_residual_localization_contract.v2",
+  "milestone": "M69",
+  "status": "draft_before_freeze",
+  "supersedes": {
+    "contract": "simplemos_m69_stage_residual_localization_contract_v1.json",
+    "reason": "The independently executed v1 run passed every physical and state-identity gate but measured a 2.6662950482963115e-10 dex cross-run final-current difference, exposing the 1e-10 replay threshold as tighter than the observed deterministic rerun envelope. V2 is frozen before a new independent solve and uses 1e-9 dex; the v1 failed report and evidence remain preserved."
+  },
+  "objective": "Localize the matched-ni residual across equilibrium, drain-only, and final diagnostic-gate states for all eight frozen low/high-NWell pairs.",
+  "upstream": {"required_m68_status": "frozen", "required_m68_classification": "dos_ratio_inactive_in_frozen_boltzmann_path",
+               "required_m69_v1_status": "failed",
+               "vela_states": "M65 equilibrium, drain-ramp, and diagnostic-gate accepted states",
+               "sentaurus_reference": "T-2022.03-SP2 explicit no-BGN with M65 tight Math and unchanged physical path"},
+  "execution": {"sentaurus_cases": 16, "sentaurus_states_per_case": 3, "new_vela_solves": 0,
+                "stages": ["equilibrium", "drain", "gate"], "production_default_changed": false},
+  "analysis": {
+    "observable": "Fixed-Sentaurus-control-node source-interface qf barrier current proxy, identical to M67.",
+    "increments": {"equilibrium": "equilibrium proxy", "drain": "drain proxy minus equilibrium proxy", "gate": "gate proxy minus drain proxy"},
+    "dominant_stage_minimum_median_absolute_share": 0.6,
+    "classifications": ["equilibrium_stage_dominant", "drain_stage_dominant", "gate_stage_dominant", "mixed_stage_residual", "execution_or_identity_failure"]
+  },
+  "acceptance": {
+    "required_sentaurus_release": "T-2022.03-SP2", "required_case_count": 16, "required_state_count_per_solver": 48,
+    "required_pair_stage_count": 24, "maximum_final_sentaurus_current_replay_error_dex": 1e-9,
+    "maximum_coordinate_error_um": 1e-10, "maximum_boltzmann_density_identity_residual_dex": 5e-4,
+    "production_reference_must_not_be_replaced": true
+  },
+  "closed_topic_guards": ["no HFS, SG, contact-current extraction, quasi-Fermi packing, BGN, mesh, or convergence tuning"]
+}

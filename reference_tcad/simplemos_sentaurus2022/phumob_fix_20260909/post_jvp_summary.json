@@ -1,0 +1,7 @@
+{
+  "states": 4,
+  "checks": 144,
+  "gated_checks": 84,
+  "gated_failures": 0,
+  "gated_max_relative": 7.966066693274523e-07
+}

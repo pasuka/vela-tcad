@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m31_minority_poisson_perturbation_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "hole_full_current_shift_dex": 0.00040723625189330266,
+    "poisson_top10_l2_share": 0.9963151534049625,
+    "electron_full_current_shift_dex": 4.191176954778976,
+    "condition_estimates_skipped_count": 3,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_minority_poisson_perturbation_report.json",
+      "sha256": "2677734b62750fcad13ad47bd4ed7567b812198602965233b96ddd4992930513"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_state_variant_response.csv",
+      "sha256": "5cce08c268e112d5c03d18b7ce3e68750a3bf5ab4919837f14d2e896f01ba55f"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_poisson_node_audit.csv",
+      "sha256": "228175f916257522d35f4e2ab8fe4b83f4287d51a554b4ad37de7e935740dd53"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_cross_block_summary.csv",
+      "sha256": "077997c6ea0ca94723d5cf6a66d08a2561d2d1e2d7688499eef274c10295b241"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_contract_v1.json": "6bb1c782291dae53efbd2f1593839dea68911f0eeb78d699db432292da362a6a",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "3f1e7a815f01c213c55ed717c2b483016cd1c62c9ce02fbf9e887219bc737be9",
+    "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
+    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+    "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
+    "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
+    "scripts/run_simplemos_m31_minority_poisson_perturbation.py": "73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b",
+    "scripts/plot_simplemos_m31_minority_poisson_perturbation.py": "8e65b7f1339ec59efecd0f47036c4fa1f7f61916dc84576d4ad5f5b4b65b8a0f",
+    "scripts/freeze_simplemos_m31_minority_poisson_perturbation_evidence.py": "f3531cd038d145141f623eafa79161d95c243ab62d627876cb2656b637defc81",
+    "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "d9d3670916e99853fa250649bc19db602f04902ee8767d3dbd7bb244c6c19b47",
+    "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md": "461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d",
+    "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png": "6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29",
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+  },
+  "m45_refresh": {
+    "stage": "M31",
+    "reason": "post-M43/M44 quasi-Fermi frozen-state rebaseline",
+    "historical_contract_rewritten": false
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "input_hashes": {
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/binary_hash.txt": "f40a6f20cf5ac9cdaee7cd78e01bc69738f5300adc4ff2255ff09393d04aaf70",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/canali_diagnostic.h": "a3ea05e38fcdd88fab701111e34955b52b83cfa5c5d7a90d7b46a41d2cde1f21",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/compile.exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/compile.log": "cb47934bd7601a73c04050c58b4d41c48674e297c4bea44e608ef36f6ff01c7e",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/compile.sh": "30f287b954b9087ef74b793c53251a02271f8186267f010d5535dfcbeb5c080d",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/compiler.txt": "f8cdbda4a108f449b0f9276d3b74ac57a3a56b80d9c5adac0694050e5e33439b",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/gcc_compat/g++": "d204dfe5cd9a73cf6d53f5de73ee2c5d924c6de28bb67a7deb89a96464c608cb",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/input_hashes.txt": "d9c1d9a8372b3fdcc860f70f846156e35ccd672105f1978f589e7fecc17fc304",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/pmi_vela_hfs_observer.C": "d035d03de2e0e992dbe0f52f1a6ebdb74e9ecabc57f8dd776315108e4738ec3a",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/pmi_vela_hfs_observer.o": "8db10d8c1774b09e344ee27f1ec3b906fcac7e0bc0cbaf132329c3fd09940e27",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/raw/pmi_vela_hfs_observer.so.linux64": "7d6d60ba1ca8dffcf43153f9948a978b595a1b02afe85d88c0dfa2bdd9c823b0",
+    "build-release/hfs_observer_preflight_20260912/v2/native_build/results.tgz": "90c6a160a821e551b2693e08947075212ce3ed01ee975984636e84d19ade4bb8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_observer_preflight_20260912/v2/native_build/input_evidence.json": "c3e4ccce4d95f43c9a706b6cb31db5a24035c85957944e733fb128f441139926",
+    "reference_tcad/simplemos_sentaurus2022/hfs_observer_preflight_20260912/v2/native_build/summary.json": "4ebef83db9319a60ff6e61527eea109cd1d9c1bc5cbd6627c6d9650f1e6376d0",
+    "scripts/build_simplemos_hfs_observer_native_20260912.py": "215b9f2e0c45f0c9c4c3f481c9f13590ce4e16426b4fd55fd075f080eb9ef4d9"
+  }
+}

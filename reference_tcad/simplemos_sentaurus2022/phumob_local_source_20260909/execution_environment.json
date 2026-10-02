@@ -1,0 +1,11 @@
+{
+  "VELA_environment": {},
+  "selected_local_linear_backend": "sparselu",
+  "selection_basis": "Default in current src/solver/LinearSolver.cpp; no VELA_LINEAR_SOLVER override in the environment used by drivers.",
+  "compiled_optional_backends": [
+    "UMFPACK",
+    "SPQR"
+  ],
+  "native_status": "not_uploaded_not_run",
+  "source_default_changed": false
+}

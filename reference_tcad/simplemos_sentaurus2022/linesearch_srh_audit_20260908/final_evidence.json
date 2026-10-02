@@ -1,0 +1,20 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_linesearch_precision_and_srh_neighborhood_2026-09-08.md": "1c97a97d08953660abf4ae83844de1e9845d0321f648da75b707aaa650878c4a",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/actual_line_search_decisions.csv": "426147301d3eb4ca63f24878565429f1ef078a2a9c21e8cb84d8053ade8b670f",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/build_evidence.json": "bac94ee5720034e9a669ee36c52db886263e40a68f399f8b128dd5e9d1f4c14a",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/freeze.json": "83878a91d2b9ae3e56430469fb9f106601dfdccd4cb7e003354c4c11e791d875",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/neighborhood/evidence.json": "e7d92eeaae9da728ba52589742e03d907541562087e448d59e77dd1baa389a1a",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/evidence.json": "90574f74d287ee3f1e57bf50d403a8ba9f4071b9531a4697978bf001b889f129",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/runtime_evidence.json": "c5ff8c7267a160763b058e53cbad72016ba42aab36d9bbb9b5740ca013fd59b9",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision_mode_counts.csv": "dceb86c32301598577327f3ccb1e7d323b6765978f5e19a6e133af08d704f33f",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/replay_evidence.json": "67174adbb633356380df6104930a7dcccf3847f1e2b8c8375475156a9b778fff",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/report_checks.json": "123168178c60a152f8cd2110295c8f7719f589079f0cf462c20a396ca8942fc8",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/summary.json": "be887ff9bd78c7ebaa24a3a6797b1aacd2c9c64360136e682fc6b4d1aa3af2bf",
+    "scripts/analyze_simplemos_linesearch_precision_20260908.py": "9a4d2756271aaa34ec4bb33224abbd95d82629efd7984301004ce1ac9a6c1fd9",
+    "scripts/audit_simplemos_linesearch_precision_20260908.py": "7d4f76faacc57edf26762dc83c4dc36d33a4e19675a0277b1a0fabcbfd4b5332",
+    "scripts/audit_simplemos_srh_neighborhood_20260908.py": "a070c33ce634e325363a7ebd4cd464b931e716c458af6c195d3cd188ec506b94",
+    "scripts/report_simplemos_linesearch_srh_audit_20260908.py": "ec408f443e3080cdb801852543e795e85e3b165af5e525eef46a68b0a90b4ea4",
+    "scripts/run_simplemos_linesearch_precision_20260908.py": "5a4daf007ded9a000ba9b33da17e853730178d8b123cac9e7031eae4d3d203ea"
+  }
+}

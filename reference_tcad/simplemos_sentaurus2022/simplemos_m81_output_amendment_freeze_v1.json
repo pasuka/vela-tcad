@@ -1,0 +1,16 @@
+{
+  "status": "frozen_before_execution",
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m81_output_amendment_contract_v1.json": "150e7f192fef70c0670fd63502a963b54efa4dcff9a7d02e8c2490349eb72d3e",
+    "scripts/run_simplemos_m81_output_amendment.py": "c422922eaebad4d8c58bc7018cc17b14b25f61c0078337189ac31cc813803e16",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_ifm_pilot/m81_initial_native_result.json": "dd23ddd3c8644879f44d6260c74832ca502dfe7687785c2921416ec4685abe48",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n19/m81_des.cmd": "fd6c5058718384277c3210b7b08d83fc70aaaeb015e375db0b5948c5ef2f7e39",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n19/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n19/state_des.tdr": "da4eeafa24fb35eb9080aad0c9a02e26df841086872d7a98cbf5db98209623ab",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n23/m81_des.cmd": "fd6c5058718384277c3210b7b08d83fc70aaaeb015e375db0b5948c5ef2f7e39",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n23/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_bundle/n23/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": "frozen_before_execution",
+  "contract_sha256": "999e2fbd346d6cbd8ea8472dd1c4828d487d07729d29459c9e55aba589fb3108",
+  "input_hashes": {
+    "scripts/run_simplemos_m79c_current_difference_calibration.py": "fc796904534ce9aae80fd058f089762aead2fab3aef4f0627e6966242db3a458",
+    "scripts/run_simplemos_m79b_numerical_calibration.py": "8b5ab5addb3ff4222135662df55919c61bb46467d688fe3dbb749ba54df7d67e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79b_numerical_calibration_contract_v1.json": "a26577b50e205db7a0c89f359c641440d1f41673218ed1a7f54b39047f1492dc",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79b_numerical_calibration_contract_freeze_v1.json": "c8513bf902eaef112ca0b1598b9b7d1daf357cd72cfbb4e89f9cd3087e72057e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79b_numerical_calibration_evidence.json": "a24e7e1bd9fad576c5293b4997c4d7a96cf7ab4d505b237de7db342e6e586984",
+    "build-release/m79b_numerical_calibration/vela_example_runner_calibrated.exe": "bf7d267343568f45b0b8055b2f4cf4bf37888cd9aa25d8727f8cf68fb676a257",
+    "scripts/run_simplemos_m79_terminal_response_qualification.py": "78a8dc8945a7cfba0f87ae08b905521e021a956d7a40f56a391e769f3946e710",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_contract_v1.json": "1048594f8cefc9b997491f9d746734fb5a30f7ad760a02937fe98751d934c404",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_contract_freeze_v1.json": "b13f349fc7f8a296aff4adb54f35c64663b2d2521d094931eeaba1c38fbc2c69",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_evidence.json": "5c9c0f02058f7753286dfaba8b6fc4a00016fe313899f95a4803329f6f455b11",
+    "tests/regression/test_simplemos_m79c_current_difference_calibration.py": "2424745bcc14033bc4e5c6a189e1de05dd4303c485aa8e18afa0d538d8f8dbe8"
+  }
+}

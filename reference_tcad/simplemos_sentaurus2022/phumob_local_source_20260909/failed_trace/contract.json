@@ -1,0 +1,16 @@
+{
+  "jobs": [
+    {
+      "label": "native_first",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_0",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\failed_trace\\native_first"
+    },
+    {
+      "label": "native_reload",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_1",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\failed_trace\\native_reload"
+    }
+  ],
+  "scope": "Budget-limited trajectory diagnostic from previous failure outputs; not a third qualification retry. Same production binary, scaling, caps, four linear refinements, line search and acceptance eps. max_iter and carrier minimum iteration budget capped at 3.",
+  "prior_step_probe_limitation": "evaluateStep uses a direct default LinearSolver, omits solve() row equilibration and linear refinements, and evaluates one full trial without line search. Its direction is not the exact iterative solver direction. This trace supplies actual production updates."
+}

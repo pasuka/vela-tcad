@@ -1,0 +1,37 @@
+{
+  "defect_measurement_qualified": true,
+  "checks": [
+    {
+      "case": "1e13",
+      "analytic_projection_A_per_um": 9.317599650180143e-12,
+      "endpoint_weighted_defect_A_per_um": 3.164594164080798e-14,
+      "prior_gap_A_per_um": 3.1645941640806085e-14,
+      "gradient_jvp_identity_relative": 2.220446049250313e-16,
+      "weighted_recovery_of_prior_gap_relative": 5.972999872483342e-14,
+      "weighted_fd_step_relative": 9.761568730448644e-06,
+      "baseline_centered_defects_A_per_um": [
+        3.1645948315846244e-14,
+        3.1645639404762176e-14,
+        3.164556170381299e-14
+      ],
+      "pass": true
+    },
+    {
+      "case": "5e12",
+      "analytic_projection_A_per_um": 4.658799989899492e-12,
+      "endpoint_weighted_defect_A_per_um": 1.5822878609385007e-14,
+      "prior_gap_A_per_um": 1.582287860938435e-14,
+      "gradient_jvp_identity_relative": 0.0,
+      "weighted_recovery_of_prior_gap_relative": 4.1522341120980855e-14,
+      "weighted_fd_step_relative": 2.4351066743033556e-06,
+      "baseline_centered_defects_A_per_um": [
+        1.5822879414297588e-14,
+        1.5822840883992146e-14,
+        1.582283135887979e-14
+      ],
+      "pass": true
+    }
+  ],
+  "m82_released": false,
+  "m83_released": false
+}

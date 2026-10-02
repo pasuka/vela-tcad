@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/build-release/libvela_core.a": "040f9a6f7c3149c3de6ee730f5802f0a4db39b5aa9b7578eab5a3c4ce14d4668",
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/build-release/vela_example_runner.exe": "d12649f7945cca1637bb3813263b95990dae94c7f3138c9ec3fdd90e91f98248",
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/include/vela/discretization/StableSGDerivative.h": "6a47e29cfe2e45d6663835e16f4eaf1a55d4d4554b0019921e7833a3759009a4",
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/src/equation/CoupledDDAssembler.cpp": "220570efd4f26300e394fbd708077347c32d65f23b5e919dd6a63de443ff12c7",
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/tests/test_production_numerics.cpp": "1bc04a2efacccce1c632d193bfcbdad969d9286c9bf4d6a095589b0961152c6f",
+    "build-release/simplemos_bgn_psi_derivative_20260908/preimage/tests/test_sg_flux.cpp": "e9be56a977e5b4119318c1791d4d44a68501df3defb5d673eda93f6208d104cd",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/preimage.json": "50f9258148eddd8b347e2f03effbe8772a39ca2708722b95548df53b8d7353b1",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/final_evidence.json": "ae1633d43a537859495f3b66141006201e373e6b44bd0d48f81b0a89faa56abe"
+  }
+}

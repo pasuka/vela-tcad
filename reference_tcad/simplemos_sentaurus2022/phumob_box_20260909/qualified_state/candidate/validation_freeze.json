@@ -1,0 +1,22 @@
+{
+  "input_hashes": {
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_0p050000_endpoint_40/native/config.json": "e5c02d79c2dfb45398462501e86bc58ee658354c594dc6b7c20b181e02167fdb",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_0p050000_endpoint_40/vela/config.json": "3f58a80c1c832c2f65dcd05d9b458613242b5e2a7fef615ce8c26115d51d5432",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_0p050000_endpoint_50/native/config.json": "478f94c17d6bbf980e463d395d9e7ab2f9d2b1d9bdd47c302fb984449e75ef2a",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_0p050000_endpoint_50/vela/config.json": "e2596e91d9767af2446e089c7db6e517cc19405d6697bdbd82a0d8bbb6c16f10",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_1p000000_endpoint_40/native/config.json": "8b9ac469e24b4d8eb6c984e25764e93f89e13b5e218e67a9904f4aeb3b493196",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_1p000000_endpoint_40/vela/config.json": "ef198593dd10223afa9be2344e2b3c8f2f3647e42bc0ff642b0c562584bd6b46",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_1p000000_endpoint_50/native/config.json": "f51e4743c953f4fdc1347bf65a1c5680a2199ea7dda7c85815227a7d98f4b66e",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n19_vd_1p000000_endpoint_50/vela/config.json": "d222df719e7373c0b61d2f89e163060b9e3a1978b50793ecbcb3a374e343cd4a",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_0p050000_endpoint_40/native/config.json": "89defbc9d85fdf2c4e522ac181865182b9c5f873d6ca86c137bc98e130964f20",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_0p050000_endpoint_40/vela/config.json": "e3f9b9b255db51a82e95545d8aaf1b5080357f34527e9db9fde27f77a0b80ccf",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_0p050000_endpoint_50/native/config.json": "686e2b8a8c0bde38bad6ce468928d3a3ded84fdda8102eb9696700e13846883b",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_0p050000_endpoint_50/vela/config.json": "936f46035f4c7969c860209564f2786839d8d34a13fbaf026880aac214a338bc",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_1p000000_endpoint_40/native/config.json": "b4dc2aee8c7708a25ebb6e7b1dd686f9bab82e070b58f140e96c87600306b764",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_1p000000_endpoint_40/vela/config.json": "c664abbe67a2bfd3d77fd4a0743dc103f867a243731d956127236ce7750b5d57",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_1p000000_endpoint_50/native/config.json": "cf98dae3003979bbf97fc300c10b488efde27346015567a797de09e0aafbeeac",
+    "build-release/phumob_box_20260909/qualified_state/candidate/inputs/m65_n23_vd_1p000000_endpoint_50/vela/config.json": "67662c5d2653e70a2d361dd01c3a96f9298d748c39bfb139ceaef648fbd61b1c",
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/fixed_analysis_evidence.json": "ce75b1771d172155ccd0833be9a0acbc84c2f51840318ed9a63d212c9370f65a"
+  }
+}

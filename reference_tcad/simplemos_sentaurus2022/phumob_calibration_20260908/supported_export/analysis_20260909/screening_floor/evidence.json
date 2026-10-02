@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/cells.csv": "37ff464a3ea35081f424b83e49f6d3eae14863e44a4fd325dfa63e978bcc860f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/floor_inference.csv": "6f0cb3d258e0c5997d894c36c6c982dd2afe21beec21dbf213dadb6335b7ae75",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/freeze.json": "6530e3fe4bde9aacb7b141522e812abec11e57c6f708c6dc3ab7515d92a0b0c0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/groups.csv": "a4923f632826397ba3cc77b1825da22b53d683fb0711ac48e952420ad0dd5baa",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/summary.json": "71529cbb0e0c4674c7b480d29dabb4db224a1012f9660c6de7385ee1e7058037"
+  }
+}

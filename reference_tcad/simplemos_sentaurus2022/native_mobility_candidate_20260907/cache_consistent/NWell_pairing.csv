@@ -1,0 +1,5 @@
+vg,vd,base_pair_error_dex,candidate_pair_error_dex,high_NWell_improved,low_NWell_not_worse,pair_improved,qualified
+0.8,0.05,0.0008904769938327112,0.0006752630559354339,False,False,True,False
+0.8,1.0,0.0027735954863307003,0.0010654023628829978,False,True,True,False
+1.0,0.05,0.0034365529611618947,0.0005452193106628808,False,True,True,False
+1.0,1.0,0.0047425113550408635,0.0007579174462997877,False,True,True,False

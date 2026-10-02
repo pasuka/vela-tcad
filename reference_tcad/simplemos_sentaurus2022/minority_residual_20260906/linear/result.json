@@ -1,0 +1,32 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/config.json": "3b24d0b65e3d8aa789e2fb1cbc248d9e8efb31b61534566de4c3ecef1f0bb1f9",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/config.status.json": "16350ec41bb3c0577956db9ba9952c0730e8de2ccb46bb38cfed4b68ca5bd9ed",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/config.stdout.txt": "97fb28dcc810a7fb089f362771f84685fff54b60ef7e5830d7a6ee3c708beaf4",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/linear.csv": "6489d34d087a72e6a670c8615dd9e45e59172b1236026a86cdb4f5692f801e6a",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/config.json": "9c32fa8e1b5e0138dbf83b70d053d089eeb0be100d25fdc2a700ac9209141ce1",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/config.status.json": "c79f5f6dc8151618cbd06a9059bc88e3b405afad630a52fc09d96c6598b963d0",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/config.stdout.txt": "addf1607eb3079cd46219aaad09d672b13a74e20da57630379656fa814f12faa",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/linear.csv": "83d207654fa4838a7fed6ca3b955d4e7bef6bcb483de3e27037d83216a616b88",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/config.json": "9b00b4c165d71e60bf54b19b953a9754b294d5317ccdd2ae41eab60ef69765f5",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/config.status.json": "5b2ea5d12585af7524be47eadf91c4e4ee27deb3e436140875c70d9ac4bc7a95",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/config.stdout.txt": "74737d2846739f92822212cae2b681e592f75215e8c25e620d91eef5dd274676",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/linear.csv": "281118ae7b41978319421e7c88d51d11aa5c405d47d14f668e07682d84b4729d",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/last_updates.csv": "d4f634b7e91abef0a31f1da71e685daa60d0213058c7bf638550c84105cf495e",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/linear/freeze.json": "27526ace8710d6ce1b26ab4c38b55dbdd1d7295109e776f0bdd9abbc582d4e9f",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/precision_summary.csv": "91c515f6e653a2a6a036083c573b8ef7242bc2b90da1760c2be53b73a5e6c562",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/trace_result.json": "e43e5e53d873d857f4bf703c2c71a35ee4805bba61e24a78acd3dac4854ebae7",
+    "scripts/analyze_simplemos_minority_linear_20260906.py": "1a0111a1ab906778b04668aa0307f7e6d4bcf3135381491d9505a2541356d7e1"
+  },
+  "states": 3,
+  "all_legacy_rows_and_raw_steps_identical": true,
+  "groups": 30,
+  "rows": 54420,
+  "nonlinear_solves": 0,
+  "gate_changed": false,
+  "interpretation": "Linear defect uses 100-digit dot accumulation on double J,F,dx. Trial uses uncapped x+dx and fixed ORIGINAL row scales; trial counts are not DC qualification, positivity/KCL/Poisson or initialization invariance certification. Column/row equilibration alone is not uniformly better.",
+  "observations": "One refinement recovers n19 node 41 from an exactly zero raw step and removes its fixed-scale trial defect. High-Vd node 973 remains a finite-amplitude nonlinear counterexample after accurate linear solution."
+}

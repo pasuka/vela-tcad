@@ -1,0 +1,18 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_sentaurus_execution_attempts.v1",
+  "attempts": [
+    {
+      "attempt": 1,
+      "remote_root": "/tmp/vela_simplemos_m50_native_substrate_face_flux_export",
+      "status": "failed_before_bias_sweeps",
+      "error": "Tcl CurrentPlot: Cannot combine 'Contact' specification with other domain specifications"
+    },
+    {
+      "attempt": 2,
+      "remote_root": "/tmp/vela_simplemos_m50_native_substrate_face_flux_export_r2",
+      "status": "complete",
+      "state_count": 6,
+      "execution_erratum_sha256": "227ea0b8edfe88a637c8e51e6a1f2461f0512db76c2bb262959a75c5dd71afd2"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "scope": "Immediate completion chain for the two already running arms; no solver launch, retry, SRH repair, or original matrix jobs.",
+  "order": [
+    "analysis",
+    "fields",
+    "archive_and_plots",
+    "seal",
+    "report"
+  ],
+  "coordinator_control_checks_passed": 7,
+  "cache_identity_checks_passed": 192,
+  "stop_condition": "A failed/interrupted/missing scan driver prevents downstream execution.",
+  "pause": "Stop completion_active.json PID along with both arm driver PIDs and their solver children."
+}

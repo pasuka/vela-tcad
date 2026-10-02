@@ -1,0 +1,20 @@
+{
+  "schema": "vela.simplemos.sdevice.m57_doping_well_boundary_flux_closure_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m57_doping_well_boundary_flux_closure_contract_v1.json",
+  "contract_sha256": "ae1f362577f3add28bd0399fc69af0777fd76430bb8a9432ea49cebedef1107a",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_terminal_attribution_report.json": "91c253bbdb364a096056549cc5359f62aad4895cadefe7b1f4b5bf7689c500a9",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_ledger.csv": "f090c1fed9d8ece7b2b5c17cd5a10aac83947a5f0d94876fc2a699351a828c27",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_terminal_component_attribution_ledger.csv": "426557b168ffa3c9bee1aa57eac1a74f6302c8b0cb9402c1b7dad8a55092e6b9",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m55_doping_well_terminal_attribution/sentaurus_export_manifest.json": "7db78fcfe4878d1ddefd699da99b7020ba93360e31d9f94fd68653641a5bd64b",
+    "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_native_substrate_face_flux_export_report.json": "18fb509fbad7b6166e948f0b2ed715a24b1349d85ef43db27edfed2b564ea81e",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_attribution_report.json": "45b6bc2d88ffd264ccda1e45cb6169d7921b99020f0b15f34ec6f084faaca628"
+  },
+  "execution_policy": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "threshold_or_sign_changes_after_freeze": false
+  }
+}

@@ -1,0 +1,268 @@
+{
+  "schema": "vela.simplemos.sdevice.m8_evidence.v1",
+  "status": "accepted",
+  "scope": "SDevice-only original SimpleMOS physics comparison",
+  "qualification_date": "2026-08-28",
+  "contract": "simplemos_m8_original_physics_contract_v1.json",
+  "contract_sha256": "3ea9d39250675e533edfd6bac350eace8cc55473133d3a52c6dc8d82b53f235e",
+  "source_deck": {
+    "path": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/Applications_Library/GettingStarted/swb/SimpleMOS/sdevice_des.cmd",
+    "sha256": "3fd501cad368aa43c55a780253309428872a4b3349aa03727f8a875d04a4b536"
+  },
+  "sentaurus_release": "T-2022.03-SP2",
+  "reference_manifest": "original_physics/reference_manifest.json",
+  "reference_manifest_sha256": "8bddb37a442c1e67c1f8b28ff0cd2eec67c752802b18cca686bbf0eca9dc6f9b",
+  "input_tdrs": [
+    {
+      "device": "n17",
+      "workbench_process_node": 17,
+      "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+      "tdr_size_bytes": 1799958
+    },
+    {
+      "device": "n18",
+      "workbench_process_node": 18,
+      "tdr_sha256": "1ede4c89920ea42cba8d05e3b9ee5be889cafb65a8e0e826acde50904b4dac7a",
+      "tdr_size_bytes": 1799855
+    },
+    {
+      "device": "n19",
+      "workbench_process_node": 19,
+      "tdr_sha256": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+      "tdr_size_bytes": 1803602
+    },
+    {
+      "device": "n20",
+      "workbench_process_node": 20,
+      "tdr_sha256": "db64cf83d8d024596878388f3b42632d7ac622035e4c0f3b74553468a5a75d13",
+      "tdr_size_bytes": 1803647
+    },
+    {
+      "device": "n21",
+      "workbench_process_node": 21,
+      "tdr_sha256": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+      "tdr_size_bytes": 1819139
+    },
+    {
+      "device": "n22",
+      "workbench_process_node": 22,
+      "tdr_sha256": "b50143646f5df599bbcb3f02d8ea7babf40886144962d3876d1037ba2af44564",
+      "tdr_size_bytes": 1819063
+    },
+    {
+      "device": "n23",
+      "workbench_process_node": 23,
+      "tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "tdr_size_bytes": 1801504
+    },
+    {
+      "device": "n24",
+      "workbench_process_node": 24,
+      "tdr_sha256": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128",
+      "tdr_size_bytes": 1801389
+    }
+  ],
+  "reference_qualification": {
+    "curve_count": 16,
+    "points_per_curve": 51,
+    "direct_point_count": 816,
+    "interpolation": "forbidden"
+  },
+  "vela_execution": {
+    "runner_sha256": "be3170b274fbb2095d8629feec20a62ff88310e2e1757dd58a4c10bef7147425",
+    "qualified_devices": [
+      "n17",
+      "n18",
+      "n19",
+      "n20",
+      "n21",
+      "n22",
+      "n23",
+      "n24"
+    ],
+    "qualified_cases": 16,
+    "all_gate_points_converged": true,
+    "restart_policy": "previous_accepted_state_only",
+    "auxiliary_drain_points_have_acceptance_role": false
+  },
+  "comparison": {
+    "status": "pass",
+    "report": "original_physics/comparisons/comparison_report.json",
+    "report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f",
+    "case_count": 16,
+    "passed_cases": 16,
+    "maximum_absolute_log10_ratio_observed": 0.10941868092427424,
+    "maximum_relative_error_observed": 0.28652633602019956,
+    "maximum_absolute_endpoint_log10_ratio_observed": 0.013174412341053722,
+    "trend_matches": 16,
+    "limits": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    },
+    "cases": [
+      {
+        "case": "n17_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.04172703523666418,
+        "median_log10_ratio": 0.010523488004350455,
+        "max_relative_error": 0.1008471825252534,
+        "endpoint_log10_ratio": -0.012470687695711476
+      },
+      {
+        "case": "n17_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.0322235035136669,
+        "median_log10_ratio": 0.004836749169218508,
+        "max_relative_error": 0.07701934380491994,
+        "endpoint_log10_ratio": 0.00013602381938093453
+      },
+      {
+        "case": "n18_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.04148372764472475,
+        "median_log10_ratio": 0.011387341691047175,
+        "max_relative_error": 0.10023062055147056,
+        "endpoint_log10_ratio": -0.013174412341053722
+      },
+      {
+        "case": "n18_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.03292572642896659,
+        "median_log10_ratio": 0.004532166784768337,
+        "max_relative_error": 0.07876221522556916,
+        "endpoint_log10_ratio": 0.00016312356220391896
+      },
+      {
+        "case": "n19_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.037075268367692364,
+        "median_log10_ratio": 0.008846353936664048,
+        "max_relative_error": 0.08911883414634526,
+        "endpoint_log10_ratio": -0.00964135176113892
+      },
+      {
+        "case": "n19_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.02745208678107426,
+        "median_log10_ratio": 0.0052306292257140044,
+        "max_relative_error": 0.06525133411545735,
+        "endpoint_log10_ratio": 0.0014486481410140185
+      },
+      {
+        "case": "n20_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.045587315934851394,
+        "median_log10_ratio": 0.009747229203109685,
+        "max_relative_error": 0.11067581689249885,
+        "endpoint_log10_ratio": -0.010641638354081454
+      },
+      {
+        "case": "n20_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.028021899776939717,
+        "median_log10_ratio": 0.004890334785243776,
+        "max_relative_error": 0.0666499068689312,
+        "endpoint_log10_ratio": 0.0014127543342920387
+      },
+      {
+        "case": "n21_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.07374837507777213,
+        "median_log10_ratio": 0.009772204570424353,
+        "max_relative_error": 0.18508192721389366,
+        "endpoint_log10_ratio": -0.009772204570424353
+      },
+      {
+        "case": "n21_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.05808652051250995,
+        "median_log10_ratio": 0.010875419335348888,
+        "max_relative_error": 0.1431060426556481,
+        "endpoint_log10_ratio": 0.0011422312412581546
+      },
+      {
+        "case": "n22_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.0644330815366874,
+        "median_log10_ratio": 0.009645355290542341,
+        "max_relative_error": 0.1599334734993115,
+        "endpoint_log10_ratio": -0.010024635711691088
+      },
+      {
+        "case": "n22_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.05896965729853152,
+        "median_log10_ratio": 0.012190560063274175,
+        "max_relative_error": 0.14543291108715872,
+        "endpoint_log10_ratio": 0.001224422065146178
+      },
+      {
+        "case": "n23_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.10941868092427424,
+        "median_log10_ratio": 0.01511468896334343,
+        "max_relative_error": 0.28652633602019956,
+        "endpoint_log10_ratio": -0.005907840182972818
+      },
+      {
+        "case": "n23_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.05051539544259388,
+        "median_log10_ratio": 0.013666295153586581,
+        "max_relative_error": 0.12335079098636223,
+        "endpoint_log10_ratio": 0.002879785566491125
+      },
+      {
+        "case": "n24_vd_0p05",
+        "status": "pass",
+        "max_log10_ratio": 0.0586034579756191,
+        "median_log10_ratio": 0.014838240678896724,
+        "max_relative_error": 0.14446748329654896,
+        "endpoint_log10_ratio": -0.006478639010003252
+      },
+      {
+        "case": "n24_vd_1",
+        "status": "pass",
+        "max_log10_ratio": 0.05136243663536683,
+        "median_log10_ratio": 0.013448962116764508,
+        "max_relative_error": 0.12554389487399262,
+        "endpoint_log10_ratio": 0.0028800497111542284
+      }
+    ]
+  },
+  "repair": {
+    "status": "confirmed",
+    "root_cause": "SimpleMOS default electron SRH lifetime was replaced by a TransportModels-specific override",
+    "evidence": "simplemos_m8_srh_repair_evidence.json",
+    "evidence_sha256": "3fe53703a7642e4be70eec2136dab7421a1a95c69165d4b26909811f42b7811d"
+  },
+  "implementation_sha256": {
+    "scripts/run_simplemos_m8_original_matrix.py": "e4948b5e6c80e4866c99e2c5df31a7d26c73b478f4713cef4f4c525bff0f89f9",
+    "scripts/run_simplemos_m8_deep_off_diagnostics.py": "52ce54f8023d4d263b934ef421a3e49cb7134a893b3279499e7151fc98db04cd",
+    "scripts/plot_simplemos_m8_validation.py": "5f134309a19ceff39f53c3a0d3fd300b11d9805a8d46af22cbd919ab3df1166e",
+    "tests/regression/test_simplemos_m8_original_matrix.py": "203dae9e0b683f81e6c8b035f0b3112a78400711442b9cc62ef1f04a593f67c3"
+  },
+  "raw_artifact_policy": "Sentaurus TDR/PLT/log and generated Vela states remain ignored",
+  "visualization": {
+    "status": "generated",
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-idvg-matrix.png",
+        "sha256": "9ecb795d355c50fb3c433926ce02ad49334f8dbac17870171056e7679740feb0"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-error-localization.png",
+        "sha256": "93fc02753a895e848c57bada680678eb7a43bf5d9cf8c00fefdff21e8348fd52"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-n17-n21-physical-state-contrast.png",
+        "sha256": "e180c573e3fff3a27f758bac5fdd004688baed97614e0d7ba2388301ea5d3b2e"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-srh-repair-evidence.png",
+        "sha256": "c27526d5e44097eb4272ce307ac31cafafc245cf7b33dfb07d11eb73771a059a"
+      }
+    ]
+  }
+}

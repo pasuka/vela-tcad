@@ -1,0 +1,7 @@
+arm,vd,pair_error_dex,baseline_pair_error_dex,high_NWell_improved,low_NWell_not_worse,pair_improved,qualified
+transport,0.05,0.029116056893511155,0.04346868215241306,True,False,True,False
+transport,1.0,0.018382550224306238,0.034450587214591044,True,False,True,False
+poisson_volume,0.05,0.01749037643619289,0.04346868215241306,False,False,True,False
+poisson_volume,1.0,0.020541270774357523,0.034450587214591044,False,False,True,False
+joint,0.05,0.0034365529611610768,0.04346868215241306,True,True,True,True
+joint,1.0,0.004742511355039669,0.034450587214591044,True,True,True,True

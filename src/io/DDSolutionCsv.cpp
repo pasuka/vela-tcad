@@ -3,6 +3,7 @@
 #include "vela/io/CsvUtils.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -49,6 +50,12 @@ Real parseRestartStateReal(const std::string& text,
             "DCSweep: initial_state_file has invalid " + column +
             " '" + text + "' for node id " + std::to_string(nodeId));
     }
+    return value;
+}
+
+Real parseSplitTail(const std::string& text) {
+    Real value=0.;auto result=std::from_chars(text.data(),text.data()+text.size(),value);
+    if(result.ec!=std::errc{} || result.ptr!=text.data()+text.size() || !std::isfinite(value))throw std::runtime_error("Invalid exact split coordinate tail");
     return value;
 }
 
@@ -113,7 +120,9 @@ DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
         "electron_qf_increment_V",
         "hole_qf_increment_V",
         "electron_qf_reference_V",
-        "hole_qf_reference_V"};
+        "hole_qf_reference_V",
+        "packed_psi", "packed_electron_qf_increment", "packed_hole_qf_increment",
+        "packed_potential_scale_V", "packed_psi_low", "packed_electron_qf_increment_low", "packed_hole_qf_increment_low", "split_state_schema", "split_mesh_fingerprint"};
     for (std::size_t i = requiredHeader.size(); i < header.size(); ++i) {
         if (std::find(optionalColumns.begin(), optionalColumns.end(), header[i]) ==
             optionalColumns.end()) {
@@ -155,6 +164,21 @@ DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
             "electron_quantum_potential_V.");
     }
     const bool hasReferencedQf = qfCoordinateColumnCount == 4;
+    const auto packedPsiColumn=columnIndex(header,"packed_psi");
+    const auto packedElectronColumn=columnIndex(header,"packed_electron_qf_increment");
+    const auto packedHoleColumn=columnIndex(header,"packed_hole_qf_increment");
+    const auto packedScaleColumn=columnIndex(header,"packed_potential_scale_V");
+    const int packedColumnCount=int(packedPsiColumn.has_value())+int(packedElectronColumn.has_value())+
+        int(packedHoleColumn.has_value())+int(packedScaleColumn.has_value());
+    if(packedColumnCount!=0 && (packedColumnCount!=4 || !hasReferencedQf))
+        throw std::runtime_error("DCSweep: packed restart requires all four packed columns and quasi-Fermi references/increments.");
+    const bool hasPacked=packedColumnCount==4;
+    const auto lowPsi=columnIndex(header,"packed_psi_low"),lowN=columnIndex(header,"packed_electron_qf_increment_low"),lowP=columnIndex(header,"packed_hole_qf_increment_low");
+    const auto splitSchema=columnIndex(header,"split_state_schema"),splitMesh=columnIndex(header,"split_mesh_fingerprint");
+    const int splitCount=int(lowPsi.has_value())+int(lowN.has_value())+int(lowP.has_value())+int(splitSchema.has_value())+int(splitMesh.has_value());
+    if(splitCount!=0 && (splitCount!=5 || !hasPacked))throw std::runtime_error("Split restart requires all tails, schema, mesh and packed coordinates");
+    const bool hasSplit=splitCount==5;
+
 
     DDSolution solution;
     solution.psi = VectorXd::Zero(static_cast<int>(expectedNodeCount));
@@ -178,6 +202,8 @@ DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
     }
     solution.iters = 0;
     solution.converged = true;
+    if(hasPacked)solution.packedState=VectorXd::Zero(3*static_cast<int>(expectedNodeCount));
+    if(hasSplit)solution.packedLow=VectorXd::Zero(3*static_cast<int>(expectedNodeCount));
 
     std::vector<bool> seen(expectedNodeCount, false);
     while (std::getline(input, line)) {
@@ -211,6 +237,23 @@ DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
             parseRestartStateReal(row.at(4), "electrons_m3", nodeId));
         solution.p(rowIndex) = units.m3ToInternalConcentration(
             parseRestartStateReal(row.at(5), "holes_m3", nodeId));
+        if(hasPacked) {
+            const int count=static_cast<int>(expectedNodeCount);
+            solution.packedState(rowIndex)=parseRestartStateReal(row.at(*packedPsiColumn),"packed_psi",nodeId);
+            solution.packedState(count+rowIndex)=parseRestartStateReal(row.at(*packedElectronColumn),"packed_electron_qf_increment",nodeId);
+            solution.packedState(2*count+rowIndex)=parseRestartStateReal(row.at(*packedHoleColumn),"packed_hole_qf_increment",nodeId);
+            const Real scale=parseRestartStateReal(row.at(*packedScaleColumn),"packed_potential_scale_V",nodeId);
+            if(scale<=0. || (solution.packedPotentialScale_V!=0. && scale!=solution.packedPotentialScale_V))
+                throw std::runtime_error("DCSweep: packed potential scale must be positive and identical on every node.");
+            solution.packedPotentialScale_V=scale;
+        }
+        if(hasSplit) {
+            const int count=expectedNodeCount;
+            if(row.at(*splitSchema)!="vela.split-dd-state.v1" || row.at(*splitMesh).empty())throw std::runtime_error("Unsupported split restart schema/mesh");
+            if(!solution.packedMeshFingerprint.empty() && solution.packedMeshFingerprint!=row.at(*splitMesh))throw std::runtime_error("Inconsistent split mesh metadata");
+            solution.packedMeshFingerprint=row.at(*splitMesh);
+            solution.packedLow(rowIndex)=parseSplitTail(row.at(*lowPsi));solution.packedLow(count+rowIndex)=parseSplitTail(row.at(*lowN));solution.packedLow(2*count+rowIndex)=parseSplitTail(row.at(*lowP));
+        }
         if (quantumPotentialColumn) {
             solution.electronQuantumPotential(rowIndex) = parseRestartStateReal(
                 row.at(*quantumPotentialColumn), "electron_quantum_potential_V", nodeId);
@@ -264,6 +307,8 @@ DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
             }
         }
     }
+    if(hasPacked && !solution.hasConsistentPackedState())
+        throw std::runtime_error("DCSweep: packed restart coordinates do not match the physical fields/increments.");
     return solution;
 }
 
@@ -271,6 +316,8 @@ void writeDDSolutionStateCsv(const std::filesystem::path& path,
                              const DDSolution& solution,
                              UnitScalingConfig scaling)
 {
+    if(solution.packedLow.size()!=0 && !solution.hasConsistentSplitPackedState())throw std::runtime_error("Cannot write stale or incomplete split checkpoint");
+    const bool hasSplit=solution.packedLow.size()!=0;
     const auto fieldSize = solution.psi.size();
     if (solution.phin.size() != fieldSize ||
         solution.phip.size() != fieldSize ||
@@ -294,6 +341,7 @@ void writeDDSolutionStateCsv(const std::filesystem::path& path,
     const bool hasReferencedQf =
         solution.phinIncrement.size() == fieldSize &&
         solution.phipIncrement.size() == fieldSize;
+    const bool hasPacked=solution.hasConsistentPackedState();
     const bool hasElectronReferenceField =
         solution.electronQfReference.size() == fieldSize;
     const bool hasHoleReferenceField =
@@ -318,6 +366,9 @@ void writeDDSolutionStateCsv(const std::filesystem::path& path,
         output << ",electron_qf_increment_V,hole_qf_increment_V"
                   ",electron_qf_reference_V,hole_qf_reference_V";
     }
+    if(hasPacked)
+        output << ",packed_psi,packed_electron_qf_increment,packed_hole_qf_increment,packed_potential_scale_V";
+    if(hasSplit)output << ",packed_psi_low,packed_electron_qf_increment_low,packed_hole_qf_increment_low,split_state_schema,split_mesh_fingerprint";
     output << '\n';
     for (int i = 0; i < fieldSize; ++i) {
         output << i << ','
@@ -343,6 +394,12 @@ void writeDDSolutionStateCsv(const std::filesystem::path& path,
                    << ',' << formatRestartReal(electronReference)
                    << ',' << formatRestartReal(holeReference);
         }
+        if(hasPacked)
+            output << ',' << formatRestartReal(solution.packedState(i))
+                   << ',' << formatRestartReal(solution.packedState(fieldSize+i))
+                   << ',' << formatRestartReal(solution.packedState(2*fieldSize+i))
+                   << ',' << formatRestartReal(solution.packedPotentialScale_V);
+        if(hasSplit)output << std::setprecision(17) << ',' << solution.packedLow(i) << ',' << solution.packedLow(fieldSize+i) << ',' << solution.packedLow(2*fieldSize+i) << ",vela.split-dd-state.v1," << solution.packedMeshFingerprint;
         output << '\n';
     }
 }

@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/curve_execution_contract.json": "c65bf40ccd161ee05fed72469994cb80391f68f035a97de02a2fbc530230fb95",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/low_fields/evidence.json": "e35d6901214ee2dc0af7f7cb456f68bab4d1f6d4b68509331e8bb9c73201d26b",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/sixteen_evidence.json": "1254184dd840665069c5430d84ec37cbd56ffebc98b28e40609429629845e41e",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/supplemental_source_evidence.json": "1cf47f486ea2c7786883f69aa37d9069fd730f86e69c6e284cf6a179e3a9e587"
+  }
+}

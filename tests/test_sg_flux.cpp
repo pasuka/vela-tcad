@@ -15,6 +15,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -396,6 +397,79 @@ TEST_CASE("SG variable-ni electron flux decomposition reconstructs the productio
         REQUIRE_FALSE(decomposition.node1ExponentClampedLow);
         REQUIRE_FALSE(decomposition.node1ExponentClampedHigh);
     }
+}
+
+TEST_CASE("SG equal-ni entry points resolve tiny quasi-Fermi differences",
+          "[sg][equal_ni][cancellation]")
+{
+    const Real Vt = constants::Vt_300;
+    const Real ni = 1.4638914958767616e16;
+    const Real psi0 = 0.22;
+    const Real psi1 = 0.27;
+    const Real phin0 = 0.10;
+    const Real phin1 = phin0 + 1.0e-15;
+    const Real phip0 = 0.12;
+    const Real phip1 = phip0 + 1.0e-15;
+    const Real coef = 3.0e-7;
+
+    const Real legacyElectron =
+        sgElectronContinuityFluxFromQuasiFermiStable(
+            ni, psi0, psi1, phin0, phin1, Vt, coef);
+    const Real compensatedElectron =
+        sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            ni, ni, psi0, psi1, phin0, phin1, Vt, coef);
+    const long double electronEta =
+        (static_cast<long double>(psi1) - static_cast<long double>(psi0)) /
+        static_cast<long double>(Vt);
+    const long double electronRight =
+        static_cast<long double>(bernoulli(static_cast<Real>(electronEta))) *
+        static_cast<long double>(ni) *
+        std::exp((static_cast<long double>(psi1) -
+                  static_cast<long double>(phin1)) /
+                 static_cast<long double>(Vt));
+    const long double electronExpected =
+        static_cast<long double>(coef) * electronRight *
+        std::expm1((static_cast<long double>(phin1) -
+                    static_cast<long double>(phin0)) /
+                   static_cast<long double>(Vt));
+
+    const Real legacyHole = sgHoleContinuityFluxFromQuasiFermiStable(
+        ni, psi0, psi1, phip0, phip1, Vt, coef);
+    const Real compensatedHole = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        ni, ni, psi0, psi1, phip0, phip1, Vt, coef);
+    const long double holeEta = electronEta;
+    const long double holeRight =
+        static_cast<long double>(bernoulli(static_cast<Real>(-holeEta))) *
+        static_cast<long double>(ni) *
+        std::exp((static_cast<long double>(phip1) -
+                  static_cast<long double>(psi1)) /
+                 static_cast<long double>(Vt));
+    const long double holeExpected =
+        static_cast<long double>(coef) * holeRight *
+        std::expm1((static_cast<long double>(phip0) -
+                    static_cast<long double>(phip1)) /
+                   static_cast<long double>(Vt));
+
+    const Real electronReference = static_cast<Real>(electronExpected);
+    const Real holeReference = static_cast<Real>(holeExpected);
+    const Real legacyElectronRelativeError =
+        std::abs(legacyElectron - electronReference) /
+        std::abs(electronReference);
+    const Real compensatedElectronRelativeError =
+        std::abs(compensatedElectron - electronReference) /
+        std::abs(electronReference);
+    const Real legacyHoleRelativeError =
+        std::abs(legacyHole - holeReference) / std::abs(holeReference);
+    const Real compensatedHoleRelativeError =
+        std::abs(compensatedHole - holeReference) /
+        std::abs(holeReference);
+
+    // The homogeneous entry points now use the same cancellation-safe law
+    // introduced on main. Both public paths must meet the physical reference.
+    REQUIRE(legacyElectronRelativeError < 1.0e-12);
+    REQUIRE(legacyHoleRelativeError < 1.0e-12);
+    REQUIRE(compensatedElectronRelativeError < 1.0e-12);
+    REQUIRE(compensatedHoleRelativeError < 1.0e-12);
 }
 
 TEST_CASE("SG variable-ni electron flux decomposition is oriented and handles large eta",
@@ -1091,6 +1165,93 @@ TEST_CASE("ContactCurrent unit scaling terminal current matches legacy SI",
             Approx(legacyLeft.totalCurrent / scale).epsilon(1.0e-12).margin(1.0e-12));
 }
 
+TEST_CASE("ContactCurrent and coupled probes share the configured Boltzmann SG kernel",
+          "[sg][contact_current][operator_consistency]")
+{
+    DeviceMesh mesh = makeContactedSiliconSquareMesh(1.0e-6);
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    for (Index node = 0; node < mesh.numNodes(); ++node)
+        doping.setNodeDoping(node, 1.0e23, 0.0);
+
+    const MobilityModelConfig mobility = mobilityModelConfig("constant");
+    const RecombinationModelConfig noRecombination =
+        recombinationModelConfig({"none"});
+    CoupledDDState state;
+    state.psi.resize(4);
+    state.phin.resize(4);
+    state.phip.resize(4);
+    state.psi << 0.22, 0.27, 0.26, 0.21;
+    state.phin << 0.10, 0.10 + 1.0e-15,
+                  0.10 + 2.0e-15, 0.10 + 1.0e-15;
+    state.phip << 0.12, 0.12 + 1.0e-15,
+                  0.12 + 2.0e-15, 0.12 + 1.0e-15;
+
+    DDSolution solution;
+    solution.psi = state.psi;
+    solution.phin = state.phin;
+    solution.phip = state.phip;
+    solution.n.resize(4);
+    solution.p.resize(4);
+    const Real ni = matdb.getMaterial("Si").ni;
+    for (int node = 0; node < 4; ++node) {
+        solution.n(node) = ni * std::exp(
+            (solution.psi(node) - solution.phin(node)) / constants::Vt_300);
+        solution.p(node) = ni * std::exp(
+            (solution.phip(node) - solution.psi(node)) / constants::Vt_300);
+    }
+
+    std::array<Real, 2> firstElectronFlux{};
+    const std::array<const char*, 2> modes = {
+        "legacy_factor_difference", "compensated_log_expm1"};
+    for (std::size_t modeIndex = 0; modeIndex < modes.size(); ++modeIndex) {
+        BandgapNarrowingConfig bgn;
+        bgn.model = "none";
+        bgn.equalNiFluxEvaluation = modes[modeIndex];
+        CoupledDDAssembler assembler(
+            mesh, matdb, doping, constants::Vt_300, mobility,
+            noRecombination, bgn);
+        const VectorXd x = assembler.pack(state);
+        const auto productionEdges = assembler.sgEdgeFluxDiagnostics(
+            x, CoupledDDBoundaryConditions{});
+        ContactCurrent current(
+            mesh, matdb, doping, mobility, constants::T0, {}, bgn);
+        const ContactCurrentDetailedResult detailed =
+            current.computeDetailed(solution, "left");
+
+        REQUIRE(!detailed.edges.empty());
+        for (const ContactCurrentEdgeDiagnostic& contactEdge : detailed.edges) {
+            const auto production = std::find_if(
+                productionEdges.begin(), productionEdges.end(),
+                [&](const CoupledDDEdgeFluxDiagnostic& edge) {
+                    return edge.edgeId == contactEdge.edgeId;
+                });
+            REQUIRE(production != productionEdges.end());
+            const Real contactElectronLineFlux =
+                contactEdge.electronContinuityFlux *
+                contactEdge.edgeCouple_m;
+            const Real contactHoleLineFlux =
+                contactEdge.holeContinuityFlux *
+                contactEdge.edgeCouple_m;
+            const Real electronScale = std::max<Real>(
+                1.0, std::abs(production->electronFlux));
+            const Real holeScale = std::max<Real>(
+                1.0, std::abs(production->holeFlux));
+            REQUIRE(contactElectronLineFlux / electronScale ==
+                    Approx(production->electronFlux / electronScale)
+                        .epsilon(2.0e-13).margin(2.0e-13));
+            REQUIRE(contactHoleLineFlux / holeScale ==
+                    Approx(production->holeFlux / holeScale)
+                        .epsilon(2.0e-13).margin(2.0e-13));
+        }
+        firstElectronFlux[modeIndex] = productionEdges.front().electronFlux;
+    }
+
+    // Equal-ni kernels share the stabilized homogeneous law after main's fix.
+    REQUIRE(firstElectronFlux[0] ==
+            Approx(firstElectronFlux[1]).epsilon(2.0e-13));
+}
+
 TEST_CASE("ContactCurrent integrates element quasi-Fermi-gradient current on exact boundary cells",
           "[element-current][contact_current]")
 {
@@ -1214,6 +1375,40 @@ TEST_CASE("CoupledDDAssembler BGN residuals use variable-ni quasi-Fermi fluxes",
     }
     REQUIRE(sawElectronDifference);
     REQUIRE(sawHoleDifference);
+}
+
+TEST_CASE("BGN assembled potential blocks preserve flat quasi-Fermi equilibrium",
+          "[sg][dd][coupled][bgn][stable_sg]")
+{
+    const DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    doping.setNodeDoping(0, 1e24, 0.);
+    doping.setNodeDoping(1, 0., 1e23);
+    doping.setNodeDoping(2, 1e24, 1e24);
+    auto bgn = bandgapNarrowingConfig("old_slotboom");
+    // The variable-ni flux is stable independently of the equal-ni option.
+    for (const std::string evaluation : {"legacy_factor_difference", "compensated_log_expm1"}) {
+        bgn.equalNiFluxEvaluation = evaluation;
+        CoupledDDAssembler assembler(mesh,matdb,doping,constants::Vt_300,
+            MobilityModelConfig{},recombinationModelConfig({"none"}),bgn);
+        for (double sign : {-1.,1.}) {
+            CoupledDDState state;
+            state.psi.resize(3); state.psi << sign*.43,sign*.42,sign*.44;
+            state.phin = VectorXd::Zero(3);
+            state.phip = VectorXd::Zero(3);
+            const VectorXd x = assembler.pack(state);
+            const auto residual = assembler.residual(x,{});
+            const auto jacobian = assembler.assembleJacobian(x,{});
+            for (int row=3; row<9; ++row) {
+                REQUIRE(residual(row)==0.);
+                for (int col=0; col<3; ++col) {
+                    CAPTURE(evaluation,sign,row,col);
+                    REQUIRE(jacobian.coeff(row,col)==0.);
+                }
+            }
+        }
+    }
 }
 
 struct AssemblySystem {

@@ -1,0 +1,13 @@
+{
+  "precisions": [
+    60,
+    100
+  ],
+  "source": "Retain the exact binary alpha and eight frozen normalized pair-source values in both carrier equations. Rounded mode uses the actual combined SRH/source rate; kernel/split/ideal add the independently specified constant source.",
+  "scope": "All rows at base and trial 0, 5, 12 of each of four final rejected searches; exact production squared-norm differences and update rounding for all 13 trials.",
+  "gates": {
+    "precision": 1e-20,
+    "reconstruction": 1e-10
+  },
+  "coefficients": "Fixed production double coefficients at each actual candidate; split and ideal are diagnostics, not accepted self-consistent states."
+}

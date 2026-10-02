@@ -1,0 +1,14 @@
+{
+  "status": "frozen_before_execution",
+  "contract_sha256": "340c2f67115cf81780988ec8e51504fd0a92d972b9f3f57ab67371884c43e298",
+  "input_hashes": {
+    "scripts/run_simplemos_m80b_state_semantics.py": "7c02dc5d17a2da5db54a518a473659b73b54ae4a2dd0d535b713dfde45723971",
+    "scripts/run_simplemos_m80_absolute_current_attribution.py": "f38c638172236e8c70d7697837bb5515cd7ee5f55c2bf81526229e80a4d3c3e5",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80_absolute_current_attribution_contract_v1.json": "cf2088e1f8d3657cd5abed84b167b209fa969dbeaaba7faf457c6a63657f6166",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80_absolute_current_attribution_contract_freeze_v1.json": "634df252db0b93ef3dc153dc05ce73b324cf1c9e42f0665280a39a5bfa86409e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80_absolute_current_attribution_evidence.json": "d39e876d3ca6794e41c8a1f1ec6ef4eb5126d38ae5a543fd8bb2723b38363c62",
+    "reference_tcad/simplemos_sentaurus2022/absolute_current_adjoint_attribution/m80_state_identity_failure.csv": "a93ae28c541ad459da73670e848c226a1a839ddd70a4479553e71a858b485d85",
+    "build-release/m65_ni/vela/matched_materials.json": "3fe16b4e1e3ffb3b087ceb661ee87768694667779dca7d684ef314023891d78b",
+    "tests/regression/test_simplemos_m80b_state_semantics.py": "fc2a84eef86ca8207a8c30340a4cd3268e745e20a74d71425ce2ef4ab5c7c316"
+  }
+}

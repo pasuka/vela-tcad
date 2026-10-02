@@ -1,0 +1,98 @@
+[
+  {
+    "case": "n18_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "0e3d09209161178b1036773029a6eb565d4a4fb66d2866ed30ba6ee80b91b20f",
+    "points": 51
+  },
+  {
+    "case": "n19_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "70ffb53fd5e9520762e6651eed59a442b760c4ac5277c467f8d3538b3592b4ae",
+    "points": 51
+  },
+  {
+    "case": "n19_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "9178e989d1e99ca5fc7a10e5a5858bd1dc55a9f03370af17d83d4c48e0c48979",
+    "points": 51
+  },
+  {
+    "case": "n20_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "9dc2ed0e1fa9c46502dcbba6e22e2a96408a6135fd6027696e634a54fbedb40a",
+    "points": 51
+  },
+  {
+    "case": "n20_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "ad38afb9d22a8f810b684ed8966e6cd5a356b5b20c17a2b94753795af2b54f0b",
+    "points": 51
+  },
+  {
+    "case": "n21_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "f45c87a5c47485810d00030c6c8476d63b02fde432371fc5d433417552f2830e",
+    "points": 51
+  },
+  {
+    "case": "n21_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "2c019b705623be4ca59e37612655dd6c92c1a64375e7d56386308db741f22a63",
+    "points": 51
+  },
+  {
+    "case": "n22_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "0e949aa2e82a1f76a4fc2c28b806de6ed6ad205b62fa2cead63639abab6fbe3e",
+    "points": 51
+  },
+  {
+    "case": "n22_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "12a59f7f5acb98354ffb94015bc487d350dabc03a3657b2cb1cf25332d1b65fe",
+    "points": 51
+  },
+  {
+    "case": "n23_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "77dd7fd4d574b1b23f414c0bbe28343a3c5bc00e73cf0d87248cefa68146468f",
+    "points": 51
+  },
+  {
+    "case": "n23_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "2078c8e724d6d72edeb1fb6cc4af7b6efb4ead335161b855d47ac358117ffd56",
+    "points": 51
+  },
+  {
+    "case": "n24_vd_0p05",
+    "origin": "cloud",
+    "summary_sha256": "be097b73f180f71a533deda4aaa3c7ca954fcd262fe2092aa50e3aaa4c59779c",
+    "points": 51
+  },
+  {
+    "case": "n24_vd_1",
+    "origin": "cloud",
+    "summary_sha256": "d31ea6e4999c884b139d8a1f5b743b1e233b5e64b8ab64a8671c0d4334b068af",
+    "points": 51
+  },
+  {
+    "case": "n17_vd_0p05",
+    "origin": "low",
+    "summary_sha256": "98f03badd449721b3c7b63ec9d823b5b578361a0086bdba0787c4736a1631493",
+    "points": 51
+  },
+  {
+    "case": "n18_vd_0p05",
+    "origin": "low",
+    "summary_sha256": "92876825c12498e5579227ae614b154540b5b050f19ae0e8426cd80d87b3dd81",
+    "points": 51
+  },
+  {
+    "case": "n17_vd_1",
+    "origin": "retry",
+    "summary_sha256": "a2129ee284063eefbaaf539152dbb099c1c135abf9c8c7f3546838c2bdd24a55",
+    "points": 51
+  }
+]

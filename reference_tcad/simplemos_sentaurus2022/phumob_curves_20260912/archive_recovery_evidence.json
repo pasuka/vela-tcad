@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "build-release/phumob_curves_20260912/archive_recovery.sh": "d95422305dbb88e6cd0966a80d24766106464cf531fa984d3fe95fd5365e5d74",
+    "build-release/phumob_curves_20260912/native_raw/archive_recovery.sh": "d95422305dbb88e6cd0966a80d24766106464cf531fa984d3fe95fd5365e5d74",
+    "build-release/phumob_curves_20260912/native_raw/launcher.log": "9cfada9b5e0c1713dd71c1d7b22611acd41275a14731d5d7c6ab2223bc50e0ba",
+    "build-release/phumob_curves_20260912/native_raw/run.sh": "bb0ca4b0634248bb3cf72379474bdd3cc9c97a87bc2345726c1a0c019d12564b",
+    "build-release/phumob_curves_20260912/results.tgz": "6345304eec45ac5a2b25e7d4c10a79f9b302c3686d795e721091e486b8040d81",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/archive_recovery.json": "849da0d2ed3f02cff63591293fa4aba73d19191852bf6e14936345648778b0a9"
+  }
+}

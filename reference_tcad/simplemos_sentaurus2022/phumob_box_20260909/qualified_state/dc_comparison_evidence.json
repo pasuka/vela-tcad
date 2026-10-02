@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/candidate/dc_evidence.json": "0ea9f3c3d86070f06542e6a624c18838ac0837852f262fd84e9c26150a92cdc3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/contract.json": "43d93de658dbc702068dcb511c40a26ee18719ac65b9b8b1b6dd17f5eb5fa791",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/dc_comparison.csv": "a29bf64bdacea7ef1773e207d04feac2659c52c6e090dfa9e38b8a58af7544d5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/dc_summary.json": "ffe6d2e094f323f2af98dc90ae0e3fe68c3b415c8cb4f8cdf5f62f92a6118d5e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/legacy/dc_evidence.json": "a94e6aa82b929ad9a7d2a2781110118f8d8f6c268f6b0fe47300d06893adc9d8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/selected_states.csv": "9a43a328c1db4faf4c30e3c0f4db204975de7d7b2fbbb3e1c33c12ac96785ea3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/source_activation.csv": "3555ea507790a47c54ff3acb2e7f97d0ac2ae5f1a5ab1ac8eb4ce6ca0d66138f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/native_points.csv": "0009d7088e577a8379eda85acc4fa5cb87277951f20e28839f3e2da734ff2b52",
+    "scripts/analyze_simplemos_phumob_box_20260909.py": "46f16ee30e92aeb09fc7040da71e3b0ec9da508d38b1f0af3f68e217ac3a56d2"
+  }
+}

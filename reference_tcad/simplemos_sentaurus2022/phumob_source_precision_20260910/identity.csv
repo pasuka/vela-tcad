@@ -1,0 +1,5 @@
+key,label,identity,repeat_identity,snapshots,iterations
+m65_n19_vd_0p050000_endpoint,plus_full,True,True,14,2
+m65_n19_vd_0p050000_endpoint,minus_full,True,True,14,0
+m65_n23_vd_0p050000_endpoint,plus_full,True,True,14,0
+m65_n23_vd_0p050000_endpoint,minus_full,True,True,14,30

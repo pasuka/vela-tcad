@@ -11915,8 +11915,10 @@ LOOKUP_TABLE default
                     "mobility": {
                         "model": "caughey_thomas_field",
                         "high_field_driving_force": "quasi_fermi_gradient",
-                        "electron_saturation_velocity_m_s": 1.0e5,
-                        "hole_saturation_velocity_m_s": 1.0e5,
+                        # Unit-scaled legacy decks store velocity in cm/s even
+                        # though this transitional key retains its SI suffix.
+                        "electron_saturation_velocity_m_s": 1.0e7,
+                        "hole_saturation_velocity_m_s": 1.0e7,
                     },
                 },
             }, indent=2) + "\n")
@@ -11933,6 +11935,33 @@ LOOKUP_TABLE default
             rows = self._read_csv(output)
             status = json.loads(result.stdout)
 
+            override = root / "mobility_drive_override.csv"
+            self._write_csv(
+                override,
+                ["edge_id", "electron_drive_V_m", "hole_drive_V_m"],
+                [[0, 0.0, 5.0e6], [1, 0.0, 5.0e6], [2, 0.0, 5.0e6]],
+            )
+            override_output = root / "edge_mobility_override.csv"
+            override_config = json.loads(config.read_text(encoding="utf-8"))
+            override_config.update({
+                "output_csv": str(override_output),
+                "mobility_drive_override_csv": str(override),
+                "mobility_drive_override_provenance": "sentaurus_mean_nodal_grad_qf",
+            })
+            config.write_text(json.dumps(override_config, indent=2) + "\n")
+            override_result = subprocess.run(
+                [str(runner), "--config", str(config)],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(
+                override_result.returncode, 0, override_result.stderr)
+            override_rows = self._read_csv(override_output)
+            override_status = json.loads(override_result.stdout)
+
         self.assertEqual(status["edge_count"], 3)
         self.assertEqual(len(rows), 3)
         focus = next(row for row in rows if row["edge_id"] == "0")
@@ -11945,6 +11974,40 @@ LOOKUP_TABLE default
             float(focus["electron_low_field_mobility_m2_V_s"]),
         )
         self.assertIn("electron_mobility_limiter", focus)
+        self.assertAlmostEqual(
+            float(focus["electron_saturation_velocity_m_s"]), 1.0e5)
+        self.assertGreater(float(focus["electron_high_field_ratio"]), 0.0)
+        self.assertGreater(float(focus["electron_limiter_denominator"]), 1.0)
+        self.assertLess(
+            float(focus["electron_limiter_reconstruction_error"]), 1.0e-12)
+        self.assertEqual(focus["drive_provenance"], "edge_projection_grad_qf")
+        self.assertEqual(status["diagnostic_schema"], "vela.edge_mobility_probe.v2")
+        self.assertTrue(status["state_carrier_populations_used"])
+        self.assertFalse(status["external_mobility_drive_override_used"])
+        override_focus = next(
+            row for row in override_rows if row["edge_id"] == "0")
+        self.assertEqual(
+            override_focus["drive_provenance"],
+            "sentaurus_mean_nodal_grad_qf",
+        )
+        self.assertAlmostEqual(
+            float(override_focus["electron_mobility_field_V_m"]), 0.0)
+        self.assertAlmostEqual(
+            float(override_focus["electron_final_mobility_m2_V_s"]),
+            float(override_focus["electron_low_field_mobility_m2_V_s"]),
+        )
+        self.assertAlmostEqual(
+            float(override_focus["hole_mobility_field_V_m"]), 5.0e6)
+        self.assertLess(
+            float(override_focus["hole_final_mobility_m2_V_s"]),
+            float(override_focus["hole_low_field_mobility_m2_V_s"]),
+        )
+        self.assertTrue(
+            override_status["external_mobility_drive_override_used"])
+        self.assertEqual(
+            override_status["mobility_drive_override_provenance"],
+            "sentaurus_mean_nodal_grad_qf",
+        )
 
     def test_runner_writes_newton_regularized_carrier_step_probe_for_external_state(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"

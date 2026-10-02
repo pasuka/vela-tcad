@@ -1,0 +1,2 @@
+input_grid_vertices,debug_grid_vertices,sdevice_internal_vertices,internal_vertex_delta,unique_contact_nodes,contact_nodes_explain_delta,material_interface_nodes,input_duplicate_coordinate_groups,geometrical_edges,internal_edges,internal_edge_delta,double_edges,no_material_double_node_evidence
+1482,1482,1564,82,82,True,21,0,4227,4309,82,0,True

@@ -1,0 +1,98 @@
+{
+  "status": "frozen_before_execution",
+  "device": "n23",
+  "vd": 0.05,
+  "vg": 0.9,
+  "cases": [
+    {
+      "name": "zero",
+      "charge_cm_3": 0.0
+    },
+    {
+      "name": "plus_1e13",
+      "charge_cm_3": 10000000000000.0
+    },
+    {
+      "name": "minus_1e13",
+      "charge_cm_3": -10000000000000.0
+    },
+    {
+      "name": "plus_5e12",
+      "charge_cm_3": 5000000000000.0
+    },
+    {
+      "name": "minus_5e12",
+      "charge_cm_3": -5000000000000.0
+    }
+  ],
+  "remote_root": "/tmp/vela_simplemos_channel_fd_20260905",
+  "window": {
+    "center_um": [
+      0.030045938170817486,
+      0,
+      0
+    ],
+    "half_width_um": [
+      0.025000000001,
+      0.125000000001,
+      1
+    ],
+    "selected_nodes": 186,
+    "scope": "Original shallow channel mask; x depth, y source-drain; no Dirichlet Poisson node included. 1e-12 um boundary margin changes no node membership."
+  },
+  "manual_basis": "Local Sentaurus Device UG T-2022.03 p548 Eq523: Uniform trap spatial window, SpaceMid/SpaceSig in um; p543 signed FixedCharge Conc. No SingleTrap or SFactor, no mesh/dopant changes.",
+  "native_green_prediction_A_per_um_at_1e13": 8.207584787557664e-12,
+  "vela_qualified_prediction_A_per_um_at_1e13": 9.285954416133963e-12,
+  "pilot_current_A_per_um": 1.56350743583972e-08,
+  "gates": {
+    "all_exit_zero": true,
+    "bias_error_V": 1e-12,
+    "zero_reclosure_dex": 1e-05,
+    "fd_vs_green_relative": 0.05,
+    "two_amplitude_derivative_relative": 0.05,
+    "even_nonlinear_fraction": 0.01,
+    "minimum_signal_to_zero_drift": 100,
+    "charge_mask_relative_tolerance": 1e-06,
+    "roundoff_multiplier": 128
+  },
+  "mask_audit": "At every Si node compare Delta SpaceCharge - Delta p + Delta n - Delta ND + Delta NA to signed Conc * frozen mask, using zero control. SpaceCharge is exported number density. Tolerance max(|Conc|*1e-6,128*double_epsilon*max component magnitude).",
+  "counts": {
+    "dc_zero": 1,
+    "dc_perturbed": 4,
+    "bias_sweeps": 0,
+    "new_ac": 0
+  },
+  "m82_released": false,
+  "m83_released": false,
+  "input_hashes": {
+    "build-release/m79_research/sdevice_ug_local_2022.txt": "a9f446d57a1ccfe2a2c16d9ccb263c74b9b3e295ad97e077a1d5997a46a852ae",
+    "build-release/sentaurus_import.exe": "a36d9be1bf29b9836fb848d5b88e22a8b6e135a7578441939d860cd9687493b6",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_1e13/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_1e13/m81_des.cmd": "b000d49550dd4099731d927f3b39878c35b61e9dc9ee3afd3891717e0cf33c7d",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_1e13/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_1e13/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_5e12/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_5e12/m81_des.cmd": "839c38903b9fe9cf54d1a606f99e135ab7312dab94bfa4ce0107a91e1ff7f2af",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_5e12/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_native_channel_charge_fd/bundle/minus_5e12/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_1e13/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_1e13/m81_des.cmd": "1006084944d41b4499032e03feece35075ee7aeb2b0109465398653620ae8566",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_1e13/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_1e13/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_5e12/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_5e12/m81_des.cmd": "198d9c1f753f85eec719e57fa34f445bc8a6ec423fbb3e8adf49113c803eae1b",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_5e12/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_native_channel_charge_fd/bundle/plus_5e12/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/simplemos_native_channel_charge_fd/bundle/zero/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_native_channel_charge_fd/bundle/zero/m81_des.cmd": "f38b2899837fe5f56307679c85476fc78166ed967581186037d46649ef3496fa",
+    "build-release/simplemos_native_channel_charge_fd/bundle/zero/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_native_channel_charge_fd/bundle/zero/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/simplemos_native_channel_charge_fd/run.sh": "84b207355d40ef29cbafe9a69f2c73d729d767e32589d87af01e8d4365edf5aa",
+    "reference_tcad/simplemos_sentaurus2022/native_channel_charge_fd/node_mask.csv": "a83e3ce9710dfe47a55e65fb85892be8b108fb4795332b5c6199ab0899458f25",
+    "reference_tcad/simplemos_sentaurus2022/qualified_charge_response/contract.json": "392d0698b08fe8117d4b59929480698d92183876a618de1f569e4b3bd8900b6b",
+    "reference_tcad/simplemos_sentaurus2022/qualified_charge_response/response_ledger.csv": "dff57198e76190ee9e0e508b0b9639e56cbe4a36c5de32191cc1a91581bf86d4",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_ifm_pilot/m81_native_pilot_result.json": "e291daebe9a22938e98409ca79b16cbef7e67811d0be8d6596ef493251ee18b3",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_strict_precision_closure_evidence.json": "4bf662a11a706ff2b0494c735ccba5de43af88a7a41fe8cadce8f4a16509e6aa",
+    "scripts/validate_simplemos_native_channel_charge.py": "8766e93bbf945ea4181e4e5cd2b08bd51643363c89cd6f4459ea0324f0c83a77"
+  }
+}

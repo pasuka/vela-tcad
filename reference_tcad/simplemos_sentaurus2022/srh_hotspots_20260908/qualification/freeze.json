@@ -1,0 +1,25 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_srh_hotspots_20260908/guards/bad_alpha/config.json": "8cfa0f30eb89a2030909115212870a385f0379ee296fe9e68e96f38c036db338",
+    "build-release/simplemos_srh_hotspots_20260908/guards/bad_alpha/sites.txt": "34887d419d44f50b194d485c097e00962c8cbcc1b1d5371683aee61cc72b3184",
+    "build-release/simplemos_srh_hotspots_20260908/guards/duplicate/config.json": "01fa9f57e541c0b4fea479095fefa330bae75f997c2fc0385ec0f29617485f49",
+    "build-release/simplemos_srh_hotspots_20260908/guards/duplicate/sites.txt": "f237269e7b5cd9136f8f2fa7a1d4199d6f97052ca629608da5e64f4b983f6f61",
+    "build-release/simplemos_srh_hotspots_20260908/guards/extra/config.json": "ef5b7ade6391bb846d2feb3445e97fc3390e48c293a5c8c5e72818edfb51e2b1",
+    "build-release/simplemos_srh_hotspots_20260908/guards/extra/sites.txt": "6616e052c7492828f9e67b6664e84fdae295b5c2a61f360625bfa317d4e36b0b",
+    "build-release/simplemos_srh_hotspots_20260908/guards/missing_alpha/config.json": "129adf711b42d77a20a6090755d7a100d3c4703394ad935dbbc7d825ab533c4e",
+    "build-release/simplemos_srh_hotspots_20260908/guards/missing_alpha/sites.txt": "34887d419d44f50b194d485c097e00962c8cbcc1b1d5371683aee61cc72b3184",
+    "build-release/simplemos_srh_hotspots_20260908/guards/missing_record/config.json": "a2fca9129b5317c03d0b4bcaac1622bfe247bc804633c1bffbf230c0bd9d88f6",
+    "build-release/simplemos_srh_hotspots_20260908/guards/missing_record/sites.txt": "1edd522ec75528f582f337d036a9e7f817ace3300ceced3ee5295cab295cd1b3",
+    "build-release/simplemos_srh_hotspots_20260908/guards/out_of_range_node/config.json": "577907417c6e69d103866178f4c803a2e54a7fb385b1a0a72c2e983473d5eaa6",
+    "build-release/simplemos_srh_hotspots_20260908/guards/out_of_range_node/sites.txt": "aa4e959c2cbb244fdbf520c4958d61dde9fb9e072ce6af5abbfc532d33690d78",
+    "build-release/simplemos_srh_hotspots_20260908/guards/wrong_count/config.json": "adeaa2a3d189c1d5ab7bebb2cbe474a51feec99934341e899068e12ef1cf6df9",
+    "build-release/simplemos_srh_hotspots_20260908/guards/wrong_count/sites.txt": "08b46fda88f3047c3aedb9e0d97a0b2183191917704b4045c35a70263a2baf88",
+    "build-release/simplemos_srh_hotspots_20260908/guards/wrong_mesh/config.json": "f0ff903d2b4e293818e0e54c8373e68bebd2017f834b4ad4b34d38338701dad5",
+    "build-release/simplemos_srh_hotspots_20260908/guards/wrong_mesh/sites.txt": "b0be2400fae864b1c1aa1511ef98c254731d4a58179d7e974aafca6b5c9ec219",
+    "build-release/simplemos_srh_hotspots_20260908/guards/zero_ratio/config.json": "04dbefffc3e1ceb6beb07fbf7444871892653f1198850ecd16dae06741a52eed",
+    "build-release/simplemos_srh_hotspots_20260908/guards/zero_ratio/sites.txt": "9abd6fd5917ffbab4cd4e8023d7d58f4f99e3f3c618ca2243f6b818219be5910",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/freeze.json": "3e81031652789694c15d958f1ce283946504971dcc8c05ea211b133ae07142a0",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/contract.json": "6bac4b258acc13f1e6289ca844fc5c237096a0aef2feb1bcad261584279fb08e",
+    "scripts/check_simplemos_hotspot_contract_20260908.py": "580ac1401e0f7aaef74cc93a847c6a5606e667b4369285de77bd5b75211e0a37"
+  }
+}

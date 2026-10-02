@@ -1,0 +1,3 @@
+label,qualified,current_A_per_um,max_row_ratio,row_violations,kcl_over_Id,iterations,failure,global_electron_ratio,global_hole_ratio
+native_first,False,1.4117850849228937e-14,0.008195634689793502,111,1.501990916669379e-05,3,carrier_row_convergence,0.00011139611272459194,8.12640328347994e-15
+native_reload,False,1.4117850849228937e-14,0.008195634695597972,82,1.5019909159876816e-05,3,carrier_row_convergence,0.00011139611266686701,1.6155871338926322e-17

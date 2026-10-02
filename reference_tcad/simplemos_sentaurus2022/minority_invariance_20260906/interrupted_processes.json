@@ -1,0 +1,26 @@
+{
+  "time": "2026-09-06T18:26:45.770948",
+  "reason": "Frozen prerequisite-gated screen replaces long shifted runs after unshifted all-row failure; interrupted states are not claimed converged or nonconverged.",
+  "processes": [
+    {
+      "pid": 23548,
+      "command": [
+        "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\runner.exe",
+        "--config",
+        "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\vela\\config.json",
+        "--log",
+        "off"
+      ]
+    },
+    {
+      "pid": 10256,
+      "command": [
+        "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\runner.exe",
+        "--config",
+        "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\hole_plus\\config.json",
+        "--log",
+        "off"
+      ]
+    }
+  ]
+}

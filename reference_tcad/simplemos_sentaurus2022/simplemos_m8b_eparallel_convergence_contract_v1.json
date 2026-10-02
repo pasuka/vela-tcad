@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m8b_eparallel_convergence.v1",
+  "contract_id": "simplemos-sdevice-m8b-eparallel-convergence-v1",
+  "scope": "SDevice-only numerical convergence probe for Eparallel at Vd=1 V",
+  "sentaurus_release": "T-2022.03-SP2",
+  "physics_invariant": "Mobility(PhuMob HighFieldSaturation(Eparallel) Enormal) with OldSlotboom and SRH(DopingDependence)",
+  "devices": ["n17", "n21"],
+  "drain_voltage_V": 1.0,
+  "gate_lattice": {
+    "start_V": 0.0,
+    "stop_V": 2.5,
+    "step_V": 0.05,
+    "point_count": 51,
+    "interpolation": "forbidden"
+  },
+  "common_numerics": {
+    "coupled_iterations": 100,
+    "gate_min_step": 1e-8
+  },
+  "probes": [
+    {
+      "id": "damping_0p5",
+      "line_search_damping": 0.5
+    },
+    {
+      "id": "damping_0p1",
+      "line_search_damping": 0.1
+    },
+    {
+      "id": "damping_0p01",
+      "line_search_damping": 0.01
+    }
+  ],
+  "selection_policy": {
+    "required_devices": 2,
+    "success_requires_exit_code_zero": true,
+    "success_requires_no_failure_marker": true,
+    "success_requires_all_51_exact_gate_points": true,
+    "selected_probe": "for each device, use the largest line_search_damping that succeeds; prefer a shared value only when available"
+  }
+}

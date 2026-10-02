@@ -1,0 +1,314 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M58 compensation contour and mesh audit",
+    "description": "Frozen eight-TDR active-species, compensation, contour, and connectivity attribution.",
+    "generatedAt": "2026-09-02T00:00:00+08:00",
+    "sources": [
+      {
+        "id": "src_m58",
+        "label": "M58 machine report",
+        "path": "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_compensation_contour_mesh_audit_report.json"
+      },
+      {
+        "id": "src_contract",
+        "label": "Frozen M58 contract",
+        "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m58_compensation_contour_mesh_audit_contract_v1.json"
+      }
+    ],
+    "tables": [
+      {
+        "id": "devices",
+        "title": "Device compensation and mesh metrics",
+        "dataset": "devices",
+        "sourceId": "src_m58",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "device",
+            "label": "Device",
+            "type": "text"
+          },
+          {
+            "field": "NWell_cm3",
+            "label": "Background boron",
+            "format": "number"
+          },
+          {
+            "field": "gate_edge_max_compensation_ratio",
+            "label": "Max compensation",
+            "format": "number"
+          },
+          {
+            "field": "floating_n_type_component_count",
+            "label": "Floating n components",
+            "format": "number"
+          },
+          {
+            "field": "maximum_m46_error_dex",
+            "label": "M46 max error",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M58 compensation contour and mesh audit"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "sourceId": "src_m58",
+        "body": "Outcome: `no_systematic_frozen_tdr_relation`. Eight immutable process TDRs were analyzed without a device solve."
+      },
+      {
+        "id": "devices",
+        "type": "table",
+        "tableId": "devices"
+      },
+      {
+        "id": "guard",
+        "type": "markdown",
+        "sourceId": "src_contract",
+        "body": "This structural relation supports a targeted control; it does not prove causality or authorize a production change."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-09-02T00:00:00+08:00",
+    "status": "ready",
+    "datasets": {
+      "devices": [
+        {
+          "device": "n17",
+          "NWell_cm3": 1e+17,
+          "GOxTime_min": 10.0,
+          "LDD_Dose_cm2": 100000000000000.0,
+          "global_node_count": 1542,
+          "silicon_node_count": 993,
+          "silicon_triangle_count": 1850,
+          "silicon_edge_count": 2842,
+          "gate_edge_roi_node_count": 152,
+          "gate_edge_roi_edge_count": 478,
+          "gate_edge_min_edge_length_um": 8.124975508838356e-05,
+          "gate_edge_median_edge_length_um": 0.004006414032758153,
+          "gate_edge_min_abs_net_cm3": 822344729409528.0,
+          "gate_edge_max_compensation_ratio": 162.2689379475897,
+          "gate_edge_near_compensation_node_count": 8,
+          "zero_contour_segment_count": 104,
+          "gate_edge_zero_contour_segment_count": 34,
+          "gate_edge_min_contour_vertex_distance_um": 1.6136757654435755e-05,
+          "gate_edge_min_contour_edge_fraction": 0.01780171569587463,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.04172703523666418
+        },
+        {
+          "device": "n18",
+          "NWell_cm3": 1e+17,
+          "GOxTime_min": 10.0,
+          "LDD_Dose_cm2": 200000000000000.0,
+          "global_node_count": 1542,
+          "silicon_node_count": 993,
+          "silicon_triangle_count": 1850,
+          "silicon_edge_count": 2842,
+          "gate_edge_roi_node_count": 152,
+          "gate_edge_roi_edge_count": 478,
+          "gate_edge_min_edge_length_um": 8.124975508838356e-05,
+          "gate_edge_median_edge_length_um": 0.004006414032758153,
+          "gate_edge_min_abs_net_cm3": 1300150321653952.0,
+          "gate_edge_max_compensation_ratio": 90.75067929592242,
+          "gate_edge_near_compensation_node_count": 4,
+          "zero_contour_segment_count": 108,
+          "gate_edge_zero_contour_segment_count": 36,
+          "gate_edge_min_contour_vertex_distance_um": 4.086285263096375e-06,
+          "gate_edge_min_contour_edge_fraction": 0.000296065148847946,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.04148372764472475
+        },
+        {
+          "device": "n19",
+          "NWell_cm3": 1e+17,
+          "GOxTime_min": 15.0,
+          "LDD_Dose_cm2": 100000000000000.0,
+          "global_node_count": 1480,
+          "silicon_node_count": 942,
+          "silicon_triangle_count": 1750,
+          "silicon_edge_count": 2691,
+          "gate_edge_roi_node_count": 136,
+          "gate_edge_roi_edge_count": 426,
+          "gate_edge_min_edge_length_um": 0.00012980775206115468,
+          "gate_edge_median_edge_length_um": 0.005590109999999999,
+          "gate_edge_min_abs_net_cm3": 1772434405484776.0,
+          "gate_edge_max_compensation_ratio": 68.33735022371276,
+          "gate_edge_near_compensation_node_count": 4,
+          "zero_contour_segment_count": 100,
+          "gate_edge_zero_contour_segment_count": 30,
+          "gate_edge_min_contour_vertex_distance_um": 4.552107498389364e-05,
+          "gate_edge_min_contour_edge_fraction": 0.01559891955342603,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.037075268367692364
+        },
+        {
+          "device": "n20",
+          "NWell_cm3": 1e+17,
+          "GOxTime_min": 15.0,
+          "LDD_Dose_cm2": 200000000000000.0,
+          "global_node_count": 1480,
+          "silicon_node_count": 942,
+          "silicon_triangle_count": 1750,
+          "silicon_edge_count": 2691,
+          "gate_edge_roi_node_count": 136,
+          "gate_edge_roi_edge_count": 426,
+          "gate_edge_min_edge_length_um": 0.00012980775206115468,
+          "gate_edge_median_edge_length_um": 0.005590109999999999,
+          "gate_edge_min_abs_net_cm3": 1521577564612096.0,
+          "gate_edge_max_compensation_ratio": 71.64895531395949,
+          "gate_edge_near_compensation_node_count": 2,
+          "zero_contour_segment_count": 104,
+          "gate_edge_zero_contour_segment_count": 32,
+          "gate_edge_min_contour_vertex_distance_um": 5.288056954062782e-06,
+          "gate_edge_min_contour_edge_fraction": 0.000383137560992175,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.045587315934851394
+        },
+        {
+          "device": "n21",
+          "NWell_cm3": 2e+17,
+          "GOxTime_min": 10.0,
+          "LDD_Dose_cm2": 100000000000000.0,
+          "global_node_count": 1540,
+          "silicon_node_count": 993,
+          "silicon_triangle_count": 1850,
+          "silicon_edge_count": 2842,
+          "gate_edge_roi_node_count": 152,
+          "gate_edge_roi_edge_count": 478,
+          "gate_edge_min_edge_length_um": 8.124867612406854e-05,
+          "gate_edge_median_edge_length_um": 0.004006414032758153,
+          "gate_edge_min_abs_net_cm3": 83239572032688.0,
+          "gate_edge_max_compensation_ratio": 1870.6739579145662,
+          "gate_edge_near_compensation_node_count": 6,
+          "zero_contour_segment_count": 122,
+          "gate_edge_zero_contour_segment_count": 56,
+          "gate_edge_min_contour_vertex_distance_um": 1.9459868704043673e-06,
+          "gate_edge_min_contour_edge_fraction": 0.0012660740739034448,
+          "n_type_component_count": 4,
+          "floating_n_type_component_count": 2,
+          "single_node_floating_n_type_component_count": 2,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.07374837507777213
+        },
+        {
+          "device": "n22",
+          "NWell_cm3": 2e+17,
+          "GOxTime_min": 10.0,
+          "LDD_Dose_cm2": 200000000000000.0,
+          "global_node_count": 1540,
+          "silicon_node_count": 993,
+          "silicon_triangle_count": 1850,
+          "silicon_edge_count": 2842,
+          "gate_edge_roi_node_count": 152,
+          "gate_edge_roi_edge_count": 478,
+          "gate_edge_min_edge_length_um": 8.124867612406854e-05,
+          "gate_edge_median_edge_length_um": 0.004006414032758153,
+          "gate_edge_min_abs_net_cm3": 1391652512910432.0,
+          "gate_edge_max_compensation_ratio": 174.7953356770543,
+          "gate_edge_near_compensation_node_count": 2,
+          "zero_contour_segment_count": 100,
+          "gate_edge_zero_contour_segment_count": 34,
+          "gate_edge_min_contour_vertex_distance_um": 1.8912599826308683e-05,
+          "gate_edge_min_contour_edge_fraction": 0.013897724004482944,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.0644330815366874
+        },
+        {
+          "device": "n23",
+          "NWell_cm3": 2e+17,
+          "GOxTime_min": 15.0,
+          "LDD_Dose_cm2": 100000000000000.0,
+          "global_node_count": 1482,
+          "silicon_node_count": 942,
+          "silicon_triangle_count": 1750,
+          "silicon_edge_count": 2691,
+          "gate_edge_roi_node_count": 136,
+          "gate_edge_roi_edge_count": 426,
+          "gate_edge_min_edge_length_um": 0.00012980682918251312,
+          "gate_edge_median_edge_length_um": 0.005590109999999999,
+          "gate_edge_min_abs_net_cm3": 1596681023065040.0,
+          "gate_edge_max_compensation_ratio": 99.90624829734554,
+          "gate_edge_near_compensation_node_count": 8,
+          "zero_contour_segment_count": 122,
+          "gate_edge_zero_contour_segment_count": 56,
+          "gate_edge_min_contour_vertex_distance_um": 2.233662781016253e-05,
+          "gate_edge_min_contour_edge_fraction": 0.025101412380825416,
+          "n_type_component_count": 4,
+          "floating_n_type_component_count": 2,
+          "single_node_floating_n_type_component_count": 2,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.10941868092427424
+        },
+        {
+          "device": "n24",
+          "NWell_cm3": 2e+17,
+          "GOxTime_min": 15.0,
+          "LDD_Dose_cm2": 200000000000000.0,
+          "global_node_count": 1482,
+          "silicon_node_count": 942,
+          "silicon_triangle_count": 1750,
+          "silicon_edge_count": 2691,
+          "gate_edge_roi_node_count": 136,
+          "gate_edge_roi_edge_count": 426,
+          "gate_edge_min_edge_length_um": 0.00012980682918251312,
+          "gate_edge_median_edge_length_um": 0.005590109999999999,
+          "gate_edge_min_abs_net_cm3": 1.0177367237356224e+16,
+          "gate_edge_max_compensation_ratio": 26.02813708444128,
+          "gate_edge_near_compensation_node_count": 0,
+          "zero_contour_segment_count": 96,
+          "gate_edge_zero_contour_segment_count": 30,
+          "gate_edge_min_contour_vertex_distance_um": 0.00019085276959499047,
+          "gate_edge_min_contour_edge_fraction": 0.01040710701092682,
+          "n_type_component_count": 2,
+          "floating_n_type_component_count": 0,
+          "single_node_floating_n_type_component_count": 0,
+          "active_field_identity_max_abs_residual_cm3": 0.0,
+          "active_field_identity_pass": true,
+          "maximum_m46_error_dex": 0.0586034579756191
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "src_m58",
+      "label": "M58 machine report",
+      "path": "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_compensation_contour_mesh_audit_report.json"
+    }
+  ]
+}

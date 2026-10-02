@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/blocks.csv": "9ac80f5471978b2a8af5f2b6af7f35d40bef666369d7df1aecc04cca5276e00f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/cell_checks.csv": "6349d4fde753008b576b7ae2da860052a23856029ec82c20d3f62fcd069fe3f2",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/cross_checks.csv": "6595bc305826c7a0e4f07eca0e12a9af6ced8b178a818ac3f0a60b89838106f1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/edge_checks.csv": "3cb0d42d302846064d6937bc810c068e07fe06ad9037d3d64f07821ecaf3cbac",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/fixed_raw_evidence.json": "597eeb7dee0cc703bbef557e04bfffe4ccbed15ec42efab02915e1b38b5b72a9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/fixed_summary.json": "40effd76f9b96320869771098d1d3800535f1771d44a723e54fd239d17d8aac4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/third_vertex.csv": "7b8b0c62a33e8383ada9717f732f8d5e3926f8fd899d0b5903e2daac9d66a423",
+    "scripts/audit_simplemos_phumob_cross_derivatives_20260908.py": "832794b8338187994750b2f7c371999c71b86804f4892d73be238a09d1b1c3ae",
+    "scripts/validate_simplemos_phumob_box_20260909.py": "cdb22d2ffc8f2e41d729ed61fbd09502049e370d0c844681b7972892c1f5a438"
+  }
+}

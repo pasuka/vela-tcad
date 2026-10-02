@@ -502,6 +502,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
     // terminal current.
     vela::DDScalingSpec ddScaling;
+    ddScaling.regionResolvedInterfaceAssembly =
+        problem.newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy =
         problem.newton.poissonChargeVolumePolicy;
     if (problem.newton.inputScaling.isUnitScaling()) {
@@ -613,6 +615,82 @@ std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
             throw std::runtime_error("Scalar field CSV is missing a node row: " + path.string());
     }
     return values;
+}
+
+struct EdgeMobilityDriveOverride {
+    std::vector<vela::Real> electronDriveVPerM;
+    std::vector<vela::Real> holeDriveVPerM;
+};
+
+EdgeMobilityDriveOverride readEdgeMobilityDriveCsv(
+    const std::filesystem::path& path,
+    vela::Index edgeCount)
+{
+    std::ifstream input(path);
+    if (!input.is_open())
+        throw std::runtime_error(
+            "Cannot open mobility drive override CSV: " + path.string());
+    std::string headerLine;
+    if (!std::getline(input, headerLine))
+        throw std::runtime_error(
+            "Empty mobility drive override CSV: " + path.string());
+    const std::vector<std::string> header = vela::splitCsvLine(headerLine);
+    const auto columnIndex = [&](const std::string& name) {
+        const auto found = std::find(header.begin(), header.end(), name);
+        if (found == header.end()) {
+            throw std::runtime_error(
+                "Mobility drive override CSV must contain " + name +
+                ": " + path.string());
+        }
+        return static_cast<std::size_t>(std::distance(header.begin(), found));
+    };
+    const std::size_t edgeColumn = columnIndex("edge_id");
+    const std::size_t electronColumn = columnIndex("electron_drive_V_m");
+    const std::size_t holeColumn = columnIndex("hole_drive_V_m");
+    const std::size_t maximumColumn =
+        std::max({edgeColumn, electronColumn, holeColumn});
+
+    EdgeMobilityDriveOverride result{
+        std::vector<vela::Real>(static_cast<std::size_t>(edgeCount), 0.0),
+        std::vector<vela::Real>(static_cast<std::size_t>(edgeCount), 0.0)};
+    std::vector<bool> seen(static_cast<std::size_t>(edgeCount), false);
+    std::string line;
+    while (std::getline(input, line)) {
+        if (line.empty())
+            continue;
+        const std::vector<std::string> cells = vela::splitCsvLine(line);
+        if (cells.size() <= maximumColumn) {
+            throw std::runtime_error(
+                "Malformed mobility drive override CSV row: " + path.string());
+        }
+        const auto edge = static_cast<vela::Index>(std::stoll(cells[edgeColumn]));
+        if (edge >= edgeCount) {
+            throw std::runtime_error(
+                "Mobility drive override CSV edge_id out of range: " + path.string());
+        }
+        if (seen[static_cast<std::size_t>(edge)]) {
+            throw std::runtime_error(
+                "Mobility drive override CSV has duplicate edge_id: " + path.string());
+        }
+        const vela::Real electron = std::stod(cells[electronColumn]);
+        const vela::Real hole = std::stod(cells[holeColumn]);
+        if (!std::isfinite(electron) || electron < 0.0 ||
+            !std::isfinite(hole) || hole < 0.0) {
+            throw std::runtime_error(
+                "Mobility drive override values must be finite and nonnegative: " +
+                path.string());
+        }
+        result.electronDriveVPerM[static_cast<std::size_t>(edge)] = electron;
+        result.holeDriveVPerM[static_cast<std::size_t>(edge)] = hole;
+        seen[static_cast<std::size_t>(edge)] = true;
+    }
+    for (vela::Index edge = 0; edge < edgeCount; ++edge) {
+        if (!seen[static_cast<std::size_t>(edge)]) {
+            throw std::runtime_error(
+                "Mobility drive override CSV is missing an edge row: " + path.string());
+        }
+    }
+    return result;
 }
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
@@ -1635,8 +1713,11 @@ nlohmann::json runNewtonPoissonQfpCrossBlockProbe(
         problem.mesh.numNodes(),
         problem.newton.inputScaling);
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const bool computeConditionEstimates =
+        cfg.value("compute_condition_estimates", true);
     const auto evaluation =
-        solver.evaluatePoissonQfpCrossBlockDecomposition(state, replacement);
+        solver.evaluatePoissonQfpCrossBlockDecomposition(
+            state, replacement, computeConditionEstimates);
     const std::filesystem::path outputPath =
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
     const std::filesystem::path blockPath = cfg.contains("jacobian_blocks_csv")
@@ -1666,7 +1747,7 @@ nlohmann::json runNewtonPoissonQfpCrossBlockProbe(
         };
     }
 
-    return {
+    nlohmann::json result = {
         {"nodes", problem.mesh.numNodes()},
         {"output_csv", outputPath.string()},
         {"jacobian_blocks_csv", blockPath.string()},
@@ -1683,25 +1764,7 @@ nlohmann::json runNewtonPoissonQfpCrossBlockProbe(
         {"loop_component_closure_norm",
          evaluation.loopComponentClosureNorm},
         {"loop_component_norms", componentNorms},
-        {"condition_estimates", {
-            {"J_psi_psi",
-             matrixConditionJson(evaluation.jacobianPsiPsiCondition)},
-            {"J_psi_psi_l2_equilibrated",
-             matrixConditionJson(
-                 evaluation.jacobianPsiPsiEquilibratedCondition)},
-            {"J_qfp_qfp",
-             matrixConditionJson(evaluation.jacobianQfpQfpCondition)},
-            {"J_qfp_qfp_l2_equilibrated",
-             matrixConditionJson(
-                 evaluation.jacobianQfpQfpEquilibratedCondition)},
-            {"schur",
-             matrixConditionJson(evaluation.schurCondition)},
-            {"schur_l2_equilibrated",
-             matrixConditionJson(evaluation.schurEquilibratedCondition)},
-            {"C_Ainv_B",
-             matrixConditionJson(
-                 evaluation.effectiveSchurLoopCondition)},
-        }},
+        {"condition_estimates_computed", computeConditionEstimates},
         {"directional_derivative_check", {
             {"relative_step",
              evaluation.finiteDifferenceRelativeStep},
@@ -1740,6 +1803,26 @@ nlohmann::json runNewtonPoissonQfpCrossBlockProbe(
             {"production_defaults_changed", false},
         }},
     };
+    if (computeConditionEstimates) {
+        result["condition_estimates"] = {
+            {"J_psi_psi",
+             matrixConditionJson(evaluation.jacobianPsiPsiCondition)},
+            {"J_psi_psi_l2_equilibrated",
+             matrixConditionJson(
+                 evaluation.jacobianPsiPsiEquilibratedCondition)},
+            {"J_qfp_qfp",
+             matrixConditionJson(evaluation.jacobianQfpQfpCondition)},
+            {"J_qfp_qfp_l2_equilibrated",
+             matrixConditionJson(
+                 evaluation.jacobianQfpQfpEquilibratedCondition)},
+            {"schur", matrixConditionJson(evaluation.schurCondition)},
+            {"schur_l2_equilibrated",
+             matrixConditionJson(evaluation.schurEquilibratedCondition)},
+            {"C_Ainv_B",
+             matrixConditionJson(evaluation.effectiveSchurLoopCondition)},
+        };
+    }
+    return result;
 }
 
 bool coordinateInRange(const nlohmann::json& direction,
@@ -2371,11 +2454,18 @@ void writeNewtonCarrierRowProbeCsv(
     std::ofstream out(path);
     if (!out.is_open())
         throw std::runtime_error("Cannot write Newton carrier-row probe CSV: " + path.string());
+    out << std::setprecision(17);
     out << "node_id,x,y,electron_residual,hole_residual,"
         << "electron_diagonal,hole_diagonal,"
         << "electron_row_abs_sum,hole_row_abs_sum,"
         << "electron_offdiag_abs_sum,hole_offdiag_abs_sum,"
         << "electron_row_l2_norm,hole_row_l2_norm,"
+        << "electron_psi_column_abs_sum,electron_phin_column_abs_sum,"
+        << "electron_phip_column_abs_sum,electron_contact_column_abs_sum,"
+        << "electron_free_column_abs_sum,"
+        << "electron_psi_contact_column_abs_sum,electron_psi_free_column_abs_sum,"
+        << "electron_phin_contact_column_abs_sum,electron_phin_free_column_abs_sum,"
+        << "electron_phip_contact_column_abs_sum,electron_phip_free_column_abs_sum,"
         << "raw_delta_phin_V,raw_delta_phip_V,"
         << "capped_delta_phin_V,capped_delta_phip_V,"
         << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3\n";
@@ -2394,6 +2484,17 @@ void writeNewtonCarrierRowProbeCsv(
             << row.holeOffdiagAbsSum << ','
             << row.electronRowL2Norm << ','
             << row.holeRowL2Norm << ','
+            << row.electronPsiColumnAbsSum << ','
+            << row.electronPhinColumnAbsSum << ','
+            << row.electronPhipColumnAbsSum << ','
+            << row.electronContactColumnAbsSum << ','
+            << row.electronFreeColumnAbsSum << ','
+            << row.electronPsiContactColumnAbsSum << ','
+            << row.electronPsiFreeColumnAbsSum << ','
+            << row.electronPhinContactColumnAbsSum << ','
+            << row.electronPhinFreeColumnAbsSum << ','
+            << row.electronPhipContactColumnAbsSum << ','
+            << row.electronPhipFreeColumnAbsSum << ','
             << row.rawDeltaPhin_V << ','
             << row.rawDeltaPhip_V << ','
             << row.cappedDeltaPhin_V << ','
@@ -2882,7 +2983,7 @@ void writeSgEdgeFluxProbeCsv(
         << "electron_density0_m3,electron_density1_m3,"
         << "hole_density0_m3,hole_density1_m3,"
         << "psi0_V,psi1_V,phin0_V,phin1_V,"
-        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_field_V_m,"
+        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_drive_V_m,electron_mobility_field_V_m,"
         << "electron_mobility_m2_V_s,hole_mobility_m2_V_s,"
         << "electron_eta0,electron_eta1,electron_drift_potential_V,"
         << "electron_generalized_einstein_factor,electron_bernoulli_argument,"
@@ -2891,7 +2992,18 @@ void writeSgEdgeFluxProbeCsv(
         << "electron_scaled_flux_per_couple_m,hole_scaled_flux_per_couple_m,"
         << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s,"
         << "electron_particle_flux_density_per_couple_m2_s,"
-        << "hole_particle_flux_density_per_couple_m2_s\n";
+        << "hole_particle_flux_density_per_couple_m2_s,"
+        << "electron_sg_boltzmann_decomposition_available,electron_sg_eta,"
+        << "electron_sg_bernoulli_minus_eta,electron_sg_bernoulli_eta,"
+        << "electron_sg_left_term_m3,electron_sg_right_term_m3,"
+        << "electron_sg_signed_difference_m3,"
+        << "electron_sg_reconstructed_flux,electron_sg_stable_flux,"
+        << "electron_sg_high_precision_reference_flux,"
+        << "electron_sg_high_precision_reference_term_scale,"
+        << "electron_sg_log_left_over_right,electron_sg_right_factor_flux,"
+        << "electron_sg_phin0_relative_V,electron_sg_phin1_relative_V,"
+        << "electron_qf_reference0_V,electron_qf_reference1_V,"
+        << "electron_sg_cancellation_condition\n";
     const vela::PhysicalUnitSystem& units = scaling.unitSystem();
     const vela::Real internalLength_m = units.internalLengthToMeters(1.0);
     out << std::setprecision(17);
@@ -2920,6 +3032,8 @@ void writeSgEdgeFluxProbeCsv(
             << edge.phip1_V << ','
             << units.internalElectricFieldToVPerM(edge.electricField_V_m) << ','
             << units.internalElectricFieldToVPerM(
+                edge.electronMobilityDriveInternal) << ','
+            << units.internalElectricFieldToVPerM(
                    edge.electronMobilityField_V_m) << ','
             << units.internalMobilityToM2PerVS(edge.electronMobility_m2_V_s) << ','
             << units.internalMobilityToM2PerVS(edge.holeMobility_m2_V_s) << ','
@@ -2940,7 +3054,26 @@ void writeSgEdgeFluxProbeCsv(
             << edge.electronParticleLineFluxPerInternalCouple_per_m_s
                    / internalLength_m << ','
             << edge.holeParticleLineFluxPerInternalCouple_per_m_s
-                   / internalLength_m << '\n';
+                   / internalLength_m << ','
+            << static_cast<int>(edge.electronSgBoltzmannDecompositionAvailable) << ','
+            << edge.electronSgEta << ','
+            << edge.electronSgBernoulliMinusEta << ','
+            << edge.electronSgBernoulliEta << ','
+            << units.internalConcentrationToM3(edge.electronSgLeftTermInternal) << ','
+            << units.internalConcentrationToM3(edge.electronSgRightTermInternal) << ','
+            << units.internalConcentrationToM3(
+                edge.electronSgSignedDifferenceInternal) << ','
+            << edge.electronSgReconstructedFluxScaled << ','
+            << edge.electronSgStableFluxScaled << ','
+            << edge.electronSgHighPrecisionReferenceFluxScaled << ','
+            << edge.electronSgHighPrecisionReferenceTermScaleScaled << ','
+            << edge.electronSgLogLeftOverRight << ','
+            << edge.electronSgRightFactorFluxScaled << ','
+            << edge.electronSgPhin0Relative_V << ','
+            << edge.electronSgPhin1Relative_V << ','
+            << edge.electronQfReference0_V << ','
+            << edge.electronQfReference1_V << ','
+            << edge.electronSgCancellationCondition << '\n';
     }
 }
 
@@ -2960,6 +3093,161 @@ nlohmann::json runSgEdgeFluxProbe(const std::string& configFile, const nlohmann:
     return {
         {"nodes", problem.mesh.numNodes()},
         {"edge_count", edges.size()},
+    };
+}
+
+void writeElectronTransportFactorProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const std::vector<vela::CoupledDDElectronTransportFactorDiagnostic>& rows)
+{
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write electron transport factor probe CSV: " + path.string());
+    out << std::setprecision(17);
+    out << "mask,mobility_state,mobility_drive,bernoulli_weights,"
+        << "carrier_population,node_id,x,y,electron_flux\n";
+    for (const auto& row : rows) {
+        const vela::Node& node = mesh.getNode(row.nodeId);
+        out << row.mask << ','
+            << ((row.mask & 1) != 0) << ','
+            << ((row.mask & 2) != 0) << ','
+            << ((row.mask & 4) != 0) << ','
+            << ((row.mask & 8) != 0) << ','
+            << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << row.electronFlux << '\n';
+    }
+}
+
+nlohmann::json runElectronTransportFactorProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, cfgDir);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    nlohmann::json replacementConfig = cfg;
+    replacementConfig["state_file"] =
+        cfg.at("replacement_state_file").get<std::string>();
+    const vela::DDSolution replacement = readExternalState(
+        cfgDir, replacementConfig, problem.mesh.numNodes());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const auto rows = solver.evaluateElectronTransportFactorDiagnostics(
+        state, replacement);
+    writeElectronTransportFactorProbeCsv(
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
+        problem.mesh, rows);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"variant_count", 16},
+        {"row_count", rows.size()},
+        {"diagnostic_schema", "vela.electron_transport_factor_probe.v1"},
+        {"production_defaults_changed", false},
+    };
+}
+
+void writeElectronTransportSecantFactorProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const std::vector<vela::CoupledDDElectronTransportFactorDiagnostic>& rows)
+{
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write electron transport secant-factor probe CSV: "
+            + path.string());
+    }
+    out << std::setprecision(17);
+    out << "mask,mobility,sg_secant_conductance,qf_log_imbalance,"
+        << "node_id,x,y,electron_flux\n";
+    for (const auto& row : rows) {
+        const vela::Node& node = mesh.getNode(row.nodeId);
+        out << row.mask << ','
+            << ((row.mask & 1) != 0) << ','
+            << ((row.mask & 2) != 0) << ','
+            << ((row.mask & 4) != 0) << ','
+            << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << row.electronFlux << '\n';
+    }
+}
+
+void writeElectronTransportSecantFactorEdgeProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const std::vector<vela::CoupledDDElectronTransportSecantEdgeDiagnostic>& rows)
+{
+    std::vector<std::string> nodeContacts(mesh.numNodes());
+    for (const vela::Contact& contact : mesh.contacts()) {
+        for (vela::Index node : contact.node_ids) {
+            if (!nodeContacts[node].empty())
+                nodeContacts[node] += ';';
+            nodeContacts[node] += contact.name;
+        }
+    }
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write electron transport secant-factor edge CSV: "
+            + path.string());
+    }
+    out << std::setprecision(17);
+    out << "mask,mobility,sg_secant_conductance,qf_log_imbalance,"
+        << "edge_id,node0,node1,node0_contacts,node1_contacts,"
+        << "node0_constrained,node1_constrained,x0,y0,x1,y1,"
+        << "midpoint_x,midpoint_y,electron_flux\n";
+    for (const auto& row : rows) {
+        const vela::Node& node0 = mesh.getNode(row.node0);
+        const vela::Node& node1 = mesh.getNode(row.node1);
+        out << row.mask << ','
+            << ((row.mask & 1) != 0) << ','
+            << ((row.mask & 2) != 0) << ','
+            << ((row.mask & 4) != 0) << ','
+            << row.edgeId << ',' << row.node0 << ',' << row.node1 << ','
+            << nodeContacts[row.node0] << ',' << nodeContacts[row.node1] << ','
+            << row.node0Constrained << ',' << row.node1Constrained << ','
+            << node0.x << ',' << node0.y << ',' << node1.x << ',' << node1.y
+            << ',' << 0.5 * (node0.x + node1.x)
+            << ',' << 0.5 * (node0.y + node1.y)
+            << ',' << row.electronFlux << '\n';
+    }
+}
+
+nlohmann::json runElectronTransportSecantFactorProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, cfgDir);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    nlohmann::json replacementConfig = cfg;
+    replacementConfig["state_file"] =
+        cfg.at("replacement_state_file").get<std::string>();
+    const vela::DDSolution replacement = readExternalState(
+        cfgDir, replacementConfig, problem.mesh.numNodes());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const auto evaluation =
+        solver.evaluateElectronTransportSecantFactorDiagnostics(
+            state, replacement);
+    writeElectronTransportSecantFactorProbeCsv(
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
+        problem.mesh, evaluation.nodes);
+    if (cfg.contains("edge_output_csv")) {
+        writeElectronTransportSecantFactorEdgeProbeCsv(
+            resolvePath(cfgDir, cfg.at("edge_output_csv").get<std::string>()),
+            problem.mesh, evaluation.edges);
+    }
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"variant_count", 8},
+        {"row_count", evaluation.nodes.size()},
+        {"edge_row_count", evaluation.edges.size()},
+        {"diagnostic_schema", "vela.electron_transport_secant_factor_probe.v2"},
+        {"production_defaults_changed", false},
     };
 }
 
@@ -3055,18 +3343,28 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
                                const vela::DopingModel& doping,
                                const vela::DDSolution& state,
                                const vela::MaterialDatabase& matdb,
-                               const vela::NewtonConfig& newton)
+                               const vela::NewtonConfig& newton,
+                               const EdgeMobilityDriveOverride* driveOverride,
+                               const std::string& driveOverrideProvenance)
 {
     const auto edgeCells = vela::detail::buildEdgeCellMap(mesh);
     const auto cellMaterials = vela::detail::buildCellMaterials(
         mesh, matdb, newton.temperature_K);
+    vela::detail::validateElementBoxMobilityContext(mesh,newton.mobility,newton.regionResolvedInterfaceAssembly);
+    if(vela::usesElementHighField(newton.mobility))throw std::invalid_argument("Use element_box_probe for element HFS; the legacy single-drive factorization is undefined for vertex saturation");
+    const auto effectiveCoupling = vela::detail::computeEffectiveTransportEdgeCouplings(
+        mesh, edgeCells, cellMaterials, newton.regionResolvedInterfaceAssembly);
+    vela::MobilityModelConfig mobilityConfig = newton.mobility;
+    vela::detail::updateSurfaceMobilityCellGeometry(
+        mobilityConfig, mesh, edgeCells, state.psi,
+        mobilityConfig.surface.coordinateFieldFactor, &cellMaterials);
     const std::unique_ptr<vela::MobilityModel> mobility =
-        vela::makeMobilityModel(newton.mobility);
+        vela::makeMobilityModel(mobilityConfig);
     const vela::PhysicalUnitSystem& units = newton.inputScaling.unitSystem();
     const vela::Real fieldFactor = units.fieldFromCoordinateDeltaFactor();
     const bool vectorQfMobility =
-        newton.mobility.highFieldDrivingForce == "quasi_fermi_gradient" &&
-        newton.mobility.highFieldGradientDiscretization == "transport_cell_vector";
+        mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient" &&
+        mobilityConfig.highFieldGradientDiscretization == "transport_cell_vector";
     const std::vector<vela::Real> electronVectorFields = vectorQfMobility
         ? vela::detail::transportCellVectorEdgeGradientMagnitudes(
               mesh, edgeCells, cellMaterials, state.phin, fieldFactor)
@@ -3085,13 +3383,28 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
     std::ofstream out(path);
     if (!out.is_open())
         throw std::runtime_error("Cannot write edge mobility probe CSV: " + path.string());
+    out << std::setprecision(17);
     out << "edge_id,node0,node1,x0,y0,x1,y1,length_m,couple_m,"
-        << "net_doping_avg_m3,electric_field_V_m,electron_qf_field_V_m,"
+        << "donors_avg_m3,acceptors_avg_m3,net_doping_avg_m3,"
+        << "electron_density_avg_m3,hole_density_avg_m3,"
+        << "electric_field_V_m,electron_qf_field_V_m,"
         << "hole_qf_field_V_m,electron_mobility_field_V_m,"
         << "hole_mobility_field_V_m,electron_low_field_mobility_m2_V_s,"
         << "hole_low_field_mobility_m2_V_s,electron_final_mobility_m2_V_s,"
-        << "hole_final_mobility_m2_V_s,electron_mobility_limiter,"
-        << "hole_mobility_limiter,adjacent_cell_count\n";
+        << "hole_final_mobility_m2_V_s,electron_saturation_velocity_m_s,"
+        << "hole_saturation_velocity_m_s,electron_field_beta,hole_field_beta,"
+        << "electron_high_field_ratio,hole_high_field_ratio,"
+        << "electron_limiter_denominator,hole_limiter_denominator,"
+        << "electron_mean_mobility_formula_denominator,"
+        << "hole_mean_mobility_formula_denominator,"
+        << "electron_mobility_limiter,hole_mobility_limiter,"
+        << "electron_reconstructed_final_mobility_m2_V_s,"
+        << "hole_reconstructed_final_mobility_m2_V_s,"
+        << "electron_limiter_reconstruction_error,"
+        << "hole_limiter_reconstruction_error,"
+        << "electron_mean_mobility_aggregation_error,"
+        << "hole_mean_mobility_aggregation_error,drive_provenance,"
+        << "adjacent_cell_count\n";
 
     for (vela::Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
         const vela::Edge& edge = mesh.getEdge(edgeId);
@@ -3105,34 +3418,89 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
         const vela::Real electricField = std::abs(state.psi(i1) - state.psi(i0)) / length * fieldFactor;
         const vela::Real electronQfField = std::abs(state.phin(i1) - state.phin(i0)) / length * fieldFactor;
         const vela::Real holeQfField = std::abs(state.phip(i1) - state.phip(i0)) / length * fieldFactor;
-        const vela::Real electronMobilityField =
+        const vela::Real electronMobilityField = driveOverride
+            ? units.vPerMToInternalElectricField(driveOverride->electronDriveVPerM[edgeId])
+            :
             vela::detail::mobilityHighFieldDrivingField(
                 newton.mobility, edgeId,
                 vectorQfMobility ? electronVectorFields[edgeId] : electronQfField,
                 electricField, contactElectricFields);
-        const vela::Real holeMobilityField =
+        const vela::Real holeMobilityField = driveOverride
+            ? units.vPerMToInternalElectricField(driveOverride->holeDriveVPerM[edgeId])
+            :
             vela::detail::mobilityHighFieldDrivingField(
                 newton.mobility, edgeId,
                 vectorQfMobility ? holeVectorFields[edgeId] : holeQfField,
                 electricField, contactElectricFields);
+        const vela::detail::EdgeMobilityCarrierState carrierState{
+            state.n(i0), state.n(i1), state.p(i0), state.p(i1), &state.n, &state.p};
         const vela::Real electronLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Electron, 0.0, &newton.mobility, nullptr);
+            vela::CarrierType::Electron, 0.0, &mobilityConfig, &state.psi,
+            &carrierState);
         const vela::Real holeLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Hole, 0.0, &newton.mobility, nullptr);
+            vela::CarrierType::Hole, 0.0, &mobilityConfig, &state.psi,
+            &carrierState);
         const vela::Real electronFinal = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Electron, electronMobilityField, &newton.mobility, &state.psi);
+            vela::CarrierType::Electron, electronMobilityField,
+            &mobilityConfig, &state.psi, &carrierState);
         const vela::Real holeFinal = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Hole, holeMobilityField, &newton.mobility, &state.psi);
+            vela::CarrierType::Hole, holeMobilityField,
+            &mobilityConfig, &state.psi, &carrierState);
+        const vela::Real electronRatio =
+            electronLowField * std::abs(electronMobilityField) /
+            mobilityConfig.electronField.saturationVelocity;
+        const vela::Real holeRatio =
+            holeLowField * std::abs(holeMobilityField) /
+            mobilityConfig.holeField.saturationVelocity;
+        const vela::Real electronMeanFormulaDenominator = std::pow(
+            1.0 + std::pow(electronRatio, mobilityConfig.electronField.beta),
+            1.0 / mobilityConfig.electronField.beta);
+        const vela::Real holeMeanFormulaDenominator = std::pow(
+            1.0 + std::pow(holeRatio, mobilityConfig.holeField.beta),
+            1.0 / mobilityConfig.holeField.beta);
         const vela::Real electronLimiter =
             electronLowField > 0.0 ? electronFinal / electronLowField : 0.0;
         const vela::Real holeLimiter =
             holeLowField > 0.0 ? holeFinal / holeLowField : 0.0;
-        const vela::Real netDoping = 0.5 * (
-            doping.netDoping(edge.n0) + doping.netDoping(edge.n1));
+        // The production edge mobility is an average of per-cell nonlinear
+        // HFS values.  Applying the formula once to the averaged low-field
+        // mobility is therefore only a diagnostic approximation.  Report the
+        // exact effective edge denominator separately and retain the
+        // approximation residual as the aggregation error.
+        const vela::Real electronDenominator = electronLimiter > 0.0
+            ? 1.0 / electronLimiter : std::numeric_limits<vela::Real>::infinity();
+        const vela::Real holeDenominator = holeLimiter > 0.0
+            ? 1.0 / holeLimiter : std::numeric_limits<vela::Real>::infinity();
+        const vela::Real electronReconstructed = electronLimiter > 0.0
+            ? electronLowField / electronDenominator : electronFinal;
+        const vela::Real holeReconstructed = holeLimiter > 0.0
+            ? holeLowField / holeDenominator : holeFinal;
+        const vela::Real electronMeanFormulaReconstructed =
+            electronLowField / electronMeanFormulaDenominator;
+        const vela::Real holeMeanFormulaReconstructed =
+            holeLowField / holeMeanFormulaDenominator;
+        const vela::Real donors = 0.5 * (
+            doping.donors(edge.n0) + doping.donors(edge.n1));
+        const vela::Real acceptors = 0.5 * (
+            doping.acceptors(edge.n0) + doping.acceptors(edge.n1));
+        const vela::Real netDoping = donors - acceptors;
+        const vela::Real electronDensity = 0.5 * (state.n(i0) + state.n(i1));
+        const vela::Real holeDensity = 0.5 * (state.p(i0) + state.p(i1));
+        const auto relativeError = [](vela::Real actual, vela::Real expected) {
+            return std::abs(actual - expected) /
+                std::max({std::abs(actual), std::abs(expected), 1.0e-300});
+        };
+        const std::string driveProvenance = driveOverride
+            ? driveOverrideProvenance
+            : vectorQfMobility
+              ? "transport_cell_vector_grad_qf"
+              : mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
+                ? "edge_projection_grad_qf"
+                : "edge_electric_field";
 
         out << edgeId << ','
             << edge.n0 << ','
@@ -3142,8 +3510,12 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
             << units.internalLengthToMeters(n1.x) << ','
             << units.internalLengthToMeters(n1.y) << ','
             << units.internalLengthToMeters(length) << ','
-            << units.internalLengthToMeters(edge.couple) << ','
+            << units.internalLengthToMeters(effectiveCoupling[edgeId]) << ','
+            << units.internalConcentrationToM3(donors) << ','
+            << units.internalConcentrationToM3(acceptors) << ','
             << units.internalConcentrationToM3(netDoping) << ','
+            << units.internalConcentrationToM3(electronDensity) << ','
+            << units.internalConcentrationToM3(holeDensity) << ','
             << units.internalElectricFieldToVPerM(electricField) << ','
             << units.internalElectricFieldToVPerM(electronQfField) << ','
             << units.internalElectricFieldToVPerM(holeQfField) << ','
@@ -3153,11 +3525,67 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
             << units.internalMobilityToM2PerVS(holeLowField) << ','
             << units.internalMobilityToM2PerVS(electronFinal) << ','
             << units.internalMobilityToM2PerVS(holeFinal) << ','
+            << units.internalVelocityToMPerS(
+                mobilityConfig.electronField.saturationVelocity) << ','
+            << units.internalVelocityToMPerS(
+                mobilityConfig.holeField.saturationVelocity) << ','
+            << mobilityConfig.electronField.beta << ','
+            << mobilityConfig.holeField.beta << ','
+            << electronRatio << ','
+            << holeRatio << ','
+            << electronDenominator << ','
+            << holeDenominator << ','
+            << electronMeanFormulaDenominator << ','
+            << holeMeanFormulaDenominator << ','
             << electronLimiter << ','
             << holeLimiter << ','
+            << units.internalMobilityToM2PerVS(electronReconstructed) << ','
+            << units.internalMobilityToM2PerVS(holeReconstructed) << ','
+            << relativeError(electronFinal, electronReconstructed) << ','
+            << relativeError(holeFinal, holeReconstructed) << ','
+            << relativeError(electronFinal, electronMeanFormulaReconstructed) << ','
+            << relativeError(holeFinal, holeMeanFormulaReconstructed) << ','
+            << driveProvenance << ','
             << edgeCells[edgeId].size()
             << '\n';
     }
+}
+
+nlohmann::json runElementBoxProbe(const std::string& configFile, const nlohmann::json& cfg)
+{
+    NewtonProblem problem=loadNewtonProblem(configFile,cfg);
+    const auto& mesh=problem.mesh;auto config=problem.newton.mobility;
+    vela::detail::validateElementBoxMobilityContext(mesh,config,problem.newton.regionResolvedInterfaceAssembly);
+    if(config.edgeAveraging!="element_box" && config.edgeAveraging!="element_box_phumob")
+        throw std::invalid_argument("element_box_probe requires a box mobility policy.");
+    const bool stateDependent=config.edgeAveraging=="element_box_phumob";
+    std::unique_ptr<DDStateCliScope> stateScope;
+    if(stateDependent)stateScope=std::make_unique<DDStateCliScope>(problem,cfg,configDirectory(configFile));
+    const auto state=stateDependent ? readExternalState(configDirectory(configFile),cfg,mesh.numNodes()) : vela::DDSolution{};
+    const vela::detail::EdgeMobilityCarrierState populations{0.,0.,0.,0.,&state.n,&state.p,&state.phin,&state.phip};
+    const auto materials=vela::detail::buildCellMaterials(mesh,problem.matdb,problem.newton.temperature_K);
+    if(vela::usesElementDistanceLombardi(config))
+        vela::detail::updateSurfaceMobilityCellGeometry(config,mesh,vela::detail::buildEdgeCellMap(mesh),state.psi,config.surface.coordinateFieldFactor,&materials);
+    const auto model=vela::makeMobilityModel(config);
+    const auto& units=problem.newton.inputScaling.unitSystem();
+    const double length=units.internalLengthToMeters(1.);
+    const auto path=resolvePath(configDirectory(configFile),cfg.at("output_csv").get<std::string>());
+    std::ofstream out(path);if(!out) throw std::runtime_error("Cannot open element box probe output.");
+    out<<std::setprecision(17)<<"cell_id,local_vertex,node_id,coefficient_next,measure_m2,electron_mobility_m2_V_s,hole_mobility_m2_V_s\n";
+    for(vela::Index cid=0;cid<mesh.numCells();++cid) {
+        const auto& cell=mesh.getCell(cid);const auto measure=vela::detail::cellBoxNodeMeasures(mesh,cid);
+        const auto& g=mesh.poissonCellEdgeCoefficients(cid);const auto& material=materials[cid];
+        const bool transport=vela::detail::isTransportMaterial(material);
+        const double n=transport?vela::detail::elementBoxCellMobility(mesh,problem.doping,*model,material,cid,vela::CarrierType::Electron,&config,&populations,&state.psi):0.;
+        const double p=transport?vela::detail::elementBoxCellMobility(mesh,problem.doping,*model,material,cid,vela::CarrierType::Hole,&config,&populations,&state.psi):0.;
+        for(std::size_t k=0;k<3;++k)
+            out<<cid<<','<<k<<','<<cell.node_ids[k]<<','<<g[k]<<','<<measure[k]*length*length<<','
+               <<n*config.internalMobilityToM2PerVS<<','<<p*config.internalMobilityToM2PerVS<<'\n';
+    }
+    return {{"cells",mesh.numCells()},{"transferred_edges",mesh.lastGeometryBuildReport().transferredCellBoxEdges},
+            {"state_evaluation","physical_double_fields"},
+            {"input_has_split_state",state.packedLow.size()!=0},
+            {"split_low_components_used",false}};
 }
 
 nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohmann::json& cfg)
@@ -3167,13 +3595,32 @@ nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohman
     DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
 
+    std::optional<EdgeMobilityDriveOverride> driveOverride;
+    std::string driveOverrideProvenance;
+    if (cfg.contains("mobility_drive_override_csv")) {
+        driveOverride = readEdgeMobilityDriveCsv(
+            resolvePath(
+                cfgDir,
+                cfg.at("mobility_drive_override_csv").get<std::string>()),
+            problem.mesh.numEdges());
+        driveOverrideProvenance = cfg.value(
+            "mobility_drive_override_provenance",
+            std::string("external_edge_drive_csv"));
+        if (driveOverrideProvenance.empty()) {
+            throw std::invalid_argument(
+                "mobility_drive_override_provenance must not be empty");
+        }
+    }
+
     writeEdgeMobilityProbeCsv(
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
         problem.mesh,
         problem.doping,
         state,
         problem.matdb,
-        problem.newton);
+        problem.newton,
+        driveOverride ? &*driveOverride : nullptr,
+        driveOverrideProvenance);
 
     return {
         {"nodes", problem.mesh.numNodes()},
@@ -3181,6 +3628,13 @@ nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohman
         {"temperature_K", problem.newton.temperature_K},
         {"mobility_model", problem.newton.mobility.model},
         {"high_field_driving_force", problem.newton.mobility.highFieldDrivingForce},
+        {"high_field_gradient_discretization",
+         problem.newton.mobility.highFieldGradientDiscretization},
+        {"diagnostic_schema", "vela.edge_mobility_probe.v2"},
+        {"state_carrier_populations_used", true},
+        {"external_mobility_drive_override_used", driveOverride.has_value()},
+        {"mobility_drive_override_provenance",
+         driveOverride ? driveOverrideProvenance : ""},
     };
 }
 
@@ -3290,6 +3744,406 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
             break;
         }
     }
+    return result;
+}
+
+nlohmann::json qualifyElectronVolumeResponse(
+    const std::string& configFile, const nlohmann::json& cfg,
+    const NewtonProblem& problem, const vela::NewtonSolver& solver,
+    const vela::DDSolution& state, const std::string& contact,
+    vela::Real currentScale,
+    const vela::NewtonTerminalCurrentAdjointEvaluation& evaluation)
+{
+    // Diagnostic only: evaluate both operators on the same frozen state.
+    // No nonlinear solve and no mutation of the source configuration/state.
+    const bool candidate = problem.newton.regionResolvedInterfaceAssembly
+        .poissonElectronTransportNodeVolume;
+    auto alternateConfig = cfg;
+    alternateConfig["solver"]["region_resolved_interface_assembly"]
+        ["poisson_electron_transport_node_volume"] = !candidate;
+    const NewtonProblem alternate = loadNewtonProblem(configFile, alternateConfig);
+    const vela::NewtonSolver alternateSolver = makeNewtonSolver(alternate);
+    const vela::VectorXd x = solver.packArclengthState(state);
+    const vela::VectorXd alternateX = alternateSolver.packArclengthState(state);
+    if ((x - alternateX).lpNorm<Eigen::Infinity>() != 0.0)
+        throw std::runtime_error("electron volume probe changed state coordinates");
+    const auto system = solver.makeArclengthSystem(contact);
+    const auto alternateSystem = alternateSolver.makeArclengthSystem(contact);
+    const auto functional = solver.makeArclengthContactCurrentFunctional(
+        contact, currentScale);
+    const auto alternateFunctional = alternateSolver.makeArclengthContactCurrentFunctional(
+        contact, currentScale);
+    const vela::Real bias = problem.biases.at(contact);
+    const vela::Real sign = candidate ? -1.0 : 1.0;
+    const vela::VectorXd residual = system.residual(x, bias);
+    const vela::VectorXd source = sign *
+        (alternateSystem.residual(x, bias) - residual);
+    const vela::Real directTerm = sign *
+        (alternateFunctional.value(x, bias) - functional.value(x, bias));
+    const vela::SparseMatrixd jacobian = system.jacobian(x, bias);
+    vela::VectorXd response;
+    if (!system.solveJacobian(x, bias, -source, response))
+        throw std::runtime_error("electron volume direct linear solve failed");
+    const vela::Real directResponse = evaluation.stateDerivative.dot(response);
+    const vela::Real adjointResponse = -evaluation.adjoint.dot(source);
+    const auto relative = [](vela::Real error, vela::Real scale) {
+        return std::abs(error) / std::max(std::abs(scale), 1.0e-300);
+    };
+    nlohmann::json checks = nlohmann::json::array();
+    const int count = evaluation.nodeCount;
+    for (int mode = 0; mode < 4; ++mode) {
+        vela::VectorXd direction = vela::VectorXd::Zero(x.size());
+        if (mode == 0) {
+            direction = response;
+        } else {
+            for (int node = 0; node < count; ++node)
+                direction((mode - 1) * count + node) =
+                    std::sin(0.37 * static_cast<double>(node + 1));
+            for (const auto& terminal : problem.mesh.contacts())
+                for (const auto node : terminal.node_ids)
+                    for (int block = 0; block < 3; ++block)
+                        direction(block * count + static_cast<int>(node)) = 0.0;
+        }
+        const vela::Real norm = direction.lpNorm<Eigen::Infinity>();
+        if (!(norm > 0.0))
+            throw std::runtime_error("empty qualification direction");
+        direction /= norm;
+        const vela::VectorXd analytic = jacobian * direction;
+        const vela::Real gradient = evaluation.stateDerivative.dot(direction);
+        for (const vela::Real stepV : {1.0e-5, 5.0e-6}) {
+            const vela::Real h = stepV / evaluation.potentialScale_V;
+            const vela::VectorXd plus = x + h * direction;
+            const vela::VectorXd minus = x - h * direction;
+            const vela::VectorXd fd =
+                (system.residual(plus, bias) - system.residual(minus, bias)) / (2*h);
+            const vela::Real currentFd =
+                (functional.value(plus, bias) - functional.value(minus, bias)) / (2*h);
+            nlohmann::json row = {
+                {"direction", mode == 0 ? "linear_response" :
+                    (mode == 1 ? "psi" : (mode == 2 ? "phin" : "phip"))},
+                {"step_V", stepV},
+                {"jvp_relative_error", relative((fd - analytic).norm(), analytic.norm())},
+                {"current_analytic", gradient}, {"current_fd", currentFd},
+                {"current_relative_error", relative(currentFd - gradient, gradient)}
+            };
+            for (int block = 0; block < 3; ++block) {
+                row["blocks"][block] = {
+                    {"analytic_norm", analytic.segment(block*count, count).norm()},
+                    {"difference_norm", (fd - analytic).segment(block*count, count).norm()}
+                };
+            }
+            checks.push_back(row);
+        }
+    }
+    const std::filesystem::path output = resolvePath(configDirectory(configFile),
+        cfg.at("electron_volume_response").at("output_csv").get<std::string>());
+    if (!output.parent_path().empty())
+        std::filesystem::create_directories(output.parent_path());
+    std::ofstream out(output);
+    if (!out) throw std::runtime_error("cannot write electron volume response ledger");
+    out << std::setprecision(17)
+        << "node_id,F_poisson,F_electron,F_hole,source_poisson,source_electron,source_hole,"
+        << "response_psi_scaled,response_phin_scaled,response_phip_scaled,"
+        << "current_contribution_A_per_um\n";
+    for (int node = 0; node < count; ++node) {
+        out << node;
+        for (const auto* vector : {&residual, &source,
+                                  static_cast<const vela::VectorXd*>(&response)})
+            for (int block = 0; block < 3; ++block)
+                out << ',' << (*vector)(block*count + node);
+        vela::Real contribution = 0.0;
+        for (int block = 0; block < 3; ++block)
+            contribution -= evaluation.adjoint(block*count + node) * source(block*count + node);
+        out << ',' << contribution << '\n';
+    }
+    return {
+        {"candidate_operator", candidate}, {"source_norm", source.norm()},
+        {"continuity_source_norm", source.tail(2*count).norm()},
+        {"parameter_direct_current_A_per_um", directTerm},
+        {"direct_response_A_per_um", directResponse + directTerm},
+        {"adjoint_response_A_per_um", adjointResponse + directTerm},
+        {"duality_relative_error", relative(directResponse - adjointResponse, directResponse)},
+        {"linear_solve_relative_residual", relative((jacobian*response + source).norm(), source.norm())},
+        {"finite_difference_checks", checks}, {"output_csv", output.string()},
+        {"new_nonlinear_solves", 0}
+    };
+}
+
+nlohmann::json runTerminalCurrentAdjointProbe(const std::string& configFile,
+                                              const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, cfgDir);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const std::string requestedContact =
+        cfg.value("contact", std::string("drain"));
+    const std::string contact =
+        canonicalContactName(problem.mesh, requestedContact);
+    const vela::PhysicalUnitSystem& units =
+        problem.newton.inputScaling.unitSystem();
+    const vela::Real defaultCurrentScale =
+        units.internalCurrentPerDeviceDepthToAPerUm(
+            units.currentDensityAM2PerInternal()
+            * units.lengthMPerInternal());
+    const vela::Real currentScale = cfg.value(
+        "current_scale", defaultCurrentScale);
+
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const vela::NewtonTerminalCurrentAdjointEvaluation evaluation =
+        solver.evaluateTerminalCurrentAdjoint(state, contact, currentScale);
+    if (evaluation.nodeCount != static_cast<int>(problem.mesh.numNodes()))
+        throw std::runtime_error("terminal-current adjoint node count mismatch");
+
+    std::vector<std::string> nodeContacts(problem.mesh.numNodes());
+    for (const vela::Contact& candidate : problem.mesh.contacts()) {
+        for (vela::Index node : candidate.node_ids) {
+            if (node >= problem.mesh.numNodes())
+                continue;
+            if (!nodeContacts[node].empty())
+                nodeContacts[node] += ';';
+            nodeContacts[node] += candidate.name;
+        }
+    }
+
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    std::ofstream out(outputPath);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write terminal-current adjoint CSV: " +
+            outputPath.string());
+    }
+    out << std::setprecision(17);
+    out << "node_id,x_m,y_m,net_doping_m3,contacts,"
+        << "dI_dpsi_scaled,dI_dphin_scaled,dI_dphip_scaled,"
+        << "dI_dpsi_A_per_um_per_V,dI_dphin_A_per_um_per_V,"
+        << "dI_dphip_A_per_um_per_V,"
+        << "lambda_poisson,lambda_electron,lambda_hole\n";
+    const int nodeCount = evaluation.nodeCount;
+    for (int node = 0; node < nodeCount; ++node) {
+        const vela::Node& meshNode =
+            problem.mesh.getNode(static_cast<vela::Index>(node));
+        const vela::Real inversePotentialScale =
+            1.0 / evaluation.potentialScale_V;
+        out << node << ','
+            << problem.newton.inputScaling.unitSystem()
+                   .internalLengthToMeters(meshNode.x) << ','
+            << problem.newton.inputScaling.unitSystem()
+                   .internalLengthToMeters(meshNode.y) << ','
+            << problem.newton.inputScaling.unitSystem()
+                   .internalConcentrationToM3(problem.doping.netDoping(node)) << ','
+            << nodeContacts[static_cast<std::size_t>(node)] << ','
+            << evaluation.stateDerivative(node) << ','
+            << evaluation.stateDerivative(nodeCount + node) << ','
+            << evaluation.stateDerivative(2 * nodeCount + node) << ','
+            << evaluation.stateDerivative(node) * inversePotentialScale << ','
+            << evaluation.stateDerivative(nodeCount + node) * inversePotentialScale << ','
+            << evaluation.stateDerivative(2 * nodeCount + node) * inversePotentialScale << ','
+            << evaluation.adjoint(node) << ','
+            << evaluation.adjoint(nodeCount + node) << ','
+            << evaluation.adjoint(2 * nodeCount + node) << '\n';
+    }
+
+    nlohmann::json result = {
+        {"nodes", problem.mesh.numNodes()},
+        {"contact", contact},
+        {"contact_bias_V", evaluation.contactBias_V},
+        {"current_A_per_um", evaluation.current},
+        {"current_scale", currentScale},
+        {"potential_scale_V", evaluation.potentialScale_V},
+        {"state_derivative_norm", evaluation.stateDerivativeNorm},
+        {"adjoint_norm", evaluation.adjointNorm},
+        {"adjoint_residual_norm", evaluation.adjointResidualNorm},
+        {"adjoint_relative_residual", evaluation.adjointRelativeResidual},
+        {"output_csv", outputPath.string()},
+        {"diagnostic_schema", "vela.terminal_current_adjoint_probe.v1"},
+        {"read_only", true},
+    };
+    if (cfg.contains("electron_volume_response"))
+        result["electron_volume_response"] = qualifyElectronVolumeResponse(
+            configFile, cfg, problem, solver, state, contact, currentScale, evaluation);
+    return result;
+}
+
+void writeContactCurrentEdgeProbeCsv(
+    const std::filesystem::path& path,
+    const vela::ContactCurrentDetailedResult& detailed,
+    const vela::PhysicalUnitSystem& units)
+{
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write contact-current edge probe CSV: " + path.string());
+    out << std::setprecision(17);
+    out << "edge_id,node0,node1,length_m,couple_m,outward_sign,"
+        << "electron_qf_reference0_V,electron_qf_reference1_V,"
+        << "electron_sg_phin0_relative_V,electron_sg_phin1_relative_V,"
+        << "electron_sg_psi0_relative_V,electron_sg_psi1_relative_V,"
+        << "electron_mobility_drive_V_m,hole_mobility_drive_V_m,"
+        << "electron_mobility_m2_V_s,hole_mobility_m2_V_s,"
+        << "electron_continuity_flux,hole_continuity_flux,"
+        << "electron_current_A_per_um,hole_current_A_per_um,"
+        << "total_current_A_per_um\n";
+    for (const auto& edge : detailed.edges) {
+        out << edge.edgeId << ','
+            << edge.node0 << ','
+            << edge.node1 << ','
+            << edge.edgeLength_m << ','
+            << edge.edgeCouple_m << ','
+            << edge.outwardSign << ','
+            << edge.electronQfReference0 << ','
+            << edge.electronQfReference1 << ','
+            << edge.electronSgPhin0Relative << ','
+            << edge.electronSgPhin1Relative << ','
+            << edge.electronSgPsi0Relative << ','
+            << edge.electronSgPsi1Relative << ','
+            << units.internalElectricFieldToVPerM(
+                edge.electronMobilityDriveInternal) << ','
+            << units.internalElectricFieldToVPerM(
+                edge.holeMobilityDriveInternal) << ','
+            << units.internalMobilityToM2PerVS(edge.mun) << ','
+            << units.internalMobilityToM2PerVS(edge.mup) << ','
+            << edge.electronContinuityFlux << ','
+            << edge.holeContinuityFlux << ','
+            << edge.electronCurrent * 1.0e-6 << ','
+            << edge.holeCurrent * 1.0e-6 << ','
+            << edge.totalCurrent * 1.0e-6 << '\n';
+    }
+}
+
+nlohmann::json runTerminalCurrentFunctionalProbe(const std::string& configFile,
+                                                 const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, cfgDir);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const std::string contact = canonicalContactName(
+        problem.mesh, cfg.value("contact", std::string("drain")));
+    const vela::PhysicalUnitSystem& units =
+        problem.newton.inputScaling.unitSystem();
+    const vela::Real defaultCurrentScale =
+        units.internalCurrentPerDeviceDepthToAPerUm(
+            units.currentDensityAM2PerInternal()
+            * units.lengthMPerInternal());
+    const vela::Real currentScale = cfg.value(
+        "current_scale", defaultCurrentScale);
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const auto biasIt = problem.biases.find(contact);
+    if (biasIt == problem.biases.end()) {
+        throw std::runtime_error(
+            "terminal-current functional contact has no configured bias: " +
+            contact);
+    }
+    vela::Real current;
+    if(problem.newton.splitDDState)current=solver.evaluateStateTerminalCurrent(state,contact,currentScale);
+    else {
+        const auto x=solver.packArclengthState(state);
+        const auto functional=solver.makeArclengthContactCurrentFunctional(contact,currentScale);
+        current=functional.value(x,biasIt->second);
+    }
+
+    vela::DDScalingSpec ddScaling;
+    ddScaling.regionResolvedInterfaceAssembly =
+        problem.newton.regionResolvedInterfaceAssembly;
+    if (problem.newton.inputScaling.isUnitScaling()) {
+        const vela::UnitScalingSystem sc = vela::UnitScalingSystem::fromInputs(
+            problem.newton.temperature_K,
+            (11.7 * vela::constants::eps0),
+            vela::UnitScalingSystem::autoInputsFrom(
+                problem.mesh, problem.doping, problem.matdb, 1e10),
+            vela::UnitScalingReferenceConfig{},
+            problem.newton.inputScaling.unitSystem());
+        ddScaling.enabled = true;
+        ddScaling.V0 = sc.V0();
+        ddScaling.C0 = sc.C0();
+        ddScaling.mu0 = sc.mu0();
+        ddScaling.D0 = sc.D0();
+        ddScaling.L0 = sc.L0();
+        ddScaling.permittivityReference_F_per_m =
+            11.7 * vela::constants::eps0;
+        ddScaling.unitSystem = problem.newton.inputScaling.unitSystem();
+        ddScaling.chargeAreaFactor = ddScaling.unitSystem.chargeAreaFactor();
+        ddScaling.chargeLineFactor = ddScaling.unitSystem.chargeLineFactor();
+        ddScaling.fieldFromCoordinateDeltaFactor =
+            ddScaling.unitSystem.fieldFromCoordinateDeltaFactor();
+        ddScaling.currentDensityLineIntegralFactor =
+            ddScaling.unitSystem.currentDensityAM2PerInternal() *
+            ddScaling.unitSystem.lengthMPerInternal();
+    }
+    const vela::ContactCurrent contactCurrent(
+        problem.mesh, problem.matdb, problem.doping,
+        problem.newton.mobility, problem.newton.temperature_K,
+        ddScaling, problem.newton.bandgapNarrowing,
+        problem.newton.carrierStatistics,
+        problem.newton.electronQuantumPotential);
+    const vela::ContactCurrentDetailedResult extracted =
+        contactCurrent.computeDetailed(state, contact);
+    const vela::Real extractedCurrent =
+        extracted.totals.totalCurrent * 1.0e-6;
+
+    std::optional<std::filesystem::path> contactEdgeOutputPath;
+    if (cfg.contains("contact_edge_output_csv")) {
+        contactEdgeOutputPath = resolvePath(
+            cfgDir, cfg.at("contact_edge_output_csv").get<std::string>());
+        writeContactCurrentEdgeProbeCsv(
+            *contactEdgeOutputPath, extracted, units);
+    }
+
+    nlohmann::json result = {
+        {"nodes", problem.mesh.numNodes()},
+        {"contact", contact},
+        {"contact_bias_V", biasIt->second},
+        {"current_A_per_um", current},
+        {"contact_current_extractor_A_per_um", extractedCurrent},
+        {"contact_current_extractor_compensated_A_per_um",
+         extracted.precision.totalCurrentCompensated * 1.0e-6},
+        {"contact_current_extractor_long_double_A_per_um",
+         extracted.precision.totalCurrentLongDoubleReference * 1.0e-6},
+        {"contact_current_extractor_electron_A_per_um",
+         extracted.totals.electronCurrent * 1.0e-6},
+        {"contact_current_extractor_hole_A_per_um",
+         extracted.totals.holeCurrent * 1.0e-6},
+        {"contact_current_extractor_electron_compensated_A_per_um",
+         extracted.precision.electronCurrentCompensated * 1.0e-6},
+        {"contact_current_extractor_hole_compensated_A_per_um",
+         extracted.precision.holeCurrentCompensated * 1.0e-6},
+        {"contact_current_extractor_electron_long_double_A_per_um",
+         extracted.precision.electronCurrentLongDoubleReference * 1.0e-6},
+        {"contact_current_extractor_hole_long_double_A_per_um",
+         extracted.precision.holeCurrentLongDoubleReference * 1.0e-6},
+        {"operator_minus_extractor_A_per_um", current - extractedCurrent},
+        {"current_scale", currentScale},
+        {"diagnostic_schema", "vela.terminal_current_functional_probe.v1"},
+        {"read_only", true},
+    };
+    if (cfg.contains("residual_output_csv")) {
+        const vela::NewtonResidualEvaluation residual =
+            solver.evaluateResidual(state);
+        const std::filesystem::path residualPath = resolvePath(
+            cfgDir, cfg.at("residual_output_csv").get<std::string>());
+        writeResidualProbeCsv(
+            residualPath,
+            problem.mesh,
+            problem.doping,
+            state,
+            residual,
+            problem.newton.inputScaling);
+        result["residual_output_csv"] = residualPath.string();
+        result["block_residuals"] = {
+            {"psi", residual.blockNorms.psi},
+            {"phin", residual.blockNorms.phin},
+            {"phip", residual.blockNorms.phip},
+            {"combined", residual.blockNorms.combined},
+        };
+    }
+    if (contactEdgeOutputPath.has_value())
+        result["contact_edge_output_csv"] = contactEdgeOutputPath->string();
     return result;
 }
 
@@ -3479,12 +4333,22 @@ int main(int argc, char** argv)
             status.update(writeDdStateVtk(configFile, cfg));
         } else if (type == "sg_edge_flux_probe") {
             status.update(runSgEdgeFluxProbe(configFile, cfg));
+        } else if (type == "electron_transport_factor_probe") {
+            status.update(runElectronTransportFactorProbe(configFile, cfg));
+        } else if (type == "electron_transport_secant_factor_probe") {
+            status.update(runElectronTransportSecantFactorProbe(configFile, cfg));
         } else if (type == "transport_edge_jacobian_probe") {
             status.update(runTransportEdgeJacobianProbe(configFile, cfg));
         } else if (type == "edge_mobility_probe") {
             status.update(runEdgeMobilityProbe(configFile, cfg));
+        } else if (type == "element_box_probe") {
+            status.update(runElementBoxProbe(configFile,cfg));
         } else if (type == "newton_jacobian_block_probe") {
             status.update(runNewtonJacobianBlockProbe(configFile, cfg));
+        } else if (type == "terminal_current_adjoint_probe") {
+            status.update(runTerminalCurrentAdjointProbe(configFile, cfg));
+        } else if (type == "terminal_current_functional_probe") {
+            status.update(runTerminalCurrentFunctionalProbe(configFile, cfg));
         } else {
             std::cerr << "Unknown simulation_type: " << type << '\n';
             return 2;

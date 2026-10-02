@@ -1,0 +1,16 @@
+{
+  "input_hashes": {
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n19_vd_0p050000_endpoint/config.json": "bbcb7330b233ef72c6969bef0abe291eea85179be67db7a5c09bb30ea3741c2a",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n19_vd_0p050000_endpoint/config.status.json": "0098e3c3b81b3dd6e9e805a7dc2c02bea04e03eecf6a34a029e326dc446e07e1",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n19_vd_0p050000_endpoint/config.stderr.txt": "f6556cbb464e928006e7857877792d153dab98ed0988ba5d6ac5ac060215318a",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n19_vd_0p050000_endpoint/config.stdout.txt": "4f8e9c3e24a804352d3f327220cb1ae7330981e9c13111e420eeb43dad8e21b6",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n19_vd_0p050000_endpoint/state.csv": "4160c3420988c42d2d1a343ca3289f238e950b8c385dd820fabaafb5f6e46c55",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n23_vd_0p050000_endpoint/config.json": "dc1bcefe786249bf7db16f5712e460aff695ebf48113b16bb89289d1f9c64a8b",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n23_vd_0p050000_endpoint/config.status.json": "f4219e40713207d02c7fc666e8ba6c7c15355b411179f25798a617c07eae0a4d",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n23_vd_0p050000_endpoint/config.stderr.txt": "32f13dafb4583863e5fd02b5c9f19ce871203b0e1556e1f5dd67f98be9d33b19",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n23_vd_0p050000_endpoint/config.stdout.txt": "26c03e33e2c48f233fbcb1cf1b7243ee526fda6faf0375d0b4c98336d70225ed",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/disabled_identity/m65_n23_vd_0p050000_endpoint/state.csv": "2d407f6287ebb5ae94f2f4d37c36408876d6ad29894c3db3484847ef327f1707",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/build_evidence.json": "1ad4237dc2e7dc91a4e03e4e3f17c455fd2a8668a95e603e19cac55724971b1c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/disabled_identity/results.csv": "280985173e706de8adeedf632ddb5f892828f793412787f5c6be809e9c548f0a"
+  }
+}

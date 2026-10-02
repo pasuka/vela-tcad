@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/unit/jacobian_supported.json": "0d78e91173a773dde5539a14778ba4c4ca2dd52d3598b45681f832a21156e4b7",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/jacobian_supported.json": "8aecd916f1128ee97a88b348e7b9ab8b7a0a04843ece6fceea26f5934d62d784",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/unit/jacobian_supported.json": "8b5d46a222e6bd98a3b4f9e84cdd3840cb783f8fed748679c685ae873db829e2",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/jacobian_supported.json": "13e56f1771441f66c14997ee73144c5f2ce896f4add8bdfd01811a74c1d6f0c2",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/unit/jacobian_supported.json": "5e7f7a19899b4ef65c50d2714a82920fd517a348ca15e019709e436c8adaf727",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/jacobian_supported.json": "55e2631367732ffefff32da927743e19140390e7bc23eae7fd601da314f0ee5d",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/unit/jacobian_supported.json": "980cfb2549b1ef6c4eccc4b910e0405e1b3cd05b00daed8234081eb80ebbf917",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/jacobian_supported.json": "1c272c642502c4e4e492ac1c66d96efddc431f1157e9893acbc84eab1c303df7",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/freeze.json": "3126c3831e6082be93eab2881653255bd9d982b041c9cc165a62fba06e1dcd46",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/jacobian_build_evidence.json": "5054d537de5592e668da05b1afbd1653f462813eac5aabab0afe93cedd03a9dd"
+  }
+}

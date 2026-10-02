@@ -72,8 +72,7 @@ void PoissonAssembler::assemble()
         const Real  h    = edge.length;
         if (h < 1e-30) continue; // degenerate edge guard
 
-        const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
-        const Real G   = eps * couple[e] / h;
+        const Real G = detail::poissonEdgeCoefficient(mesh_, matdb_, edgeCells, e);
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);

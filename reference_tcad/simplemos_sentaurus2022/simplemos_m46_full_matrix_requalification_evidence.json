@@ -1,0 +1,123 @@
+{
+  "schema": "vela.simplemos.sdevice.m46_full_matrix_requalification_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_full_matrix_requalification_report.json",
+      "sha256": "b7bdf3deb49e8cfd924196405cd918bfb84d855ac12409bb258a5f46995f12ed"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_case_summary.csv",
+      "sha256": "59f6c872914217810665ff596b0d98d361785e66ce8348ca182b487dad625b48"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_pointwise_delta.csv",
+      "sha256": "346b2b28d17eb26d5b29d4457ab493a37379d14c9700fa843f82b4b563ef9d9e"
+    },
+    {
+      "path": "docs/validation/simplemos_m46_full_matrix_requalification_2026-09-01.md",
+      "sha256": "e0a8d5376d318e1afad1301a5c62ca075b0288291129688449fa01830c26a94d"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/comparison_report.json",
+      "sha256": "e86bdfbcb2f5efc78de575ca8f86fa2dfdb5c9f394b24200733dea7ac08b9949"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n17_vd_0p05_comparison.csv",
+      "sha256": "13a0343a94ef35650ac9125358069565b66b5c0cc2f61b882bdefa68f4957df6"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n17_vd_1_comparison.csv",
+      "sha256": "4bfb07291446fa582b8489a39c04c654f7d75ae56f93d49de57f7f45753f9195"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n18_vd_0p05_comparison.csv",
+      "sha256": "47acd75289e62c79719b5f790a7d86c13c3c7b2333387a99bc8cf3e63c23bea9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n18_vd_1_comparison.csv",
+      "sha256": "dda9d51273e1cdb340c2e55541098a6acfa7e12ce79f7404747659f40ca85fca"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n19_vd_0p05_comparison.csv",
+      "sha256": "83f04bd089eba45af60edff96a5201430961e01afb10c093e6656f5fb5c41e2e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n19_vd_1_comparison.csv",
+      "sha256": "2f4f4f906b273ea438890c6b60b3e8383a96f4feeadf14cde74086ca00c4ca72"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n20_vd_0p05_comparison.csv",
+      "sha256": "bae842cfb044c5ef5c9494b405defc112793a1fc39376fb52ffa3fcbe44e8f3f"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n20_vd_1_comparison.csv",
+      "sha256": "d8e76dd0ac089aeaaeebe511e98295b3e5516dabb401c1a5eb9fe10bbb10964c"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n21_vd_0p05_comparison.csv",
+      "sha256": "2138403be046dc67e4a3cceb65ee8a11e1552218e97b41ad519e214d2bb4f566"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n21_vd_1_comparison.csv",
+      "sha256": "455ec485209dae866da878475b8e03733e9fdad5bce6e4f27dff07ebec169c66"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n22_vd_0p05_comparison.csv",
+      "sha256": "8890ffd706cd2271c8c8518ad6f61bfd4c257f9cd3fe80b591ae90234ebe54dc"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n22_vd_1_comparison.csv",
+      "sha256": "c8d540073ccba70bdbeeec402d2317a43bc46b3dc7f14ca4a35d3dc6fb01e11b"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n23_vd_0p05_comparison.csv",
+      "sha256": "228d60b3a514fa08e9c356896f1653631071bf2387f71165fb8e6744688a6a58"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n23_vd_1_comparison.csv",
+      "sha256": "8decd68941d2a7525a6069f99694587134e6c9377ea69f77fb3003ade7b1b9ba"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n24_vd_0p05_comparison.csv",
+      "sha256": "c748366297157af5df853e483cb9ccf9b9e3f4d04d0f59c9d142c66443807c16"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_current_comparisons/n24_vd_1_comparison.csv",
+      "sha256": "5c5eee44444dec51d46eeb1e8c4353239a93254718eb9ae0739928f0e33262ae"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_contract_v1.json": "3c3a3b0cc782cf2917c08e4011418e597070b92d2d164520bc5ae6a94c11c980",
+    "scripts/run_simplemos_m46_full_matrix_requalification.py": "59e133d1d879c31d9b8f02171646afe67afc3f41b82beac6a7e20b3b4e5b6a2d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json": "7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4",
+    "scripts/run_simplemos_m8_original_matrix.py": "e4948b5e6c80e4866c99e2c5df31a7d26c73b478f4713cef4f4c525bff0f89f9",
+    "scripts/compare_simplemos_m4_controlled_matrix.py": "931e323a5a87dbba2c3671f12bc11d16587c32fdee64b4e96d10af0fec4c9a94",
+    "CMakeLists.txt": "d0405e1972c95a008f2b3f246e93a490cec147fa4e820934b81d35830034b118",
+    "tests/regression/simplemos_evidence_chain.py": "d19ad33a2be57764004934e6951a4fd2ed41e396909791061395b3b970490d71",
+    "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py": "2300bc8f9b70378f7f41ce9f213d623ca430610677d4fb18a8c594bd8e76ae98",
+    "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py": "42e0b180b88afd9b1fce35a0ed86739e84d147441e71da6a7ad3147a73611033",
+    "tests/regression/test_simplemos_m45_post_qf_rebaseline.py": "f9686e495a1f3903dbaf73beeef99860ebb994fc4b05e61c0058d0595e010f66",
+    "tests/regression/test_simplemos_m46_full_matrix_requalification.py": "9428629ef12bf259701d3a34a51fa432b52add2461654e1322f0aadb82024138"
+  },
+  "runner_sha256": "98f0b7ecb95aafbdb2a271ba27afb650adba6b4f12ea1de2bc2bf07cde0a4a4c",
+  "default_physics_model_changed": false,
+  "default_hfs_model_changed": false,
+  "new_sentaurus_execution": false,
+  "acceptance": {
+    "m45_is_frozen": true,
+    "current_comparison_passed": true,
+    "curve_count": true,
+    "direct_bias_point_count": true,
+    "all_curves_pass": true,
+    "all_trends_match": true,
+    "maximum_log_error": true,
+    "maximum_relative_error": true,
+    "global_error_not_regressed": true,
+    "all_case_csvs_bitwise_identical_to_m8": true,
+    "all_pointwise_vela_currents_identical_to_m8": true,
+    "m8_baseline_accepted": true,
+    "all_checks_pass": true
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/pilot_dc_evidence.json": "0a60733723c3a6476b447ab1a7e6563e2e33050e3ab8e1b3b165588b2955d67d",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/pilot_dual_summary.json": "6d6f1fe9d9c20e60cfa1eabbdbffa677091fce735cdb62f18b7c07b127ee9cc8",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/native_points.csv": "1104712b87063aecf310f919336c8500950854724e77865a0f0656f0f69fd201"
+  }
+}

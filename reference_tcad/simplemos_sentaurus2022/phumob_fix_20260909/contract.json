@@ -1,0 +1,105 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n19_vd_0p050000_endpoint\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "native",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n19_vd_0p050000_endpoint\\native\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\initial\\m65_n19_vd_0p050000_endpoint\\vg_040\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n19_vd_1p000000_endpoint\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "native",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n19_vd_1p000000_endpoint\\native\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\initial\\m65_n19_vd_1p000000_endpoint\\vg_040\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n23_vd_0p050000_endpoint\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "native",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n23_vd_0p050000_endpoint\\native\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\initial\\m65_n23_vd_0p050000_endpoint\\vg_040\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n23_vd_1p000000_endpoint\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "model": "phumob",
+      "arm": "native",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\inputs\\m65_n23_vd_1p000000_endpoint\\native\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\initial\\m65_n23_vd_1p000000_endpoint\\vg_040\\state.csv"
+    }
+  ],
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "scope": "Vg=.8, 2 NWell x 2 Vd x two inherited independent initializations. Before/after same PhuMob legacy constitutive and same SRH/BGN; only Jacobian changes.",
+  "recovery": "At most one same-bias saved-state reload; all attempts retained. A failed point is not used for qualified final-state comparison.",
+  "caveat": "This is a derivative-isolation self-consistent comparison, not native element-box PhuMob restoration. Native current is context only while the averaging definition differs."
+}

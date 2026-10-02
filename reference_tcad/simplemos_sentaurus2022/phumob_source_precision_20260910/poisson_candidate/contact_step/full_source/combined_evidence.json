@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/native/comparison/evidence.json": "951aa580a244ccfa9c034807ac4012f8af18233b6984e625354f0908fa4d1edc",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/full_source/combined_summary.json": "098236395f764d61ac9b2aebe454eb73bdd4ed7744e0d4c1e770de47604a256a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/full_source/evidence.json": "89576d2bad73e2064801d6443e4853729b72eb27937ad60df262ad16e865535f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/full_source/native_ports.csv": "72780397e55b0401f8d8f9f270d4eb1bd0363089893eeb30d730c1f5b480957e"
+  }
+}

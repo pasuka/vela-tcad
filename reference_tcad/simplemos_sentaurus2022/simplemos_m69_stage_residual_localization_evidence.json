@@ -1,0 +1,34 @@
+{
+  "schema": "vela.simplemos.sdevice.m69_stage_residual_localization_evidence.v2",
+  "status": "frozen",
+  "classification": "gate_stage_dominant",
+  "contract_sha256": "ae8eba47d1f5a35776dae1dc67f61ec6d51064ecf2f3d5e898f7c553bfa11d70",
+  "v1_failure_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m69_stage_residual_localization_evidence_v1_failed.json",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m69_stage_residual_localization.py": "20e5f65e79ed9ac601944cf765448e9b996ed393e9bc76b2b2cbed752d5fdcc2"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_stage_residual_localization_report.json": "213a78d7879dc10a38aac6b2786f05bf654b609d1c7b8bcf8b1f5b4a8b1ee98a",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_stage_state_ledger.csv": "d9f7e088495cc0766c96483f038ec7dcb967e5f82726eb4e2f225cc31e87cbd4",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_pair_stage_ledger.csv": "a831f545532497ce656c5726e6325afd2999e93dd1714a196185a7e35f9cf278",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_execution_case_ledger.csv": "a9e6e09551ec1236e827e27a76d6916c3f333b643919742438f4326e93fca1a9",
+    "docs/validation/simplemos_m69_stage_residual_localization_2026-09-03.md": "a5563e720fca8cbbfc99c8beb5cf13e1a775bb3dbda0bd19a877ee1ed6abff90",
+    "docs/validation/reports/simplemos_m69/artifact.json": "ffce9cb4cc3bbbacc41c3ec5aa9d393515d9c523fe26a81cfa341cd25888e8b6"
+  },
+  "new_sentaurus_execution": true,
+  "new_vela_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "sentaurus_release": true,
+    "case_count": true,
+    "state_counts": true,
+    "pair_stage_count": true,
+    "final_current_replay": true,
+    "coordinate_identity": true,
+    "boltzmann_density_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

@@ -2,6 +2,8 @@
 #include "vela/io/DDSolutionState.h"
 #include "vela/io/StateIdentity.h"
 #include "vela/io/ElectrothermalState.h"
+#include "vela/io/DDSolutionCsv.h"
+#include "vela/numerics/SplitDDState.h"
 #include <catch2/catch_test_macros.hpp>
 #include <bit>
 #include <chrono>
@@ -125,6 +127,54 @@ TEST_CASE("DD archive preserves solver state without legacy serialization", "[st
     auto partial = solution;
     partial.holeQfReference.resize(1);
     REQUIRE_THROWS(vela::archiveDDSolution(partial, source.metadata));
+}
+
+TEST_CASE("DD HDF5 checkpoint retains all normalized blocks and sub-ULP tails", "[state_archive][split_dd]") {
+    Workspace w;
+    auto source = example();
+    auto solution = vela::restoreDDSolution(source);
+    solution.packedPotentialScale_V = .03125;
+    solution.packedMeshFingerprint = "test-split-mesh";
+    solution.packedState = vela::VectorXd::Constant(9, 1e-18);
+    solution.packedState.head(3).setConstant(8.);
+    solution.packedLow = vela::VectorXd::Constant(9, 1e-30);
+    solution.packedLow(0) = std::numeric_limits<double>::denorm_min();
+    for (int i=0; i<3; ++i) {
+        solution.psi(i) = solution.splitPotentialAt(0,i);
+        solution.phin(i) = solution.splitPotentialAt(1,i);
+        solution.phip(i) = solution.splitPotentialAt(2,i);
+        solution.phinIncrement(i) = static_cast<double>((vela::split_dd::Wide(solution.packedState(3+i)) +
+            vela::split_dd::Wide(solution.packedLow(3+i))) * vela::split_dd::Wide(solution.packedPotentialScale_V));
+        solution.phipIncrement(i) = static_cast<double>((vela::split_dd::Wide(solution.packedState(6+i)) +
+            vela::split_dd::Wide(solution.packedLow(6+i))) * vela::split_dd::Wide(solution.packedPotentialScale_V));
+    }
+    REQUIRE(solution.hasConsistentSplitPackedState());
+    const auto state = vela::archiveDDSolution(solution, source.metadata);
+    vela::writeStateArchive(w.root/"split.h5", state);
+    const auto restored = vela::restoreDDSolution(vela::readStateArchive(w.root/"split.h5",3,std::string(64,'a')));
+    REQUIRE(restored.hasConsistentSplitPackedState());
+    REQUIRE(restored.packedMeshFingerprint == solution.packedMeshFingerprint);
+    REQUIRE(restored.packedPotentialScale_V == solution.packedPotentialScale_V);
+    for (int i=0;i<9;++i) {
+        REQUIRE(std::bit_cast<std::uint64_t>(restored.packedState(i)) == std::bit_cast<std::uint64_t>(solution.packedState(i)));
+        REQUIRE(std::bit_cast<std::uint64_t>(restored.packedLow(i)) == std::bit_cast<std::uint64_t>(solution.packedLow(i)));
+    }
+    for (int i=0;i<3;++i)
+        REQUIRE(restored.holeMinusElectronQuasiFermiAt(i) == solution.holeMinusElectronQuasiFermiAt(i));
+    // Cross the explicit historical CSV importer as well as the production HDF5 adapter.
+    vela::writeDDSolutionStateCsv(w.root/"legacy.csv",solution);
+    const auto imported=vela::readDDSolutionStateCsv(w.root/"legacy.csv",3);
+    equalBits(state,vela::archiveDDSolution(imported,source.metadata));
+    auto stale=solution;stale.psi(0)+=1e-6;
+    REQUIRE_THROWS(vela::archiveDDSolution(stale,source.metadata));
+    auto bad=state;bad.fields.erase("packed_psi_low");
+    REQUIRE_THROWS(vela::writeStateArchive(w.root/"split.h5",bad));
+    bad=state;bad.metadata.erase("split_mesh_fingerprint");
+    REQUIRE_THROWS(vela::validateStateArchive(bad));
+    bad=state;bad.fields.at("packed_psi")[0]+=1.;
+    REQUIRE_THROWS(vela::readStateArchive(w.root/"split.h5",3,std::string(64,'b')));
+    REQUIRE_THROWS(vela::validateStateArchive(bad));
+    equalBits(state,vela::readStateArchive(w.root/"split.h5",3,std::string(64,'a')));
 }
 
 TEST_CASE("State SHA256 matches known empty and multiblock vectors", "[state_archive]") {

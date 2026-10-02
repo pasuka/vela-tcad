@@ -1,0 +1,9 @@
+key,native_constant_replay_over_charge,replay_below_1e_minus_10,native_constants_source
+m65_n19_vd_0p050000_endpoint_vg016,1.2889112934855142e-13,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n19_vd_0p050000_endpoint_vg020,1.0391245247622983e-13,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n19_vd_1p000000_endpoint_vg016,1.3879105418210376e-13,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n19_vd_1p000000_endpoint_vg020,1.7489140198466796e-13,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n23_vd_0p050000_endpoint_vg016,6.704548386787343e-14,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n23_vd_0p050000_endpoint_vg020,6.64484140652559e-14,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n23_vd_1p000000_endpoint_vg016,1.1417859862864665e-13,True,2022 built-in Schottky resistance PMI example; no fitted value
+m65_n23_vd_1p000000_endpoint_vg020,7.465481854738343e-14,True,2022 built-in Schottky resistance PMI example; no fitted value

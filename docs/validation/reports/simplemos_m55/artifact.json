@@ -1,0 +1,13 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M55 doping-well terminal attribution",
+  "status": "accepted",
+  "classification": "nwell_changes_well_topology_surface_redistribution",
+  "summary": "SRH charge-current terms are opposite for electrons and holes and cancel from total current; the default-minus-Direct total shift is therefore carried by the well-surface versus contact-surface redistribution residual.",
+  "report": "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_terminal_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_terminal_component_attribution_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_nwell_pair_summary.csv"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_same_response_20260912/comparison.csv": "f16611df7090b47950d4d2047382b4627fefcafbee5c88df3063dad487dfef83",
+    "reference_tcad/simplemos_sentaurus2022/enormal_same_response_20260912/signed_evidence.json": "6bc657a855218a52f587209a638fa316a55222c030e971eab543c084d4644476",
+    "reference_tcad/simplemos_sentaurus2022/enormal_same_response_20260912/summary.json": "2f46cfd77d4ef114996d22c6d043c5a586d0afc4dba2e2c334f3f6e461372505",
+    "reference_tcad/simplemos_sentaurus2022/enormal_same_response_20260912/zero_evidence.json": "8e3f332573c6ad1611a76e09824f0de3e31b80acd1239d456e0a742ea3d95dae"
+  }
+}

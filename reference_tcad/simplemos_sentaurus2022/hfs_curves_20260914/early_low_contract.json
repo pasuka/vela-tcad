@@ -1,0 +1,82 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "index": 0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n19_vd_0p050000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n19_vd_0p050000_endpoint\\continuation\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "index": 10,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n19_vd_0p050000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n19_vd_0p050000_endpoint\\continuation\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "index": 0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n19_vd_1p000000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n19_vd_1p000000_endpoint\\continuation\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "index": 10,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n19_vd_1p000000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n19_vd_1p000000_endpoint\\continuation\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "index": 0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n23_vd_0p050000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_0p050000_endpoint\\continuation\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "index": 10,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n23_vd_0p050000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_0p050000_endpoint\\continuation\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "index": 0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n23_vd_1p000000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_1p000000_endpoint\\continuation\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "index": 10,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\inputs\\m65_n23_vd_1p000000_endpoint_vg_040\\template.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_1p000000_endpoint\\continuation\\vg_010\\attempt_0\\state.csv"
+    }
+  ],
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "d9848e77096647530f1c3f0622542a2ce6e9f8be6dae8b8507d9ff27cb36dbe3",
+  "scope": "Only independent Enormal-start low controls; native qualification and full dual gate required later.",
+  "acceptance_changed": false
+}

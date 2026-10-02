@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/rejected_guard/build-release/libvela_core.a": "2846bef04e0828a37c9c68777f3e1a76a81e4ade1aa0218a3653403a84ffa273",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/build-release/vela_example_runner.exe": "2e503919667628d8c968ef5d617d900c0727e9c9a2915178c16d4492ae0c807e",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/include/vela/equation/CoupledDDAssembler.h": "9a33fc669cf8a3b8d1ce915d0d8a6dfe0bddce734fb5f6d0cf678dd6d290c99d",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/include/vela/equation/ExtendedPoissonResidual.h": "ff923341946e01caf0c35f5c74735732ecdf5fb4dec0ce7c8d245a2150e188f4",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/include/vela/numerics/StableMeritComparison.h": "836656f1f5fd9ab5d5a250d8f0446b572b3d049af75b1307a107b8cdc0a766c8",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/include/vela/solver/NewtonSolver.h": "4bbbe9d63af011f98682198f762d5fd576cffb950232d4277b0d5eab7af79601",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/scripts/validate_simplemos_production_precision_20260910.py": "907dd5286b902e83511533ba567944a9a1a0b43fd3e58d1b9585216e0ea49bd3",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/src/equation/CoupledDDAssembler.cpp": "1d7ff86e020b2081e02d66ca4911d4cd53df0fa4249b4cdc1c1dbc199b2d243a",
+    "build-release/phumob_numerics_production_20260910/rejected_guard/src/solver/NewtonSolver.cpp": "819325260a8ce250f9b9fb2b2bfff484c429aee0e954acc3edec9ffb8fe15e5c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/dc_evidence.json": "cfad7a5a98cd8dca95c0ed4707c1010d7a441110306c74cec31f1e5c61304867",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/guard_rejection_archive.json": "22112724d00f65fa721a0c46f3a6ba5868fa3a866d76620562bcb1e2a78787ff"
+  }
+}

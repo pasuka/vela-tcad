@@ -1,0 +1,40 @@
+{
+  "schema": "vela.simplemos.sdevice.m29_bgn_srh_factorial.v1",
+  "scope": "SDevice-only n23 HFS-off OldSlotboom BGN by SRH(DopingDependence) 2x2 causal ablation",
+  "device": "n23",
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.05,
+  "fixed_invariants": {
+    "hfs_enabled": false,
+    "sentaurus_mobility": "Mobility(PhuMob Enormal)",
+    "vela_mobility": "phumob_lombardi",
+    "sentaurus_gate_route": "M28 original_initial_dozero",
+    "vela_gate_bias_points_V": [0.0, 0.05]
+  },
+  "cells": [
+    {"id": "bgn_on_srh_on", "bgn": true, "srh": true, "reuse_m28": true},
+    {"id": "bgn_on_srh_off", "bgn": true, "srh": false, "reuse_m28": false},
+    {"id": "bgn_off_srh_on", "bgn": false, "srh": true, "reuse_m28": false},
+    {"id": "bgn_off_srh_off", "bgn": false, "srh": false, "reuse_m28": false}
+  ],
+  "response_space": "log10 absolute drain current",
+  "factor_effects": {
+    "bgn_main": "average over SRH levels of BGN-on minus BGN-off",
+    "srh_main": "average over BGN levels of SRH-on minus SRH-off",
+    "interaction": "y11-y10-y01+y00"
+  },
+  "acceptance": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "new_sentaurus_state_count": 3,
+    "vela_state_count": 4,
+    "minimum_common_silicon_nodes": 900,
+    "maximum_bias_error_V": 1e-10,
+    "maximum_nonfinite_fraction": 0.0
+  },
+  "claim_policy": [
+    "Only paired cross-solver factor effects may be used for causal attribution; a single ablated current is diagnostic only.",
+    "The M28 validated continuation route is fixed for every Sentaurus cell.",
+    "HFS remains disabled in every cell so its response cannot alias BGN or SRH effects.",
+    "No production BGN, SRH, mobility, contact, SG, or solver default may be changed from this audit alone."
+  ]
+}

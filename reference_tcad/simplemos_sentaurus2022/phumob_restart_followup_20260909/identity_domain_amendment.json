@@ -1,0 +1,5 @@
+{
+  "reason": "The initial all-node textual identity precheck included Dirichlet rows. Every difference is a contact value projected from tiny nonzero roundoff to exactly zero; all 907 free Si nodes remain identical. Preserve original precheck failure; separate prescribed-boundary projection from the previously frozen free-Si field/row domain.",
+  "acceptance_threshold_changed": false,
+  "physical_domain_changed": false
+}

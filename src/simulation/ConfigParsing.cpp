@@ -167,6 +167,34 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     }
     options.requireNonObtuse = geometry.value("require_non_obtuse", false);
 
+    const std::string permittivity = geometry.value("poisson_permittivity_policy", "legacy_average");
+    const std::string cellBox = geometry.value("cell_box_policy", "legacy_positive");
+    if (cellBox == "delaunay_transfer")
+        options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::DelaunayTransfer;
+    else if (cellBox != "legacy_positive")
+        throw std::runtime_error("cell_box_policy must be legacy_positive or delaunay_transfer.");
+    if (permittivity == "cell_material")
+        options.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
+    else if (permittivity != "legacy_average")
+        throw std::runtime_error("poisson_permittivity_policy must be 'legacy_average' or 'cell_material'.");
+    if (geometry.contains("poisson_cell_edge_coefficients")) {
+        const auto& entries = geometry.at("poisson_cell_edge_coefficients");
+        if (permittivity != "cell_material" || !entries.is_array() || entries.empty())
+            throw std::runtime_error("poisson_cell_edge_coefficients requires cell_material and a nonempty array.");
+        for (const auto& entry : entries) {
+            if (!entry.at("cell_id").is_number_integer() ||
+                entry.at("cell_id").get<Index>() != options.poissonCellEdgeCoefficients.size() ||
+                !entry.at("node_ids").is_array() || entry.at("node_ids").size() != 3 ||
+                !entry.at("coefficients").is_array() || entry.at("coefficients").size() != 3)
+                throw std::runtime_error("Poisson cell records require sequential cell_id and three nodes/coefficients.");
+            for (const auto& node : entry.at("node_ids"))
+                if (!node.is_number_integer() || node.get<double>() < 0)
+                    throw std::runtime_error("Poisson cell node IDs must be nonnegative integers.");
+            options.poissonCellEdgeCoefficients.push_back({
+                entry.at("node_ids").get<std::array<Index, 3>>(),
+                entry.at("coefficients").get<std::array<Real, 3>>()});
+        }
+    }
     if (geometry.contains("fallback_negative_cotangent") &&
         !geometry.at("fallback_negative_cotangent").is_boolean()) {
         throw std::runtime_error(

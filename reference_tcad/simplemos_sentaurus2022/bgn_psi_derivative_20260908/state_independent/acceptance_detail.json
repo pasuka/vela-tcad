@@ -1,0 +1,22 @@
+{
+  "global_components": 96,
+  "global_source_qualified": 0,
+  "global_below_source_floor": 96,
+  "global_recorded_ratio_max": 9.131188147595441e-05,
+  "global_relative_gate_not_exercised": true,
+  "row_ratio_max": 3.769053741787343e-07,
+  "kcl_over_Id_max": 4.915546849863422e-12,
+  "port_relative_max": 1.1324274851176597e-14,
+  "same_state_previous_small_three_checks": 84,
+  "same_state_previous_failures": 18,
+  "same_state_current_small_three_checks": 84,
+  "same_state_current_failures": 0,
+  "dual_maxima": {
+    "psi_max_V": 2.9e-15,
+    "phin_max_V": 3.820699e-11,
+    "phip_max_V": 5.0838023e-10,
+    "density_max_relative": 1.9665026496085147e-08,
+    "dual_Id_relative": 4.926392627169207e-12
+  },
+  "limitation": "Global SRH-source relative closure was inactive under the unchanged source floor; weak carrier cross blocks and carrier/field-dependent mobility are not qualified by this psi-partial repair."
+}

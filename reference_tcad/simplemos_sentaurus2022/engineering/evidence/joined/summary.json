@@ -1,0 +1,48 @@
+{
+  "numerical_passed": true,
+  "points": 816,
+  "curves": 16,
+  "field_rows": 4896,
+  "verified_files": {
+    "cloud": 93,
+    "low": 437,
+    "retry": 222
+  },
+  "core_files": 204,
+  "source_identity": "raw SHA256 identical",
+  "max_abs_Id_error_percent": 0.18661739467205063,
+  "worst_current": {
+    "case": "n23_vd_0p05",
+    "vg": 0.05,
+    "errors": {
+      "cold": -0.18661739467205063,
+      "native": -0.18661738608113376
+    }
+  },
+  "dual_max": {
+    "psi_max_V": 6.81170035768445e-11,
+    "phin_max_V": 2.5515287121051986e-08,
+    "phip_max_V": 5.411943084127104e-08,
+    "density_relative": 2.0934352360502118e-06,
+    "Id_relative": 1.3546810340159254e-09
+  },
+  "original_retry_exit": "missing: preserved empty file, not repaired or inferred",
+  "retry_readonly_driver_replay_exit": 0,
+  "replay": {
+    "passed": true,
+    "scope": "Read-only frozen driver replay, not recovery of original exit code",
+    "cached_evaluations": 204,
+    "unchanged_h5": 162,
+    "unchanged_summary_sha256": "a2129ee284063eefbaaf539152dbb099c1c135abf9c8c7f3546838c2bdd24a55",
+    "verified_writes": 358,
+    "original_job_exit_bytes": 0
+  },
+  "full_regression_passed": false,
+  "native_fields": "descriptive comparison; no new acceptance threshold",
+  "remaining": [
+    "Full CTest",
+    "Code review and commit",
+    "Mobility field definition coverage",
+    "Controlled performance work"
+  ]
+}

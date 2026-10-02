@@ -1,0 +1,9 @@
+key,projection_sum_relative_error,passed
+m65_n19_vd_0p050000_endpoint_vg016,6.168020175422903e-16,True
+m65_n19_vd_0p050000_endpoint_vg020,7.521196316074101e-16,True
+m65_n19_vd_1p000000_endpoint_vg016,2.5452457923070985e-16,True
+m65_n19_vd_1p000000_endpoint_vg020,1.4955620885767644e-15,True
+m65_n23_vd_0p050000_endpoint_vg016,0.0,True
+m65_n23_vd_0p050000_endpoint_vg020,0.0,True
+m65_n23_vd_1p000000_endpoint_vg016,2.560536207683473e-16,True
+m65_n23_vd_1p000000_endpoint_vg020,0.0,True

@@ -1,0 +1,16 @@
+{
+  "status": "frozen_before_execution",
+  "single_axis": "Add F/mu * dmu/d(vector_qf_field) * d(vector_qf_field)/d(qf_node) in existing full adjacent-cell stencil, for both carriers; equal/opposite endpoint rows; existing state-density and surface derivatives retained.",
+  "field_chain_finite_difference_step_V": 1e-07,
+  "switch": "VELA_VALIDATE_VECTOR_CHAIN_ENABLE",
+  "gates": {
+    "residual_rows_identical": true,
+    "old_Jv_rows_identical_when_off": true,
+    "weighted_defect_reduction_minimum": 0.99,
+    "fd_adjoint_relative": 0.001,
+    "base_current_relative": 1e-08,
+    "strict_KCL_over_Id": 1e-08
+  },
+  "release_order": "Fixed-state Jv and current invariance, corrected adjoint versus already computed nonlinear FD, then five strict reclosures if both pass.",
+  "scope": "n23 low Vd only. No production default, current functional, physical residual or Sentaurus change. No M82/M83 release."
+}

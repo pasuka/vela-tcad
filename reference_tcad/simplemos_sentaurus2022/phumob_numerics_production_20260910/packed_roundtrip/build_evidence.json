@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/pr_audit/compile.json": "0d58c963389ca1cece6afdfcb6f20237a151470224ede83bf60cc2b027181279",
+    "build-release/pr_audit/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pr_audit/link.json": "54da3dc9061a7cddce79faa2f0106907a13b4199fa735724b4035de10db519bb",
+    "build-release/pr_audit/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pr_audit/newton.o": "f43bbc569dc0a9ec1a3e74c9dfe240fed98a4ddb97f25b33d2a6e0c289089f92",
+    "build-release/pr_audit/NewtonSolver.cpp": "42e0b10c556cb151929e3d952d8e26c7c17a062f877e8cb3369b5f78eebc6162",
+    "build-release/pr_audit/runner.exe": "571cca3111793ebe90db3246af3a159fbc0fc582d0842c073d7e0effbde2281f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/completion_evidence_amended.json": "96d1a4658b749bf557cbbeaa0b2a5ec42ac0219312fa723470f3acd429a29a51",
+    "scripts/audit_simplemos_packed_roundtrip_20260910.py": "f013d466b6d445c91e8ffe53c7fe38a5adb8f0fe41d17e5a79a3b70ebb16ea65",
+    "src/solver/NewtonSolver.cpp": "f830761d169c74f6dec3ac05560a72106a7739531add61a9b800b661d37082f3"
+  }
+}

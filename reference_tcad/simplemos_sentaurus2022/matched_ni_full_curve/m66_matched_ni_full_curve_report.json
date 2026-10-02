@@ -1,0 +1,40 @@
+{
+  "schema": "vela.simplemos.sdevice.m66_matched_ni_full_curve_report.v1",
+  "status": "accepted",
+  "classification": "matched_ni_full_curve_material_but_not_complete",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m66_matched_ni_full_curve_contract_v1.json",
+    "sha256": "780af652b131e387acd96fdc0ef06ccce87b52197d672aa019ea5bf71b28d30a"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_equilibrium_or_drain_solves": 0,
+    "vela_continuations": 16,
+    "production_default_changed": false
+  },
+  "summary": {
+    "curve_count": 16,
+    "point_count": 816,
+    "maximum_restart_current_replay_error_dex": 0.0,
+    "maximum_newton_start_reclosure_error_dex": 1.8541264329557744e-05,
+    "median_absolute_smooth_pair_growth_dex": 0.02633485838480982,
+    "maximum_absolute_smooth_pair_growth_dex": 0.047037872149750484,
+    "high_nwell_smooth_median_absolute_error_dex": 0.0561069183128231,
+    "high_nwell_smooth_maximum_absolute_error_dex": 0.06446948028754287,
+    "high_nwell_smooth_maximum_relative_error_percent": 16.003069301413355,
+    "median_smooth_fit_explained_fraction": 0.9978347246091231
+  },
+  "causal_scope": {
+    "closed": "M65 matched-ni behavior is evaluated on every native Id-Vg point without a new Sentaurus solve.",
+    "not_closed": "M66 tests representativeness only; remaining state and transport differences are assigned to M67-M70."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "curve_count": true,
+    "point_count": true,
+    "restart_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

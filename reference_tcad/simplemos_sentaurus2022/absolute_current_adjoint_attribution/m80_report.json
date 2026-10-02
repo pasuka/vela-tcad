@@ -1,0 +1,14 @@
+{
+  "status": "stopped_at_state_identity_gate",
+  "cases_checked": 16,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "runner_probes": 0,
+  "m81_released": false,
+  "m82_released": false,
+  "maximum_raw_boltzmann_error_dex": 2.3270109844095933e-06,
+  "original_threshold_dex": 1e-06,
+  "maximum_source_identity_error_V": 9.43689570931383e-16,
+  "source_inferred_thermal_voltage_V": 0.02585199526648491,
+  "meaning": "Raw Sentaurus densities and Vela-recomputed densities are not identical. Stop M80 v1 before residual replay."
+}

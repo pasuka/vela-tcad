@@ -1,0 +1,114 @@
+{
+  "archive_sha256": "f8473838e3f0d3f605b7965f9b626800c126f7b4a6ea76ca4aec319ab4f0132d",
+  "archive_bytes": 4210148,
+  "destination": "sentaurus:/tmp/vela_simplemos_channel_fd_20260905",
+  "files": [
+    {
+      "path": "bundle/minus_1e13/input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/minus_1e13/m81_des.cmd",
+      "sha256": "b000d49550dd4099731d927f3b39878c35b61e9dc9ee3afd3891717e0cf33c7d",
+      "kind": "same_M81_deck_only_fixed_charge_window_and_amplitude_changed"
+    },
+    {
+      "path": "bundle/minus_1e13/state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/minus_1e13/state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/minus_5e12/input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/minus_5e12/m81_des.cmd",
+      "sha256": "839c38903b9fe9cf54d1a606f99e135ab7312dab94bfa4ce0107a91e1ff7f2af",
+      "kind": "same_M81_deck_only_fixed_charge_window_and_amplitude_changed"
+    },
+    {
+      "path": "bundle/minus_5e12/state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/minus_5e12/state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_1e13/input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_1e13/m81_des.cmd",
+      "sha256": "1006084944d41b4499032e03feece35075ee7aeb2b0109465398653620ae8566",
+      "kind": "same_M81_deck_only_fixed_charge_window_and_amplitude_changed"
+    },
+    {
+      "path": "bundle/plus_1e13/state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_1e13/state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_5e12/input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_5e12/m81_des.cmd",
+      "sha256": "198d9c1f753f85eec719e57fa34f445bc8a6ec423fbb3e8adf49113c803eae1b",
+      "kind": "same_M81_deck_only_fixed_charge_window_and_amplitude_changed"
+    },
+    {
+      "path": "bundle/plus_5e12/state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/plus_5e12/state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/zero/input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/zero/m81_des.cmd",
+      "sha256": "f38b2899837fe5f56307679c85476fc78166ed967581186037d46649ef3496fa",
+      "kind": "same_M81_deck_only_fixed_charge_window_and_amplitude_changed"
+    },
+    {
+      "path": "bundle/zero/state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "bundle/zero/state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+      "kind": "byte_identical_previously_authorized_M81_n23_data"
+    },
+    {
+      "path": "run.sh",
+      "sha256": "84b207355d40ef29cbafe9a69f2c73d729d767e32589d87af01e8d4365edf5aa",
+      "kind": "five_case_DC_runner"
+    }
+  ],
+  "remote_transfer_started": false,
+  "remote_runs_started": false
+}

@@ -1,0 +1,28 @@
+{
+  "cached_states": 64,
+  "remaining_states": 344,
+  "administrative_interruptions": 4,
+  "numerical_failures_before_resume": 0,
+  "workers_per_arm": 2,
+  "arms": [
+    "continuation",
+    "native"
+  ],
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "original_results_immutable": true,
+  "source_and_physics_changed": false,
+  "output_root": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\resume_20260915",
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "d9848e77096647530f1c3f0622542a2ce6e9f8be6dae8b8507d9ff27cb36dbe3",
+  "recovery": "Original maximum one same-bias reload; qualified seeds only.",
+  "scope": "Complete unchanged HFS baseline before SRH volume repair."
+}

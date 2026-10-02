@@ -1,0 +1,17 @@
+key,arm,Poisson_source_relative_error,carrier_source_error_over_bound,qualified
+m65_n19_vd_0p050000_endpoint_vg020,baseline,0.0,0.0,True
+m65_n19_vd_0p050000_endpoint_vg020,transport,0.0,0.5363327480524486,True
+m65_n19_vd_0p050000_endpoint_vg020,poisson_volume,1.681891196758807e-12,0.0,True
+m65_n19_vd_0p050000_endpoint_vg020,joint,1.681891196758807e-12,0.5363327480524486,True
+m65_n19_vd_1p000000_endpoint_vg020,baseline,0.0,0.0,True
+m65_n19_vd_1p000000_endpoint_vg020,transport,0.0,0.45545976028657453,True
+m65_n19_vd_1p000000_endpoint_vg020,poisson_volume,1.3489627725763827e-12,0.0,True
+m65_n19_vd_1p000000_endpoint_vg020,joint,1.3489627725763827e-12,0.45545976028657453,True
+m65_n23_vd_0p050000_endpoint_vg020,baseline,0.0,0.0,True
+m65_n23_vd_0p050000_endpoint_vg020,transport,0.0,0.651008554309746,True
+m65_n23_vd_0p050000_endpoint_vg020,poisson_volume,6.186118809416105e-13,0.0,True
+m65_n23_vd_0p050000_endpoint_vg020,joint,6.186118809416105e-13,0.651008554309746,True
+m65_n23_vd_1p000000_endpoint_vg020,baseline,0.0,0.0,True
+m65_n23_vd_1p000000_endpoint_vg020,transport,0.0,0.6435735191743097,True
+m65_n23_vd_1p000000_endpoint_vg020,poisson_volume,5.479896123998979e-13,0.0,True
+m65_n23_vd_1p000000_endpoint_vg020,joint,5.479896123998979e-13,0.6435735191743097,True

@@ -1,0 +1,72 @@
+{
+  "schema": "vela.simplemos.sdevice.m62_active_species_topology_intervention_contract.v1",
+  "contract_id": "simplemos-sdevice-m62-active-species-topology-intervention-v1",
+  "objective": "Execute the E3 feasibility gate and, only if a validated writer exists, flip the selected near-compensation well topology by changing primitive active species while preserving the active-species identity and every non-target field.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m58_status": "frozen",
+    "required_m60_classification": "tight_convergence_suppresses_port_bursts",
+    "required_m63_classification": "threshold_like_horizontal_shift_dominant",
+    "hashes": {
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m58_compensation_contour_mesh_audit_evidence.json": "ff2b1e08f0c9e0f8304f792ddaf23821c97ec1ed438f26c3fe1a49a9fe4b685b",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m63_smooth_nwell_attribution_evidence.json": "2480a8ad273d8953566f525cb5806d56351b7bb365b4695baa9c0202a94ac38c",
+      "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_critical_gate_edge_node_ledger.csv": "9255ba29b1a705d0daad5615f173679375a8428a2d0d8184447ffb1784f28ea5",
+      "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n21/input_fps.tdr": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+      "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n24/input_fps.tdr": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128"
+    }
+  },
+  "candidates": {
+    "positive_devices": ["n21", "n23"],
+    "negative_control_device": "n24",
+    "m58_candidate_node_ids": {"n23": [298, 1041]},
+    "identity": "NetActive = AsActive + PActive - BActive",
+    "required_primitive_edit": "BActive and every derived acceptor/net-doping dataset must be regenerated consistently; editing NetActive alone is forbidden",
+    "coordinate_selection": "use frozen mesh coordinates and region membership, never assume proprietary TDR node numbering equals exported node_id"
+  },
+  "feasibility_gate": {
+    "required": true,
+    "writer_requirements": [
+      "documented or self-describing support for editing nodal active-species datasets",
+      "round-trip preserves mesh, contacts, regions, primitive active species outside targets, and all unrelated datasets",
+      "post-write import verifies the active-species identity at every silicon node",
+      "target primitive species edit is explicit and reproducible"
+    ],
+    "stop_rule": "If no available tool satisfies every writer requirement, stop E3 without creating a mutated TDR or running a device solve."
+  },
+  "conditional_execution": {
+    "baseline_math": "Math { Extrapolate Iterations=20 ExitOnFailure }",
+    "drain_voltage_V": 0.05,
+    "gate_points_V": [0.0, 0.05, 0.1, 0.25, 0.8],
+    "observers": ["default", "DirectCurrent"],
+    "fixed": ["mesh coordinates", "contacts", "regions", "physics", "bias path", "all non-target nodes", "all non-doping fields"],
+    "positive_modulator_signature": {
+      "default_kcl_median_target_A_per_um": 1e-20,
+      "burst_amplitude_reduction_max_factor": 3.0,
+      "smooth_error_max_change_dex": 0.003
+    }
+  },
+  "classifications": [
+    "topology_modulates_but_does_not_cause_burst",
+    "topology_is_primary_burst_mechanism",
+    "topology_intervention_has_no_material_effect",
+    "e3_stopped_no_identity_preserving_writer",
+    "writer_or_execution_mismatch"
+  ],
+  "prohibitions": [
+    "no derived-NetActive-only edit",
+    "no coordinate, element, contact, region, or mesh change",
+    "no remeshing or profile re-evaluation that changes non-target nodes",
+    "no HFS, SG, BGN, SRH, contact, convergence, or production-default tuning",
+    "no mutation when the writer gate is incomplete",
+    "no replacement of M8, M46, or M60 references"
+  ],
+  "acceptance": {
+    "contract_must_be_frozen_before_tool_inventory": true,
+    "candidate_ledger_must_be_complete": true,
+    "local_and_remote_writer_inventory_required": true,
+    "stop_classification_is_an_accepted_E3_outcome": true,
+    "all_outputs_must_be_hash_frozen": true
+  }
+}

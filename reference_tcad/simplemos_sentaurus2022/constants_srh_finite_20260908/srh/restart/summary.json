@@ -1,0 +1,9 @@
+{
+  "restarts": 12,
+  "qualified_restarts": 10,
+  "qualified_endpoints": 22,
+  "endpoints": 24,
+  "qualified_dual": 10,
+  "initial_failures_retained": 12,
+  "qualified": false
+}

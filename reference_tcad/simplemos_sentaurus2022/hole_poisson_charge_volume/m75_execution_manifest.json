@@ -1,0 +1,697 @@
+{
+  "schema": "vela.simplemos.sdevice.m75_execution_manifest.v1",
+  "status": "complete",
+  "contract_sha256": "6bbcca4b90cb91ccd7651e06c7ac11713c3f41a9084854244400d91d3ffc4cec",
+  "workflows": [
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "5698a4af2d4ddfb0b955705d42d8a1b967832366a33e91ad335fe19cae034d9d",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "dd7ef34189179ef27aa5d2e16d17891710b77f25c952587697a6ca5c1fbbff11",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "bef1831eaa252695020135828780c85877e19933f44d3e0989993d202cda28e6",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "e9d47ba38edd5be7b90578c08b559c1901eea7b6ea081ce6b0ed18b5e59c5fb4",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "a5875d586c7a75930e9cb1adf7d08a453b7011a0fc4fb015ade4d1d9483deff0",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "ebb809bb1f5c3ceb77e464334ab8b825d4651c2f5f0d4ce9705247c61a70d813",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "3b1ab5e735ea7f7cc938a55e98d910d6cde8d6a64ffdd77da292d2ce018120a1",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "b731ab42c18363a50e447ed90724e39bdc166a5398142612c3ad3067e173e816",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "131ba5a23bb4b76e18c39a4e419bb9de9362c8d20b2308db18e04579b08533bf",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "171ad124b3e152f4b314c7ff628fc802faa4a86d322de19bb993bd939e12a13f",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "dd7ef34189179ef27aa5d2e16d17891710b77f25c952587697a6ca5c1fbbff11",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "bef1831eaa252695020135828780c85877e19933f44d3e0989993d202cda28e6",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "41bde0364cde3e76276a5b207f570aa9d70846d2949fb884bba6113628588e41",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "0c26510af553ac7f12d69e21a9e6cfc5be08471b6db1eb952b8e9285a243bb2f",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "ef7e5d0e24710daf625e2cf5e55466ec08c49cd057bce1fe132a6dcf8afb4669",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "c0d66750ea1770d5595160daff394da72e03a97263fbe0f08958c997999022e9",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "510d48244bb7bf4af72fc43ddc50d6d15d72e32848f2e7f57025a9c7165f989a",
+          "state": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "657d47c1c2bf1a4f31dca1679bcb4fca71dc79c9d2fdf8b221766903eeb6d3e8",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "c919556ddfa7089bb82aabc6fa2120c1bdd43cfa6a58c115865b7c9290bb73bc",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "207262150356b02149f07d1a6d531a9c72b866cb9de6423d15edcaf064723430",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "f15be25f88c5de84fb1c71e0837b59250e0874535cda28e7afad5fc3715655d9",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "9755e151d8ca16ffca0ae0ea7c152c174a27e62c456618864a035e0a30e77c06",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "c0f732ece4c3947b0a6cf1e619fc1fbdff05532e77d8ea63604426d711ad012a",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "6f606de8bfc4176829fe1a8a6a91e6cdf907849c41f9db4a7bdbff3070e6ffaa",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "422c705b51b1f568c7263ba5bcf29ab74a92e08bbe2b656725605e8b3d009507",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "aa95cf3bf0b3efab3183547b27f77f95a579e162061bbd310580654234b84ae2",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "ad5308a3e405bde23458f70141393f888f554246edd82722b8beb0b21c8df0b5",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "ce43fb817c4d977ced6fe2943fe18e7c07f91baade7f8a4b18c65bba3c3cd952",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "207262150356b02149f07d1a6d531a9c72b866cb9de6423d15edcaf064723430",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "f15be25f88c5de84fb1c71e0837b59250e0874535cda28e7afad5fc3715655d9",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "ce7887494ffec29381d6c4d7472d0f0b6c63412ea5670c657cf0aefdcd1420c8",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "fee26b05871e837e859002fba8cd84db7f3f6abae0d205920df1e1fddc81b5e0",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "3ac244e92bf6d914245954e7b145dff930c20b5370aaa119844c1f54edea133c",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "1807e4d3693e09fb9ec7dc7f93b92cbf78b7f6259df7b233fe294ec01abc3b6c",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "375a1930954b8e5f819aca452475270a2b4f1411c16bfb488ef36587aad3d4ec",
+          "state": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "8f486f4bd69a559e1b156edf92e507c628730c198177dc32c9ff2c02c0217fbd",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "5717457f7d3090c391bc90a0038ddee9cd9f4406878599db98dbab20ff6848e1",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "8ded68e6bec24af56acd23e2136ca67c282a225a0de90ac6d4c35890e8ddc73e",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "3c0b150df979f63c3a9d42e5900b5dbd1c79ff3ab63e16c35716de7a28c61195",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "98b2ece39b0423bd5800b22aa6ac0de093efc5f96aa5aa7b7121cfc101d51811",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "753ded79cbd96bff78b7a6343ec6f7af2816cdc962103bab9e9670ac614a433d",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "5b4917c8990baafed48e2aa5767593bfad6b2bbb9f47bce0c01568da4dcf5e6a",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "f32f103e6f57f7a49a14d4653477e16ffaea79f0d733da2e6ca2d9ca91fc99a2",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "7e3b22979fa091bea6297e145e045ca0d968eac9bf7b916b9c7a4740fb616ddd",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "55f63c648f1806b008519fa6dedba46efef7c3f4a103635f0c027653f69dafab",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "79af0c86741ebf86c08a585c8e385ebed217b1a86fbffd9270e5272c29d6cd31",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "8ded68e6bec24af56acd23e2136ca67c282a225a0de90ac6d4c35890e8ddc73e",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "3c0b150df979f63c3a9d42e5900b5dbd1c79ff3ab63e16c35716de7a28c61195",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "b2125a9f6e53d6fcca910313578eb99a7134b288c26951795599cd39e78197c0",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "c25e13f6b4d775ef8464bba16aa8ddd6cbabbb6f1148d476938d42f884fc6058",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "b36d3252cc65cea85206b747a0b4e660775d4023bca6d2af69e687c34aad1a56",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "99d23b78b09833e418adeba6de9f1966fdac0dc602eefee1bbb712b78992d767",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "52f7d79f66cdf41bbefd99521ad9e0fd4a19ec0299152e9dca46d1bb0335f0ad",
+          "state": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "5bed00fcd9261b40d7483c849720caf1077411386ec24bcd6c40c4f3703adfa9",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "87c79e88451be07d7e9d6ca3b4c78692182b2b45dfc3f4496c4aaeed0de2bd6b",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "851fe6c9aa71f2a8547ebab15c3f9c7472e0f88eddcfa00b6cc684879163a2d1",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "ca7f996e612ff16e672f1cdabee14d5b18fd294caa6ef65499da04ee78f16563",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "d0ffed45c587bb318dfc8f2a04f38fa962fc82aab2f781ee0d420b1cbdf6dbb5",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "5a345c3abdada927b19694e1e07737d20b354f5a0046670cb8bb1ee6efc928e6",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "127df5c5863ac079665a424def44c5fd1718f1bc1656869eadbfa10b02954493",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "3ae8adb89e84b868cf967c9b9e6c404be2c153a3007b2ab9c5d15b03a62cacc5",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "a258cb800cfa38d34649496420029d450a04a71b7dcda253e85676bf2ad6be1e",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "1ea845b2d72c3f16aa4dd2b56a5e20e0dcab6c5c4138749ec3d0dd1cb84399e1",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "e34f6a195aa7a655f90956140f1e9b725c3d9aba376f0d3c5cb7e5f9558af482",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "851fe6c9aa71f2a8547ebab15c3f9c7472e0f88eddcfa00b6cc684879163a2d1",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "ca7f996e612ff16e672f1cdabee14d5b18fd294caa6ef65499da04ee78f16563",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "ae705196ae9005d8e9b96410d81bd1722faeffc4ad30a4922910ecf2ac333e2a",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "5fdf2874cf66510230613e246bea45d555b85da6810f2d3adb71718efb1bfd59",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "5f2ab77907b83789e528488d624b3f9a199b619773249fb428ea88918d199f06",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "0115e72c68a567966317c686784f0619832d0a00c970052a72e7bc2b2a4a8fed",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "1afdad766b553d993db9b39f251a6b9c48c212004c6967913ff57cd689402769",
+          "state": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "a579ae3266d42bf2fa34130a159380123816a4ee35350be78af7e081f185a985",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "14425579b5b5ab6e77202c7fae5eeb5fc045b2f2f68bcd6055ca9ace982a5d09",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "230e28814b9a1f90d0d72009d1e64860caafcdb0cb2e650bd86d6660fd09b9be",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "48698c0c99f38cf0dd4fc11ac9415a145eab667d80f1ca2824e1b342745dff4b",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "6389918afbb7049beacc45ae259692bb6da7d5b60150c475445e0fabcd82250a",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "1c0f78040e6908d2a36e0da0520bd0469d6cde97c5bd6956a2dcf28f8c322518",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "d87c365669f14e2a6d55c6ec6e77878fd4efc1f2f87960d6ae7ca91aa9900578",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "5ca64e0ffe13f2e0209fc78b14ec1f45df45f0ad96e41ab3947e3d6e56a81849",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "3427d363b02ea397d596fb6ab7b7f309664e0af540325a5e159b191c2e7cdf4d",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "702dc55be462fbd511adcd5455da14a61c070a92e74fb24e4001c210dc983cde",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "ebc66e92d2b0cdaba2ed6ff6bc79e897fd2275db28e50fe1112f1df2608a256e",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "230e28814b9a1f90d0d72009d1e64860caafcdb0cb2e650bd86d6660fd09b9be",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "48698c0c99f38cf0dd4fc11ac9415a145eab667d80f1ca2824e1b342745dff4b",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "b82cc2ef8ee5d98f1fb6d7fc9c849dc782826f3d0846ccd9550966d0f3c3f5df",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "f71bd9423da1658040655753782275acb81d8ae0c8dabb70e771655a86e702ec",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "e65977b692c2b8d98b110a3f5cd23abfc085a925f94efe96fca9d597cf6ba161",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "df5615f190e66b185554f00ba469b30d67c557d756d5555205e36c37fa820d8e",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "4ea0918e825ea007a63940d891b7a13ef2c936850d29a0d9c93085bbfa290b1f",
+          "state": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "88918022fb9ac06174dbe1800d647236fe87fc6f429c47336676756851e4f21f",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "b91ac73f65fb4d075350b6367d7fc9b33d40b7f5c00128f4a61a737f8d3e81d4",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "04231d80981c6e2c507901bf20b3b490185e620b2e9c1c3ec658aaa96c885776",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "566777d056bcf27ac7b3e7cbc8f88b832c6196d953eefbc0f17369b0621deccb",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "6772c573ad1985fe69372d226ebfac03e9e75cf3c5d5111c3d2a675c4f06d749",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "b78a8ba2cb9c1e4cfe73ecbc9ae38ffd6acedfa4aaceaaf84db75935de08c472",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "029d1c0d4195790fc48d6d0fe7f78ce3463eae9f5b0077aac2c4ac37e8882adf",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "1e1ca66c221e8ea11268198f53817bc3fb7d8669293d6b8448ab9d6af0f701dc",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "dcf60f4f1a1fd35507c148e1793980d87733d9e98df0b7cc9c5423e0427f6ddb",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "d60047ea5c5e842136c281c31cb5598e55ab0cb286514587dcfd18bbcf9edc9c",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "85f35961f9d0e8d345752b78eaa617af38922418f33d2bf7a13928745da8a17b",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "04231d80981c6e2c507901bf20b3b490185e620b2e9c1c3ec658aaa96c885776",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "566777d056bcf27ac7b3e7cbc8f88b832c6196d953eefbc0f17369b0621deccb",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "bfbce8b28c974c67ebfb53290063a9ab6e5586d93d16c7462b2bfdb64e87f371",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "3bc7cc17a5321f18dfcd186f575bb6c61352893ac89c73c76fa1cc710fbdf0d5",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "f65d4ee3ba4f15c54bfe7f2251d163d911a89549ae04c07554c228a1631ce616",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "71ad3ba7da03c0b4284214450f61dfaf44cf21e661b3ec7795d62b8fc21f81eb",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "fd5ed2ca7d07d6555ec36eab58796bf9be4f55979f1402c1ee9074d617d1a213",
+          "state": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "9619c5f56ac47ddbd53a2622c7dcd9f72d8a9682c661bf76df60610daa89139f",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "6d054cc739da02d4a19a90e296f050618b3ea2c8d013ec10ae1f2a80d1ced5ff",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "1b7f323a6143001ed76cf000109cdb8a5720c526eb359055abd3a04489e5d8b1",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "fa1d0ad163e7fc04118e94ca70282a5862295ae66b959f3e7c5e2369b8080837",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "e5b18641a7cd70903f855b92634069ac66228cb6a0d05a0c68374fdd3bea14a0",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "f9f647b424d409b72fcc4b70888f200fde992bce270a41de5cce09f401928ca8",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "4a84425482b75385786205ed78d5bc4786b06f4119ddc98570e4158fd12a3008",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "154018b284695c23e5eda8044b16c27b219dfe6700d93dd0de2512b3d0f1825c",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "9e8dbac9d6005503d1271b1a8a5fa8478680ffa6ea5f0737d489e12e5049550b",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "fd9b41b356eda4fa713ae1e0b0bda93ad0d9ab0f8ca732020b77a21a7eb98b8b",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "d4e33c31ab73e0e49e21e9669bb1a04510cc4d6807202bd33ca642960b28d0e9",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "1b7f323a6143001ed76cf000109cdb8a5720c526eb359055abd3a04489e5d8b1",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "fa1d0ad163e7fc04118e94ca70282a5862295ae66b959f3e7c5e2369b8080837",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "4355deab47fd053085a3e464f45454f3231d036f4c20c5b8f8b58a5f4f810a98",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "98da71a24f0184ca5d6e4ec299d11ba79631b181f0860db2e3965f163e323860",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "9f39eeb1bd4f4bc6d017dcd99517564fd79f34deefb066bbeeef06a7760fce1b",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "2b12d03fc2ce1625e08f2967c6832217612db6cb3488b83ea382a2979b60a451",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "40f6d8147d306920e77ca7f73d8f029951905dce0e2b2f3a95462023fad6e050",
+          "state": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "804414d1a0a9f475ba975a848197a33e3c37f0f3800eb376c26593edb79fbdd1",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "17c6b33b90ffa7517289e66f22a6c7baf024775b7a0c6ab3dcf7dce6be5d6a06",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "87a5c4b95654adbbea09018f84751c534ba1cf65d9ade44db34abbc6655c6713",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "5fcfdc3b23aef8d28ec13e9f049f957d7144e42b3b5c2c15fc2ae8316c5bd038",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "925f7bfada71c1b9c84029b9d237f2a78e5a0f93d20f2886fc00709499c25516",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "4b6b9425902715c38e95732cf3c06f4c6c4d47bb556d005ddb481d9a1befbb8f",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "40e7c4bf7687a547e91170e8e35ad45803cbc0297ff1987baf2be96a11ef57d3",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "a768634d8f4e09ef3fb39d02a6fc1a921603ecc94fa2b125b39219ad0e86fa34",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "75b85e40ddfdbe3cafc8c94ef7c45f62b3c7b56a8e701e1a258c593d8d1f4797",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "153a2e1fbd4cf2039e6942364c5b0a118ffc376e3eb3a461431d7e7cf9cef34e",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "9461722f3b32ac9a4db6153d16791036e49959abde6454b6c76f961aa7cdc381",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "87a5c4b95654adbbea09018f84751c534ba1cf65d9ade44db34abbc6655c6713",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "5fcfdc3b23aef8d28ec13e9f049f957d7144e42b3b5c2c15fc2ae8316c5bd038",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "c7d861a28fa47526e8f8e88791d66a6208c28ed7095859370ec57371ae6b3cf0",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "6efbfe0886b72507089769815f64169711d994c0f193de74ce32ece7ead36ac3",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "e31b57c663d9e846f53af828bd10ba68c8360c039e9437985249403b424bfe08",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "422474f51743dfe2604f5cb2f82c0c6ca05b8287bff03f311735935cbca470b6",
+          "curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "7a28fd1592a937245708016fbd957b3aa1e50f5283bab938d2335455178e4b94",
+          "state": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "c3645eba5d651effdaaa475e1b8afdaa1f707395fe0f5b81be545bb2c096b282",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m75_hole_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv"
+    }
+  ],
+  "source": "build-release/m75_hole_poisson_charge_volume/execution_manifest.json",
+  "source_sha256": "3d04da7976247099c1db60e011df95978525a11f71c1b7159c4ff358ab05d237"
+}

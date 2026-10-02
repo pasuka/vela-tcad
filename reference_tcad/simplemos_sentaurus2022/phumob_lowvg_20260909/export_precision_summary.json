@@ -1,0 +1,11 @@
+{
+  "states": 16,
+  "replay_failures": 16,
+  "mismatches_within_half_ulp_bound": 16,
+  "max_one_ulp_linearization_relative": 1.1188127357214966e-14,
+  "min_half_ulp_bound_over_Id": 0.006342481918395062,
+  "max_half_ulp_bound_over_Id": 202.95246804176034,
+  "export_cause_proven": false,
+  "native_algorithm_identified": false,
+  "acceptance_changed": false
+}

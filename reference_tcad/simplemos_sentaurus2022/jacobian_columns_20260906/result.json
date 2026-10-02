@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "scripts/analyze_simplemos_jacobian_columns_20260906.py": "667541c08527777dd2d78bb8021c704480b32e55a17c83beb1d98771c255ff0d"
+  },
+  "active_baseline_blocks": 509,
+  "stable_baseline_blocks": 476,
+  "passed_baseline_blocks": 472,
+  "frozen_field_switch_identity": true,
+  "all_baseline_residuals_identical": true,
+  "production_promoted": false,
+  "boundary": "All residual rows, locally complete selected columns only; inactive or unstable cross-block signals are not certified."
+}

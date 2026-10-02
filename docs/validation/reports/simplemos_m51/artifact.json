@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m51_artifact.v1",
+  "title": "SimpleMOS M51 CurrentWeighting attribution",
+  "status": "complete",
+  "classification": "weighted_third_observable",
+  "report": "reference_tcad/simplemos_sentaurus2022/current_weighting_attribution/m51_current_weighting_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/current_weighting_attribution/m51_current_weighting_state_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/current_weighting_attribution/m51_terminal_component_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/current_weighting_attribution/m51_field_invariance_ledger.csv"
+  ],
+  "document": "docs/validation/simplemos_m51_current_weighting_attribution_2026-09-01.md",
+  "target": {
+    "state": "n23_vd_0p05_vg_0p05",
+    "device": "n23",
+    "gate_voltage_V": 0.05,
+    "drain_voltage_V": 0.05,
+    "m50_default_substrate_electron_A_per_um": 4.67098440284444e-17,
+    "m51_weighted_substrate_electron_A_per_um": -2.37611367356691e-19,
+    "weighted_minus_default_A_per_um": -4.694745539580109e-17,
+    "m50_default_minus_native_normal_A_per_um": 4.694752375074735e-17,
+    "m50_native_normal_A_per_um": -2.37679722302952e-19,
+    "m50_native_negative_normal_A_per_um": 2.37679722302952e-19,
+    "m51_native_normal_A_per_um": -2.37679722302952e-19,
+    "m51_native_minus_m50_native_A_per_um": 0.0,
+    "weighted_minus_native_normal_A_per_um": 6.835494626103712e-23,
+    "absolute_default_native_gap_reduction_fraction": 0.9999985440138095,
+    "weighted_native_normal_relative_difference": 0.0002875926713424477,
+    "native_flux_replays": true,
+    "weighted_matches_default": false,
+    "weighted_matches_native_normal": false,
+    "weighted_matches_native_negative_normal": false,
+    "weighted_matches_either_native_orientation": false,
+    "weighted_minus_nearest_native_A_per_um": 6.835494626103712e-23
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "exact_state_count": true,
+    "terminal_component_row_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "state_fields_invariant": true,
+    "native_flux_replays": true,
+    "classification_declared": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

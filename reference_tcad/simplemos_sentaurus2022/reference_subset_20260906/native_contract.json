@@ -1,0 +1,114 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "baseline",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "masetti",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "baseline",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "masetti",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "baseline",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "masetti",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "baseline",
+      "indices": [
+        16,
+        20
+      ]
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "masetti",
+      "indices": [
+        16,
+        20
+      ]
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_reference_subset_20260906",
+  "question": "Does the high-NWell current gap persist after removing field/surface mobility and using the Masetti bulk model covered by the accepted BJT M1 terminal/source chain?",
+  "axis": "Original PhuMob+HFS+Enormal versus Masetti DopingDependence only, simultaneously in both solvers. This is a reduced-model composite control, not a single-mechanism attribution or a fully prequalified MOS model.",
+  "unchanged": "Same original meshes, boron/dopants, contacts, bias, matched-ni/no-BGN Boltzmann and doping-dependent SRH; 300K. No material ni swap to the BJT Fermi/BGN convention.",
+  "native_math": "Math { ExtendedPrecision(128) Method=Super RelErrControl Digits=12 ErrRef(Electron)=1e-2 ErrRef(Hole)=1e-2 RhsMin=1e-20 Iterations=40 ExitOnFailure CNormPrint }",
+  "native_runs": 8,
+  "native_target_states": 16,
+  "interpolation": false,
+  "gates": {
+    "native_exit_zero": true,
+    "bias_error_V": 1e-10,
+    "native_kcl_over_Id": 1e-08,
+    "vela_row_eps": 1e-06,
+    "vela_all_active_rows": 1814,
+    "vela_zero_scale_rows": 0,
+    "vela_kcl_over_Id": 1e-08,
+    "vela_global_tolerance": 1e-06,
+    "vela_global_source_floor": 1e-10
+  },
+  "vela_arms": [
+    "baseline with existing corrected Jacobian and 4 linear refinements",
+    "Masetti with experimental vector-chain correction disabled and no linear refinements",
+    "Same Masetti with exactly 4 linear refinements, for convergence discrimination"
+  ],
+  "endpoint_selection": "n19/n23 x Vd=.05/1 x Vg=.8/1, eight working points; independent saved-state reclosures, not full curves.",
+  "prior_acceptance_unchanged": true,
+  "production_changes": false,
+  "m82_released": false,
+  "m83_released": false
+}

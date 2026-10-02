@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M65 no-BGN intrinsic-density attribution",
+  "status": "accepted",
+  "classification": "base_intrinsic_density_convention_material_but_not_dominant",
+  "summary": "Matched-Si-ni causal intervention at the eight frozen M63 pair gates",
+  "report": "reference_tcad/simplemos_sentaurus2022/nobgn_intrinsic_density_attribution/m65_nobgn_intrinsic_density_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/nobgn_intrinsic_density_attribution/m65_current_intervention_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/nobgn_intrinsic_density_attribution/m65_state_attribution_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/nobgn_intrinsic_density_attribution/m65_nwell_pair_closure_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/nobgn_intrinsic_density_attribution/m65_execution_case_ledger.csv"
+  ]
+}

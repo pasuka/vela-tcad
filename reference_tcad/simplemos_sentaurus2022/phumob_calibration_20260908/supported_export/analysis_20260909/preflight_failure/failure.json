@@ -1,0 +1,1 @@
+{"status":"mapping_preflight_failed_before_scalar_execution","reason":"Global runtime vertex injectivity includes duplicate unused vertices; no cell or current physical gate evaluated.","first_state":{"runtime_vertices":1562,"tdr_vertices":1480,"silicon_vertices":942,"unique_mapped_silicon_vertices":942,"max_coordinate_distance_um":1.1102230246251565e-16}}

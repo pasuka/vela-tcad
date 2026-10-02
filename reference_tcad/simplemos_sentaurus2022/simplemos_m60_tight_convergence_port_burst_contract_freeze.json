@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m60_tight_convergence_port_burst_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_contract_v1.json",
+  "contract_sha256": "a674891c9e73ee6efb2580bb0efb86e1b45a7d2e180c4dea966622262460ccc4",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m59_port_observable_decomposition_evidence.json": "02f7d654e1e0f6f58e59729c579209028f18faf05c0c27effc573717075823b2",
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_pointwise_delta.csv": "346b2b28d17eb26d5b29d4457ab493a37379d14c9700fa843f82b4b563ef9d9e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_contract_v1.json": "3ea9d39250675e533edfd6bac350eace8cc55473133d3a52c6dc8d82b53f235e",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n17/input_fps.tdr": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n18/input_fps.tdr": "1ede4c89920ea42cba8d05e3b9ee5be889cafb65a8e0e826acde50904b4dac7a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n20/input_fps.tdr": "db64cf83d8d024596878388f3b42632d7ac622035e4c0f3b74553468a5a75d13",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n21/input_fps.tdr": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n22/input_fps.tdr": "b50143646f5df599bbcb3f02d8ea7babf40886144962d3876d1037ba2af44564",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n24/input_fps.tdr": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128"
+  },
+  "execution_policy": {
+    "new_sentaurus_execution": true,
+    "new_vela_execution": false,
+    "remote_host": "sentaurus",
+    "remote_release": "T-2022.03-SP2",
+    "production_reference_replacement": false,
+    "threshold_or_classification_changes_after_freeze": false
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_hfs_srh_quadrature_audit_2026-09-14.md": "434138cc7ed0b7018e991f094a32314e7cce615edbf294d778146a97bbd48f5e",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/srh_volume_evidence.json": "dbdc9a2bee680c6ebed1304fcbbba325d4b0007d2c3122bc37bdebe15c1b0879"
+  }
+}

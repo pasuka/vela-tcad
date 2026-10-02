@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/resume_20260915/first_overlap_evidence.json": "e0179bc90f8da31df3dc532bbebe760f9b0a0b0af69f84d38de90a74673c0109",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/resume_20260915/postprocessing_contract.json": "4e3c527b5a519479828eef36d76adb47a78124fa9c9cc953a29b96feb96fcf6c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/resume_20260915/preflight_evidence.json": "345bb0564debc3b06476069442f82676255d60716819ce737ea249e4dbf530e2",
+    "scripts/complete_simplemos_hfs_baseline_20260915.py": "365c3becded287c72d99a7f2cdba3a2cee132fb564db3566a19f9a20622a3119",
+    "scripts/finish_simplemos_hfs_curves_20260914.py": "cb29a719e9b7ea7503369ad99b1d8c4d1ef8cb887ca3caec3456764e001688c0",
+    "scripts/seal_simplemos_hfs_resume_20260915.py": "20204bf71f6b7f77db96626f5d00b00312dc86724ea568f13ef1f94d9f9d46ab",
+    "scripts/simplemos_masetti_curve_vela_20260908.py": "99296aa84993e3b78131b6d11bfe4d27bcc6ddc30470bfbd13ef3ac9c303821f",
+    "scripts/summarize_simplemos_hfs_curve_fields_20260914.py": "22c134cbcfd2fdb7d886f1b32cc51db70f13e7235bb3aba1a9a07a52996b2141"
+  }
+}

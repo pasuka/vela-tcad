@@ -1,0 +1,30 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    "1e13",
+    "5e12"
+  ],
+  "base": "Same strict n23 Vd=.05 V Vg=.9 V baseline; complete physical psi/phin/phip actual centered DC response, QF differences formed using reference+increment before conversion to double.",
+  "steps": [
+    1,
+    0.5,
+    0.25
+  ],
+  "directions": [
+    "all",
+    "psi",
+    "phin",
+    "phip"
+  ],
+  "operator": "Original unmodified core. Jv accumulated in long double. FD at x0 +/- h*v; separate original +/- endpoint secant. No charge source needed because it is constant in state.",
+  "gates": {
+    "weighted_fd_step_relative": 0.001,
+    "weighted_recovery_of_prior_gap_relative": 0.001,
+    "gradient_jvp_identity_relative": 1e-08
+  },
+  "interpretation": "Qualify defect measurement and localization, not the erroneous Jacobian. Tiny hole signals may be noise and must be reported without claiming local relative precision.",
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

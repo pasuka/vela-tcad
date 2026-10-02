@@ -1,0 +1,35 @@
+{
+  "status": "completed_bounded_localization",
+  "date": "2026-09-07",
+  "new_DC": 104,
+  "qualified_DC": 104,
+  "production_changes": false,
+  "acceptance_changes": false,
+  "full_curve_started": false,
+  "summary": {
+    "finite_qualified": 32,
+    "finite_count": 32,
+    "dual_qualified": 16,
+    "port_qualified": 32,
+    "all_native_K_promoted": true,
+    "production_changed": false,
+    "full_curve_started": false
+  },
+  "input_hashes": {
+    "scripts/report_simplemos_remaining_poisson_20260907.py": "c9d022195bf304592c8c388c1f53054da81dfc2ab5ccf3d5d37697fcc86934a1",
+    "scripts/localize_simplemos_remaining_poisson_20260907.py": "52a95a65c34e2c528a8899c5329c09ab8449cfe4ee5b2234ff8483536cc6664f",
+    "scripts/validate_simplemos_remaining_dielectric_20260907.py": "dbf3c968cab432d81994f0c2514101b525094acda0c5f350b86ea0eb8dd1eef6",
+    "scripts/audit_simplemos_dielectric_interface_formula_20260907.py": "8cd6c7eb7bb9cac3d854b1ae03951f05691665ec85a1bbf36333f418833b1684",
+    "scripts/analyze_simplemos_remaining_poisson_fields_20260907.py": "e1c9165d19aa8b6a52d22fa4afbadd6a1b72c47aa28e0384d92534ae533e9adc",
+    "scripts/audit_simplemos_post_dielectric_residual_20260907.py": "d82a08932e192653da113ac468aaaf15b5246716c0e13d6414ef9e0e125c62c2",
+    "docs/validation/simplemos_remaining_poisson_dielectric_localization_2026-09-07.md": "bb6347248f6d339afacb953adfa1a33e4290ded987bfc9a8ac258d739013c398",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/ledger_evidence.json": "5f509123ec05bacbaf0d454fd699289498169c073c020bfa1d2b8e40b1773895",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/interface_formula_evidence.json": "1005ee05af4822693bda2ee3dc62e4f24a8782fcd237b9dde97cbd6c3b2a24a3",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/dielectric/validation_evidence.json": "92f5b6f3495e469df2148ec732d8a8c9ccb68a92a0d94c8642bb71ea63e5e538",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/dielectric/fields_evidence.json": "7cda2bc2bc8aba7c2566a6f4654d916b2b3c773178bf2bdf6a89eae3599ccc4d",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/dielectric/post_K_ledger/evidence.json": "edceaca11b83a631df605482d6cb9451262c2d4203cb44ba1f163a8b512dccfa",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/dielectric/worst_quasi_fermi_nodes.csv": "9f8b2a1d73275999a4ae6b1fc684ff98c3a791dc742ddca4ed8401c999a674f3",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/final_evidence.json": "cf5c373982c60b5e78549854790a659f90ad0455d7c9c26f273ec17f835cf608",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/validation_evidence.json": "7f88ac38d310f380d83007c5060641947fd49339113e87e16b083539d1da71ce"
+  }
+}

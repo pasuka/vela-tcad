@@ -1,0 +1,57 @@
+{
+  "schema": "vela.simplemos.sdevice.m21_incident_edge_balance.v1",
+  "contract_id": "simplemos-sdevice-m21-incident-edge-balance-v1",
+  "scope": "SDevice-only production-SG input and factor audit for edges incident on the first free drain layer",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "diagnostic_cpp_extension_only": true,
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "variants": ["vela_self_consistent", "sentaurus_imported"],
+    "probe_count": 32,
+    "interpolation": "forbidden"
+  },
+  "edge_inputs": [
+    "endpoint_phin",
+    "variable_ni_sg_eta_and_bernoulli_weights",
+    "endpoint_electron_density",
+    "production_edge_mobility",
+    "finite_volume_length_and_couple",
+    "production_transport_cell_vector_drive"
+  ],
+  "factorization": {
+    "source": "reuse the exact M18 edge-level M17 three-factor game",
+    "factors": ["mobility", "sg_secant_conductance", "qf_log_imbalance"],
+    "allocation": "edge-local three-factor Shapley value",
+    "closure": "factor sum equals imported-state minus Vela-state production edge flux"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "probe_count": 32,
+    "maximum_stable_sg_flux_absolute_closure": 1e-12,
+    "maximum_edge_factor_absolute_closure": 1e-12,
+    "maximum_m20_node_flux_delta_absolute_closure": 1e-12,
+    "maximum_geometry_difference": 0.0,
+    "all_states_use_transport_cell_vector": true,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "Which incident edges create the node-991/992 contact-versus-internal flux imbalance?",
+    "Are the differences carried by endpoint phin imbalance, the SG state conductance, or mobility?",
+    "Do carrier density, Bernoulli weights, mobility drive, mobility, or geometry change materially on those edges?",
+    "Does the production stable SG decomposition reproduce every selected edge flux?"
+  ],
+  "interpretation_limits": [
+    "Both frozen states are evaluated by the unchanged Vela SG operator; private Sentaurus face quantities are not exposed.",
+    "The M17/M18 factors partition the Vela operator response and are not native Sentaurus residual terms.",
+    "Carrier densities are reported as production state diagnostics; in the Boltzmann variable-ni SG kernel they also enter mobility state dependence while the stable flux is expressed through psi, phin, and effective ni.",
+    "Deep-off relative ratios remain cancellation-sensitive and are not used as headline acceptance metrics."
+  ]
+}

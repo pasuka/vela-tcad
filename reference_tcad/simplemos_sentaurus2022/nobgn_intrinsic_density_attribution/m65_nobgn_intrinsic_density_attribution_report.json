@@ -1,0 +1,55 @@
+{
+  "schema": "vela.simplemos.sdevice.m65_nobgn_intrinsic_density_attribution_report.v1",
+  "status": "accepted",
+  "classification": "base_intrinsic_density_convention_material_but_not_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m65_nobgn_intrinsic_density_attribution_contract_v1.json",
+    "sha256": "08df794fa46f15560ade8c417fd2259121532a36376e7d94654b6f9acdc0b7e1"
+  },
+  "execution": {
+    "new_sentaurus_execution": true,
+    "new_vela_execution": true,
+    "sentaurus_case_count": 16,
+    "vela_workflow_count": 16,
+    "single_axis": "copied Vela Si.ni",
+    "sentaurus_normalized_steps_rescaled_to_preserve_m64_physical_path": true,
+    "production_default_changed": false
+  },
+  "summary": {
+    "sentaurus_no_bgn_ni_cm3": 10750038488.844236,
+    "vela_baseline_no_bgn_ni_cm3": 14638914958.767616,
+    "ni_log10_ratio_dex": -0.1340988686858403,
+    "median_pair_closure_fraction": 0.6804966256892779,
+    "minimum_pair_closure_fraction": 0.6620676019377211,
+    "maximum_pair_closure_fraction": 0.704305447783955,
+    "pair_closure_at_or_above_0p8_count": 0,
+    "median_baseline_pair_growth_dex": 0.11121963243727909,
+    "median_matched_ni_pair_growth_dex": 0.03702897509661555,
+    "median_matched_ni_current_error_dex": 0.038593540395785275,
+    "median_qf_barrier_pair_proxy_dex": 0.023523917340993582,
+    "maximum_m64_sentaurus_anchor_replay_error_dex": 5.670934997842164e-11,
+    "maximum_sentaurus_ni_relative_spread": 0.0,
+    "boltzmann_identity_p95_residual_dex": 1.8266698042809947e-06,
+    "maximum_coordinate_error_um": 0.0
+  },
+  "causal_scope": {
+    "closed": "The only causal intervention is the copied Vela Silicon base intrinsic density under explicit no-BGN; pair closure measures how much of M64's larger BGN-independent NWell growth this convention explains.",
+    "state_identity": "The matched-ni electron-density difference is independently checked against the electrostatic and electron quasi-Fermi potentials through the Boltzmann identity.",
+    "not_closed": "Any residual matched-ni pair growth remains a self-consistent electrostatics, statistics, transport, or material-convention difference; M65 does not tune those terms."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "sentaurus_release": true,
+    "case_counts": true,
+    "pair_count": true,
+    "sentaurus_no_bgn_qualified": true,
+    "m64_sentaurus_anchor_replay": true,
+    "sentaurus_ni_uniform": true,
+    "sentaurus_ni_anchor": true,
+    "state_coordinates": true,
+    "boltzmann_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

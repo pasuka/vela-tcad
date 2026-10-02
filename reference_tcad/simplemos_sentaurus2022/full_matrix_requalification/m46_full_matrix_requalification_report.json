@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.sdevice.m46_full_matrix_requalification_report.v1",
+  "status": "complete",
+  "execution": {
+    "device_count": 8,
+    "curve_count": 16,
+    "direct_bias_point_count": 816,
+    "parallel_worker_count": 4,
+    "runner": "build-release/vela_example_runner.exe",
+    "runner_sha256": "98f0b7ecb95aafbdb2a271ba27afb650adba6b4f12ea1de2bc2bf07cde0a4a4c",
+    "new_sentaurus_execution": false,
+    "sentaurus_references_reused_read_only": true,
+    "default_model_changed": false,
+    "historical_m8_artifacts_rewritten": false
+  },
+  "findings": {
+    "curve_count": 16,
+    "direct_bias_point_count": 816,
+    "passing_curve_count": 16,
+    "trend_match_count": 16,
+    "maximum_absolute_log10_ratio_dex": 0.10941868092427424,
+    "maximum_relative_error": 0.28652633602019956,
+    "maximum_absolute_endpoint_log10_ratio_dex": 0.013174412341053722,
+    "maximum_log_shift_vs_historical_m8_dex": 0.0,
+    "maximum_absolute_current_delta_vs_historical_m8_A_per_um": 0.0,
+    "bitwise_identical_case_csv_count": 16,
+    "worst_case": {
+      "case": "n23_vd_0p05",
+      "gate_voltage_V": 0.05,
+      "sentaurus_current_A_per_um": 8.58625099702983e-17,
+      "historical_m8_vela_current_A_per_um": 1.1046438035358572e-16,
+      "m46_vela_current_A_per_um": 1.1046438035358572e-16,
+      "absolute_current_delta_A_per_um": 0.0,
+      "absolute_log_current_shift_dex": 0.0,
+      "m46_absolute_log10_ratio_dex": 0.10941868092427424,
+      "m46_relative_error": 0.28652633602019956
+    },
+    "m43_m44_changed_original_physics_production_curves": false,
+    "m43_m44_closed_diagnostic_paths_only_for_this_matrix": true,
+    "remaining_cross_tcad_error_changed": false
+  },
+  "acceptance": {
+    "m45_is_frozen": true,
+    "current_comparison_passed": true,
+    "curve_count": true,
+    "direct_bias_point_count": true,
+    "all_curves_pass": true,
+    "all_trends_match": true,
+    "maximum_log_error": true,
+    "maximum_relative_error": true,
+    "global_error_not_regressed": true,
+    "all_case_csvs_bitwise_identical_to_m8": true,
+    "all_pointwise_vela_currents_identical_to_m8": true,
+    "m8_baseline_accepted": true,
+    "all_checks_pass": true
+  },
+  "claim_policy": [
+    "Bitwise identity is asserted for the sixteen portable comparison CSV files, not for path-bearing report metadata.",
+    "M46 reuses the frozen T-2022.03-SP2 reference curves without interpolation or new Sentaurus execution.",
+    "The unchanged production matrix does not invalidate M43/M44 diagnostic fixes; it bounds their observed impact to the diagnosed numerical paths for this BGN-on matrix."
+  ]
+}

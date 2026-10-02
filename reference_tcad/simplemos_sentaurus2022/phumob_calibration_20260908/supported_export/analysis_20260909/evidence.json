@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_phumob_calibration_20260908/supported_export/analysis_20260909/scalar_output.csv": "4f91e5e3175a9ce66386b8b6133da25e40b92cb73ae21ba7f25e4b6a1dc9e471",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/cell_comparison.csv": "ad6b53f145521c5091fb958ec6897c7cbe9ea07913b565826140e1d3110c9a93",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/cell_summary.csv": "a67c9a5ec1f569731b7a4cd856464dd9f8dc3467961b6fc678b6c64401d47dc8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/edge_comparison.csv": "0486c42ae43a031e691eeb1d0e72f0b90c57f7fd703764d5f012e0e4d627fa50",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/freeze.json": "48f9e717c90670da0fd2c666bcef2cc44443f416b6da118f4d29c4a3b8d16104",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/port_replay.csv": "97bdb660b4df9f96a61e474937d3ebe432c839b457ee24a35e3dad6eccdca1db",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/process.json": "ff6b56353bdacc2b76e557e533f1bb1804b464ae3d2a54c2545d3e2587244e3c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/summary.json": "a72e30a71168eb4cd52b9c34719181ea9bccefd54f1803ad8e8e152defa23a6a"
+  }
+}

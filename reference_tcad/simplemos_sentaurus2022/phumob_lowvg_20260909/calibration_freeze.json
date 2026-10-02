@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/evidence.json": "268beba6b5ff182c1ab44ef7e5c2665e9f3afd6a3df6b1941c1578a367987798",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/floor_inference.csv": "6f0cb3d258e0c5997d894c36c6c982dd2afe21beec21dbf213dadb6335b7ae75",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_contract.json": "ae0292e798a47ffbc5c1495375ec3b9b69faae41267a41e4d782b99dabd01885",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/export_evidence.json": "9352da1005d6a6d8995a1faa070abe3af6a36605ca259ebf5df0131051f7edc0",
+    "scripts/analyze_simplemos_phumob_lowvg_20260909.py": "1bc9834439bc802248556eecc255f59dcfc4bedf2a94c42cd81f058ca872c320",
+    "scripts/analyze_simplemos_phumob_native_cells_20260909.py": "b52730f63ed284abfa97c6e37f2e9f7dab6ab8da06e0c7e897f3575326b2c714",
+    "scripts/audit_simplemos_phumob_cross_derivatives_20260908.py": "832794b8338187994750b2f7c371999c71b86804f4892d73be238a09d1b1c3ae",
+    "scripts/localize_simplemos_phumob_screening_floor_20260909.py": "595f4be8bff6f00bb57987cfa25c6afb511f51daf39481f4f84510cc73d8a274"
+  }
+}

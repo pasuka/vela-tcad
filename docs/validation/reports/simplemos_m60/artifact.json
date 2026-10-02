@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M60 tight-convergence port-burst replay",
+  "status": "accepted",
+  "classification": "tight_convergence_suppresses_port_bursts",
+  "summary": "Frozen tight-convergence default/Direct full-matrix discriminator",
+  "report": "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_convergence_port_burst_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_default_direct_point_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_case_summary.csv",
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_cnormprint_log_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_default_direct_field_invariance_ledger.csv"
+  ]
+}

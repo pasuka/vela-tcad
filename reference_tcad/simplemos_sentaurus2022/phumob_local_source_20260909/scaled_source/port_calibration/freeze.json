@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.json": "d367ce6f58353240dd5e427bf9d6b2a7a3a94afb722fd768a9474a8b19d6232d",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.json": "4c082f25048d66d3cea80cc8aa16bc90402f479df1ccb155f649c6382843552d",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.json": "a4a223228b833ffff3fd5d220d46a151361e657ba8dd24a63c05857d229810b2",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.json": "32ef05b01914ceac095da6e205e1bdeb9f815329dc67f105d5db192633ea93a4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/evidence.json": "27aebab3a194d1bd9d0cdceb3724eca1cd91a782ea86211263e23ab0e40129c8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/port_calibration/contract.json": "98d58f348c2da8fa5e8becca0849cdc8690e6392d938aa73e35e9beb7a049b44",
+    "scripts/audit_simplemos_phumob_pair_source_ports_20260909.py": "5d3fa8be9aef6351f362918dab8e03da5acae5b1506efb9a10197f75d8e3ea53"
+  }
+}

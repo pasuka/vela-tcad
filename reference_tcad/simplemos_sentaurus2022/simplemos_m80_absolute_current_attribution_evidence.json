@@ -1,0 +1,10 @@
+{
+  "status": "frozen",
+  "contract_sha256": "cf2088e1f8d3657cd5abed84b167b209fa969dbeaaba7faf457c6a63657f6166",
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/absolute_current_adjoint_attribution/m80_state_identity_failure.csv": "a93ae28c541ad459da73670e848c226a1a839ddd70a4479553e71a858b485d85",
+    "reference_tcad/simplemos_sentaurus2022/absolute_current_adjoint_attribution/m80_report.json": "6b03af6f9570b3aee5378221e75d44663bb52b9a1677220fb61b013924f5c023",
+    "docs/validation/simplemos_m80_absolute_current_attribution_2026-09-05.md": "0df4ff5ac42a6003d4a061fd202b2907a2e6ea955a63e9977bb23b5bd7bf70dc"
+  },
+  "preflight_recorder_sha256": "7c02dc5d17a2da5db54a518a473659b73b54ae4a2dd0d535b713dfde45723971"
+}

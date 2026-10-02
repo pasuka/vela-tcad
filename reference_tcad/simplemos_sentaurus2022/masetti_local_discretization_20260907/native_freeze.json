@@ -1,0 +1,23 @@
+{
+  "input_hashes": {
+    "build-release/m79_research/sdevice_ug_local_2022.txt": "a9f446d57a1ccfe2a2c16d9ccb263c74b9b3e295ad97e077a1d5997a46a852ae",
+    "build-release/simplemos_masetti_local_20260907/bundle/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/simplemos_masetti_local_20260907/bundle/n19/native_des.cmd": "3f97d6724106b31b7c458f5467c8545412b87a7c876ba9cf6ecaa7310f9934e1",
+    "build-release/simplemos_masetti_local_20260907/bundle/n19/result_020_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_masetti_local_20260907/bundle/n19/result_020_des.sav": "b279e76635bf817082c93b2830227c46c9efea94642988aa5a2cf3472a3ab831",
+    "build-release/simplemos_masetti_local_20260907/bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_masetti_local_20260907/bundle/n23/native_des.cmd": "3f97d6724106b31b7c458f5467c8545412b87a7c876ba9cf6ecaa7310f9934e1",
+    "build-release/simplemos_masetti_local_20260907/bundle/n23/result_020_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_masetti_local_20260907/bundle/n23/result_020_des.sav": "09a6ebd19fb435f68b44cc99c432082e7c5fb645e6eaccab060d7624ee036877",
+    "build-release/simplemos_masetti_local_20260907/run.sh": "2618a65235ebde19ef9dd92df2dbc2198b335ca4d7595b8193e1c138dfb545ba",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n19_vd_0p050000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n19_vd_0p050000_endpoint/result_020_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n19_vd_0p050000_endpoint/result_020_des.sav": "b279e76635bf817082c93b2830227c46c9efea94642988aa5a2cf3472a3ab831",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n23_vd_0p050000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n23_vd_0p050000_endpoint/result_020_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/simplemos_reference_subset_20260906/native_raw/bundle/masetti/m65_n23_vd_0p050000_endpoint/result_020_des.sav": "09a6ebd19fb435f68b44cc99c432082e7c5fb645e6eaccab060d7624ee036877",
+    "reference_tcad/simplemos_sentaurus2022/masetti_local_discretization_20260907/native_contract.json": "db922dd9c0999f9f327e6f77bb5c937199baf1a6209284c4fd3b5c8f4e1f8e0e",
+    "reference_tcad/simplemos_sentaurus2022/reference_subset_20260906/validation_evidence.json": "3eb9c10189de8e9211de71a41a69842304a146dc72211a0b1169e7faa75593f6",
+    "scripts/prepare_simplemos_masetti_local_20260907.py": "01db314d8636449269616f5fc88dffd9775e184bded687922cb29bcbb25405c7"
+  }
+}

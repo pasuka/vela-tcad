@@ -1,0 +1,17 @@
+case,device,vd,vg,index,arm,name,exit_code,Id_A_per_um,kcl_over_Id,bias_error_V,qualified
+m65_n19_vd_0p050000_endpoint,n19,0.05,0.8,40,baseline,m65_n19_vd_0p050000_endpoint_vg_040_baseline,0,5.65480729817486e-07,5.477259650853342e-16,0.0,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,0.8,40,observed,m65_n19_vd_0p050000_endpoint_vg_040_observed,0,5.65480729817486e-07,5.477259650853342e-16,0.0,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,1.0,50,baseline,m65_n19_vd_0p050000_endpoint_vg_050_baseline,0,5.72620835723687e-06,3.156559293468411e-17,0.0,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,1.0,50,observed,m65_n19_vd_0p050000_endpoint_vg_050_observed,0,5.72620835723687e-06,3.156559293468411e-17,0.0,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,0.8,40,baseline,m65_n19_vd_1p000000_endpoint_vg_040_baseline,0,4.95622364719008e-06,1.335518549003556e-15,0.0,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,0.8,40,observed,m65_n19_vd_1p000000_endpoint_vg_040_observed,0,4.95622364719008e-06,1.335518549003556e-15,0.0,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,1.0,50,baseline,m65_n19_vd_1p000000_endpoint_vg_050_baseline,0,3.44702880616105e-05,9.133420096315592e-16,0.0,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,1.0,50,observed,m65_n19_vd_1p000000_endpoint_vg_050_observed,0,3.44702880616105e-05,9.133420096315592e-16,0.0,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,0.8,40,baseline,m65_n23_vd_0p050000_endpoint_vg_040_baseline,0,2.73299324297004e-09,1.1388494550592954e-16,0.0,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,0.8,40,observed,m65_n23_vd_0p050000_endpoint_vg_040_observed,0,2.73299324297004e-09,1.1388494550592954e-16,0.0,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,1.0,50,baseline,m65_n23_vd_0p050000_endpoint_vg_050_baseline,0,2.57483320302723e-07,1.4178166630648256e-15,0.0,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,1.0,50,observed,m65_n23_vd_0p050000_endpoint_vg_050_observed,0,2.57483320302723e-07,1.4178166630648256e-15,0.0,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,0.8,40,baseline,m65_n23_vd_1p000000_endpoint_vg_040_baseline,0,1.7732950156142e-08,1.6612604933523285e-15,0.0,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,0.8,40,observed,m65_n23_vd_1p000000_endpoint_vg_040_observed,0,1.7732950156142e-08,1.6612604933523285e-15,0.0,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,1.0,50,baseline,m65_n23_vd_1p000000_endpoint_vg_050_baseline,0,1.43735819113585e-06,2.2017453946976355e-15,0.0,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,1.0,50,observed,m65_n23_vd_1p000000_endpoint_vg_050_observed,0,1.43735819113585e-06,2.2017453946976355e-15,0.0,True

@@ -1,0 +1,9 @@
+{
+  "status": "completed_read_only_support_explanation",
+  "input_hashes": {
+    "scripts/explain_simplemos_native_transport_support_20260907.py": "6f12caee36ecb0a8087a5cb99b5bdf610c1b0b853474f17fb975670ee3b1dea7",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/independent_check.json": "220d0e034eb86f12dba85c722926a9bfb2f855c350fb938389ee3ba4bf54a032",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/dominant_edge_material_support.csv": "f1430fcf278938fc03185482dad2367fa13b3b994b092723d6f16254c76dc833"
+  },
+  "interpretation": "Per-edge adjoint rankings belong to the calibrated combined direction; individual edge finite differences were not performed."
+}

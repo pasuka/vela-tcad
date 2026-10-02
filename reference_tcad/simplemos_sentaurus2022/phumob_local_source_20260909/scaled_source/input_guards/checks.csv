@@ -1,0 +1,10 @@
+label,exit_code,qualified
+size,1,True
+count,1,True
+duplicate,1,True
+contact,1,True
+truncated,1,True
+extra,1,True
+alpha_range,1,True
+alpha_trailing,1,True
+alpha_missing,1,True

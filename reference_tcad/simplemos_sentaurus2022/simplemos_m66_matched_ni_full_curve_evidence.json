@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m66_matched_ni_full_curve_evidence.v1",
+  "status": "frozen",
+  "classification": "matched_ni_full_curve_material_but_not_complete",
+  "contract_sha256": "780af652b131e387acd96fdc0ef06ccce87b52197d672aa019ea5bf71b28d30a",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m66_matched_ni_full_curve.py": "6a0f0f8cc42486d0e4afadea996fb7aca03821e8cce7c870397c18fb39076702"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_report.json": "48b10ae1f22c82760fc294d0d9e0f6ea9ac12b7ac36f57e183fb628801f1d8d9",
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_point_ledger.csv": "ed118819d9f4b6916dd61956a8ffc6bc1e2c880e271fc87a5a0482285c8e397b",
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_pair_ledger.csv": "d659d87c6ddcff2d882375d65e7dd76b25ed4632075625c46396997ac8c11953",
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_execution_case_ledger.csv": "429a4d107a4d187ff1fa6507c1c64ca2abd9a75b2bd4eb4d73e75fb3fa4a88af",
+    "docs/validation/simplemos_m66_matched_ni_full_curve_2026-09-03.md": "82161bb11e4483cf2d31e628deed767b4b3a8a27b48bf5371aeb140d73752a17",
+    "docs/validation/reports/simplemos_m66/artifact.json": "b686ea4cb40afe3cd854957badc2c43c4a26e100c7d457118d89f20dab0e9a0a"
+  },
+  "new_sentaurus_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "curve_count": true,
+    "point_count": true,
+    "restart_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

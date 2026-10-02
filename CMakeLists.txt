@@ -291,6 +291,7 @@ add_library(vela_core STATIC
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
+    src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
@@ -698,6 +699,17 @@ target_link_libraries(test_csv_utils PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_production_numerics tests/test_production_numerics.cpp)
+target_link_libraries(test_production_numerics PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_split_dd_runtime tests/test_split_dd_runtime.cpp)
+target_link_libraries(test_split_dd_runtime PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_split_dd_state tests/test_split_dd_state.cpp)
+target_link_libraries(test_split_dd_state PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_permittivity_assembly tests/test_permittivity_assembly.cpp)
+target_link_libraries(test_permittivity_assembly PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_element_box_transport tests/test_element_box_transport.cpp)
+target_link_libraries(test_element_box_transport PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_sg_flux tests/test_sg_flux.cpp)
 target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -724,6 +736,9 @@ add_dependencies(test_external_state vela_example_runner)
 
 add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_temperature_hfs.cpp tests/test_silicon_thermal.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_phumob tests/test_phumob.cpp)
+target_link_libraries(test_phumob PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
 target_link_libraries(test_impact_ionization PRIVATE vela_core Catch2::Catch2WithMain)
@@ -790,6 +805,9 @@ target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithM
 add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
 target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_poisson_charge_volume tests/test_poisson_charge_volume.cpp)
+target_link_libraries(test_poisson_charge_volume PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_material_local_poisson_charge tests/test_material_local_poisson_charge.cpp)
 target_link_libraries(test_material_local_poisson_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -819,6 +837,11 @@ vela_catch_discover_tests(test_performance_profiler)
 vela_catch_discover_tests(test_box_geometry)
 vela_catch_discover_tests(test_csv_utils)
 vela_catch_discover_tests(test_bernoulli)
+vela_catch_discover_tests(test_production_numerics)
+vela_catch_discover_tests(test_split_dd_state)
+vela_catch_discover_tests(test_split_dd_runtime)
+vela_catch_discover_tests(test_permittivity_assembly)
+vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
@@ -828,6 +851,7 @@ add_test(NAME device_stability COMMAND test_device_stability [device_stability])
 vela_catch_discover_tests(test_newton_solver)
 vela_catch_discover_tests(test_external_state)
 vela_catch_discover_tests(test_mobility)
+vela_catch_discover_tests(test_phumob)
 vela_catch_discover_tests(test_impact_ionization)
 vela_catch_discover_tests(test_path_ionization_integral)
 vela_catch_discover_tests(test_cell_reconstructed_avalanche)
@@ -860,6 +884,7 @@ vela_catch_discover_tests(test_schottky_contact)
 add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 vela_catch_discover_tests(test_poisson_neumann)
 vela_catch_discover_tests(test_mos_interface_charge)
+vela_catch_discover_tests(test_poisson_charge_volume)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
 vela_catch_discover_tests(test_material_local_poisson_charge)
 
@@ -928,6 +953,323 @@ add_test(NAME sentaurus_import_tools
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
+
+add_test(NAME simplemos_m2_tdr_gate
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_tdr_gate)
+set_tests_properties(simplemos_m2_tdr_gate PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m2_tdr_gate)
+
+foreach(_simplemos_contract IN ITEMS historical_provenance engineering_join regression_exit_capture engineering_codespaces reference_package mobility_field_audit evidence_archive raw_archive)
+    add_test(NAME simplemos_${_simplemos_contract}
+        COMMAND ${Python3_EXECUTABLE} -m unittest
+                tests.regression.test_simplemos_${_simplemos_contract})
+    set_tests_properties(simplemos_${_simplemos_contract} PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    vela_set_windows_msys2_test_path(simplemos_${_simplemos_contract})
+endforeach()
+
+add_test(NAME simplemos_engineering_evidence_audit
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_simplemos_engineering_audit.py)
+set_tests_properties(simplemos_engineering_evidence_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_engineering_evidence_audit)
+
+add_test(NAME simplemos_engineering_matrix_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_simplemos_engineering_matrix.py)
+set_tests_properties(simplemos_engineering_matrix_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_engineering_matrix_contract)
+
+add_test(NAME simplemos_m3_workflow
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m3_workflow)
+set_tests_properties(simplemos_m3_workflow PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m3_workflow)
+
+add_test(NAME simplemos_m4_controlled_matrix
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m4_controlled_matrix)
+set_tests_properties(simplemos_m4_controlled_matrix PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m4_controlled_matrix)
+
+add_test(NAME simplemos_m8_original_matrix
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m8_original_matrix)
+set_tests_properties(simplemos_m8_original_matrix PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m8_original_matrix)
+
+add_test(NAME simplemos_m9_hfs_diagnostics
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m9_hfs_diagnostics)
+set_tests_properties(simplemos_m9_hfs_diagnostics PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m9_hfs_diagnostics)
+
+add_test(NAME simplemos_m10_fixed_state_replay
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m10_fixed_state_replay)
+set_tests_properties(simplemos_m10_fixed_state_replay PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m10_fixed_state_replay)
+
+add_test(NAME simplemos_m11_mobility_factorial
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m11_mobility_factorial)
+set_tests_properties(simplemos_m11_mobility_factorial PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m11_mobility_factorial)
+
+add_test(NAME simplemos_m12_terminal_sensitivity
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m12_terminal_sensitivity)
+set_tests_properties(simplemos_m12_terminal_sensitivity PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m12_terminal_sensitivity)
+
+add_test(NAME simplemos_m13_spatial_attribution
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m13_spatial_attribution)
+set_tests_properties(simplemos_m13_spatial_attribution PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m13_spatial_attribution)
+
+add_test(NAME simplemos_m14_adjoint_attribution
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m14_adjoint_attribution)
+set_tests_properties(simplemos_m14_adjoint_attribution PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m14_adjoint_attribution)
+
+add_test(NAME simplemos_m15_operator_adjoint
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m15_operator_adjoint)
+set_tests_properties(simplemos_m15_operator_adjoint PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m15_operator_adjoint)
+
+add_test(NAME simplemos_m16_transport_factor
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m16_transport_factor)
+set_tests_properties(simplemos_m16_transport_factor PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m16_transport_factor)
+
+add_test(NAME simplemos_m17_sg_secant
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m17_sg_secant)
+set_tests_properties(simplemos_m17_sg_secant PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m17_sg_secant)
+
+add_test(NAME simplemos_m18_qf_edge_localization
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m18_qf_edge_localization)
+set_tests_properties(simplemos_m18_qf_edge_localization PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m18_qf_edge_localization)
+
+add_test(NAME simplemos_m19_drain_cut_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m19_drain_cut_audit)
+set_tests_properties(simplemos_m19_drain_cut_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m19_drain_cut_audit)
+
+add_test(NAME simplemos_m20_drain_adjacent_row_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m20_drain_adjacent_row_audit)
+set_tests_properties(simplemos_m20_drain_adjacent_row_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m20_drain_adjacent_row_audit)
+
+add_test(NAME simplemos_m21_incident_edge_balance
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m21_incident_edge_balance)
+set_tests_properties(simplemos_m21_incident_edge_balance PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m21_incident_edge_balance)
+
+add_test(NAME simplemos_m22_n23_hfs_deep_off
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m22_n23_hfs_deep_off)
+set_tests_properties(simplemos_m22_n23_hfs_deep_off PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m22_n23_hfs_deep_off)
+
+add_test(NAME simplemos_m23_numerical_resolvability
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m23_numerical_resolvability)
+set_tests_properties(simplemos_m23_numerical_resolvability PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m23_numerical_resolvability)
+
+add_test(NAME simplemos_m24_contact_boundary_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m24_contact_boundary_audit)
+set_tests_properties(simplemos_m24_contact_boundary_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m24_contact_boundary_audit)
+
+add_test(NAME simplemos_m25_qf_reference_transform_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m25_qf_reference_transform_audit)
+set_tests_properties(simplemos_m25_qf_reference_transform_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m25_qf_reference_transform_audit)
+
+add_test(NAME simplemos_m26_first_layer_feedback_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m26_first_layer_feedback_audit)
+set_tests_properties(simplemos_m26_first_layer_feedback_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m26_first_layer_feedback_audit)
+
+add_test(NAME simplemos_m27_cross_solver_response_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m27_cross_solver_response_audit)
+set_tests_properties(simplemos_m27_cross_solver_response_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m27_cross_solver_response_audit)
+
+add_test(NAME simplemos_m28_exact_bias_path_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m28_exact_bias_path_audit)
+set_tests_properties(simplemos_m28_exact_bias_path_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m28_exact_bias_path_audit)
+
+add_test(NAME simplemos_m29_bgn_srh_factorial
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m29_bgn_srh_factorial)
+set_tests_properties(simplemos_m29_bgn_srh_factorial PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m29_bgn_srh_factorial)
+
+add_test(NAME simplemos_m30_double_off_causal_closure
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m30_double_off_causal_closure)
+set_tests_properties(simplemos_m30_double_off_causal_closure PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m30_double_off_causal_closure)
+
+add_test(NAME simplemos_m31_minority_poisson_perturbation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m31_minority_poisson_perturbation)
+set_tests_properties(simplemos_m31_minority_poisson_perturbation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m31_minority_poisson_perturbation)
+
+add_test(NAME simplemos_m32_electron_qf_scaled_perturbation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m32_electron_qf_scaled_perturbation)
+set_tests_properties(simplemos_m32_electron_qf_scaled_perturbation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m32_electron_qf_scaled_perturbation)
+
+add_test(NAME simplemos_m33_region_resolved_interface_assembly
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m33_region_resolved_interface_assembly)
+set_tests_properties(simplemos_m33_region_resolved_interface_assembly PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m33_region_resolved_interface_assembly)
+
+add_test(NAME simplemos_m34_sentaurus_interface_box_probe
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m34_sentaurus_interface_box_probe)
+set_tests_properties(simplemos_m34_sentaurus_interface_box_probe PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m34_sentaurus_interface_box_probe)
+
+add_test(NAME simplemos_m35_signed_average_box_assembly
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m35_signed_average_box_assembly)
+set_tests_properties(simplemos_m35_signed_average_box_assembly PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m35_signed_average_box_assembly)
+
+add_test(NAME simplemos_m36_boundary_contact_measure_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m36_boundary_contact_measure_audit)
+set_tests_properties(simplemos_m36_boundary_contact_measure_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m36_boundary_contact_measure_audit)
+
+add_test(NAME simplemos_m37_measure_contact_qf_ablation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m37_measure_contact_qf_ablation)
+set_tests_properties(simplemos_m37_measure_contact_qf_ablation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m37_measure_contact_qf_ablation)
+
+add_test(NAME simplemos_m38_ldmos_mechanism_crosscheck
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m38_ldmos_mechanism_crosscheck)
+set_tests_properties(simplemos_m38_ldmos_mechanism_crosscheck PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m38_ldmos_mechanism_crosscheck)
+
+add_test(NAME simplemos_m39_bgn_chain_first_divergence
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m39_bgn_chain_first_divergence)
+set_tests_properties(simplemos_m39_bgn_chain_first_divergence PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m39_bgn_chain_first_divergence)
+
+add_test(NAME simplemos_m40_true_no_bgn_factorial
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m40_true_no_bgn_factorial)
+set_tests_properties(simplemos_m40_true_no_bgn_factorial PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m40_true_no_bgn_factorial)
+
+add_test(NAME simplemos_m41_equal_ni_flux_ablation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m41_equal_ni_flux_ablation)
+set_tests_properties(simplemos_m41_equal_ni_flux_ablation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m41_equal_ni_flux_ablation)
+
+add_test(NAME simplemos_m42_no_bgn_self_consistent_interaction
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m42_no_bgn_self_consistent_interaction)
+set_tests_properties(simplemos_m42_no_bgn_self_consistent_interaction PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m42_no_bgn_self_consistent_interaction)
+
+add_test(NAME simplemos_m43_sg_kernel_consistency
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m43_sg_kernel_consistency)
+set_tests_properties(simplemos_m43_sg_kernel_consistency PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m43_sg_kernel_consistency)
+
+add_test(NAME simplemos_m44_qf_coordinate_consistency
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m44_qf_coordinate_consistency)
+set_tests_properties(simplemos_m44_qf_coordinate_consistency PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m44_qf_coordinate_consistency)
+
+add_test(NAME simplemos_m45_post_qf_rebaseline
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m45_post_qf_rebaseline)
+set_tests_properties(simplemos_m45_post_qf_rebaseline PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m45_post_qf_rebaseline)
+
+add_test(NAME simplemos_m46_full_matrix_requalification
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m46_full_matrix_requalification)
+set_tests_properties(simplemos_m46_full_matrix_requalification PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m46_full_matrix_requalification)
 
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest

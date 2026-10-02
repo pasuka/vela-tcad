@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_phumob_calibration_20260908/supported_export/analysis_20260909/scalar_input.csv": "302bd54b2d1f6e86a945787d17f173361e7dc45574e45075349ff27ebb18fda8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/evidence.json": "90671757629a343400e7257612d17c111760978d8b1fb2e1bfc79a9a86a53d66",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/mapping.json": "ecad67cf0b38fe62b5970c5f84c7e028b801f2f990e8a979eb761163f77c7195",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/contract.json": "c6aed31bcbb58b43970d016aff10ec79f72d47e2b54e0519b07d2280a77b77ab",
+    "scripts/audit_simplemos_phumob_cross_derivatives_20260908.py": "832794b8338187994750b2f7c371999c71b86804f4892d73be238a09d1b1c3ae",
+    "scripts/localize_simplemos_phumob_screening_floor_20260909.py": "595f4be8bff6f00bb57987cfa25c6afb511f51daf39481f4f84510cc73d8a274"
+  }
+}

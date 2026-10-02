@@ -24,6 +24,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -152,10 +153,14 @@ std::filesystem::path makeUniqueSweepDir()
     for (int attempt = 0; attempt < kMaxDirCreationAttempts; ++attempt) {
         const auto dir = base /
             ("vela_dc_sweep_test_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
-        // Catch2 cases can run in separate processes with the same clock/thread
-        // seed. Reserve the directory atomically before another case can use it.
-        if (std::filesystem::create_directory(dir))
+        // Reserve the directory atomically. Different test processes can have
+        // the same clock stamp and thread-id hash on Windows.
+        std::error_code error;
+        if (std::filesystem::create_directory(dir, error))
             return dir;
+        if (error && error != std::errc::file_exists)
+            throw std::filesystem::filesystem_error(
+                "Failed to reserve a DCSweep test directory", dir, error);
     }
 
     throw std::runtime_error("Failed to create a unique temp directory for DCSweep test.");
@@ -4393,6 +4398,32 @@ TEST_CASE("DDSolution CSV uses round-trip precision for every persistent field",
              solution.holeQfReference.array()).all());
 }
 
+TEST_CASE("DDSolution CSV preserves packed coordinates and refuses stale checkpoint data", "[dc_sweep][restart][precision]")
+{
+    const auto dir=makeUniqueSweepDir();const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);const auto path=dir/"packed.csv";
+    constexpr Real scale=0x1.a78f25679cb4ep-6;
+    constexpr Real coordinate=-0x1.e53059760fd30p+3;
+    DDSolution s;
+    s.packedPotentialScale_V=scale;s.packedState=VectorXd(3);s.packedState<<coordinate,1e-40,-2e-40;
+    s.psi=VectorXd::Constant(1,coordinate*scale);
+    s.phinIncrement=VectorXd::Constant(1,s.packedState(1)*scale);
+    s.phipIncrement=VectorXd::Constant(1,s.packedState(2)*scale);
+    s.electronQfReference_V=s.holeQfReference_V=.05;
+    s.phin=VectorXd::Constant(1,.05+s.phinIncrement(0));s.phip=VectorXd::Constant(1,.05+s.phipIncrement(0));
+    s.n=s.p=VectorXd::Constant(1,1e16);
+    REQUIRE(s.psi(0)/scale!=coordinate);REQUIRE(s.hasConsistentPackedState());
+    writeDDSolutionStateCsv(path,s);const auto restored=readDDSolutionStateCsv(path,1);
+    REQUIRE(restored.hasConsistentPackedState());REQUIRE((restored.packedState.array()==s.packedState.array()).all());
+    REQUIRE(restored.packedPotentialScale_V==scale);
+    auto rows=readCsvRows(path);rows[1][1]="123";
+    {std::ofstream corrupt(path);for(const auto& row:rows){for(std::size_t k=0;k<row.size();++k){if(k)corrupt<<',';corrupt<<row[k];}corrupt<<'\n';}}
+    REQUIRE_THROWS_AS(readDDSolutionStateCsv(path,1),std::runtime_error);
+    s.psi(0)+=.01;REQUIRE_FALSE(s.hasConsistentPackedState());
+    writeDDSolutionStateCsv(path,s);const auto edited=readDDSolutionStateCsv(path,1);
+    REQUIRE(edited.packedState.size()==0);REQUIRE(edited.psi(0)==s.psi(0));
+}
+
 TEST_CASE("DDSolution CSV writes physical m3 densities in unit scaling mode", "[dc_sweep][scaling]")
 {
     const auto dir = makeUniqueSweepDir();
@@ -4753,6 +4784,53 @@ TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
     REQUIRE(rows.at(3).at(branchStatusCol) == "accepted");
     REQUIRE(rows.at(3).at(branchReasonCol).empty());
     REQUIRE(std::isfinite(std::stod(rows.at(3).at(ratioCol))));
+}
+
+TEST_CASE("DCSweep explicit targets preserve intermediate predictor history",
+          "[dc_sweep][continuation][predictor][intermediate_history]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    auto run = [&](const std::string& name, bool explicitTargets) {
+        nlohmann::json options = {
+            {"start", 0.0}, {"stop", 0.03}, {"step", 0.01},
+            {"initial_step", 0.01}, {"max_step", 0.01},
+            {"growth_factor", 1.0}, {"write_vtk", false},
+            {"continuation", {{"predictor", {
+                {"mode", "linear"}, {"fields", {"psi", "phin", "phip"}}
+            }}}},
+            {"diagnostics", {{"newton_history", {
+                {"enabled", true},
+                {"attempts_csv_file", (dir / (name + "_attempts.csv")).string()},
+                {"iterations_csv_file", (dir / (name + "_iterations.csv")).string()}
+            }}}}
+        };
+        if (explicitTargets) options["bias_points"] = {0.0, 0.03};
+        const auto config = writeSweepConfig(dir, meshPath, dir / (name + ".csv"),
+            options, {{"method", "newton"}, {"max_iter", 80}, {"verbose", false}});
+        DCSweep sweep;
+        const auto result = sweep.runWithResult(config.string());
+        REQUIRE(result.points.size() == (explicitTargets ? 2 : 4));
+        REQUIRE(std::all_of(result.points.begin(), result.points.end(),
+            [](const auto& point) { return point.converged; }));
+        return readCsvRows(dir / (name + "_attempts.csv"));
+    };
+    const auto implicit = run("implicit", false);
+    const auto explicitRows = run("explicit", true);
+    REQUIRE(implicit.size() == 5);
+    REQUIRE(explicitRows.size() == implicit.size());
+    for (const auto* field : {"actual_target_bias_V", "parent_accepted_bias_V",
+                             "parent_state_hash", "initial_state_hash", "status"}) {
+        const auto a = csvColumnIndex(implicit.front(), field);
+        const auto b = csvColumnIndex(explicitRows.front(), field);
+        for (std::size_t row = 1; row < implicit.size(); ++row)
+            REQUIRE(explicitRows[row][b] == implicit[row][a]);
+    }
+    const auto initial = csvColumnIndex(implicit.front(), "initial_state_hash");
+    const auto parent = csvColumnIndex(implicit.front(), "parent_state_hash");
+    REQUIRE(implicit[3][initial] != implicit[3][parent]);
 }
 
 TEST_CASE("DCSweep branch acceptance: measures psi-phin exponent jumps",

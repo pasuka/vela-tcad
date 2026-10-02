@@ -176,6 +176,40 @@ TEST_CASE("Poisson charge volume policy parsing is explicit and barycentric-only
         Catch::Matchers::ContainsSubstring("qualified only"));
 }
 
+TEST_CASE("Poisson diagnostics preserve explicit interface geometry after policy integration",
+          "[poisson][charge_volume][production_geometry]")
+{
+    DeviceMesh mesh = makeHorizontalInterfaceMesh();
+    BoxGeometryBuilder::Options geometry;
+    geometry.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
+    mesh.buildBoxGeometry(geometry);
+    const MaterialDatabase materials;
+    const auto doping = DopingModel::fromMeshAndRegions(
+        mesh, {{"channel", 1.0e21, 0.0}, {"gate_oxide", 0.0, 0.0}});
+    for (const auto policy : {PoissonChargeVolumePolicy::Global,
+                             PoissonChargeVolumePolicy::MaterialLocalBarycentric}) {
+        for (const auto volume : {"inherit", "signed_transport"}) {
+            DDScalingSpec scaling;
+            scaling.poissonChargeVolumePolicy = policy;
+            scaling.regionResolvedInterfaceAssembly.poissonChargeNodeVolume = volume;
+            CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+                MobilityModelConfig{}, recombinationModelConfig({"none"}),
+                {}, {}, {}, {}, scaling);
+            CoupledDDState state{VectorXd::LinSpaced(4, -0.03, 0.04),
+                VectorXd::Constant(4, 0.01), VectorXd::Constant(4, -0.02)};
+            const auto x = assembler.pack(state);
+            const auto residual = assembler.residual(x, {});
+            const auto terms = assembler.poissonTermDiagnostics(x, {});
+            for (int i = 0; i < 4; ++i) {
+                const auto& term = terms.at(i);
+                const Real reconstructed = term.dielectricFlux + term.electronCharge +
+                    term.holeCharge + term.dopingCharge + term.fixedInterfaceCharge;
+                REQUIRE(reconstructed == Catch::Approx(residual(i)).epsilon(1e-12).margin(1e-30));
+            }
+        }
+    }
+}
+
 TEST_CASE("Poisson carrier assembly reports a non-finite carrier state",
           "[poisson][diagnostic]")
 {

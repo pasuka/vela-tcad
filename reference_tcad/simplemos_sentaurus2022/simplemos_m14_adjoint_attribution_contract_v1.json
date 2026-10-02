@@ -1,0 +1,55 @@
+{
+  "schema": "vela.simplemos.sdevice.m14_adjoint_attribution.v1",
+  "contract_id": "simplemos-sdevice-m14-adjoint-attribution-v1",
+  "scope": "SDevice-only two-layer terminal-current attribution: frozen-state direct contribution and self-consistent adjoint sensitivity",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "new_sentaurus_execution": false
+  },
+  "evidence_layers": {
+    "terminal_error_spectrum": {
+      "devices": ["n21", "n22", "n23", "n24"],
+      "drain_voltage_V": 0.05,
+      "gate_voltage_range_V": [0.0, 0.95],
+      "gate_step_V": 0.05,
+      "point_count": 80
+    },
+    "spatial_state_matrix": {
+      "devices": ["n17", "n21"],
+      "drain_voltages_V": [0.05, 1.0],
+      "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+      "state_count": 16,
+      "reason": "Only these states have paired Sentaurus nodal fields and self-consistent Vela states; interpolation is forbidden."
+    }
+  },
+  "adjoint_definition": {
+    "equation": "J^T lambda = dI_D/dx",
+    "jacobian": "production coupled drift-diffusion Jacobian with configured boundary conditions",
+    "terminal_functional": "drain contact current from the no-boundary-condition continuity residual",
+    "state_order": ["psi", "phin", "phip"],
+    "current_units": "A/um"
+  },
+  "substitutions": {
+    "field_variants": ["psi", "phin", "phip", "all_fields"],
+    "alternate_state": "Sentaurus nodal fields mapped to the Vela mesh",
+    "density_policy": "electron and hole densities are derived observables, not independent Newton unknowns",
+    "mobility_policy": "reuse M10/M12 frozen edge-mobility evidence",
+    "srh_policy": "reuse M12 terminal conditioning and generation/recombination evidence"
+  },
+  "spatial_partition": {
+    "coordinates": {"depth": "x_um", "lateral": "y_um"},
+    "body": "x_um > 0.25",
+    "source": "x_um <= 0.25 and y_um < -0.3",
+    "drain": "x_um <= 0.25 and y_um > 0.3",
+    "channel": "x_um <= 0.25 and -0.3 <= y_um <= 0.3",
+    "properties": ["mutually_exclusive", "exhaustive"]
+  },
+  "decision_questions": [
+    "Which state variable produces the largest frozen direct drain-current response?",
+    "Does self-consistent relaxation suppress or amplify that direct response?",
+    "Which spatial region dominates the direct and adjoint-weighted residual response?",
+    "Does the 80-point weak-region spectrum support a stable cross-device trend?"
+  ]
+}

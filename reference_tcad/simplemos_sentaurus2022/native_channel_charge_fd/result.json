@@ -1,0 +1,13 @@
+{
+  "status": "passed_local_native_charge_fd",
+  "passed": true,
+  "passed_amplitudes": 2,
+  "native_dc_runs": 5,
+  "charge_support_pass": true,
+  "charge_support_failed_rows": 0,
+  "maximum_fd_vs_green_relative": 1.106218766368362e-05,
+  "two_amplitude_derivative_relative_change": 7.259304715123704e-07,
+  "scope": "n23 Vd=.05 V Vg=.9 V shallow channel bulk fixed charge only; no inference to interface sheet charge, continuity sources, n19 or high Vd.",
+  "m82_released": false,
+  "m83_released": false
+}

@@ -1,0 +1,103 @@
+{
+  "schema": "vela.simplemos.sdevice.m65_nobgn_intrinsic_density_attribution_contract.v1",
+  "milestone": "M65",
+  "status": "draft_before_freeze",
+  "objective": "Determine whether the frozen uniform no-BGN intrinsic-density convention accounts for the M64 BGN-independent smooth NWell error growth, using one matched-ni intervention and exact self-consistent state comparison.",
+  "upstream": {
+    "required_m64_status": "frozen",
+    "required_m64_classification": "bgn_independent_threshold_shift_dominant",
+    "sentaurus_ni_source": "build-release/reference_tcad/simplemos_sentaurus2022/m40_true_no_bgn_factorial/sentaurus_exports/bgn_off_srh_on/fields/EffectiveIntrinsicDensity_region0.csv",
+    "sentaurus_ni_source_qualification": "942/942 Silicon nodes have the identical value 10750038488.844236 cm^-3 under explicit EffectiveIntrinsicDensity(NoBandGapNarrowing)."
+  },
+  "intervention": {
+    "axis": "Vela Silicon base intrinsic density only",
+    "baseline_vela_ni_cm3": 14638914958.767616,
+    "matched_vela_ni_cm3": 10750038488.844236,
+    "matched_to": "Sentaurus explicit no-BGN EffectiveIntrinsicDensity",
+    "materials_changed": [
+      "Si"
+    ],
+    "materials_explicitly_not_changed": [
+      "SiO2",
+      "Nitride",
+      "PolySilicon"
+    ],
+    "bandgap_narrowing": "none in both solvers",
+    "fermi_statistics_correction": false,
+    "sentaurus_math": "RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint",
+    "current_observer": "Sentaurus default contact current",
+    "production_default_changed": false
+  },
+  "matrix": {
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.9},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.85},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8}
+    ],
+    "sentaurus_case_count": 16,
+    "vela_workflow_count": 16,
+    "state_count_per_solver": 16,
+    "bias_path": "M8 equilibrium then drain ramp then the original 0.05 V gate path truncated exactly at the frozen M63 diagnostic gate"
+  },
+  "observables": {
+    "current": [
+      "baseline no-BGN log10(Vela/Sentaurus) from M64",
+      "matched-ni no-BGN log10(Vela/Sentaurus)",
+      "low-to-high NWell pair growth and closure"
+    ],
+    "state": [
+      "EffectiveIntrinsicDensity",
+      "ElectrostaticPotential",
+      "eQuasiFermiPotential",
+      "hQuasiFermiPotential",
+      "eDensity",
+      "hDensity",
+      "srhRecombination",
+      "ConductionBandEnergy",
+      "ValenceBandEnergy",
+      "source-side electrostatic barrier",
+      "source-side electron quasi-Fermi barrier"
+    ],
+    "boltzmann_identity": "log10(n_vela/n_sentaurus) = log10(ni_vela/ni_sentaurus) + ((psi-phin)_vela-(psi-phin)_sentaurus)/(Vt*ln(10))"
+  },
+  "analysis": {
+    "primary_metric": "median classification_pair_closure_fraction over eight frozen NWell pairs",
+    "pair_closure": "clamp(1-abs(matched_ni_pair_growth_dex)/abs(m64_baseline_pair_growth_dex),0,1)",
+    "classification_thresholds": {
+      "base_ni_dominant_minimum_median_closure_fraction": 0.8,
+      "base_ni_material_minimum_median_closure_fraction": 0.3
+    },
+    "classifications": [
+      "base_intrinsic_density_convention_dominant",
+      "base_intrinsic_density_convention_material_but_not_dominant",
+      "base_intrinsic_density_convention_not_dominant",
+      "execution_or_state_identity_failure"
+    ]
+  },
+  "acceptance": {
+    "required_sentaurus_release": "T-2022.03-SP2",
+    "exact_bias_tolerance_V": 1e-10,
+    "required_pair_count": 8,
+    "required_case_count_per_solver": 16,
+    "maximum_m64_sentaurus_anchor_replay_error_dex": 1e-10,
+    "maximum_sentaurus_ni_relative_spread": 1e-12,
+    "maximum_sentaurus_ni_relative_anchor_error": 1e-12,
+    "maximum_state_coordinate_error_um": 1e-10,
+    "maximum_boltzmann_identity_p95_residual_dex": 5e-4,
+    "production_reference_must_not_be_replaced": true
+  },
+  "closed_topic_guards": [
+    "no global HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN parameter tuning",
+    "no mesh or convergence tuning",
+    "no production material or reference replacement"
+  ]
+}

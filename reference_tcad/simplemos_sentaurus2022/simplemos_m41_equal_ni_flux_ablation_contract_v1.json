@@ -1,0 +1,42 @@
+{
+  "schema": "vela.simplemos.sdevice.m41_equal_ni_flux_ablation.v1",
+  "scope": "n23 Vd=0.05 V Vg=0.05 V, true no-BGN, HFS off",
+  "goal": "Separate equal-ni SG floating-point evaluation from BGN and SRH physics without changing production defaults.",
+  "cells": [
+    {
+      "id": "bgn_off_srh_on",
+      "srh": true
+    },
+    {
+      "id": "bgn_off_srh_off",
+      "srh": false
+    }
+  ],
+  "evaluation_modes": {
+    "legacy": "legacy_factor_difference",
+    "compensated": "compensated_log_expm1"
+  },
+  "fixed_invariants": {
+    "bandgap_narrowing": "none",
+    "high_field_saturation": false,
+    "mobility": "PhuMob + Enormal",
+    "mesh_and_doping": "M40 n23",
+    "sentaurus_states_reused": true,
+    "production_default_changed": false
+  },
+  "pre_registered_hypothesis": {
+    "statement": "If equal-ni exponential cancellation is the sole cause of the M40 SRH-off anomaly, compensated evaluation will strongly close the SRH-off gap while leaving the SRH-on state nearly unchanged.",
+    "srh_off_gap_improvement_min_dex": 0.5,
+    "srh_on_log_current_shift_max_dex": 0.01
+  },
+  "evidence_layers": [
+    "unit-level long-double comparison",
+    "same-state frozen edge and drain-cut replay",
+    "self-consistent paired reclosure"
+  ],
+  "claim_policy": [
+    "A failed hypothesis is a valid completed experiment.",
+    "M40 is reclassified if residual and terminal extraction use different equal-ni numerical paths.",
+    "No production default changes from M41 alone."
+  ]
+}

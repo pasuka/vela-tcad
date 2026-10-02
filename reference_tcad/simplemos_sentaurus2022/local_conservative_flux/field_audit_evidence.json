@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "scripts/audit_simplemos_local_electrochemical_fields.py": "5baefff96e0575c44d3e262dc26b4586f4be7f7cb197de2b16954b1eb24326b6"
+  },
+  "definition": "Common Vela edge geometry and Boltzmann SG state secant using each solver thermal convention, excluding mobility. Native proxy is not an exported native edge operator.",
+  "conductance_units": "particle line flux per mobility (m2/V/s) per dimensionless log imbalance; geometry couple/length dimensionless, density m^-3, thermal voltage V",
+  "new_solver_calls": 0
+}

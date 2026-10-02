@@ -1,0 +1,9 @@
+{
+  "stage": "rest",
+  "native_points": 15,
+  "zero_passed": 3,
+  "response_checks": 6,
+  "response_passed": 6,
+  "all_qualified": true,
+  "acceptance_relaxed": false
+}

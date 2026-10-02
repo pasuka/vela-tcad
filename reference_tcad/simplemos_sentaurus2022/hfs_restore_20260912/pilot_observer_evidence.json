@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_identity_evidence.json": "ff21e8bf798044b4dda19f69222d2da486d68887bb75ae46f6c06979bfd4b6bc",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_observer_cell_hypotheses.csv": "8df4405d03abd58025d03f33923d95eee3e95d7aaf3bfc775866aac0c9a04f1f",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_observer_coverage.csv": "793254dfe459193c398956720d533595739c14d731dd57bdf0accf07886de4b8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_observer_samples.csv": "07dc04c08551177565d1496706cd128aae45794299217012d0afe7325eadf3e5",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_observer_summary.json": "7481de699df05c7f0fbd73efe6985080c62cd430087fe71e3cb83d5b95903af0",
+    "scripts/inspect_simplemos_hfs_observer_samples_20260912.py": "5f2b3b7be63c2c6f6c714070e1298c6fd55f3f658b80fffdb088899bdbfca1a0"
+  }
+}

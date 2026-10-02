@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.sdevice.m30_double_off_causal_closure.v1",
+  "scope": "SDevice-only frozen-state and self-consistent branch decomposition",
+  "device": "n23",
+  "bias": {
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "fixed_physics": {
+    "mobility": "PhuMob + Enormal",
+    "high_field_saturation": false,
+    "continuation_route": "M28 original_initial_dozero"
+  },
+  "factor_cells": [
+    {"id": "bgn_on_srh_on", "bgn": true, "srh": true},
+    {"id": "bgn_on_srh_off", "bgn": true, "srh": false},
+    {"id": "bgn_off_srh_on", "bgn": false, "srh": true},
+    {"id": "bgn_off_srh_off", "bgn": false, "srh": false}
+  ],
+  "state_sources": ["vela", "sentaurus"],
+  "operator_probes": [
+    "sg_edge_flux_probe",
+    "newton_carrier_term_probe",
+    "newton_carrier_row_probe"
+  ],
+  "solver_controls": [
+    "baseline_report_reclosure",
+    "tight_report_reclosure",
+    "strict_enforce_reclosure",
+    "strict_row_scaled_reclosure",
+    "tight_path_repeat",
+    "strict_path_repeat"
+  ],
+  "decomposition_identity": "log10(Iv_native/Is_native) = log10(Iv_probe/Is_probe) + log10(Is_probe/Is_native) - log10(Iv_probe/Iv_native)",
+  "acceptance": {
+    "state_count": 8,
+    "state_operator_pair_count": 32,
+    "probe_run_count": 96,
+    "solver_control_count": 6,
+    "minimum_common_silicon_nodes": 900,
+    "maximum_decomposition_closure_dex": 1e-12,
+    "require_finite_outputs": true
+  },
+  "claim_policy": [
+    "Only common-operator frozen-state differences are state-branch contributions.",
+    "A Vela operator replay on a Sentaurus state includes discretization, contact-cut, and model-implementation differences and is not a private Sentaurus residual.",
+    "Deep-off relative errors must be accompanied by absolute current and contact-cut condition numbers.",
+    "No production BGN, SRH, mobility, contact, SG, or solver default may be changed from this audit alone."
+  ]
+}

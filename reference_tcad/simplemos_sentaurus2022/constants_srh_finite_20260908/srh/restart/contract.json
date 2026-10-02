@@ -1,0 +1,90 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "node_792",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\node_792\\finite",
+      "previous_max_ratio": 9.905570042730629e-06
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "node_792",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\node_792\\finite_native_seed",
+      "previous_max_ratio": 7.968143294467767e-06
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "node_1057",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\node_1057\\finite",
+      "previous_max_ratio": 1.5186446003076026e-05
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "node_1057",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\node_1057\\finite_native_seed",
+      "previous_max_ratio": 2.6100312715992147e-05
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "joint",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\finite",
+      "previous_max_ratio": 2.0206571454385012e-05
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg016",
+      "axis": "joint",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\finite_native_seed",
+      "previous_max_ratio": 1.6254287208035113e-05
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "node_792",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\node_792\\finite",
+      "previous_max_ratio": 2.3727115962175006e-06
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "node_792",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\node_792\\finite_native_seed",
+      "previous_max_ratio": 2.7319446871202592e-05
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "node_1057",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\node_1057\\finite",
+      "previous_max_ratio": 8.496228893708767e-05
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "node_1057",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\node_1057\\finite_native_seed",
+      "previous_max_ratio": 0.0007631499741535063
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "joint",
+      "label": "finite",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\joint\\finite",
+      "previous_max_ratio": 5.486910488400377e-05
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg016",
+      "axis": "joint",
+      "label": "finite_native_seed",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_constants_srh_finite_20260908\\srh\\restart\\m65_n23_vd_1p000000_endpoint_vg016\\joint\\finite_native_seed",
+      "previous_max_ratio": 0.0006373959967436523
+    }
+  ],
+  "maximum_restarts_per_failed_path": 1,
+  "policy": "Same finite parameter and numerical solver configuration, exported failed state as new initial condition; read-only raw/capped/applied update diagnostics enabled at violated rows. No failed artifact overwritten, no tolerance/line-search change."
+}

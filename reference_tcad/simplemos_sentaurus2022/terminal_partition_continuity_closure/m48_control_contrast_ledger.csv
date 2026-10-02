@@ -1,0 +1,5 @@
+term,n23_vg_0_absolute_gap_fraction,n23_vg_0p05_absolute_gap_fraction,n23_vg_0p1_absolute_gap_fraction,n19_vg_0p05_absolute_gap_fraction,target_is_adjacent_gate_interior_maximum,target_exceeds_n19_control,target_localized_per_contract
+kcl_residual_difference,0.00819546544317875,0.12207953270367052,0.042125552944394004,1.1711940194129397e-09,True,True,True
+source_rebalancing,1.1216494790388014,1.0141598870504875,0.5416658380102577,0.951065127682006,False,True,False
+substrate_rebalancing,0.11345401359562274,1.892080354346817,0.41620860904534823,0.04893487114679993,True,True,True
+gate_rebalancing,0.0,0.0,0.0,0.0,False,False,False

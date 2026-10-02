@@ -1,0 +1,10 @@
+{
+  "status": "completed_read_only_ledger",
+  "input_hashes": {
+    "scripts/analyze_simplemos_masetti_local_20260907.py": "df5b4dbe5afe09352a4e0d49ac09b7a5fb93691bf28957b5d3439881203d65e6"
+  },
+  "finite_gap_weights": "Fresh but only screened here; source calibration is recorded separately. No arbitrary finite-state-gap linearization claim.",
+  "poisson": "The residual term is retained. Exact reconstruction is bookkeeping, not proof of native Poisson equivalence or of charge causing the discrepancy.",
+  "sg": "Mapped-native potentials evaluated with common Vela ni/Vt/geometry; actual native edge SG operator has not been exported.",
+  "new_nonlinear_solves": 0
+}

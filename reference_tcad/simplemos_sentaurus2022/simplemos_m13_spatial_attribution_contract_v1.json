@@ -1,0 +1,63 @@
+{
+  "schema": "vela.simplemos.sdevice.m13_spatial_attribution.v1",
+  "contract_id": "simplemos-sdevice-m13-spatial-attribution-v1",
+  "scope": "SDevice-only spatial attribution of HFS drive discretization, source-barrier state, and OldSlotboom BGN",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": false,
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "drive_comparison": {
+    "variants": [
+      "transport_cell_vector",
+      "edge_projection",
+      "sentaurus_mean_endpoint_gradqf_magnitude"
+    ],
+    "reference": "Sentaurus final nodal mobility mapped by arithmetic endpoint mean",
+    "active_edge_threshold": "reuse M10 active_current_edge exactly"
+  },
+  "mobility_stage_chain": {
+    "phumob": "M11 p1_e0_h0",
+    "phumob_plus_enormal": "M11 p1_e1_h0",
+    "phumob_plus_enormal_plus_hfs": "M11 p1_e1_h1",
+    "sentaurus_drive_hfs": "M10 external-drive replay"
+  },
+  "self_consistent_state_sources": {
+    "vg_0": "M8 drain-ramp accepted state",
+    "vg_0p05": "M8 deep-off accepted state",
+    "vg_0p8": "M13 exact-lattice continuation from the M8 drain-ramp state",
+    "vg_2p5": "M8 gate-sweep accepted state"
+  },
+  "surface_profile": {
+    "interface": "edges shared by Silicon_1 and Oxide_1",
+    "mesh_coordinates": {"depth": "x_um", "lateral": "y_um"},
+    "channel_lateral_window_um": [-0.3, 0.3],
+    "source_barrier_window_um": [-0.3, 0.0],
+    "barrier_proxy": "maximum(eQuasiFermiPotential - ElectrostaticPotential)"
+  },
+  "bgn_replay": {
+    "sentaurus_field": "BandgapNarrowing",
+    "vela_model": "OldSlotboom",
+    "coefficient_eV": 0.009,
+    "reference_concentration_cm_minus3": 1e17,
+    "smoothing": 0.5,
+    "effective_concentration": "total ionized impurity = donors + acceptors; carrier populations are excluded by the production buildEffectiveNodeNi path",
+    "ni_eff_metric": "exp(deltaEg / (2 Vt))",
+    "temperature_K": 300.0
+  },
+  "decision_questions": [
+    "Does edge_projection improve active-edge final mobility over transport_cell_vector?",
+    "Does the source/drain contact-insensitivity found in M12 persist while internal mobility changes?",
+    "Can the self-consistent Vela-to-Sentaurus weak-current residual be explained by a source-barrier proxy shift?",
+    "Does direct OldSlotboom replay expose a material BGN formula mismatch?"
+  ]
+}

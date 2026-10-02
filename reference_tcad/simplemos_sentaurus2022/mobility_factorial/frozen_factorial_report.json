@@ -1,0 +1,972 @@
+{
+  "schema": "vela.simplemos.sdevice.m11_frozen_vela_factorial.v1",
+  "status": "complete",
+  "state_count": 16,
+  "variant_evaluations": 128,
+  "effect_definition": "mean response at coded product +1 minus mean response at coded product -1",
+  "sentaurus_variant_re_evaluation": false,
+  "states": [
+    {
+      "state": "n17_vd_0p05_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.2154781138750468,
+          "enormal": -0.004048807261085141,
+          "hfs": -0.00021096056237235317,
+          "phumob:enormal": 0.003930790876780055,
+          "phumob:hfs": 0.00021096056236968863,
+          "enormal:hfs": -0.00021096056235725413,
+          "phumob:enormal:hfs": 0.00021096056235725413
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.1236027940492235,
+          "enormal": -0.009833615099721471,
+          "hfs": -0.002123699255965561,
+          "phumob:enormal": -0.0023665045195629952,
+          "phumob:hfs": -0.0021236992558972823,
+          "enormal:hfs": 0.0014144396908432055,
+          "phumob:enormal:hfs": 0.0014144396908487566
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.4036080799702606,
+          "enormal": -0.007140057569605229,
+          "hfs": -0.013947012455870822,
+          "phumob:enormal": -0.007140057569470115,
+          "phumob:hfs": -0.013947012455868157,
+          "enormal:hfs": 0.004706631069069878,
+          "phumob:enormal:hfs": 0.004706631069069878
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5742140881975626,
+          "enormal": -8.060469228965417e-06,
+          "hfs": 5.451779472309681e-09,
+          "phumob:enormal": 7.639986916885277e-06,
+          "phumob:hfs": 2.6731896696219337e-09,
+          "enormal:hfs": -3.6770586575585185e-13,
+          "phumob:enormal:hfs": -4.440892098500626e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.574214088197561,
+          "enormal": -8.060469228965417e-06,
+          "hfs": 5.451778584131262e-09,
+          "phumob:enormal": 7.639986916885277e-06,
+          "phumob:hfs": 2.6731896696219337e-09,
+          "enormal:hfs": -3.668176873361517e-13,
+          "phumob:enormal:hfs": -4.440892098500626e-14
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0469296242167694,
+          "enormal": -0.00877482016661535,
+          "hfs": -0.0005515768041588487,
+          "phumob:enormal": 0.004713546511459832,
+          "phumob:hfs": 0.0005515768037085422,
+          "enormal:hfs": -0.0005515768038373281,
+          "phumob:enormal:hfs": 0.0005515768038399926
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8964396388940712,
+          "enormal": -0.03474906635106351,
+          "hfs": -0.0035909354180348463,
+          "phumob:enormal": 0.007572604905240754,
+          "phumob:hfs": -0.0035909354114612713,
+          "enormal:hfs": 0.0028239936591211157,
+          "phumob:enormal:hfs": 0.002823993661366153
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.3919081734725696,
+          "enormal": -0.006280706823591498,
+          "hfs": -0.012381009689221956,
+          "phumob:enormal": -0.006280647311891041,
+          "phumob:hfs": -0.012381009689214073,
+          "enormal:hfs": 0.00852827247549115,
+          "phumob:enormal:hfs": 0.008528272475491039
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5742153261330287,
+          "enormal": -7.002504650799324e-06,
+          "hfs": 5.4522910630794286e-09,
+          "phumob:enormal": 6.639192589474874e-06,
+          "phumob:hfs": 2.6734365832226104e-09,
+          "enormal:hfs": -3.7125857943465235e-13,
+          "phumob:enormal:hfs": -4.085620730620576e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5742153261330278,
+          "enormal": -7.002504649911145e-06,
+          "hfs": 5.452290174901009e-09,
+          "phumob:enormal": 6.639192587698517e-06,
+          "phumob:hfs": 2.6734363611780054e-09,
+          "enormal:hfs": -3.703704010149522e-13,
+          "phumob:enormal:hfs": -4.1300296516055823e-14
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0105580806248922,
+          "enormal": -0.00858111960166763,
+          "hfs": -0.0003468995040378786,
+          "phumob:enormal": 0.007071096568586732,
+          "phumob:hfs": 0.0003141789040901344,
+          "enormal:hfs": -0.00019625756354813007,
+          "phumob:enormal:hfs": 0.00022449051757877925
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8422920516721167,
+          "enormal": -0.02732047355542261,
+          "hfs": -0.0040023295171714435,
+          "phumob:enormal": -0.012415994536484953,
+          "phumob:hfs": -0.0034490692072443596,
+          "enormal:hfs": 0.000527116885249701,
+          "phumob:enormal:hfs": 0.0008079794981069033
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.3781074499487058,
+          "enormal": -0.018442776211117673,
+          "hfs": -0.01132145208250479,
+          "phumob:enormal": -0.01843710061479431,
+          "phumob:hfs": -0.011285877075000506,
+          "enormal:hfs": 0.011347501890143441,
+          "phumob:enormal:hfs": 0.011347501832066342
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.573064410203485,
+          "enormal": -3.878335895191043e-05,
+          "hfs": -1.4942594665612319e-05,
+          "phumob:enormal": 3.673810864501803e-05,
+          "phumob:hfs": 1.4413059708395792e-05,
+          "enormal:hfs": 2.595636594548978e-09,
+          "phumob:enormal:hfs": -2.592840608883762e-09
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.573064410203485,
+          "enormal": -3.878335895179941e-05,
+          "hfs": -1.4942594665057207e-05,
+          "phumob:enormal": 3.673810864457394e-05,
+          "phumob:hfs": 1.4413059709172948e-05,
+          "enormal:hfs": 2.5956370386381877e-09,
+          "phumob:enormal:hfs": -2.592841386039879e-09
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0078602416744098,
+          "enormal": -0.011971620679403827,
+          "hfs": -0.0072535990308040255,
+          "phumob:enormal": 0.008152884369698743,
+          "phumob:hfs": 0.004594368873004129,
+          "enormal:hfs": -0.000977021256215238,
+          "phumob:enormal:hfs": 0.000916726927853162
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8232578288456734,
+          "enormal": -0.037842807475660156,
+          "hfs": -0.01865430811368607,
+          "phumob:enormal": -0.004953859308584607,
+          "phumob:hfs": 0.0049993936792636084,
+          "enormal:hfs": -0.004841792792132482,
+          "phumob:enormal:hfs": 0.0035463681995194785
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.2378321418939315,
+          "enormal": -0.16695299228333693,
+          "hfs": -0.014528345344530957,
+          "phumob:enormal": -0.16695218409900237,
+          "phumob:hfs": -0.013005838363150057,
+          "enormal:hfs": 0.014166226332924636,
+          "phumob:enormal:hfs": 0.014166227059881797
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5723314294853807,
+          "enormal": -9.14096508939366e-05,
+          "hfs": -0.0007225859377726351,
+          "phumob:enormal": 8.644802066903878e-05,
+          "phumob:hfs": 0.0006969115692170291,
+          "enormal:hfs": 3.0333275713445573e-07,
+          "phumob:enormal:hfs": -3.029820128119809e-07
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.57233142948538,
+          "enormal": -9.140965089360353e-05,
+          "hfs": -0.000722585937772191,
+          "phumob:enormal": 8.644802066937185e-05,
+          "phumob:hfs": 0.0006969115692172512,
+          "enormal:hfs": 3.0333275724547804e-07,
+          "phumob:enormal:hfs": -3.029820122568694e-07
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.2380175299016054,
+          "enormal": -0.004317497452506203,
+          "hfs": -0.024485915788188706,
+          "phumob:enormal": 0.0035668933215164955,
+          "phumob:hfs": -0.02248990029714726,
+          "enormal:hfs": -0.0012162811654858885,
+          "phumob:enormal:hfs": 0.0007797343253477251
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.1544683241404818,
+          "enormal": -0.019372889308484242,
+          "hfs": -0.033716320035628744,
+          "phumob:enormal": 0.010728326596836424,
+          "phumob:hfs": 0.021961658126136263,
+          "enormal:hfs": 0.013640478718181082,
+          "phumob:enormal:hfs": -0.006840749469046892
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0133680643654297,
+          "enormal": -0.01888394014027739,
+          "hfs": -0.38914702303227333,
+          "phumob:enormal": -0.018883936051229178,
+          "phumob:hfs": -0.3891470230322609,
+          "enormal:hfs": 0.019835576748789663,
+          "phumob:enormal:hfs": 0.019835576748789663
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5707231747320378,
+          "enormal": -6.962128329845996e-05,
+          "hfs": -1.3473208326786335e-08,
+          "phumob:enormal": 6.599931544215565e-05,
+          "phumob:hfs": -6.6513266006040794e-09,
+          "enormal:hfs": 4.050093593832571e-13,
+          "phumob:enormal:hfs": 5.595524044110789e-13
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5707231747320378,
+          "enormal": -6.962128329757178e-05,
+          "hfs": -1.347320810474173e-08,
+          "phumob:enormal": 6.599931544126747e-05,
+          "phumob:hfs": -6.6513263785594745e-09,
+          "enormal:hfs": 4.0523140398818214e-13,
+          "phumob:enormal:hfs": 5.59996493620929e-13
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.1954016445929208,
+          "enormal": -0.006841788391847459,
+          "hfs": -0.038706704894056365,
+          "phumob:enormal": 0.004185138883740613,
+          "phumob:hfs": -0.03606863069896882,
+          "enormal:hfs": -0.0026473618276288136,
+          "phumob:enormal:hfs": -9.287633483623381e-06
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.0820502902792286,
+          "enormal": -0.03338235025248815,
+          "hfs": -0.04759399134226039,
+          "phumob:enormal": 0.0181975600876072,
+          "phumob:hfs": 0.03269784947984122,
+          "enormal:hfs": 0.008807796305322135,
+          "phumob:enormal:hfs": 0.0015394461924640446
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.010437647372694,
+          "enormal": -0.016356152976713778,
+          "hfs": -0.3754476418784852,
+          "phumob:enormal": -0.01635534332626465,
+          "phumob:hfs": -0.37544764187832613,
+          "enormal:hfs": 0.016757040848540905,
+          "phumob:enormal:hfs": 0.016757040848540905
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5707117465164622,
+          "enormal": -8.571094070930485e-05,
+          "hfs": -1.3443983704064522e-08,
+          "phumob:enormal": 8.12261898310851e-05,
+          "phumob:hfs": -6.636732052811567e-09,
+          "enormal:hfs": 2.7355895326763857e-13,
+          "phumob:enormal:hfs": 6.750155989720952e-13
+        },
+        "terminal_current_error_dex": {
+          "phumob": -0.9208143348214852,
+          "enormal": -8.1226189830641e-05,
+          "hfs": 6.636733829168406e-09,
+          "phumob:enormal": 8.571094070985996e-05,
+          "phumob:hfs": 1.3443982593841497e-08,
+          "enormal:hfs": -6.730171975277699e-13,
+          "phumob:enormal:hfs": -2.73225886360251e-13
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.1457340642660214,
+          "enormal": -0.009055358899327626,
+          "hfs": -0.06417103536653457,
+          "phumob:enormal": 0.006275910907369564,
+          "phumob:hfs": -0.06175209128055004,
+          "enormal:hfs": 0.00017723109088807476,
+          "phumob:enormal:hfs": 0.001751453624629029
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.0069824641846115,
+          "enormal": -0.021347346114122034,
+          "hfs": -0.09150579611926263,
+          "phumob:enormal": 0.0003783582696506027,
+          "phumob:hfs": 0.06711882812211029,
+          "enormal:hfs": 0.002230307447896873,
+          "phumob:enormal:hfs": 0.006839702713541174
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0158997628096524,
+          "enormal": -0.014222552502052732,
+          "hfs": -0.36868754110644464,
+          "phumob:enormal": -0.014221823935218092,
+          "phumob:hfs": -0.36855996116029455,
+          "enormal:hfs": 0.014417785376109826,
+          "phumob:enormal:hfs": 0.014417784123836208
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5730066478136848,
+          "enormal": -4.487194459734667e-05,
+          "hfs": -6.734713224254563e-05,
+          "phumob:enormal": 4.249477213669195e-05,
+          "phumob:hfs": 6.495999664224428e-05,
+          "enormal:hfs": 1.386536929715021e-08,
+          "phumob:enormal:hfs": -1.3850282698513183e-08
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.573006647813685,
+          "enormal": -4.4871944597124624e-05,
+          "hfs": -6.734713224221256e-05,
+          "phumob:enormal": 4.249477213669195e-05,
+          "phumob:hfs": 6.495999664246632e-05,
+          "enormal:hfs": 1.3865369408172512e-08,
+          "phumob:enormal:hfs": -1.3850281810334764e-08
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0072621470341443,
+          "enormal": -0.014146888843223682,
+          "hfs": -0.07010415872657916,
+          "phumob:enormal": 0.012546602238844518,
+          "phumob:hfs": 0.0036302884978529626,
+          "enormal:hfs": -0.004397784031298091,
+          "phumob:enormal:hfs": 0.003462746191893906
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8415637673531512,
+          "enormal": -0.028121569126510704,
+          "hfs": -0.12175866590913037,
+          "phumob:enormal": 0.014082662774205723,
+          "phumob:hfs": 0.08185531025290238,
+          "enormal:hfs": 0.011772628812109442,
+          "phumob:enormal:hfs": -0.02179092970424884
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0747414267269801,
+          "enormal": -0.08348171443972008,
+          "hfs": -0.30491248600722576,
+          "phumob:enormal": -0.08348068356812832,
+          "phumob:hfs": -0.2891681953483023,
+          "enormal:hfs": 0.03412681794146244,
+          "phumob:enormal:hfs": 0.03412701536579088
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5679332577359393,
+          "enormal": -0.00027157465434246575,
+          "hfs": -0.005102604481956874,
+          "phumob:enormal": 0.0002563369297288176,
+          "phumob:hfs": 0.004918472770552462,
+          "enormal:hfs": 5.508301863521581e-06,
+          "phumob:enormal:hfs": -5.501309963129586e-06
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5679332577359393,
+          "enormal": -0.0002715746543423547,
+          "hfs": -0.005102604481956541,
+          "phumob:enormal": 0.00025633692972859556,
+          "phumob:hfs": 0.004918472770552906,
+          "enormal:hfs": 5.5083018634105585e-06,
+          "phumob:enormal:hfs": -5.501309963573675e-06
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.2917134136973447,
+          "enormal": -0.003795259808177409,
+          "hfs": -1.3322676295501878e-15,
+          "phumob:enormal": 0.003783632147722038,
+          "phumob:hfs": 1.3322676295501878e-15,
+          "enormal:hfs": 4.440892098500626e-16,
+          "phumob:enormal:hfs": -4.440892098500626e-16
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.2578677573682169,
+          "enormal": -0.016837141809907807,
+          "hfs": -0.00038827491124959757,
+          "phumob:enormal": 0.012126606387792283,
+          "phumob:hfs": -0.0003882749112487094,
+          "enormal:hfs": -7.32909612601862e-05,
+          "phumob:enormal:hfs": -7.329096125996415e-05
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.4158072746422006,
+          "enormal": -0.009101198488822404,
+          "hfs": -0.012574844215016423,
+          "phumob:enormal": -0.009095809888511774,
+          "phumob:hfs": -0.012574844214974235,
+          "enormal:hfs": 0.011322816539025782,
+          "phumob:enormal:hfs": 0.011322816539025782
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5741939485140062,
+          "enormal": -8.76195873011909e-06,
+          "hfs": 5.574834816002294e-09,
+          "phumob:enormal": 8.305175432710143e-06,
+          "phumob:hfs": 2.7329623009109127e-09,
+          "enormal:hfs": -3.6770586575585185e-13,
+          "phumob:enormal:hfs": -4.618527782440651e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5741939485140084,
+          "enormal": -8.76195873011909e-06,
+          "hfs": 5.574835704180714e-09,
+          "phumob:enormal": 8.305175432266054e-06,
+          "phumob:hfs": 2.7329631890893324e-09,
+          "enormal:hfs": -3.681499549657019e-13,
+          "phumob:enormal:hfs": -4.618527782440651e-14
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0969775377603637,
+          "enormal": -0.01164489058373519,
+          "hfs": -1.7785780116241767e-05,
+          "phumob:enormal": 0.00882668967409117,
+          "phumob:hfs": 1.778578011535359e-05,
+          "enormal:hfs": -1.778578008737597e-05,
+          "phumob:enormal:hfs": 1.778578008648779e-05
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.9509433727137387,
+          "enormal": -0.02457033373339096,
+          "hfs": -0.0008319070928007877,
+          "phumob:enormal": -0.009418110051908235,
+          "phumob:hfs": -0.0008319070927962358,
+          "enormal:hfs": 0.0002177542097829832,
+          "phumob:enormal:hfs": 0.00021775420978031867
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.3900955890692874,
+          "enormal": -0.0058579495016432,
+          "hfs": -0.008639825849921512,
+          "phumob:enormal": -0.005834460985611023,
+          "phumob:hfs": -0.008639825849920402,
+          "enormal:hfs": 0.008639825850005556,
+          "phumob:enormal:hfs": 0.008639825850005556
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.574193997478119,
+          "enormal": -8.719691006575658e-06,
+          "hfs": 5.5746447458204784e-09,
+          "phumob:enormal": 8.265190768241837e-06,
+          "phumob:hfs": 2.732861048571067e-09,
+          "enormal:hfs": -3.6770586575585185e-13,
+          "phumob:enormal:hfs": -4.618527782440651e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5741939974781198,
+          "enormal": -8.719691004799301e-06,
+          "hfs": 5.574645189909688e-09,
+          "phumob:enormal": 8.265190769130015e-06,
+          "phumob:hfs": 2.732860604481857e-09,
+          "enormal:hfs": -3.6770586575585185e-13,
+          "phumob:enormal:hfs": -4.618527782440651e-14
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.025755030549373,
+          "enormal": -0.008396469425990816,
+          "hfs": -8.799039683538012e-07,
+          "phumob:enormal": 0.0075498791017629685,
+          "phumob:hfs": 4.1467689726459867e-07,
+          "enormal:hfs": 1.805386320441471e-07,
+          "phumob:enormal:hfs": -5.339034290230416e-07
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8781316024842614,
+          "enormal": -0.026373555411148775,
+          "hfs": -0.0016448966927520847,
+          "phumob:enormal": -0.012250517050128917,
+          "phumob:hfs": -0.0016408001747382772,
+          "enormal:hfs": 0.0007263122761142493,
+          "phumob:enormal:hfs": 0.0007222282645250044
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.391015655312545,
+          "enormal": -0.0156937869783369,
+          "hfs": -0.011311995329733038,
+          "phumob:enormal": -0.01569297712060358,
+          "phumob:hfs": -0.011311703092509284,
+          "enormal:hfs": 0.01131186525668093,
+          "phumob:enormal:hfs": 0.011311865256408482
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5731491379587554,
+          "enormal": -3.6596640052621865e-05,
+          "hfs": -1.390038182336184e-07,
+          "phumob:enormal": 3.467037498161574e-05,
+          "phumob:hfs": 1.3407899679407365e-07,
+          "enormal:hfs": 2.2438051416884264e-11,
+          "phumob:enormal:hfs": -2.241318242113266e-11
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.573149137958755,
+          "enormal": -3.6596640052621865e-05,
+          "hfs": -1.390038182336184e-07,
+          "phumob:enormal": 3.467037498228187e-05,
+          "phumob:hfs": 1.3407899701611825e-07,
+          "enormal:hfs": 2.2438162439186726e-11,
+          "phumob:enormal:hfs": -2.2413515488040048e-11
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0674418029671116,
+          "enormal": -0.01084918002917501,
+          "hfs": -0.004787192917379723,
+          "phumob:enormal": 0.008731612086268825,
+          "phumob:hfs": 0.003977838528207656,
+          "enormal:hfs": -0.0005949255518107321,
+          "phumob:enormal:hfs": 0.0006158963395392902
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.8724313879142926,
+          "enormal": -0.03107880685164549,
+          "hfs": -0.010363140449794195,
+          "phumob:enormal": -0.010061328548813753,
+          "phumob:hfs": 0.0007644411544578955,
+          "enormal:hfs": -0.00022023448520941402,
+          "phumob:enormal:hfs": -0.0040656621294862805
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.247067605488903,
+          "enormal": -0.1635962189117629,
+          "hfs": -0.015612539540028059,
+          "phumob:enormal": -0.1635953493113007,
+          "phumob:hfs": -0.014328525339812104,
+          "enormal:hfs": 0.015814196587419893,
+          "phumob:enormal:hfs": 0.015814533661870467
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5724955016409599,
+          "enormal": -8.608244164642898e-05,
+          "hfs": -0.0006286767216914235,
+          "phumob:enormal": 8.142003122202368e-05,
+          "phumob:hfs": 0.0006063508360516501,
+          "enormal:hfs": 2.495728761431337e-07,
+          "phumob:enormal:hfs": -2.492858954816768e-07
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5724955016409599,
+          "enormal": -8.608244164665102e-05,
+          "hfs": -0.0006286767216917566,
+          "phumob:enormal": 8.14200312221347e-05,
+          "phumob:hfs": 0.0006063508360518721,
+          "enormal:hfs": 2.495728760321114e-07,
+          "phumob:enormal:hfs": -2.492858954816768e-07
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.317781394333826,
+          "enormal": -0.0021827738608806158,
+          "hfs": -0.009559252135149077,
+          "phumob:enormal": 0.002161542036202224,
+          "phumob:hfs": -0.009306675393075725,
+          "enormal:hfs": -0.00011568629579317147,
+          "phumob:enormal:hfs": 0.00013689044627440694
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.2916217763673523,
+          "enormal": -0.004229309839574369,
+          "hfs": -0.004861361580096868,
+          "phumob:enormal": 0.0027094871872809234,
+          "phumob:hfs": 0.002211167730142294,
+          "enormal:hfs": 0.0016722856626332216,
+          "phumob:enormal:hfs": -0.0011115360959887965
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0741474138064042,
+          "enormal": -0.01163982480617598,
+          "hfs": -0.33111585737417704,
+          "phumob:enormal": -0.01163594218202979,
+          "phumob:hfs": -0.3311158573741704,
+          "enormal:hfs": 0.015823298537706698,
+          "phumob:enormal:hfs": 0.015823298537706698
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.574108632376939,
+          "enormal": -1.0152753057823816e-05,
+          "hfs": 5.081112419702549e-09,
+          "phumob:enormal": 9.623370392120023e-06,
+          "phumob:hfs": 2.5224835553672165e-09,
+          "enormal:hfs": -3.3573144264664734e-13,
+          "phumob:enormal:hfs": -5.3290705182007514e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.574108632376939,
+          "enormal": -1.0152753058267905e-05,
+          "hfs": 5.081114196059389e-09,
+          "phumob:enormal": 9.623370392120023e-06,
+          "phumob:hfs": 2.5224835553672165e-09,
+          "enormal:hfs": -3.361755318564974e-13,
+          "phumob:enormal:hfs": -5.3290705182007514e-14
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.2116056433102376,
+          "enormal": -0.007455091462964525,
+          "hfs": -0.024644322052711942,
+          "phumob:enormal": 0.0069242873011985395,
+          "phumob:hfs": -0.02365688979619307,
+          "enormal:hfs": -0.000271012760737932,
+          "phumob:enormal:hfs": 0.0007164194957471892
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.122211772083161,
+          "enormal": -0.022081460383391316,
+          "hfs": -0.03863293081417296,
+          "phumob:enormal": 0.003245886478081217,
+          "phumob:hfs": 0.026621533136817255,
+          "enormal:hfs": 0.012968324977232881,
+          "phumob:enormal:hfs": -0.004126466740809742
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0601916409855805,
+          "enormal": -0.008119149959018301,
+          "hfs": -0.33731469675403736,
+          "phumob:enormal": -0.008118461579692982,
+          "phumob:hfs": -0.337314696754035,
+          "enormal:hfs": 0.011996306646246957,
+          "phumob:enormal:hfs": 0.011996306646246735
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5741086750953155,
+          "enormal": -1.011556070018571e-05,
+          "hfs": 5.0839847887118594e-09,
+          "phumob:enormal": 9.58818657714744e-06,
+          "phumob:hfs": 2.523981024182831e-09,
+          "enormal:hfs": -3.3573144264664734e-13,
+          "phumob:enormal:hfs": -5.1514348342607263e-14
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.574108675095316,
+          "enormal": -1.01155607006298e-05,
+          "hfs": 5.083986565068699e-09,
+          "phumob:enormal": 9.588186576259261e-06,
+          "phumob:hfs": 2.5239819123612506e-09,
+          "enormal:hfs": -3.361755318564974e-13,
+          "phumob:enormal:hfs": -5.284661597215745e-14
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.1506736132467654,
+          "enormal": -0.009207218396412031,
+          "hfs": -0.05911201233575358,
+          "phumob:enormal": 0.007053975431100756,
+          "phumob:hfs": -0.05810710747100112,
+          "enormal:hfs": 0.0005765193712949923,
+          "phumob:enormal:hfs": 0.0015718460498139741
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -1.0183033382972801,
+          "enormal": -0.026042611955564787,
+          "hfs": -0.07452382880425423,
+          "phumob:enormal": 1.2851889361509272e-05,
+          "phumob:hfs": 0.060637507023038495,
+          "enormal:hfs": 0.007120161902929856,
+          "phumob:enormal:hfs": 0.0015510771616833452
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0576208368541655,
+          "enormal": -0.022329695811271533,
+          "hfs": -0.3322736722952345,
+          "phumob:enormal": -0.022329209897133273,
+          "phumob:hfs": -0.33227289001199245,
+          "enormal:hfs": 0.02357789994057602,
+          "phumob:enormal:hfs": 0.023577899928896917
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5731472609877137,
+          "enormal": -3.672800334619808e-05,
+          "hfs": -6.167764246001184e-07,
+          "phumob:enormal": 3.479467919298429e-05,
+          "phumob:hfs": 5.9492447324061e-07,
+          "enormal:hfs": 9.991651950258529e-11,
+          "phumob:enormal:hfs": -9.980816173538187e-11
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5731472609877135,
+          "enormal": -3.672800334708626e-05,
+          "hfs": -6.16776424822163e-07,
+          "phumob:enormal": 3.47946791925402e-05,
+          "phumob:hfs": 5.949244730185654e-07,
+          "enormal:hfs": 9.991607541337544e-11,
+          "phumob:enormal:hfs": -9.980816173538187e-11
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "effects": {
+        "median_log10_electron_mobility_cm2_V_s": {
+          "phumob": -1.0575742734176563,
+          "enormal": -0.013139354062421393,
+          "hfs": -0.04225170710243242,
+          "phumob:enormal": 0.011467809222938996,
+          "phumob:hfs": 0.01893463062816947,
+          "enormal:hfs": -0.0035531859095958573,
+          "phumob:enormal:hfs": 0.00243266945112941
+        },
+        "mobility_active_median_error_dex": {
+          "phumob": -0.915302545182533,
+          "enormal": -0.02978337646009166,
+          "hfs": -0.0798250866902328,
+          "phumob:enormal": 0.01423345632584988,
+          "phumob:hfs": 0.044669898352492465,
+          "enormal:hfs": 0.007801026955465806,
+          "phumob:enormal:hfs": -0.018092675339843545
+        },
+        "mobility_active_p95_error_dex": {
+          "phumob": -1.0906072120572516,
+          "enormal": -0.08694396699039064,
+          "hfs": -0.28370858322528825,
+          "phumob:enormal": -0.08694328261313988,
+          "phumob:hfs": -0.2712776268029109,
+          "enormal:hfs": 0.03657247265590169,
+          "phumob:enormal:hfs": 0.03657311394389984
+        },
+        "log10_terminal_current_A_per_um": {
+          "phumob": -1.5688959035455832,
+          "enormal": -0.00024051152578019597,
+          "hfs": -0.004206402450120272,
+          "phumob:enormal": 0.0002270772007477717,
+          "phumob:hfs": 0.004055120987611183,
+          "enormal:hfs": 4.084776370483212e-06,
+          "phumob:enormal:hfs": -4.079652117017218e-06
+        },
+        "terminal_current_error_dex": {
+          "phumob": -1.5688959035455832,
+          "enormal": -0.00024051152577997392,
+          "hfs": -0.004206402450120272,
+          "phumob:enormal": 0.00022707720074799376,
+          "phumob:hfs": 0.004055120987611405,
+          "enormal:hfs": 4.084776370261167e-06,
+          "phumob:enormal:hfs": -4.079652117017218e-06
+        }
+      }
+    }
+  ],
+  "aggregate_effects": {
+    "median_log10_electron_mobility_cm2_V_s": {
+      "phumob": -1.1304227597167804,
+      "enormal": -0.008400508682839813,
+      "hfs": -0.02163775018151526,
+      "phumob:enormal": 0.006683893167455324,
+      "phumob:hfs": -0.01119682823015733,
+      "enormal:hfs": -0.0008747442817238493,
+      "phumob:enormal:hfs": 0.0008362109361987891
+    },
+    "mobility_active_median_error_dex": {
+      "phumob": -1.0048419194893372,
+      "enormal": -0.024560419608011697,
+      "hfs": -0.033376092046655814,
+      "phumob:enormal": 0.0019888429304014688,
+      "phumob:hfs": 0.020719556312738585,
+      "enormal:hfs": 0.0041617068290175085,
+      "phumob:enormal:hfs": -0.0022898950530531037
+    },
+    "mobility_active_p95_error_dex": {
+      "phumob": -1.2032784984235352,
+      "enormal": -0.040940167774614844,
+      "hfs": -0.17643278288624953,
+      "phumob:enormal": -0.04093732937837635,
+      "phumob:hfs": -0.17448615802767142,
+      "enormal:hfs": 0.01618403341850594,
+      "phumob:enormal:hfs": 0.01618410686797045
+    },
+    "log10_terminal_current_A_per_um": {
+      "phumob": -1.5725308211509361,
+      "enormal": -6.591896131169506e-05,
+      "hfs": -0.0006714568623262807,
+      "phumob:enormal": 6.232917032988894e-05,
+      "phumob:hfs": 0.0006473100496329209,
+      "enormal:hfs": 6.351603598631073e-07,
+      "phumob:enormal:hfs": -6.343621485882522e-07
+    },
+    "terminal_current_error_dex": {
+      "phumob": -1.53191223292,
+      "enormal": -6.563866438202837e-05,
+      "hfs": -0.000671455607282212,
+      "phumob:enormal": 6.260946725933358e-05,
+      "phumob:hfs": 0.0006473113046767676,
+      "enormal:hfs": 6.35160301021287e-07,
+      "phumob:enormal:hfs": -6.343622080962064e-07
+    }
+  },
+  "variant_aggregate": [
+    {
+      "variant": "p0_e0_h0",
+      "median_log10_electron_mobility_cm2_V_s": 3.1513698502474603,
+      "mobility_active_median_error_dex": 1.0732261963330902,
+      "mobility_active_p95_error_dex": 1.5639855510744367,
+      "log10_terminal_current_A_per_um": -7.6416435503168945,
+      "terminal_current_error_dex": 2.289882993753417
+    },
+    {
+      "variant": "p0_e0_h1",
+      "median_log10_electron_mobility_cm2_V_s": 3.1426398835140246,
+      "mobility_active_median_error_dex": 1.0126789460916252,
+      "mobility_active_p95_error_dex": 1.562038999665323,
+      "log10_terminal_current_A_per_um": -7.642963586751362,
+      "terminal_current_error_dex": 2.2885629573189488
+    },
+    {
+      "variant": "p0_e1_h0",
+      "median_log10_electron_mobility_cm2_V_s": 3.137996403615088,
+      "mobility_active_median_error_dex": 1.0402253319126065,
+      "mobility_active_p95_error_dex": 1.5639827861276627,
+      "log10_terminal_current_A_per_um": -7.6417730679710445,
+      "terminal_current_error_dex": 2.2897534760992664
+    },
+    {
+      "variant": "p0_e1_h1",
+      "median_log10_electron_mobility_cm2_V_s": 3.1258445264458077,
+      "mobility_active_median_error_dex": 0.9925812854352827,
+      "mobility_active_p95_error_dex": 1.56203608781962,
+      "log10_terminal_current_A_per_um": -7.643090565360494,
+      "terminal_current_error_dex": 2.2884359787098165
+    },
+    {
+      "variant": "p1_e0_h0",
+      "median_log10_electron_mobility_cm2_V_s": 2.0262962365295807,
+      "mobility_active_median_error_dex": 0.043385982547560056,
+      "mobility_active_p95_error_dex": 0.5923146469249198,
+      "log10_terminal_current_A_per_um": -9.21488464504994,
+      "terminal_current_error_dex": 0.7572602056992728
+    },
+    {
+      "variant": "p1_e0_h1",
+      "median_log10_electron_mobility_cm2_V_s": 1.993500191463433,
+      "mobility_active_median_error_dex": 0.02885763503767824,
+      "mobility_active_p95_error_dex": 0.20902756572452236,
+      "log10_terminal_current_A_per_um": -9.214908792660847,
+      "terminal_current_error_dex": 0.7572360605985745
+    },
+    {
+      "variant": "p1_e1_h0",
+      "median_log10_electron_mobility_cm2_V_s": 2.0246181543597213,
+      "mobility_active_median_error_dex": 0.018942594093985285,
+      "mobility_active_p95_error_dex": 0.4780690094854522,
+      "log10_terminal_current_A_per_um": -9.214888235639133,
+      "terminal_current_error_dex": 0.7572571757040574
+    },
+    {
+      "variant": "p1_e1_h1",
+      "median_log10_electron_mobility_cm2_V_s": 1.9917450426025234,
+      "mobility_active_median_error_dex": 0.008157870136032424,
+      "mobility_active_p95_error_dex": 0.15951820885800766,
+      "log10_terminal_current_A_per_um": -9.214912381653617,
+      "terminal_current_error_dex": 0.7572330321995446
+    }
+  ],
+  "interpretation": "All eight Vela mobility compositions are evaluated on each same full-physics Sentaurus state. Effects isolate Vela formula response but are not frozen Sentaurus model re-evaluations."
+}

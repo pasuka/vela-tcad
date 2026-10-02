@@ -1,0 +1,18 @@
+{
+  "schema": "vela.simplemos.sdevice.m48_contract_freeze.v1",
+  "status": "frozen_before_analysis",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json",
+  "contract_sha256": "ab32861c940c2d899cdf8401bd2779ee0a1fb4985efe6265fe79c43b73538f25",
+  "baseline_revision": "54ced9a30af0003ec738d881219285cf7f7a1245",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json": "ab160b2657faa9525eeedeb4c5c73c8d8f293065d9147455aaf3422f3bb18026"
+  },
+  "analysis_started": false,
+  "policy": {
+    "contract_mutation_after_freeze": "forbidden",
+    "analysis_must_reverify_hash_before_and_after_execution": true,
+    "terminal_partition_must_not_be_promoted_to_causality": true,
+    "failed_or_null_attribution_may_not_relax_acceptance": true
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schema": "vela.simplemos.sdevice.m28_exact_bias_path_audit_report.v1",
+  "status": "complete",
+  "execution": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "new_sentaurus_state_count": 6,
+    "reused_m27_state_count": 2,
+    "m8_currentplot_scalar_count": 2,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "maximum_bias_error_V": 0.0,
+    "nonfinite_fraction": 0.0,
+    "checks": {
+      "new_state_count": true,
+      "bias_error": true,
+      "finite_values": true,
+      "common_node_count": true
+    },
+    "all_checks_pass": true
+  },
+  "terminal": {
+    "m8_hfs_response_A_per_um": -2.7011974031096713e-17,
+    "maximum_hfs_response_relative_difference_from_m8": 0.014612117142231072,
+    "maximum_common_mode_offset_A_per_um": 2.5702977125093036e-16,
+    "maximum_differential_offset_A_per_um": 3.9470212878526415e-19,
+    "routes": [
+      {
+        "route": "m8_currentplot",
+        "full_current_A_per_um": 8.58625099702983e-17,
+        "no_hfs_current_A_per_um": 1.12874484001395e-16,
+        "hfs_response_A_per_um": -2.7011974031096713e-17,
+        "hfs_response_relative_difference_from_m8": 0.0,
+        "full_offset_from_m8_A_per_um": 0.0,
+        "no_hfs_offset_from_m8_A_per_um": 0.0,
+        "differential_offset_A_per_um": 0.0,
+        "common_mode_offset_A_per_um": 0.0
+      },
+      {
+        "route": "m27_tiny_endpoint",
+        "full_current_A_per_um": 3.42694930156836e-16,
+        "no_hfs_current_A_per_um": 3.70101606316718e-16,
+        "hfs_response_A_per_um": -2.7406676159882002e-17,
+        "hfs_response_relative_difference_from_m8": 0.014612117142231072,
+        "full_offset_from_m8_A_per_um": 2.5683242018653773e-16,
+        "no_hfs_offset_from_m8_A_per_um": 2.57227122315323e-16,
+        "differential_offset_A_per_um": -3.9470212878526415e-19,
+        "common_mode_offset_A_per_um": 2.5702977125093036e-16
+      },
+      {
+        "route": "tiny_dozero",
+        "full_current_A_per_um": 3.42703292841721e-16,
+        "no_hfs_current_A_per_um": 3.70081644182533e-16,
+        "hfs_response_A_per_um": -2.7378351340812005e-17,
+        "hfs_response_relative_difference_from_m8": 0.013563514806193402,
+        "full_offset_from_m8_A_per_um": 2.5684078287142274e-16,
+        "no_hfs_offset_from_m8_A_per_um": 2.57207160181138e-16,
+        "differential_offset_A_per_um": -3.663773097152673e-19,
+        "common_mode_offset_A_per_um": 2.5702397152628035e-16
+      },
+      {
+        "route": "original_initial_dozero",
+        "full_current_A_per_um": 8.58625099702983e-17,
+        "no_hfs_current_A_per_um": 1.12874484001395e-16,
+        "hfs_response_A_per_um": -2.7011974031096713e-17,
+        "hfs_response_relative_difference_from_m8": 0.0,
+        "full_offset_from_m8_A_per_um": 0.0,
+        "no_hfs_offset_from_m8_A_per_um": 0.0,
+        "differential_offset_A_per_um": 0.0,
+        "common_mode_offset_A_per_um": 0.0
+      },
+      {
+        "route": "direct_dozero",
+        "full_current_A_per_um": 1.04031837323416e-16,
+        "no_hfs_current_A_per_um": 1.31383174832924e-16,
+        "hfs_response_A_per_um": -2.735133750950799e-17,
+        "hfs_response_relative_difference_from_m8": 0.012563446048800213,
+        "full_offset_from_m8_A_per_um": 1.8169327353117704e-17,
+        "no_hfs_offset_from_m8_A_per_um": 1.850869083152898e-17,
+        "differential_offset_A_per_um": -3.3936347841127597e-19,
+        "common_mode_offset_A_per_um": 1.8339009092323342e-17
+      }
+    ]
+  },
+  "state_response": {
+    "routes": [
+      {
+        "route": "m27_tiny_endpoint",
+        "node_count": 942,
+        "hfs_phin_response_pearson_vs_m27": 1.0,
+        "hfs_phin_response_p95_abs_difference_V": 0.0,
+        "full_path_phin_p95_abs_shift_from_m27_V": 0.0,
+        "no_hfs_path_phin_p95_abs_shift_from_m27_V": 0.0
+      },
+      {
+        "route": "tiny_dozero",
+        "node_count": 942,
+        "hfs_phin_response_pearson_vs_m27": 1.0,
+        "hfs_phin_response_p95_abs_difference_V": 9.020562075079397e-17,
+        "full_path_phin_p95_abs_shift_from_m27_V": 2.296118430191378e-17,
+        "no_hfs_path_phin_p95_abs_shift_from_m27_V": 0.0
+      },
+      {
+        "route": "original_initial_dozero",
+        "node_count": 942,
+        "hfs_phin_response_pearson_vs_m27": 1.0,
+        "hfs_phin_response_p95_abs_difference_V": 2.5159412666295467e-12,
+        "full_path_phin_p95_abs_shift_from_m27_V": 2.46285796119162e-12,
+        "no_hfs_path_phin_p95_abs_shift_from_m27_V": 1.3257818454182053e-12
+      },
+      {
+        "route": "direct_dozero",
+        "node_count": 942,
+        "hfs_phin_response_pearson_vs_m27": 1.0,
+        "hfs_phin_response_p95_abs_difference_V": 7.466034301212276e-13,
+        "full_path_phin_p95_abs_shift_from_m27_V": 2.857064758388093e-12,
+        "no_hfs_path_phin_p95_abs_shift_from_m27_V": 2.270162459709269e-12
+      }
+    ]
+  },
+  "conclusions": {
+    "supported": [
+      "The original-initial-step exact endpoint reproduces both frozen M8 CurrentPlot currents exactly, so the M8 values are a continuation-route result rather than a parsing artifact.",
+      "DoZero is a null control at the M27 tiny-step schedule; the large absolute current shift is controlled by the normalized gate-step path.",
+      "Path changes create an almost perfectly common-mode deep-off terminal-current offset while the full-minus-no_hfs HFS response changes by at most 1.47 percent.",
+      "The nodal HFS quasi-Fermi response retains unit correlation across all exact-endpoint routes even though the sub-fA terminal current changes materially.",
+      "M27's HFS difference-in-differences conclusion is route robust, but its exact-endpoint absolute current must not replace the frozen M8 Id-Vg ordinate."
+    ],
+    "not_supported": [
+      "Treating the M27 exact-endpoint absolute Sentaurus current as the canonical M8 curve value.",
+      "Attributing the route-dependent common-mode current offset to HFS.",
+      "Starting BGN or SRH parameter fitting before the path-conditioned baseline is held fixed."
+    ]
+  },
+  "artifacts": {
+    "terminal_route_ledger": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_terminal_route_ledger.csv",
+    "state_route_ledger": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_state_route_ledger.csv",
+    "state_route_summary": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_state_route_summary.csv"
+  },
+  "claim_policy": [
+    "M8 CurrentPlot values and exact endpoint states are distinct numerical observables until this audit establishes equivalence.",
+    "A route-dependent common-mode current shift must not be attributed to HFS when the full-minus-no_hfs response remains stable.",
+    "No production HFS, contact, SG, recombination, band-gap-narrowing, or solver default may be changed from this audit alone.",
+    "BGN and SRH causal ablations are deferred until exact-bias route reproducibility is quantified."
+  ]
+}

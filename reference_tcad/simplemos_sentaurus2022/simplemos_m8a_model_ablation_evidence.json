@@ -1,0 +1,122 @@
+{
+  "schema": "vela.simplemos.sdevice.m8a_model_attribution_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only paired model ablation; no SProcess claims",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "first_round": {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "variants": 8,
+      "curves": 8,
+      "points": 408
+    },
+    "confirmation": {
+      "devices": [
+        "n17",
+        "n21"
+      ],
+      "drain_voltages_V": [
+        0.05,
+        1.0
+      ],
+      "variants": 3,
+      "curves": 12,
+      "points": 612
+    },
+    "total_direct_bias_points": 1020,
+    "interpolation": "forbidden"
+  },
+  "findings": {
+    "first_round_full_maximum_error_dex": 0.10941868092427424,
+    "first_round_no_hfs_maximum_error_dex": 0.09039871358507992,
+    "first_round_no_hfs_change_dex": -0.019019967339194324,
+    "no_old_slotboom_maximum_error_dex": 1.7093291766585752,
+    "confirmation_no_hfs_changes_dex": [
+      -0.0026226730830612027,
+      -0.001942547466229478,
+      -0.010215665186736583,
+      -0.0032770256770239883
+    ],
+    "confirmation_phumob_only_changes_dex": [
+      -0.00024567777396761886,
+      0.00018502305244265382,
+      -0.006785772845975424,
+      -0.000925219043903254
+    ],
+    "no_hfs_improves_all_confirmation_conditions": true
+  },
+  "attribution": {
+    "verified": [
+      "SRH removal and plain SRH both worsen the n23 deep-off mismatch",
+      "OldSlotboom removal causes a large cross-solver divergence",
+      "No-HFS is the best first-round mismatch-reducing ablation"
+    ],
+    "likely": [
+      "Differences in HighFieldSaturation driving-force, smoothing, parameters, or limiting behavior contribute to the remaining mismatch"
+    ],
+    "unresolved": [
+      "The experiment cannot isolate proprietary Sentaurus internal smoothing from parameter or driving-force differences",
+      "Ablation evidence is diagnostic and does not prove one internal formula is the sole cause"
+    ]
+  },
+  "artifacts": {
+    "first_round_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/comparisons/comparison_report.json",
+      "sha256": "55218f7cb52b7ba74b652f47a62c8c0ce39ce7e328f7e20c632c38e7c9a077ae"
+    },
+    "first_round_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/ablation_summary.csv",
+      "sha256": "a0716988b842554bed93ea402398cfd6f616dce23a6d7e7664df07b3beb45854"
+    },
+    "confirmation_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/comparison_report.json",
+      "sha256": "1649e2e83c40ff45d6cf223f69099beeca83ba4eeab05c6914f4b9d63b889b05"
+    },
+    "confirmation_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/confirmation_summary.csv",
+      "sha256": "4e85312b0ac3ab2d9b6687ebf35815cd57697d9984460b0f852f0042b9175176"
+    },
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_paired_idvg.png",
+        "sha256": "f3ebea7a020a34c4092f4a93928bc46ea595b9bfcc019e242b7c2e7a44d4ce5b"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_signed_residual.png",
+        "sha256": "b9377617ff717360f86e53043513c014e37420c1244504df3684f65be6b26bc6"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_gap_change.png",
+        "sha256": "bf77fa3cf866330799b429b70d4d5b5fb2638879412ace999150314b42e022a7"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_model_response.png",
+        "sha256": "79faa309c029a8d3c9426c04f16c656ab5f82db02114bb38644c6bafec9ca3b8"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_full_idvg.png",
+        "sha256": "6391e2c01aab4fc1222a02e4552df5ff26c979644e6131c9cb86a8724929e5b4"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_residual.png",
+        "sha256": "f599717fd8d7fb3c7c2d24ed698a7f143faf95127476cda79c7b35e206c84bac"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_improvement.png",
+        "sha256": "47dd64b5353ab1781903eb4e59e0ef5690910d797ba70ecbc756e60c3e21cb28"
+      }
+    ]
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8a_model_ablation_contract_v1.json": "a73ee81375f513863bfae48970e738eeb40aef7ae3b90749f38ae29093469f2d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8a_confirmation_contract_v1.json": "fd4748a5698aff4edb48c152751be578be835c305e14be32b62138781e851f1a",
+    "scripts/run_simplemos_m8a_model_ablation.py": "05648895e3fed9146573ed04996c3da6ab031c8a64d044775df347866c465db3",
+    "scripts/run_simplemos_m8a_confirmation.py": "ff61c028cc1eb017ae463d543e28853e2da8c728ffa22c3219bb54275c2421fb",
+    "scripts/plot_simplemos_m8a_model_ablation.py": "53263604ce2300f2b48b604a81bb77f3fd327e7991f9fb549a683c66cbc1df44",
+    "scripts/plot_simplemos_m8a_confirmation.py": "72fa49ecc06acf94fb5b1a4d5b035484aa8930771526a65701ac31533df1597b",
+    "scripts/freeze_simplemos_m8a_evidence.py": "b8460d3c36be4e3600cc64a2b8981c79bc9917af82ed58a69f066e627f4dfae3",
+    "scripts/build_simplemos_m8a_report_artifact.py": "7212e5cfad7fe67352460564e8ce65ca3143b287b80a1faba64f5dd90e6bf13e",
+    "tests/regression/test_simplemos_m8a_model_ablation.py": "727f579c23b880d4ced9beaea2e4f5945d4095a404841c09650fc6d730146e59"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "python_syntax_checks": 4,
+  "manifest_identity_checks": 19,
+  "unique_file_hashes_verified": 1320,
+  "report_links_checked": 27,
+  "snapshots": 26,
+  "explicit_candidate": "element_box_phumob",
+  "global_default_changed": false,
+  "native_G_floor_matched": false,
+  "initial_failed_state_audit_preserved": true,
+  "full_ctest_all_green": false,
+  "commit_or_push": false
+}

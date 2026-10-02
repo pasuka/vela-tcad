@@ -1,0 +1,24 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/assembler.o": "9d51093eb9e7d26514a5b8d881fe477daabb806d2d13d3e8278d3f6efb9fdcb1",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/assembler.o_compile.json": "8c0363afb9227f2c0510910d3dd7429b08ce6bb017dca9b97c3a6328ffd5b98b",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/assembler.o_compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/CoupledDDAssembler.cpp": "804ff0320c71699df2a8051ad4c381ee34986f7f12df55de13a453935c1aaa22",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/jacobian_runner.exe": "b31a6eb9487eb19b7d6b53742e3c857c8c9f2870bb9e64465dacab8c505bf547",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/jacobian_runner_link.json": "f879dadb9bf1b4e4ee3f11ef15ecee5e6afea73a4ff7f31820fd3f09a71bf305",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/jacobian_runner_link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner.cpp": "9c73cd91f3d44109b87a08593bcb2e5cfa23ba5aa6d2b4e878d949852442cb9f",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner.exe": "5451bd3a5152088ada4b6064495978598297bb4f07d162ba7ac6db3f852d55f4",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner.o": "7b7c14741a91410cde06bf32447b754e823b15527d373bbfd9e9eab8e67f9a17",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner.o_compile.json": "210c5f6f93cfb6efd7fdcbda9584e7c3c7c6c34136bbbd1bffefd721a1b6dedc",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner.o_compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner_link.json": "53dde822f66ebde7f578b384fa431a7f5908abb9bd8345ac01820900bf5c4175",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/source/runner_link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/validation_freeze.json": "a2c2f60327f4df6f1af1131ff972428ae6e54e8cbce57fb4d5c7ed66e9834b5c",
+    "scripts/build_simplemos_constants_srh_calibration_20260907.py": "ecee71c121ee9603661c3d2690295717347ece2e7eb44801814da6621bfd9c84",
+    "scripts/calibrate_simplemos_phumob_local_source_20260909.py": "620a6536d6df9d7b69a3c34a08c25e62e49e88880ea9b78c775a78755ee9c6dd",
+    "scripts/validate_simplemos_production_weighted_source_20260910.py": "2ab70f9bd8db8cdd5703bd725b172ca2b3e18c1623d31504985174852d4c051d",
+    "src/equation/CoupledDDAssembler.cpp": "1d7ff86e020b2081e02d66ca4911d4cd53df0fa4249b4cdc1c1dbc199b2d243a",
+    "src/tools/vela_example_runner.cpp": "e70e87ff5f5e949dea2b536d99ebfd2419f8df02a651ce9b27108d62028a8526"
+  }
+}

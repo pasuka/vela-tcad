@@ -1,0 +1,5 @@
+{
+  "status": "snapshot_copy_failed",
+  "reason": "Windows path length exceeded for deeply mirrored snapshot directories. Partial copies retained; final snapshot uses a separate shallow directory.",
+  "numerical_data_changed": false
+}

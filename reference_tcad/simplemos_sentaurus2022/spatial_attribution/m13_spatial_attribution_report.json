@@ -1,0 +1,2019 @@
+{
+  "schema": "vela.simplemos.sdevice.m13_spatial_attribution_report.v1",
+  "status": "complete",
+  "scope": "SDevice-only spatial attribution on 16 exact frozen/self-consistent states",
+  "execution": {
+    "state_count": 16,
+    "edge_projection_probe_count": 16,
+    "new_self_consistent_vg0p8_state_count": 4,
+    "required_local_outputs_verified": 20,
+    "new_sentaurus_execution": false,
+    "cpp_changed": false,
+    "default_model_changed": false,
+    "runs_executed_this_invocation": 0
+  },
+  "findings": {
+    "edge_projection_improves_active_p95_state_count": 8,
+    "transport_cell_vector_better_or_equal_state_count": 8,
+    "edge_projection_low_drain_improves_state_count": 8,
+    "edge_projection_high_drain_worsens_state_count": 8,
+    "mean_active_p95_mobility_error_dex": {
+      "transport_cell_vector": 0.23646437023899486,
+      "edge_projection": 0.262947243074646,
+      "sentaurus_drive": 0.16405366585143977
+    },
+    "sentaurus_drive_improves_active_p95_state_count": 16,
+    "maximum_abs_edge_projection_p95_change_dex": 0.25050845784564263,
+    "source_barrier_difference_mV": {
+      "minimum": -1.2972551725226045,
+      "maximum": 9.579821273683176,
+      "mean": 1.9318410635149077,
+      "same_positive_sign_count": 6
+    },
+    "high_nwell_low_drain_weak_region_barrier": {
+      "representative_state_count": 3,
+      "sign_consistent_with_terminal_error_count": 3,
+      "mean_absolute_prediction_residual_dex": 0.0325847076105126
+    },
+    "maximum_surface_psi_p95_difference_mV": 16.611789467822714,
+    "maximum_surface_phin_p95_difference_mV": 7.357437213438455,
+    "maximum_old_slotboom_p95_difference_meV": 3.469446951953614e-15
+  },
+  "cases": [
+    {
+      "state": "n17_vd_0p05_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "terminal_signed_log10_error_dex": 0.025115431335973274,
+      "barrier_predicted_log10_shift_dex": 0.01132217766081199,
+      "barrier_prediction_residual_dex": 0.013793253675161285,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 922,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 922,
+            "median": 0.01977714626154602,
+            "p95": 0.24291581412310195,
+            "maximum": 0.7335411489274684
+          },
+          "edge_projection": {
+            "count": 922,
+            "median": 0.009298482353344035,
+            "p95": 0.15256826751319724,
+            "maximum": 0.2786519916887034
+          },
+          "sentaurus_drive": {
+            "count": 922,
+            "median": 0.008658384016507273,
+            "p95": 0.14456394366062636,
+            "maximum": 0.27865201208345475
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 922,
+            "median": 0.059601875292961105,
+            "p95": 1.6836549512537364,
+            "maximum": 2.4687051908411037
+          },
+          "edge_projection": {
+            "count": 921,
+            "median": 0.4556242346472755,
+            "p95": 2.4837901724042215,
+            "maximum": 3.7358673647132954
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.22109213650243748,
+            "p95": 0.7315884430229289,
+            "maximum": 0.7335411489274684
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.006799352919349692,
+            "p95": 0.022272198871330636,
+            "maximum": 0.04444442532575813
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.005951201052020604,
+            "p95": 0.01751462713000716,
+            "maximum": 0.018102619177261907
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.09034754660990471,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 85.49898239842302,
+          "phumob_enormal": 85.47575182577452,
+          "phumob_enormal_hfs": 85.47575182577395,
+          "sentaurus_drive_hfs": 85.4757518257737,
+          "sentaurus_final": 101.97070583876022
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n17/workflow/vd_0p05/10_drain_ramp_accepted_state.csv",
+        "vela_state_sha256": "da49dfb668a0ecd2d6329e6cf52c772c232d51c7317544f4b65941a63d77c783",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 0.4445500937297342,
+          "p95": 2.0398896032479685,
+          "maximum": 2.31674592456943,
+          "signed_mean": -0.7218154242123955
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 2.0671934264345544e-07,
+          "p95": 0.12778710323033127,
+          "maximum": 0.24311925107730475,
+          "signed_mean": -0.004058737436073335
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.007477813541030581,
+          "p95": 0.03426643251218629,
+          "maximum": 0.038917377954303174,
+          "signed_mean": -0.01205493076034673
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.1485177610783532,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.1478437922699388,
+          "vela_minus_sentaurus_mV": -0.6739688084144158,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.011325858680049188
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "terminal_signed_log10_error_dex": 0.02744476281548734,
+      "barrier_predicted_log10_shift_dex": 0.01290970652670705,
+      "barrier_prediction_residual_dex": 0.014535056288780289,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1124,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1124,
+            "median": 0.028558238663524603,
+            "p95": 0.24313643864623988,
+            "maximum": 0.7217891642792937
+          },
+          "edge_projection": {
+            "count": 1124,
+            "median": 0.00899508639690376,
+            "p95": 0.16435366310682592,
+            "maximum": 0.37607054802855727
+          },
+          "sentaurus_drive": {
+            "count": 1124,
+            "median": 0.00806655773795491,
+            "p95": 0.15936723260321156,
+            "maximum": 0.3760705480285693
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1124,
+            "median": 0.03868262614492832,
+            "p95": 1.5427569484251764,
+            "maximum": 2.9779085723656262
+          },
+          "edge_projection": {
+            "count": 1124,
+            "median": 0.4242452684340616,
+            "p95": 2.4556771967817617,
+            "maximum": 4.359889408767753
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.21755162352998925,
+            "p95": 0.7140521281539309,
+            "maximum": 0.7217891642792937
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.006292235496743433,
+            "p95": 0.027700032306732056,
+            "maximum": 0.04169811158054056
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.005014556381819855,
+            "p95": 0.021196618533392227,
+            "maximum": 0.02693419922221771
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.07878277553941396,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 125.81338420257347,
+          "phumob_enormal": 124.64284316033132,
+          "phumob_enormal_hfs": 124.64284316020303,
+          "sentaurus_drive_hfs": 124.64284316015721,
+          "sentaurus_final": 162.6689347830487
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_deep_off_diagnostics/vela/n17_vd_0p05/vg_0p05/accepted_state.csv",
+        "vela_state_sha256": "7c8a3b45a2593ea51f7c335e78e878b656ae6bd582ec5f5cd6cdd2ba6db164e9",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 0.44037037443751814,
+          "p95": 1.786939125135445,
+          "maximum": 2.042942615216592,
+          "signed_mean": -0.6487286113964854
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 4.1498433571870013e-07,
+          "p95": 0.08067956639200899,
+          "maximum": 0.3413084492135954,
+          "signed_mean": -0.012954231778019621
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.007326123556999186,
+          "p95": 0.03001708602904872,
+          "maximum": 0.034317720377171276,
+          "signed_mean": -0.010677757567846153
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.11232746822053889,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.11155899948727574,
+          "vela_minus_sentaurus_mV": -0.7684687332631529,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.012913281248726672
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "terminal_signed_log10_error_dex": 0.02484443250026478,
+      "barrier_predicted_log10_shift_dex": -0.006623935141619246,
+      "barrier_prediction_residual_dex": 0.03146836764188403,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1066,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1066,
+            "median": 0.03381255675593406,
+            "p95": 0.17588551317059672,
+            "maximum": 0.4602706641568974
+          },
+          "edge_projection": {
+            "count": 1066,
+            "median": 0.0083982629214184,
+            "p95": 0.16695256589753277,
+            "maximum": 0.42638031393669823
+          },
+          "sentaurus_drive": {
+            "count": 1066,
+            "median": 0.0060323975260120205,
+            "p95": 0.16695366568435377,
+            "maximum": 0.42638183447206046
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1066,
+            "median": 0.013446886314815505,
+            "p95": 0.14177149680082354,
+            "maximum": 0.29297277180945897
+          },
+          "edge_projection": {
+            "count": 1066,
+            "median": 0.140768186831704,
+            "p95": 2.553789772218785,
+            "maximum": 4.275543647415961
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.1422303042034906,
+            "p95": 0.20057388781878302,
+            "maximum": 0.20419441684621795
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.004310124835410529,
+            "p95": 0.006960871346349722,
+            "maximum": 0.007824362454104136
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.0020407571834904488,
+            "p95": 0.006360979298302697,
+            "maximum": 0.006912569532041153
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.008932947273063957,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 136.03550568315757,
+          "phumob_enormal": 135.55418819273908,
+          "phumob_enormal_hfs": 135.55278885017677,
+          "sentaurus_drive_hfs": 135.55275958552025,
+          "sentaurus_final": 187.20106614366068
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m13_spatial_attribution/self_consistent/n17_vd_0p05_vg_0p8/accepted_state.csv",
+        "vela_state_sha256": "ae279e9e4a12e605e9155f22848beba62723bfa6cffc38af46af4dd645f0988a",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 2.042624183211106,
+          "p95": 2.6689583698150665,
+          "maximum": 2.702116209439276,
+          "signed_mean": -1.9321476772813453
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.09546294547838681,
+          "p95": 0.29784605142372383,
+          "maximum": 0.3890401362549676,
+          "signed_mean": 0.014871609815895121
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.03471908852702335,
+          "p95": 0.0451900857073331,
+          "maximum": 0.04614005768294066,
+          "signed_mean": -0.03270658956211203
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.41914661152936666,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.4187523123222571,
+          "vela_minus_sentaurus_mV": 0.3942992071095386,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": -0.006621921451854837
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "terminal_signed_log10_error_dex": -0.012470687695711476,
+      "barrier_predicted_log10_shift_dex": -0.14092982838344809,
+      "barrier_prediction_residual_dex": 0.12845914068773662,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1053,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1053,
+            "median": 0.036025873901226274,
+            "p95": 0.3628337092547189,
+            "maximum": 0.5062573754605558
+          },
+          "edge_projection": {
+            "count": 1053,
+            "median": 0.013251471064143042,
+            "p95": 0.15835653151751455,
+            "maximum": 0.4059618686588932
+          },
+          "sentaurus_drive": {
+            "count": 1053,
+            "median": 0.010010991430005207,
+            "p95": 0.15865218385905294,
+            "maximum": 0.4060382268539179
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1053,
+            "median": 0.008193724379686816,
+            "p95": 0.1060532502970408,
+            "maximum": 0.2881929076431136
+          },
+          "edge_projection": {
+            "count": 1053,
+            "median": 0.12356180425103346,
+            "p95": 2.615770753405079,
+            "maximum": 4.655697569917564
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.4567261057200408,
+            "p95": 0.49625302039628233,
+            "maximum": 0.499221542042106
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.0002997337463545224,
+            "p95": 0.02605492251023884,
+            "maximum": 0.02650347916737933
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.0005283586581219446,
+            "p95": 0.026084631083091833,
+            "maximum": 0.026530789594860403
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.20447717773720436,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 135.41883780311937,
+          "phumob_enormal": 134.25196167356836,
+          "phumob_enormal_hfs": 133.41391105729394,
+          "sentaurus_drive_hfs": 133.39541098271053,
+          "sentaurus_final": 184.17538002793208
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n17/workflow/vd_0p05/20_gate_sweep_accepted_state.csv",
+        "vela_state_sha256": "96e2995d000faba141ec90484bd20c2cb658cee603bc8f5cc098cd6c38031172",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 10.145978360924012,
+          "p95": 16.361684902522768,
+          "maximum": 16.50489651467413,
+          "signed_mean": -10.503081232120044
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.22199996356169274,
+          "p95": 0.3365590578742403,
+          "maximum": 0.341175266568473,
+          "signed_mean": 0.003938911371622266
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.17320859789394386,
+          "p95": 0.2738131211547454,
+          "maximum": 0.2783120786999883,
+          "signed_mean": -0.17650857206630177
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 350,
+          "sentaurus_lateral_um": -0.12346298750000002,
+          "sentaurus_proxy_V": -0.5544796415911611,
+          "vela_node": 368,
+          "vela_lateral_um": -0.121925975,
+          "vela_proxy_V": -0.5460905921210764,
+          "vela_minus_sentaurus_mV": 8.389049470084785,
+          "sentaurus_min_density_node": 350,
+          "vela_min_density_node": 368,
+          "minimum_density_log10_ratio_dex": -0.14584508582301808
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "terminal_signed_log10_error_dex": 0.019770378275517878,
+      "barrier_predicted_log10_shift_dex": 0.0054846555167969,
+      "barrier_prediction_residual_dex": 0.014285722758720977,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 886,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 886,
+            "median": 0.01438230882441124,
+            "p95": 0.22731123114081098,
+            "maximum": 0.6880554151168816
+          },
+          "edge_projection": {
+            "count": 886,
+            "median": 0.011353923284358289,
+            "p95": 0.4778196889864536,
+            "maximum": 1.0255342232200026
+          },
+          "sentaurus_drive": {
+            "count": 886,
+            "median": 0.009500516028756734,
+            "p95": 0.1709678342350335,
+            "maximum": 0.5137695311092775
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 886,
+            "median": 0.02693780331855429,
+            "p95": 1.8426255191213468,
+            "maximum": 17.83366321452327
+          },
+          "edge_projection": {
+            "count": 870,
+            "median": 0.3408377153190233,
+            "p95": 2.9901076034433345,
+            "maximum": 7.342964956996369
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.20951597636781272,
+            "p95": 0.6919711448890002,
+            "maximum": 0.7663700105592515
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.012876166748543895,
+            "p95": 0.1249648211813393,
+            "maximum": 0.281707155115291
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.012870180005320607,
+            "p95": 0.28236719249872955,
+            "maximum": 0.3323379611785808
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.25050845784564263,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 85.7149087519504,
+          "phumob_enormal": 85.65286080509779,
+          "phumob_enormal_hfs": 76.79452506148584,
+          "sentaurus_drive_hfs": 76.69823380245526,
+          "sentaurus_final": 84.61961679157687
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n17/workflow/vd_1/10_drain_ramp_accepted_state.csv",
+        "vela_state_sha256": "05ba13a5736e8eb83538c0ff13fa4169e36fd102367f46314dc051045109d667",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 0.8280209769348512,
+          "p95": 7.299541490271899,
+          "maximum": 8.877971636203963,
+          "signed_mean": -1.8043610699499861
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 8.373899802781057e-05,
+          "p95": 5.324866246189108,
+          "maximum": 8.975126245129527,
+          "signed_mean": -0.9551304530485092
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.027021605000607542,
+          "p95": 0.1321848919268031,
+          "maximum": 0.14914029690428365,
+          "signed_mean": -0.014263277912959772
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.11900199836163572,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.11867551640260293,
+          "vela_minus_sentaurus_mV": -0.3264819590327872,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.0054882498430795035
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "terminal_signed_log10_error_dex": 0.021325079816345866,
+      "barrier_predicted_log10_shift_dex": 0.005481591112818765,
+      "barrier_prediction_residual_dex": 0.0158434887035271,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1041,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1041,
+            "median": 0.017651543386863026,
+            "p95": 0.24545402979948408,
+            "maximum": 0.6739214421344806
+          },
+          "edge_projection": {
+            "count": 1041,
+            "median": 0.011067681430062471,
+            "p95": 0.4109610641714018,
+            "maximum": 0.9912787366405136
+          },
+          "sentaurus_drive": {
+            "count": 1041,
+            "median": 0.009511316257127266,
+            "p95": 0.19158813213160686,
+            "maximum": 0.5308729813805061
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1041,
+            "median": 0.02135156225509788,
+            "p95": 1.6310067091383962,
+            "maximum": 17.834638717001308
+          },
+          "edge_projection": {
+            "count": 1030,
+            "median": 0.35983049072487666,
+            "p95": 3.211164669241678,
+            "maximum": 8.180886125122749
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.20521865752827273,
+            "p95": 0.6784083832481302,
+            "maximum": 0.7636602644074739
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.009987291036866568,
+            "p95": 0.1141303653667275,
+            "maximum": 0.31891882392307164
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.008731012158655002,
+            "p95": 0.31290343789619174,
+            "maximum": 0.34526641708940653
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.16550703437191774,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 97.23943121208167,
+          "phumob_enormal": 97.23943120155964,
+          "phumob_enormal_hfs": 81.35990348718683,
+          "sentaurus_drive_hfs": 81.70075376786093,
+          "sentaurus_final": 95.59843614753572
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_deep_off_diagnostics/vela/n17_vd_1/vg_0p05/accepted_state.csv",
+        "vela_state_sha256": "788994dc709bbc2ec0e7fab94f997d15ba38728d92f7c116b2670ef03a471ba8",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 0.8328267624918562,
+          "p95": 7.0444548190533585,
+          "maximum": 8.566875818097008,
+          "signed_mean": -1.7156365964844809
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.00012588863617538432,
+          "p95": 5.161261420453589,
+          "maximum": 8.43904724157374,
+          "signed_mean": -0.9092622821578255
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.023587157859777986,
+          "p95": 0.12405911367020431,
+          "maximum": 0.14391416300653623,
+          "signed_mean": -0.013543401569797494
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.08192691857509798,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.08160061902909205,
+          "vela_minus_sentaurus_mV": -0.326299546005937,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.00548507654311356
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "terminal_signed_log10_error_dex": 0.015942572099488312,
+      "barrier_predicted_log10_shift_dex": -0.022617381816616138,
+      "barrier_prediction_residual_dex": 0.03855995391610445,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1039,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1039,
+            "median": 0.019063187474341145,
+            "p95": 0.19759016378717517,
+            "maximum": 0.45990021215098
+          },
+          "edge_projection": {
+            "count": 1039,
+            "median": 0.010108093039209022,
+            "p95": 0.43266321256885604,
+            "maximum": 0.9731257421806238
+          },
+          "sentaurus_drive": {
+            "count": 1039,
+            "median": 0.008644952004356212,
+            "p95": 0.18537332460900832,
+            "maximum": 0.426080636685066
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1039,
+            "median": 0.012986530417590672,
+            "p95": 0.1784715109040788,
+            "maximum": 2.678994218325768
+          },
+          "edge_projection": {
+            "count": 1039,
+            "median": 0.16363288702934123,
+            "p95": 2.5488986180021347,
+            "maximum": 4.71476733880537
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.1141397998068798,
+            "p95": 0.2837997374077143,
+            "maximum": 0.2886992082974764
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.014549786662017263,
+            "p95": 0.07774201767264707,
+            "maximum": 0.17163131420443284
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.007459257747448976,
+            "p95": 0.12763661649617486,
+            "maximum": 0.2687195686969769
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.23507304878168087,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 115.57487169479046,
+          "phumob_enormal": 114.32870579000841,
+          "phumob_enormal_hfs": 85.93317247454561,
+          "sentaurus_drive_hfs": 85.71989366153731,
+          "sentaurus_final": 107.40214870862141
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m13_spatial_attribution/self_consistent/n17_vd_1_vg_0p8/accepted_state.csv",
+        "vela_state_sha256": "a773b016076090c33c955b6c1e2ae6798e7b358930812fb5f89eaa82ad39e074",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 1.7406923446861566,
+          "p95": 2.7236799432661662,
+          "maximum": 3.3940187268493016,
+          "signed_mean": -1.6019777361176595
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.5269171608374978,
+          "p95": 5.360131082400743,
+          "maximum": 6.839379273933299,
+          "signed_mean": -0.6712193975591004
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.03935310587076212,
+          "p95": 0.07544419453196968,
+          "maximum": 0.09135829897532353,
+          "signed_mean": -0.0156339947265442
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.42539274701602026,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.4240464150356311,
+          "vela_minus_sentaurus_mV": 1.3463319803891372,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": -0.02261538647285228
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "terminal_signed_log10_error_dex": 0.00013602381938093453,
+      "barrier_predicted_log10_shift_dex": -0.1575559322535365,
+      "barrier_prediction_residual_dex": 0.15769195607291744,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1047,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1047,
+            "median": 0.024631298835424354,
+            "p95": 0.20529052902587197,
+            "maximum": 0.5490342600400283
+          },
+          "edge_projection": {
+            "count": 1047,
+            "median": 0.014269238556323397,
+            "p95": 0.4144167422091152,
+            "maximum": 0.7371618169123738
+          },
+          "sentaurus_drive": {
+            "count": 1047,
+            "median": 0.00863953738671317,
+            "p95": 0.1347298471663582,
+            "maximum": 0.4019022357402926
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1047,
+            "median": 0.009645267964808031,
+            "p95": 0.12855284420222698,
+            "maximum": 0.7804512322593873
+          },
+          "edge_projection": {
+            "count": 1047,
+            "median": 0.13018071376937984,
+            "p95": 2.7083454128738214,
+            "maximum": 4.871134960676308
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.32030926720402064,
+            "p95": 0.5237204508557503,
+            "maximum": 0.5490342600400283
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.0055020967808442345,
+            "p95": 0.027511111031791248,
+            "maximum": 0.07040706939250874
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.00694855268918281,
+            "p95": 0.04606621139122777,
+            "maximum": 0.07728931462876534
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.2091262131832432,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 135.32983698228827,
+          "phumob_enormal": 135.1226985226184,
+          "phumob_enormal_hfs": 115.69628175701067,
+          "sentaurus_drive_hfs": 115.40427813702907,
+          "sentaurus_final": 134.9108813066851
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n17/workflow/vd_1/20_gate_sweep_accepted_state.csv",
+        "vela_state_sha256": "de334266c849d18250fc80415dd2dde77ed89ae182e3bfbb3f62959540aa00c5",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 7.285630869937165,
+          "p95": 10.967205892174148,
+          "maximum": 14.734516829291833,
+          "signed_mean": -7.207939881982556
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 1.9870173088157825,
+          "p95": 7.357437213438455,
+          "maximum": 7.713102423234142,
+          "signed_mean": 1.7265089815108792
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.15357429708152848,
+          "p95": 0.17385657057243736,
+          "maximum": 0.2768264019845548,
+          "signed_mean": -0.15009050135520824
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 8.673617379884035e-16,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": 6.608470384673551e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.5532256925297507,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.5438469504625711,
+          "vela_minus_sentaurus_mV": 9.37874206717959,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": -0.15755431237746745
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "terminal_signed_log10_error_dex": 0.016369687660571057,
+      "barrier_predicted_log10_shift_dex": 0.0172870132614538,
+      "barrier_prediction_residual_dex": -0.000917325600882743,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 549,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 549,
+            "median": 0.01234121030482292,
+            "p95": 0.23565426925822136,
+            "maximum": 0.5923108980237878
+          },
+          "edge_projection": {
+            "count": 549,
+            "median": 0.007788280469943777,
+            "p95": 0.14287678397444947,
+            "maximum": 0.24535626854582213
+          },
+          "sentaurus_drive": {
+            "count": 549,
+            "median": 0.007402352462946944,
+            "p95": 0.1428767839790506,
+            "maximum": 0.24535628541123414
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 549,
+            "median": 0.2572348789477712,
+            "p95": 2.1094836025330155,
+            "maximum": 4.5010888106374365
+          },
+          "edge_projection": {
+            "count": 546,
+            "median": 0.389324768078492,
+            "p95": 2.6568082322559343,
+            "maximum": 5.282421006938544
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.22539807578840151,
+            "p95": 0.8330961160181716,
+            "maximum": 0.8392149230976897
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.006382379540409625,
+            "p95": 0.02860549422735668,
+            "maximum": 0.034045694389127704
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.005338955425836236,
+            "p95": 0.024905849525080393,
+            "maximum": 0.03391895725194476
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.09277748528377189,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 71.75840954042829,
+          "phumob_enormal": 71.75648832962301,
+          "phumob_enormal_hfs": 71.75648832962301,
+          "sentaurus_drive_hfs": 71.75648832962301,
+          "sentaurus_final": 73.85672255947844
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n21/workflow/vd_0p05/10_drain_ramp_accepted_state.csv",
+        "vela_state_sha256": "6ba4819bd076de98d2c4f8302110d8346ebcbb39cc3d9fb1c4a19f906cbafc10",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 1.0390838380510137,
+          "p95": 1.8297053882788683,
+          "maximum": 2.0593761362648344,
+          "signed_mean": -0.9609299727285532
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 6.51044849776462e-08,
+          "p95": 0.14290484160944197,
+          "maximum": 0.46602350369356893,
+          "signed_mean": -0.015285422087944311
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.01729091562561741,
+          "p95": 0.030735481358988206,
+          "maximum": 0.03459374295369654,
+          "signed_mean": -0.015883162351901684
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.22660405927516558,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.2255750251018906,
+          "vela_minus_sentaurus_mV": -1.0290341732749897,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.01729091562561741
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "terminal_signed_log10_error_dex": 0.07374837507777213,
+      "barrier_predicted_log10_shift_dex": 0.01911048633108004,
+      "barrier_prediction_residual_dex": 0.054637888746692086,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 838,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 838,
+            "median": 0.02273914171643058,
+            "p95": 0.244379243930849,
+            "maximum": 0.8088558482503445
+          },
+          "edge_projection": {
+            "count": 838,
+            "median": 0.008451377806184858,
+            "p95": 0.15784389367691634,
+            "maximum": 0.3675346333690261
+          },
+          "sentaurus_drive": {
+            "count": 838,
+            "median": 0.007801062591157679,
+            "p95": 0.1578438936769582,
+            "maximum": 0.36753463336903347
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 838,
+            "median": 0.13241576813686506,
+            "p95": 1.5256143692021054,
+            "maximum": 4.527696870590957
+          },
+          "edge_projection": {
+            "count": 833,
+            "median": 0.37024188166761146,
+            "p95": 2.3965506977374194,
+            "maximum": 4.842850558854924
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.22636519387447734,
+            "p95": 0.8094304917604066,
+            "maximum": 0.8203487184515854
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.007857933434436944,
+            "p95": 0.021786914976998112,
+            "maximum": 0.028299982712496473
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.005589383779831257,
+            "p95": 0.015619623796509467,
+            "maximum": 0.021313673772314603
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.08653535025393266,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 111.06203552716133,
+          "phumob_enormal": 110.34368933517612,
+          "phumob_enormal_hfs": 110.34368933517584,
+          "sentaurus_drive_hfs": 110.3436893351752,
+          "sentaurus_final": 146.94382062827182
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_deep_off_diagnostics/vela/n21_vd_0p05/vg_0p05/accepted_state.csv",
+        "vela_state_sha256": "c0f48bb082e954a1b6a20ee41e9fe5c4c8c15c71b97afa708879ffed4e58db32",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 0.9385195223443887,
+          "p95": 1.6252298417067657,
+          "maximum": 1.8362428301928468,
+          "signed_mean": -0.8968354671637574
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 1.0179092942947298e-07,
+          "p95": 0.14662751434818372,
+          "maximum": 0.5899496770630577,
+          "signed_mean": -0.02369263892015028
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.016139239021891665,
+          "p95": 0.02730047865741657,
+          "maximum": 0.030845304724808557,
+          "signed_mean": -0.014665252028343708
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.19576709710756926,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.19462951809347576,
+          "vela_minus_sentaurus_mV": -1.1375790140935038,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.01911429812169513
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "terminal_signed_log10_error_dex": 0.06399183621494026,
+      "barrier_predicted_log10_shift_dex": 0.02179292773097728,
+      "barrier_prediction_residual_dex": 0.042198908483962974,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1051,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1051,
+            "median": 0.03214626277162527,
+            "p95": 0.1821541362448358,
+            "maximum": 0.454271954022498
+          },
+          "edge_projection": {
+            "count": 1051,
+            "median": 0.007903471507972796,
+            "p95": 0.15706344879962508,
+            "maximum": 0.4199557748113786
+          },
+          "sentaurus_drive": {
+            "count": 1051,
+            "median": 0.0062877391089111315,
+            "p95": 0.15706347207165727,
+            "maximum": 0.4199557909377544
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1051,
+            "median": 0.016252075153930554,
+            "p95": 0.27085230329653254,
+            "maximum": 0.5916218109199961
+          },
+          "edge_projection": {
+            "count": 1051,
+            "median": 0.1996554606985564,
+            "p95": 2.5902566246983443,
+            "maximum": 4.75284652958251
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.18348372909059496,
+            "p95": 0.35672233096783224,
+            "maximum": 0.37764476574416006
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.003434886006740944,
+            "p95": 0.012487744972134307,
+            "maximum": 0.014828288256187648
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.0014690012944338264,
+            "p95": 0.005527510307763184,
+            "maximum": 0.006185576998814475
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.02509068744521073,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 131.23932620646087,
+          "phumob_enormal": 130.98385108154304,
+          "phumob_enormal_hfs": 130.9836041932707,
+          "sentaurus_drive_hfs": 130.98357657059904,
+          "sentaurus_final": 173.4296559846356
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m13_spatial_attribution/self_consistent/n21_vd_0p05_vg_0p8/accepted_state.csv",
+        "vela_state_sha256": "f76b0db1014b211d93213c0d6bdbb964a5657ffa91a1ae5a9af162b209ef012e",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 2.0489593945179907,
+          "p95": 2.857638008292196,
+          "maximum": 2.9706671706429266,
+          "signed_mean": -1.7363326451537575
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.002851141040365751,
+          "p95": 0.3220537792477385,
+          "maximum": 0.5620513887785381,
+          "signed_mean": -0.022877334136206334
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.03440869071041745,
+          "p95": 0.04802299987769186,
+          "maximum": 0.04991205320575053,
+          "signed_mean": -0.028782784096236247
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.3132717343450301,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.3145689895175527,
+          "vela_minus_sentaurus_mV": -1.2972551725226045,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.021795244385566164
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "terminal_signed_log10_error_dex": -0.009772204570424353,
+      "barrier_predicted_log10_shift_dex": -0.14958864781656497,
+      "barrier_prediction_residual_dex": 0.13981644324614062,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1034,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1034,
+            "median": 0.03418187457581377,
+            "p95": 0.35448230156456334,
+            "maximum": 0.5062329416274417
+          },
+          "edge_projection": {
+            "count": 1034,
+            "median": 0.012348780424353268,
+            "p95": 0.153505453071985,
+            "maximum": 0.40734606944920093
+          },
+          "sentaurus_drive": {
+            "count": 1034,
+            "median": 0.009780356889387321,
+            "p95": 0.15345565712067025,
+            "maximum": 0.40741830289778624
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1034,
+            "median": 0.008230719842488729,
+            "p95": 0.1060201471008836,
+            "maximum": 0.30330934592060105
+          },
+          "edge_projection": {
+            "count": 1034,
+            "median": 0.126576757973116,
+            "p95": 2.6249057496302894,
+            "maximum": 4.65950450506651
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.46262089192903844,
+            "p95": 0.5033695087031055,
+            "maximum": 0.5062329416274417
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.00032372742713415714,
+            "p95": 0.019395526473730457,
+            "maximum": 0.01982863796486034
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.0005363523194561545,
+            "p95": 0.019264725860692056,
+            "maximum": 0.019703306230358535
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": -0.20097684849257835,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 117.99859558383338,
+          "phumob_enormal": 117.41251021189183,
+          "phumob_enormal_hfs": 117.19823096946926,
+          "sentaurus_drive_hfs": 117.22379446653252,
+          "sentaurus_final": 167.36629673708075
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n21/workflow/vd_0p05/20_gate_sweep_accepted_state.csv",
+        "vela_state_sha256": "888ff762738dfe133ae94296fd00a89dd9eb55afbd4e3fe62625fd1d40a2573b",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 10.249988651772401,
+          "p95": 16.611789467822714,
+          "maximum": 16.7289763265831,
+          "signed_mean": -10.650010152366297
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.2051420952081419,
+          "p95": 0.2769770853117068,
+          "maximum": 0.28145753677484997,
+          "signed_mean": 0.003823914908807837
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.1747792954946298,
+          "p95": 0.27775589368606707,
+          "maximum": 0.28233608343754835,
+          "signed_mean": -0.17897493652545013
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 350,
+          "sentaurus_lateral_um": -0.12346298750000002,
+          "sentaurus_proxy_V": -0.5519666168380654,
+          "vela_node": 368,
+          "vela_lateral_um": -0.121925975,
+          "vela_proxy_V": -0.5430621387648937,
+          "vela_minus_sentaurus_mV": 8.904478073171628,
+          "sentaurus_min_density_node": 350,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": -0.15136684787546847
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "terminal_signed_log10_error_dex": 0.009830715355814272,
+      "barrier_predicted_log10_shift_dex": 0.010011061151283786,
+      "barrier_prediction_residual_dex": -0.00018034579546951333,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 437,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 437,
+            "median": 0.009745015488472647,
+            "p95": 0.20667623754239114,
+            "maximum": 0.533353788619555
+          },
+          "edge_projection": {
+            "count": 437,
+            "median": 0.007730217068123826,
+            "p95": 0.24192137618673779,
+            "maximum": 0.7142475963919899
+          },
+          "sentaurus_drive": {
+            "count": 437,
+            "median": 0.007813353556851556,
+            "p95": 0.19001529594384126,
+            "maximum": 0.44562465824643765
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 436,
+            "median": 0.19826496295869367,
+            "p95": 2.9644555475063754,
+            "maximum": 7.636899865907766
+          },
+          "edge_projection": {
+            "count": 404,
+            "median": 0.3185116345357747,
+            "p95": 4.799988189564624,
+            "maximum": 9.218792865956825
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.2630743505760008,
+            "p95": 0.8073903771226933,
+            "maximum": 0.8347051578332592
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.015040459971648563,
+            "p95": 0.14149694298435356,
+            "maximum": 0.25202287889229347
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.010745205933982734,
+            "p95": 0.2597152804750948,
+            "maximum": 0.32783132948063354
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.03524513864434664,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 69.32190354510402,
+          "phumob_enormal": 69.3151302634215,
+          "phumob_enormal_hfs": 66.371757898823,
+          "sentaurus_drive_hfs": 66.56568853283736,
+          "sentaurus_final": 69.5448391558129
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n21/workflow/vd_1/10_drain_ramp_accepted_state.csv",
+        "vela_state_sha256": "4a14928a16caf8d0ab57d70c97eef9b60ce461827a00362714b563443b054458",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 1.2169739427889126,
+          "p95": 5.919965744179967,
+          "maximum": 7.344662399123347,
+          "signed_mean": -1.8396063284685393
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 3.467112789266747e-05,
+          "p95": 5.883870684155523,
+          "maximum": 10.106550312420804,
+          "signed_mean": -1.064161823947541
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.021543706446760336,
+          "p95": 0.12338179999385451,
+          "maximum": 0.1416816190118863,
+          "signed_mean": -0.013023579780061943
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.22093673351237655,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.22034081078821302,
+          "vela_minus_sentaurus_mV": -0.5959227241635334,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.01001494686951278
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "terminal_signed_log10_error_dex": 0.022712740742172714,
+      "barrier_predicted_log10_shift_dex": 0.010455748130116106,
+      "barrier_prediction_residual_dex": 0.012256992612056608,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 738,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 738,
+            "median": 0.016165880180707456,
+            "p95": 0.24004866052908952,
+            "maximum": 0.7717149907030533
+          },
+          "edge_projection": {
+            "count": 738,
+            "median": 0.00903152518918941,
+            "p95": 0.26917614796949196,
+            "maximum": 0.8545842797169707
+          },
+          "sentaurus_drive": {
+            "count": 738,
+            "median": 0.008701150322072415,
+            "p95": 0.1859267615352987,
+            "maximum": 0.4786283855382742
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 736,
+            "median": 0.10472852303989541,
+            "p95": 2.3192574305677995,
+            "maximum": 7.636788675808179
+          },
+          "edge_projection": {
+            "count": 707,
+            "median": 0.29363841915181316,
+            "p95": 3.1007763965812627,
+            "maximum": 9.21770794341298
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.2561798963699844,
+            "p95": 0.7896794447313507,
+            "maximum": 0.8289823759558936
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.013499189031641688,
+            "p95": 0.13391832677163126,
+            "maximum": 0.2756774890681078
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.01317418688415806,
+            "p95": 0.2787533951948615,
+            "maximum": 0.3347089763355322
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.029127487440402444,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 90.61798835719111,
+          "phumob_enormal": 90.41513854518081,
+          "phumob_enormal_hfs": 80.98064568067308,
+          "sentaurus_drive_hfs": 81.05921652488456,
+          "sentaurus_final": 90.46496824138761
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_deep_off_diagnostics/vela/n21_vd_1/vg_0p05/accepted_state.csv",
+        "vela_state_sha256": "c8086fa406078c3fd623f45dabea134a49874dc249d0ac53b5cf4b78fadf69aa",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 1.2642716348848226,
+          "p95": 5.758241807189313,
+          "maximum": 7.131506266344179,
+          "signed_mean": -1.7816005370973738
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 4.357322757315746e-05,
+          "p95": 6.450603975198366,
+          "maximum": 10.828897249651636,
+          "signed_mean": -1.1544269655513286
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.021435542856147436,
+          "p95": 0.11980098181365739,
+          "maximum": 0.15365167829173007,
+          "signed_mean": -0.010532809167104383
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": 0.18879261651464013,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": 0.18817022316245613,
+          "vela_minus_sentaurus_mV": -0.622393352184003,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.010459539435455878
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "terminal_signed_log10_error_dex": 0.0573070719503948,
+      "barrier_predicted_log10_shift_dex": 0.0051382482681231805,
+      "barrier_prediction_residual_dex": 0.05216882368227162,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1033,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1033,
+            "median": 0.021544598077494002,
+            "p95": 0.21399195375789068,
+            "maximum": 0.4542711921305582
+          },
+          "edge_projection": {
+            "count": 1033,
+            "median": 0.009449682773395095,
+            "p95": 0.3409023948189439,
+            "maximum": 1.0126834257030584
+          },
+          "sentaurus_drive": {
+            "count": 1033,
+            "median": 0.008233019902408652,
+            "p95": 0.18291431325462776,
+            "maximum": 0.4756083587980748
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1033,
+            "median": 0.015685752526022383,
+            "p95": 0.2850269719276617,
+            "maximum": 4.4441339648739095
+          },
+          "edge_projection": {
+            "count": 1033,
+            "median": 0.20434870883362585,
+            "p95": 2.851766658474906,
+            "maximum": 6.092151318422834
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.21934421524302844,
+            "p95": 0.33960143204017906,
+            "maximum": 0.3931210527815384
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.010382246389826962,
+            "p95": 0.14399047986575667,
+            "maximum": 0.2333812988225413
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.005646659243911805,
+            "p95": 0.2414645647779255,
+            "maximum": 0.33532889215232164
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.12691044106105323,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 113.06318491661884,
+          "phumob_enormal": 111.94884228674466,
+          "phumob_enormal_hfs": 85.89123598171314,
+          "sentaurus_drive_hfs": 85.71624833030103,
+          "sentaurus_final": 106.30467205993817
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m13_spatial_attribution/self_consistent/n21_vd_1_vg_0p8/accepted_state.csv",
+        "vela_state_sha256": "a23de34fab8bbcba6b9c63a9d5d531e20d08588566ee3435fb2ca7d9772ddd8d",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 1.5492162081652827,
+          "p95": 2.9697959718893996,
+          "maximum": 2.996433457062464,
+          "signed_mean": -1.5929871588762596
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 0.07724390666218159,
+          "p95": 5.67712141083998,
+          "maximum": 9.802975288660033,
+          "signed_mean": -1.1020612438111483
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.03469977533550771,
+          "p95": 0.0748948757799676,
+          "maximum": 0.14551408308391617,
+          "signed_mean": -0.008244999765335024
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.3276835902198063,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.3279894517922307,
+          "vela_minus_sentaurus_mV": -0.30586157242440404,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": 0.005140522592575692
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "terminal_signed_log10_error_dex": 0.0011422312412581546,
+      "barrier_predicted_log10_shift_dex": -0.16093391424840772,
+      "barrier_prediction_residual_dex": 0.16207614548966587,
+      "edge": {
+        "silicon_edge_count": 2842,
+        "active_edge_count": 1022,
+        "interface_edge_count": 20,
+        "active_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 1022,
+            "median": 0.02463171500791838,
+            "p95": 0.20562569204807712,
+            "maximum": 0.5548272924475591
+          },
+          "edge_projection": {
+            "count": 1022,
+            "median": 0.014094391849760749,
+            "p95": 0.3657746547252893,
+            "maximum": 0.7447265358724142
+          },
+          "sentaurus_drive": {
+            "count": 1022,
+            "median": 0.008961565766994374,
+            "p95": 0.14256631209168097,
+            "maximum": 0.4050584568129878
+          }
+        },
+        "active_drive_error_dex": {
+          "transport_cell_vector": {
+            "count": 1022,
+            "median": 0.010293515178889639,
+            "p95": 0.15154039609935482,
+            "maximum": 1.6511974897314745
+          },
+          "edge_projection": {
+            "count": 1022,
+            "median": 0.1351678176514357,
+            "p95": 2.6345822027110004,
+            "maximum": 5.627670314058137
+          }
+        },
+        "interface_mobility_error_dex": {
+          "transport_cell_vector": {
+            "count": 20,
+            "median": 0.3085469267926368,
+            "p95": 0.5338799892968766,
+            "maximum": 0.5548272924475591
+          },
+          "edge_projection": {
+            "count": 20,
+            "median": 0.006213347194174447,
+            "p95": 0.024960020525539396,
+            "maximum": 0.08544865285145335
+          },
+          "sentaurus_drive": {
+            "count": 20,
+            "median": 0.006964151005585763,
+            "p95": 0.06447482054315426,
+            "maximum": 0.0977520648056525
+          }
+        },
+        "edge_projection_p95_change_vs_transport_dex": 0.16014896267721218,
+        "mobility_stage_active_median_cm2_V_s": {
+          "phumob": 116.36592339307444,
+          "phumob_enormal": 116.21842848197852,
+          "phumob_enormal_hfs": 109.8594135934851,
+          "sentaurus_drive_hfs": 110.06002412484784,
+          "sentaurus_final": 126.00092554358895
+        }
+      },
+      "profile": {
+        "interface_node_count": 21,
+        "channel_profile_node_count": 21,
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n21/workflow/vd_1/20_gate_sweep_accepted_state.csv",
+        "vela_state_sha256": "43985d6c6a7219614c7d5df6dc032ff50003c604d49ea5444e949089ab80e996",
+        "psi_difference_mV": {
+          "count": 21,
+          "median": 7.778557144877851,
+          "p95": 11.100044665779851,
+          "maximum": 15.207180757414562,
+          "signed_mean": -7.7064761752963955
+        },
+        "phin_difference_mV": {
+          "count": 21,
+          "median": 1.7079375547565667,
+          "p95": 6.341740509890281,
+          "maximum": 6.564917008792276,
+          "signed_mean": 1.4038324062632295
+        },
+        "electron_density_log10_ratio_dex": {
+          "count": 21,
+          "median": 0.15729634103413329,
+          "p95": 0.17525911526635776,
+          "maximum": 0.2811908484957545,
+          "signed_mean": -0.15304481322319882
+        },
+        "old_slotboom_difference_meV": {
+          "count": 21,
+          "median": 0.0,
+          "p95": 3.469446951953614e-15,
+          "maximum": 3.469446951953614e-15,
+          "signed_mean": -9.086646778926133e-16
+        },
+        "source_barrier": {
+          "sentaurus_node": 404,
+          "sentaurus_lateral_um": 0.0,
+          "sentaurus_proxy_V": -0.5493373829352097,
+          "vela_node": 404,
+          "vela_lateral_um": 0.0,
+          "vela_proxy_V": -0.5397575616615266,
+          "vela_minus_sentaurus_mV": 9.579821273683176,
+          "sentaurus_min_density_node": 404,
+          "vela_min_density_node": 404,
+          "minimum_density_log10_ratio_dex": -0.16093229095987985
+        }
+      }
+    }
+  ],
+  "interpretation_guards": [
+    "The edge_projection comparison changes only Vela HFS drive discretization on the same imported Sentaurus state.",
+    "The source-barrier proxy is phin-psi on exact Silicon/Oxide interface nodes; it is diagnostic, not a fitted threshold voltage.",
+    "OldSlotboom production replay uses total ionized impurity only; carrier populations do not enter buildEffectiveNodeNi.",
+    "The barrier-predicted current shift is a Boltzmann proxy, -Delta(phin-psi)/(Vt ln(10)), not a solved terminal current.",
+    "Sentaurus low-field mobility is not separately exported, so PhuMob and Enormal stage values are Vela-only diagnostics."
+  ],
+  "inputs": {
+    "m10_report": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/fixed_state_replay_report.json",
+    "m10_report_sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be",
+    "m12_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_evidence.json",
+    "m12_evidence_sha256": "0a75db391e3e072facd0081e9d08cd0fd2167fcb210caa6eddd18073f49efe45"
+  },
+  "artifacts": {
+    "state_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_state_summary.csv",
+      "sha256": "0bcf21280739b7bcf297f4bd7cac19526ab903346456790cb2d904f059da3f7c"
+    },
+    "surface_profiles": {
+      "path": "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_surface_profiles.csv",
+      "sha256": "3050752c4aefee1cd6ac0eff91d2367ef1bcb38b7451154d18e7608bc4514bfd"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "points": 16,
+  "qualified": 16,
+  "attempts": 32,
+  "failed_attempts": 0,
+  "qualified_selected": 32,
+  "max_row_ratio": 7.354958333870068e-07,
+  "max_dual_Id_relative": 4.3298697960381105e-14,
+  "max_native_error_percent": 0.8081352366531291,
+  "source_components": 64,
+  "source_relative_active": 0,
+  "acceptance_changed": false,
+  "options": {
+    "split_dd_state": true
+  }
+}

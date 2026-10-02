@@ -1,0 +1,21 @@
+{
+  "DC": 68,
+  "qualified_DC": 68,
+  "response_checks": 32,
+  "qualified_response": 32,
+  "native_same_perturbation_done": false,
+  "finite_replacement_done": false,
+  "maximum_prediction_relative_error": 7.602986842092374e-05,
+  "maximum_two_amplitude_relative": 5.923247406902643e-05,
+  "maximum_even_over_odd": 0.0006239997442309189,
+  "minimum_signal_over_zero_drift": 659.2083743502176,
+  "maximum_row_ratio": 6.097042434048072e-07,
+  "maximum_KCL_over_Id": 2.1835579085428094e-14,
+  "maximum_fixed_source_relative": 5.814049021858023e-07,
+  "maximum_linear_residual_relative": 1.0488641672162239e-13,
+  "coherent_core_translation_units": 47,
+  "fixed_port_checks": 60,
+  "compatibility_q_relative": 9.590702843897958e-06,
+  "compatibility_eps0_relative": 1.376433418576184e-06,
+  "compatibility_Vt_relative": -1.7483949643626318e-07
+}

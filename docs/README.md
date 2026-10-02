@@ -6,6 +6,14 @@ evidence.
 
 ## Current References
 
+- [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
+  complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,
+  persistent VM storage, restore tool and source-to-main commit mapping.
+
+- [SimpleMOS historical evidence archive and recovery](../reference_tcad/simplemos_sentaurus2022/local_evidence_20260930/README.md):
+  1,424 small records in Git; complete 1,946-file archive on the Sentaurus VM,
+  with exact hashes and recovery of 522 detailed historical artifacts to their original paths.
+
 - [Latest D0 Release closeout, 2026-09-25](validation/templates_ldmos_release_closeout_2026-09-25.md):
   Codespaces Release 858/858 CTest, 590 exact points, 698 identical state pairs,
   62 native local fields and six checkpoints passed. Three paired rounds reduce
@@ -250,6 +258,12 @@ evidence.
   `scaling.mode = "unit_scaling"`.
 - [PN2D BV validation](validation/pn2d_bv_validation.md): current qualified
   template policy, validation gates, limitations, and evidence map.
+- [SimpleMOS engineering reference](../reference_tcad/simplemos_sentaurus2022/engineering/README.md):
+  qualified configuration, run entry, external input requirements, 816-point
+  evidence and a portable read-only hash/coverage audit.
+- [SimpleMOS branch status](validation/simplemos_branch_status.md): explicit
+  production options, diagnostic boundaries, local evidence dependencies, and
+  the current n23 Id-Vg comparison.
 - [Validation evidence](validation/): dated reports and machine-readable
   contracts for checked-in reference TCAD work.
 - [LDMOS performance summary, 2026-09-11](validation/templates_ldmos_stage4_performance_summary_2026-09-11.md):

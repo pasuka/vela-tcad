@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "build-release/phumob_source_precision_20260910/poisson_candidate/response/jvp/command.json": "5b26ce1636b4c5cd08bcbbfa91d1f9ca6d0feb71b8c5c60cbf489e815b1d9849",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/response/jvp/inputs.json": "1ebd5468b04288d6a172e1e9a7cdf9844b194787fcdc0e38ba01667524f9fd59",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/response/jvp/results.csv": "cdb63b53032b3ac8f47bcac63fe392813bd5e9bfbca8485d246321d802ebe561",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/kernel_check/evidence.json": "cdd73d33758bf8e64ecd84d4270dacfa853c02f7a48fd7b5fa120d18b84a936b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/jvp/checks.csv": "769a44635797152cd48c7e20b6fe8f5f14219416bf3b3351ef3b9e0b13a9a9e1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/jvp/summary.json": "ea489d7d76cfb09805624d57732b86d1252713157036651a081a141f6f72aa7c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/preflight_evidence.json": "1c586858f52ee02c3d35ec6e4125a73b1fc40b623b6d5f349a084013f2e6c738",
+    "scripts/check_simplemos_packed_poisson_jvp_20260910.py": "f58a2e7138c8586bfe3573cdd464da71125609c6273596da599ead2c9ab84664"
+  }
+}

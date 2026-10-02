@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate/dc_evidence.json": "7337aa5fdd2ce332c012d79a815a715eb60e34672b511d795563bd359bf7886c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/contract.json": "7754ec192720b54c0815c39ea05c1e15618d789646ca6ae9fc8ef34ca2c05074",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/dc_comparison.csv": "dece93984e6a750826bff1d18335d59d83d4acf89e8953617b9624c1b0811647",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/dc_summary.json": "58b9c2e91a5e98a1ec7638bf4f76ff49b96f30526d9ccfb65526739081cd9c0b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/legacy/dc_evidence.json": "b42e73481518e14506b9aad745fd8650522fa26ad457211a64539953b7d92ab5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/selected_states.csv": "359aca06360ac588e1019daa8b23fe1d37c43413a6349af8d8ffd96397c01066",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/source_activation.csv": "96f9750581b4de36fc5cdbc67ad329ba2319f864f12a22a9e9583c9792712ac6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_points.csv": "0e3bfa67bf44d4c4e1b6df0a11c540a576eeab7fd4bd4598bc43d3a8590a0928",
+    "scripts/analyze_simplemos_phumob_box_20260909.py": "46f16ee30e92aeb09fc7040da71e3b0ec9da508d38b1f0af3f68e217ac3a56d2"
+  }
+}

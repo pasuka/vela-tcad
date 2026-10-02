@@ -1,0 +1,14 @@
+{
+  "status": "frozen_before_read_only_control",
+  "single_axis": "Explicit jacobian_field_derivatives=false against omitted default true; transport_cell_vector unchanged.",
+  "scope": "No solve, no model selection change. Compare all residual FD rows and Jv rows; this is not a candidate correction.",
+  "input_hashes": {
+    "scripts/check_simplemos_vector_field_jacobian_switch.py": "c3e1dc4df855d809529bf792066db6190304d2860266e9c1294a83d466707b1a",
+    "build-release/simplemos_actual_direction_jvp/field_switch_off/config.json": "9cc9e6eab804d63e99b8034c748cbd16474e5693a1a38243772c50658e540483",
+    "reference_tcad/simplemos_sentaurus2022/actual_direction_jvp/freeze.json": "fb1dd62aeb979a78fed1483770d8b4addde33499c80c9b29bda26665c946ead7",
+    "build-release/simplemos_actual_direction_jvp/direction_runner.exe": "3650d835ad22d13bfdcccc6c5b5639f467689e669d5532487431aa8495d94c00",
+    "include/vela/physics/MobilityModel.h": "c2899e8bff385d8b635375f2990b8eeb97964003da12a6949204a0b6b03eb8e2",
+    "src/physics/MobilityModel.cpp": "ab515aada77b7c6f3b36adb67974f08162a30651f439e27fe305169d40ef52f3",
+    "src/equation/CoupledDDAssembler.cpp": "450bb381d14ea748385e8b19784d9b62cbd62dc5b0c9939c4b7916ea2fd902ae"
+  }
+}

@@ -1,0 +1,5 @@
+key,label,identity_rows,nonzero_linear_artifacts,max_original_constraint_defect,projected_constraint_defect,free_updates_identical,free_defect_change_norm,qualified
+m65_n19_vd_0p050000_endpoint,plus_full,246,49,7.622324035765491e-45,0.0,True,1.091789160005127e-40,True
+m65_n19_vd_0p050000_endpoint,minus_full,246,49,4.925000731046097e-45,0.0,True,8.108514468835022e-41,True
+m65_n23_vd_0p050000_endpoint,plus_full,246,49,3.986855365202495e-45,0.0,True,6.181583274252627e-41,True
+m65_n23_vd_0p050000_endpoint,minus_full,246,49,9.960574268583287e-45,0.0,True,2.8036627549852403e-41,True

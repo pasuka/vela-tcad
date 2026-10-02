@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n19_vd_0p050000_endpoint/vela/vg_040/attempt_0/acceptance_edges.csv": "eae4b8b7821d074f0011492071d46bcfd35e84e499b1488e0c4cef7b256a6246",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n19_vd_1p000000_endpoint/vela/vg_040/attempt_0/acceptance_edges.csv": "0a2814833174a6a2c82478256f0d0540e1e9d8cd84564b5b4cc292b6715e663c",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n23_vd_0p050000_endpoint/vela/vg_040/attempt_0/acceptance_edges.csv": "933540ef6c356362db4b7b80060dc17befd7ff08616339627759d1505ba11eba",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n23_vd_1p000000_endpoint/vela/vg_040/attempt_0/acceptance_edges.csv": "41f98ff4f8dcf6f1ea8700177b76578cb2bcfacae243351be6612df59758b999",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/precision_contract.json": "afeb6133d561c6b6821a1aa3b321874678ca1d87746503ea13ab3cb980180254",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/comparison_evidence.json": "fce52e6937e1409355206eafc119e3a5cb99f16a232d4e738728677744278245",
+    "scripts/audit_simplemos_bgn_psi_precision_20260908.py": "88c0c835b683495fce273ab169aefd11ecf834b3a58a5931c8dfc49c53f1cd7d"
+  }
+}

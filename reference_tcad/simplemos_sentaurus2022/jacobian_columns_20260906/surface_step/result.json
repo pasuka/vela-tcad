@@ -1,0 +1,26 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_jacobian_columns_20260906/m65_n19_vd_1p000000_endpoint/baseline_on/columns.csv.residual.csv": "51c5f556026ce03e8fb2a0f5d68d412defe71d5e6ccd474f5958f5f295285914",
+    "build-release/simplemos_jacobian_columns_20260906/m65_n23_vd_1p000000_endpoint/baseline_on/columns.csv.residual.csv": "be4f5986bd23104baa168e2a1d27c24a93afba6703493fb881dffeb04808bf64",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-07/columns.csv": "4c203548d32bcb41ede8ce4cae0baf5b608462caaf2bdbc8714db760ffa555b3",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-07/columns.csv.residual.csv": "51c5f556026ce03e8fb2a0f5d68d412defe71d5e6ccd474f5958f5f295285914",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-07/config.status.json": "9a5d0cfe30c83fa85f5b98da25fd8b94fd8ffbc097bf9ceb3a01e856883354af",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-08/columns.csv": "795620a19c8ed04246b5174255d9400f0d19a9a0f8299b8863aa26a0bd16ab07",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-08/columns.csv.residual.csv": "51c5f556026ce03e8fb2a0f5d68d412defe71d5e6ccd474f5958f5f295285914",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-08/config.status.json": "18e8e5a7fcafef859dc717e1364f4da58150721fb6a5376b544fb8040f9c6ba2",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-07/columns.csv": "2a7f0deebc5540226b9b48a883c7d76bdb0b31c8abfcb251b9806a90b0ea7fac",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-07/columns.csv.residual.csv": "be4f5986bd23104baa168e2a1d27c24a93afba6703493fb881dffeb04808bf64",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-07/config.status.json": "7d3642f51b104df09ad53150d12e4a0f60c1c5d5a29b7250f7e6f75f7321c2dc",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-08/columns.csv": "85a79242ff4a4c0bcca85a2304d8f6de791611f5564c5fa4c74f913b82cac6f6",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-08/columns.csv.residual.csv": "be4f5986bd23104baa168e2a1d27c24a93afba6703493fb881dffeb04808bf64",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-08/config.status.json": "9a2a5cd2337e6fa35733652054b83ad957a21a937c43fd17638a5ed3e51235f1",
+    "reference_tcad/simplemos_sentaurus2022/jacobian_columns_20260906/surface_step/freeze.json": "8931116ee2c73145d4fb8c87f6c96b962c0775b1ca2e0dda9ef797a318fde2d1",
+    "scripts/analyze_simplemos_surface_derivative_step_20260906.py": "78d84b3546b9aea70c44536645023e366c18172cb26746b0d39da0d87423bfb5"
+  },
+  "stable_failures_remaining": 0,
+  "previously_failed_controls_passed": 8,
+  "previously_failed_controls": 8,
+  "residual_invariant": true,
+  "production_promoted": false,
+  "interpretation": "Local transport FD step control, not a blanket certificate for all Jacobian entries or a production fix."
+}

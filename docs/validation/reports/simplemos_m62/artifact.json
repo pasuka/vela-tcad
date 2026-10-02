@@ -1,0 +1,13 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M62 active-species topology intervention gate",
+  "status": "accepted",
+  "classification": "e3_stopped_no_identity_preserving_writer",
+  "summary": "E3 stopped before mutation because the no-edit TDX round-trip changed unrelated fields",
+  "report": "reference_tcad/simplemos_sentaurus2022/active_species_topology_intervention/m62_active_species_topology_intervention_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/active_species_topology_intervention/m62_roundtrip_field_invariance_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/active_species_topology_intervention/m62_writer_capability_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/active_species_topology_intervention/m62_candidate_node_ledger.csv"
+  ]
+}

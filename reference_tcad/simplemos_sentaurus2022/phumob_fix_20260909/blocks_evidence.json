@@ -1,0 +1,27 @@
+{
+  "input_hashes": {
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_0p050000_endpoint/config.json": "2347a9a29dca74707c79efb725f7a409a3d0a6b1379e9b59e0de47d3726645d3",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_0p050000_endpoint/config.status.json": "e63616d36d09c244bae5892845f884c584a50d95670916b3e275e6a76184e1aa",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_0p050000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_0p050000_endpoint/config.stdout.txt": "378f3dcd653891654c852e93a85379bcde0332fe06d1a9ef77b0aec0ef41c9e9",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_0p050000_endpoint/jvp.csv": "854e207d54d81de35aa373c9ca5442422f96b146a985202703eea925f375e34c",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_1p000000_endpoint/config.json": "00fc20a9abb36b7c214122824fff51ecb8ce717384d8de0e4e907211153ad841",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_1p000000_endpoint/config.status.json": "2bcdbfb0af88f2bcc7b9c614965f4bd8bb8a688e387b17031279261f20bc7f58",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_1p000000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_1p000000_endpoint/config.stdout.txt": "ef364c281edee1d4c8bb3b6a9e589545496d1dea6361f9d90f7e45ce5e73d64b",
+    "build-release/phumob_fix_20260909/blocks/m65_n19_vd_1p000000_endpoint/jvp.csv": "a1129c0e82b421d8873315361030721cbe23a67c3fda0a8b995e3dead445e071",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_0p050000_endpoint/config.json": "735d2aed5a55e5f1a0dde5164c331d8337244f6ecf615cb5352af85d3f95c110",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_0p050000_endpoint/config.status.json": "caf39068aeae08cdcb27f3fbaa17ad9d07d556f4d060a0191ef8024b75020ef6",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_0p050000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_0p050000_endpoint/config.stdout.txt": "427322be6e59f768c390cc19de21ec7264b6a134025b5ae1379bd2bc0489efd5",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_0p050000_endpoint/jvp.csv": "c7400fde980e302bd662924685923038d0c3c2f79e4eb7fc0331b4986585056e",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_1p000000_endpoint/config.json": "5f1df0072371d519ec682838d6624a51074c607965f09fc089ef8cd258fa5bae",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_1p000000_endpoint/config.status.json": "4efe724ffdee20c2a04ef2d5bfc5c438b61094df1e5034ad57d5ec40a670c846",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_1p000000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_1p000000_endpoint/config.stdout.txt": "3795e964f8c37db034296a85f69ee90a1acbe7a835721b674d94c8ac793d8e46",
+    "build-release/phumob_fix_20260909/blocks/m65_n23_vd_1p000000_endpoint/jvp.csv": "290f9f70807f3d2f8a5597db049d4885f5ad58ba042accff7aaf8a3977580f6f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/blocks.csv": "42c213a70be21c8af108cd2fdd23a8f40e16d1518b73597294e97e2e976f67d7",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/blocks_freeze.json": "9aac0f1aaebcd66b29425a6dd0d0032d129d54d9e997195ca27abf2e6d276cd1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/blocks_summary.json": "d6ec4b35f41832d9461ea2c5d977a44534e4be8476ec865d0867ffedd10523ad"
+  }
+}

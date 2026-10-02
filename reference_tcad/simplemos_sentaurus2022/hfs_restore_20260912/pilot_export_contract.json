@@ -1,0 +1,16 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\pilot_raw\\bundle\\m65_n19_vd_0p050000_endpoint_vg_040_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\pilot_exports\\m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\pilot_raw\\bundle\\m65_n19_vd_0p050000_endpoint_vg_040_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\pilot_exports\\m65_n19_vd_0p050000_endpoint_vg_040_observed"
+    }
+  ]
+}

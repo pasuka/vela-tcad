@@ -1,0 +1,66 @@
+{
+  "schema": "vela.simplemos.sdevice.m59_port_observable_decomposition_report.v1",
+  "status": "accepted",
+  "classification": "port_observable_burst_association_plus_smooth_nwell_growth",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m59_port_observable_decomposition_contract_v1.json",
+    "sha256": "5479ea7835ac60eeef1b26c3733fbfa2148f53aed2bd16ae08cfdb88142f0a3e"
+  },
+  "source_scope": {
+    "point_count": 816,
+    "curve_count": 16,
+    "component_count": 9792
+  },
+  "primary_threshold": 0.02,
+  "smooth_component": {
+    "minimum_threshold_robust_pair_growth_dex": 0.021056803474534466,
+    "maximum_threshold_robust_pair_growth_dex": 0.026043930869564934,
+    "interpretation": "A systematic matched-background-Boron curve-error growth remains after excluding points with a large default-minus-Direct substrate observable fraction; its physical chain remains for M63."
+  },
+  "port_observable_component": {
+    "low_drain_primary_slope": 0.3698832241978595,
+    "low_drain_primary_pearson": 0.9962587615174409,
+    "low_drain_primary_point_count": 11,
+    "high_drain_primary": {
+      "threshold": 0.02,
+      "scope": "high_drain",
+      "flagged_point_count": 4,
+      "zero_intercept_slope": -0.10702468014628333,
+      "pearson": 0.8403986900480943,
+      "minimum_pair_burst_free_growth_dex": 0.021056803474534466,
+      "maximum_pair_burst_free_growth_dex": 0.026043930869564934,
+      "minimum_burst_free_maximum_gate_voltage_V": 0.55,
+      "maximum_burst_free_maximum_gate_voltage_V": 0.9
+    },
+    "interpretation": "The positive 0.36-scale drain-error association is low-drain-specific; default-minus-Direct is an observable gap, while continuity-residual causality remains an M60 hypothesis."
+  },
+  "kcl_topology": {
+    "floating_devices": [
+      "n21",
+      "n23"
+    ],
+    "minimum_floating_to_maximum_nonfloating_median_kcl_ratio": 334.61836590926424,
+    "interpretation": "Large default four-terminal KCL sums stratify with the two frozen-TDR devices containing single-node floating n-type components; this is observational support, not an internal-algorithm proof."
+  },
+  "next_gate": {
+    "milestone": "M60",
+    "hypothesis": "tightening Sentaurus nonlinear convergence controls reduces the default-minus-Direct substrate observable burst while preserving non-burst curve points",
+    "claim_guard": "M59 authorizes a frozen M60 convergence-control experiment but does not establish Sentaurus residual causality, a solver defect, or a production-reference change."
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "point_count": true,
+    "curve_count": true,
+    "pair_row_count": true,
+    "component_count": true,
+    "burst_free_growth_threshold_robust": true,
+    "low_drain_slope_in_range": true,
+    "low_drain_pearson_pass": true,
+    "floating_device_set_exact": true,
+    "kcl_topology_stratification": true,
+    "historical_artifacts_not_rewritten": true,
+    "no_new_solve": true,
+    "residual_causality_not_claimed": true,
+    "all_checks_pass": true
+  }
+}

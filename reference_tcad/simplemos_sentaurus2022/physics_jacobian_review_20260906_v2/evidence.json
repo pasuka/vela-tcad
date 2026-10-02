@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_physics_and_jacobian_review_2026-09-06.md": "60654f0857cadb498cf8779efe3d38851b1a52a5b8c8d7493b4610d07c4ef582",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/curve_bins.csv": "a6fed1e4172bf4a49a60e38264e2f36e1e61ad9c5d1da0a0d57733b9962a0711",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/fields.csv": "f5029f6186d4bd4c387eaa19c743bf9b0c32d588d35cfedb88aacd42598fc8c9",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/mobility_ranges.csv": "659a1b5d3e00872b30a863807716cad41f2a24e9601d1bf7f77af883aac1ade1",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/nodes.csv": "526e970e851f14bd6f4e31b39ab6d0de20453ba8f321b614d61d12dca2f1f387",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/review.json": "376a880e432d1c405564129e2901c2ec244c144c1eb60afcff56f55152888f77",
+    "reference_tcad/simplemos_sentaurus2022/physics_jacobian_review_20260906_v2/srh.csv": "3449e2633b911b088879c26dc304d004acada7c02d35206abe98d626b5412dbe"
+  }
+}

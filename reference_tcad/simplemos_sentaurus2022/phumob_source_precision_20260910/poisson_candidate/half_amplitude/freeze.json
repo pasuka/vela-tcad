@@ -1,0 +1,25 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/scaled_source/m65_n19_vd_0p050000_endpoint_source.txt": "9f01e63a86e32d32aca3710985a2b609515279d5c1b9c1f4e7afee6c0a8980be",
+    "build-release/phumob_local_source_20260909/scaled_source/m65_n23_vd_0p050000_endpoint_source.txt": "4eecd4e7f5d3c31c54ebdde884c0a2b90ee255ecf644ed4fa7549babfa44df83",
+    "build-release/phumob_restart_followup_20260909/zero_plateau/m65_n19_vd_0p050000_endpoint/2/state.csv": "d2847a99e28ff1c291c8bdafa45b08a6631822a3d1bd8e03b874653b31dc24b7",
+    "build-release/phumob_restart_followup_20260909/zero_plateau/m65_n23_vd_0p050000_endpoint/2/state.csv": "2d407f6287ebb5ae94f2f4d37c36408876d6ad29894c3db3484847ef327f1707",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/minus_half/acceptance_edges.json": "c8663e565ac4b273da665796d69d2d80599fdcbd7ef85044471c772d569ff98b",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/minus_half/all_row.json": "13baac7c3a09032a61c894c732db340a1ce9a152a04b01d2317dcfa07cc84350",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/minus_half/config.json": "e13082c27b5b899844bc835d072de03b7c7f8be580e72f2807ac4aa4a09e2fb7",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/plus_half/acceptance_edges.json": "6061ba6e4e64aa0da0c2fc6a3837f38c08a5bc190d218c34aa645412ac256400",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/plus_half/all_row.json": "dff540103f90a64eeb0ebc618255ab3792e92d5519d697b762479de140428961",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n19_vd_0p050000_endpoint/plus_half/config.json": "3d58866cc75293204704be1fce90455d7ae612506e8902a30659e2810650a367",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/minus_half/acceptance_edges.json": "2dfd6c2c9c1702337c495612987d8a5874d078da34f1f86466f65780e8a2e309",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/minus_half/all_row.json": "65b5afc524494f464bfe1f0d128b773f2ae1ddb06553ce49014c539aeaf13653",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/minus_half/config.json": "5e2fba86d1890284d6e503033b75e2dd421f444bebb677a45722a0cddd72d33c",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/plus_half/acceptance_edges.json": "92fa0a85c4ccf82475c18917cd69d490ea12c42dc0bcc1cae20aa0c88da6a22b",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/plus_half/all_row.json": "2be0e8754fd50a59f46c55e14ce0864cedbfa8cc38407053fd3d23739914beaf",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/half_amplitude/m65_n23_vd_0p050000_endpoint/plus_half/config.json": "deec6b0db6b514d289977aaba52922eadf80e775544e29f6d33201e74c4cbd28",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/stable_merit/dc_evidence.json": "5aad379be0f44bfb545d320b8780c1c0b21e47b016c2df6f514f72c9067fa9b3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/build_evidence.json": "1ad4237dc2e7dc91a4e03e4e3f17c455fd2a8668a95e603e19cac55724971b1c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/half_amplitude/contract.json": "75bcc9da0c309aff01eee4d1a0bcd2e66b49d219bfae1764306fe2cb12139559",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/kernel_check/evidence.json": "cdd73d33758bf8e64ecd84d4270dacfa853c02f7a48fd7b5fa120d18b84a936b",
+    "scripts/validate_simplemos_poisson_half_source_20260910.py": "aa5ac5b45b386056351bf8d2fbb4ec50943927f12186bd0d3d3d00c1aa6602d5"
+  }
+}

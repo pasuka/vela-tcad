@@ -1,0 +1,54 @@
+{
+  "points": 204,
+  "scope": "Native Enormal versus native PhuMob finite model effect. Both native stages qualified. This is not Vela current error, a small-perturbation derivative, or a production acceptance gate.",
+  "curves": [
+    {
+      "device": "n19",
+      "vd": 0.05,
+      "min_change_percent": -30.610372901905347,
+      "max_change_percent": -13.158733506370268,
+      "endpoints": {
+        "0.0": -13.158733506370268,
+        "0.2": -18.280556052873955,
+        "0.8": -27.832520928507954,
+        "1.0": -30.610372901905347
+      }
+    },
+    {
+      "device": "n19",
+      "vd": 1.0,
+      "min_change_percent": -27.89044622716611,
+      "max_change_percent": -8.96056685019837,
+      "endpoints": {
+        "0.0": -8.96056685019837,
+        "0.2": -14.354334436406536,
+        "0.8": -25.17391032488261,
+        "1.0": -27.89044622716611
+      }
+    },
+    {
+      "device": "n23",
+      "vd": 0.05,
+      "min_change_percent": -30.146361747652904,
+      "max_change_percent": -11.794626317838375,
+      "endpoints": {
+        "0.0": -11.794626317838375,
+        "0.2": -20.4534122804775,
+        "0.8": -28.267749978629595,
+        "1.0": -30.146361747652904
+      }
+    },
+    {
+      "device": "n23",
+      "vd": 1.0,
+      "min_change_percent": -29.181238452404834,
+      "max_change_percent": -7.17526247308794,
+      "endpoints": {
+        "0.0": -7.17526247308794,
+        "0.2": -19.247297422523236,
+        "0.8": -27.239581361834574,
+        "1.0": -29.181238452404834
+      }
+    }
+  ]
+}

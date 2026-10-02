@@ -1,0 +1,39 @@
+{
+  "schema": "vela.simplemos.sdevice.m70_transport_support_partition_report.v1",
+  "status": "accepted",
+  "classification": "transport_support_proxy_not_material",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m70_transport_support_partition_contract_v1.json",
+    "sha256": "230aa58e7c5639d542de72c175815828be7ce6a37ab3d44cf229aa18dba29edd"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_pair_closure_fraction": 0.0,
+    "minimum_pair_closure_fraction": 0.0,
+    "maximum_pair_closure_fraction": 0.0,
+    "median_current_pair_growth_dex": 0.03702897509661555,
+    "median_density_support_pair_growth_dex": 0.0002717679630998889,
+    "median_mobility_support_pair_growth_dex": 0.08905085794854466,
+    "median_qf_gradient_support_pair_growth_dex": -0.18015894469376215,
+    "median_transport_product_pair_growth_dex": -0.2525546098854855,
+    "minimum_active_node_count": 11
+  },
+  "causal_scope": {
+    "closed": "The native state support is partitioned into density, mobility, and qf-gradient factors.",
+    "not_closed": "This diagnostic does not alter or revalidate SG/contact extraction; a remaining mismatch is spatial integration/discretization support, not authorization to reopen closed topics."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "state_count": true,
+    "pair_count": true,
+    "active_node_count": true,
+    "component_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

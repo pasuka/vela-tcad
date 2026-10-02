@@ -1,0 +1,370 @@
+{
+  "schema": "vela.simplemos.sdevice.m56_si_oxide_interface_topology_report.v1",
+  "status": "complete",
+  "classification": "shared_topology_continuous_potential_insulator",
+  "execution": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "inputs": "frozen M8 neutral TDR exports and six M52 solved-state exports",
+    "contract_sha256_before_and_after": "074478d116353371cb3f1392a62ae4ceae4349c2c98ac22abd924868ff3027a2"
+  },
+  "findings": {
+    "input_topology_count": 8,
+    "solved_state_count": 6,
+    "total_input_duplicate_coordinate_groups": 0,
+    "total_input_duplicate_interface_coordinate_groups": 0,
+    "minimum_input_shared_interface_edge_count": 20,
+    "minimum_solved_interface_node_count": 21,
+    "maximum_interface_potential_mismatch_V": 0.0,
+    "all_gate_contacts_on_oxide": true,
+    "all_other_contacts_on_silicon": true,
+    "carrier_density_current_fields_silicon_only": true,
+    "quasi_fermi_plot_records_outside_silicon_are_diagnostic_only": true,
+    "default_deck_explicit_interface_override_present": false
+  },
+  "input_topologies": [
+    {
+      "device": "n17",
+      "global_node_count": 1542,
+      "element_count": 2864,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n18",
+      "global_node_count": 1542,
+      "element_count": 2864,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n19",
+      "global_node_count": 1480,
+      "element_count": 2742,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n20",
+      "global_node_count": 1480,
+      "element_count": 2742,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n21",
+      "global_node_count": 1540,
+      "element_count": 2862,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n22",
+      "global_node_count": 1540,
+      "element_count": 2862,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n23",
+      "global_node_count": 1482,
+      "element_count": 2746,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    },
+    {
+      "device": "n24",
+      "global_node_count": 1482,
+      "element_count": 2746,
+      "silicon_region": "Silicon_1",
+      "oxide_region": "Oxide_1",
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "shared_region_node_count": 21,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_coordinate_node_count": 0,
+      "duplicate_interface_coordinate_group_count": 0,
+      "gate_contact_region": "Oxide_1",
+      "source_contact_region": "Silicon_1",
+      "drain_contact_region": "Silicon_1",
+      "substrate_contact_region": "Silicon_1",
+      "contact_attachment_ok": true
+    }
+  ],
+  "solved_states": [
+    {
+      "state": "n19_vd_0p05_vg_0",
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "global_node_count": 1480,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    },
+    {
+      "state": "n19_vd_0p05_vg_0p05",
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "global_node_count": 1480,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    },
+    {
+      "state": "n19_vd_0p05_vg_0p1",
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.1,
+      "global_node_count": 1480,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    },
+    {
+      "state": "n23_vd_0p05_vg_0",
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "global_node_count": 1482,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    },
+    {
+      "state": "n23_vd_0p05_vg_0p05",
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "global_node_count": 1482,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    },
+    {
+      "state": "n23_vd_0p05_vg_0p1",
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.1,
+      "global_node_count": 1482,
+      "silicon_oxide_shared_edge_count": 20,
+      "silicon_oxide_interface_node_count": 21,
+      "interface_nodes_with_both_potential_values": 21,
+      "maximum_interface_potential_mismatch_V": 0.0,
+      "potential_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "carrier_density_current_support_regions": "Silicon_1",
+      "carrier_density_current_support_is_silicon_only": true,
+      "electron_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "hole_qf_plot_support_regions": "Nitride_1.1;Nitride_1.2;Oxide_1;Silicon_1",
+      "contact_attachment_ok": true,
+      "duplicate_coordinate_group_count": 0,
+      "duplicate_interface_coordinate_group_count": 0
+    }
+  ],
+  "deck_audit": [
+    {
+      "case": "n17_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n17_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n18_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n18_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n19_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n19_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n20_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n20_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n21_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n21_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n22_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n22_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n23_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n23_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n24_vd_0p05",
+      "forbidden_interface_or_current_override_present": false
+    },
+    {
+      "case": "n24_vd_1",
+      "forbidden_interface_or_current_override_present": false
+    }
+  ],
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "input_topology_count": true,
+    "solved_state_count": true,
+    "interface_topology_complete": true,
+    "interface_potential_support_complete": true,
+    "interface_potential_continuous": true,
+    "carrier_support_silicon_only": true,
+    "contact_attachments_match": true,
+    "default_decks_have_no_explicit_override": true,
+    "all_values_finite": true,
+    "classification_declared": true,
+    "no_new_solver_execution": true,
+    "historical_artifacts_preserved": true,
+    "all_checks_pass": true
+  },
+  "claim_guard": "M56 describes the representation used by this frozen SimpleMOS TDR/deck. It does not claim that every Sentaurus heterointerface uses the same strategy and does not authorize adding interface physics."
+}

@@ -1,0 +1,55 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "T299",
+      "model": "phumob",
+      "index": 50,
+      "vg": 1.0,
+      "temperature_K": 299
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "T300",
+      "model": "phumob",
+      "index": 50,
+      "vg": 1.0,
+      "temperature_K": 300
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "T301",
+      "model": "phumob",
+      "index": 50,
+      "vg": 1.0,
+      "temperature_K": 301
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "T350",
+      "model": "phumob",
+      "index": 50,
+      "vg": 1.0,
+      "temperature_K": 350
+    }
+  ],
+  "remote": "/tmp/vela_phumob_floor_20260909",
+  "scope": "Only prescribed lattice temperature changes on n19 Vd=.05 Vg=1; same PhuMob/OldSlotboom/SRH, native Math and geometry callback.",
+  "questions": "Check whether inferred G-floor discrepancy persists under independent temperature changes; compare mathematical and open-source root algorithms without fitting production parameters.",
+  "temperature_export_required": true,
+  "gates": {
+    "temperature_K": 1e-08,
+    "native_kcl_relative": 1e-08,
+    "bias_V": 1e-10,
+    "cell_mobility_relative": 1e-07
+  },
+  "production_parameter_fit_permitted": false
+}

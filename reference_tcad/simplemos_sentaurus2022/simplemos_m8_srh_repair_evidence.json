@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m8_srh_repair.v1",
+  "status": "confirmed",
+  "date": "2026-08-27",
+  "scope": "SimpleMOS SDevice-only SRH parameter mapping",
+  "sentaurus_parameter_query": {
+    "release": "T-2022.03-SP2",
+    "command": "sdevice -P n21_vd_1_des.cmd",
+    "deck_has_parameter_file": false,
+    "generated_models_par_sha256": "cdf4087bc457cad99dd47c918aaa54cde2ac80d95e576178b693e008973eacd4"
+  },
+  "scharfetter_defaults": {
+    "electron": {
+      "tau_min_s": 0.0,
+      "tau_max_s": 1e-5,
+      "reference_doping_cm3": 1e16,
+      "gamma": 1.0
+    },
+    "hole": {
+      "tau_min_s": 0.0,
+      "tau_max_s": 3e-6,
+      "reference_doping_cm3": 1e16,
+      "gamma": 1.0
+    },
+    "trap_energy_eV": 0.0
+  },
+  "root_cause": {
+    "incorrect_source": "TransportModels example-specific Silicon.par",
+    "incorrect_electron_tau_max_s": 3e-8,
+    "effect": "Vela silicon SRH generation integral was 4.5522x to 5.6873x the Sentaurus field integral across the matched n17/n21 deep-off states"
+  },
+  "fixed_state_formula_replay": {
+    "matched_cases": 8,
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05],
+    "maximum_relative_error_after_default_parameter_replay": 5.32907051820075e-15,
+    "interpretation": "The ordinary Scharfetter formula with the deck-specific default parameters reproduces the exported Sentaurus SRH integral to floating-point precision."
+  },
+  "repair_scope": "M8 SimpleMOS scenario generation only; no global C++ default or TransportModels contract change"
+}

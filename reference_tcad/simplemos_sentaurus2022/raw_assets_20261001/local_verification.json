@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "archive_sha256": "f4580adba429d5db2bea835eff5be910f245f965d5ad3f9e723dca84851d0049",
+  "archive_bytes": 3870139662,
+  "files_verified": 60489,
+  "source_bytes": 7772846298,
+  "manifest_sha256": "07ad389a09787324e5944785d2ddc0f8bdd1e7fcd8944d2c77533c33a2a895f9",
+  "restored": 0
+}

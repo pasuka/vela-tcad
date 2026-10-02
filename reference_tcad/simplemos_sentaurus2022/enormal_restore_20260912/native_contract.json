@@ -1,0 +1,167 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_050_observed"
+    }
+  ],
+  "targets": 8,
+  "arms": 2,
+  "remote_root": "/tmp/vela_simplemos_enormal_observer_20260912",
+  "physics": "Restore Enormal only: PhuMob + default Lombardi + OldSlotboom + doping SRH, 300 K. High-field saturation remains disabled.",
+  "identity": "Observed arm adds zero inverse mobility and zero derivatives. Match exported state/current and last callback against final TDR before using observer data.",
+  "native_gates": {
+    "exit_zero": true,
+    "runtime": "T-2022.03-SP2",
+    "bias_error_V": 1e-10,
+    "kcl_over_Id": 1e-08
+  },
+  "observer_gates": {
+    "current_relative": 1e-12,
+    "potential_max_V": 1e-12,
+    "density_relative": 1e-10,
+    "mobility_relative": 1e-12
+  },
+  "original_vela_gates_changed": false,
+  "compiler": "Check vendor CMI compiler and qualify actual load/runtime; baseline jobs do not depend on the observer build."
+}

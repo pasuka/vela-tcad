@@ -1,0 +1,192 @@
+{
+  "schema": "vela.simplemos.sdevice.m9_hfs_parameter_audit.v1",
+  "status": "complete",
+  "sentaurus_release": "T-2022.03-SP2",
+  "parameter_file": "Sentaurus M9 n17 explicit-GradQF Vd=0.05 V sdevice -P export",
+  "parameter_file_sha256": "7887b1556fe21bd15a3b68b7784cf536c5d925b0b323e08f376e0a08a0dcdcd1",
+  "high_field_dependence": {
+    "beta0": [
+      1.109,
+      1.213
+    ],
+    "betaexp": [
+      0.66,
+      0.17
+    ],
+    "alpha": [
+      0.0,
+      0.0
+    ],
+    "K_dT": [
+      0.2,
+      0.2
+    ],
+    "E0_TrEf": [
+      4000.0,
+      4000.0
+    ],
+    "Ksmooth_TrEf": [
+      1.0,
+      1.0
+    ],
+    "Vsat_Formula": [
+      1.0,
+      1.0
+    ],
+    "vsat0": [
+      10700000.0,
+      8370000.0
+    ],
+    "vsatexp": [
+      0.87,
+      0.52
+    ],
+    "ku": [
+      1.0,
+      1.0
+    ],
+    "kv": [
+      1.0,
+      1.0
+    ]
+  },
+  "vela_defaults": {
+    "electron": {
+      "saturation_velocity_m_s": 107000.0,
+      "beta": 1.109
+    },
+    "hole": {
+      "saturation_velocity_m_s": 83700.0,
+      "beta": 1.213
+    }
+  },
+  "core_formula_maximum_relative_error_at_300K": {
+    "electron": 0.0,
+    "hole": 0.0
+  },
+  "core_formula_equivalent_at_300K": true,
+  "implementation_formula_found": true,
+  "parameter_rows": [
+    {
+      "carrier": "electron",
+      "parameter": "vsat0_m_s",
+      "sentaurus": 107000.0,
+      "vela": 107000.0,
+      "status": "exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "beta0",
+      "sentaurus": 1.109,
+      "vela": 1.109,
+      "status": "exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "alpha",
+      "sentaurus": 0.0,
+      "vela": 0.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "betaexp",
+      "sentaurus": 0.66,
+      "vela": null,
+      "status": "neutral_at_300K",
+      "relevance_at_300K": "T/T0=1"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "vsatexp",
+      "sentaurus": 0.87,
+      "vela": null,
+      "status": "neutral_at_300K",
+      "relevance_at_300K": "T/T0=1"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "ku",
+      "sentaurus": 1.0,
+      "vela": 1.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active scale"
+    },
+    {
+      "carrier": "electron",
+      "parameter": "kv",
+      "sentaurus": 1.0,
+      "vela": 1.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active scale"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "vsat0_m_s",
+      "sentaurus": 83700.0,
+      "vela": 83700.0,
+      "status": "exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "beta0",
+      "sentaurus": 1.213,
+      "vela": 1.213,
+      "status": "exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "alpha",
+      "sentaurus": 0.0,
+      "vela": 0.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "betaexp",
+      "sentaurus": 0.17,
+      "vela": null,
+      "status": "neutral_at_300K",
+      "relevance_at_300K": "T/T0=1"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "vsatexp",
+      "sentaurus": 0.52,
+      "vela": null,
+      "status": "neutral_at_300K",
+      "relevance_at_300K": "T/T0=1"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "ku",
+      "sentaurus": 1.0,
+      "vela": 1.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active scale"
+    },
+    {
+      "carrier": "hole",
+      "parameter": "kv",
+      "sentaurus": 1.0,
+      "vela": 1.0,
+      "status": "implicit_exact",
+      "relevance_at_300K": "active scale"
+    }
+  ],
+  "not_exercised_by_isothermal_dd": [
+    "K_dT is a HydroHighField carrier-temperature smoothing parameter",
+    "betaexp and vsatexp are neutral at the frozen 300 K temperature"
+  ],
+  "unresolved_activation": [
+    "E0_TrEf and Ksmooth_TrEf are exported, but the selected isothermal DD deck does not expose whether an additional transferred-electron branch is active internally"
+  ],
+  "interpretation": "The exported 300 K Caughey-Thomas core parameters and formula match Vela. Remaining HFS uncertainty is therefore concentrated in driving-force construction, density interpolation, hidden activation/limiting behavior, or spatial discretization rather than vsat0 or beta0.",
+  "default_model_changed": false
+}

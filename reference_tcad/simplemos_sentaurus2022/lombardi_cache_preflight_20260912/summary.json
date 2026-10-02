@@ -1,0 +1,10 @@
+{
+  "checks": 240,
+  "exact": 240,
+  "max_relative": 0,
+  "uncached_seconds": 0.3876202,
+  "cached_seconds": 0.1525526,
+  "kernel_speedup": 2.5408954026348947,
+  "sums_identical": true,
+  "scope": "Kernel-only isolated cache of static distance/doping coefficients at 300 K. Current frozen solver and curves unchanged. No production migration, matrix or self-consistent qualification. Wall time observed while four solver jobs run; not a whole-solver speedup estimate."
+}

@@ -1,0 +1,9 @@
+{
+  "strict_states": 4,
+  "vela_spatial_responses": 12,
+  "native_screened_directions": 3,
+  "native_independent_FD_qualified_directions": 1,
+  "m82_released": false,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0
+}

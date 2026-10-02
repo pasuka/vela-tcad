@@ -1,0 +1,12 @@
+{
+  "points": 16,
+  "max_native_signed_h_relative": 4.9960036108132044e-15,
+  "max_native_h_sum_condition": 1.003897198180482,
+  "max_vela_source_h_relative": 3.984590435379687e-13,
+  "q_native_C": 1.602192e-19,
+  "q_vela_C": 1.602176634e-19,
+  "interpretation": "Existing signed Si quadrature of native nodal SRH compared with signed native hole-port sum. Electron sum cancellation is recorded and not used as the primary strong-inversion source witness. Fixed-state volume differences do not predict a self-consistent drain response without a sensitivity calibration.",
+  "production_changed": false,
+  "self_consistent_candidate_run": false,
+  "acceptance_changed": false
+}

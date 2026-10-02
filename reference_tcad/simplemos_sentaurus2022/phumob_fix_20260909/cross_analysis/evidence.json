@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross/raw_evidence.json": "a32f76293a5bbdbd3ecbe6d438f5fc5dcc962f7f326b0e1f38d217dc8e703586",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/analysis_freeze.json": "a96c948ca5f47d3998dc6747435655180a13bf7cc6efae8b03b1e8f6823ca49c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/base_closure.csv": "5741d30e649a7f06a15b5493e4cf7d3ac23ac11b9b1809b2376eb21a67633a71",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/cross_entries.csv": "67ce52b4492624942d29518976d0eac55b47f2c2173dafc7be1e18efbf277ac6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/reference_edges.csv": "3247bafa4aba81e14797eb9cdaa15b5abb168464b47090b79356d62e26ccd8d1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/scalar_values.csv": "c1681a59b01a3bba3a411753a05a9cfd020f22b1055353a3f41fc25c73cc716c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross_analysis/summary.json": "14196ce61a8586a3c882f824b75c71ca490dbfc74c4b296ec7c89f4e7f3ba10e"
+  }
+}

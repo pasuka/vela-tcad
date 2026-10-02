@@ -1,0 +1,23 @@
+{
+  "points": 8,
+  "attempts": {
+    "legacy": 18,
+    "candidate": 17
+  },
+  "failed_attempts": {
+    "legacy": 2,
+    "candidate": 2
+  },
+  "dual_qualified": {
+    "legacy": 8,
+    "candidate": 7
+  },
+  "max_abs_native_error_percent": {
+    "legacy": 0.7500985860422471,
+    "candidate": 0.8081352366535954
+  },
+  "source_components": 64,
+  "source_relative_active": 0,
+  "native_G_floor_qualification": false,
+  "acceptance_changed": false
+}

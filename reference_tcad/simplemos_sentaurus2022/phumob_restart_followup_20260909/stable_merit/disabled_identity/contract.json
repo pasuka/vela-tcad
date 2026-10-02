@@ -1,0 +1,15 @@
+{
+  "jobs": [
+    {
+      "label": "e1089",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\linesearch\\failed_e1089\\plain",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\disabled_identity\\e1089"
+    },
+    {
+      "label": "lowvd_source",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\disabled_identity\\lowvd_source"
+    }
+  ],
+  "scope": "Replay the already completed e1089 single-step and n19 low-Vd positive full-source trajectory with the new binary and selector disabled; require identical saved state, exit, iteration count, currents and final residual."
+}

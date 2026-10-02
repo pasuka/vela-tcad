@@ -1,0 +1,7 @@
+device,vd,index,identity,trials,dest
+n19,0.05,0,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\0
+n19,0.05,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\10
+n23,0.05,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\0.05\10
+n23,1.0,0,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\1.0\0
+n23,1.0,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\1.0\10
+n19,0.05,40,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\40

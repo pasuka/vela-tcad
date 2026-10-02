@@ -1,0 +1,102 @@
+{
+  "schema": "vela.simplemos.m78_electron_volume_localization_contract.v1",
+  "objective": "Locate existing M74 electron-only response by stage and space; separate pair improvement from absolute-error deterioration.",
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "pairs": [
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.9
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.85
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      }
+    ]
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "fixed_state_linear_observers_only": true,
+    "production_changes": false
+  },
+  "comparison": "M65 matched-ni/no-BGN vs M74 poisson_electron_transport_node_volume=true; all other physics and bias paths frozen",
+  "reference": "M65 no-BGN Sentaurus endpoint currents for like-physics errors. M60 remains the tight-convergence original-physics reference; do not substitute its BGN currents into the no-BGN ledger.",
+  "definitions": {
+    "delta": "M74 minus M65 at identical node IDs within each device; never subtract different-device node IDs",
+    "stage_increments": "equilibrium delta; drain delta minus equilibrium delta; gate delta minus drain delta",
+    "pair_stage_share": "absolute high-minus-low control-node psi (or psi-phin) stage increment divided by sum of absolute increments",
+    "control": "M69 frozen Sentaurus gate control node, used unchanged at all three stages",
+    "norms": "unweighted node mean, L1, RMS, P95 absolute and maximum; carrier fields restricted to Si; volume-weighted psi L1 also reported",
+    "spatial_partition": "Si nodes at depth x - minimum Si/SiO2 interface x > 0.1 um are substrate; remaining y<-0.125 source, y>0.125 drain, others channel; exclusive, exhaustive",
+    "interface": "ALL nodes belonging to both Si and SiO2; gate footprint subset abs(y)<=0.125 um reported separately, no restricted profile called full interface",
+    "electron_reaction": "Poisson residual sign +q*n*volume in C/m; forcing q*n_baseline*(V_Si-V_all); relaxation q*(n_candidate-n_baseline)*V_Si",
+    "gate_reaction": "unconstrained legacy Poisson residual at gate nodes, qualified against existing M72 native reaction before use",
+    "poisson_prediction": "M73 raw candidate-minus-legacy fixed-state correction, separately total and electron, using frozen Sentaurus states. Also report electron-only baseline-state forcing response -K_legacy^-1*q*n_baseline*(V_Si-V_all)",
+    "pair_prediction": "negative high-minus-low gate-minus-drain delta psi divided by Vt*ln(10); compare both actual electrostatic proxy and M74 actual current reduction",
+    "localization": "report forcing support separately from propagated psi support; interface L1 share has all Si nodes as denominator",
+    "next_step_gate": "M79 local-support A/B only if at least 6/8 pairs have same-sign current reduction and BOTH devices have >=80% gate-increment psi L1 on Si/SiO2 mixed nodes, stable under 0.05/0.10/0.20 um depth partitions"
+  },
+  "acceptance": {
+    "cases": 16,
+    "stages": 48,
+    "pairs": 8,
+    "hash_errors": 0,
+    "bias_tolerance_V": 1e-12,
+    "native_gate_replay_tolerance_C_per_m": 1e-20,
+    "poisson_replay_tolerance_V": 1e-07,
+    "m73_ledger_replay_tolerance_V": 1e-10,
+    "balance_tolerance_V": 2e-07,
+    "current_ledger_tolerance_dex": 1e-12
+  },
+  "guards": [
+    "No retuning closed topics",
+    "No new self-consistent solves",
+    "Stop on state hash failure",
+    "Pair improvement is not absolute accuracy improvement",
+    "Linear prediction is not a validated correction",
+    "No production-default changes",
+    "No new or changed remote decks"
+  ]
+}

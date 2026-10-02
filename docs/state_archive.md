@@ -20,12 +20,31 @@ values into the solver or predictor.
 | `electron_quantum_potential_V` | V | When available |
 | `electron_quantum_potential_like_V` | V | Requires the quantum-potential field |
 | `temperature_K` | K | Required in electrothermal mode; absent in DD mode |
+| `packed_psi`, `packed_electron_qf_increment`, `packed_hole_qf_increment` | 1 | Optional complete normalized DD coordinate bundle; requires all four QF reference/increment fields |
+| `packed_psi_low`, `packed_electron_qf_increment_low`, `packed_hole_qf_increment_low` | 1 | Optional complete low-component bundle; requires the high-component bundle |
 
 The four-equation restart unknowns are potential, the two QF coordinates and
 temperature. Density is derived by the physics implementation; the archive does
 not invent zero densities to fill a DD-shaped record. Physical QF values and
 split reference/increment values are checked for consistency. Keeping the split
 arrays separately preserves increments smaller than the ULP of the reference.
+
+The optional packed DD bundle records `packed_potential_scale_V` in metadata.
+When low components are present, metadata also contains
+`split_state_schema: vela.split-dd-state.v1` and `split_mesh_fingerprint`.
+These are the explicit split-DD solver coordinates, distinct from the ordinary
+reference/increment QF representation. Readers reject partial bundles, invalid
+scales, and disagreement with the physical fields. The DD adapter restores all
+three high/low blocks without a physical-potential round trip. Low tails,
+including subnormals, retain their binary64 bits. The solver additionally checks
+the split mesh fingerprint when loading its runtime; the archive still requires
+the independent full `mesh_sha256` check.
+
+The migration-only CSV importer extracts repeated scale/schema/fingerprint
+columns into metadata, checks their uniformity, and verifies every decoded
+numeric field. Production continues to accept only HDF5. Python frame translation
+rejects packed coordinates until an explicit transformation of all coordinates
+has been supplied; it cannot silently translate only the physical fields.
 
 Required metadata: `mode` (`dd` or `electrothermal`), `mesh_sha256` and finite
 `potential_origin_V`. The canonical `vela.mesh/1` identity includes node order,

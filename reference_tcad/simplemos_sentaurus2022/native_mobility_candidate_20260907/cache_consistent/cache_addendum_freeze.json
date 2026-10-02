@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_native_mobility_candidate_20260907/cache_consistent/compile_command.json": "36b424dde63b02f6edb4768adc1a190ade4578a72ffc1a3a80ece4e36c55ae06",
+    "build-release/simplemos_native_mobility_candidate_20260907/cache_consistent/CoupledDDAssembler.cpp": "740e493263cb3f75c00358a68fcee7464c64c02c8193cfe3a12bb5aa57848361",
+    "build-release/simplemos_native_mobility_candidate_20260907/cache_consistent/link_command.json": "cb099be2a71955a24d1d2df62b78fe90b821b58ee3c12616127fd75bcdfe358c",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/cache_addendum.json": "cf7ebe3b8c899fc9deb8441f4145097bc0b8e5cc45501660ad3095ee30bf2844",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/freeze.json": "f5749859ab20bc3ca7c7f05b9dab2c46aeb112d7a4006e5f0b862bc228574fdb",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/preflight_evidence.json": "431c24f84d3a4550a7811d7248bdb3533f58883de19a8153b5625a9876899474",
+    "scripts/qualify_simplemos_native_mobility_cache_20260907.py": "8ee83e32267a4ac73ab8f502966fb119bab95d303bd8094a65ab31bbf6a7d962"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "points": 7,
+  "cell_comparisons": 122500,
+  "sample_comparisons": 65940,
+  "production_changed": false,
+  "inference_not_native_algorithm_proof": true,
+  "full_device_derivatives_qualified": false
+}

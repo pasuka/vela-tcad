@@ -1,0 +1,16 @@
+{
+  "completed_date": "2026-09-07",
+  "source_revision": "1ff79fec622837641912472ba7463dd4a4523e9d",
+  "native_version": "T-2022.03-SP2",
+  "native_directory": "/tmp/vela_simplemos_reference_subset_20260906",
+  "downloaded_archive_sha256": "4332df4e2a5592b46170dd828545f12e689a91fba1d4183397cf7c961424a66b",
+  "input_archive_sha256": "80f7cec177f91a155f71e6ee7f95819d23eb3ee2e96a9694719772c485f3b011",
+  "backend": "Eigen SparseLU",
+  "native_precision": "128-bit double-double",
+  "vela_precision": "double matrix/state; MP100 accumulation only for the four fixed linear corrections",
+  "existing_tracked_runner_diff": "127 insertions / 1 deletion preserved",
+  "remote_new_runs": 8,
+  "native_target_states": 16,
+  "vela_reclosures": 24,
+  "post_row_probes": 24
+}

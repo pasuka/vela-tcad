@@ -1,0 +1,21 @@
+{
+  "python_syntax_checks": 7,
+  "tests": [
+    {
+      "test": "test_simplemos_bgn_restore.py",
+      "count": 5,
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "test": "test_simplemos_masetti_curves.py",
+      "count": 4,
+      "exit_code": 0,
+      "passed": true
+    }
+  ],
+  "regression_tests_passed": 9,
+  "production_source_changed": false,
+  "full_ctest_repeated": false,
+  "previous_full_ctest": "772/788; same 16 historical failures. Previous stage only, not a new execution."
+}

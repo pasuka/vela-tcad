@@ -1,0 +1,64 @@
+{
+  "schema": "vela.simplemos.sdevice.m52_direct_current_attribution_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "b37c7fb9e6426123df98e1a8286890811e2443f5def4e254b4e08cd7a226bb12",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_attribution_report.json",
+      "sha256": "45b6bc2d88ffd264ccda1e45cb6169d7921b99020f0b15f34ec6f084faaca628"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_state_ledger.csv",
+      "sha256": "0f884a5b028492d0a165808fc28532e0f33aeaa9ed6c88299828b696721156ce"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_terminal_component_ledger.csv",
+      "sha256": "d7f202cc459e3c2e29849cc800707190bd30a5eda9125fe5d71545b34b56cbd3"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_field_invariance_ledger.csv",
+      "sha256": "342886867abf3bad731a1e550b84a1e468664f487ceb9b69ea991cb87d1e72b9"
+    },
+    {
+      "path": "docs/validation/simplemos_m52_direct_current_attribution_2026-09-02.md",
+      "sha256": "12130f05dc304a3deb48c23c305688ee54fd8edfcce35d6415636dcc73da6486"
+    },
+    {
+      "path": "docs/validation/reports/simplemos_m52/artifact.json",
+      "sha256": "751551867a3aaa407401431bec3f4058435973b0ced5c7c3c1832da31df0449b"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_contract_v1.json": "b37c7fb9e6426123df98e1a8286890811e2443f5def4e254b4e08cd7a226bb12",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_contract_freeze.json": "b97e881b6ea8e96090704024852e08640445ff0e2b4ae1da0ff36529e0be987b",
+    "scripts/run_simplemos_m52_direct_current_attribution.py": "e045047ee731bc5971aed2cc93a5648c41dab8a904e5c98eef3731315afda9b1",
+    "tests/regression/test_simplemos_m52_direct_current_attribution.py": "35de02196e364e931e6627ac71dd52c24d0796f53ed394b945308ddf9d4875fb",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_evidence.json": "9dcd3631789f222f9abe3a42a50f6fc27fc9ce8a5482f5baac143907308ea9dc",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m51_current_weighting_attribution_evidence.json": "0557454d6548a1422b0846300e4373ce3fc3a5e31b8af3739a18428aca2d3dcc",
+    "scripts/run_simplemos_m51_current_weighting_attribution.py": "11df01430deeefe25f4a778f87cef480195eeb536473a25242678dee75ed4e53",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_manifest.json": "d4040357ca1e55fcfeaeff1e04584283b8b52d3d9a41dffbe508045a43cbfc2e",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_banner.txt": "a78e8454935480693b2930f4ccfeef2205167c178afd8718ec702218a8171d9b",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_bundle/n23/n23_vd_0p05_des.cmd": "7f9247ac15797572300594e81652535c7410b2b0244c4ed57d72b30d3821dd47",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_0p05_des.plt": "ff622f51533b525593279433e53f8ea24178de47cdff61d0386730cdd16c64bf",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_bundle/n19/n19_vd_0p05_des.cmd": "f2860d4e01a0613007bbd02f221f6c6e57e1352a1adaf162bace6c1aa0f76a11",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m52_direct_current_attribution/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_0p05_des.plt": "eb3e6fd544e867e3b0e71ce6fde092b754e7f86e4f101732c9f9a7e4501420cf"
+  },
+  "new_sentaurus_execution": true,
+  "new_vela_execution": false,
+  "only_intervention": "Math DirectCurrent flag",
+  "production_defaults_changed": false,
+  "closed_topics_reinvestigated": false,
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "exact_state_count": true,
+    "terminal_component_row_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "state_fields_invariant": true,
+    "native_flux_replays": true,
+    "classification_declared": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

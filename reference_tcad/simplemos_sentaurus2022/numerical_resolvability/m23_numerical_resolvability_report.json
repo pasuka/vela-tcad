@@ -1,0 +1,105 @@
+{
+  "schema": "vela.simplemos.sdevice.m23_numerical_resolvability_report.v1",
+  "status": "complete",
+  "execution": {
+    "edge_evaluation_count": 36,
+    "solver_control_count": 8,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "decimal_digits": 100
+  },
+  "findings": {
+    "maximum_raw_subtractive_sg_condition": 1979426197951810.5,
+    "maximum_production_vs_decimal_relative_error": 4.4902674778984784e-15,
+    "maximum_one_ulp_flux_relative_envelope": 2.5160075895207333e-16,
+    "absolute_export_collapsed_edge_count": 10,
+    "all_edges_resolved_in_production_representation": true,
+    "solver_path_spread": {
+      "full": {
+        "minimum_current_A_per_um": 1.1046055986506674e-16,
+        "maximum_current_A_per_um": 1.1046472845209762e-16,
+        "spread_dex": 1.6389199795529203e-05,
+        "maximum_absolute_relative_change_from_baseline": 3.458570542602679e-05
+      },
+      "no_hfs": {
+        "minimum_current_A_per_um": 1.3899350016539832e-16,
+        "maximum_current_A_per_um": 1.3899350034798933e-16,
+        "spread_dex": 5.705178262061873e-10,
+        "maximum_absolute_relative_change_from_baseline": 1.3136658427725934e-09
+      }
+    }
+  },
+  "state_summaries": [
+    {
+      "case": "m21_stable_weak_inversion",
+      "state_variant": "baseline",
+      "edge_count": 11,
+      "maximum_sg_cancellation_condition": 2988661555.511642,
+      "maximum_production_vs_decimal_relative_error": 4.4902674778984784e-15,
+      "maximum_subtractive_vs_decimal_stable_relative_error": 2.759427863475027e-06,
+      "maximum_one_ulp_flux_relative_envelope": 2.5160075895207333e-16,
+      "minimum_qf_drop_ulps": 4222960360272217.5,
+      "absolute_export_collapsed_edge_count": 0,
+      "resolved_edge_count": 11
+    },
+    {
+      "case": "m21_stable_weak_inversion",
+      "state_variant": "sentaurus_import",
+      "edge_count": 11,
+      "maximum_sg_cancellation_condition": 3440411661.249867,
+      "maximum_production_vs_decimal_relative_error": 3.675476386873527e-15,
+      "maximum_subtractive_vs_decimal_stable_relative_error": 3.2757244068225076e-06,
+      "maximum_one_ulp_flux_relative_envelope": 2.418803556211012e-16,
+      "minimum_qf_drop_ulps": 4651059807505038.0,
+      "absolute_export_collapsed_edge_count": 0,
+      "resolved_edge_count": 11
+    },
+    {
+      "case": "m22_deep_off",
+      "state_variant": "full",
+      "edge_count": 7,
+      "maximum_sg_cancellation_condition": 1979426197951810.5,
+      "maximum_production_vs_decimal_relative_error": 3.863182016200291e-15,
+      "maximum_subtractive_vs_decimal_stable_relative_error": 857.6077931022805,
+      "maximum_one_ulp_flux_relative_envelope": 1.973729821555834e-16,
+      "minimum_qf_drop_ulps": 5066549580791808.0,
+      "absolute_export_collapsed_edge_count": 5,
+      "resolved_edge_count": 7
+    },
+    {
+      "case": "m22_deep_off",
+      "state_variant": "no_hfs",
+      "edge_count": 7,
+      "maximum_sg_cancellation_condition": 1979426197951810.5,
+      "maximum_production_vs_decimal_relative_error": 3.664826899557497e-15,
+      "maximum_subtractive_vs_decimal_stable_relative_error": 771.9470137920524,
+      "maximum_one_ulp_flux_relative_envelope": 2.2078630892916767e-16,
+      "minimum_qf_drop_ulps": 4529266351931392.0,
+      "absolute_export_collapsed_edge_count": 5,
+      "resolved_edge_count": 7
+    }
+  ],
+  "conclusions": {
+    "supported": [
+      "The production contact-basin QF increments must be distinguished from rounded absolute QF exports.",
+      "A large raw SG subtraction condition number does not imply equal loss in the factorized production flux.",
+      "The Decimal-100 replay and endpoint-ULP envelope quantify formula evaluation and stored-state resolution separately."
+    ],
+    "not_supported": [
+      "Treating the raw subtractive SG condition number times machine epsilon as the production current error bound.",
+      "Recovering missing state digits by applying multiprecision only after an absolute binary64 QF snapshot was written.",
+      "Changing an HFS or solver default from this diagnostic."
+    ]
+  },
+  "artifacts": {
+    "edge_csv": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_edge_resolvability.csv",
+    "state_summary_csv": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_state_summary.csv",
+    "solver_path_csv": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_solver_path_reproducibility.csv"
+  },
+  "claim_policy": [
+    "A large subtractive SG condition number does not by itself prove that the production factorized flux is unresolved.",
+    "Multiprecision replay of binary64 snapshots can audit formula evaluation but cannot recover state information that was never stored.",
+    "Absolute exported quasi-Fermi potentials and contact-basin increments must be reported separately.",
+    "No HFS or solver default may be changed from this diagnostic alone."
+  ]
+}

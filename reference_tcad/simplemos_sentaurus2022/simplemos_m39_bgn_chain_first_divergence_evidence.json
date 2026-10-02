@@ -1,0 +1,34 @@
+{
+  "schema": "vela.simplemos.sdevice.m39_bgn_chain_first_divergence_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "first_divergence_stage": "C-1_model_selection_contract",
+    "m29_declared_model": "none",
+    "m29_effective_model": "BennettWilson",
+    "m27_c1_total_max_abs_difference_eV": 2.7755575615628914e-17,
+    "m27_c3_max_joint_fit_rms": 1.3620070590630167e-14,
+    "default_model_changed": false,
+    "sentaurus_rerun": false,
+    "vela_solve_rerun": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_chain_first_divergence/m39_bgn_chain_first_divergence_report.json",
+      "sha256": "aa7b9797fd5eb9053fb4122596d349dca187c516973c82f75f7e217abc5a2112"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_chain_first_divergence/m39_model_selection_ledger.csv",
+      "sha256": "c427b76a4b9cbdc43412ad08444cebf78e33c10867909c88cbe0e9a7e734dca3"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_contract_v1.json": "5127f4e757be9a1fdb6fe5001e1266ef43657b2dcfe1ec45f5c7c2f34ee20113",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json": "c84f2ffbd4fbfd042f9b4086c23d1c3c01e7bfe5e4aab197b9e407f17e4cc3ea",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+    "scripts/run_simplemos_m39_bgn_chain_first_divergence.py": "8561aeb6da4172725dcabdd847b5a56396e55ff0807c5fa1bb1bfe5e3193c492",
+    "scripts/freeze_simplemos_m39_bgn_chain_first_divergence_evidence.py": "011d89a0113fee2a581e6ed478c8ab6f7ca693d7a884c271c3f44174a73f8349",
+    "tests/regression/test_simplemos_m39_bgn_chain_first_divergence.py": "eeb16e23303fa837c0964ed2adf5eb136e2e33154b27093f03ace51158f745c7",
+    "docs/validation/simplemos_m39_bgn_chain_first_divergence_2026-09-01.md": "7cc19c014343f127a519cdb0757998eeb4d7bdbdb1254ec64913f78302133f52",
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+  }
+}

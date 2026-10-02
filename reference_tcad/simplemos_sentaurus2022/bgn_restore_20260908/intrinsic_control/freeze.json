@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/m65_ni/vela/matched_materials.json": "3fe16b4e1e3ffb3b087ceb661ee87768694667779dca7d684ef314023891d78b",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/materials.json": "fccdc915c4d1da56035f8e93f8842fad544c6b277bfc262c10a7989b5006187f",
+    "build-release/vela_example_runner.exe": "d12649f7945cca1637bb3813263b95990dae94c7f3138c9ec3fdd90e91f98248",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/contract.json": "9608d28880852760489311c87f846736eb71ebcbb63f95080ec0973d082d9de6",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/semantics.csv": "083c9b65ae8421dafb2939b71b730096a22826f848b5eeaa07ebdafabc018833",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/semantics_evidence.json": "0e58f06843b4fb2fb9d16258dab9effdab44b380000dc577673b4063024f74e7",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/vela_freeze.json": "4ed0cbea5a87234cc5d9134257577b67b952a25a91494262c9d6e7ef9781438a",
+    "scripts/simplemos_bgn_intrinsic_control_20260908.py": "bb3fce881e4ee95606a2bf2d9282c7d9ca6ad97fd1d82014ad75cac817345fcb",
+    "scripts/simplemos_bgn_restore_vela_20260908.py": "95593cbf1ad08b47a568e0346503057013481e41292017f7d1cf7170cf35cbda"
+  }
+}

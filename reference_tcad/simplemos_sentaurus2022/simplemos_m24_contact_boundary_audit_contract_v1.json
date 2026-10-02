@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m24_contact_boundary_audit.v1",
+  "scope": "SDevice-only n23 drain-contact boundary and first-layer continuity audit",
+  "device": "n23",
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.05,
+  "contact": "drain",
+  "state_variants": [
+    "full",
+    "no_hfs"
+  ],
+  "probe_types": [
+    "sg_edge_flux_probe",
+    "newton_carrier_term_probe",
+    "newton_carrier_row_probe"
+  ],
+  "acceptance": {
+    "maximum_contact_qf_bias_error_V": 1e-12,
+    "maximum_sg_cut_current_relative_disagreement": 1e-3,
+    "maximum_continuity_term_absolute_closure": 1e-18
+  },
+  "claim_policy": [
+    "Identical Vela HFS-on/off contact states exclude a direct contact-boundary response, not a private Sentaurus contact implementation difference.",
+    "Contact and internal flux terms must be reported together at the first free-node layer.",
+    "Sub-fA relative changes must be accompanied by absolute current and quasi-Fermi increment changes.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ]
+}

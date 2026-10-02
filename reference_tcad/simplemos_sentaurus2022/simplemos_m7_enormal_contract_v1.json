@@ -1,0 +1,79 @@
+{
+  "schema": "vela.simplemos.enormal_contract.v1",
+  "milestone": "M7",
+  "depends_on": "simplemos_m6_phumob_dd_contract_v1.json",
+  "sentaurus_parameter_source": {
+    "release": "T-2022.03-SP2",
+    "command": "sdevice -P:Silicon",
+    "parameter_file": "models.par",
+    "sha256": "aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f"
+  },
+  "enormal_formula": {
+    "composition": "inverse_mu_enormal = inverse_mu_ac + inverse_mu_sr",
+    "low_field_composition": "inverse_mu_low = inverse_mu_phumob + inverse_mu_ac + inverse_mu_sr",
+    "high_field_order": "phumob_then_enormal_then_high_field_saturation",
+    "distance_factor": "exp(-distance_to_nearest_semiconductor_insulator_interface/l_crit)",
+    "l_crit_over_100_cm_disables_distance_damping": true,
+    "total_impurity_for_N": "ionized_donors_plus_ionized_acceptors",
+    "temperature_term": "pow(lattice_temperature_K/300,-k)"
+  },
+  "silicon_defaults_cm_formula_units": {
+    "electron_hole": {
+      "B_cm_per_s": [47500000.0, 9925000.0],
+      "C_cm_5_over_3_per_V_2_over_3_s": [580.0, 2947.0],
+      "N0_cm3": [1.0, 1.0],
+      "N2_cm3": [1.0, 1.0],
+      "lambda": [0.125, 0.0317],
+      "k": [1.0, 1.0],
+      "delta_V_per_s": [582000000000000.0, 205460000000000.0],
+      "A": [2.0, 2.0],
+      "alpha": [0.0, 0.0],
+      "aother": [0.0, 0.0],
+      "N1_cm3": [1.0, 1.0],
+      "nu": [1.0, 1.0],
+      "eta_V2_per_cm_s": [5.82e30, 2.0546e30],
+      "l_crit_cm": [1e-6, 1e-6],
+      "a_ac": [1.0, 1.0],
+      "a_sr": [1.0, 1.0]
+    }
+  },
+  "spatial_closure": {
+    "implicit_interface_selector": "nearest_transport_nontransport_material_interface",
+    "explicit_interface_selector": "exact_region_pair",
+    "normal": "unit_normal_of_selected_interface_edge",
+    "field": "absolute_cell_linear_potential_gradient_dot_interface_normal",
+    "distance": "cell_centroid_to_selected_interface_segment",
+    "geometry_cache": ["normal", "distance"],
+    "live_state": ["electrostatic_potential"],
+    "transport_edge_reduction": "arithmetic_average_over_adjacent_transport_cells"
+  },
+  "solver_paths": {
+    "gummel_dd": true,
+    "coupled_newton_residual": true,
+    "coupled_newton_jacobian": true,
+    "contact_current": true,
+    "fixed_state_operator_audit": true
+  },
+  "jacobian_contract": {
+    "surface_field_derivatives": "all_three_Tri3_potential_columns",
+    "carrier_population_derivatives": "both_edge_endpoints_for_electrons_and_holes",
+    "fixed_sparse_pattern_includes_surface_cell_stencil": true,
+    "comparison": "assembled_jacobian_vs_global_centered_finite_difference"
+  },
+  "import_contract": {
+    "Mobility.PhuMob+Enormal": "phumob_lombardi",
+    "Mobility.PhuMob+HighFieldSaturation+Enormal": "phumob_field_lombardi",
+    "high_field_driving_force": "quasi_fermi_gradient",
+    "original_simplemos_unsupported_physics": [],
+    "lossy_masetti_substitution_allowed": false
+  },
+  "acceptance": {
+    "official_parameter_mapping_exact": true,
+    "analytical_spatial_enormal_comparison_required": true,
+    "analytical_composed_mobility_comparison_required": true,
+    "coupled_jacobian_directional_comparison_required": true,
+    "original_deck_import_gate_required": true,
+    "full_regression_required": true,
+    "original_deck_current_parity_deferred_to": "M8"
+  }
+}

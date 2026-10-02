@@ -1,0 +1,92 @@
+{
+  "schema": "vela.simplemos.sdevice.m14_adjoint_attribution.report.v1",
+  "status": "complete_with_declared_field_coverage",
+  "execution": {
+    "weak_region_terminal_point_count": 80,
+    "paired_spatial_state_count": 16,
+    "adjoint_solve_count": 16,
+    "substitution_variant_count_per_state": 8,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "cpp_changed": true
+  },
+  "coverage_boundary": {
+    "terminal_error_spectrum": "complete 80/80",
+    "paired_nodal_field_attribution": "16 representative states only",
+    "missing_for_80_point_spatial_extension": "Sentaurus nodal field exports for n21-n24 at every Vg=0..0.95 point"
+  },
+  "adjoint_quality": {
+    "maximum_relative_residual": 2.3061337740005625e-16
+  },
+  "weak_region": {
+    "all_vela_above_sentaurus": true,
+    "mean_signed_error_dex": 0.051096304466763776,
+    "maximum_absolute_error_dex": 0.10941868092427424,
+    "linear_fits_by_device": {
+      "n21": {
+        "slope_dex_per_V": 0.022528407525405393,
+        "intercept_dex": 0.04237941711546712,
+        "rmse_dex": 0.010065236224156256
+      },
+      "n22": {
+        "slope_dex_per_V": 0.029367770190497525,
+        "intercept_dex": 0.03822461320122941,
+        "rmse_dex": 0.006702787048427745
+      },
+      "n23": {
+        "slope_dex_per_V": 0.013453158891506448,
+        "intercept_dex": 0.04440524913816629,
+        "rmse_dex": 0.01615434421987113
+      },
+      "n24": {
+        "slope_dex_per_V": 0.028779345318512253,
+        "intercept_dex": 0.03466481449737951,
+        "rmse_dex": 0.005996753645130993
+      }
+    }
+  },
+  "low_drain_representative_attribution": {
+    "field_means": {
+      "field_psi": {
+        "mean_abs_direct_exact_relative_to_current": 8.348664569450728e-06,
+        "mean_abs_adjoint_relaxation_relative_to_current": 0.008814723515847498
+      },
+      "field_phin": {
+        "mean_abs_direct_exact_relative_to_current": 14932.62431338923,
+        "mean_abs_adjoint_relaxation_relative_to_current": 14932.452485219457
+      },
+      "field_phip": {
+        "mean_abs_direct_exact_relative_to_current": 0.0002644989927786666,
+        "mean_abs_adjoint_relaxation_relative_to_current": 0.00026199755979667725
+      },
+      "field_all": {
+        "mean_abs_direct_exact_relative_to_current": 14932.780348540564,
+        "mean_abs_adjoint_relaxation_relative_to_current": 14932.591675627082
+      }
+    },
+    "region_means": {
+      "region_source": {
+        "mean_abs_direct_exact_relative_to_current": 0.0,
+        "mean_abs_adjoint_relaxation_relative_to_current": 1.7219153889827696e-07
+      },
+      "region_channel": {
+        "mean_abs_direct_exact_relative_to_current": 2932.0590521016934,
+        "mean_abs_adjoint_relaxation_relative_to_current": 2931.8624009847013
+      },
+      "region_drain": {
+        "mean_abs_direct_exact_relative_to_current": 12000.721296438867,
+        "mean_abs_adjoint_relaxation_relative_to_current": 12000.729249837068
+      },
+      "region_body": {
+        "mean_abs_direct_exact_relative_to_current": 0.0,
+        "mean_abs_adjoint_relaxation_relative_to_current": 2.2029575097330203e-05
+      }
+    }
+  },
+  "interpretation_limits": [
+    "The adjoint is local to the converged Vela state and is a first-order self-consistent sensitivity.",
+    "Field and region substitutions can be large; exact frozen current changes are reported separately from the adjoint response.",
+    "Carrier densities are derived from psi and quasi-Fermi potentials and are not substituted as independent Newton unknowns.",
+    "Mobility and SRH evidence is linked from M10-M12 rather than represented as independent state-vector coordinates."
+  ]
+}

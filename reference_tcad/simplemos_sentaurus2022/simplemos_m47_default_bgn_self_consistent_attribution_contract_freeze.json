@@ -1,0 +1,17 @@
+{
+  "schema": "vela.simplemos.sdevice.m47_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json",
+  "contract_sha256": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+  "baseline_revision": "54ced9a30af0003ec738d881219285cf7f7a1245",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json": "7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json": "cc4eab4af3f33dc5d57c15eb984c475447b0aee10c8dedd3f1f7be82237ccd28"
+  },
+  "execution_started": false,
+  "policy": {
+    "contract_mutation_after_freeze": "forbidden",
+    "analysis_must_reverify_hash_before_and_after_execution": true,
+    "failed_or_null_attribution_may_not_relax_acceptance": true
+  }
+}

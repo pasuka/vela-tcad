@@ -1,0 +1,9 @@
+low_device,high_device,drain_voltage_V,diagnostic_gate_voltage_V,dominant_component,dominant_pair_contribution_dex,channel_dominance_stable,pass
+n17,n21,0.05,0.8,electron_transport,0.016304832141786352,True,True
+n17,n21,1.0,0.75,electron_transport,0.019087256087622753,True,True
+n18,n22,0.05,0.8,electron_transport,0.01623611639631707,True,True
+n18,n22,1.0,0.75,electron_transport,0.018955215381989465,True,True
+n19,n23,0.05,0.9,electron_transport,0.013437466369383332,True,True
+n19,n23,1.0,0.8,electron_transport,0.015507670859088728,True,True
+n20,n24,0.05,0.85,electron_transport,0.012863072430478684,True,True
+n20,n24,1.0,0.8,electron_transport,0.015447406361998862,True,True

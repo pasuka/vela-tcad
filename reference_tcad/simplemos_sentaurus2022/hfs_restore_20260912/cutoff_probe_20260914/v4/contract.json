@@ -1,0 +1,27 @@
+{
+  "remote_root": "/tmp/vela_simplemos_hfs_cutoff_v4_20260914",
+  "forces_V_cm": [
+    0.5,
+    0.999,
+    0.999999,
+    1.0,
+    1.000001,
+    1.001,
+    1.5
+  ],
+  "scope": "Load/Plot on modified copies, no Coupled solve. Not a physical or DC accepted state. Both model arms must export the requested loaded state.",
+  "gates": {
+    "psi_V": 1e-12,
+    "phif_V": 1e-10,
+    "density_relative": 1e-08,
+    "observer_identity_relative": 1e-12
+  },
+  "diagnostic_math": [
+    "ComputeGradQuasiFermiAtContacts=UseQuasiFermi",
+    "-ParallelToInterfaceInBoundaryLayer"
+  ],
+  "original_state_modified": false,
+  "native_thermal_voltage_V": 0.025851995266484913,
+  "prior_failure": "v3 requested changed contact values and predicted densities with modern SI Vt; both assumptions invalid. v4 preserves contact values and uses previously documented native constants. No gate relaxation.",
+  "sample_scope": "Only nodes with no contact-adjacent cell enter uniform-field checks; all other calls retained separately."
+}

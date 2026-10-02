@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m69_stage_residual_localization_report.v2",
+  "status": "accepted",
+  "classification": "gate_stage_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m69_stage_residual_localization_contract_v2.json",
+    "sha256": "ae8eba47d1f5a35776dae1dc67f61ec6d51064ecf2f3d5e898f7c553bfa11d70"
+  },
+  "execution": {
+    "sentaurus_release": "****************************************************************************",
+    "new_sentaurus_cases": 16,
+    "new_vela_solves": 0,
+    "independent_v2_rerun": true,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_absolute_stage_increment_dex": {
+      "equilibrium": 0.006169926784802826,
+      "drain": 0.0007535998978480409,
+      "gate": 0.020997921384721677
+    },
+    "median_absolute_stage_share": {
+      "equilibrium": 0.22097445554812253,
+      "drain": 0.026990000519659867,
+      "gate": 0.7520355439322176
+    },
+    "dominant_stage": "gate",
+    "dominant_stage_share": 0.7520355439322176,
+    "median_final_qf_barrier_pair_proxy_dex": 0.023523917340994675,
+    "maximum_final_sentaurus_current_replay_error_dex": 2.6662950482963115e-10
+  },
+  "causal_scope": {
+    "closed": "The stage at which the residual qf-barrier observable appears is localized on the same physical path.",
+    "not_closed": "Stage localization is not by itself a transport closure; M70 is conditional on the remaining unexplained current residual."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "sentaurus_release": true,
+    "case_count": true,
+    "state_counts": true,
+    "pair_stage_count": true,
+    "final_current_replay": true,
+    "coordinate_identity": true,
+    "boltzmann_density_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

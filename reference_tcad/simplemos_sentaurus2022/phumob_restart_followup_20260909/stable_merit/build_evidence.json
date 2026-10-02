@@ -1,0 +1,25 @@
+{
+  "input_hashes": {
+    "build-release/phumob_restart_followup_20260909/stable_merit/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/stable_merit/compile_command.json": "6c1e19a09978474c11bf3ffb4aeeba00b9e3dc971afded297d1475409fab48ea",
+    "build-release/phumob_restart_followup_20260909/stable_merit/fixtures.tsv": "38d4c0d82587885fde622ea0f4fdbd7cfc9826388e8c1f95a61f95efa4ec63e2",
+    "build-release/phumob_restart_followup_20260909/stable_merit/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/stable_merit/link_command.json": "f7e2be7433dd72eb14bbb4066de1fa6769d2405d4aa60a2756d8a2e3f6b0539c",
+    "build-release/phumob_restart_followup_20260909/stable_merit/newton.o": "92f2a6755257621ecb21ab1436e49ae596e4081ce7867e23403867b0a300a903",
+    "build-release/phumob_restart_followup_20260909/stable_merit/NewtonSolver.cpp": "2446b72a45e26e45166fcab52f457cbe4d9cecfc5af67d92f6b457833af33d8f",
+    "build-release/phumob_restart_followup_20260909/stable_merit/runner.exe": "5c993b448c5ecd12e4fd0d5af9d131a5907c66b125fdddc39d9a19f80935a45a",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test.cpp": "008865734180b5fe2a6d92351b4acd7bd116565d5ec8084ad63526149325f50f",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test.exe": "e99c96168caacfceb2d21bc3d6326d66dfd718fa761e740cb0e6a1d55adc3a49",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test_compile.json": "52825e45dc3c6892d0e043a87b8dbd08f27e56ce5bd6a18a681b1e7b12a4a980",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test_compile.log": "4d234cb473f0747a2027ab8635af88ef15de74e6d131239702d66906b5408e8d",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test_compile_resolved.json": "7f0fc425b544afafff2edb50878f4321f2d56ac1c1a710f793320c26223d939c",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test_compile_resolved.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/stable_merit/test_result.log": "c820fa10a56c984e1cb518990ce3166becf73e86e275dee7664cf615c9219df4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/freeze.json": "a3d3a37e461eb26f16d22d61ed9a0103c05548ba11169b02492c39185161673d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/evidence.json": "7e67531ff201e52bc7e1b8d0ec6d1794537e8e407bfa52da2d25e7694d6b33b1",
+    "scripts/build_simplemos_stable_merit_20260908.py": "04924a4411b8e17f395eccab8c072bd30e3d67f8430737c6d8875be84588caf0",
+    "scripts/diagnostics/simplemos_stable_merit.hpp": "711c13855755af80e743de3c020a72574756a001fb5d316e10874e399bba8dbf",
+    "scripts/validate_simplemos_e1089_stable_merit_20260909.py": "aa7860ef19aa318e085c1b7ecbe1e2628fd9e7cf4e6bddb75f3da71c4a633eb8",
+    "tests/diagnostics/test_simplemos_stable_merit.cpp": "9547996aab44a99a644db8ca8d9206f5d64fbe858468ec989dc4de14b09725b8"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "vela.simplemos.sdevice.m29_bgn_srh_factorial_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "new_sentaurus_state_count": 3,
+    "baseline_absolute_gap_dex": 0.09039871358507992,
+    "best_gap_cell": "bgn_off_srh_on",
+    "best_absolute_gap_dex": 0.0023104383154259477,
+    "sentaurus_interaction_dex": -0.05987715055709941,
+    "vela_interaction_dex": 1.244018722018982,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_bgn_srh_factorial_report.json",
+      "sha256": "a3406b02a42030d9f976cd14b2e78f078b8d6effebf69cab6e50bcd2d2e3dc42"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_factorial_matrix.csv",
+      "sha256": "1b75bbcced7ddf4d8b5e0cfd81d7d845856bc59fc223da8c204f0cec417f86c1"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_factor_effects.csv",
+      "sha256": "6b4ca458919b7fb094daf796c93ab814d859c71d6e880f96e02ac777b46c1767"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_node_factor_effects.csv",
+      "sha256": "a411af3c02d6d4a2a804801aa4b5b69dc3774d2465959f015b8a444d6e741548"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_spatial_effect_summary.csv",
+      "sha256": "02338d453401f63290abe84fb742d4a8ce3d901252a43649515a9d15eb7ad977"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_contract_v1.json": "7fe3f03cd36f2b92b1a06d52cdd73260b6f1c76d0b142f75f5307e96faef19c3",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m28_exact_bias_path_audit_evidence.json": "a05d10d4f53f9634a12d69773f6c2f1c2b4f9688bb116d9c9af652e9c82e495d",
+    "scripts/run_simplemos_m29_bgn_srh_factorial.py": "fdf445d99ba4faca435ddcb6ed29d3b74daf1970f34fcabca0f8d276969a0cc4",
+    "scripts/plot_simplemos_m29_bgn_srh_factorial.py": "c56f000a544dfde969e43de679d880e216f556a8aa7758d8645998c3e1d93a45",
+    "scripts/freeze_simplemos_m29_bgn_srh_factorial_evidence.py": "75a987596c846ae0200619e5e4e772d44d6bea26237ccc41a385bdb4115f1237",
+    "tests/regression/test_simplemos_m29_bgn_srh_factorial.py": "f440430d05f82661efb0e243f811f93932b617528b08c86ed9f8a70732cdc025",
+    "docs/validation/simplemos_m29_bgn_srh_factorial_2026-08-31.md": "7eb868503db569e9710c0ef41a3860b92311fe685e9bdf3092e48a3a049518a2",
+    "docs/validation/figures/simplemos_m29/simplemos_m29_bgn_srh_factorial.png": "3cd4c070dd527022e0d0fa69d0f11dda454ebc2c6e6ab5a7abeffb694a03cd10",
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
+  }
+}

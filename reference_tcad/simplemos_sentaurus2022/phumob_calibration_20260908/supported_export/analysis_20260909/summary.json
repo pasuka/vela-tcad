@@ -1,0 +1,10 @@
+{
+  "native_states": 16,
+  "chosen_cell_checks": 32,
+  "chosen_cell_failures": 8,
+  "chosen_cell_max_relative": 7.35772248194877e-06,
+  "edge_failures": 8,
+  "port_replay_failures": 0,
+  "port_replay_max_relative": 3.5992382274585566e-07,
+  "production_element_box_phumob_enabled": false
+}

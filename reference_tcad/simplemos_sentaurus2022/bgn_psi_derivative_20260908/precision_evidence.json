@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/precision_edges.csv": "59e0bb6d2d46b31df5134bccd9df5ff3ff3e2574f36ff2ba8efeb3cd4ec97818",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/precision_freeze.json": "dcb1629d583bd0586ef9ab3a09333cef49266a94fc39159f29a502cd7f980a17",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/precision_summary.json": "7299f50d3491385ce368b9b9078ad74feffcd7a8ce2b4ce0f4c7383dcf1e7f23"
+  }
+}

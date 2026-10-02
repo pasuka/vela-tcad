@@ -1,0 +1,180 @@
+{
+  "schema": "vela.simplemos.sdevice.m29_bgn_srh_factorial_report.v1",
+  "status": "complete",
+  "execution": {
+    "new_sentaurus_state_count": 3,
+    "vela_state_count": 4,
+    "reused_m28_state_count": 1,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "maximum_bias_error_V": 0.0,
+    "nonfinite_fraction": 0.0,
+    "common_silicon_node_count": 942,
+    "checks": {
+      "sentaurus_state_count": true,
+      "vela_state_count": true,
+      "bias_error": true,
+      "finite_values": true,
+      "common_nodes": true
+    },
+    "all_checks_pass": true
+  },
+  "matrix": {
+    "cells": [
+      {
+        "cell": "bgn_on_srh_on",
+        "bgn": true,
+        "srh": true,
+        "sentaurus_current_A_per_um": 1.12874484001395e-16,
+        "vela_current_A_per_um": 1.3899350016539832e-16,
+        "signed_log10_vela_over_sentaurus": 0.09039871358507992,
+        "absolute_log10_ratio": 0.09039871358507992,
+        "relative_error": 0.2313987646993851
+      },
+      {
+        "cell": "bgn_on_srh_off",
+        "bgn": true,
+        "srh": false,
+        "sentaurus_current_A_per_um": 9.58829785725555e-17,
+        "vela_current_A_per_um": 1.2222870353190991e-16,
+        "signed_log10_vela_over_sentaurus": 0.10543168848230958,
+        "absolute_log10_ratio": 0.10543168848230958,
+        "relative_error": 0.2747695717380992
+      },
+      {
+        "cell": "bgn_off_srh_on",
+        "bgn": false,
+        "srh": true,
+        "sentaurus_current_A_per_um": 2.68881979408187e-17,
+        "vela_current_A_per_um": 2.703162381140761e-17,
+        "signed_log10_vela_over_sentaurus": 0.0023104383154259477,
+        "absolute_log10_ratio": 0.0023104383154259477,
+        "relative_error": 0.005334157049296985
+      },
+      {
+        "cell": "bgn_off_srh_off",
+        "bgn": false,
+        "srh": false,
+        "sentaurus_current_A_per_um": 1.98989556846157e-17,
+        "vela_current_A_per_um": 4.169361680781519e-16,
+        "signed_log10_vela_over_sentaurus": 1.3212392857887345,
+        "absolute_log10_ratio": 1.3212392857887345,
+        "relative_error": 19.952665792431205
+      }
+    ],
+    "baseline_absolute_gap_dex": 0.09039871358507992,
+    "best_gap_cell": "bgn_off_srh_on",
+    "best_absolute_gap_dex": 0.0023104383154259477
+  },
+  "factor_effects": {
+    "sentaurus": {
+      "bgn_main_effect_dex": 0.6529726566686174,
+      "srh_main_effect_dex": 0.10079283647121517,
+      "bgn_srh_interaction_dex": -0.05987715055709941,
+      "bgn_effect_srh_on_dex": 0.6230340813900686,
+      "bgn_effect_srh_off_dex": 0.6829112319471662,
+      "srh_effect_bgn_on_dex": 0.07085426119266636,
+      "srh_effect_bgn_off_dex": 0.130731411749764
+    },
+    "vela": {
+      "bgn_main_effect_dex": 0.08911299565023079,
+      "srh_main_effect_dex": -0.566188074714054,
+      "bgn_srh_interaction_dex": 1.244018722018982,
+      "bgn_effect_srh_on_dex": 0.7111223566597218,
+      "bgn_effect_srh_off_dex": -0.5328963653592602,
+      "srh_effect_bgn_on_dex": 0.055821286295437034,
+      "srh_effect_bgn_off_dex": -1.188197435723545
+    },
+    "cross_solver": [
+      {
+        "effect": "bgn_main_effect_dex",
+        "sentaurus_dex": 0.6529726566686174,
+        "vela_dex": 0.08911299565023079,
+        "vela_minus_sentaurus_dex": -0.5638596610183866
+      },
+      {
+        "effect": "srh_main_effect_dex",
+        "sentaurus_dex": 0.10079283647121517,
+        "vela_dex": -0.566188074714054,
+        "vela_minus_sentaurus_dex": -0.6669809111852691
+      },
+      {
+        "effect": "bgn_srh_interaction_dex",
+        "sentaurus_dex": -0.05987715055709941,
+        "vela_dex": 1.244018722018982,
+        "vela_minus_sentaurus_dex": 1.3038958725760814
+      },
+      {
+        "effect": "bgn_effect_srh_on_dex",
+        "sentaurus_dex": 0.6230340813900686,
+        "vela_dex": 0.7111223566597218,
+        "vela_minus_sentaurus_dex": 0.08808827526965324
+      },
+      {
+        "effect": "bgn_effect_srh_off_dex",
+        "sentaurus_dex": 0.6829112319471662,
+        "vela_dex": -0.5328963653592602,
+        "vela_minus_sentaurus_dex": -1.2158075973064264
+      },
+      {
+        "effect": "srh_effect_bgn_on_dex",
+        "sentaurus_dex": 0.07085426119266636,
+        "vela_dex": 0.055821286295437034,
+        "vela_minus_sentaurus_dex": -0.015032974897229323
+      },
+      {
+        "effect": "srh_effect_bgn_off_dex",
+        "sentaurus_dex": 0.130731411749764,
+        "vela_dex": -1.188197435723545,
+        "vela_minus_sentaurus_dex": -1.318928847473309
+      }
+    ]
+  },
+  "spatial_effects": [
+    {
+      "factor": "bgn",
+      "field": "phin",
+      "node_count": 942,
+      "pearson": 0.9908224622797693,
+      "median_absolute_difference": 4.0016601143832986e-14,
+      "p95_absolute_difference": 0.00011034062325331153
+    },
+    {
+      "factor": "bgn",
+      "field": "logn",
+      "node_count": 942,
+      "pearson": 0.9642420661013782,
+      "median_absolute_difference": 0.10753771078219154,
+      "p95_absolute_difference": 0.26891585516737304
+    },
+    {
+      "factor": "srh",
+      "field": "phin",
+      "node_count": 942,
+      "pearson": 0.9999653072123693,
+      "median_absolute_difference": 3.92986602406592e-16,
+      "p95_absolute_difference": 1.768339630194708e-09
+    },
+    {
+      "factor": "srh",
+      "field": "logn",
+      "node_count": 942,
+      "pearson": 0.9999653072119491,
+      "median_absolute_difference": 6.661338147750939e-15,
+      "p95_absolute_difference": 2.970573766969406e-08
+    }
+  ],
+  "artifacts": {
+    "factorial_matrix": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_factorial_matrix.csv",
+    "factor_effects": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_factor_effects.csv",
+    "node_factor_effects": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_node_factor_effects.csv",
+    "spatial_effect_summary": "reference_tcad/simplemos_sentaurus2022/bgn_srh_factorial/m29_spatial_effect_summary.csv"
+  },
+  "claim_policy": [
+    "Only paired cross-solver factor effects may be used for causal attribution; a single ablated current is diagnostic only.",
+    "The M28 validated continuation route is fixed for every Sentaurus cell.",
+    "HFS remains disabled in every cell so its response cannot alias BGN or SRH effects.",
+    "No production BGN, SRH, mobility, contact, SG, or solver default may be changed from this audit alone."
+  ]
+}

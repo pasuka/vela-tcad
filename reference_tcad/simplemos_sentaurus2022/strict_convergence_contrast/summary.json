@@ -1,0 +1,9 @@
+{
+  "status": "strict_qualification_incomplete",
+  "nonlinear_reclosures": 8,
+  "strict_native_converged": 0,
+  "strict_qualified": 0,
+  "max_observed_strict_current_shift_dex": 1.361881164213683e-06,
+  "failed_states_are_not_converged_corrections": true,
+  "m82_released": false
+}

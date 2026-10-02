@@ -1,0 +1,552 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M49 substrate electron-transport attribution",
+    "description": "Frozen-state substrate boundary and transport-factor attribution.",
+    "generatedAt": "2026-09-01T00:00:00+08:00",
+    "sources": [
+      {
+        "id": "src_m49",
+        "label": "Frozen M49 machine report and ledgers",
+        "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_substrate_electron_transport_attribution_report.json",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "description": "Literal reviewed rows from the frozen M49 exact target transport bridge.",
+          "sql": "WITH target_bridge(term,contribution_A_per_um,signed_fraction_of_terminal_difference,absolute_fraction_of_terminal_difference) AS (\n  VALUES ('density',3.6284049868883634e-24,-7.728720229325677e-08,7.728720229325677e-08),\n('mobility',-1.0302778322648019e-20,0.00021945535718380309,0.00021945535718380309),\n('qf_gradient',-9.2300447568149927e-21,0.00019660548887833471,0.00019660548887833471),\n('constitutive_residual',1.6795477138474035e-20,-0.00035775373584364176,0.00035775373584364176),\n('terminal_boundary_residual',-4.6944301227794632e-17,0.99994177017698382,0.99994177017698382)\n) SELECT * FROM target_bridge;",
+          "tables_used": [
+            "target_bridge"
+          ],
+          "filters": [
+            "n23, Vd=0.05 V, Vg=0.05 V",
+            "No interpolation"
+          ],
+          "metric_definitions": [
+            "contribution_A_per_um is the signed exact bridge term",
+            "absolute fraction divides absolute contribution by the absolute frozen M48 substrate-electron difference"
+          ]
+        }
+      },
+      {
+        "id": "src_contract",
+        "label": "Frozen M49 analysis contract",
+        "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_v1.json"
+      }
+    ],
+    "charts": [
+      {
+        "id": "chart_bridge",
+        "title": "Target substrate electron-current bridge",
+        "subtitle": "Signed contribution to Vela-minus-Sentaurus substrate electron current, A/um",
+        "type": "bar",
+        "dataset": "target_bridge",
+        "sourceId": "src_m49",
+        "encodings": {
+          "x": {
+            "field": "term",
+            "type": "ordinal",
+            "label": "Bridge term"
+          },
+          "y": {
+            "field": "contribution_A_per_um",
+            "type": "quantitative",
+            "label": "Contribution (A/um)"
+          }
+        },
+        "layout": "full",
+        "palette": {
+          "kind": "categorical"
+        },
+        "legend": {
+          "position": "none"
+        },
+        "labels": {
+          "values": "auto"
+        },
+        "referenceLines": [
+          {
+            "axis": "y",
+            "value": 0,
+            "label": "Zero",
+            "color": "neutral"
+          }
+        ],
+        "settings": {
+          "orientation": "vertical",
+          "sort": "none"
+        },
+        "surface": {
+          "viewMode": "both",
+          "showControls": true
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "table_bridge",
+        "title": "Target exact transport bridge",
+        "subtitle": "Signed A/um contributions; fractions use the absolute M48 substrate-electron difference",
+        "dataset": "target_bridge",
+        "sourceId": "src_m49",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "term",
+            "label": "Term",
+            "type": "text"
+          },
+          {
+            "field": "contribution_A_per_um",
+            "label": "Contribution (A/um)",
+            "format": "number"
+          },
+          {
+            "field": "absolute_fraction_of_terminal_difference",
+            "label": "Absolute fraction",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "table_layers",
+        "title": "Target substrate graph-distance rows",
+        "subtitle": "n23, Vd=0.05 V, Vg=0.05 V; exact common nodes",
+        "dataset": "target_layers",
+        "sourceId": "src_m49",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "graph_distance",
+            "label": "Layer",
+            "format": "number"
+          },
+          {
+            "field": "node_count",
+            "label": "Nodes",
+            "format": "number"
+          },
+          {
+            "field": "qf_gradient_delta_p95_V_per_cm",
+            "label": "QF-grad p95 (V/cm)",
+            "format": "number"
+          },
+          {
+            "field": "electron_density_log_ratio_p95_abs_dex",
+            "label": "n p95 (dex)",
+            "format": "number"
+          },
+          {
+            "field": "mobility_log_ratio_p95_abs_dex",
+            "label": "Mobility p95 (dex)",
+            "format": "number"
+          },
+          {
+            "field": "current_density_log_ratio_p95_abs_dex",
+            "label": "Jn p95 (dex)",
+            "format": "number"
+          },
+          {
+            "field": "sentaurus_srh_p95_abs_cm3_s",
+            "label": "Sentaurus |SRH| p95",
+            "format": "number"
+          },
+          {
+            "field": "vela_srh_p95_abs_cm3_s",
+            "label": "Vela |SRH| p95",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "table_controls",
+        "title": "Six-state localization controls",
+        "subtitle": "Exact gates only; no interpolation",
+        "dataset": "controls",
+        "sourceId": "src_m49",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "device",
+            "label": "Device",
+            "type": "text"
+          },
+          {
+            "field": "gate_voltage_V",
+            "label": "Vg (V)",
+            "format": "number"
+          },
+          {
+            "field": "terminal_difference_A_per_um",
+            "label": "Substrate electron delta (A/um)",
+            "format": "number"
+          },
+          {
+            "field": "dominant_factor",
+            "label": "Dominant term",
+            "type": "text"
+          },
+          {
+            "field": "dominant_absolute_fraction",
+            "label": "Dominant fraction",
+            "format": "percent"
+          },
+          {
+            "field": "terminal_boundary_residual_absolute_fraction",
+            "label": "Boundary residual fraction",
+            "format": "percent"
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M49 substrate electron-transport attribution"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "sourceId": "src_m49",
+        "body": "## Technical summary\nOutcome: `boundary_observable_limited`. The largest exact bridge term is `terminal_boundary_residual` at 99.99% of the target substrate-electron difference. The terminal-to-boundary residual is 99.99%, and is retained as an explicit attribution limit. The exported boundary-field difference accounts for only 0.0058% of the target terminal difference."
+      },
+      {
+        "id": "bridge_title",
+        "type": "markdown",
+        "body": "## Exact target bridge"
+      },
+      {
+        "id": "bridge_chart",
+        "type": "chart",
+        "chartId": "chart_bridge"
+      },
+      {
+        "id": "bridge",
+        "type": "table",
+        "tableId": "table_bridge"
+      },
+      {
+        "id": "layers_title",
+        "type": "markdown",
+        "sourceId": "src_m49",
+        "body": "## Spatial onset from the substrate boundary\nGraph-distance rows show where current, quasi-Fermi-gradient, density, and mobility differences first become visible on the common Silicon mesh."
+      },
+      {
+        "id": "layers",
+        "type": "table",
+        "tableId": "table_layers"
+      },
+      {
+        "id": "controls_title",
+        "type": "markdown",
+        "body": "## Exact adjacent-gate and low-NWell controls"
+      },
+      {
+        "id": "controls",
+        "type": "table",
+        "tableId": "table_controls"
+      },
+      {
+        "id": "method",
+        "type": "markdown",
+        "sourceId": "src_contract",
+        "body": "## Methodology\nM49 integrates exported electron-current density over the common substrate boundary, reconstructs Jn=q n mu grad(Phi_n), and uses an exact three-factor Shapley bridge. Constitutive and terminal-to-boundary residuals are shown explicitly."
+      },
+      {
+        "id": "limits",
+        "type": "markdown",
+        "sourceId": "src_m49",
+        "body": "## Robustness and limitations\nAll states and fields are read-only M47/M48 evidence. A field-derived boundary integral is not the solver's native contact-face flux. If its residual exceeds 20%, the contract forbids a resolved physical-factor claim. The large layer-0 SRH log ratio is floor-sensitive at near-zero absolute rates and is not used as a discriminator."
+      },
+      {
+        "id": "next",
+        "type": "markdown",
+        "body": "## Recommended next step\nOnly a contract-gated, unchanged-state native substrate-face diagnostic is admissible if the boundary observable is limiting. No SG, contact-extraction, quasi-Fermi-packing, HFS, or default retuning is reopened."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-09-01T00:00:00+08:00",
+    "status": "ready",
+    "datasets": {
+      "target_bridge": [
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "density",
+          "contribution_A_per_um": 3.6284049868883634e-24,
+          "signed_fraction_of_terminal_difference": -7.728720229325677e-08,
+          "absolute_fraction_of_terminal_difference": 7.728720229325677e-08
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "mobility",
+          "contribution_A_per_um": -1.030277832264802e-20,
+          "signed_fraction_of_terminal_difference": 0.0002194553571838031,
+          "absolute_fraction_of_terminal_difference": 0.0002194553571838031
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "qf_gradient",
+          "contribution_A_per_um": -9.230044756814993e-21,
+          "signed_fraction_of_terminal_difference": 0.0001966054888783347,
+          "absolute_fraction_of_terminal_difference": 0.0001966054888783347
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "constitutive_residual",
+          "contribution_A_per_um": 1.6795477138474035e-20,
+          "signed_fraction_of_terminal_difference": -0.00035775373584364176,
+          "absolute_fraction_of_terminal_difference": 0.00035775373584364176
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "terminal_boundary_residual",
+          "contribution_A_per_um": -4.694430122779463e-17,
+          "signed_fraction_of_terminal_difference": 0.9999417701769838,
+          "absolute_fraction_of_terminal_difference": 0.9999417701769838
+        }
+      ],
+      "target_layers": [
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "graph_distance": 0,
+          "node_count": 29,
+          "qf_gradient_delta_median_V_per_cm": 1.2300495036865795,
+          "qf_gradient_delta_p95_V_per_cm": 6116.177098016192,
+          "electron_density_log_ratio_median_dex": 6.455364469191549e-06,
+          "electron_density_log_ratio_p95_abs_dex": 6.455364499297405e-06,
+          "mobility_log_ratio_median_dex": -0.01457524277181686,
+          "mobility_log_ratio_p95_abs_dex": 0.10711952492110186,
+          "current_density_log_ratio_median_dex": 0.016407930557467,
+          "current_density_log_ratio_p95_abs_dex": 1.0263204519311797,
+          "potential_delta_median_mV": 0.00011919309028662894,
+          "potential_delta_p95_abs_mV": 0.00011919309387264931,
+          "srh_log_ratio_median_dex": -11.38898619365284,
+          "srh_log_ratio_p95_abs_dex": 11.964745578489875,
+          "sentaurus_srh_p95_abs_cm3_s": 6.978410232371476e-05,
+          "vela_srh_p95_abs_cm3_s": 0.0
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "graph_distance": 1,
+          "node_count": 29,
+          "qf_gradient_delta_median_V_per_cm": 3.5651523727018444,
+          "qf_gradient_delta_p95_V_per_cm": 6113.434736030338,
+          "electron_density_log_ratio_median_dex": -0.00014984139630482742,
+          "electron_density_log_ratio_p95_abs_dex": 0.0002765754000233443,
+          "mobility_log_ratio_median_dex": -0.013328103198159316,
+          "mobility_log_ratio_p95_abs_dex": 0.10501888047047128,
+          "current_density_log_ratio_median_dex": -0.012831860050423702,
+          "current_density_log_ratio_p95_abs_dex": 0.9794223432243956,
+          "potential_delta_median_mV": 0.0001191838525094191,
+          "potential_delta_p95_abs_mV": 0.00011922046149193122,
+          "srh_log_ratio_median_dex": 0.0012958788799511123,
+          "srh_log_ratio_p95_abs_dex": 0.0014635499671169596,
+          "sentaurus_srh_p95_abs_cm3_s": 656292460.7603343,
+          "vela_srh_p95_abs_cm3_s": 658508437.6649207
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "graph_distance": 2,
+          "node_count": 29,
+          "qf_gradient_delta_median_V_per_cm": 4.143656682390716,
+          "qf_gradient_delta_p95_V_per_cm": 6122.187062594747,
+          "electron_density_log_ratio_median_dex": -0.0001011645261201779,
+          "electron_density_log_ratio_p95_abs_dex": 0.00011140415081799417,
+          "mobility_log_ratio_median_dex": -0.012510274454249227,
+          "mobility_log_ratio_p95_abs_dex": 0.10290389828842826,
+          "current_density_log_ratio_median_dex": -0.008492419028613815,
+          "current_density_log_ratio_p95_abs_dex": 0.8997767118118242,
+          "potential_delta_median_mV": 0.00011915302278175943,
+          "potential_delta_p95_abs_mV": 0.00011932759268473703,
+          "srh_log_ratio_median_dex": 0.00047233890858064463,
+          "srh_log_ratio_p95_abs_dex": 0.0009769670151196636,
+          "sentaurus_srh_p95_abs_cm3_s": 1233468071.1790717,
+          "vela_srh_p95_abs_cm3_s": 1234152850.3110652
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "graph_distance": 3,
+          "node_count": 29,
+          "qf_gradient_delta_median_V_per_cm": 5.004817999158804,
+          "qf_gradient_delta_p95_V_per_cm": 6136.233776438928,
+          "electron_density_log_ratio_median_dex": -7.036849981374729e-05,
+          "electron_density_log_ratio_p95_abs_dex": 0.00012681862830576555,
+          "mobility_log_ratio_median_dex": -0.012482352796694483,
+          "mobility_log_ratio_p95_abs_dex": 0.10114659937561543,
+          "current_density_log_ratio_median_dex": -0.004885805619993112,
+          "current_density_log_ratio_p95_abs_dex": 0.8440287846857294,
+          "potential_delta_median_mV": 0.00011892362211662899,
+          "potential_delta_p95_abs_mV": 0.00012056300138230114,
+          "srh_log_ratio_median_dex": 0.00022792732498402667,
+          "srh_log_ratio_p95_abs_dex": 0.0010159880210262617,
+          "sentaurus_srh_p95_abs_cm3_s": 1763398294.0880728,
+          "vela_srh_p95_abs_cm3_s": 1762847071.2962036
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "graph_distance": 4,
+          "node_count": 29,
+          "qf_gradient_delta_median_V_per_cm": 7.916711439605803,
+          "qf_gradient_delta_p95_V_per_cm": 6160.5641918972615,
+          "electron_density_log_ratio_median_dex": -5.321979175193085e-05,
+          "electron_density_log_ratio_p95_abs_dex": 0.00042226431601274483,
+          "mobility_log_ratio_median_dex": -0.012462763740101102,
+          "mobility_log_ratio_p95_abs_dex": 0.09863419271069215,
+          "current_density_log_ratio_median_dex": -0.002936298870326922,
+          "current_density_log_ratio_p95_abs_dex": 0.7110962866461781,
+          "potential_delta_median_mV": 0.00011887371559327065,
+          "potential_delta_p95_abs_mV": 0.00012951823490370273,
+          "srh_log_ratio_median_dex": 0.00014207379230444652,
+          "srh_log_ratio_p95_abs_dex": 0.0013011337746183793,
+          "sentaurus_srh_p95_abs_cm3_s": 2256003424.394826,
+          "vela_srh_p95_abs_cm3_s": 2254329422.146021
+        }
+      ],
+      "controls": [
+        {
+          "state": "n23_vd_0p05_vg_0",
+          "device": "n23",
+          "gate_voltage_V": 0.0,
+          "terminal_difference_A_per_um": -1.6866699435512172e-19,
+          "density_absolute_fraction": 2.1511830665092494e-05,
+          "mobility_absolute_fraction": 0.06108195614474202,
+          "qf_gradient_absolute_fraction": 0.054727192422062566,
+          "constitutive_residual_absolute_fraction": 0.09957409981452028,
+          "terminal_boundary_residual_absolute_fraction": 0.983786463078381,
+          "dominant_factor": "terminal_boundary_residual",
+          "dominant_absolute_fraction": 0.983786463078381,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "terminal_difference_A_per_um": -4.6947034945330634e-17,
+          "density_absolute_fraction": 7.728720229325677e-08,
+          "mobility_absolute_fraction": 0.0002194553571838031,
+          "qf_gradient_absolute_fraction": 0.0001966054888783347,
+          "constitutive_residual_absolute_fraction": 0.00035775373584364176,
+          "terminal_boundary_residual_absolute_fraction": 0.9999417701769838,
+          "dominant_factor": "terminal_boundary_residual",
+          "dominant_absolute_fraction": 0.9999417701769838,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p1",
+          "device": "n23",
+          "gate_voltage_V": 0.1,
+          "terminal_difference_A_per_um": -1.0183411617917742e-17,
+          "density_absolute_fraction": 3.5631302841417525e-07,
+          "mobility_absolute_fraction": 0.0010117509795105509,
+          "qf_gradient_absolute_fraction": 0.0009063343017170348,
+          "constitutive_residual_absolute_fraction": 0.0016493652552287612,
+          "terminal_boundary_residual_absolute_fraction": 0.9997316362870295,
+          "dominant_factor": "terminal_boundary_residual",
+          "dominant_absolute_fraction": 0.9997316362870295,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        },
+        {
+          "state": "n19_vd_0p05_vg_0",
+          "device": "n19",
+          "gate_voltage_V": 0.0,
+          "terminal_difference_A_per_um": 3.7644630407646824e-20,
+          "density_absolute_fraction": 0.00018196256743999205,
+          "mobility_absolute_fraction": 0.2064040066691131,
+          "qf_gradient_absolute_fraction": 0.40132175295038824,
+          "constitutive_residual_absolute_fraction": 0.8713028156373385,
+          "terminal_boundary_residual_absolute_fraction": 0.32343296807649635,
+          "dominant_factor": "constitutive_residual",
+          "dominant_absolute_fraction": 0.8713028156373385,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        },
+        {
+          "state": "n19_vd_0p05_vg_0p05",
+          "device": "n19",
+          "gate_voltage_V": 0.05,
+          "terminal_difference_A_per_um": -1.6984600411397647e-17,
+          "density_absolute_fraction": 4.033169981389232e-07,
+          "mobility_absolute_fraction": 0.00045746978098469337,
+          "qf_gradient_absolute_fraction": 0.0008894675154120451,
+          "constitutive_residual_absolute_fraction": 0.0019313081911396506,
+          "terminal_boundary_residual_absolute_fraction": 1.0014997137737105,
+          "dominant_factor": "terminal_boundary_residual",
+          "dominant_absolute_fraction": 1.0014997137737105,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        },
+        {
+          "state": "n19_vd_0p05_vg_0p1",
+          "device": "n19",
+          "gate_voltage_V": 0.1,
+          "terminal_difference_A_per_um": -4.638204429936751e-18,
+          "density_absolute_fraction": 1.4769667290036318e-06,
+          "mobility_absolute_fraction": 0.001675190968475026,
+          "qf_gradient_absolute_fraction": 0.003257024789959707,
+          "constitutive_residual_absolute_fraction": 0.00707286176792897,
+          "terminal_boundary_residual_absolute_fraction": 1.0054925049131733,
+          "dominant_factor": "terminal_boundary_residual",
+          "dominant_absolute_fraction": 1.0054925049131733,
+          "target_dominant_factor": "terminal_boundary_residual",
+          "target_dominant_factor_localized": false
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "src_m49",
+      "label": "Frozen M49 machine report and ledgers",
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_substrate_electron_transport_attribution_report.json",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "description": "Literal reviewed rows from the frozen M49 exact target transport bridge.",
+        "sql": "WITH target_bridge(term,contribution_A_per_um,signed_fraction_of_terminal_difference,absolute_fraction_of_terminal_difference) AS (\n  VALUES ('density',3.6284049868883634e-24,-7.728720229325677e-08,7.728720229325677e-08),\n('mobility',-1.0302778322648019e-20,0.00021945535718380309,0.00021945535718380309),\n('qf_gradient',-9.2300447568149927e-21,0.00019660548887833471,0.00019660548887833471),\n('constitutive_residual',1.6795477138474035e-20,-0.00035775373584364176,0.00035775373584364176),\n('terminal_boundary_residual',-4.6944301227794632e-17,0.99994177017698382,0.99994177017698382)\n) SELECT * FROM target_bridge;",
+        "tables_used": [
+          "target_bridge"
+        ],
+        "filters": [
+          "n23, Vd=0.05 V, Vg=0.05 V",
+          "No interpolation"
+        ],
+        "metric_definitions": [
+          "contribution_A_per_um is the signed exact bridge term",
+          "absolute fraction divides absolute contribution by the absolute frozen M48 substrate-electron difference"
+        ]
+      }
+    },
+    {
+      "id": "src_contract",
+      "label": "Frozen M49 analysis contract",
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_v1.json"
+    }
+  ]
+}

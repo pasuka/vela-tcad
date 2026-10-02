@@ -1,0 +1,16 @@
+{
+  "native_states": 16,
+  "new_fit": false,
+  "production_changed": false,
+  "heldout": "Use previously frozen high-Vg diagnostic G floors; fit zero parameters to these low-Vg fields or currents.",
+  "gates": {
+    "cell_relative": 1e-07,
+    "edge_relative": 1e-07,
+    "native_terminal_relative": 1e-06,
+    "masetti_reclosure_relative": 1e-08
+  },
+  "precision": 100,
+  "q_C": 1.602192e-19,
+  "thermal_voltage_V": 0.025851995266484913,
+  "floor_algorithm_identified": false
+}

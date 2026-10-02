@@ -1,0 +1,39 @@
+{
+  "schema": "vela.simplemos.sdevice.m33_region_resolved_interface_assembly.v1",
+  "scope": "SDevice-only shared-node Si/SiO2 region-resolved finite-volume assembly diagnostic",
+  "device": "n23",
+  "bias": {
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "physics": {
+    "bandgap_narrowing": "OldSlotboom",
+    "recombination": "SRH(DopingDependence)",
+    "mobility": "PhuMob + Enormal + HighFieldSaturation(GradQuasiFermi)",
+    "high_field_gradient_discretization": "transport_cell_vector"
+  },
+  "factors": [
+    "poisson_edge_coupling",
+    "transport_edge_coupling",
+    "transport_node_volume"
+  ],
+  "variants": "complete 2^3 factorial matrix",
+  "workflow": [
+    "self-consistent equilibrium",
+    "self-consistent drain ramp to 0.05 V",
+    "self-consistent gate ramp to 0.05 V"
+  ],
+  "acceptance": {
+    "variant_count": 8,
+    "maximum_baseline_replay_relative_error": 1e-10,
+    "minimum_si_oxide_interface_edges": 1,
+    "require_all_runs_converged": true,
+    "require_finite_results": true
+  },
+  "claim_policy": [
+    "The diagnostic retains one shared electrostatic degree of freedom at each material-interface node.",
+    "The three factors change only region-local geometric weighting; default assembly remains unchanged.",
+    "Local coefficient ratios are not terminal-current error multipliers.",
+    "A better current match supports an interface-assembly contribution but does not prove equivalence to Sentaurus double-point internals."
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 0,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_000_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_000"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 1,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_001_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_001"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 2,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_002_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_002"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 3,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_003_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_003"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 4,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_004_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_004"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 5,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_005_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_005"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 6,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_006_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_006"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 7,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_007_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_007"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 8,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_008_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_008"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 9,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_009_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_009"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 10,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_010_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_010"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 11,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_011_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_011"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 12,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_012_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_012"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 13,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_013_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_013"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 14,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_014_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_014"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 15,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_015_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_015"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 17,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_017_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_017"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 18,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_018_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_018"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 19,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_019_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_019"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_0p050000_endpoint\\refined_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_0p050000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 0,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_000_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_000"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 1,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_001_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_001"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 2,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_002_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_002"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 3,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_003_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_003"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 4,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_004_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_004"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 5,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_005_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_005"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 6,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_006_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_006"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 7,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_007_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_007"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 8,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_008_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_008"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 9,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_009_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_009"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 10,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_010_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_010"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 11,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_011_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_011"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 12,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_012_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_012"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 13,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_013_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_013"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 14,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_014_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_014"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 15,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_015_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_015"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 17,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_017_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_017"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 18,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_018_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_018"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 19,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_019_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_019"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_raw\\bundle\\m65_n23_vd_1p000000_endpoint\\refined_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_precision\\native_exports\\m65_n23_vd_1p000000_endpoint\\vg_020"
+    }
+  ],
+  "input_hashes": {
+    "build-release/simplemos_fullfield_20260906/native_precision/results.tgz": "8a1803efbe45fc3c26fa16a80b68aea9a12f1a8ab4ec95c0b2071946b1728998",
+    "scripts/refine_simplemos_native_precision_20260906.py": "d1cb7295e701476ae258332088518e4ec0dadd0e2d44dd77e11158f19c04972a"
+  }
+}

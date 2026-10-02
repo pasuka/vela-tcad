@@ -1,0 +1,30 @@
+{
+  "schema": "vela.simplemos.sdevice.m70_transport_support_partition_evidence.v1",
+  "status": "frozen",
+  "classification": "transport_support_proxy_not_material",
+  "contract_sha256": "230aa58e7c5639d542de72c175815828be7ce6a37ab3d44cf229aa18dba29edd",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m70_transport_support_partition.py": "23f8cfa5d98c75fb2dd4cab85344e2415136ab42a3a4d587fa6b0445f2fb6dcb"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_partition_report.json": "7873280405900f5318d0ea896e8b836bdf9db067bbabd3bc3013e8a3009b69b5",
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_state_ledger.csv": "4861babc4b91e60904699a03e753d2996cf12a2ae90bbe2f88fd0b2137b8484c",
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_pair_ledger.csv": "1a3346cd305c29920d69ef0b4ef782375c7858ddb36336e9b3e20dded694a5ab",
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_node_ledger.csv": "d6ef57000f708ca9ba4199906c0c668d810c6b5848461b2844d14fd3377594ed",
+    "docs/validation/simplemos_m70_transport_support_partition_2026-09-03.md": "d6a3d9952b86349c72bb3f0920b8147cba7f2471f96f8387819b56f620d3ed31",
+    "docs/validation/reports/simplemos_m70/artifact.json": "47a69f56c2bfcecbed3fcf5e6e13a46b860bd35ee1d3a7ec461abc25a8130656"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "state_count": true,
+    "pair_count": true,
+    "active_node_count": true,
+    "component_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

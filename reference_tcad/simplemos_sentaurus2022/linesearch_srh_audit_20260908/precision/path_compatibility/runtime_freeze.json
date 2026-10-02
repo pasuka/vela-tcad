@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/freeze.json": "537cab8208ec07f1483a81dd487a4748e04828c2cfc1b31789764ee553911323",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/adapter.json": "da16a5e8b6a1c080faab50c98ff7084778e6c25eb043bbef6f4ea0e80105c228",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/freeze.json": "4182ffb7aee245096e5c2ad0ed22fb6147c3b830952c43452bee3917fea6bf32",
+    "scripts/run_simplemos_linesearch_precision_20260908.py": "5a4daf007ded9a000ba9b33da17e853730178d8b123cac9e7031eae4d3d203ea"
+  }
+}

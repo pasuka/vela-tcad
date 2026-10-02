@@ -1,0 +1,23 @@
+{
+  "input_hashes": {
+    "build-release/m65_ni/vela/matched_materials.json": "3fe16b4e1e3ffb3b087ceb661ee87768694667779dca7d684ef314023891d78b",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n19/doping.csv": "b6b41fa3f519c5ed4b645f1e9430cd1f86ec2093334e93054d9a881f4f4332c7",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n23/doping.csv": "e1afbfb11018166065a4917149541c55be835aa0fe23219432c58857a78dcd6a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json": "be50eb40a52bb13e049eaf1b8ddd12f706e45175415974484aad734dca069ff4",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json": "91a068dab450d03b6587762b257e66b7644e7f2704ca108da36f3a4b70e5c85f",
+    "build-release/simplemos_strict_flux_precision/m65_n19_vd_0p050000_endpoint/state.csv": "49db26390ebc7f892f46f61c231eb41b1773d57ec877b6834eceba0e5ee0de6d",
+    "build-release/simplemos_strict_flux_precision/m65_n19_vd_1p000000_endpoint/state.csv": "923e86338bab710a8b671ffbbe03a351bc00d678ada7ad545479a8720db8c1b1",
+    "build-release/simplemos_strict_flux_precision/m65_n23_vd_0p050000_endpoint/state.csv": "8f844b2504cafb728a71a33db206055e55685a62326b2f88faa0e9c292c935e1",
+    "build-release/simplemos_strict_flux_precision/m65_n23_vd_1p000000_endpoint/state.csv": "5e13122bbc59346f9bf9d3e8a708ee6091baddf700078c194c6c6a99f5754d6e",
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_0p050000_endpoint/config.json": "08d1cf221fa785579301bb8d660a9056b7801a3c85486feb95fd212d69700469",
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_1p000000_endpoint/config.json": "efbbcd6ce1db1624922302b31d1d4a779fb6603480fa88d7801a5ba3c9e96c88",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_0p050000_endpoint/config.json": "38da6176259e3ecfaa3921d3b7011a5d2e28f8e4b091c9f3dc65368189b94411",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_1p000000_endpoint/config.json": "32d59a27f653c38224dd9329bb7eb788e57b64c01065e7a9a290d12a23d11308",
+    "build-release/simplemos_weak_columns_20260906/runner.cpp": "dc635c59defc399ed05d09473d407dd5faa6559dc0bb0c7982be812c77765ff4",
+    "build-release/simplemos_weak_columns_20260906/runner.exe": "47b638c2213028aba8c8a1e1c6b88da77abb0da6558e71336445754b511fda8c",
+    "reference_tcad/simplemos_sentaurus2022/jacobian_columns_20260906/columns.csv": "61978928df32b47cdbc5316219e61ed2403feffe6bd97c029647b08a1bc8f6c5",
+    "reference_tcad/simplemos_sentaurus2022/jacobian_columns_20260906/surface_step/freeze.json": "8931116ee2c73145d4fb8c87f6c96b962c0775b1ca2e0dda9ef797a318fde2d1",
+    "reference_tcad/simplemos_sentaurus2022/weak_columns_20260906/contract.json": "ceb890e38c6331f498b17ff104bc53993a3f739c6e29c9a682a4d0665c0eb664",
+    "scripts/validate_simplemos_weak_columns_20260906.py": "4d3c36583d48594cae8ab20247bd353fb9f4b0847ede6329df14427d14f7e574"
+  }
+}

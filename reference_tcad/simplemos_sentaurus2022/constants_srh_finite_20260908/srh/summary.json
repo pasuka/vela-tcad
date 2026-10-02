@@ -1,0 +1,9 @@
+{
+  "DC": 24,
+  "qualified_DC": 12,
+  "qualified_dual": 12,
+  "qualified_ports": 24,
+  "max_row_ratio": 0.0007631499741535063,
+  "qualified": false,
+  "native_source_calibrated": false
+}

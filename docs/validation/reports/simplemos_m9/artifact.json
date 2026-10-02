@@ -1,0 +1,1184 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M9 HighFieldSaturation 参考密度与边级诊断报告",
+    "description": "SDevice-only HFS density interpolation and Vela per-edge limiter diagnosis.",
+    "generatedAt": "2026-08-28T13:16:20Z",
+    "cards": [
+      {
+        "id": "curve_count",
+        "description": "六个配置、四个器件/漏压条件。",
+        "dataset": "headline",
+        "sourceId": "refdens_scan",
+        "metrics": [
+          {
+            "label": "Sentaurus 曲线",
+            "field": "sentaurus_curves",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "point_count",
+        "description": "全部为直接求解，禁止插值。",
+        "dataset": "headline",
+        "sourceId": "refdens_scan",
+        "metrics": [
+          {
+            "label": "直接偏置点",
+            "field": "direct_bias_points",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "material_density",
+        "description": "四工况均达到 1e-4 dex 响应的最低密度。",
+        "dataset": "headline",
+        "sourceId": "refdens_scan",
+        "metrics": [
+          {
+            "label": "物质性起点",
+            "field": "material_response_refdens_cm3",
+            "format": "number",
+            "unit": "cm^-3"
+          }
+        ]
+      },
+      {
+        "id": "max_response",
+        "description": "扫描中最大的 Sentaurus 电流响应。",
+        "dataset": "headline",
+        "sourceId": "refdens_scan",
+        "metrics": [
+          {
+            "label": "最大响应",
+            "field": "maximum_scan_response_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "edge_limiter",
+        "description": "16 个状态中最强的电子 HFS 限制。",
+        "dataset": "headline",
+        "sourceId": "edge_diagnostics",
+        "metrics": [
+          {
+            "label": "最小 μ/μ0",
+            "field": "minimum_electron_limiter",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "baseline",
+        "description": "原始 M8 曲线及哈希保持不变。",
+        "dataset": "headline",
+        "sourceId": "refdens_scan",
+        "metrics": [
+          {
+            "label": "冻结基线曲线",
+            "field": "baseline_cases",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "scan_chart",
+        "title": "参考密度对最大比较误差的影响",
+        "subtitle": "负值为改善；横轴为 log10(RefDens/cm^-3)",
+        "type": "line",
+        "dataset": "scan_rows",
+        "sourceId": "refdens_scan",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "refdens_log10_cm3",
+            "type": "quantitative",
+            "label": "log10 参考密度"
+          },
+          "y": {
+            "field": "maximum_error_change_dex",
+            "type": "quantitative",
+            "label": "最大误差变化, dex"
+          },
+          "color": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "器件与漏压"
+          },
+          "tooltip": [
+            {
+              "field": "maximum_sentaurus_response_dex",
+              "type": "quantitative",
+              "label": "最大 Sentaurus 响应, dex"
+            },
+            {
+              "field": "refdens_cm3",
+              "type": "quantitative",
+              "label": "参考密度, cm^-3"
+            }
+          ]
+        }
+      },
+      {
+        "id": "limiter_chart",
+        "title": "Vela 边级电子 HFS 等效限制因子",
+        "subtitle": "每个状态取传输边最小 μ/μ0；越低表示速度饱和越强",
+        "type": "line",
+        "dataset": "edge_rows",
+        "sourceId": "edge_diagnostics",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "gate_voltage_V",
+            "type": "quantitative",
+            "label": "栅压, V"
+          },
+          "y": {
+            "field": "minimum_electron_mobility_limiter",
+            "type": "quantitative",
+            "label": "最小 μ/μ0"
+          },
+          "color": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "器件与漏压"
+          },
+          "tooltip": [
+            {
+              "field": "maximum_electron_drive_V_per_cm",
+              "type": "quantitative",
+              "label": "最大电子驱动力, V/cm"
+            },
+            {
+              "field": "maximum_electron_high_field_ratio",
+              "type": "quantitative",
+              "label": "最大 μ0F/vsat"
+            }
+          ]
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "parameter_table",
+        "title": "300 K HFS 参数逐项审计",
+        "subtitle": "Sentaurus sdevice -P 导出与 Vela 默认值",
+        "dataset": "parameter_rows",
+        "sourceId": "parameter_audit",
+        "defaultSort": {
+          "field": "carrier",
+          "direction": "asc"
+        },
+        "columns": [
+          {
+            "field": "carrier",
+            "label": "载流子",
+            "type": "text"
+          },
+          {
+            "field": "parameter",
+            "label": "参数",
+            "type": "text"
+          },
+          {
+            "field": "sentaurus",
+            "label": "Sentaurus",
+            "format": "number"
+          },
+          {
+            "field": "vela",
+            "label": "Vela",
+            "format": "number"
+          },
+          {
+            "field": "status",
+            "label": "结论",
+            "type": "text"
+          },
+          {
+            "field": "relevance_at_300K",
+            "label": "300 K 相关性",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "scan_table",
+        "title": "20 组正参考密度逐工况结果",
+        "subtitle": "固定 Vela；只改变 Sentaurus HFS 参考密度",
+        "dataset": "scan_rows",
+        "sourceId": "refdens_scan",
+        "defaultSort": {
+          "field": "maximum_error_change_dex",
+          "direction": "desc"
+        },
+        "columns": [
+          {
+            "field": "device",
+            "label": "器件",
+            "type": "text"
+          },
+          {
+            "field": "drain_voltage_V",
+            "label": "Vd, V",
+            "format": "number"
+          },
+          {
+            "field": "refdens_cm3",
+            "label": "RefDens, cm^-3",
+            "format": "number"
+          },
+          {
+            "field": "maximum_sentaurus_response_dex",
+            "label": "最大响应, dex",
+            "format": "number"
+          },
+          {
+            "field": "maximum_error_change_dex",
+            "label": "最大误差变化, dex",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "refdens_scan",
+        "label": "M9 冻结参考密度扫描",
+        "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/refdens_scan_summary.csv"
+      },
+      {
+        "id": "edge_diagnostics",
+        "label": "M9 冻结边级 HFS 摘要",
+        "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/vela_edge_probes/edge_hfs_summary.csv"
+      },
+      {
+        "id": "parameter_audit",
+        "label": "M9 HFS 参数审计",
+        "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/parameter_audit/hfs_parameter_audit.json"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M9 HighFieldSaturation 参考密度与边级诊断报告"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "body": "## 技术摘要\n\n公开的 300 K Caughey–Thomas 核心公式及 `vsat0/beta0/alpha` 与 Vela 一致；剩余差异不来自这些核心常数。参考密度扫描显示，`1e2 cm⁻³` 的平均改善仅为 -2.25e-6 dex，低于物质性阈值；从 `1e6 cm⁻³` 起四个工况全部恶化，`1e10 cm⁻³` 的平均最大误差增加 0.488 dex。因此参考密度插值是可辨识的影响源，但不应作为 Vela 默认参数拟合。原 16 条/816 点基线哈希保持不变。"
+      },
+      {
+        "id": "metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "curve_count",
+          "point_count",
+          "material_density",
+          "max_response",
+          "edge_limiter",
+          "baseline"
+        ]
+      },
+      {
+        "id": "finding_scan",
+        "type": "markdown",
+        "sourceId": "refdens_scan",
+        "body": "## 参考密度只在接近零时近似空对照，增大后系统性恶化\n\n扫描覆盖 `0、1e2、1e4、1e6、1e8、1e10 cm⁻³`。显式 GradQuasiFermi 与默认曲线完全相同；`1e2` 的微小改善没有达到 1e-4 dex 物质性门槛。`1e6、1e8、1e10` 在四个工况均提高最大误差，且响应随密度单调放大。"
+      },
+      {
+        "id": "scan_chart_block",
+        "type": "chart",
+        "chartId": "scan_chart"
+      },
+      {
+        "id": "parameters",
+        "type": "markdown",
+        "sourceId": "parameter_audit",
+        "body": "## 核心饱和速度与指数不是当前残差来源\n\nSentaurus 导出电子/空穴 `vsat0=1.07e7/8.37e6 cm/s`、`beta0=1.109/1.213`、`alpha=0`；换算后与 Vela 默认值及公式逐点完全一致。`betaexp` 与 `vsatexp` 在固定 300 K 时为中性，`K_dT` 属于载流子温度分支。`E0_TrEf/Ksmooth_TrEf` 是否触发额外私有分支仍无法由导出文件单独证明。"
+      },
+      {
+        "id": "parameter_table_block",
+        "type": "table",
+        "tableId": "parameter_table"
+      },
+      {
+        "id": "edge",
+        "type": "markdown",
+        "sourceId": "edge_diagnostics",
+        "body": "## 边级诊断把驱动力、饱和参数和限制过程连成可审计链\n\n16 个状态覆盖 n17/n21、两档漏压及 Vg=0/0.05/0.8/2.5 V。诊断现在输出逐边载流子密度、GradQF 驱动力、低场迁移率、饱和速度、beta、`μ0F/vsat`、等效限制因子和重构误差。生产等效限制重构误差最大 2.22e-16；相邻单元非线性限制后再平均造成的最大均值近似残差为 0.619%，已单独标识。"
+      },
+      {
+        "id": "limiter_chart_block",
+        "type": "chart",
+        "chartId": "limiter_chart"
+      },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "body": "## 范围、数据与方法\n\n范围仅限 SDevice。Sentaurus 使用 T-2022.03-SP2、两份固定 TDR、Vd=0.05/1 V 与 Vg=0:0.05:2.5 V 的 51 点精确栅压网格；禁止插值。比较固定 M8-A Vela 曲线，只改变 Sentaurus 的 HFS 参考密度。误差为电流绝对值对数比，电流门槛 1e-18 A/μm。Vela 边级输出为只读诊断，不参与方程或默认模型。"
+      },
+      {
+        "id": "detail_heading",
+        "type": "markdown",
+        "body": "## 逐工况扫描结果\n\n最大响应衡量 Sentaurus 选项本身的可辨识度；最大误差变化衡量它对固定 Vela 比较的方向。"
+      },
+      {
+        "id": "scan_table_block",
+        "type": "table",
+        "tableId": "scan_table"
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## 局限性、稳健性与未解析项\n\n本轮证明参考密度插值能够稳定改变结果，却不能反演 Sentaurus 私有的 GradQuasiFermi 构造、平滑或极限公式。高密度工况的强响应主要集中在深关断/弱反型，亚飞安电流更敏感。边级最小限制因子是全器件极值，不等同于沟道加权的端电流贡献。参数审计仅针对 300 K 等温漂移扩散。"
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## 建议的下一步\n\n1. 保持 Vela 默认 HFS 参数不变，并把 16 条原始曲线继续作为回归基线。\n2. 使用新增逐边输出定位对端电流贡献最大的沟道边，再比较驱动力离散方式，而不是调大 RefDens。\n3. 若继续审查 Sentaurus 私有行为，应优先设计温度扫描或空间探针来辨识 `betaexp/vsatexp` 与 `E0_TrEf/Ksmooth_TrEf` 的激活条件。\n4. 将本轮 `1e6–1e10 cm⁻³` 系统性恶化作为防止误用参考密度拟合的负向回归证据。"
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## 后续问题\n\n剩余基线误差中，GradQF 的空间离散、接触/边界处极限处理和私有低密度平滑各占多少；以及沟道加权边诊断能否把约 0.1 dex 峰值误差缩小到单一空间区域，仍需进一步验证。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-28T13:16:20Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "sentaurus_curves": 24,
+          "direct_bias_points": 1224,
+          "material_response_refdens_cm3": 1000000.0,
+          "maximum_scan_response_dex": 0.65577679987537,
+          "minimum_electron_limiter": 0.0506793464959194,
+          "baseline_cases": 16
+        }
+      ],
+      "scan_rows": [
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e2",
+          "refdens_cm3": 100.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.04172673977307932,
+          "maximum_error_change_dex": -2.9546358485538216e-07,
+          "maximum_sentaurus_response_dex": 3.918793115436092e-06,
+          "refdens_log10_cm3": 2.0,
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e2",
+          "refdens_cm3": 100.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.032223503016796655,
+          "maximum_error_change_dex": -4.968702463359342e-10,
+          "maximum_sentaurus_response_dex": 4.8180448517072565e-05,
+          "refdens_log10_cm3": 2.0,
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e4",
+          "refdens_cm3": 10000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.04173035147801575,
+          "maximum_error_change_dex": 3.3162413515738787e-06,
+          "maximum_sentaurus_response_dex": 0.00010756441698389305,
+          "refdens_log10_cm3": 4.0,
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e4",
+          "refdens_cm3": 10000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.032223503012778335,
+          "maximum_error_change_dex": -5.008885667345808e-10,
+          "maximum_sentaurus_response_dex": 5.947995104903678e-05,
+          "refdens_log10_cm3": 4.0,
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e6",
+          "refdens_cm3": 1000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.04945236187789498,
+          "maximum_error_change_dex": 0.007725326641230802,
+          "maximum_sentaurus_response_dex": 0.024336930541921677,
+          "refdens_log10_cm3": 6.0,
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e6",
+          "refdens_cm3": 1000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.03222350533816578,
+          "maximum_error_change_dex": 1.824498878366665e-09,
+          "maximum_sentaurus_response_dex": 0.0007728638135028508,
+          "refdens_log10_cm3": 6.0,
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e8",
+          "refdens_cm3": 100000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.3882346519954385,
+          "maximum_error_change_dex": 0.34650761675877434,
+          "maximum_sentaurus_response_dex": 0.3631192206594652,
+          "refdens_log10_cm3": 8.0,
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e8",
+          "refdens_cm3": 100000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.1338799594299055,
+          "maximum_error_change_dex": 0.10165645591623859,
+          "maximum_sentaurus_response_dex": 0.1141095811543876,
+          "refdens_log10_cm3": 8.0,
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e10",
+          "refdens_cm3": 10000000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.5547512079847058,
+          "maximum_error_change_dex": 0.5130241727480416,
+          "maximum_sentaurus_response_dex": 0.5130241727480416,
+          "refdens_log10_cm3": 10.0,
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e10",
+          "refdens_cm3": 10000000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.3194333286062173,
+          "maximum_error_change_dex": 0.28720982509255044,
+          "maximum_sentaurus_response_dex": 0.2981082487898714,
+          "refdens_log10_cm3": 10.0,
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e2",
+          "refdens_cm3": 100.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.0737396802143929,
+          "maximum_error_change_dex": -8.694863379232753e-06,
+          "maximum_sentaurus_response_dex": 3.542302800699729e-05,
+          "refdens_log10_cm3": 2.0,
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e2",
+          "refdens_cm3": 100.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.058086520512293564,
+          "maximum_error_change_dex": -2.16382467499443e-13,
+          "maximum_sentaurus_response_dex": 4.2330731030523045e-05,
+          "refdens_log10_cm3": 2.0,
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e4",
+          "refdens_cm3": 10000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.07748471879393334,
+          "maximum_error_change_dex": 0.0037363437161612167,
+          "maximum_sentaurus_response_dex": 0.006074418426018213,
+          "refdens_log10_cm3": 4.0,
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e4",
+          "refdens_cm3": 10000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.058086520548487584,
+          "maximum_error_change_dex": 3.597763753582228e-11,
+          "maximum_sentaurus_response_dex": 0.001201976047924712,
+          "refdens_log10_cm3": 4.0,
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e6",
+          "refdens_cm3": 1000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.23832965634146988,
+          "maximum_error_change_dex": 0.16458128126369775,
+          "maximum_sentaurus_response_dex": 0.17776511606727816,
+          "refdens_log10_cm3": 6.0,
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e6",
+          "refdens_cm3": 1000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.08240928178216492,
+          "maximum_error_change_dex": 0.02432276126965497,
+          "maximum_sentaurus_response_dex": 0.06951682815026079,
+          "refdens_log10_cm3": 6.0,
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e8",
+          "refdens_cm3": 100000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.5934688502098558,
+          "maximum_error_change_dex": 0.5197204751320837,
+          "maximum_sentaurus_response_dex": 0.5197204751320837,
+          "refdens_log10_cm3": 8.0,
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e8",
+          "refdens_cm3": 100000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.3864223447263656,
+          "maximum_error_change_dex": 0.32833582421385565,
+          "maximum_sentaurus_response_dex": 0.3538884961146752,
+          "refdens_log10_cm3": 8.0,
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "refdens_1e10",
+          "refdens_cm3": 10000000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.7011467373407136,
+          "maximum_error_change_dex": 0.6273983622629415,
+          "maximum_sentaurus_response_dex": 0.65577679987537,
+          "refdens_log10_cm3": 10.0,
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "refdens_1e10",
+          "refdens_cm3": 10000000000.0,
+          "maximum_absolute_log10_ratio_above_floor": 0.58131541210823,
+          "maximum_error_change_dex": 0.5232288915957201,
+          "maximum_sentaurus_response_dex": 0.5399673417694125,
+          "refdens_log10_cm3": 10.0,
+          "condition": "n21, Vd=1 V"
+        }
+      ],
+      "edge_rows": [
+        {
+          "case": "n17_vd_0p05_vg_0",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.0,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 11080.377333103323,
+          "maximum_hole_drive_V_per_cm": 9738.433071928233,
+          "median_electron_high_field_ratio": 5.913862746575861e-08,
+          "p95_electron_high_field_ratio": 0.2887974565796781,
+          "maximum_electron_high_field_ratio": 0.9349680321516488,
+          "median_hole_high_field_ratio": 8.817264141214207e-14,
+          "p95_hole_high_field_ratio": 0.059087505400486066,
+          "maximum_hole_high_field_ratio": 0.16410956377038732,
+          "minimum_electron_mobility_limiter": 0.5532054134225278,
+          "minimum_hole_mobility_limiter": 0.9164222887573312,
+          "maximum_electron_reconstruction_error": 2.202677840394743e-16,
+          "maximum_hole_reconstruction_error": 2.212564050879063e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0001183910589872245,
+          "maximum_hole_mean_mobility_aggregation_error": 0.00018586466872831667,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_0p05_vg_0/edge_hfs.csv",
+          "edge_csv_sha256": "62d0b212f1fc77a0dc9aae2e49e0e49facd9e40d67cc238548c4f2ad510accea",
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "case": "n17_vd_0p05_vg_0p05",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 10955.521370984558,
+          "maximum_hole_drive_V_per_cm": 8403.581149432728,
+          "median_electron_high_field_ratio": 1.1024416170028917e-07,
+          "p95_electron_high_field_ratio": 0.2838774765979551,
+          "maximum_electron_high_field_ratio": 0.9231530916442436,
+          "median_hole_high_field_ratio": 3.795313479420075e-13,
+          "p95_hole_high_field_ratio": 0.05836333518863965,
+          "maximum_hole_high_field_ratio": 0.14163805118134853,
+          "minimum_electron_mobility_limiter": 0.5565902322835562,
+          "minimum_hole_mobility_limiter": 0.9290263313547794,
+          "maximum_electron_reconstruction_error": 2.2035392492371997e-16,
+          "maximum_hole_reconstruction_error": 2.1763838684564579e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 9.836001105991117e-05,
+          "maximum_hole_mean_mobility_aggregation_error": 0.00017142023929819815,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_0p05_vg_0p05/edge_hfs.csv",
+          "edge_csv_sha256": "e4583c270454946870eab48a36fdb5c9e2fd669a64a09b6ec558fabddafa4bfd",
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "case": "n17_vd_0p05_vg_0p8",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.8,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 7048.148625194497,
+          "maximum_hole_drive_V_per_cm": 8394.857928873551,
+          "median_electron_high_field_ratio": 0.0034847354779827663,
+          "p95_electron_high_field_ratio": 0.27058379478857897,
+          "maximum_electron_high_field_ratio": 0.5651981584248797,
+          "median_hole_high_field_ratio": 2.6087708345204936e-07,
+          "p95_hole_high_field_ratio": 0.05836321193595638,
+          "maximum_hole_high_field_ratio": 0.14149102562908067,
+          "minimum_electron_mobility_limiter": 0.6810443003204362,
+          "minimum_hole_mobility_limiter": 0.9291087138129552,
+          "maximum_electron_reconstruction_error": 2.209181756520043e-16,
+          "maximum_hole_reconstruction_error": 2.2189727774597222e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.00016014058968274317,
+          "maximum_hole_mean_mobility_aggregation_error": 4.408021228517095e-05,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_0p05_vg_0p8/edge_hfs.csv",
+          "edge_csv_sha256": "0ae0db02091eae729cdb7848e4f8169b6ba3f6baaa2cca960bb9b616c4d7cd23",
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "case": "n17_vd_0p05_vg_2p5",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 2.5,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 4921.5372158477585,
+          "maximum_hole_drive_V_per_cm": 8444.795863670952,
+          "median_electron_high_field_ratio": 0.0141411692411379,
+          "p95_electron_high_field_ratio": 0.20438534612211204,
+          "maximum_electron_high_field_ratio": 0.3441161815098508,
+          "median_hole_high_field_ratio": 2.5795384989551306e-06,
+          "p95_hole_high_field_ratio": 0.05838307481182729,
+          "maximum_hole_high_field_ratio": 0.1423326997171787,
+          "minimum_electron_mobility_limiter": 0.7858688764212334,
+          "minimum_hole_mobility_limiter": 0.9286370733369445,
+          "maximum_electron_reconstruction_error": 2.2092159683173515e-16,
+          "maximum_hole_reconstruction_error": 2.211739219474725e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.000873994926959207,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0001528608209486831,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_0p05_vg_2p5/edge_hfs.csv",
+          "edge_csv_sha256": "9a6c3fce1e453e902c40228c370a53e97ccabe9218e08ba4f12daea9d9d754b4",
+          "condition": "n17, Vd=0.05 V"
+        },
+        {
+          "case": "n17_vd_1_vg_0",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.0,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 245933.20581837642,
+          "maximum_hole_drive_V_per_cm": 310178.3456202759,
+          "median_electron_high_field_ratio": 4.995252959666102e-05,
+          "p95_electron_high_field_ratio": 7.860687673901782,
+          "maximum_electron_high_field_ratio": 19.035436271359764,
+          "median_hole_high_field_ratio": 4.652703584003456e-12,
+          "p95_hole_high_field_ratio": 3.025884028451448,
+          "maximum_hole_high_field_ratio": 9.031977673792971,
+          "minimum_electron_mobility_limiter": 0.05078646756790806,
+          "minimum_hole_mobility_limiter": 0.10476448716417597,
+          "maximum_electron_reconstruction_error": 2.218075457788041e-16,
+          "maximum_hole_reconstruction_error": 2.2118344306320317e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.000742187994928042,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0035433228106885755,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_1_vg_0/edge_hfs.csv",
+          "edge_csv_sha256": "aea89b239eb95516b1568ca270c9c904a6c00e4fdffa29ea180a5f2c51eea4ae",
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "case": "n17_vd_1_vg_0p05",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.05,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 245574.07547441227,
+          "maximum_hole_drive_V_per_cm": 299934.54717780335,
+          "median_electron_high_field_ratio": 5.841050302627286e-05,
+          "p95_electron_high_field_ratio": 7.888154201761671,
+          "maximum_electron_high_field_ratio": 19.077234669855045,
+          "median_hole_high_field_ratio": 1.0250746933533009e-11,
+          "p95_hole_high_field_ratio": 2.9755025023037005,
+          "maximum_hole_high_field_ratio": 8.813051886031255,
+          "minimum_electron_mobility_limiter": 0.0506793464959194,
+          "minimum_hole_mobility_limiter": 0.10719460824053448,
+          "maximum_electron_reconstruction_error": 2.2055857999208779e-16,
+          "maximum_hole_reconstruction_error": 2.2168419027281255e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0008956337271985333,
+          "maximum_hole_mean_mobility_aggregation_error": 0.003845551370468083,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_1_vg_0p05/edge_hfs.csv",
+          "edge_csv_sha256": "31bcafc2a9a1b8e9980ccc833fe305730bf4af4b162649d9e048094a0e9d12e0",
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "case": "n17_vd_1_vg_0p8",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.8,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 221134.5302029699,
+          "maximum_hole_drive_V_per_cm": 219318.0563796429,
+          "median_electron_high_field_ratio": 0.01344259875596824,
+          "p95_electron_high_field_ratio": 8.050519558259323,
+          "maximum_electron_high_field_ratio": 14.734662143468055,
+          "median_hole_high_field_ratio": 2.1240825964000296e-06,
+          "p95_hole_high_field_ratio": 3.2031742784591226,
+          "maximum_hole_high_field_ratio": 7.282397220778996,
+          "minimum_electron_mobility_limiter": 0.06491154471501417,
+          "minimum_hole_mobility_limiter": 0.12790380669183654,
+          "maximum_electron_reconstruction_error": 2.2091413281573691e-16,
+          "maximum_hole_reconstruction_error": 2.2018310377732192e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0007797620191201559,
+          "maximum_hole_mean_mobility_aggregation_error": 0.006187598475432752,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_1_vg_0p8/edge_hfs.csv",
+          "edge_csv_sha256": "0295d3cd6b1354ab2320943d0d0a8fff952e685959dd904faea6137b96861449",
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "case": "n17_vd_1_vg_2p5",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 2.5,
+          "edge_count": 4405.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 161683.45798400053,
+          "maximum_hole_drive_V_per_cm": 193208.11963342698,
+          "median_electron_high_field_ratio": 0.03813595613709388,
+          "p95_electron_high_field_ratio": 5.9833900638938005,
+          "maximum_electron_high_field_ratio": 11.878283035059521,
+          "median_hole_high_field_ratio": 0.00010272318481951891,
+          "p95_hole_high_field_ratio": 2.688956597773047,
+          "maximum_hole_high_field_ratio": 6.622277918865468,
+          "minimum_electron_mobility_limiter": 0.07958815752987143,
+          "minimum_hole_mobility_limiter": 0.13949492587468335,
+          "maximum_electron_reconstruction_error": 2.2203109989661927e-16,
+          "maximum_hole_reconstruction_error": 2.2167972208477509e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.00541730908000763,
+          "maximum_hole_mean_mobility_aggregation_error": 0.002033820622927442,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n17_vd_1_vg_2p5/edge_hfs.csv",
+          "edge_csv_sha256": "4f0357f6bcf286f604325936f51805b5d7fd56c59db7bb8b80771d80da1b0471",
+          "condition": "n17, Vd=1 V"
+        },
+        {
+          "case": "n21_vd_0p05_vg_0",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.0,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 8722.499287594475,
+          "maximum_hole_drive_V_per_cm": 11949.787008276215,
+          "median_electron_high_field_ratio": 1.1525318347954106e-06,
+          "p95_electron_high_field_ratio": 0.23307221645454976,
+          "maximum_electron_high_field_ratio": 0.6425021209325336,
+          "median_hole_high_field_ratio": 1.842685699063845e-14,
+          "p95_hole_high_field_ratio": 0.07748345040871911,
+          "maximum_hole_high_field_ratio": 0.173458616501895,
+          "minimum_electron_mobility_limiter": 0.6500302785963855,
+          "minimum_hole_mobility_limiter": 0.9108927959047612,
+          "maximum_electron_reconstruction_error": 2.2115295238414844e-16,
+          "maximum_hole_reconstruction_error": 2.2176172902576259e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 9.587305352692766e-05,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0003149429707685756,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_0p05_vg_0/edge_hfs.csv",
+          "edge_csv_sha256": "4f423b934c909fae259cfb3a016ebda82211e5f041601da1717b18a7bdded05f",
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "case": "n21_vd_0p05_vg_0p05",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 8773.299579898472,
+          "maximum_hole_drive_V_per_cm": 8498.144901402937,
+          "median_electron_high_field_ratio": 1.1418462800377594e-06,
+          "p95_electron_high_field_ratio": 0.23180908596215935,
+          "maximum_electron_high_field_ratio": 0.6435794908909694,
+          "median_hole_high_field_ratio": 2.4060181085153912e-14,
+          "p95_hole_high_field_ratio": 0.05957424829634237,
+          "maximum_hole_high_field_ratio": 0.14314525816042367,
+          "minimum_electron_mobility_limiter": 0.6496136720262238,
+          "minimum_hole_mobility_limiter": 0.928181687408986,
+          "maximum_electron_reconstruction_error": 2.217427483896728e-16,
+          "maximum_hole_reconstruction_error": 2.2163192750071539e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.00010241204106303488,
+          "maximum_hole_mean_mobility_aggregation_error": 0.00016702547728077895,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_0p05_vg_0p05/edge_hfs.csv",
+          "edge_csv_sha256": "83b077e650a35ec4a194916e66a2117c12bb40495e900c0f07a91891313befaa",
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "case": "n21_vd_0p05_vg_0p8",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.8,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 7412.26908538689,
+          "maximum_hole_drive_V_per_cm": 8486.68775187645,
+          "median_electron_high_field_ratio": 0.00019072794477194223,
+          "p95_electron_high_field_ratio": 0.22214990329126608,
+          "maximum_electron_high_field_ratio": 0.5315368004636961,
+          "median_hole_high_field_ratio": 7.384685050245849e-09,
+          "p95_hole_high_field_ratio": 0.059102823110506734,
+          "maximum_hole_high_field_ratio": 0.14295227055365606,
+          "minimum_electron_mobility_limiter": 0.6953789245913558,
+          "minimum_hole_mobility_limiter": 0.9282898495674702,
+          "maximum_electron_reconstruction_error": 2.2188936591238068e-16,
+          "maximum_hole_reconstruction_error": 2.2182004160373345e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.00017271089893977813,
+          "maximum_hole_mean_mobility_aggregation_error": 4.206515609229546e-05,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_0p05_vg_0p8/edge_hfs.csv",
+          "edge_csv_sha256": "a9fa039d57a7d35b40464be72424329c357f99cfbc51ff752160a6663bc813d2",
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "case": "n21_vd_0p05_vg_2p5",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 2.5,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 4563.047014073368,
+          "maximum_hole_drive_V_per_cm": 8531.722738167862,
+          "median_electron_high_field_ratio": 0.012909170761916763,
+          "p95_electron_high_field_ratio": 0.1658902717286089,
+          "maximum_electron_high_field_ratio": 0.25376815134317166,
+          "median_hole_high_field_ratio": 1.0615469258471954e-06,
+          "p95_hole_high_field_ratio": 0.05914719897520627,
+          "maximum_hole_high_field_ratio": 0.14371084925795377,
+          "minimum_electron_mobility_limiter": 0.8367558732305054,
+          "minimum_hole_mobility_limiter": 0.9278646772008359,
+          "maximum_electron_reconstruction_error": 2.2183188850319893e-16,
+          "maximum_hole_reconstruction_error": 2.21704919406952e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0004941381178780362,
+          "maximum_hole_mean_mobility_aggregation_error": 0.00014956318359245902,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_0p05_vg_2p5/edge_hfs.csv",
+          "edge_csv_sha256": "e593dbc09dcf28f4397bfd6a5328f79e5b3b8bc0a06116ebf55e8c8ff05234e3",
+          "condition": "n21, Vd=0.05 V"
+        },
+        {
+          "case": "n21_vd_1_vg_0",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.0,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 263157.9030685629,
+          "maximum_hole_drive_V_per_cm": 336981.8601704702,
+          "median_electron_high_field_ratio": 0.0005596619799081593,
+          "p95_electron_high_field_ratio": 7.29062288027136,
+          "maximum_electron_high_field_ratio": 18.479311408086584,
+          "median_hole_high_field_ratio": 1.3201374879030076e-13,
+          "p95_hole_high_field_ratio": 2.6866419346725574,
+          "maximum_hole_high_field_ratio": 8.862609208375696,
+          "minimum_electron_mobility_limiter": 0.05225786035173582,
+          "minimum_hole_mobility_limiter": 0.1066388240845,
+          "maximum_electron_reconstruction_error": 2.2188351471245692e-16,
+          "maximum_hole_reconstruction_error": 2.2082547428881801e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0005867289957314062,
+          "maximum_hole_mean_mobility_aggregation_error": 0.004853867796459036,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_1_vg_0/edge_hfs.csv",
+          "edge_csv_sha256": "18c234c21b23db382e45ed836f7e8b75fb43a14fc05f18499500d17b8acbbb12",
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "case": "n21_vd_1_vg_0p05",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.05,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 264345.6009406768,
+          "maximum_hole_drive_V_per_cm": 323773.09707758867,
+          "median_electron_high_field_ratio": 0.0005820448639352801,
+          "p95_electron_high_field_ratio": 7.25659027013361,
+          "maximum_electron_high_field_ratio": 18.634889157461345,
+          "median_hole_high_field_ratio": 1.546978839844751e-13,
+          "p95_hole_high_field_ratio": 2.7612271979684024,
+          "maximum_hole_high_field_ratio": 8.717380875374245,
+          "minimum_electron_mobility_limiter": 0.05183796040480424,
+          "minimum_hole_mobility_limiter": 0.10829575330949341,
+          "maximum_electron_reconstruction_error": 2.2185495938292158e-16,
+          "maximum_hole_reconstruction_error": 2.21327868706749e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0007109156064410556,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0039777871331484775,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_1_vg_0p05/edge_hfs.csv",
+          "edge_csv_sha256": "a8a03501a70de3dae4e54520dd1d7b6d5a6a1a2890e8c7eaa866c07fb7331a17",
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "case": "n21_vd_1_vg_0p8",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.8,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 220867.76682961945,
+          "maximum_hole_drive_V_per_cm": 259269.55089670199,
+          "median_electron_high_field_ratio": 0.00592016428555304,
+          "p95_electron_high_field_ratio": 7.0779296414566915,
+          "maximum_electron_high_field_ratio": 15.215533566768272,
+          "median_hole_high_field_ratio": 3.173170966736755e-08,
+          "p95_hole_high_field_ratio": 2.9523375455359115,
+          "maximum_hole_high_field_ratio": 7.794059544251739,
+          "minimum_electron_mobility_limiter": 0.06295585961227884,
+          "minimum_hole_mobility_limiter": 0.12015399372584228,
+          "maximum_electron_reconstruction_error": 2.2162196443358101e-16,
+          "maximum_hole_reconstruction_error": 2.2204181469492177e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.000495791885094322,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0038826044292778502,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_1_vg_0p8/edge_hfs.csv",
+          "edge_csv_sha256": "d3553ca16f106858a5b9973debee680d7848e47792d9a75024962202b08314db",
+          "condition": "n21, Vd=1 V"
+        },
+        {
+          "case": "n21_vd_1_vg_2p5",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 2.5,
+          "edge_count": 4401.0,
+          "transport_edge_count": 2842.0,
+          "maximum_electron_drive_V_per_cm": 209362.99885928622,
+          "maximum_hole_drive_V_per_cm": 239373.81664348912,
+          "median_electron_high_field_ratio": 0.03118573418825115,
+          "p95_electron_high_field_ratio": 5.454718698585448,
+          "maximum_electron_high_field_ratio": 13.512500450402445,
+          "median_hole_high_field_ratio": 7.152925323450773e-05,
+          "p95_hole_high_field_ratio": 2.2912283843274404,
+          "maximum_hole_high_field_ratio": 7.032057214394585,
+          "minimum_electron_mobility_limiter": 0.07047416154991983,
+          "minimum_hole_mobility_limiter": 0.13206777075194676,
+          "maximum_electron_reconstruction_error": 2.2195672569919681e-16,
+          "maximum_hole_reconstruction_error": 2.219474178065187e-16,
+          "maximum_electron_mean_mobility_aggregation_error": 0.0021506868895222265,
+          "maximum_hole_mean_mobility_aggregation_error": 0.0020001729616926263,
+          "edge_csv": "build-release/reference_tcad/simplemos_sentaurus2022/m9_hfs_diagnostics/vela_edge_probes/n21_vd_1_vg_2p5/edge_hfs.csv",
+          "edge_csv_sha256": "3c8c2b4ac68f4560072c2462841ec2e4f02cde14a806f8597a28e805ee70b7ad",
+          "condition": "n21, Vd=1 V"
+        }
+      ],
+      "parameter_rows": [
+        {
+          "carrier": "electron",
+          "parameter": "vsat0_m_s",
+          "sentaurus": 107000.0,
+          "vela": 107000.0,
+          "status": "exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "beta0",
+          "sentaurus": 1.109,
+          "vela": 1.109,
+          "status": "exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "alpha",
+          "sentaurus": 0.0,
+          "vela": 0.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "betaexp",
+          "sentaurus": 0.66,
+          "vela": null,
+          "status": "neutral_at_300K",
+          "relevance_at_300K": "T/T0=1"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "vsatexp",
+          "sentaurus": 0.87,
+          "vela": null,
+          "status": "neutral_at_300K",
+          "relevance_at_300K": "T/T0=1"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "ku",
+          "sentaurus": 1.0,
+          "vela": 1.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active scale"
+        },
+        {
+          "carrier": "electron",
+          "parameter": "kv",
+          "sentaurus": 1.0,
+          "vela": 1.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active scale"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "vsat0_m_s",
+          "sentaurus": 83700.0,
+          "vela": 83700.0,
+          "status": "exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "beta0",
+          "sentaurus": 1.213,
+          "vela": 1.213,
+          "status": "exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "alpha",
+          "sentaurus": 0.0,
+          "vela": 0.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "betaexp",
+          "sentaurus": 0.17,
+          "vela": null,
+          "status": "neutral_at_300K",
+          "relevance_at_300K": "T/T0=1"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "vsatexp",
+          "sentaurus": 0.52,
+          "vela": null,
+          "status": "neutral_at_300K",
+          "relevance_at_300K": "T/T0=1"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "ku",
+          "sentaurus": 1.0,
+          "vela": 1.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active scale"
+        },
+        {
+          "carrier": "hole",
+          "parameter": "kv",
+          "sentaurus": 1.0,
+          "vela": 1.0,
+          "status": "implicit_exact",
+          "relevance_at_300K": "active scale"
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "refdens_scan",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/refdens_scan_summary.csv', header=true)",
+        "description": "Twenty positive-reference-density comparisons plus frozen null control in the comparison report.",
+        "executed_at": "2026-08-28T13:16:20Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/refdens_scan_summary.csv"
+        ],
+        "metric_definitions": [
+          "maximum_error_change_dex is controlled maximum absolute log-current error minus the explicit-GradQF baseline",
+          "maximum_sentaurus_response_dex is max abs(log10(abs(Id_RefDens)/abs(Id_default))) over 51 exact gate points"
+        ],
+        "filters": [
+          "n17 and n21",
+          "Vd=0.05 and 1 V",
+          "Vg=0:0.05:2.5 V",
+          "no interpolation",
+          "current floor 1e-18 A/um"
+        ]
+      }
+    },
+    {
+      "id": "edge_diagnostics",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/vela_edge_probes/edge_hfs_summary.csv', header=true)",
+        "description": "Sixteen Vela per-edge HFS diagnostic state summaries.",
+        "executed_at": "2026-08-28T13:16:20Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/vela_edge_probes/edge_hfs_summary.csv"
+        ],
+        "metric_definitions": [
+          "minimum_electron_mobility_limiter is min production edge mobility divided by zero-drive mobility",
+          "reconstruction error compares the exact effective edge denominator against production mobility"
+        ],
+        "filters": [
+          "n17 and n21",
+          "Vd=0.05 and 1 V",
+          "Vg in 0, 0.05, 0.8, 2.5 V",
+          "transport-capable edges only"
+        ]
+      }
+    },
+    {
+      "id": "parameter_audit",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/parameter_audit/hfs_parameter_comparison.csv', header=true)",
+        "description": "Sentaurus sdevice -P HighFieldDependence parameters compared with Vela defaults.",
+        "executed_at": "2026-08-28T13:16:20Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/parameter_audit/hfs_parameter_audit.json"
+        ],
+        "metric_definitions": [
+          "vsat0 is converted from cm/s to m/s before comparison",
+          "core formula equivalence is evaluated at 300 K over a broad dimensionless-field grid"
+        ],
+        "filters": [
+          "Sentaurus T-2022.03-SP2",
+          "SimpleMOS n17 explicit GradQuasiFermi",
+          "300 K isothermal DD"
+        ]
+      }
+    }
+  ]
+}

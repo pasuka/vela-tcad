@@ -1,0 +1,28 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_psi_derivative_20260908/before_assembly_test.log": "72164d0f628a5f54a6b3aac574c1ca27ef5b25c4e1551aa3e56d803dbea91708",
+    "build-release/simplemos_bgn_psi_derivative_20260908/build_scoped.log": "66ddc8190f3a9ed09888a8cc0ad5fadff7fa0602d6a90c299e51b08f434b2b98",
+    "build-release/simplemos_bgn_psi_derivative_20260908/ctest_scoped.log": "c0c56c0fb1dc2a6e8c03ba2f40b8a2c86ed1399836f6d1d224f56e849ed2f32a",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/build-release/libvela_core.a": "bcdabe3e0f01471b92fe5671d52eee69287744455be13e28c3769f2d3ee44c34",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/build-release/vela_example_runner.exe": "49bba31a3163653ee60ec76380c6d236f870b5165a8337669128ecb2755f651b",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/docs/config_schema.md": "f7c599fefbd26fefb50dd2af28d59fd1a41e3189ac67a0c29854858d0cefbe03",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/docs/validation/simplemos_bgn_psi_derivative_validation_2026-09-08.md": "8637f772f5386e4cc3ec9a4add1f8918ee55ed9ad15ce1e60e7ed4995d60741f",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/docs/validation/simplemos_branch_status.md": "6e979cf5ea73da3ab48e1f373756240cf22b303b78f7cd8ad7f42937484a10b0",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/include/vela/discretization/StableSGDerivative.h": "5acaf3ee2d4ddab56143dd59ea431199d24eb8d389db413091ee9a61375f8983",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/scripts/audit_simplemos_bgn_psi_precision_20260908.py": "88c0c835b683495fce273ab169aefd11ecf834b3a58a5931c8dfc49c53f1cd7d",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/scripts/validate_simplemos_bgn_psi_derivative_20260908.py": "7482c02e62d3d6e808e7caf21c8f5d4bc7aecce787f86d96cec36a98fad00add",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/scripts/validate_simplemos_bgn_psi_scoped_20260908.py": "7fe4dc511b37f736eb344cbab83b562ba1a59e1993ae111a437c060e4f12dfc5",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/src/equation/CoupledDDAssembler.cpp": "5afc732b4b72c617741c78b16bb9c87a349e531f363ee96e9e26f5f0f331be42",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/tests/test_dc_sweep.cpp": "f2afa5c1ee13846528dc3c03623c00906583ac83c5676af3911d963a6a34e67a",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/tests/test_production_numerics.cpp": "27bff7ac3eeb2b4bb9d1f123e1481c8a7d73ec289290114ddf1c71295f9b06c2",
+    "build-release/simplemos_bgn_psi_derivative_20260908/state_independent/accepted_snapshot/tests/test_sg_flux.cpp": "d1fbbaf5b0b0c33eab5ddda1ea9028499c231c1bc2413809478d14138ce1b13d",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/candidate_v1_evidence.json": "033059d1e4b62950cb0cc8eb1eae4461d8d8c4a97e20f16782d5be3c0398a474",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/precision_evidence.json": "93815a38c064fc0a2b86f2cbff8840c145f2ee871f2d3fc3547b65ba7f216d88",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/preimage_freeze.json": "95e273026a075b837bf5a03b49d4611d883e7cf882f2922fb4949b3c5b994de8",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/acceptance_detail.json": "9069dd938b333fe6b344f2f42f9fd61c2dc873a4ff00f3079a54aac72a826dad",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/accepted_snapshot_identity.json": "ea075141617bf81ad11bbfb50669a7979258b26a4439747ffbef9d9503d03330",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/comparison_evidence.json": "7f532e05a6b05945f5081deda4a57ab390d1f3f1e96845ba17a9208b68439304",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/ctest_comparison.json": "0cdf3da2bc8be66eb5e03f3ae7ad5be2e707553417f9b133763d44d2a2d07437",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/global_closure_components.csv": "8755ef3edda2921b33cab5b60c3470b27210e3bdb7ed2096654e49e208193e95"
+  }
+}

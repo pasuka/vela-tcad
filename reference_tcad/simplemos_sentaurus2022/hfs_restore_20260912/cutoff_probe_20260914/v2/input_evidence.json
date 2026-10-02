@@ -1,0 +1,32 @@
+{
+  "input_hashes": {
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/bundle/baseline/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/bundle/baseline/native_des.cmd": "5fc368f9a0fd26357beb203e2df06bf95fe0148142464315b2fb01404573ef7c",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/bundle/observed/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/bundle/observed/native_des.cmd": "6fbdaeb7f18a779b0c12d1c6aaa04d33f71aa80c4c1f9123afbd276d9c184754",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/pmi/canali_diagnostic.h": "a3ea05e38fcdd88fab701111e34955b52b83cfa5c5d7a90d7b46a41d2cde1f21",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/pmi/pmi_vela_hfs_observer.C": "d035d03de2e0e992dbe0f52f1a6ebdb74e9ecabc57f8dd776315108e4738ec3a",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/pmi/pmi_vela_hfs_observer.so.linux64": "7d6d60ba1ca8dffcf43153f9948a978b595a1b02afe85d88c0dfa2bdd9c823b0",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/run.sh": "f98b6f525649113dc246543479e6ba6c13f968c845ddedbfa3a209cbd1b7a957",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s00_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s00_des.sav": "597c3f908807de9313fc931c5fbbe4a2d38578260fe8924a33744629ec913fb0",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s01_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s01_des.sav": "67698dbb20d10050cc617c3181f3394eae2aa730e6ee5850fe01005befdde341",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s02_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s02_des.sav": "6a42d0d35acbf6967a387c8fccbef819f58fe6beaa3162e6d82fa1b651c2a499",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s03_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s03_des.sav": "fc3eebf4d318c4f31eb8c9e0e2f9edcde8f280c98fe8a16d0d986dd96c4a82e4",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s04_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s04_des.sav": "918f138d6ccbe08cb33d6d9f60a330aac70ce84fa7962a5d33ef0ddea5bbf6db",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s05_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s05_des.sav": "d2b436ad617150065fc8282c048205d3c6d92f10e890bf8ba1d34abafc1f1dff",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s06_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/cutoff_probe_20260914/v2/states/s06_des.sav": "7b6a32ecf149e409f8da17ae8c9157644866ad9ae991bfbd73cf9f1a568c8d72",
+    "build-release/hfs_restore_20260912/pilot_raw/bundle/m65_n19_vd_0p050000_endpoint_vg_040_baseline/final_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/hfs_restore_20260912/pilot_raw/bundle/m65_n19_vd_0p050000_endpoint_vg_040_baseline/final_des.sav": "1bd4b257a574d68cbc4c0dc406d7501cdf97dc5b443e4d221e5f22616316e482",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v2/contract.json": "7a41fc585d13c6887686cd9d5ccbb4cd3ffb0e7cd933c4c230a619ac15134540",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v2/requested.csv": "df3702fa7c017298f635d7034e8359c6093cdd607bc47fbbbbcc3b6c8bbaefc4",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_identity_evidence.json": "ff21e8bf798044b4dda19f69222d2da486d68887bb75ae46f6c06979bfd4b6bc",
+    "scripts/probe_simplemos_hfs_native_cutoff_20260914.py": "d4825fd02b30669209b2229399f24bbd028913d3855caddb1f5a42434e4e9d59"
+  }
+}

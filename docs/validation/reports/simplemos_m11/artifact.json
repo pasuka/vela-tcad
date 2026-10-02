@@ -1,0 +1,492 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M11 PhuMob × Enormal × HFS 三因素矩阵报告",
+    "description": "SDevice-only full factorial mobility-model attribution.",
+    "generatedAt": "2026-08-29T02:42:04Z",
+    "cards": [
+      {
+        "id": "curves",
+        "description": "2 个网格、2 档漏压、8 种开关组合。",
+        "dataset": "headline",
+        "sourceId": "m11",
+        "metrics": [
+          {
+            "label": "自洽曲线",
+            "field": "curves",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "points",
+        "description": "每个求解器均使用直接栅压点。",
+        "dataset": "headline",
+        "sourceId": "m11",
+        "metrics": [
+          {
+            "label": "每求解器偏置点",
+            "field": "points",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "hfs",
+        "description": "正值表示开启 HFS 后最大 Id 误差增加。",
+        "dataset": "headline",
+        "sourceId": "m11",
+        "metrics": [
+          {
+            "label": "HFS 主效应",
+            "field": "hfs_effect_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "enormal",
+        "description": "负值表示 Enormal 改善最大 Id 一致性。",
+        "dataset": "headline",
+        "sourceId": "m11",
+        "metrics": [
+          {
+            "label": "Enormal 主效应",
+            "field": "enormal_effect_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "best",
+        "description": "八种组合中跨四工况的最低平均最大误差。",
+        "dataset": "headline",
+        "sourceId": "m11",
+        "metrics": [
+          {
+            "label": "最优组合最大误差",
+            "field": "best_max_error_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "aggregate",
+        "title": "自洽 Id 最大误差的主效应与交互效应",
+        "subtitle": "负值改善一致性；正值增加误差",
+        "type": "bar",
+        "dataset": "aggregate_rows",
+        "sourceId": "m11",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "term",
+            "type": "nominal",
+            "label": "因子或交互项"
+          },
+          "y": {
+            "field": "effect_dex",
+            "type": "quantitative",
+            "label": "效应, dex"
+          },
+          "color": {
+            "field": "direction",
+            "type": "nominal",
+            "label": "方向"
+          }
+        }
+      },
+      {
+        "id": "condition",
+        "title": "四个工况的三项主效应",
+        "subtitle": "HFS 在四个工况均增加最大 Id 误差，Enormal 均降低",
+        "type": "bar",
+        "dataset": "condition_rows",
+        "sourceId": "m11",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "工况"
+          },
+          "y": {
+            "field": "effect_dex",
+            "type": "quantitative",
+            "label": "最大误差效应, dex"
+          },
+          "color": {
+            "field": "term",
+            "type": "nominal",
+            "label": "模型"
+          }
+        }
+      },
+      {
+        "id": "frozen",
+        "title": "冻结全物理状态的活跃边迁移率 P95 误差效应",
+        "subtitle": "仅在同一 Sentaurus 状态上替换 Vela 迁移率公式",
+        "type": "bar",
+        "dataset": "frozen_rows",
+        "sourceId": "m11",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "term",
+            "type": "nominal",
+            "label": "因子或交互项"
+          },
+          "y": {
+            "field": "effect_dex",
+            "type": "quantitative",
+            "label": "P95 误差效应, dex"
+          },
+          "color": {
+            "field": "direction",
+            "type": "nominal",
+            "label": "方向"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "variants",
+        "title": "八种自洽组合的跨工况误差",
+        "subtitle": "最大值和中位值均为四个器件/漏压工况的平均",
+        "dataset": "variant_rows",
+        "sourceId": "m11",
+        "columns": [
+          {
+            "field": "variant",
+            "label": "组合",
+            "type": "text"
+          },
+          {
+            "field": "maximum_absolute_log10_ratio_above_floor",
+            "label": "平均最大误差, dex",
+            "format": "number"
+          },
+          {
+            "field": "median_absolute_log10_ratio_above_floor",
+            "label": "平均中位误差, dex",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "m11",
+        "label": "M11 冻结证据",
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/self_consistent_factorial_effects.csv"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M11 PhuMob × Enormal × HFS 三因素矩阵报告"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "body": "## 技术摘要\n\n完整 2³ 矩阵的 32 条 Sentaurus/Vela 自洽曲线全部收敛并逐点对齐。以最大 Id 误差为响应，HFS 是唯一在四个器件/漏压工况中均增加误差的主因子（聚合 +0.00679 dex）；Enormal 在四个工况均改善一致性（聚合 -0.00576 dex）；PhuMob 的聚合效应为 -0.00663 dex，主要来自 n21、Vd=0.05 V。"
+      },
+      {
+        "id": "metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "curves",
+          "points",
+          "hfs",
+          "enormal",
+          "best"
+        ]
+      },
+      {
+        "id": "self",
+        "type": "markdown",
+        "body": "## 重新自洽求解：HFS 是稳定的误差放大项\n\n自洽矩阵同时包含模型的直接迁移率响应以及电势、载流子和电流的非线性反馈。PhuMob+Enormal、关闭 HFS 的 p1_e1_h0 具有最低的跨工况平均最大误差 0.04693 dex；全模型 p1_e1_h1 为 0.05145 dex。该差异是归因证据，不足以直接改变默认模型。"
+      },
+      {
+        "id": "aggregate_chart",
+        "type": "chart",
+        "chartId": "aggregate"
+      },
+      {
+        "id": "condition_chart",
+        "type": "chart",
+        "chartId": "condition"
+      },
+      {
+        "id": "variant_table",
+        "type": "table",
+        "tableId": "variants"
+      },
+      {
+        "id": "frozen_note",
+        "type": "markdown",
+        "body": "## 冻结状态回放：三项模型都能改善全物理迁移率复现\n\n在相同的全模型 Sentaurus 状态上只更换 Vela 迁移率组合时，PhuMob、Enormal 和 HFS 对活跃边迁移率 P95 误差的主效应均为负。PhuMob 主导低场基线，HFS 对高场区继续改善。冻结结果不能解释为 Sentaurus 在同一状态下关闭模型后的响应。"
+      },
+      {
+        "id": "frozen_chart",
+        "type": "chart",
+        "chartId": "frozen"
+      },
+      {
+        "id": "interpretation",
+        "type": "markdown",
+        "body": "## 综合判断\n\nHFS 在冻结迁移率回放中有益、在自洽跨求解器 Id 对比中却稳定放大误差。这种符号反转说明剩余差异更可能位于 HFS 驱动力的空间构造、边界/参考密度限制、离散映射及其状态反馈，而不是简单的“缺少 HFS”。该结论与 M10 中替换 Sentaurus GradQuasiFermi 后迁移率残差显著下降相互印证。"
+      },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "body": "## 范围、方法与限制\n\n范围仅限 SDevice。自洽矩阵使用 n17/n21、Vd=0.05/1 V、Vg=0:0.05:2.5 V，共 1,632 个直接点/求解器，不插值。冻结矩阵使用 M10 的 16 个全物理状态并执行 128 个 Vela 公式评估。Sentaurus 未提供同一冻结状态下的八模型重算，也未公开所有内部 HFS 平滑和极限处理，因此不能据此锁定单一私有公式。"
+      },
+      {
+        "id": "next",
+        "type": "markdown",
+        "body": "## 结论与后续\n\n三因素独立消融已完成：Enormal 不是主要误差源；PhuMob 总体改善一致性；HFS 是自洽 Id 误差的稳定放大项。后续应保持当前 16 条全模型曲线为回归基线，针对 GradQuasiFermi 边驱动力、参考密度和平滑限制增加逐边诊断，而不直接修改默认模型。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-29T02:42:04Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "curves": 32,
+          "points": 1632,
+          "hfs_effect_dex": 0.006793238694210932,
+          "enormal_effect_dex": -0.005764283011379781,
+          "best_max_error_dex": 0.046931880731890474,
+          "best_vs_full_dex": 0.0045144778532628105
+        }
+      ],
+      "aggregate_rows": [
+        {
+          "term": "PhuMob",
+          "effect_dex": -0.006633467790978134,
+          "direction": "误差降低"
+        },
+        {
+          "term": "Enormal",
+          "effect_dex": -0.005764283011379781,
+          "direction": "误差降低"
+        },
+        {
+          "term": "HFS",
+          "effect_dex": 0.006793238694210932,
+          "direction": "误差增加"
+        },
+        {
+          "term": "PhuMob×Enormal",
+          "effect_dex": 0.002611147072622985,
+          "direction": "误差增加"
+        },
+        {
+          "term": "PhuMob×HFS",
+          "effect_dex": -0.0016971911026032321,
+          "direction": "误差降低"
+        },
+        {
+          "term": "Enormal×HFS",
+          "effect_dex": -0.001616975095150533,
+          "direction": "误差降低"
+        },
+        {
+          "term": "三因素交互",
+          "effect_dex": 0.0010354053568056437,
+          "direction": "误差增加"
+        }
+      ],
+      "condition_rows": [
+        {
+          "condition": "n17, Vd=0.05 V",
+          "term": "PhuMob",
+          "effect_dex": -0.0017481901187550095
+        },
+        {
+          "condition": "n17, Vd=0.05 V",
+          "term": "Enormal",
+          "effect_dex": -0.0015614721639506945
+        },
+        {
+          "condition": "n17, Vd=0.05 V",
+          "term": "HFS",
+          "effect_dex": 0.004941556884801461
+        },
+        {
+          "condition": "n17, Vd=1 V",
+          "term": "PhuMob",
+          "effect_dex": 0.0006726719752869342
+        },
+        {
+          "condition": "n17, Vd=1 V",
+          "term": "Enormal",
+          "effect_dex": -0.003360177332031755
+        },
+        {
+          "condition": "n17, Vd=1 V",
+          "term": "HFS",
+          "effect_dex": 0.0007288768468100559
+        },
+        {
+          "condition": "n21, Vd=0.05 V",
+          "term": "PhuMob",
+          "effect_dex": -0.025823032404580143
+        },
+        {
+          "condition": "n21, Vd=0.05 V",
+          "term": "Enormal",
+          "effect_dex": -0.013804551950152025
+        },
+        {
+          "condition": "n21, Vd=0.05 V",
+          "term": "HFS",
+          "effect_dex": 0.019531640613631454
+        },
+        {
+          "condition": "n21, Vd=1 V",
+          "term": "PhuMob",
+          "effect_dex": 0.00036467938413568823
+        },
+        {
+          "condition": "n21, Vd=1 V",
+          "term": "Enormal",
+          "effect_dex": -0.004330930599384615
+        },
+        {
+          "condition": "n21, Vd=1 V",
+          "term": "HFS",
+          "effect_dex": 0.0019708804316007564
+        }
+      ],
+      "frozen_rows": [
+        {
+          "term": "PhuMob",
+          "effect_dex": -1.2032784984235352,
+          "direction": "误差降低"
+        },
+        {
+          "term": "Enormal",
+          "effect_dex": -0.040940167774614844,
+          "direction": "误差降低"
+        },
+        {
+          "term": "HFS",
+          "effect_dex": -0.17643278288624953,
+          "direction": "误差降低"
+        },
+        {
+          "term": "PhuMob×Enormal",
+          "effect_dex": -0.04093732937837635,
+          "direction": "误差降低"
+        },
+        {
+          "term": "PhuMob×HFS",
+          "effect_dex": -0.17448615802767142,
+          "direction": "误差降低"
+        },
+        {
+          "term": "Enormal×HFS",
+          "effect_dex": 0.01618403341850594,
+          "direction": "误差增加"
+        },
+        {
+          "term": "三因素交互",
+          "effect_dex": 0.01618410686797045,
+          "direction": "误差增加"
+        }
+      ],
+      "variant_rows": [
+        {
+          "variant": "p0_e0_h0",
+          "maximum_absolute_log10_ratio_above_floor": 0.056015465336494624,
+          "median_absolute_log10_ratio_above_floor": 0.010763322691820742,
+          "models": "P=0, E=0, H=0"
+        },
+        {
+          "variant": "p0_e0_h1",
+          "maximum_absolute_log10_ratio_above_floor": 0.06715827558526496,
+          "median_absolute_log10_ratio_above_floor": 0.010978555733899538,
+          "models": "P=0, E=0, H=1"
+        },
+        {
+          "variant": "p0_e1_h0",
+          "maximum_absolute_log10_ratio_above_floor": 0.050292415704448035,
+          "median_absolute_log10_ratio_above_floor": 0.007337933708189913,
+          "models": "P=0, E=1, H=0"
+        },
+        {
+          "variant": "p0_e1_h1",
+          "maximum_absolute_log10_ratio_above_floor": 0.05613046504930602,
+          "median_absolute_log10_ratio_above_floor": 0.007930511917785687,
+          "models": "P=0, E=1, H=1"
+        },
+        {
+          "variant": "p1_e0_h0",
+          "maximum_absolute_log10_ratio_above_floor": 0.04950344693230238,
+          "median_absolute_log10_ratio_above_floor": 0.009275024121163166,
+          "models": "P=1, E=0, H=0"
+        },
+        {
+          "variant": "p1_e0_h1",
+          "maximum_absolute_log10_ratio_above_floor": 0.05518106426225496,
+          "median_absolute_log10_ratio_above_floor": 0.009294884159828487,
+          "models": "P=1, E=0, H=1"
+        },
+        {
+          "variant": "p1_e1_h0",
+          "maximum_absolute_log10_ratio_above_floor": 0.046931880731890474,
+          "median_absolute_log10_ratio_above_floor": 0.010370909519777639,
+          "models": "P=1, E=1, H=0"
+        },
+        {
+          "variant": "p1_e1_h1",
+          "maximum_absolute_log10_ratio_above_floor": 0.051446358585153285,
+          "median_absolute_log10_ratio_above_floor": 0.00900196526983555,
+          "models": "P=1, E=1, H=1"
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "m11",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/mobility_factorial/self_consistent_factorial_effects.csv', header=true)",
+        "description": "M11 orthogonal factorial effects and frozen evidence.",
+        "executed_at": "2026-08-29T02:42:04Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/mobility_factorial/self_consistent_factorial_effects.csv"
+        ],
+        "metric_definitions": [
+          "factorial effect is mean response at coded product +1 minus mean response at -1",
+          "negative error effect improves Vela-to-Sentaurus agreement",
+          "self-consistent response includes nonlinear state feedback"
+        ],
+        "filters": [
+          "SDevice only",
+          "n17 and n21",
+          "Vd=0.05 and 1 V",
+          "Vg=0:0.05:2.5 V",
+          "no interpolation"
+        ]
+      }
+    }
+  ]
+}

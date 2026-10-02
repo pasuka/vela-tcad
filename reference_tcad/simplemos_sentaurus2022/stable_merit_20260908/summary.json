@@ -1,0 +1,13 @@
+{
+  "DC": 24,
+  "stable_qualified": 11,
+  "stable_total": 12,
+  "stable_failed_path_qualified": 3,
+  "stable_failed_path_total": 4,
+  "stable_controls_qualified": 8,
+  "stable_controls_total": 8,
+  "legacy_identity": true,
+  "ports_qualified": 24,
+  "all_stable_qualified": false,
+  "production_changes": false
+}

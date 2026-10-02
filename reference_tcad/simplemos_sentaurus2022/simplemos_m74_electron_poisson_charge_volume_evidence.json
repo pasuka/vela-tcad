@@ -1,0 +1,32 @@
+{
+  "schema": "vela.simplemos.sdevice.m74_electron_poisson_charge_volume_evidence.v1",
+  "status": "frozen",
+  "classification": "electron_poisson_volume_material_but_not_dominant",
+  "contract_sha256": "bf1e9c4b089c35bb45339f27e1e66a35298d3c0dc1ad06faf54b9b85ace35960",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m74_electron_poisson_charge_volume.py": "3a7ed94dddfd1c81df355a86e21ff805f1c9828d07369af146f5d76f9eddf2f0"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_electron_poisson_charge_volume_report.json": "fc4488e0bb28b6963c123f583e7c186d524faf95c5f24fa84c1ac37ab7d74cf9",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_case_ledger.csv": "fcdac46a957112acd81106f96eda674ce5ace8b2c02726d5c2fda3f531e53904",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_pair_ledger.csv": "c2b207ec29a35be6a2a4ec8f77fd8ffc2c2d359f03101a761fb26466448a173a",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_curve_response_ledger.csv": "fcb89e0738e80e057c8f93f0e15aac9b85fe6690c50f7992a97daa13d1faa5b7",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_execution_manifest.json": "436c6d22a77366bf050390a30797566bd75923eaac83a0bfc3598afca9e9e514",
+    "docs/validation/simplemos_m74_electron_poisson_charge_volume_2026-09-03.md": "86b625c4e5e5ce3850fe7c57d76fcb0f9388ef742883eda6fbc168d1b4ee6d39",
+    "docs/validation/reports/simplemos_m74/artifact.json": "862347872092e84e1caf091ce62723f8ac1e52a00f7e7e4422e47233a79cfd87"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_self_consistent_execution": true,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "electron_volume_unit_test": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

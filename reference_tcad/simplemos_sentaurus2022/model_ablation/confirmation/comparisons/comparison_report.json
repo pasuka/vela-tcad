@@ -1,0 +1,679 @@
+{
+  "schema": "vela.simplemos.sdevice.m8a_confirmation_comparison.v1",
+  "status": "complete",
+  "interpolation": "forbidden",
+  "cases": [
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_full_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/full/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.04172703523666418,
+      "median_absolute_log10_ratio_above_floor": 0.010523488004350455,
+      "maximum_relative_error_above_floor": 0.1008471825252534,
+      "endpoint_log10_ratio": -0.012470687695711476,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 2.21341390130383e-15,
+            "vela_current_A_per_um": 2.345190166689931e-15,
+            "absolute_log10_ratio": 0.025115431335973274,
+            "relative_error": 0.059535302145015526
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 7.85441564823606e-15,
+            "vela_current_A_per_um": 8.366785648866198e-15,
+            "absolute_log10_ratio": 0.02744476281548734,
+            "relative_error": 0.06523336981093009
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.04082586620946772,
+          "relative_error": 0.09856527272197953
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 5.6516440988337e-05,
+          "vela_current_A_per_um": 5.491666021202143e-05,
+          "absolute_log10_ratio": 0.012470687695711476,
+          "relative_error": 0.028306467080007815
+        }
+      },
+      "case": "n17_full_vd_0p05",
+      "device": "n17",
+      "variant": "full",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_full_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "13a0343a94ef35650ac9125358069565b66b5c0cc2f61b882bdefa68f4957df6",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": 0.0,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0,
+        "weak_inversion_max_log10_ratio_change": 0.0
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_full_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/full/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.0322235035136669,
+      "median_absolute_log10_ratio_above_floor": 0.004836749169218508,
+      "maximum_relative_error_above_floor": 0.07701934380491994,
+      "endpoint_log10_ratio": 0.00013602381938093453,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 1.70609556257428e-14,
+            "vela_current_A_per_um": 1.78555705357388e-14,
+            "absolute_log10_ratio": 0.019770378275517878,
+            "relative_error": 0.046575052853254376
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 6.21395275523882e-14,
+            "vela_current_A_per_um": 6.526690622481117e-14,
+            "absolute_log10_ratio": 0.021325079816345866,
+            "relative_error": 0.050328330381758296
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.029607855330203933,
+          "relative_error": 0.070552217342374
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.000333279743036906,
+          "vela_current_A_per_um": 0.0003333841447404691,
+          "absolute_log10_ratio": 0.00013602381938093453,
+          "relative_error": 0.0003132554730503079
+        }
+      },
+      "case": "n17_full_vd_1",
+      "device": "n17",
+      "variant": "full",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_full_vd_1_comparison.csv",
+      "comparison_csv_sha256": "4bfb07291446fa582b8489a39c04c654f7d75ae56f93d49de57f7f45753f9195",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": 0.0,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0,
+        "weak_inversion_max_log10_ratio_change": 0.0
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_no_hfs_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/no_hfs/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.039104362153602974,
+      "median_absolute_log10_ratio_above_floor": 0.01183781325233785,
+      "maximum_relative_error_above_floor": 0.09421927857143698,
+      "endpoint_log10_ratio": -0.014086768576305926,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 3.04453658716035e-15,
+            "vela_current_A_per_um": 3.2134212431947705e-15,
+            "absolute_log10_ratio": 0.02344646290367032,
+            "relative_error": 0.05547138331221043
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.0719214683527e-14,
+            "vela_current_A_per_um": 1.1368611017182797e-14,
+            "absolute_log10_ratio": 0.025544438108418714,
+            "relative_error": 0.060582454296187506
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.03872718657313825,
+          "relative_error": 0.09326938479096747
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 6.0125169657494e-05,
+          "vela_current_A_per_um": 5.8206240078635884e-05,
+          "absolute_log10_ratio": 0.014086768576305926,
+          "relative_error": 0.03191557861357217
+        }
+      },
+      "case": "n17_no_hfs_vd_0p05",
+      "device": "n17",
+      "variant": "no_hfs",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_no_hfs_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "5af6468af3e03956e12f6bdb5759f157aa7b28e43a6b7107a2c700e33676d494",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.0026226730830612027,
+        "deep_off_vg_0p05_log10_ratio_change": -0.0019003247070686242,
+        "weak_inversion_max_log10_ratio_change": -0.0020986796363294744
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_no_hfs_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/no_hfs/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.030280956047437423,
+      "median_absolute_log10_ratio_above_floor": 0.008813699336091477,
+      "maximum_relative_error_above_floor": 0.07221272235586275,
+      "endpoint_log10_ratio": -0.011087754125456008,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 2.96561578413366e-14,
+            "vela_current_A_per_um": 3.094329825921002e-14,
+            "absolute_log10_ratio": 0.018451718954757994,
+            "relative_error": 0.04340212999808485
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.06810190815008e-13,
+            "vela_current_A_per_um": 1.1176802351930515e-13,
+            "absolute_log10_ratio": 0.019704880104448236,
+            "relative_error": 0.0464172254207837
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.027751407455207676,
+          "relative_error": 0.06598577045785745
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.000931091789699652,
+          "vela_current_A_per_um": 0.0009076214329871267,
+          "absolute_log10_ratio": 0.011087754125456008,
+          "relative_error": 0.02520735009391106
+        }
+      },
+      "case": "n17_no_hfs_vd_1",
+      "device": "n17",
+      "variant": "no_hfs",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_no_hfs_vd_1_comparison.csv",
+      "comparison_csv_sha256": "fb15272c263a4400d44d865e9be405f63daf8fe1202a5c19965821e68540aeae",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.001942547466229478,
+        "deep_off_vg_0p05_log10_ratio_change": -0.0016201997118976304,
+        "weak_inversion_max_log10_ratio_change": -0.0018564478749962567
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_phumob_only_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/phumob_only/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.04148135746269656,
+      "median_absolute_log10_ratio_above_floor": 0.009144816606612174,
+      "maximum_relative_error_above_floor": 0.10022461600884686,
+      "endpoint_log10_ratio": -0.010876602381555134,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 3.56766289438625e-15,
+            "vela_current_A_per_um": 3.7722631099869614e-15,
+            "absolute_log10_ratio": 0.02421816503976605,
+            "relative_error": 0.05734852805814466
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.27813267289226e-14,
+            "vela_current_A_per_um": 1.3585758074790958e-14,
+            "absolute_log10_ratio": 0.026507939872163443,
+            "relative_error": 0.06293801597670033
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.041168250627476595,
+          "relative_error": 0.09943168929299906
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.000112351220890266,
+          "vela_current_A_per_um": 0.00010957240492308236,
+          "absolute_log10_ratio": 0.010876602381555134,
+          "relative_error": 0.02473329568797229
+        }
+      },
+      "case": "n17_phumob_only_vd_0p05",
+      "device": "n17",
+      "variant": "phumob_only",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_phumob_only_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "80fc2fb42babe71a695653a118f467f2d15d16de2c8d0c1742cdb7e4f33afd41",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.00024567777396761886,
+        "deep_off_vg_0p05_log10_ratio_change": -0.000936822943323895,
+        "weak_inversion_max_log10_ratio_change": 0.0003423844180088717
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n17_phumob_only_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n17/phumob_only/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.032408526566109555,
+      "median_absolute_log10_ratio_above_floor": 0.006486347375033334,
+      "maximum_relative_error_above_floor": 0.077478285535062,
+      "endpoint_log10_ratio": -0.008003799163011041,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 3.31970945133996e-14,
+            "vela_current_A_per_um": 3.465909372086162e-14,
+            "absolute_log10_ratio": 0.01871712752102181,
+            "relative_error": 0.044039974849964685
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.21595430413599e-13,
+            "vela_current_A_per_um": 1.2738065431110978e-13,
+            "absolute_log10_ratio": 0.02018622102930767,
+            "relative_error": 0.047577642332715275
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.65,
+          "absolute_log10_ratio": 0.02998552098839389,
+          "relative_error": 0.07148358228351602
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.00168882863768078,
+          "vela_current_A_per_um": 0.0016579895371726776,
+          "absolute_log10_ratio": 0.008003799163011041,
+          "relative_error": 0.018260645171468016
+        }
+      },
+      "case": "n17_phumob_only_vd_1",
+      "device": "n17",
+      "variant": "phumob_only",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n17_phumob_only_vd_1_comparison.csv",
+      "comparison_csv_sha256": "08b522d0711c2299624b483a7be31a5ea705812c0440cb08ee792845d106d9af",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": 0.00018502305244265382,
+        "deep_off_vg_0p05_log10_ratio_change": -0.0011388587870381946,
+        "weak_inversion_max_log10_ratio_change": 0.00037766565818995665
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_full_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/full/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.07374837507777213,
+      "median_absolute_log10_ratio_above_floor": 0.009772204570424353,
+      "maximum_relative_error_above_floor": 0.18508192721389366,
+      "endpoint_log10_ratio": -0.009772204570424353,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 9.39050615567485e-17,
+            "vela_current_A_per_um": 9.75121404061547e-17,
+            "absolute_log10_ratio": 0.016369687660571057,
+            "relative_error": 0.038411974707309934
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.95517753930434e-16,
+            "vela_current_A_per_um": 2.3170455663241055e-16,
+            "absolute_log10_ratio": 0.07374837507777213,
+            "relative_error": 0.18508192721389366
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.8,
+          "absolute_log10_ratio": 0.06399183621494026,
+          "relative_error": 0.15875557388353656
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 4.96461008841558e-05,
+          "vela_current_A_per_um": 4.854147187637822e-05,
+          "absolute_log10_ratio": 0.009772204570424353,
+          "relative_error": 0.022250065727319086
+        }
+      },
+      "case": "n21_full_vd_0p05",
+      "device": "n21",
+      "variant": "full",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_full_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "2138403be046dc67e4a3cceb65ee8a11e1552218e97b41ad519e214d2bb4f566",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": 0.0,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0,
+        "weak_inversion_max_log10_ratio_change": 0.0
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_full_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/full/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.05808652051250995,
+      "median_absolute_log10_ratio_above_floor": 0.010875419335348888,
+      "maximum_relative_error_above_floor": 0.1431060426556481,
+      "endpoint_log10_ratio": 0.0011422312412581546,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 3.32655227475971e-16,
+            "vela_current_A_per_um": 3.4027110221336656e-16,
+            "absolute_log10_ratio": 0.009830715355814272,
+            "relative_error": 0.022894198282050724
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 6.37933801750496e-16,
+            "vela_current_A_per_um": 6.72184285433372e-16,
+            "absolute_log10_ratio": 0.022712740742172714,
+            "relative_error": 0.05368971449528528
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.75,
+          "absolute_log10_ratio": 0.05808652051250995,
+          "relative_error": 0.1431060426556481
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.00027822580194864,
+          "vela_current_A_per_um": 0.000278958522489844,
+          "absolute_log10_ratio": 0.0011422312412581546,
+          "relative_error": 0.0026335463356459343
+        }
+      },
+      "case": "n21_full_vd_1",
+      "device": "n21",
+      "variant": "full",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_full_vd_1_comparison.csv",
+      "comparison_csv_sha256": "455ec485209dae866da878475b8e03733e9fdad5bce6e4f27dff07ebec169c66",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": 0.0,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0,
+        "weak_inversion_max_log10_ratio_change": 0.0
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_no_hfs_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/no_hfs/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.06353270989103554,
+      "median_absolute_log10_ratio_above_floor": 0.010644149011707692,
+      "maximum_relative_error_above_floor": 0.1575312109433035,
+      "endpoint_log10_ratio": -0.01104798192135146,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 1.11930586812695e-16,
+            "vela_current_A_per_um": 1.1651594611357122e-16,
+            "absolute_log10_ratio": 0.017436585388028916,
+            "relative_error": 0.04096609721656675
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 2.48297757426889e-16,
+            "vela_current_A_per_um": 2.8741240382885343e-16,
+            "absolute_log10_ratio": 0.06353270989103554,
+            "relative_error": 0.1575312109433035
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.8,
+          "absolute_log10_ratio": 0.06134185561518295,
+          "relative_error": 0.1517065999778678
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 5.27234955758418e-05,
+          "vela_current_A_per_um": 5.139918282897553e-05,
+          "absolute_log10_ratio": 0.01104798192135146,
+          "relative_error": 0.025118075582854126
+        }
+      },
+      "case": "n21_no_hfs_vd_0p05",
+      "device": "n21",
+      "variant": "no_hfs",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_no_hfs_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "68afc12aa446b5128f943a6c6f322d7e400f3fa9eb3d966796ef1852447ffd58",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.010215665186736583,
+        "deep_off_vg_0p05_log10_ratio_change": -0.010215665186736583,
+        "weak_inversion_max_log10_ratio_change": -0.0026499805997573095
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_no_hfs_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/no_hfs/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.05480949483548596,
+      "median_absolute_log10_ratio_above_floor": 0.01018797647897354,
+      "maximum_relative_error_above_floor": 0.1345130474205984,
+      "endpoint_log10_ratio": -0.007071536062015652,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 4.15232651640277e-16,
+            "vela_current_A_per_um": 4.2743751695568297e-16,
+            "absolute_log10_ratio": 0.012581141562543512,
+            "relative_error": 0.029392836202050986
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 8.9297344451575e-16,
+            "vela_current_A_per_um": 9.429094753247942e-16,
+            "absolute_log10_ratio": 0.02363145608250003,
+            "relative_error": 0.05592107034730914
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.75,
+          "absolute_log10_ratio": 0.05480949483548596,
+          "relative_error": 0.1345130474205984
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.000747721830989084,
+          "vela_current_A_per_um": 0.0007356454017893387,
+          "absolute_log10_ratio": 0.007071536062015652,
+          "relative_error": 0.016150965103921878
+        }
+      },
+      "case": "n21_no_hfs_vd_1",
+      "device": "n21",
+      "variant": "no_hfs",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_no_hfs_vd_1_comparison.csv",
+      "comparison_csv_sha256": "53dc91f30b71192683606631c246f075c81e2592d8490758b7f6adc7cec241bc",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.0032770256770239883,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0009187153403273154,
+        "weak_inversion_max_log10_ratio_change": -0.0032770256770239883
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_phumob_only_vd_0p05_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/phumob_only/workflow/vd_0p05/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.0669626022317967,
+      "median_absolute_log10_ratio_above_floor": 0.008693232513672296,
+      "maximum_relative_error_above_floor": 0.1667091456097159,
+      "endpoint_log10_ratio": -0.0077721498905833864,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 1.29011881350695e-16,
+            "vela_current_A_per_um": 1.3521774119799444e-16,
+            "absolute_log10_ratio": 0.020403968308258,
+            "relative_error": 0.04810301022143811
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 2.98608829858279e-16,
+            "vela_current_A_per_um": 3.4838965275546974e-16,
+            "absolute_log10_ratio": 0.0669626022317967,
+            "relative_error": 0.1667091456097159
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.8,
+          "absolute_log10_ratio": 0.0637021110597668,
+          "relative_error": 0.15798280633780268
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.00010049307011851,
+          "vela_current_A_per_um": 9.871063926467696e-05,
+          "absolute_log10_ratio": 0.0077721498905833864,
+          "relative_error": 0.017736853414181186
+        }
+      },
+      "case": "n21_phumob_only_vd_0p05",
+      "device": "n21",
+      "variant": "phumob_only",
+      "drain_voltage_V": 0.05,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_phumob_only_vd_0p05_comparison.csv",
+      "comparison_csv_sha256": "0946fa003d81c72b96a82684b633cdcb9469bbb6bdf3df8d720ebbaa2ea4240f",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.006785772845975424,
+        "deep_off_vg_0p05_log10_ratio_change": -0.006785772845975424,
+        "weak_inversion_max_log10_ratio_change": -0.000289725155173462
+      }
+    },
+    {
+      "status": "pass",
+      "reference": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/sentaurus_reference/n21_phumob_only_vd_1_reference.csv",
+      "candidate": "build-release/reference_tcad/simplemos_sentaurus2022/m8a_confirmation/vela/n21/phumob_only/workflow/vd_1/20_gate_sweep.csv",
+      "point_count": 51,
+      "points_above_floor": 51,
+      "maximum_absolute_log10_ratio_above_floor": 0.05716130146860669,
+      "median_absolute_log10_ratio_above_floor": 0.01277569998933486,
+      "maximum_relative_error_above_floor": 0.14067336679792913,
+      "endpoint_log10_ratio": -0.004055248449671589,
+      "reference_trend": "nondecreasing",
+      "candidate_trend": "nondecreasing",
+      "trend_match": true,
+      "failures": [],
+      "diagnostic_metrics": {
+        "deep_off": [
+          {
+            "gate_voltage_V": 0.0,
+            "sentaurus_current_A_per_um": 4.6025690550986e-16,
+            "vela_current_A_per_um": 4.7646530292936e-16,
+            "absolute_log10_ratio": 0.015030966806120922,
+            "relative_error": 0.03521597878372904
+          },
+          {
+            "gate_voltage_V": 0.05,
+            "sentaurus_current_A_per_um": 1.04695749492531e-15,
+            "vela_current_A_per_um": 1.1116297187519013e-15,
+            "absolute_log10_ratio": 0.02603109860093148,
+            "relative_error": 0.06177158494023191
+          }
+        ],
+        "weak_inversion_max": {
+          "gate_voltage_V": 0.75,
+          "absolute_log10_ratio": 0.05716130146860669,
+          "relative_error": 0.14067336679792913
+        },
+        "strong_inversion": {
+          "gate_voltage_V": 2.5,
+          "sentaurus_current_A_per_um": 0.00139652225136036,
+          "vela_current_A_per_um": 0.001383542840831672,
+          "absolute_log10_ratio": 0.004055248449671589,
+          "relative_error": 0.009294095039333988
+        }
+      },
+      "case": "n21_phumob_only_vd_1",
+      "device": "n21",
+      "variant": "phumob_only",
+      "drain_voltage_V": 1.0,
+      "comparison_csv": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/comparisons/n21_phumob_only_vd_1_comparison.csv",
+      "comparison_csv_sha256": "ab0379885b18aebbed787378a7cf9a44dbd164401ed08930f6f17c09ad793254",
+      "effect_vs_full": {
+        "maximum_log10_ratio_change": -0.000925219043903254,
+        "deep_off_vg_0p05_log10_ratio_change": 0.0033183578587587664,
+        "weak_inversion_max_log10_ratio_change": -0.000925219043903254
+      }
+    }
+  ]
+}

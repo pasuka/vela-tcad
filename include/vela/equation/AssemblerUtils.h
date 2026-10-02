@@ -14,6 +14,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/DDAssembler.h"
 #include "vela/equation/PoissonChargeVolume.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
@@ -23,6 +24,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/ElementLombardi.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/BandToBandTunnelingModel.h"
@@ -265,6 +267,330 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
         }
     }
     return edgeCells;
+}
+
+/// Return one triangle's positive box-couple contribution to an edge.
+/// This mirrors BoxGeometryBuilder's default cotangent plus barycentric
+/// fallback policy, but keeps the contribution region-local for interface
+/// assembly diagnostics.
+inline Real cellLocalEdgeCoupling(const DeviceMesh& mesh,
+                                  Index cellId,
+                                  Index edgeId)
+{
+    const Cell& cell = mesh.getCell(cellId);
+    const Edge& edge = mesh.getEdge(edgeId);
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3 ||
+        edge.length <= 1.0e-30) {
+        return 0.0;
+    }
+
+    Index opposite = mesh.numNodes();
+    bool hasNode0 = false;
+    bool hasNode1 = false;
+    for (Index node : cell.node_ids) {
+        hasNode0 = hasNode0 || node == edge.n0;
+        hasNode1 = hasNode1 || node == edge.n1;
+        if (node != edge.n0 && node != edge.n1)
+            opposite = node;
+    }
+    if (!hasNode0 || !hasNode1 || opposite >= mesh.numNodes())
+        return 0.0;
+
+    const Node& a = mesh.getNode(edge.n0);
+    const Node& b = mesh.getNode(edge.n1);
+    const Node& o = mesh.getNode(opposite);
+    const Real uX = a.x - o.x;
+    const Real uY = a.y - o.y;
+    const Real vX = b.x - o.x;
+    const Real vY = b.y - o.y;
+    const Real cross = std::abs(uX * vY - uY * vX);
+    if (cross <= 1.0e-300)
+        return 0.0;
+    const Real cotangent = (uX * vX + uY * vY) / cross;
+    if (cotangent < 0.0)
+        return triangleArea(mesh, cell) / (3.0 * edge.length);
+    return 0.5 * cotangent * edge.length;
+}
+
+inline Real cellBoxEdgeCoefficient(const DeviceMesh& mesh, Index cellId, Index edgeId)
+{
+    if (mesh.poissonPermittivityPolicy() != BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
+        throw std::invalid_argument("Element box transport requires cell_material geometry.");
+    const auto& cell=mesh.getCell(cellId);const auto& edge=mesh.getEdge(edgeId);
+    for (std::size_t k=0;k<3;++k) {
+        const Index a=cell.node_ids[k],b=cell.node_ids[(k+1)%3];
+        if ((a==edge.n0 && b==edge.n1)||(a==edge.n1 && b==edge.n0))
+            return mesh.poissonCellEdgeCoefficients(cellId)[k];
+    }
+    throw std::logic_error("Element box edge/cell mismatch.");
+}
+
+// M(T,i) = 1/4 sum_{j in T} g(T,ij) |xi-xj|^2 in coordinate area units.
+// These are averaging weights only; no equation source volume is changed.
+inline std::array<Real,3> cellBoxNodeMeasures(const DeviceMesh& mesh,Index cellId)
+{
+    if (mesh.poissonPermittivityPolicy() != BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
+        throw std::invalid_argument("Element box measures require cell_material geometry.");
+    const auto& cell=mesh.getCell(cellId);const auto& g=mesh.poissonCellEdgeCoefficients(cellId);
+    std::array<long double,3> measures{};
+    for(std::size_t k=0;k<3;++k) {
+        const auto& a=mesh.getNode(cell.node_ids[k]);const auto& b=mesh.getNode(cell.node_ids[(k+1)%3]);
+        const long double dx=(long double)b.x-a.x,dy=(long double)b.y-a.y;
+        const long double value=g[k]*(dx*dx+dy*dy)/4;
+        measures[k]+=value;measures[(k+1)%3]+=value;
+    }
+    return {static_cast<Real>(measures[0]),static_cast<Real>(measures[1]),static_cast<Real>(measures[2])};
+}
+
+inline void validateElementBoxMobilityContext(const DeviceMesh& mesh,
+    const MobilityModelConfig& mobility,const RegionResolvedInterfaceAssemblyConfig& assembly)
+{
+    if(mobility.edgeAveraging=="legacy") return;
+    const bool modelSupported =
+        (mobility.edgeAveraging=="element_box" && (mobility.model=="constant" || mobility.model=="masetti")) ||
+        (mobility.edgeAveraging=="element_box_phumob" && mobility.model=="phumob") || usesElementDistanceLombardi(mobility);
+    if(!modelSupported ||
+       mobility.dopingConcentrationBasis!="total_impurity" ||
+       assembly.transportEdgeGeometry!="element_box" ||
+       mesh.poissonPermittivityPolicy()!=BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
+        throw std::invalid_argument("Box mobility requires constant/Masetti or the explicit plain PhuMob candidate, nodal total_impurity, element_box transport, and cell_material geometry.");
+    if(usesElementDistanceLombardi(mobility) && (!mobility.surface.surfaceRegion.empty() || !mobility.surface.surfaceInterface.empty()))
+        throw std::invalid_argument("Element Lombardi custom interface selectors are not qualified");
+}
+
+/// Sum only transport-material cell contributions to every primal edge.
+inline std::vector<Real> computeTransportEdgeCouplings(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> coupling(mesh.numEdges(), 0.0);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        for (Index cellId : edgeCells.at(edgeId)) {
+            const Material& material = cellMaterials.at(cellId);
+            if (material.ni <= 0.0 && material.mun <= 0.0 &&
+                material.mup <= 0.0) {
+                continue;
+            }
+            coupling[edgeId] += cellLocalEdgeCoupling(mesh, cellId, edgeId);
+        }
+    }
+    return coupling;
+}
+
+/// Sum barycentric node-volume shares only over transport-material cells.
+// One effective geometry for assembly, terminal integration and diagnostics.
+inline std::vector<Real> computeEffectiveTransportEdgeCouplings(
+    const DeviceMesh& mesh, const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials,
+    const RegionResolvedInterfaceAssemblyConfig& config)
+{
+    const auto& ratios = config.transportEdgeCouplingRatios;
+    if (config.poissonChargeNodeVolume != "inherit" && config.poissonChargeNodeVolume != "signed_transport")
+        throw std::invalid_argument("Unknown Poisson charge volume policy.");
+    if (config.poissonChargeNodeVolume != "inherit" &&
+        (config.poissonElectronTransportNodeVolume || config.poissonHoleTransportNodeVolume || config.poissonDopantTransportNodeVolume))
+        throw std::invalid_argument("Charge volume policy conflicts with per-term volume flags.");
+    if (config.transportEdgeGeometry != "inherit" && config.transportEdgeGeometry != "element_box")
+        throw std::invalid_argument("Unknown transport edge geometry.");
+    if (config.transportEdgeGeometry == "element_box") {
+        if (config.transportEdgeCoupling || !ratios.empty())
+            throw std::invalid_argument("element_box transport conflicts with legacy edge flag or explicit ratios.");
+        std::vector<Real> result(mesh.numEdges(),0.);
+        for(Index e=0;e<mesh.numEdges();++e)
+            for(Index c:edgeCells.at(e)) {
+                const auto& mat=cellMaterials.at(c);
+                if(mat.ni>0 || mat.mun>0 || mat.mup>0)
+                    result[e]+=cellBoxEdgeCoefficient(mesh,c,e)*mesh.getEdge(e).length;
+            }
+        return result;
+    }
+    if (!ratios.empty() && (config.transportEdgeCoupling ||
+                           ratios.size() != mesh.edges().size()))
+        throw std::invalid_argument("Transport edge ratios require one value per mesh edge and cannot combine with transport_edge_coupling.");
+    auto result = config.transportEdgeCoupling
+        ? computeTransportEdgeCouplings(mesh, edgeCells, cellMaterials)
+        : computeTransportEdgeCouplings(mesh);
+    for (std::size_t e = 0; e < ratios.size(); ++e) {
+        if (!std::isfinite(ratios[e]) || ratios[e] < 0.0)
+            throw std::invalid_argument("Transport edge ratios must be finite and nonnegative.");
+        result[e] *= ratios[e];
+    }
+    return result;
+}
+
+inline std::vector<Real> computeTransportNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        const Material& material = cellMaterials.at(cellId);
+        if (material.ni <= 0.0 && material.mun <= 0.0 &&
+            material.mup <= 0.0) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const Real share = triangleArea(mesh, cell) / 3.0;
+        for (Index node : cell.node_ids)
+            volume.at(node) += share;
+    }
+    return volume;
+}
+
+/// Return the signed circumcentric (Sentaurus AverageBox) shares of a Tri3 cell.
+inline std::array<Real, 3> signedAverageBoxTriangleNodeMeasures(
+    const DeviceMesh& mesh,
+    const Cell& cell)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
+        throw std::invalid_argument(
+            "signed AverageBox node measures require a Tri3 cell");
+    }
+
+    const std::array<const Node*, 3> nodes = {
+        &mesh.getNode(cell.node_ids[0]),
+        &mesh.getNode(cell.node_ids[1]),
+        &mesh.getNode(cell.node_ids[2])};
+    const auto squaredDistance = [&](int a, int b) {
+        const Real dx = nodes[static_cast<std::size_t>(b)]->x -
+                        nodes[static_cast<std::size_t>(a)]->x;
+        const Real dy = nodes[static_cast<std::size_t>(b)]->y -
+                        nodes[static_cast<std::size_t>(a)]->y;
+        return dx * dx + dy * dy;
+    };
+    const auto cotangent = [&](int vertex, int a, int b) {
+        const Node& center = *nodes[static_cast<std::size_t>(vertex)];
+        const Node& first = *nodes[static_cast<std::size_t>(a)];
+        const Node& second = *nodes[static_cast<std::size_t>(b)];
+        const Real uX = first.x - center.x;
+        const Real uY = first.y - center.y;
+        const Real vX = second.x - center.x;
+        const Real vY = second.y - center.y;
+        const Real cross = std::abs(uX * vY - uY * vX);
+        if (cross <= 1.0e-300) {
+            throw std::invalid_argument(
+                "degenerate triangle cannot form signed AverageBox measure");
+        }
+        return (uX * vX + uY * vY) / cross;
+    };
+
+    std::array<Real, 3> measures{};
+    for (int i = 0; i < 3; ++i) {
+        const int j = (i + 1) % 3;
+        const int k = (i + 2) % 3;
+        measures[static_cast<std::size_t>(i)] = 0.125 * (
+            squaredDistance(i, k) * cotangent(j, i, k) +
+            squaredDistance(i, j) * cotangent(k, i, j));
+    }
+    return measures;
+}
+
+/// Sum signed AverageBox shares only over transport-material cells.
+inline std::vector<Real> computeTransportSignedAverageBoxNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        const Material& material = cellMaterials.at(cellId);
+        if (material.ni <= 0.0 && material.mun <= 0.0 &&
+            material.mup <= 0.0) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const auto measures = signedAverageBoxTriangleNodeMeasures(mesh, cell);
+        for (std::size_t local = 0; local < 3; ++local)
+            volume.at(cell.node_ids[local]) += measures[local];
+    }
+    return volume;
+}
+
+// Independent SRH measure; never rewrites Poisson, mesh or other sources.
+inline std::vector<Real> computeSrhNodeVolumes(
+    const DeviceMesh& mesh, const std::vector<Material>& materials,
+    const std::vector<Real>& legacy, const RegionResolvedInterfaceAssemblyConfig& config)
+{
+    const Real f = config.srhSignedTransportVolumeFraction;
+    if (!std::isfinite(f) || std::abs(f) > 1.0)
+        throw std::invalid_argument("SRH volume fraction must be finite and in [-1,1].");
+    if (f == 0.0) return legacy;
+    if (config.transportNodeVolume || config.transportSignedAverageBoxNodeVolume)
+        throw std::invalid_argument("SRH-only volume cannot combine with global continuity volume flags.");
+    const auto target = computeTransportSignedAverageBoxNodeVolumes(mesh, materials);
+    auto result = legacy;
+    for (Index i=0; i<mesh.numNodes(); ++i) {
+        result[i] = f == 1.0 ? target[i] : legacy[i] + f*(target[i]-legacy[i]);
+        if (!std::isfinite(result[i]) || result[i] < 0.0)
+            throw std::invalid_argument("SRH blended node volume must be finite and nonnegative.");
+    }
+    return result;
+}
+
+/// Replace historical node volumes by signed transport measures only on a
+/// diagnostic topology support.  The boundary/contact scope contains every
+/// external-boundary node plus the complete one-ring of every contact node.
+inline std::vector<Real> computeScopedTransportSignedAverageBoxNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials,
+    const std::string& scope)
+{
+    const auto signedVolume =
+        computeTransportSignedAverageBoxNodeVolumes(mesh, cellMaterials);
+    if (scope == "all_transport_nodes")
+        return signedVolume;
+    if (scope != "external_boundary_contact_support") {
+        throw std::invalid_argument(
+            "signed AverageBox node-volume scope must be "
+            "'all_transport_nodes' or "
+            "'external_boundary_contact_support'");
+    }
+
+    std::vector<Real> volume = computeNodeVolumes(mesh);
+    std::vector<bool> selected(mesh.numNodes(), false);
+    const auto edgeCells = buildEdgeCellMap(mesh);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        if (edgeCells.at(edgeId).size() == 1) {
+            selected.at(edge.n0) = true;
+            selected.at(edge.n1) = true;
+        }
+    }
+    std::vector<bool> contactNodes(mesh.numNodes(), false);
+    for (const Contact& contact : mesh.contacts()) {
+        for (Index node : contact.node_ids)
+            contactNodes.at(node) = true;
+    }
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        if (contactNodes.at(edge.n0) || contactNodes.at(edge.n1)) {
+            selected.at(edge.n0) = true;
+            selected.at(edge.n1) = true;
+        }
+    }
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        if (selected.at(node))
+            volume.at(node) = signedVolume.at(node);
+    }
+    return volume;
+}
+
+/// Return sum_c epsilon_c * couple_c for one edge [F].
+inline Real regionResolvedPermittivityCoupling(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const std::vector<std::vector<Index>>& edgeCells,
+    Index edgeId)
+{
+    Real weighted = 0.0;
+    for (Index cellId : edgeCells.at(edgeId)) {
+        const Cell& cell = mesh.getCell(cellId);
+        const Region& region = mesh.getRegion(cell.region_id);
+        const Real epsilon =
+            matdb.getMaterial(region.material).eps_r * constants::eps0;
+        weighted += epsilon * cellLocalEdgeCoupling(mesh, cellId, edgeId);
+    }
+    return weighted;
 }
 
 inline std::vector<std::vector<Index>> buildCellEdgeMap(
@@ -1022,15 +1348,75 @@ inline std::pair<Real, Real> nearestSurfaceFieldAndDistanceForCell(
     return {nearestField, nearestDistance};
 }
 
+inline bool isTransportMaterial(const Material& material);
+
+inline void updateElementHighFieldGeometry(MobilityModelConfig& config,
+    const DeviceMesh& mesh,const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& materials) {
+    if(!usesElementHighField(config) || config.highFieldCells.size()==mesh.numCells())return;
+    if(!config.jacobianFieldDerivatives || config.highFieldDrivingForce!="quasi_fermi_gradient")
+        throw std::invalid_argument("Element HFS requires full QF derivatives");
+    const auto cellEdges=buildCellEdgeMap(edgeCells,mesh);
+    std::vector<bool> contact(mesh.numNodes(),false);
+    for(const auto& c:mesh.contacts())for(Index n:c.node_ids)contact[n]=true;
+    config.highFieldCells.resize(mesh.numCells());
+    for(Index cid=0;cid<mesh.numCells();++cid) {
+        if(!isTransportMaterial(materials.at(cid)))continue;
+        if(materials.at(cid).temperature_K.value_or(300.)!=300.)
+            throw std::invalid_argument("Element HFS currently qualifies 300 K only");
+        const auto& cell=mesh.getCell(cid);auto& out=config.highFieldCells[cid];
+        if(cell.node_ids.size()!=3)throw std::invalid_argument("Element HFS requires triangles");
+        for(Index n:cell.node_ids)out.contact=out.contact||contact[n];
+        const auto& a=mesh.getNode(cell.node_ids[0]);const auto& b=mesh.getNode(cell.node_ids[1]);const auto& c=mesh.getNode(cell.node_ids[2]);
+        Real x1=b.x-a.x,y1=b.y-a.y,x2=c.x-a.x,y2=c.y-a.y,det=x1*y2-x2*y1;
+        if(det==0.)throw std::invalid_argument("Degenerate HFS cell");
+        Point2 g1{y2/det,-x2/det},g2{-y1/det,x1/det};
+        // PartialLayer: intersect all true boundary tangents. A contact vertex
+        // overrides the projection and selects the complete electric gradient.
+        bool projected=false,corner=false;Point2 tangent=Point2::Zero();
+        if(!out.contact)for(Index e:cellEdges[cid]) {
+            int transport=0;for(Index k:edgeCells[e])if(isTransportMaterial(materials[k]))++transport;
+            if(transport!=1)continue;
+            const auto& edge=mesh.getEdge(e);const auto& p=mesh.getNode(edge.n0);const auto& q=mesh.getNode(edge.n1);
+            Point2 t{q.x-p.x,q.y-p.y};t.normalize();
+            if(projected && std::abs(t.x()*tangent.y()-t.y()*tangent.x())>1e-12)corner=true;
+            tangent=t;projected=true;
+        }
+        if(corner){g1.setZero();g2.setZero();}
+        else if(projected){g1=tangent*tangent.dot(g1);g2=tangent*tangent.dot(g2);}
+        const Real f=config.surface.coordinateFieldFactor;
+        out.stencil={g1.x()*f,g1.y()*f,g2.x()*f,g2.y()*f};
+    }
+}
+
+struct ElementHighFieldDrive {Real field=0.;std::array<Real,3> derivative{};bool contact=false;};
+inline ElementHighFieldDrive elementHighFieldDrive(const MobilityModelConfig& config,
+    const DeviceMesh& mesh,Index cid,const VectorXd& psi,const VectorXd* qf) {
+    const auto& g=config.highFieldCells.at(cid);const auto& cell=mesh.getCell(cid);
+    if(!g.contact && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
+    const auto& z=g.contact?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
+    const auto& s=g.stencil;
+    const Real gx=(z(j)-z(i))*s[0]+(z(k)-z(i))*s[2],gy=(z(j)-z(i))*s[1]+(z(k)-z(i))*s[3];
+    ElementHighFieldDrive out;out.contact=g.contact;out.field=std::hypot(gx,gy);
+    if(out.field>=100./config.internalFieldToVPerM) {
+        out.derivative[1]=(gx*s[0]+gy*s[1])/out.field;
+        out.derivative[2]=(gx*s[2]+gy*s[3])/out.field;
+        out.derivative[0]=-out.derivative[1]-out.derivative[2];
+    }
+    return out;
+}
+
 inline void updateSurfaceMobilityCellGeometry(
     MobilityModelConfig& config,
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
     const VectorXd& psi,
-    Real fieldFactor)
+    Real fieldFactor,
+    const std::vector<Material>* cellMaterials = nullptr)
 {
     if (!isSurfaceMobilityModel(config))
         return;
+    if(usesElementHighField(config)) {if(!cellMaterials)throw std::invalid_argument("HFS requires material geometry");updateElementHighFieldGeometry(config,mesh,edgeCells,*cellMaterials);}
     if (config.surface.cellNormalX.size() != mesh.numCells() ||
         config.surface.cellNormalY.size() != mesh.numCells() ||
         config.surface.cellDistances.size() != mesh.numCells()) {
@@ -1058,6 +1444,23 @@ inline void updateSurfaceMobilityCellGeometry(
                     mesh.getCell(adjacentCell).region_id).name);
             if (regions.size() < 2 || edge.length <= 1.0e-30)
                 continue;
+            // With no explicit selector, Sentaurus Enormal uses the nearest
+            // semiconductor/insulator interface.  Do not treat boundaries
+            // between two transport regions as surface-scattering geometry.
+            if (config.surface.surfaceInterface.empty() &&
+                cellMaterials != nullptr) {
+                bool hasTransport = false;
+                bool hasInsulator = false;
+                for (Index adjacentCell : edgeCells.at(edgeId)) {
+                    const Material& material = cellMaterials->at(
+                        static_cast<std::size_t>(adjacentCell));
+                    const bool transport = material.mun > 0.0 || material.mup > 0.0;
+                    hasTransport = hasTransport || transport;
+                    hasInsulator = hasInsulator || !transport;
+                }
+                if (!hasTransport || !hasInsulator)
+                    continue;
+            }
             // A configured interface is an exact physical selector, not only
             // a per-cell applicability test.  Filter the geometry candidates
             // here so internal same-region edges do not participate in the
@@ -1086,8 +1489,33 @@ inline void updateSurfaceMobilityCellGeometry(
                  (b.x - a.x) / edge.length,
                 std::move(regions)});
         }
+        if(usesElementDistanceLombardi(config)) {
+            if(interfaces.empty())throw std::invalid_argument("Element Lombardi requires a semiconductor-insulator interface");
+            config.surface.nodeDistances.assign(mesh.numNodes(),std::numeric_limits<Real>::infinity());
+            for(Index n=0;n<mesh.numNodes();++n) {
+                const auto& point=mesh.getNode(n);
+                for(const auto& s:interfaces) {
+                    Real dx=s.bx-s.ax,dy=s.by-s.ay;
+                    Real t=std::clamp(((point.x-s.ax)*dx+(point.y-s.ay)*dy)/(dx*dx+dy*dy),0.,1.);
+                    config.surface.nodeDistances[n]=std::min(config.surface.nodeDistances[n],std::hypot(point.x-s.ax-t*dx,point.y-s.ay-t*dy));
+                }
+            }
+        }
         for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
             const Region& region = mesh.getRegion(mesh.getCell(cellId).region_id);
+            if(usesElementDistanceLombardi(config)) {
+                const auto& cell=mesh.getCell(cellId);
+                if(cell.type!=CellType::Tri3 || cell.node_ids.size()!=3)throw std::invalid_argument("Element Lombardi requires triangles");
+                const auto& p0=mesh.getNode(cell.node_ids[0]);const auto& p1=mesh.getNode(cell.node_ids[1]);const auto& p2=mesh.getNode(cell.node_ids[2]);
+                Real x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
+                if(std::abs(det)<1e-300)throw std::invalid_argument("Degenerate element Lombardi triangle");
+                const auto& distance=config.surface.nodeDistances;
+                Real d0=distance[cell.node_ids[0]],d1=distance[cell.node_ids[1]]-d0,d2=distance[cell.node_ids[2]]-d0;
+                config.surface.cellNormalX[cellId]=(d1*y2-d2*y1)/det;
+                config.surface.cellNormalY[cellId]=(x1*d2-x2*d1)/det;
+                config.surface.cellDistances[cellId]=d0+(d1+d2)/3;
+                continue;
+            }
             const auto [cx, cy] = cellCentroid(mesh, cellId);
             Real nearest = std::numeric_limits<Real>::infinity();
             for (const InterfaceSegment& segment : interfaces) {
@@ -1144,6 +1572,43 @@ inline void updateSurfaceMobilityCellGeometry(
     }
 }
 
+inline Real liveSurfaceNormalFieldForCell(
+    const MobilityModelConfig& config,
+    const DeviceMesh& mesh,
+    const VectorXd& psi,
+    Index cellId)
+{
+    if (cellId >= config.surface.cellNormalX.size() ||
+        cellId >= config.surface.cellNormalY.size() ||
+        !std::isfinite(config.surface.cellNormalX[cellId]) ||
+        !std::isfinite(config.surface.cellNormalY[cellId])) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    const Cell& cell = mesh.getCell(cellId);
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Node& p0 = mesh.getNode(cell.node_ids[0]);
+    const Node& p1 = mesh.getNode(cell.node_ids[1]);
+    const Node& p2 = mesh.getNode(cell.node_ids[2]);
+    const Real dx10 = p1.x - p0.x;
+    const Real dy10 = p1.y - p0.y;
+    const Real dx20 = p2.x - p0.x;
+    const Real dy20 = p2.y - p0.y;
+    const Real det = dx10 * dy20 - dy10 * dx20;
+    if (std::abs(det) <= 1.0e-300)
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Real dv10 = psi(static_cast<int>(cell.node_ids[1])) -
+        psi(static_cast<int>(cell.node_ids[0]));
+    const Real dv20 = psi(static_cast<int>(cell.node_ids[2])) -
+        psi(static_cast<int>(cell.node_ids[0]));
+    const Real gradientX = (dv10 * dy20 - dv20 * dy10) / det;
+    const Real gradientY = (dx10 * dv20 - dx20 * dv10) / det;
+    return std::abs(
+        gradientX * config.surface.cellNormalX[cellId] +
+        gradientY * config.surface.cellNormalY[cellId]) *
+        config.surface.coordinateFieldFactor;
+}
+
 inline Real cellAverageTotalImpurity(const DeviceMesh& mesh,
                                      const DopingModel& doping,
                                      Index cellId)
@@ -1192,7 +1657,174 @@ inline Real nodeMobilityDopingConcentration(
         return cellAverageTotalImpurity(mesh, doping, cellId);
     return doping.netDoping(nodeId);
 }
+
+/** Endpoint carrier populations used by state-dependent edge mobility. */
+struct EdgeMobilityCarrierState {
+    Real electron0 = 0.0;
+    Real electron1 = 0.0;
+    Real hole0 = 0.0;
+    Real hole1 = 0.0;
+    // Full live nodal populations are required by the cell-average candidate.
+    const VectorXd* electrons = nullptr;
+    const VectorXd* holes = nullptr;
+    const VectorXd* phin = nullptr;
+    const VectorXd* phip = nullptr;
+};
+
+// Derivatives of the plain PhuMob legacy endpoint average. Geometry weights
+// and field/surface limits belong to different constitutive policies.
+inline PhuMobLogDensityDerivatives edgePhuMobLogDensityDerivatives(
+    const std::vector<std::vector<Index>>& edgeCells, const DeviceMesh& mesh,
+    const DopingModel& doping, const std::vector<Material>& cellMaterials,
+    Index edgeId, CarrierType carrier, const MobilityModelConfig& config,
+    const EdgeMobilityCarrierState& populations)
+{
+    const auto& edge = mesh.getEdge(edgeId);
+    PhuMobScalarState state{
+        0.5 * (doping.donors(edge.n0) + doping.donors(edge.n1)),
+        0.5 * (doping.acceptors(edge.n0) + doping.acceptors(edge.n1)),
+        0.5 * (populations.electron0 + populations.electron1),
+        0.5 * (populations.hole0 + populations.hole1), 300.0};
+    PhuMobLogDensityDerivatives result;
+    std::size_t count = 0;
+    for (Index cell : edgeCells[edgeId]) {
+        const auto& material = cellMaterials.at(cell);
+        if ((carrier == CarrierType::Electron ? material.mun : material.mup) <= 0.0)
+            continue;
+        state.temperature_K = material.temperature_K.value_or(300.0);
+        const auto value = evaluatePhuMobLogDensityDerivatives(carrier, state, config.phuMob);
+        result.electrons += value.electrons;
+        result.holes += value.holes;
+        ++count;
+    }
+    if (count) { result.electrons /= count; result.holes /= count; }
+    return result;
+}
+
 /// Return average model mobility [m^2/V/s] for edge @p edgeId.
+inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& doping,
+    const MobilityModel& mobility,const Material& material,Index cid,CarrierType carrier,
+    const MobilityModelConfig* config=nullptr,const EdgeMobilityCarrierState* populations=nullptr,const VectorXd* psi=nullptr)
+{
+    const bool phumob=config && config->edgeAveraging=="element_box_phumob";
+    if(phumob && (!populations || !populations->electrons || !populations->holes ||
+        populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
+        throw std::invalid_argument("element_box_phumob requires complete live nodal electron and hole densities.");
+    const auto measures=cellBoxNodeMeasures(mesh,cid);const auto& cell=mesh.getCell(cid);
+    long double sum=0,volume=0;
+    for(std::size_t k=0;k<3;++k) {
+        const Index node=cell.node_ids[k];
+        const Real impurity=doping.totalImpurity(node);
+        Real mu=phumob
+            ? ((carrier==CarrierType::Electron ? material.mun : material.mup)<=0.0 ? 0.0 :
+                evaluatePhuMobScalar(carrier,{doping.donors(node),doping.acceptors(node),
+                    (*populations->electrons)(node),(*populations->holes)(node),
+                    material.temperature_K.value_or(300.0)},config->phuMob).mobility)
+            : carrier==CarrierType::Electron
+            ? mobility.electronMobility(material,impurity,0.,0.)
+            : mobility.holeMobility(material,impurity,0.,0.);
+        if(config && usesElementDistanceLombardi(*config)) {
+            if(!psi || config->surface.nodeDistances.size()!=mesh.numNodes())throw std::invalid_argument("Element Lombardi requires live potential and vertex distances");
+            const Real field=liveSurfaceNormalFieldForCell(*config,mesh,*psi,cid);
+            mu=evaluateElementLombardi(mu,field,config->surface.nodeDistances[node],impurity,
+                material.temperature_K.value_or(300.),carrier==CarrierType::Electron?config->electronLombardi:config->holeLombardi,*config).mobility;
+        }
+        if(config && usesElementHighField(*config)) {
+            const auto drive=elementHighFieldDrive(*config,mesh,cid,*psi,carrier==CarrierType::Electron?populations->phin:populations->phip);
+            mu=evaluateElementCanali(mu,drive.field,carrier==CarrierType::Electron?config->electronField:config->holeField,100./config->internalFieldToVPerM).mobility;
+        }
+        sum+=(long double)measures[k]*mu;volume+=measures[k];
+    }
+    if(!(volume>0)) throw std::invalid_argument("Element box mobility requires positive sum of vertex measures.");
+    return static_cast<Real>(sum/volume);
+}
+
+inline Real elementBoxEdgeMobility(const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh& mesh,const DopingModel& doping,const MobilityModel& mobility,
+    const std::vector<Material>& cellMaterials,Index edgeId,CarrierType carrier,
+    const MobilityModelConfig& config,const EdgeMobilityCarrierState* populations=nullptr,const VectorXd* psi=nullptr)
+{
+    const bool supported=usesElementDistanceLombardi(config) || (config.edgeAveraging=="element_box_phumob" && config.model=="phumob") ||
+        (config.edgeAveraging=="element_box" && (config.model=="constant" || config.model=="masetti"));
+    if (!supported || config.dopingConcentrationBasis!="total_impurity")
+        throw std::invalid_argument("Unsupported element box mobility model or doping basis.");
+    long double weighted=0,geometry=0;
+    for(Index cid:edgeCells.at(edgeId)) {
+        const auto& material=cellMaterials.at(cid);
+        if(material.ni<=0 && material.mun<=0 && material.mup<=0) continue;
+        const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
+        if(g==0) continue;
+        weighted+=(long double)g*elementBoxCellMobility(mesh,doping,mobility,material,cid,carrier,&config,populations,psi);geometry+=g;
+    }
+    return geometry>0?static_cast<Real>(weighted/geometry):0.;
+}
+
+struct ElementBoxPhuMobDerivative {
+    Index node;
+    Real electrons; // d(edge mobility)/d(log n_node)
+    Real holes;     // d(edge mobility)/d(log p_node)
+    Real potential=0.; // d(edge mobility)/d(psi_node), holding populations fixed
+    Real quasiFermi=0.; // direct derivative for the selected carrier
+};
+
+inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
+    const std::vector<std::vector<Index>>& edgeCells,const DeviceMesh& mesh,
+    const DopingModel& doping,const std::vector<Material>& materials,Index edgeId,
+    CarrierType carrier,const MobilityModelConfig& config,const VectorXd& n,const VectorXd& p,const VectorXd* psi=nullptr,const VectorXd* phin=nullptr,const VectorXd* phip=nullptr)
+{
+    long double geometry=0;
+    for(Index cid:edgeCells.at(edgeId)) {
+        const auto& mat=materials.at(cid);
+        if(mat.ni<=0 && mat.mun<=0 && mat.mup<=0) continue;
+        geometry+=cellBoxEdgeCoefficient(mesh,cid,edgeId);
+    }
+    std::vector<ElementBoxPhuMobDerivative> result;
+    if(!(geometry>0)) return result;
+    for(Index cid:edgeCells.at(edgeId)) {
+        const auto& mat=materials.at(cid);
+        if((carrier==CarrierType::Electron?mat.mun:mat.mup)<=0) continue;
+        const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
+        if(g==0) continue;
+        const auto measures=cellBoxNodeMeasures(mesh,cid);
+        const long double volume=(long double)measures[0]+measures[1]+measures[2];
+        if(!(volume>0)) throw std::invalid_argument("PhuMob cell volume must be positive.");
+        for(std::size_t k=0;k<3;++k) {
+            const Index node=mesh.getCell(cid).node_ids[k];
+            auto derivative=evaluatePhuMobLogDensityDerivatives(carrier,
+                {doping.donors(node),doping.acceptors(node),n(node),p(node),
+                 mat.temperature_K.value_or(300.0)},config.phuMob);
+            const long double weight=(long double)g*measures[k]/volume/geometry;
+            if(usesElementDistanceLombardi(config)) {
+                if(!psi)throw std::invalid_argument("Element Lombardi Jacobian requires live potential");
+                const auto& cell=mesh.getCell(cid);const Real field=liveSurfaceNormalFieldForCell(config,mesh,*psi,cid);
+                Real mu=evaluatePhuMobScalar(carrier,{doping.donors(node),doping.acceptors(node),n(node),p(node),mat.temperature_K.value_or(300.)},config.phuMob).mobility;
+                const auto correction=evaluateElementLombardi(mu,field,config.surface.nodeDistances[node],doping.totalImpurity(node),mat.temperature_K.value_or(300.),carrier==CarrierType::Electron?config.electronLombardi:config.holeLombardi,config);
+                ElementCanaliValue hfs{correction.mobility,1.,0.};
+                if(usesElementHighField(config)) {
+                    const auto drive=elementHighFieldDrive(config,mesh,cid,*psi,carrier==CarrierType::Electron?phin:phip);
+                    hfs=evaluateElementCanali(correction.mobility,drive.field,carrier==CarrierType::Electron?config.electronField:config.holeField,100./config.internalFieldToVPerM);
+                    for(int z=0;z<3;++z) {
+                        const Real d=static_cast<Real>(weight*hfs.fieldDerivative*drive.derivative[z]);
+                        result.push_back({cell.node_ids[z],0.,0.,drive.contact?d:0.,drive.contact?0.:d});
+                    }
+                }
+                derivative.electrons*=correction.bulkDerivative*hfs.lowDerivative;derivative.holes*=correction.bulkDerivative*hfs.lowDerivative;
+                const auto& p0=mesh.getNode(cell.node_ids[0]);const auto& p1=mesh.getNode(cell.node_ids[1]);const auto& p2=mesh.getNode(cell.node_ids[2]);
+                Real x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
+                Real a=(y2*config.surface.cellNormalX[cid]-x2*config.surface.cellNormalY[cid])/det*config.surface.coordinateFieldFactor;
+                Real b=(-y1*config.surface.cellNormalX[cid]+x1*config.surface.cellNormalY[cid])/det*config.surface.coordinateFieldFactor;
+                Real signedField=((*psi)(cell.node_ids[1])-(*psi)(cell.node_ids[0]))*a+((*psi)(cell.node_ids[2])-(*psi)(cell.node_ids[0]))*b;
+                const Real sign=signedField>0?1.:(signedField<0?-1.:0.);
+                const std::array<Real,3> ds{{-a-b,a,b}};
+                for(int z=0;z<3;++z)result.push_back({cell.node_ids[z],0.,0.,static_cast<Real>(weight*hfs.lowDerivative*correction.fieldDerivative*sign*ds[z])});
+            }
+            result.push_back({node,static_cast<Real>(weight*derivative.electrons),
+                                   static_cast<Real>(weight*derivative.holes)});
+        }
+    }
+    return result;
+}
+
 inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const DeviceMesh&                       mesh,
                          const DopingModel&                      doping,
@@ -1202,8 +1834,11 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          CarrierType                             carrier,
                          Real                                    electricField,
                          const MobilityModelConfig*              mobilityConfig = nullptr,
-                         const VectorXd*                         psi = nullptr)
+                         const VectorXd*                         psi = nullptr,
+                         const EdgeMobilityCarrierState*         carrierState = nullptr)
 {
+    if (mobilityConfig && (mobilityConfig->edgeAveraging=="element_box" || mobilityConfig->edgeAveraging=="element_box_phumob"))
+        return elementBoxEdgeMobility(edgeCells,mesh,doping,mobility,cellMaterials,edgeId,carrier,*mobilityConfig,carrierState,psi);
     if (mobilityConfig != nullptr && mobilityConfig->model == "ialmob")
         return ialEdgeMobility(*mobilityConfig,edgeId,carrier,psi==nullptr);
     const auto& cells = edgeCells[edgeId];
@@ -1236,20 +1871,31 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         // factor while preserving any high-field velocity saturation.
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
         const bool lombardi = mobilityConfig != nullptr &&
-            (mobilityConfig->model == "masetti_lombardi" ||
-             mobilityConfig->model == "masetti_field_lombardi");
+            (mobilityConfig->model == "constant_lombardi" ||
+             mobilityConfig->model == "constant_field_lombardi" ||
+             mobilityConfig->model == "masetti_lombardi" ||
+             mobilityConfig->model == "masetti_field_lombardi" ||
+             mobilityConfig->model == "phumob_lombardi" ||
+             mobilityConfig->model == "phumob_field_lombardi");
         const bool surfaceApplies = surfaceEnabled &&
             (lombardi
                 ? (mobilityConfig->surface.surfaceRegion.empty() ||
                    mobilityConfig->surface.surfaceRegion == region.name)
                 : surfaceMobilityAppliesToRegionPair(
                     *mobilityConfig, region.name, adjacentRegionNames));
-        const Real surfaceNormalField = (surfaceApplies && psi != nullptr)
-            ? (c < mobilityConfig->surface.cellNormalFields.size()
-                ? mobilityConfig->surface.cellNormalFields[c]
-                : estimateSurfaceNormalField(cells, mesh, *psi, edgeId, c) *
-                    mobilityConfig->surface.coordinateFieldFactor)
-            : std::numeric_limits<Real>::quiet_NaN();
+        Real surfaceNormalField = std::numeric_limits<Real>::quiet_NaN();
+        if (surfaceApplies && psi != nullptr) {
+            // Re-evaluate the projected field from the live potential.  The
+            // cached normal/distance are geometric; caching the field itself
+            // would omit Enormal derivatives from the Newton Jacobian.
+            surfaceNormalField = liveSurfaceNormalFieldForCell(
+                *mobilityConfig, mesh, *psi, c);
+            if (!std::isfinite(surfaceNormalField)) {
+                surfaceNormalField = estimateSurfaceNormalField(
+                    cells, mesh, *psi, edgeId, c) *
+                    mobilityConfig->surface.coordinateFieldFactor;
+            }
+        }
         const Real surfaceDistance = surfaceApplies
             ? (c < mobilityConfig->surface.cellDistances.size()
                 ? mobilityConfig->surface.cellDistances[c]
@@ -1257,13 +1903,33 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             : std::numeric_limits<Real>::quiet_NaN();
         const Real mobilityDoping = edgeMobilityDopingConcentration(
             mesh, doping, edge, c, mobilityConfig);
+        const Real donors = 0.5 * (
+            doping.donors(edge.n0) + doping.donors(edge.n1));
+        const Real acceptors = 0.5 * (
+            doping.acceptors(edge.n0) + doping.acceptors(edge.n1));
+        const Real electronDensity = carrierState != nullptr
+            ? 0.5 * (carrierState->electron0 + carrierState->electron1)
+            : 0.0;
+        const Real holeDensity = carrierState != nullptr
+            ? 0.5 * (carrierState->hole0 + carrierState->hole1)
+            : 0.0;
+        const bool phuMob = mobilityConfig != nullptr &&
+            isPhuMobModel(*mobilityConfig);
         const Real modelMobility = (carrier == CarrierType::Electron)
-            ? mobility.electronMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance)
-            : mobility.holeMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance);
+            ? (phuMob
+                ? mobility.electronMobilityWithIonizedImpurities(
+                    material, donors, acceptors, electronDensity, holeDensity,
+                    electricField, surfaceNormalField, surfaceDistance)
+                : mobility.electronMobility(
+                    material, mobilityDoping, 0.0, 0.0,
+                    electricField, surfaceNormalField, surfaceDistance))
+            : (phuMob
+                ? mobility.holeMobilityWithIonizedImpurities(
+                    material, donors, acceptors, electronDensity, holeDensity,
+                    electricField, surfaceNormalField, surfaceDistance)
+                : mobility.holeMobility(
+                    material, mobilityDoping, 0.0, 0.0,
+                    electricField, surfaceNormalField, surfaceDistance));
         if (modelMobility <= 0.0)
             continue;
 
@@ -5104,6 +5770,47 @@ inline Real edgeEpsilon(const std::vector<std::vector<Index>>& edgeCells,
 {
     return edgeAvgMaterialProp(edgeCells[edgeId], mesh, matdb,
                                &Material::eps_r, 1.0) * constants::eps0;
+}
+
+/// Physical Poisson edge coefficient [F/m in 2-D], shared by all assemblers.
+/// Cell-material mode sums epsilon_cell * (d/l)_cell before any row scaling.
+inline Real poissonEdgeCoefficient(const DeviceMesh& mesh,
+                                   const MaterialDatabase& matdb,
+                                   const std::vector<std::vector<Index>>& edgeCells,
+                                   Index edgeId,
+                                   bool legacyRegionResolved = false)
+{
+    const auto& edge = mesh.getEdge(edgeId);
+    const bool cellMaterial = mesh.poissonPermittivityPolicy() ==
+        BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
+    if (cellMaterial && legacyRegionResolved)
+        throw std::invalid_argument("cell_material conflicts with legacy poisson_edge_coupling flag.");
+    if (edge.length <= 1.0e-30) return 0.0;
+    if (!cellMaterial)
+        return legacyRegionResolved
+            ? regionResolvedPermittivityCoupling(mesh, matdb, edgeCells, edgeId) / edge.length
+            : edgeEpsilon(edgeCells, mesh, matdb, edgeId) * edge.couple / edge.length;
+
+    Real result = 0.0;
+    for (Index cellId : edgeCells.at(edgeId)) {
+        const auto& cell = mesh.getCell(cellId);
+        const Real epsilon = constants::eps0 *
+            matdb.getMaterial(mesh.getRegion(cell.region_id).material).eps_r;
+        if (!(epsilon > 0.0) || !std::isfinite(epsilon))
+            throw std::invalid_argument("Cell-material permittivity must be positive and finite.");
+        bool found = false;
+        for (std::size_t k = 0; k < 3; ++k) {
+            const Index a = cell.node_ids[k], b = cell.node_ids[(k + 1) % 3];
+            if ((a == edge.n0 && b == edge.n1) || (a == edge.n1 && b == edge.n0)) {
+                result += epsilon * mesh.poissonCellEdgeCoefficients(cellId)[k];
+                found = true;
+                break;
+            }
+        }
+        if (!found) throw std::logic_error("Poisson edge/cell adjacency mismatch.");
+    }
+    if (!std::isfinite(result)) throw std::invalid_argument("Nonfinite Poisson edge coefficient.");
+    return result;
 }
 
 // ---------------------------------------------------------------------------

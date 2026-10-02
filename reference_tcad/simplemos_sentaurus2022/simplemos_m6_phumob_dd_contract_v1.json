@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.phumob_dd_contract.v1",
+  "milestone": "M6",
+  "depends_on": "simplemos_m5_phumob_scalar_contract_v1.json",
+  "state_contract": {
+    "required_fields": [
+      "ionized_donors",
+      "ionized_acceptors",
+      "electrons",
+      "holes",
+      "lattice_temperature"
+    ],
+    "edge_interpolation": "arithmetic_endpoint_average",
+    "adjacent_transport_cell_reduction": "arithmetic_average",
+    "net_doping_substitution_for_phumob": false
+  },
+  "solver_paths": {
+    "gummel_dd": true,
+    "coupled_newton_residual": true,
+    "coupled_newton_jacobian": true,
+    "sg_edge_diagnostics": true,
+    "fixed_state_operator_audit": true,
+    "contact_current": true
+  },
+  "mobility_models": {
+    "phumob": {
+      "low_field": "T-2022.03 equations 270-283",
+      "high_field_saturation": false
+    },
+    "phumob_field": {
+      "low_field": "T-2022.03 equations 270-283",
+      "high_field_saturation": true,
+      "default_driving_force": "quasi_fermi_gradient"
+    }
+  },
+  "jacobian_contract": {
+    "edge_endpoint_columns": [
+      "psi_0",
+      "psi_1",
+      "phin_0",
+      "phin_1",
+      "phip_0",
+      "phip_1"
+    ],
+    "electron_to_hole_cross_block_required": true,
+    "hole_to_electron_cross_block_required": true,
+    "carrier_density_derivatives_always_enabled": true,
+    "high_field_derivatives_control": "jacobian_field_derivatives"
+  },
+  "import_contract": {
+    "Mobility.PhuMob": "exact",
+    "Mobility.PhuMob+HighFieldSaturation": "phumob_field",
+    "Mobility.PhuMob+Enormal": "blocked_until_m7",
+    "lossy_masetti_substitution_allowed": false
+  },
+  "acceptance": {
+    "scalar_to_model_parity_required": true,
+    "compensated_impurity_state_required": true,
+    "coupled_jacobian_directional_derivative_required": true,
+    "full_regression_required": true
+  }
+}

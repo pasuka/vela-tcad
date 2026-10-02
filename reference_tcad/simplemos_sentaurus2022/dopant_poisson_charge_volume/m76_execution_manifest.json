@@ -1,0 +1,697 @@
+{
+  "schema": "vela.simplemos.sdevice.m76_execution_manifest.v1",
+  "status": "complete",
+  "contract_sha256": "d78472945c32809d7ca1dc4d91081d70ecdc248ce9fab418a330ac04513016cb",
+  "workflows": [
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "2f450a31bb3ac6ba0154ee08964d19aa00121ad1ed00510adce6d860c1beb174",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "f2a622a40e44fe2e00c8227a6d87b5344d6d7d7c8adfc5088f88aeeaa8cc0953",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "afe21fc4b60e2efc04d49f4cbca4cf1b96cd1a7d9c2482c067a0a6a79938c6d7",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "5e6fbecde5c7ca880ebc6cbabbddca49f73be80595399fe40e65d66888e48232",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "63f1ae8e4efe30507e21a890146a02a47c0f98551fc692250e85892c6e712049",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "434556a6b0c335289072b98675454983b76fccd613ee338f29bd227999325aa1",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "ff5f7c6e8472d7f6ea24058ab27577fd8855f9f9ca94f328d46fde14c11586fb",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "bc85a528b523b014a37761465e5e114caada5c3ee63829e15b863a3c2ae91be8",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "19e2d11bb08352f9d074ed17210455c22a4f16f4a5818c8f75f146b3571a811a",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "ca13555007516fbd43d06a2499ae9e3d18eb0403626b5542cfa9bf76d15ee0dc",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "f2a622a40e44fe2e00c8227a6d87b5344d6d7d7c8adfc5088f88aeeaa8cc0953",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "afe21fc4b60e2efc04d49f4cbca4cf1b96cd1a7d9c2482c067a0a6a79938c6d7",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "1b5bbe0fcf7b48a380185d94dbd44e941297d16e2d930c310d90d01fe8c86da6",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "de6d2379f0579f45e2a73ea2f6c82f300eca26b9f541fe6bf63b8c04c2139680",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "5fd15b535196e24445e74cc4b0ef9ad46cb51d9478ea70f33087e3697d4adc8a",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "6e8780fef96e149c45102a444effd91e73d1567849adff46e1b1f60534abb3fb",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "36355a770d4c6de69e3a610d75239856923c5ddf44eeffbde2934d1f557b4f7b",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "8bd3f9b928a2cffcc25ad5a98e43c34d0d4e43a4a902014cd41dfe125b42e52c",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "c34f39632f484f658278344a41722ad2f029c43acbafbdce0398d7d3ba85511c",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "56222ee261238b7e41fb1e36ca1a625b2d8e97b537e80cdc0f1f2eda28e53d47",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "0bd500be630d457c483c46294da84a8225218870cd19cfe109d955c4ec44b0eb",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "6f8ce25158a265b6573dfc0371677b8ab680483ea7f45e870c1f112e9bc997d8",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "d7ddce6bbad61399478c5674a1057a31a7cbaa90bfc91c1d795a0612747d9e19",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "2201746f678a4f978d67709da098f2f363f1565236d16cbd577a5e30461ff6d0",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "61d79e86c5c66503caa661832a0b31b99c392df5678c35fea77cee53f417803a",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "0cf8f1dd2cbc5193d9edb2a9e384995b2cae3915af25761a933acad79d1e770d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "c6643a311357e34641413cbc93fa67e798b149faaee4a2c2224e86d7823b30e0",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "e1c753960279a3f15a65696b6d4ba2208aee0a611528232bd0a9b17e2a0a51ba",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "56222ee261238b7e41fb1e36ca1a625b2d8e97b537e80cdc0f1f2eda28e53d47",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "0bd500be630d457c483c46294da84a8225218870cd19cfe109d955c4ec44b0eb",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "d660fbe7095f907dbdad4bf43065a65d54f83a3f6bdf51a60dbf6bc29a5ccf5c",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "a79535a6b001ab0e9d2ad887e6d2cd31f7d1156c4c1b63a9529374ec56afbe50",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "1386f8b00eb08b745bfecc301c2feff41776ea010ed32ad90942868dda1fdfd6",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "1f14f2832318f358939cfe4f4342081cd069c7405c6d4c24e381d90ca2e2ba59",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "7ce2ebd8f529c671b58af5010e3626b05fd825a8648844c95b13e5a7a3ad4c26",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "84bf3ef4a3f5d04952e666f3f51791815e94e89a9c8f5339ff2cac6696da6179",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "f83207538634075d1e15eb8b96c89348f4113bf222b3eddec9d4bdeecb5ed267",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "f2653ad70d27ddb06a58ca4c315168512347503bfd5055c4015afef302e58c6b",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "d0bd115e60008e18f955cc5d0dbc3fb2808d5322478364028178282b3e4fbc7d",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "ea44b4b52902be1dd8e64cbebb8aa51dfdc21a8fb4d1430158e0e2522d718c71",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "e7bbab3ef3b231cc245588f99e7254a41369ad0a14a74f12ddd940b98caf4b98",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "eca72f5b0b5bad087f2e51ae571d4a314be46c1b082ee687dac043784d2bce46",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "ae0157a0396e7814cd5fc64aafad624d501b646def6154897a2afe1e0f7e05c6",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "9b62f2684bfe62eed2ccf542ada09e9641f9be2de1fe319568a409bf6e5a3067",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "cd4cbfb58fa9bb9e9404670a0f890ffacb4602d1c7407fb668a7799bafa00c01",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "9abc9d55ebb7283ef41d8e03abea2e111f862e843c028350ac937285b99a0f5e",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "f2653ad70d27ddb06a58ca4c315168512347503bfd5055c4015afef302e58c6b",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "d0bd115e60008e18f955cc5d0dbc3fb2808d5322478364028178282b3e4fbc7d",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "5efe6354367ed9a7863c56751da216eb411ad866815b4cc46f00856e165aacfa",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "42dc4794442c8f0af96c00a6d696c9e3ed5fabedc7aaeaa01e8511b1556f971c",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "9898dda6be569fe773c43de23b09b2fd44ff70183a3b96617ff0712606116f11",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "86d0257b2db940f8e3c355451bce184390d25935f87fe068e4dd26890e9e66fa",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "2e8a6943fdd51d006c11b83bd763f9b52e894ebd77e0a2561613e24ca8a8c2f0",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "be51e603dd4af2adeab8b454aa997e431e77d025e46982938c5d92dbdf27d7eb",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "be0a43cb7b33bc6074a495165e3a11f0f2e5cd5d99a5a17ad9f76a63b93a33fa",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "5b5a59e3b69fff031e9ce6d0f0302a7e56503474fe8a64742673062acf89910d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "f4192f437e2789deec2388df4cc9738d2243d19751a7f315605d14d67d9a0bb1",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "d51969255c03554acc2a1ac1a6e2eeab8a0d1c3b2773fab64044c7fca921e4c8",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "8d87c5e8856f8b4985f6022b0f03c7f80981f1319a9b87f8991c9b1cb1757b1d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "460a85a0d87470969cad7a000cf04dde3b2cb36bff80adcf5a54c9f7df54ef77",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "a63fa436f103e0fd7676b650f8742c118e8b797d0b21da3593f4d8a9000f6429",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "135a5ecb2d6186e9a349fb23c284ccc06d59696917a838207680df8f8929c8ef",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "30a8ebb1137524b04f2944c276dfb13825cdea9583364df52d2d435ed81d9dba",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "f49cb3896c99fd506d6aa36730770c981e970bc46e77b4982960c38d59e775df",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "5b5a59e3b69fff031e9ce6d0f0302a7e56503474fe8a64742673062acf89910d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "f4192f437e2789deec2388df4cc9738d2243d19751a7f315605d14d67d9a0bb1",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "d8cb0dcf31405f0c11752fe1471dcdd12c7dd6f82d4815d8fc6d26fe0c93617a",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "38d10743ab19ceb066773c7754821c72c50afb27054bd7474fcfd580acba6779",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "881d4fa01f868a2d95a9104f028cdcc0acaf14b2eb01aabe5ec987357b1e17a4",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "f413e8e6dddbd65c317b2e97d93121b39b5c152d0d3b5976d8d9890c2d32e992",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "4301f3ca2b6d0ebe5cce475c61ff06b5b3d53cb095ac31eb8a66b9474d3e0524",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "6c60fb83a6b7891df1e75acdafc787862294dd31b474be01d6fe6dde603e7285",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "5073cd0a21631b7a00c30fa387f45f3aa040784b623c1681199b35b20942e7bc",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "d23f7c01e0143d983924d98767c3d4d8c9e8574da474c007dcdae023bac00489",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "fc98393652b184bb8ab0fc233fba4353b11d08ca038b744e63d704039584448b",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "5435ce0c70c776a7e3d8070001c36f177f6710809ed380a88392874dff144ba4",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "3e951d632fe786aff64846097a6f6f37ef488b0de6e0f6ff3f69bcb4c08d8178",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "c415376491b02d9f08158dad5d4d14c1f8942622a558eda052359875e0fa73d5",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "5fb9f119f5d3cf48ec5c8375dd98a87acfb2760672946d59c6a3b4822472d8da",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "ebd747bb7809d2e20640e80cb22a03342a191cba2378535b43814f183e2bdb56",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "ab1e25f77491efd29b7275fae3f574921e3f43db6f709f5b6924ef0f8ebc55c3",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "30eb1b89adf9faf85f530557b828634ccd35b0942cbb24bba9a58a405fc59a08",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "d23f7c01e0143d983924d98767c3d4d8c9e8574da474c007dcdae023bac00489",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "fc98393652b184bb8ab0fc233fba4353b11d08ca038b744e63d704039584448b",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "46a4e0bfd4a1c08e77ad12072f751c28f3a1c1343403623091e5c21f77937376",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "779904dc3db60fad6f50c829c3f1e286a5695db2c30d162cf33ef5ba13f95c39",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "ea3cbb7b581800204c97bcf58cc6dfce7c16d81695858b8736e954c7e1d3bdfe",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "2a45f1b3c87982a7cd2de2c4aad666eae28e58acc11f05a815de15f96bc42cb2",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "bbd0d50cc659cff400bb5c03131ac5b0dd8bf8eb0be4ed2bb59f452e987d2d91",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "06e5fd67c9e7be265ba1f35438ce8b83781bff853d3a4b0f5642f7709d300321",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "d43c0fc633838c106e840f88f3459047b1313e6dd5976f50b11b1adbac25e126",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "83a7820f6034b964232bb706a60a0f9f1874a869858fd85c689c046b0262199d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "ba5620abeb4d75c783174aec8d62be330a0198e22162caa1c6ab12ffe59185a4",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "08eab09b5c6aa7301f1dc8a38822b4f14af442cdf33fa82ff090f68aae318382",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "ee48bd3a471784b6d9574687b3668bdc13b478340c854a60fb344dadeef5c61d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "ce8dea10493d167c808283325db39743d0e5ee24c1b4297ea0ee4acaa5acd790",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "77ac74dfec2c48d1f6ea8c45c710ef04b684d267722c6df1bcd63cc58a65232f",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "446b2ad2cd92b7c71dedccab957e9df296fba6bc042979a1eb8bcff0875b350a",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "54dd53a252c2132fd26a39446ce29d189a593f65b1aca4024ebc31226e9c03de",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "ee345547062c9674bc7d019027d9444ba51c1a971b9f90738c216c44d09c341a",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "83a7820f6034b964232bb706a60a0f9f1874a869858fd85c689c046b0262199d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "ba5620abeb4d75c783174aec8d62be330a0198e22162caa1c6ab12ffe59185a4",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "73ec194d59d7ebd6f1dc25be348d01fe20fe7af9d44cc51439bb19a587d915f6",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "a669359c8d50488e907b53529e1e6ea93314c96aba33c6e80289fb97b6a7e266",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "b8ed2275c188f46c87799d82bf10117596ce3e0a6b96d1c991f28289f9b4dd56",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "0e733a2fcfb27ab2d1c4f1496d7ea0839a1ed66011cf78cf8bd43a51c34b3c01",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "d235cd1898c5b827f12d73932b19b4408cf95ae4971ff568df129f6491cca9ca",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "bf037888f415b84b1f3d1767e336f37683675ef2ff54afb3622f64f8d8468856",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "afd72db06acd3e42c6acda4911c81b0c540d9afe3f71c4c5f76a86d07c191688",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "8ee17ef8842558d35550a3957e1c86bdbc9565584a01c4fa98a9ef1a357704da",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "6765c1030a7a2f4acc66ecd5350334345e3634dccecd3fe8d9faaee48e6b1ed5",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "9a84ec90090dbef3058ee99703c35cb6aa171cd20a03882f4509b54930423db4",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "20eb13a98a3dbbda8876ce62b4cc7d7a70ba11488ca6fd7d82dec0c86bcdfb18",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "814b6e7805cd5a27a7181782e64ee870063d56607c2f3e8c68d807c9240e43b7",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "dc961d9e25e110039449876b389098f04af3110b36a236a1372b21e8359730d6",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "f985dd42cebeb31816c13077eb6a19b196556420cd9b8add0cc94124ff9fa132",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "2e38ce85eec0ec7e049fbac988f53cfec5074c1936ccb4de9a975088ce74ddab",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "c2bd19e1429b3bfaa54580750d1d5122ecb3f179d966fffffc0fab35d9c2bb8e",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "8ee17ef8842558d35550a3957e1c86bdbc9565584a01c4fa98a9ef1a357704da",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "6765c1030a7a2f4acc66ecd5350334345e3634dccecd3fe8d9faaee48e6b1ed5",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "ebf0fa775808c3652c927b2900b3a76e94ca47bd974fb8feb82600c51c68e401",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "0ee1153578425fe164659149ebcc504950cf0f3d5b5bc3b79514cc40111acc77",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "e50330afc41e7e7ba561de3faeef1978403b84333aa6931c7514c61b00ccecda",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "7149aafb04f5b398a2f8712f7067aecf5d979918d74259b1579894d55f5fa6ef",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "26b75c9a8971ee4d8a1dab25a78cff40cbda229b06fa0887dad64f588d79522d",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "de684488da1bfda06536d3c762ff8961489685c0fc9378d02269bf898881aba4",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "3cb4bd05b3b814c9ebfdbe2fd2fe662f3706022526c1e93a71e72cdd9342f80e",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "6cf18cda306e2256ddb2a233f072ac45d2b46de6c7760f95d25f7e1044862f01",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "2252b07e0a491b5ed8404327ce6068c2466a657d3ba2f26a910e1438fe397309",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "686397dc65f8e77117b6ac776be9f35839946b5fb56490022349d9560c63b742",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "3ca559c8a93ca4568a43cfe395a59d113db809cb432a08e14659c9d5d4cd942f",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "5b60ce97aaa8b5ef43c24db4d4a8de3ca8ac1ce97da4b56f0a3cc75f1306f10f",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "1457bd430b65b6811a461bf052708bc75a0b742e0d2a98256a707db47eeddaa7",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "4b7f1ae7406b15b15bec5f204e13ea46f71ab47394933a87b6af4e421d822946",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "2f48425f77a31d008b5a5619325a5928c48ef9bd93459a44ee2a20cde9b9ec2d",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "817f74f84b27d4c2e53b4a80c63335264b306cbc96215c946ecff2d1c5ebe92a",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "6cf18cda306e2256ddb2a233f072ac45d2b46de6c7760f95d25f7e1044862f01",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "2252b07e0a491b5ed8404327ce6068c2466a657d3ba2f26a910e1438fe397309",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "b983537e357ce4a90ca2af29fe3983d7ef2ab99244ea67715e3763614bd17aed",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "d9c5c25bffb6ebdd372c96c7605ad44fedaff35e599434a8e253578809acf809",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "4558b08aa60af3658377ea26b2441f40336ac6decfcd5e1b4b6e8c996ed8312a",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "7440b2c0684463e44d9d50a36d120aec56f626e27e1d790a5f9d61000d99e352",
+          "curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "517a15199aad780cb717a51fdb44962f4d5acff5cf52aa5ec5d972063437e7ea",
+          "state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "ab40829e215724465ef405029b0bb148334541b8952ecbc78606746e17d71cd4",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m76_dopant_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv"
+    }
+  ],
+  "source": "build-release/m76_dopant_poisson_charge_volume/execution_manifest.json",
+  "source_sha256": "7521818d7602e1f84dc19a4e7500d5781e2daa13af2224be5b182f6b4d349e12"
+}

@@ -1,0 +1,17 @@
+{
+  "status": "fixed_state_comparisons_completed_causal_correction_not_qualified",
+  "cases": 4,
+  "new_read_only_probes": 36,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "maximum_edge_terminal_relative": 2.220446049250313e-16,
+  "maximum_electron_high_precision_relative_L2": 1.1376251961980555e-08,
+  "production_changes": false,
+  "m82_released": false,
+  "limitations": [
+    "Mapped state is M80b coherent Vela representation, not raw n/p.",
+    "Non-Si placeholders in BJT SRH input are excluded from analysis.",
+    "Raw-density subtraction and node-mobility proxy are diagnostics, not self-consistent solutions.",
+    "Strict qualification remains 1/4; small current movement is not a convergence error bound."
+  ]
+}

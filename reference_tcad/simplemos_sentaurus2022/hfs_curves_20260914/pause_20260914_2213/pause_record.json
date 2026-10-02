@@ -1,0 +1,17 @@
+{
+  "recorded_at": "2026-09-14T22:15:49.842571+08:00",
+  "status": "paused_by_user",
+  "qualified_curve_states": 64,
+  "target_curve_states": 408,
+  "remaining_curve_states": 344,
+  "numerical_failed_attempts": 0,
+  "interrupted_attempts": 4,
+  "local_task_processes_remaining": 0,
+  "native_reference_points_qualified": 204,
+  "native_jobs": "All four completed with exit zero before local pause.",
+  "controls": "32/32 states,16/16 full-field dual qualification.",
+  "resume_priority": "User explicitly chose to complete the unchanged HFS baseline curves before SRH repair. Do not switch to SRH candidate or original matrix ahead of this baseline.",
+  "resume_policy": "Verify this snapshot and frozen runner; preserve all 64 completed state directories and all interrupted attempts byte-for-byte. Do not rerun original drivers over existing result.json. Use a new resume wrapper and isolated attempt paths/logs for interrupted targets, recover each continuation case from its last qualified state, then finish remaining cases and both paths. Preserve original numerical gates and one-reload policy; an administrative interruption is not a convergence failure.",
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "d9848e77096647530f1c3f0622542a2ce6e9f8be6dae8b8507d9ff27cb36dbe3"
+}

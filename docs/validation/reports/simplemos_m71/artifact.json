@@ -1,0 +1,11 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M71 gate electrostatic partition",
+  "status": "accepted",
+  "classification": "gate_surface_partition_material_but_not_dominant_charge_proxy_unqualified",
+  "report": "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_partition_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_state_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_pair_ledger.csv"
+  ]
+}

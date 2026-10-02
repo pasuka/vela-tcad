@@ -1,0 +1,114 @@
+{
+  "schema": "vela.simplemos.sdevice.m25_qf_reference_transform_audit_report.v1",
+  "status": "complete",
+  "execution": {
+    "read_only_state_count": 2,
+    "edge_evaluation_count": 116,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "decimal_digits": 100
+  },
+  "topology": {
+    "unique_selected_edges": 58,
+    "drain_cut_edge_count": 7,
+    "drain_cut_reference_transition_edge_count": 0,
+    "reference_transition_edge_count": 51,
+    "finite_couple_reference_transition_edge_count": 26,
+    "reference_jump_values_V": [
+      0.05
+    ]
+  },
+  "closure": {
+    "maximum_endpoint_transform_error_V": 3.469446951953614e-18,
+    "maximum_physical_drop_closure_error_V": 3.469446951953614e-18,
+    "maximum_sg_log_state_closure_error": 1.7474832016035768e-16,
+    "maximum_factorized_flux_relative_error": 5.116429536880849e-15,
+    "all_acceptance_checks_pass": true
+  },
+  "findings": {
+    "maximum_naive_increment_only_error_on_reference_transition_V": 0.05,
+    "maximum_reference_jump_thermal_voltages": 1.9340863535916804,
+    "maximum_full_no_hfs_reference_transition_qf_drop_delta_V": 0.0023660677192794896,
+    "maximum_full_no_hfs_drain_cut_qf_drop_delta_V": 9.394977088878401e-17,
+    "maximum_absolute_drain_cut_qf_drop_V": 4.466211682862112e-16
+  },
+  "class_summaries": [
+    {
+      "variant": "full",
+      "edge_class": "drain_cut",
+      "edge_count": 7,
+      "finite_couple_transport_edge_count": 4,
+      "maximum_endpoint_transform_error_V": 1.6779140127219986e-21,
+      "maximum_physical_drop_closure_error_V": 1.6780538950515698e-21,
+      "maximum_sg_log_state_closure_error": 6.491002278021254e-20,
+      "maximum_sg_log_endpoint_closure_error": 7.214530235957041e-31,
+      "maximum_factorized_flux_relative_error": 3.863182016200276e-15,
+      "maximum_naive_increment_only_drop_error_V": 0.0,
+      "maximum_absolute_stable_flux": 4.560989729376407e-12
+    },
+    {
+      "variant": "full",
+      "edge_class": "reference_transition",
+      "edge_count": 51,
+      "finite_couple_transport_edge_count": 26,
+      "maximum_endpoint_transform_error_V": 3.469446951953614e-18,
+      "maximum_physical_drop_closure_error_V": 3.469446951953614e-18,
+      "maximum_sg_log_state_closure_error": 1.7474832016035768e-16,
+      "maximum_sg_log_endpoint_closure_error": 1.1396798301753395e-16,
+      "maximum_factorized_flux_relative_error": 5.116429536880849e-15,
+      "maximum_naive_increment_only_drop_error_V": 0.05,
+      "maximum_absolute_stable_flux": 1.1794893869150877e-12
+    },
+    {
+      "variant": "no_hfs",
+      "edge_class": "drain_cut",
+      "edge_count": 7,
+      "finite_couple_transport_edge_count": 4,
+      "maximum_endpoint_transform_error_V": 1.6202831079734444e-21,
+      "maximum_physical_drop_closure_error_V": 1.6202823454230079e-21,
+      "maximum_sg_log_state_closure_error": 6.267531946496324e-20,
+      "maximum_sg_log_endpoint_closure_error": 1.3003064607718142e-30,
+      "maximum_factorized_flux_relative_error": 3.6648268995574835e-15,
+      "maximum_naive_increment_only_drop_error_V": 0.0,
+      "maximum_absolute_stable_flux": 5.771767930731467e-12
+    },
+    {
+      "variant": "no_hfs",
+      "edge_class": "reference_transition",
+      "edge_count": 51,
+      "finite_couple_transport_edge_count": 26,
+      "maximum_endpoint_transform_error_V": 3.469446951953614e-18,
+      "maximum_physical_drop_closure_error_V": 3.469446951953614e-18,
+      "maximum_sg_log_state_closure_error": 1.6792451371784347e-16,
+      "maximum_sg_log_endpoint_closure_error": 1.1533316869010462e-16,
+      "maximum_factorized_flux_relative_error": 3.5525844066326035e-15,
+      "maximum_naive_increment_only_drop_error_V": 0.05,
+      "maximum_absolute_stable_flux": 1.5693084016817272e-12
+    }
+  ],
+  "conclusions": {
+    "supported": [
+      "The seven drain-cut edges remain inside the drain reference basin; no cross-basin transform occurs on the terminal-current cut.",
+      "Across all 51 reference-transition edges, the production anchored endpoints, physical QF drop, SG log imbalance, and factorized flux close to the frozen state at the stated numerical tolerances.",
+      "Using increments without the reference jump would introduce an approximately 0.05 V artificial QF drop on every reference-transition edge.",
+      "The HFS-on/off terminal response cannot be attributed to a cross-reference transform located on the drain cut."
+    ],
+    "not_supported": [
+      "Equating this Vela reference-coordinate closure with an undocumented Sentaurus contact-basin implementation.",
+      "Using the cross-reference edges as an additive terminal-current cut; zero-couple and internal edges are included for coordinate closure only.",
+      "Assigning the remaining deep-off current difference to a contact reference transform without a corresponding Sentaurus node-level export."
+    ]
+  },
+  "artifacts": {
+    "edge_ledger_csv": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_edge_reference_transform_ledger.csv",
+    "variant_delta_csv": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_variant_edge_delta_ledger.csv",
+    "class_summary_csv": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_class_summary.csv"
+  },
+  "claim_policy": [
+    "Drain-cut edges and cross-reference edges must be reported as separate populations.",
+    "Reference-coordinate closure is a Vela implementation audit and does not establish private Sentaurus coordinate equivalence.",
+    "Zero-couple edges remain in the coordinate audit but must not be counted as current-bearing support.",
+    "HFS-on/off comparisons use independently converged states and therefore include self-consistent feedback.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ]
+}

@@ -1,0 +1,3 @@
+label,materials,config,curve,state,current_A_per_um,state_sha256
+baseline,build-release/m68_dos/baseline_materials.json,build-release/m68_dos/baseline/config.json,build-release/m68_dos/baseline/curve.csv,build-release/m68_dos/baseline/state.csv,1.7876142940971415e-08,dac42552954cb153292b64d48abe5ec16173a56e7da92aaa7c807adbd40f5a9c
+perturbed,build-release/m68_dos/perturbed_materials.json,build-release/m68_dos/perturbed/config.json,build-release/m68_dos/perturbed/curve.csv,build-release/m68_dos/perturbed/state.csv,1.7876142940971415e-08,dac42552954cb153292b64d48abe5ec16173a56e7da92aaa7c807adbd40f5a9c

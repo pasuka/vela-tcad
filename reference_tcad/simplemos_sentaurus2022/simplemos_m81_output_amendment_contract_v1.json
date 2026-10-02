@@ -1,0 +1,27 @@
+{
+  "schema": "vela.simplemos.m81.output_amendment.v1",
+  "status": "frozen_before_execution",
+  "reason": "Initial DIFM completed and emitted native dI but no spatial Green TDR; unnamed Noise enables plot output (UG p815).",
+  "change": "Add unnamed Noise(DiffusionNoise(LatticeTemperature)); retain the exact DC physics, mesh, state, deterministic variation and solver.",
+  "manual_pages": [
+    787,
+    788,
+    815
+  ],
+  "cases": [
+    "n19",
+    "n23"
+  ],
+  "remote_root": "/tmp/vela_simplemos_m81_ifm_20260905/output_amendment_bundle",
+  "additional_counts": {
+    "dc_reclosures": 2,
+    "ac_ifm_points": 2,
+    "bias_sweeps": 0
+  },
+  "gates": {
+    "dc_reclosure_dex": 1e-05,
+    "native_response_relative_change": 1e-08,
+    "three_finite_nonzero_green_fields": true
+  },
+  "m82_released": false
+}

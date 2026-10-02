@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/dc_evidence.json": "48e665e5198d879f4a6ebb03862f2d45833111d86b3ae421ac875213ef5bf790",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/ports.csv": "acf1a36cdc410ed139b505e468d41f47fc85f5d676c9c284b5fc6c3348663ace",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/response.csv": "2c277757f07de777bc9d803b6b062e1805b1546cf2ea720be139628455e7b511",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/summary.json": "5042e67372c3b1d895f8d76930c235112ea14215fa1b02a63bbf8ffabec15c6b"
+  }
+}

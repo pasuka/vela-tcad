@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/native/comparison/evidence.json": "951aa580a244ccfa9c034807ac4012f8af18233b6984e625354f0908fa4d1edc",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/dc_evidence.json": "5986f1f257b13729b909e29b3c95bd4e3d5ec0132920fb2d237d189228acd790",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/half_amplitude/dc_evidence.json": "1cc3166e31c348eaa3b3a68c5b7b508aba0e36be573c69950d0ff2b409bb6edf",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/ports.csv": "c45852906b8685cd655349af8dea491be4c48f22f8052f5e8808a7489ab1d791",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/preflight_evidence.json": "1c586858f52ee02c3d35ec6e4125a73b1fc40b623b6d5f349a084013f2e6c738",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/response.csv": "6a8089c1b99f2d2510048c4c03785d533dc4c9115c30760d243b968f4e6b214e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/summary.json": "e09850b127425c30635f59d88f8cd367daeeb22fe1216c7a8b0010f7bb78901e"
+  }
+}

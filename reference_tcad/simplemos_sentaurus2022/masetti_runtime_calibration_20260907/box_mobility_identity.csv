@@ -1,0 +1,5 @@
+device,carrier,cells,maximum_relative_error,qualified
+n19,e,1750,4.440892098500626e-16,True
+n19,h,1750,4.440892098500626e-16,True
+n23,e,1750,4.440892098500626e-16,True
+n23,h,1750,4.440892098500626e-16,True

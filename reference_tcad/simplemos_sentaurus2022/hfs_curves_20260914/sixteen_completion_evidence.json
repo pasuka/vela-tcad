@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "build-release/hfs_curves_20260914/reference_tools_tests.log": "4af573cbcf531b7ad9fca033de575a89863204410b732f18117a295cbe366f06",
+    "docs/validation/simplemos_hfs_sixteen_point_validation_2026-09-14.md": "8a4147e1c257e31f5b91e5750c0afc690fd81d71c3e9b5ca2f28f22c34b6e72a",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/early_hfs_shift_evidence.json": "ca6f9033fbd3a8aace235aacdeeac34697c91d33e0a9c5c7996937bb49696f71",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/low_fields/evidence.json": "e35d6901214ee2dc0af7f7cb456f68bab4d1f6d4b68509331e8bb9c73201d26b",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/matrix_support_evidence.json": "61f2672041935a013812d8e0f74c2049db6389f7d9d27e7580f012ce30131748",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/native_overlap_evidence.json": "dddc3e7ff77ef6a0484476c9b248538a5b7dce2fabce95e72602ff31e269e6c2",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/original_scope_evidence.json": "56100507082c37a26df87a20ea1cce6e57b70ac9cb5ad99d5a36c2b86a090c4c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/sixteen_evidence.json": "1254184dd840665069c5430d84ec37cbd56ffebc98b28e40609429629845e41e"
+  }
+}

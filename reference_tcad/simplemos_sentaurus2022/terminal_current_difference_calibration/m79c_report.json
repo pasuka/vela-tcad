@@ -1,0 +1,21 @@
+{
+  "status": "qualified",
+  "cases": 16,
+  "endpoints": 32,
+  "matrix_complete": true,
+  "observer_pass": true,
+  "finite_prediction_pass": true,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "failed_gates": [],
+  "maximum": {
+    "current_replay_relative": 6.661338147750939e-16,
+    "adjoint_relative_residual": 1.0453553175383065e-16,
+    "jvp_max_relative": 0.00027343511702041933,
+    "current_fd_max_relative": 0.0003248976075046907,
+    "duality_relative": 6.504705860226117e-16,
+    "richardson_max_relative_error": 0.00020078460576877788,
+    "richardson_convergence_relative": 0.00025510689590138856
+  },
+  "m80_released": true
+}

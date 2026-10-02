@@ -1,0 +1,18 @@
+{
+  "input_hashes": {
+    "build-release/phumob_restart_followup_20260909/zero_plateau/m65_n19_vd_0p050000_endpoint/2/state.csv": "d2847a99e28ff1c291c8bdafa45b08a6631822a3d1bd8e03b874653b31dc24b7",
+    "build-release/phumob_restart_followup_20260909/zero_plateau/m65_n23_vd_0p050000_endpoint/2/state.csv": "2d407f6287ebb5ae94f2f4d37c36408876d6ad29894c3db3484847ef327f1707",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n19_vd_0p050000_endpoint/minus_full/acceptance_edges.json": "f0396fcfd759b1a36999722784f298b380cbc147ee07b43d7cec5ce369ec1aa9",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n19_vd_0p050000_endpoint/minus_full/all_row.json": "0d8fdd1ebf4ac4705f3655f5ec90702a497113b5ac006551ad98f16da6c94f32",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n19_vd_0p050000_endpoint/minus_full/config.json": "7e9e57c6a255b633db8e2c0f564d97e65d768b2d3b8c714fe20ac3143fe15961",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/plus_full/acceptance_edges.json": "0239ba1e78bbe735ea047b7427bb011ea4f2d7c9041a1695b49c8ae563f28f97",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/plus_full/all_row.json": "72ba0822f11789b8cfd774c1ffed8ef94efc841657a179c646ceb28c7d74b0c3",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/plus_full/config.json": "19542bc63f10174fded305b0ccdd3a6f534917eef4a415ff1cc5902b6bf62956",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/zero/acceptance_edges.json": "02e316125366b704c4a5ff7c8ce688b4cf6ed7a3cc5b23769d5ec9311f9f1bc7",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/zero/all_row.json": "c4465fa1a4b9ccac2705b94b9183947621776fa318efebaa03b0944854f9889b",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/m65_n23_vd_0p050000_endpoint/zero/config.json": "899337f4452c5518f337206d5ac36b7ae6befb7296c40ee12c7ab1c35263558d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/build_evidence.json": "4dc295c8daa4746bd1d8abb4a784125f94f255a75acb753b9da915b31f26ba97",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/contract.json": "b653517539172e07264e4698dd87a71de6520b2a0b6881b66441a256aee67334",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/freeze.json": "16867d5be31bf281f2a6ef077c1c3fddedb0821e4ec95f21e753adaf5b3c1a61"
+  }
+}

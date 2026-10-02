@@ -1,0 +1,697 @@
+{
+  "schema": "vela.simplemos.sdevice.m74_execution_manifest.v1",
+  "status": "complete",
+  "contract_sha256": "bf1e9c4b089c35bb45339f27e1e66a35298d3c0dc1ad06faf54b9b85ace35960",
+  "workflows": [
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "db3eaa66b9b04293dab7a5a711b895d1d1f482e736d7ea80d3608b82dc4c66f7",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "a6a105d464df3563dca1392091bffb0365fbf7187916a13291a2773afe197ebf",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "42f2246acaa1d23edfa22acc2e25ee3b51a9006ebddf3225ce4508bb281d5eb3",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "92dd6cf97c13c6cdc4b95216b0b9a19f6d55f56722f3d1d2d1e3f30a5d014fd0",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "629a0e24762fc2182f3bcd2fdedebf59d1fedf96a9816cbba8164440ce6e2cd5",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "77417a5784bba041880c2d289aa69d7dafa39615fdc0e91201a3e150d650a4cb",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "4e7e8c3d2507d8282bbf26c7a112d9373306dc9c3a1d258cfc75d4ebbf5ebc40",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "2a0dc1f2c870e4103fcc9bee71f7d698cd71858d76fc4fe3bc4c93f8e474d10b",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "f2f745163cbb60b488446f9f9931228ae31adc16c05c3ea7e5a82a4d95c245e2",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n17/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "bdc0b23052c0e177724da36a791bb1e96f0c35613168afe1bd5774f26d6b1385",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "a6a105d464df3563dca1392091bffb0365fbf7187916a13291a2773afe197ebf",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "42f2246acaa1d23edfa22acc2e25ee3b51a9006ebddf3225ce4508bb281d5eb3",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "b01d509b7a2f33a8a58b7a74ffc4bea7021b3c8ddac6fcaa700206e09f7d7da4",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "456be77ad6d45f180e96258dc354856a0deda6da1592e1f93f2f9452a8536ad3",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "6f5df84a2eb923f082713c0580a1f3b3ac2eeeb619e919517fe2b80c0adc0022",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "157cf51ca5f10bb693350df7b30280c222a71d077d63f7e668a86d460478a66f",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "85af81f6239a9cd5e77ac140d6b0f236f72f60b06ed992221ef044279cf4ead3",
+          "state": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "e47b67263955a597c1fd910708b77c69bfc47244a3fa52535d676b4c9197ff26",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n17/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "bfec2d5df8b2b9fad2dadadfc0e851d05661990431ef5153993a720641fb6288",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "eb169c0c2a46f9a38f6f6cfdbc3b4d40105c4877f94fcfbcd3dd99cc2e9d9bd2",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "4ba76d89f08eaae7a6aa6086fd0ec37f52083a434759caa3fa294a6e92589f63",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "2b5c231c762f5756e073abfdbef89261ca60d22555aa6e5398f353647598eb8f",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "41912dea3cd7a9ab8070e4fb44027cc54c984458662189d6b8af49be7ff3a695",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "f09cb289db9ca6e862af2c41afafd8a4766dfd80c76762b2cbdfe12b76b194e1",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "5f7593a59e9ff4816bd80a0acbb5b2cae837be4f547a17240791384249a8f534",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "66bb37ad5cbbea25ab007150396a8e5e4f74ee9a52e5f9308ed87ea920388c99",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "cad17af6f2797d055eabbd2412e4ae100bcedf0ab23d2d879158d87c41d94944",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n18/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "d21df5c79bac81af612857625455bd82458643fa5bb0b406340883a096f6ca9b",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "eb169c0c2a46f9a38f6f6cfdbc3b4d40105c4877f94fcfbcd3dd99cc2e9d9bd2",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "4ba76d89f08eaae7a6aa6086fd0ec37f52083a434759caa3fa294a6e92589f63",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "33eed8920d88a2bd6c3259686d9765947f504748aaaadc314074444c157983bf",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "df4a725e1b379faf85aeee35633fcae74057222789e60e02c640e95644cfa553",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "8babaef3a54e15a4389d467ccd22578132aed3fb958f1874d00e353b959fb128",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "3898bf977626436bda4ab48710c870c8f6481f15733b62f39a6d8f423f18cd9a",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "99d60a06fcbbad84422e134f8b59369c7d3e1c0ef1ab1cdb9848573055c3eaa2",
+          "state": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "e0edf20758d477dc632dbaf3f82616b28f4923156316e3eacdb072089d039d2c",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n18/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "dc181df61bfa8f9e868d2749a2a4cb2e5d9e088efa0355454a52139fa5b4d143",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "219ac0b60a99ce1be2ba607b923303270b2cf5c925c7cb1044a5e80d9c6d4673",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "f8ed7d3baf0c62a93eb7891f51f1ae76783ab0f05b4f4ee4e126145597345c54",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "fb333026da969b406ff5c44cca8ee861da5662a49b56e001f0aa3a9985b4ef27",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "a752c8f6dd6efaeb723cd8f77b5dbb53de9d26972798ecb30eca16e01e40ea8a",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "21b3cf5a93621f90943eb0259623809ab8c9184f45affc9068650bba0f417bc0",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "904f21188bdd47998a687a930776e94451ef9a040af213e856fc3036ceaa8230",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "33d306cdf40f2585f215cfcc737f72655a0258f8ffde988cde6b6400657aed59",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "faa68fcf432ea9f24dab23618f3742d6ed8e8c0b5f4cd1c0fa275ab7aad67f70",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n19/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "7af34e1a05a6fc4802d4154e0342e9129a7d7867e26bee1dc2abe100f779b2c7",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "219ac0b60a99ce1be2ba607b923303270b2cf5c925c7cb1044a5e80d9c6d4673",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "f8ed7d3baf0c62a93eb7891f51f1ae76783ab0f05b4f4ee4e126145597345c54",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "7e6d10afb166c7a29174d036684254c9e43b6e08856d6a72a1aba8a81744ce7f",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "0bf778a2b4bcff673a946140999abff9fdb556f8a016fbda50c3e050610dda44",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "00bfa40a052b1023a38c8dc6ec812c1915b529c133eed8533b7b76c474936e34",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "af4442c0140b5486809da3b4414857444972b10ee12e6c251d5009248e003434",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "e04a7167a4e58c77c9044839c25d1ce7a20e7d03c9c1d23fae90e432e117cfc1",
+          "state": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "42f0c08648522d1cc0eeddfb84e03ca806c03c7c7b153eade36e2d84caad1dcb",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n19/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "8e99e7fd4f547e704fab834efd010bff74000723b6e914ab1b57a2b30f1a002a",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "f37e4b4c4c6676ab42ca33338bf71732b4d175764bbee4da64dde0ef8b7bd952",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "357f3819e6cd00e03edcf7154df07346b0b99a01118e27141182c501cfd40111",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "17eb4888f3735e98122fbc99f78465ff14a31362be0e974db60a83bad9110729",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "808497f1b4643041e382fe034fb2fd4413711aac5f100b76627010131f25488f",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "d7b0218446f5eef49bf42fb222f5462cce62e20b3f95561e00ed0ab5af9ccce7",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "2299292f5f2e972ae5333638e9703c66da3cf5d50623a0ab225b019f2fce1a14",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "c6cd973edcc15924724a300a8100f8725999bb1171d4baf53b074d619ad01a4a",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "5597271cdcc834fd2a913270a7755a589e6a16e657f0345bdfd9c5bb013e9456",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n20/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "504c563438467cdf152a2ed168b9be56891e5db4e8b85c3d33ed316b6d036195",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "f37e4b4c4c6676ab42ca33338bf71732b4d175764bbee4da64dde0ef8b7bd952",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "357f3819e6cd00e03edcf7154df07346b0b99a01118e27141182c501cfd40111",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "415daff49a4fb6cd0ed085e0b5e1646bddb71f1c31e541ebe451b9da2af485e8",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "cea29709b8f1648f60b510b56ed7ccd0ee60c0d02eca332efd3b110ddde7a473",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "aaada81be60e59d41deed3a33fe284bd3c66de6a922eb4f11fb3e7689abae0c1",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "fc2eb24be7bb6a3dc7133e6ba2d10f2c822f6e665d45e59e76e7a2c73f641352",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "143733f4de16acbe05bafa9bd57f037110cb980a5ccf31196791fd301275a85d",
+          "state": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "aa4f3fae5aa0f5c3c620d10bc3db06f12b45650f115f72dfc4fb11482b9090b8",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n20/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "3ffabec34cffcd5952be031d7efb80461b2c29eae2fe2f004fcf700c4958bf11",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "d45c7b327609ef322eace105181391dad007e18fe4b82903c274baf3b4ed2f5c",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "0d4ac4e582b67e97440bec73c97d7a9e19ecb5f73a21531a05fcdf4b7078a988",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "bc64f47b106fc7fac5c7ac5e6ae1c8fa87e8e95ec30ef7fedbaf529aca245cf9",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "7d6e1d02dd1548de15009871fc19d979ae8a12e03c74ac081b42a6e184c7ccac",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "3274ad3ee88c15e427fa85ced5adaf1c3eb7ed9d7df81720cb61de2ed2bd27b5",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "c51f6f6fa0e7114221c02d9d47cc8b0e73584b1621689eeb7bcec1d8a095d325",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "6c253067f404d9e2d133f76f5a55fa02e59f6eae210ae04af1445b2c533178a9",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "ad46f6eb4adf80ea4afa492fca5d76a555c49339f978d0ddd93f0db77c6ad9bc",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n21/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "dc18a6e0242d658754010839c364288baf77049fd9242caa6bd69bbb0589be71",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "d45c7b327609ef322eace105181391dad007e18fe4b82903c274baf3b4ed2f5c",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "0d4ac4e582b67e97440bec73c97d7a9e19ecb5f73a21531a05fcdf4b7078a988",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "be9d9462930e5a43416cd71a916c142d71a00c607c335bc2ad9e21c1f58c731e",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "de0d08ea2b9da9cd44834929df6341715fe83652b076d01dbbed6aef392ed5ab",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "dc88fef2b1bd446f29ae414d1c190529a9588292e50278cf52b614f521ee81a5",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "41aa915ed3bd041bd6de603596d1c9a9054bb046dc82b9c9e5c87ca6df8addfe",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "c5f11c2ad9022501925520cf05fed90f661fcedb5936c910aa6561f3ea721a06",
+          "state": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "5b646ccf69596f37821ff1c0bc1ed9f375bf0f8db048eb8a552583bbd83bc1b6",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n21/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "a1d2695cc5f7615608f0110eab86ab76db928b39636a9dc4c3f8b8a17d514c4f",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "1b872e9e0b159c341ab11f4435b75475fabe3ff75d96713d77aa1e8f59f293eb",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "b9543409ffe3c1f13d42f5bfc39516fa3a9a100d43f97b54d6bdb1506fba1472",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "a363316074bf899e6042b80e2d18400c7f209bd2b84a98ce885084ee44a94085",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "7072af0722e299ce5c907dd3dd6338a1ec87c363e24318318572d51fd80ad527",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "6b7c8899c29c652a8202b73b9fa9161c909dd4e4b98905ddfc51d1488fa4687f",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "9715de46e2b4b108e7a6cabc57b649a5bf7d928f11724e1d30e21eb0aa6e8595",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "a11cc5e08da1b1096f339f201e96b56199277d3085674fb8b2b510ad6cee7b61",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "5035e55ad16bd34bba2d8eb1cffc332af966020a6c1cade36c5bb022044d5256",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n22/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.75,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "5cb0310cde7cc57ecd79cbfaea157ece437ec41be461d20acb7da42a2660b961",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "1b872e9e0b159c341ab11f4435b75475fabe3ff75d96713d77aa1e8f59f293eb",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "b9543409ffe3c1f13d42f5bfc39516fa3a9a100d43f97b54d6bdb1506fba1472",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "282f34254ef669f448ccdde164cf62bd1b7101506b55da6f2ccfcfe6644a0ac8",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "54cf3672378f11ab524211a45cceccf0e6a9ede8f442060bea2211ebe8838fcf",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "7ce92fd5e52b4f6c794aeb6913bfef40be9c7fe75962b794481803ac188f8efd",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "7698d78bf6d7c66caee135150c475096f009d6a763b3b259efa66626ad1cac63",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "a67cdbce1e1000006d9fcc892c16116f61e51aa44cc37f6192a5499005a5e7f8",
+          "state": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "f7f5f850814769a777f69ff46f8776238c076f9f14cb29905839507c416c1f21",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n22/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "9dfa24411585edd29d28fdbe080acadcfe7c9bccd64d2964a6ad3d0763da4859",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "454c957d0860ee76cddb8671cab570d17a6f75f391297c2809821c4e6336062e",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "f26b581f876e1879591abffff024b290104d32e55a64f424ca9c39f4cc0b9978",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "fb70c288ff6487f0aedc1f81bad59baf090eef65a924fdfe2fc8b9143def85a0",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "ec44e71eaca3ac332b5ddf2811029160d4496429a72e157eba21f2e0b7441ca2",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "263d297680c08837c12dfd35842ca147b98815e5f148bc70a805f58299fa1c91",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "eca79d2a3fa31cde4de0976b3bc382a78bf102dc2c0d2181d53cf5109548e72e",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "6458a2955e2576c1c6c11956e1848db478de8f8ea3e97c8d37a612a3044ca58c",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "d771db8cec2a0ee2cec0a041537d1c3096ae294d49722a99cb405b3db2f6bc37",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n23/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "ac8b4c7e30097a66283f8aa3ce960218718b1265b3664e606d58ba79437e41f0",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "454c957d0860ee76cddb8671cab570d17a6f75f391297c2809821c4e6336062e",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "f26b581f876e1879591abffff024b290104d32e55a64f424ca9c39f4cc0b9978",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "351d104106a717874885a018cd68c2d12abcdeb33b0c830ac7793fb9d534c485",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "0b1764abfdd1f9d0de168f530325af667d156cf4b01786644796ae7ce816dcff",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "ee783fdc25f90b8397e1ba8bffadf52a50556f65c18b5ebf47688b403076116e",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "ea6ee74f282c064b12349b30db6ee387100783bc12650a251f30edc7dfa9416a",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "b82d86e47efb1222d45a53ae5588c58ae462fe5918acbac283d48f4b6a714687",
+          "state": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "1d402d20feccfa22d4adfea70d7c5a32b656f2bbc2f24b2aafe6c6e6e0a8ce33",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n23/vd_1p000000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.85,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/config.json",
+          "config_sha256": "6a8c0cc3ce7cc3e008e53cdde3630cfacfcbf360197b2da7e0dfab16cd0f307c",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/curve.csv",
+          "curve_sha256": "1aee066214bbc1875723121f45295952ce00965c19edcc948ca55317cc240122",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/00_equilibrium/state.csv",
+          "state_sha256": "a14c23606e4168766d837c7525ab8a3e7e7fd128a4b1eb0e56ae646d75bc7f25",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/config.json",
+          "config_sha256": "b251e2c008805d3f23f243dae4298e68612db6d385a76ebe0f9f5b1a0f7568e5",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/curve.csv",
+          "curve_sha256": "7005683dc9af35f81e472156392de804d0f69e7fc7dd9fcbbbb93ddcbcf035ba",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/10_drain_ramp/state.csv",
+          "state_sha256": "d1fa2a293c569d3ac5f4fb3537a4b58c55b9eb454af110251438b31f2c190489",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/config.json",
+          "config_sha256": "989e17b6167a509a01484bc53122217244fb2e0dd8941a3be893d4c7092c6617",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+          "curve_sha256": "e01aa62f42e0dbf5d4eed9a7fbffd406667faf792d811d7e8be67a75ece25bed",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv",
+          "state_sha256": "c8ff7263617311b0716aafa9894c12a1bc4869e3855b7701f306b0a50ea4da76",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n24/vd_0p050000/20_gate_sweep/state.csv"
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "unapproved_config_diff_count": 0,
+      "phases": [
+        {
+          "phase": "00_equilibrium",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/00_equilibrium/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/config.json",
+          "config_sha256": "097c18b0a51c1f6da1c84de340f35fe220bf47c6d8dc1584eeeb9a69b18506e6",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/curve.csv",
+          "curve_sha256": "1aee066214bbc1875723121f45295952ce00965c19edcc948ca55317cc240122",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/00_equilibrium/state.csv",
+          "state_sha256": "a14c23606e4168766d837c7525ab8a3e7e7fd128a4b1eb0e56ae646d75bc7f25",
+          "converged": true
+        },
+        {
+          "phase": "10_drain_ramp",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/config.json",
+          "config_sha256": "69174aeb2e6ce150d7d389140fecb04e9991d07f967c35d6417a84e5a50ee1d3",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/curve.csv",
+          "curve_sha256": "c65d2ffaca0789b01cd0adb3e9a6af2448864b2ec9924abe94be3a22eaa1db95",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/10_drain_ramp/state.csv",
+          "state_sha256": "6eb3815b51c54155ba80a07b43efd24c20b2b4af4afcb730893cc1cb0405871f",
+          "converged": true
+        },
+        {
+          "phase": "20_gate_sweep",
+          "source_config": "build-release/m65_ni/vela/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/config.json",
+          "config_sha256": "349d696fb4f27a1cf37c855bcdde5a9f97a3017c4cce5ab0665343743119c82d",
+          "curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+          "curve_sha256": "683e9e8b459495fbf8ff824397c01467c6e9b5d9a7db18535d9cf6f867227ed3",
+          "state": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv",
+          "state_sha256": "4b42f66b30de768ff0533f1f7c9309aa9e50ee9f998c6f187c22cdf3c169fc21",
+          "converged": true
+        }
+      ],
+      "final_curve": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/curve.csv",
+      "final_state": "build-release/m74_electron_poisson_charge_volume/n24/vd_1p000000/20_gate_sweep/state.csv"
+    }
+  ],
+  "source": "build-release/m74_electron_poisson_charge_volume/execution_manifest.json",
+  "source_sha256": "09bae4715e0aa6b176e9b0544c11df5b1158a0a36017e806223826b5c31ddf03"
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m58_compensation_contour_mesh_audit_evidence.v1",
+  "status": "accepted",
+  "classification": "no_systematic_frozen_tdr_relation",
+  "contract_sha256": "ecf987092071aec24a979fc65f66891ef4085de363abd9f47250bf69d5912f6c",
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_compensation_contour_mesh_audit_report.json": "cad751b8cfd249a75081c394473f9f465b3bcef22b045a81ec81f936862d88bb",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_device_compensation_mesh_ledger.csv": "25e10dcf942e54b6897b8ebaf0070fb89c1e866ac239f00a0a2ee91a5d16505d",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_zero_contour_segment_ledger.csv": "f4261b7cece40f20bb63923a9babdb162326ae81366436b95fc10242ef1a7c94",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_connectivity_component_ledger.csv": "e3d8adcb9822fbf993422dcf356f14b2bfcad53a7d9e22cb288e9a29f055ece1",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_critical_gate_edge_node_ledger.csv": "9255ba29b1a705d0daad5615f173679375a8428a2d0d8184447ffb1784f28ea5",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_pair_species_coordinate_ledger.csv": "734ea55d483312d5ebe3a5de0494317b792dcf83150fffd2466fb672f5410a09",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_nwell_error_attribution_ledger.csv": "85dbe8abfcaa01c78d50b9433e57fddee9ff65c4ffc6be03fcd7a8d80300eebd",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_metric_error_correlation_ledger.csv": "ea93c413e1df91769284777a1d066545e82f821f05b076fa7aba4d30a6ca57a0",
+    "docs/validation/simplemos_m58_compensation_contour_mesh_audit_2026-09-02.md": "4d8cd50ccb51a9ba7b0770b052759b4cf2dad32f9fb5c362f9ad3d6c82d6d047",
+    "docs/validation/reports/simplemos_m58/artifact.json": "8a783cfed8c29dc703969a6c01ac9ee406776d1e840a24a417de829a0482ecdb"
+  },
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_full_matrix_requalification_report.json": "b7bdf3deb49e8cfd924196405cd918bfb84d855ac12409bb258a5f46995f12ed",
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_case_summary.csv": "59f6c872914217810665ff596b0d98d361785e66ce8348ca182b487dad625b48",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_terminal_attribution_report.json": "91c253bbdb364a096056549cc5359f62aad4895cadefe7b1f4b5bf7689c500a9",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_boundary_flux_closure/m57_doping_well_boundary_flux_closure_report.json": "ff89dd8eec3e88226ecec485498afb4105063027798fed0835f7dba3730fe602",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n17/input_fps.tdr": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n18/input_fps.tdr": "1ede4c89920ea42cba8d05e3b9ee5be889cafb65a8e0e826acde50904b4dac7a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n20/input_fps.tdr": "db64cf83d8d024596878388f3b42632d7ac622035e4c0f3b74553468a5a75d13",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n21/input_fps.tdr": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n22/input_fps.tdr": "b50143646f5df599bbcb3f02d8ea7babf40886144962d3876d1037ba2af44564",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n24/input_fps.tdr": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "local_immutable_tdr_export_only": true,
+  "historical_artifacts_rewritten": false,
+  "closed_topics_reinvestigated": false,
+  "acceptance": {
+    "device_count": true,
+    "pair_voltage_row_count": true,
+    "m46_case_count": true,
+    "m46_point_count": true,
+    "all_active_field_identities_pass": true,
+    "all_error_pair_rows_increase": true,
+    "classification_declared": true,
+    "read_only_execution": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

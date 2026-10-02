@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/comparison_evidence.json": "335f2d6d59c3168b716f178cb7f7c1d16d8f3eb07a3440fc4d559391789f30d5",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/control_summary.json": "6643395dfe91cf29af07f8df30b9c1ee2c8cc71de219987fc21f3b082c5d55c6",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/low_control_comparison.csv": "1db3f32a266b921bf4c891635de099c102b3d0c264b550b72c6700c1b6ac65b8",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/low_control_evidence.json": "79d793a6faea1327d8f69e71a3eb831506057ccb3584584e988eca91437e38ae"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "DC": 68,
+  "qualified_DC": 68,
+  "response_checks": 32,
+  "qualified_response": 32,
+  "native_same_perturbation_done": false,
+  "finite_replacement_done": false
+}

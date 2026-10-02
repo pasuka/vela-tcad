@@ -103,6 +103,7 @@ Prerequisites:
 - Python `numpy` and `h5py` for state preparation and regression tests. Use the
   same Python interpreter selected by CMake; its h5py build and loaded HDF5
   runtime must be compatible.
+- Python `jsonschema` for full Sentaurus IR schema validation in regression tests.
 
 Ubuntu/Debian:
 
@@ -117,7 +118,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   nlohmann-json3-dev \
   libspdlog-dev \
   catch2 \
-  python3 python3-numpy python3-h5py \
+  python3 python3-numpy python3-h5py python3-jsonschema \
   libhdf5-dev
 ```
 
@@ -190,6 +191,7 @@ pacman -S --needed \
   mingw-w64-ucrt-x86_64-python \
   mingw-w64-ucrt-x86_64-python-numpy \
   mingw-w64-ucrt-x86_64-python-h5py \
+  mingw-w64-ucrt-x86_64-python-jsonschema \
   mingw-w64-ucrt-x86_64-gdb
 ```
 

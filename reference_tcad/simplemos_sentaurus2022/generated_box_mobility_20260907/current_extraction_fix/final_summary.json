@@ -1,0 +1,22 @@
+{
+  "DC": 32,
+  "qualified_DC": 32,
+  "qualified_dual": 8,
+  "qualified_migration": 8,
+  "qualified_ports": 32,
+  "maximum_row_ratio": 8.249645556894346e-07,
+  "maximum_KCL_over_Id": 1.6218028745806847e-14,
+  "maximum_migration_Id_relative": 1.4247014679114045e-10,
+  "status": "completed_opt_in_generated_cell_box_and_mobility",
+  "physical_gates": 4,
+  "qualified_physical_gates": 4,
+  "geometry_max_absolute": 2.7853275241795927e-12,
+  "cell_mu_max_relative": 1.7763568394002505e-15,
+  "strong_JVP_checks": 336,
+  "strong_JVP_max_relative": 5.560914252590006e-09,
+  "weak_bit_identity_checks": 48,
+  "max_dual_phi_V": 3.8565464752e-08,
+  "max_dual_density_relative": 1.491779894502443e-06,
+  "max_migration_phi_V": 3.8569372126e-08,
+  "retained_failed_DC": 24
+}

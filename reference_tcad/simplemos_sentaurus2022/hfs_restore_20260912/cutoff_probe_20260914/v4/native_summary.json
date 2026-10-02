@@ -1,0 +1,8 @@
+{
+  "exit_codes": {
+    "baseline": 0,
+    "observed": 0
+  },
+  "all_exit_zero": true,
+  "DC_qualified": false
+}

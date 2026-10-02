@@ -1,0 +1,8 @@
+{
+  "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_candidate_20260912\\v1\\candidate_source_and_binary.tgz",
+  "sha256": "7904fb28a96ede3453464a5f02a27abc3e5487e5e104b772dd5e418e7ef79623",
+  "source_files": 890,
+  "test_cases": 207,
+  "test_assertions": 4561,
+  "test_programs": 8
+}

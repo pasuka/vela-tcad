@@ -1,0 +1,9 @@
+{
+  "key": "m65_n19_vd_0p050000_endpoint_vg_050",
+  "repeated_directions": 3,
+  "checks": 26640,
+  "nonzero": 558,
+  "max_relative": 1.3406590329865896e-09,
+  "failures": 0,
+  "qualified": true
+}

@@ -1,0 +1,3017 @@
+{
+  "schema": "vela.simplemos.sdevice.m10_fixed_state_replay_evidence.v1",
+  "status": "complete",
+  "case_count": 16,
+  "default_model_changed": false,
+  "sentaurus_release": "T-2022.03-SP2",
+  "cases": [
+    {
+      "state": "n17_vd_0p05_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 922,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.03994880560702918,
+          "p90": 1.2118035727652792,
+          "p95": 1.8929104629649818,
+          "maximum": 3.8552169935815375
+        },
+        "active_edges_abs_error_dex": {
+          "count": 922,
+          "median": 0.05960187529296146,
+          "p90": 0.8665955431742778,
+          "p95": 1.6836549512537362,
+          "maximum": 2.4687051908411037
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.014261791296212412,
+            "p90": 0.1355843891688995,
+            "p95": 0.22314219835448657,
+            "maximum": 1.8849014363309147
+          },
+          "active_edges_abs_error_dex": {
+            "count": 922,
+            "median": 0.01977714626154592,
+            "p90": 0.1672926230760042,
+            "p95": 0.24291581412310176,
+            "maximum": 0.7335411489274688
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0053187283319083845,
+            "p90": 0.06314980484321155,
+            "p95": 0.13309040135199773,
+            "maximum": 0.3726413812055347
+          },
+          "active_edges_abs_error_dex": {
+            "count": 922,
+            "median": 0.008658384016507203,
+            "p90": 0.10717672420758648,
+            "p95": 0.14456394366062633,
+            "maximum": 0.27865201208345436
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005308928782323363,
+            "p90": 0.0631498051019141,
+            "p95": 0.13309040135199773,
+            "maximum": 0.3726413812055347
+          },
+          "active_edges_abs_error_dex": {
+            "count": 922,
+            "median": 0.008658384016507203,
+            "p90": 0.10717672420758488,
+            "p95": 0.14456394366062633,
+            "maximum": 0.27865201208344237
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1943,
+          "median": 0.08762273706313017,
+          "p90": 0.8758492818229187,
+          "p95": 1.4027147732654262,
+          "maximum": 11.426971553081433
+        },
+        "active_edges_abs_error_dex": {
+          "count": 921,
+          "median": 0.15006104119545682,
+          "p90": 0.8883861749517497,
+          "p95": 1.3200577539783875,
+          "maximum": 2.5811772146476066
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 2.2133369170465e-15,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.558087908921264e-14,
+          "hole_A_per_um": 3.2460240492510266e-20,
+          "total_A_per_um": -5.558084662897215e-14,
+          "absolute_log10_error_dex": 1.3998776299987927,
+          "relative_error": 24.111787636533805
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.558077335257969e-14,
+          "hole_A_per_um": 3.2397443656230214e-20,
+          "total_A_per_um": -5.5580740955136036e-14,
+          "absolute_log10_error_dex": 1.399876804289752,
+          "relative_error": 24.111739892408046
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.558077335257969e-14,
+          "hole_A_per_um": 3.2397978617129273e-20,
+          "total_A_per_um": -5.5580740954601074e-14,
+          "absolute_log10_error_dex": 1.3998768042855723,
+          "relative_error": 24.111739892166348
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.558188781780607e-14,
+          "hole_A_per_um": 3.336379372474176e-20,
+          "total_A_per_um": -5.558185445401234e-14,
+          "absolute_log10_error_dex": 1.3998855048138061,
+          "relative_error": 24.11224297843518
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_0p05_vg_0/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "7dbb14e829ac42dd76e4e1dd132232168d95097be2e2eb144b9276ab618da2d6"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1124,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.03481163103090967,
+          "p90": 1.1384250365090662,
+          "p95": 1.7703384689316182,
+          "maximum": 3.756288055769539
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1124,
+          "median": 0.038682626144928456,
+          "p90": 0.7911807288252,
+          "p95": 1.5427569484251764,
+          "maximum": 2.9779085723656262
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.01413208236895247,
+            "p90": 0.1342244555912287,
+            "p95": 0.22172102314502656,
+            "maximum": 1.8472270394504258
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1124,
+            "median": 0.028558238663524582,
+            "p90": 0.16608179233057008,
+            "p95": 0.24313643864623996,
+            "maximum": 0.721789164279294
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005217870968327265,
+            "p90": 0.06311950186033047,
+            "p95": 0.13312472817942253,
+            "maximum": 0.3760705480285691
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1124,
+            "median": 0.008066557737954949,
+            "p90": 0.10776170723340511,
+            "p95": 0.15936723260321156,
+            "maximum": 0.3760705480285691
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005170610262644981,
+            "p90": 0.06311950211109957,
+            "p95": 0.1331247281794225,
+            "maximum": 0.3760705480285671
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1124,
+            "median": 0.008066557737954838,
+            "p90": 0.10776170723340506,
+            "p95": 0.1593672326032115,
+            "maximum": 0.3760705480285671
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1946,
+          "median": 0.07744422112263383,
+          "p90": 0.7659450813560773,
+          "p95": 1.3189868133513896,
+          "maximum": 11.426978983436705
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1124,
+          "median": 0.12863726428633893,
+          "p90": 0.7566212142240838,
+          "p95": 1.2165206416513124,
+          "maximum": 3.5840811008207165
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 7.98385153345127e-15,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.557300495260849e-14,
+          "hole_A_per_um": 3.2459763623594317e-20,
+          "total_A_per_um": -5.557297249284487e-14,
+          "absolute_log10_error_dex": 0.8426511747173713,
+          "relative_error": 5.9606720841440435
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.5572891915393305e-14,
+          "hole_A_per_um": 3.239697719155429e-20,
+          "total_A_per_um": -5.557285951841611e-14,
+          "absolute_log10_error_dex": 0.8426502918381829,
+          "relative_error": 5.960657933777108
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.557289191539332e-14,
+          "hole_A_per_um": 3.2397512034680924e-20,
+          "total_A_per_um": -5.5572859517881283e-14,
+          "absolute_log10_error_dex": 0.8426502918340031,
+          "relative_error": 5.960657933710118
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.5573954031379415e-14,
+          "hole_A_per_um": 3.3363276185354296e-20,
+          "total_A_per_um": -5.557392066810323e-14,
+          "absolute_log10_error_dex": 0.8426585845022228,
+          "relative_error": 5.960790845778624
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_0p05_vg_0p05/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "6a3891b2b1e9e258c6778cc7d903256476b7b108edfc1c95face27ab64c15ea5"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p05\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p05\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p05\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p05\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1066,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.016188042530027563,
+          "p90": 0.13180372009113173,
+          "p95": 0.2172426184743953,
+          "maximum": 2.192653047051961
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1066,
+          "median": 0.013446886314815498,
+          "p90": 0.09296467456010309,
+          "p95": 0.1417714968008234,
+          "maximum": 0.292972771809459
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.014056550921376587,
+            "p90": 0.11520618544637361,
+            "p95": 0.16114812905559878,
+            "maximum": 0.5597939789901967
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1066,
+            "median": 0.033812556755933976,
+            "p90": 0.14491058059715312,
+            "p95": 0.17588551317059664,
+            "maximum": 0.46027066415689744
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0038365577636745307,
+            "p90": 0.06753104671560131,
+            "p95": 0.13722466324251817,
+            "maximum": 0.42638183447206046
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1066,
+            "median": 0.006032397526011923,
+            "p90": 0.11330780706377297,
+            "p95": 0.16695366568435366,
+            "maximum": 0.42638183447206046
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0038088136517355764,
+            "p90": 0.06753103118535832,
+            "p95": 0.13722457626301346,
+            "maximum": 0.4263818344714967
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1066,
+            "median": 0.006031906554937461,
+            "p90": 0.11330732701762969,
+            "p95": 0.16695366387230842,
+            "maximum": 0.4263818344714967
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1946,
+          "median": 0.07204571421976458,
+          "p90": 1.6901593836185416,
+          "p95": 2.8221223946031917,
+          "maximum": 11.425644415776485
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1066,
+          "median": 0.07526266268736281,
+          "p90": 0.5510282471855594,
+          "p95": 0.9475804744739971,
+          "maximum": 2.2693872435199687
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 1.70824403547326e-06,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 1.7098024921717479e-06,
+          "hole_A_per_um": 3.245682253985779e-20,
+          "total_A_per_um": 1.7098024921717803e-06,
+          "absolute_log10_error_dex": 0.00039603275489685785,
+          "relative_error": 0.000912315024175424
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 1.7098053551037124e-06,
+          "hole_A_per_um": 3.239418234364835e-20,
+          "total_A_per_um": 1.7098053551037448e-06,
+          "absolute_log10_error_dex": 0.00039675994679111426,
+          "relative_error": 0.0009139909743939359
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 1.70980535693019e-06,
+          "hole_A_per_um": 3.239471612769694e-20,
+          "total_A_per_um": 1.7098053569302225e-06,
+          "absolute_log10_error_dex": 0.00039676041072045365,
+          "relative_error": 0.0009139920436074949
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 1.7096521638479854e-06,
+          "hole_A_per_um": 3.336003011273705e-20,
+          "total_A_per_um": 1.7096521638480188e-06,
+          "absolute_log10_error_dex": 0.0003578472732375104,
+          "relative_error": 0.000824313356591792
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_0p05_vg_0p8/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "389d9346b059185fa8b32771a502323ffbd98c5d7dfe9d99ca4e025ba38837f2"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p8\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p8\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p8\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_0p8\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1053,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.010153488782911335,
+          "p90": 0.07434584443097374,
+          "p95": 0.16218423138215995,
+          "maximum": 0.8281689837839897
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1053,
+          "median": 0.008193724379687017,
+          "p90": 0.04965420119269246,
+          "p95": 0.10605325029704063,
+          "maximum": 0.28819290764311367
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.015975444296725705,
+            "p90": 0.14284713675714522,
+            "p95": 0.2291112746126896,
+            "maximum": 0.6817661083762772
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1053,
+            "median": 0.03602587390122647,
+            "p90": 0.2271775874565934,
+            "p95": 0.36283370925471903,
+            "maximum": 0.5062573754605562
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0050166139267018295,
+            "p90": 0.06919787992801198,
+            "p95": 0.1310638122890945,
+            "maximum": 0.40603822685391777
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1053,
+            "median": 0.010010991430005278,
+            "p90": 0.11132271341062068,
+            "p95": 0.1586521838590529,
+            "maximum": 0.40603822685391777
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005011563462738122,
+            "p90": 0.06919039276793672,
+            "p95": 0.13106379884104236,
+            "maximum": 0.4060382266703204
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1053,
+            "median": 0.01001098909395548,
+            "p90": 0.1113227120192081,
+            "p95": 0.15865149182594065,
+            "maximum": 0.4060382266703204
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1946,
+          "median": 0.09063356567078362,
+          "p90": 1.8828444878448278,
+          "p95": 2.876002975318973,
+          "maximum": 11.899210176388811
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1053,
+          "median": 0.09084281914450343,
+          "p90": 0.4826686553127087,
+          "p95": 0.8272875863570266,
+          "maximum": 2.2697268425215253
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 5.65164409930179e-05,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 5.656867795113939e-05,
+          "hole_A_per_um": 3.252965589778937e-20,
+          "total_A_per_um": 5.6568677951139425e-05,
+          "absolute_log10_error_dex": 0.0004012238655084488,
+          "relative_error": 0.0009242789744665535
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 5.656872135663164e-05,
+          "hole_A_per_um": 3.246778557231941e-20,
+          "total_A_per_um": 5.656872135663167e-05,
+          "absolute_log10_error_dex": 0.0004015571021902531,
+          "relative_error": 0.0009250469897818213
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 5.656872428920262e-05,
+          "hole_A_per_um": 3.246832623362136e-20,
+          "total_A_per_um": 5.6568724289202654e-05,
+          "absolute_log10_error_dex": 0.00040157961638787043,
+          "relative_error": 0.0009250988785938208
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 5.656213934322094e-05,
+          "hole_A_per_um": 3.343615391385983e-20,
+          "total_A_per_um": 5.6562139343220974e-05,
+          "absolute_log10_error_dex": 0.00035102213605320287,
+          "relative_error": 0.0008085850665777148
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_0p05_vg_2p5/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "757df264a6c2d5c721b1c93a32e34073cca67035411ae4cc63e4a315f1da038c"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_2p5\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_2p5\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_2p5\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_0p05_vg_2p5\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 886,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.029630870232820516,
+          "p90": 0.8537870666866716,
+          "p95": 1.9924839541915598,
+          "maximum": 17.83366321452327
+        },
+        "active_edges_abs_error_dex": {
+          "count": 886,
+          "median": 0.026937803318554554,
+          "p90": 0.7770089692418128,
+          "p95": 1.8426255191213465,
+          "maximum": 17.83366321452327
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.015290422424536265,
+            "p90": 0.16052160740616708,
+            "p95": 0.2568677881368991,
+            "maximum": 1.9960829067720167
+          },
+          "active_edges_abs_error_dex": {
+            "count": 886,
+            "median": 0.014382308824411272,
+            "p90": 0.16069487624574297,
+            "p95": 0.22731123114081114,
+            "maximum": 0.6880554151168816
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006238715778302262,
+            "p90": 0.114581440093982,
+            "p95": 0.19973521707327405,
+            "maximum": 0.5457915028952192
+          },
+          "active_edges_abs_error_dex": {
+            "count": 886,
+            "median": 0.009500516028756678,
+            "p90": 0.11804441188753989,
+            "p95": 0.1709678342350336,
+            "maximum": 0.5137695311092778
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006220211681055021,
+            "p90": 0.1145814400939692,
+            "p95": 0.1986711378417365,
+            "maximum": 0.5433203564597058
+          },
+          "active_edges_abs_error_dex": {
+            "count": 886,
+            "median": 0.009500516028756678,
+            "p90": 0.11804441188753989,
+            "p95": 0.17096755182850554,
+            "maximum": 0.5137310947307783
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1922,
+          "median": 0.07897656750558024,
+          "p90": 0.8428102739231367,
+          "p95": 1.2983621511723507,
+          "maximum": 11.502160053093325
+        },
+        "active_edges_abs_error_dex": {
+          "count": 870,
+          "median": 0.11074268924253516,
+          "p90": 0.6923308195048534,
+          "p95": 1.0414354282328713,
+          "maximum": 2.3117882488680035
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 1.70607826818451e-14,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.93445208402677e-14,
+          "hole_A_per_um": 3.649717641669744e-20,
+          "total_A_per_um": 2.934455733744412e-14,
+          "absolute_log10_error_dex": 0.23552861155082105,
+          "relative_error": 0.7200006520609722
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.934468096316624e-14,
+          "hole_A_per_um": 3.6403419858127904e-20,
+          "total_A_per_um": 2.93447173665861e-14,
+          "absolute_log10_error_dex": 0.23553097994857808,
+          "relative_error": 0.7200100320023833
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.934468096316625e-14,
+          "hole_A_per_um": 3.640424863563831e-20,
+          "total_A_per_um": 2.934471736741488e-14,
+          "absolute_log10_error_dex": 0.23553097996084382,
+          "relative_error": 0.7200100320509616
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.9331400106478823e-14,
+          "hole_A_per_um": 3.7678812019101104e-20,
+          "total_A_per_um": 2.933143778529084e-14,
+          "absolute_log10_error_dex": 0.2353344009818059,
+          "relative_error": 0.7192316631817437
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_1_vg_0/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "622ad4ee088ef6e4517320e2648e024f0467311ab20bdd92a53e423aa7b6a24b"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1041,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.02532127473064194,
+          "p90": 0.8145948753185688,
+          "p95": 1.8369072991014963,
+          "maximum": 17.834638717001308
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1041,
+          "median": 0.02135156225509771,
+          "p90": 0.7059909820113219,
+          "p95": 1.6310067091383962,
+          "maximum": 17.834638717001308
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.014974741168509054,
+            "p90": 0.1566874943330008,
+            "p95": 0.25166338473337374,
+            "maximum": 1.9700901801091661
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1041,
+            "median": 0.017651543386863366,
+            "p90": 0.1675120982595517,
+            "p95": 0.24545402979948405,
+            "maximum": 0.6739214421344806
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006303052937143394,
+            "p90": 0.11478365599429831,
+            "p95": 0.1969264472507829,
+            "maximum": 0.5458098305225101
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1041,
+            "median": 0.0095113162571272,
+            "p90": 0.1310015395693951,
+            "p95": 0.19158813213160686,
+            "maximum": 0.5308729813805062
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006291941709336335,
+            "p90": 0.11478365599429792,
+            "p95": 0.19684147920333173,
+            "maximum": 0.5433101448698432
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1041,
+            "median": 0.0095113162571272,
+            "p90": 0.1310015395693951,
+            "p95": 0.19158813213160686,
+            "maximum": 0.5308417022227236
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1934,
+          "median": 0.07566955562933497,
+          "p90": 0.745213781417513,
+          "p95": 1.2992204263148805,
+          "maximum": 11.502285802659728
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1030,
+          "median": 0.10944841946215611,
+          "p90": 0.6780962763442842,
+          "p95": 1.0560104892393516,
+          "maximum": 4.364589573703338
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 6.21463494830537e-14,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.940790763993003e-14,
+          "hole_A_per_um": 3.6496945159526256e-20,
+          "total_A_per_um": 2.940794413687519e-14,
+          "absolute_log10_error_dex": 0.3249509582628125,
+          "relative_error": 0.5267953084694982
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.9408126532516e-14,
+          "hole_A_per_um": 3.640319520213425e-20,
+          "total_A_per_um": 2.94081629357112e-14,
+          "absolute_log10_error_dex": 0.32494772706878017,
+          "relative_error": 0.5267917877665472
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.9408126532516e-14,
+          "hole_A_per_um": 3.6404023895643125e-20,
+          "total_A_per_um": 2.9408162936539896e-14,
+          "absolute_log10_error_dex": 0.32494772705654107,
+          "relative_error": 0.5267917877532127
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.939526708721053e-14,
+          "hole_A_per_um": 3.767855784856594e-20,
+          "total_A_per_um": 2.939530476576838e-14,
+          "absolute_log10_error_dex": 0.3251376557434238,
+          "relative_error": 0.5269986892185196
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_1_vg_0p05/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "3a14b9950c5103b3839b86dce08515d811be5fc1325e7d4f835485128cda404f"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p05\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p05\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p05\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p05\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1039,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.01709761094812845,
+          "p90": 0.14564948359986085,
+          "p95": 0.24320070923550102,
+          "maximum": 3.3514491237775705
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1039,
+          "median": 0.012986530417591347,
+          "p90": 0.11647741022251457,
+          "p95": 0.17847151090407884,
+          "maximum": 2.678994218325768
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.015095716389204927,
+            "p90": 0.12630021101077343,
+            "p95": 0.20199763214297073,
+            "maximum": 1.175334952595405
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1039,
+            "median": 0.019063187474341436,
+            "p90": 0.14604834792421198,
+            "p95": 0.19759016378717506,
+            "maximum": 0.4599002121509801
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006049809993403987,
+            "p90": 0.11148175918416138,
+            "p95": 0.19175428188375923,
+            "maximum": 0.5460383955450143
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1039,
+            "median": 0.00864495200435611,
+            "p90": 0.1310542909577578,
+            "p95": 0.18537332460900832,
+            "maximum": 0.42608063668506624
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.006039289468344089,
+            "p90": 0.11148110708853844,
+            "p95": 0.18954410972379615,
+            "maximum": 0.5432477348421294
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1039,
+            "median": 0.00858615269457097,
+            "p90": 0.131053451391597,
+            "p95": 0.18503945088334325,
+            "maximum": 0.42608063668260643
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1946,
+          "median": 0.08013049474527717,
+          "p90": 1.489989110111174,
+          "p95": 2.8312335578430012,
+          "maximum": 11.505856283290063
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1039,
+          "median": 0.08643837493502438,
+          "p90": 0.6210970522637936,
+          "p95": 1.009096438528901,
+          "maximum": 5.360388674237743
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 6.62955965342489e-06,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 6.635622606523678e-06,
+          "hole_A_per_um": 3.650285421240137e-20,
+          "total_A_per_um": 6.635622606523714e-06,
+          "absolute_log10_error_dex": 0.00039699526272762853,
+          "relative_error": 0.0009145333047410526
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 6.635635053997005e-06,
+          "hole_A_per_um": 3.6409314910018746e-20,
+          "total_A_per_um": 6.635635053997041e-06,
+          "absolute_log10_error_dex": 0.0003978099359285281,
+          "relative_error": 0.0009164108764015783
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 6.635635085965199e-06,
+          "hole_A_per_um": 3.6410143636251974e-20,
+          "total_A_per_um": 6.635635085965235e-06,
+          "absolute_log10_error_dex": 0.0003978120282095432,
+          "relative_error": 0.0009164156984705692
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 6.635024358828364e-06,
+          "hole_A_per_um": 3.7684787001948213e-20,
+          "total_A_per_um": 6.635024358828401e-06,
+          "absolute_log10_error_dex": 0.00035783881862361255,
+          "relative_error": 0.0008242938730762491
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_1_vg_0p8/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "55252f17a941e88d75498be35990d95ea63c7029e527facf7ae593693946d5e3"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p8\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p8\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p8\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_0p8\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1047,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.012996727231781913,
+          "p90": 0.0979199897930135,
+          "p95": 0.17102802144764184,
+          "maximum": 2.631983844338709
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1047,
+          "median": 0.009645267964808024,
+          "p90": 0.06719135840541561,
+          "p95": 0.12855284420222685,
+          "maximum": 0.7804512322593871
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.014794005286651979,
+            "p90": 0.1264048499501136,
+            "p95": 0.20454445217193293,
+            "maximum": 1.0357146211031
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1047,
+            "median": 0.024631298835424253,
+            "p90": 0.14597787841139293,
+            "p95": 0.20529052902587203,
+            "maximum": 0.5490342600400284
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005988427220553594,
+            "p90": 0.09073583005952729,
+            "p95": 0.1498830512637547,
+            "maximum": 0.544548869241464
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1047,
+            "median": 0.008639537386713192,
+            "p90": 0.10189122393531572,
+            "p95": 0.13472984716635822,
+            "maximum": 0.4019022357402924
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005987787752730345,
+            "p90": 0.09065773879544756,
+            "p95": 0.14977183179444117,
+            "maximum": 0.5418273567448129
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1047,
+            "median": 0.008633292334851772,
+            "p90": 0.10188909056604759,
+            "p95": 0.13471348996899377,
+            "maximum": 0.4019022339559628
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1946,
+          "median": 0.07769955328961364,
+          "p90": 1.7820609392812126,
+          "p95": 3.024409388097512,
+          "maximum": 12.669944838282635
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1047,
+          "median": 0.07691958177031744,
+          "p90": 0.5465599952793267,
+          "p95": 0.9505665282806603,
+          "maximum": 4.747923347101697
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 0.00033327974242444,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.00033360853106676483,
+          "hole_A_per_um": 3.699643439873285e-20,
+          "total_A_per_um": 0.0003336085310667649,
+          "absolute_log10_error_dex": 0.0004282309655736505,
+          "relative_error": 0.0009865245332138647
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.000333600639262062,
+          "hole_A_per_um": 3.6903597457730833e-20,
+          "total_A_per_um": 0.00033360063926206205,
+          "absolute_log10_error_dex": 0.00041795722418269676,
+          "relative_error": 0.0009628453121324035
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.0003336007633057499,
+          "hole_A_per_um": 3.690449713104304e-20,
+          "total_A_per_um": 0.00033360076330574996,
+          "absolute_log10_error_dex": 0.0004181187091223393,
+          "relative_error": 0.0009632175030343065
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.00033348707897176873,
+          "hole_A_per_um": 3.819502501444627e-20,
+          "total_A_per_um": 0.0003334870789717688,
+          "absolute_log10_error_dex": 0.00027009478700668055,
+          "relative_error": 0.0006221096602527824
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n17_vd_1_vg_2p5/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1542,
+        "silicon_node_count": 993,
+        "state_sha256": "36fa88988cbb1a6133e5664a103ee00682011000c771dc016f34f303efbd1f07"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_2p5\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_2p5\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4405,
+          "nodes": 1542,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_2p5\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n17_vd_1_vg_2p5\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4405,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1542,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 549,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.09441834139983762,
+          "p90": 1.348007665786707,
+          "p95": 2.2243404410971133,
+          "maximum": 5.3699659884734166
+        },
+        "active_edges_abs_error_dex": {
+          "count": 549,
+          "median": 0.2572348789477701,
+          "p90": 1.1865840173281632,
+          "p95": 2.1094836025330155,
+          "maximum": 4.501088810637437
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.009695815313133904,
+            "p90": 0.12428285784130916,
+            "p95": 0.2086765561208291,
+            "maximum": 2.000364877363519
+          },
+          "active_edges_abs_error_dex": {
+            "count": 549,
+            "median": 0.012341210304823047,
+            "p90": 0.16083043888928533,
+            "p95": 0.23565426925822114,
+            "maximum": 0.5923108980237877
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.004205822084663913,
+            "p90": 0.05971936992760675,
+            "p95": 0.12328762022005295,
+            "maximum": 0.364244499995918
+          },
+          "active_edges_abs_error_dex": {
+            "count": 549,
+            "median": 0.0074023524629469595,
+            "p90": 0.09093849850293054,
+            "p95": 0.14287678397905068,
+            "maximum": 0.2453562854112339
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.00418540414329982,
+            "p90": 0.05971936992760675,
+            "p95": 0.12328762022005244,
+            "maximum": 0.3642444999959149
+          },
+          "active_edges_abs_error_dex": {
+            "count": 549,
+            "median": 0.0074023524629469595,
+            "p90": 0.09093849850292024,
+            "p95": 0.14287678397903275,
+            "maximum": 0.24535628541121257
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1941,
+          "median": 0.14150899944206863,
+          "p90": 1.309741639771504,
+          "p95": 1.7310298522794714,
+          "maximum": 11.374764063341672
+        },
+        "active_edges_abs_error_dex": {
+          "count": 546,
+          "median": 0.364867332131948,
+          "p90": 1.5342140263793667,
+          "p95": 1.742097303190997,
+          "maximum": 3.4081695517638426
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 9.35140161603241e-17,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.5498324486439183e-14,
+          "hole_A_per_um": 3.2784051359025605e-20,
+          "total_A_per_um": -5.5498291702387824e-14,
+          "absolute_log10_error_dex": 2.7734029061666536,
+          "relative_error": 592.475651898421
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.54982235711652e-14,
+          "hole_A_per_um": 3.271977494946833e-20,
+          "total_A_per_um": -5.549819085139025e-14,
+          "absolute_log10_error_dex": 2.773402116969903,
+          "relative_error": 592.474573439793
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.549822357116524e-14,
+          "hole_A_per_um": 3.272032189131876e-20,
+          "total_A_per_um": -5.549819085084335e-14,
+          "absolute_log10_error_dex": 2.7734021169656238,
+          "relative_error": 592.4745734339447
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.55485122940972e-14,
+          "hole_A_per_um": 3.3707697322398893e-20,
+          "total_A_per_um": -5.554847858639988e-14,
+          "absolute_log10_error_dex": 2.7737954594704135,
+          "relative_error": 593.0123295652855
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_0p05_vg_0/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "d01d951768f1c3bdc6843c9db7d224027f4a95d59c89c0ba4e8fc01f4b6150dc"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 838,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.06452388537268217,
+          "p90": 1.3389902673664793,
+          "p95": 2.0706592490794447,
+          "maximum": 5.4383375744172024
+        },
+        "active_edges_abs_error_dex": {
+          "count": 838,
+          "median": 0.13241576813686518,
+          "p90": 0.9427730893965143,
+          "p95": 1.5256143692021054,
+          "maximum": 4.527696870590956
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.009757430162855463,
+            "p90": 0.12379069322251407,
+            "p95": 0.20735508174488812,
+            "maximum": 1.9728562884125924
+          },
+          "active_edges_abs_error_dex": {
+            "count": 838,
+            "median": 0.022739141716430655,
+            "p90": 0.16926909285240757,
+            "p95": 0.244379243930849,
+            "maximum": 0.8088558482503445
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.004129363824818988,
+            "p90": 0.059903029776278864,
+            "p95": 0.12218444502489918,
+            "maximum": 0.36753463336903325
+          },
+          "active_edges_abs_error_dex": {
+            "count": 838,
+            "median": 0.007801062591157648,
+            "p90": 0.10943257692650371,
+            "p95": 0.1578438936769582,
+            "maximum": 0.36753463336903325
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0041213406918072515,
+            "p90": 0.059903029774038656,
+            "p95": 0.12218444502489033,
+            "maximum": 0.367534633369033
+          },
+          "active_edges_abs_error_dex": {
+            "count": 838,
+            "median": 0.00780108852432948,
+            "p90": 0.10943257692650371,
+            "p95": 0.15784389367695556,
+            "maximum": 0.367534633369033
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1943,
+          "median": 0.10672159538664161,
+          "p90": 1.1241919202423023,
+          "p95": 1.5423889064829504,
+          "maximum": 11.374767505307124
+        },
+        "active_edges_abs_error_dex": {
+          "count": 833,
+          "median": 0.2213034143614525,
+          "p90": 1.2900650136371168,
+          "p95": 1.517272659554684,
+          "maximum": 3.460420152921926
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 4.74153376013846e-16,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.549800965151817e-14,
+          "hole_A_per_um": 3.278364617781126e-20,
+          "total_A_per_um": -5.5497976867872e-14,
+          "absolute_log10_error_dex": 2.0683583044494345,
+          "relative_error": 116.04646571208083
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.5497908445068067e-14,
+          "hole_A_per_um": 3.271937893136668e-20,
+          "total_A_per_um": -5.549787572568913e-14,
+          "absolute_log10_error_dex": 2.0683575129695573,
+          "relative_error": 116.04625240097101
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.549790844506811e-14,
+          "hole_A_per_um": 3.2719925768883725e-20,
+          "total_A_per_um": -5.549787572514234e-14,
+          "absolute_log10_error_dex": 2.068357512965278,
+          "relative_error": 116.0462523998178
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -5.5548195074983265e-14,
+          "hole_A_per_um": 3.370725711061337e-20,
+          "total_A_per_um": -5.554816136772615e-14,
+          "absolute_log10_error_dex": 2.068750841338943,
+          "relative_error": 116.15230593676941
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_0p05_vg_0p05/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "e21433e3aa1c627bad253df835bf1d1b49ace93c4934ef0847ee9f26e7dec1a4"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p05\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p05\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p05\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p05\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1051,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.01603962088419346,
+          "p90": 0.2568908722328971,
+          "p95": 0.4224155881012815,
+          "maximum": 2.9058007333464038
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1051,
+          "median": 0.016252075153930345,
+          "p90": 0.1780377730149425,
+          "p95": 0.27085230329653254,
+          "maximum": 0.5916218109199961
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.010058937685124114,
+            "p90": 0.10830025619026329,
+            "p95": 0.159103102058005,
+            "maximum": 0.9711874713931816
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1051,
+            "median": 0.032146262771625356,
+            "p90": 0.1379734907101544,
+            "p95": 0.182154136244836,
+            "maximum": 0.4542719540224982
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.003281805173370178,
+            "p90": 0.06604919299090974,
+            "p95": 0.1310515385342785,
+            "maximum": 0.4199557909377547
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1051,
+            "median": 0.006287739108911117,
+            "p90": 0.11136580544360086,
+            "p95": 0.15706347207165727,
+            "maximum": 0.4199557909377547
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0032849504853386113,
+            "p90": 0.06604919286590645,
+            "p95": 0.13105152578220092,
+            "maximum": 0.41995579093774804
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1051,
+            "median": 0.0062877391105076175,
+            "p90": 0.11136580543390551,
+            "p95": 0.1570634720407369,
+            "maximum": 0.41995579093774804
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1948,
+          "median": 0.06068335482187681,
+          "p90": 1.6629598313691427,
+          "p95": 3.2434938686762793,
+          "maximum": 11.374595943399504
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1051,
+          "median": 0.08622648772135033,
+          "p90": 0.6283954618786649,
+          "p95": 1.3257205999678559,
+          "maximum": 4.181210041072918
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 2.50679477323319e-08,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.5090641842970826e-08,
+          "hole_A_per_um": 3.277918138034645e-20,
+          "total_A_per_um": 2.5090641843003606e-08,
+          "absolute_log10_error_dex": 0.0003929906240349723,
+          "relative_error": 0.0009053038930041627
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.509068096893159e-08,
+          "hole_A_per_um": 3.2715016154060307e-20,
+          "total_A_per_um": 2.5090680968964306e-08,
+          "absolute_log10_error_dex": 0.0003936678556373252,
+          "relative_error": 0.0009068646893293436
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.50906809691812e-08,
+          "hole_A_per_um": 3.2715561839504246e-20,
+          "total_A_per_um": 2.5090680969213916e-08,
+          "absolute_log10_error_dex": 0.00039366785995742504,
+          "relative_error": 0.0009068646992866813
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 2.5088610921703638e-08,
+          "hole_A_per_um": 3.370240567700712e-20,
+          "total_A_per_um": 2.508861092173734e-08,
+          "absolute_log10_error_dex": 0.00035783593953819803,
+          "relative_error": 0.0008242872382723749
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_0p05_vg_0p8/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "9db0d3e8ae8cb441d97d0a2d886d323dbc0a6e7d01feda4945e1c755285e9da2"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p8\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p8\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p8\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_0p8\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1034,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.009203030063862583,
+          "p90": 0.06903645575511291,
+          "p95": 0.15696547716713752,
+          "maximum": 0.8967703143464164
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1034,
+          "median": 0.008230719842488465,
+          "p90": 0.05197100158526698,
+          "p95": 0.10602014710088355,
+          "maximum": 0.303309345920601
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.010274572744782495,
+            "p90": 0.13357103070171544,
+            "p95": 0.2134565391510502,
+            "maximum": 0.6577796432673162
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1034,
+            "median": 0.034181874575813787,
+            "p90": 0.21797572462200032,
+            "p95": 0.35448230156456345,
+            "maximum": 0.5062329416274416
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.004421689218071956,
+            "p90": 0.06757329070233867,
+            "p95": 0.12130986012097571,
+            "maximum": 0.40741830289778647
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1034,
+            "median": 0.009780356889387276,
+            "p90": 0.10871837760277424,
+            "p95": 0.15345565712067033,
+            "maximum": 0.40741830289778647
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.004414278041177111,
+            "p90": 0.06757308677889885,
+            "p95": 0.12130929898673048,
+            "maximum": 0.4074183027071898
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1034,
+            "median": 0.009780642419991104,
+            "p90": 0.10871352432818501,
+            "p95": 0.15345509185978448,
+            "maximum": 0.4074183027071898
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1948,
+          "median": 0.07426111976200722,
+          "p90": 2.285957082919333,
+          "p95": 3.817184474862332,
+          "maximum": 11.844389381823735
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1034,
+          "median": 0.09380454896434898,
+          "p90": 0.6658969308149637,
+          "p95": 1.1508736305881881,
+          "maximum": 4.184404319467393
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 4.96461008572384e-05,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 4.969158645529337e-05,
+          "hole_A_per_um": 3.284409453172449e-20,
+          "total_A_per_um": 4.96915864552934e-05,
+          "absolute_log10_error_dex": 0.0003977170428735022,
+          "relative_error": 0.0009161967862451094
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 4.969164006305343e-05,
+          "hole_A_per_um": 3.2780667133889685e-20,
+          "total_A_per_um": 4.9691640063053464e-05,
+          "absolute_log10_error_dex": 0.0003981855636734366,
+          "relative_error": 0.0009172765842380537
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 4.9691642306054856e-05,
+          "hole_A_per_um": 3.278121905541094e-20,
+          "total_A_per_um": 4.969164230605489e-05,
+          "absolute_log10_error_dex": 0.0003982051670332609,
+          "relative_error": 0.0009173217640484839
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 4.968636178494892e-05,
+          "hole_A_per_um": 3.377037705014709e-20,
+          "total_A_per_um": 4.9686361784948955e-05,
+          "absolute_log10_error_dex": 0.0003520520730759813,
+          "relative_error": 0.0008109585046030074
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_0p05_vg_2p5/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "c26654260e0734a13847095e4ba5a91b48c940d7ae888b1a8c0229ba6812a632"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_2p5\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_2p5\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_2p5\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_0p05_vg_2p5\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 437,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2836,
+          "median": 0.07493193719955826,
+          "p90": 1.0700547842038777,
+          "p95": 2.299767084053852,
+          "maximum": 16.578114901462882
+        },
+        "active_edges_abs_error_dex": {
+          "count": 436,
+          "median": 0.19826496295869322,
+          "p90": 1.5754852198768077,
+          "p95": 2.9644555475063745,
+          "maximum": 7.636899865907766
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.010727880071996876,
+            "p90": 0.15130516803971267,
+            "p95": 0.2508924805588965,
+            "maximum": 2.078776987197333
+          },
+          "active_edges_abs_error_dex": {
+            "count": 437,
+            "median": 0.00974501548847262,
+            "p90": 0.15001640806736566,
+            "p95": 0.2066762375423912,
+            "maximum": 0.5333537886195547
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.0054405782887795295,
+            "p90": 0.10210398300918289,
+            "p95": 0.1804224839225651,
+            "maximum": 0.4969502149537366
+          },
+          "active_edges_abs_error_dex": {
+            "count": 437,
+            "median": 0.007813353556851643,
+            "p90": 0.1254011722745343,
+            "p95": 0.1900152959438413,
+            "maximum": 0.4456246582464378
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005427375272739399,
+            "p90": 0.10153509106291835,
+            "p95": 0.17916253659340114,
+            "maximum": 0.49669705820627463
+          },
+          "active_edges_abs_error_dex": {
+            "count": 437,
+            "median": 0.007813353556851643,
+            "p90": 0.1254011722745309,
+            "p95": 0.18997468329327263,
+            "maximum": 0.43470699426474035
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1867,
+          "median": 0.1028672853762771,
+          "p90": 1.1163017657923917,
+          "p95": 1.5009287175032053,
+          "maximum": 11.439448479941252
+        },
+        "active_edges_abs_error_dex": {
+          "count": 404,
+          "median": 0.1822392795540555,
+          "p90": 1.3568504249340252,
+          "p95": 1.685535026143264,
+          "maximum": 2.506251630133278
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 3.3188074243741e-16,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.884027730112062e-14,
+          "hole_A_per_um": 3.6774182692464217e-20,
+          "total_A_per_um": -7.884024052693792e-14,
+          "absolute_log10_error_dex": 2.3757658875977086,
+          "relative_error": 236.55593635206642
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.884014709335499e-14,
+          "hole_A_per_um": 3.667900823392182e-20,
+          "total_A_per_um": -7.884011041434676e-14,
+          "absolute_log10_error_dex": 2.375765170866929,
+          "relative_error": 236.55554430584462
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.884014709335499e-14,
+          "hole_A_per_um": 3.667984825460037e-20,
+          "total_A_per_um": -7.884011041350673e-14,
+          "absolute_log10_error_dex": 2.3757651708623015,
+          "relative_error": 236.5555443033135
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.890585172114324e-14,
+          "hole_A_per_um": 3.7974965084582077e-20,
+          "total_A_per_um": -7.890581374617816e-14,
+          "absolute_log10_error_dex": 2.376126950054049,
+          "relative_error": 236.75351702143172
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_1_vg_0/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "a789ffe3c7ccee9b5d7f7a4870db704b9714348b1f759aaeeb3c02beec49a0e4"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 738,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2839,
+          "median": 0.05350617237757738,
+          "p90": 1.0591607254409698,
+          "p95": 2.311314777052032,
+          "maximum": 9.479293231467318
+        },
+        "active_edges_abs_error_dex": {
+          "count": 736,
+          "median": 0.10472852303989555,
+          "p90": 1.3248119261362752,
+          "p95": 2.3192574305677995,
+          "maximum": 7.636788675808179
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.010743059149650902,
+            "p90": 0.1484476976269482,
+            "p95": 0.24825769258961636,
+            "maximum": 2.0588744808129067
+          },
+          "active_edges_abs_error_dex": {
+            "count": 738,
+            "median": 0.016165880180707526,
+            "p90": 0.16739313768608569,
+            "p95": 0.24004866052908969,
+            "maximum": 0.7717149907030536
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005412861021979909,
+            "p90": 0.10154687632457376,
+            "p95": 0.1804671802853112,
+            "maximum": 0.5010399604704461
+          },
+          "active_edges_abs_error_dex": {
+            "count": 738,
+            "median": 0.008701150322072304,
+            "p90": 0.1282133580831249,
+            "p95": 0.18592676153529847,
+            "maximum": 0.47862838553827425
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005400903499245713,
+            "p90": 0.10154687632433675,
+            "p95": 0.1791890642190785,
+            "maximum": 0.5007977403514925
+          },
+          "active_edges_abs_error_dex": {
+            "count": 738,
+            "median": 0.008701150322072304,
+            "p90": 0.1282117859293989,
+            "p95": 0.1859267615352977,
+            "maximum": 0.4786028397063493
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1902,
+          "median": 0.09692910092097051,
+          "p90": 1.0408545363927524,
+          "p95": 1.484787575236018,
+          "maximum": 11.43948377380479
+        },
+        "active_edges_abs_error_dex": {
+          "count": 707,
+          "median": 0.16322905525892217,
+          "p90": 1.0765232330873686,
+          "p95": 1.3954361759721727,
+          "maximum": 3.460420152921926
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 6.37937675626451e-16,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.883988375746935e-14,
+          "hole_A_per_um": 3.6783432952443416e-20,
+          "total_A_per_um": -7.88398469740364e-14,
+          "absolute_log10_error_dex": 2.0919675209768336,
+          "relative_error": 122.58550056887003
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.883975318573357e-14,
+          "hole_A_per_um": 3.668825176204088e-20,
+          "total_A_per_um": -7.883971649748181e-14,
+          "absolute_log10_error_dex": 2.0919668022375575,
+          "relative_error": 122.58529604018398
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.883975318573357e-14,
+          "hole_A_per_um": 3.668909161462467e-20,
+          "total_A_per_um": -7.883971649664196e-14,
+          "absolute_log10_error_dex": 2.09196680223293,
+          "relative_error": 122.58529603886745
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": -7.890545519725077e-14,
+          "hole_A_per_um": 3.798492113712931e-20,
+          "total_A_per_um": -7.890541721232964e-14,
+          "absolute_log10_error_dex": 2.0923285688276803,
+          "relative_error": 122.688285277782
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_1_vg_0p05/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "a49327d02b2728c7ec46fdc6885d5d9f909add2a614e43f9643613d68a22af8e"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p05\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p05\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p05\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p05\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1033,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.01779452586260233,
+          "p90": 0.19772223124577198,
+          "p95": 0.32969631068816524,
+          "maximum": 5.134135851253611
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1033,
+          "median": 0.015685752526022334,
+          "p90": 0.18296419985107915,
+          "p95": 0.28502697192766174,
+          "maximum": 4.4441339648739095
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.010773006800126717,
+            "p90": 0.12462627696769876,
+            "p95": 0.20548429921162667,
+            "maximum": 1.350432021866819
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1033,
+            "median": 0.02154459807749398,
+            "p90": 0.14678788722366187,
+            "p95": 0.2139919537578906,
+            "maximum": 0.4542711921305582
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005148061419559369,
+            "p90": 0.10167728651024893,
+            "p95": 0.17795599419744482,
+            "maximum": 0.4756083587980746
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1033,
+            "median": 0.008233019902408323,
+            "p90": 0.12573727474388285,
+            "p95": 0.1829143132546278,
+            "maximum": 0.4756083587980746
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005126019912957247,
+            "p90": 0.10146237003851657,
+            "p95": 0.17649814968677133,
+            "maximum": 0.47519840232743804
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1033,
+            "median": 0.008279629863053195,
+            "p90": 0.12573721777067545,
+            "p95": 0.1826077284369616,
+            "maximum": 0.47519840232743804
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1947,
+          "median": 0.06530737118898644,
+          "p90": 1.5593400003875888,
+          "p95": 2.9639395469293213,
+          "maximum": 11.441246123619011
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1033,
+          "median": 0.09276903274585546,
+          "p90": 0.76791277251404,
+          "p95": 1.4339450173206574,
+          "maximum": 7.968055272684971
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 9.59235490600595e-08,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 9.601028692999268e-08,
+          "hole_A_per_um": 3.678003500197061e-20,
+          "total_A_per_um": 9.601028693002946e-08,
+          "absolute_log10_error_dex": 0.0003925288177573094,
+          "relative_error": 0.0009042395826664802
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 9.601043771335868e-08,
+          "hole_A_per_um": 3.668496582658888e-20,
+          "total_A_per_um": 9.601043771339536e-08,
+          "absolute_log10_error_dex": 0.0003932108731339312,
+          "relative_error": 0.0009058114945419274
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 9.601043771759913e-08,
+          "hole_A_per_um": 3.6685804342107774e-20,
+          "total_A_per_um": 9.601043771763582e-08,
+          "absolute_log10_error_dex": 0.00039321089231503237,
+          "relative_error": 0.0009058115387485767
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 9.600245980083246e-08,
+          "hole_A_per_um": 3.7981177451679136e-20,
+          "total_A_per_um": 9.600245980087044e-08,
+          "absolute_log10_error_dex": 0.0003571220120877072,
+          "relative_error": 0.0008226420058908911
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_1_vg_0p8/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "5e87bd99dcf5db2c95d84d6161799e56f714bb5fca5dfbc86fb6dbb3d9ecbb04"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p8\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p8\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p8\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_0p8\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "silicon_edge_count": 2842,
+      "active_current_edge_count": 1022,
+      "drive": {
+        "all_edges_abs_error_dex": {
+          "count": 2842,
+          "median": 0.012080126845325223,
+          "p90": 0.09704831041375146,
+          "p95": 0.1710698799188516,
+          "maximum": 3.2822598994567507
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1022,
+          "median": 0.010293515178889434,
+          "p90": 0.07625985604573095,
+          "p95": 0.15154039609935516,
+          "maximum": 1.6511974897314743
+        }
+      },
+      "electron_mobility": {
+        "vela_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.01092144393238148,
+            "p90": 0.12751631357890836,
+            "p95": 0.1904116487419683,
+            "maximum": 1.0846423032244867
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1022,
+            "median": 0.024631715007918498,
+            "p90": 0.1499505688883753,
+            "p95": 0.2056256920480771,
+            "maximum": 0.554827292447559
+          }
+        },
+        "sentaurus_drive": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005489747769171105,
+            "p90": 0.08752206159201605,
+            "p95": 0.14453111549367456,
+            "maximum": 0.409811112505156
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1022,
+            "median": 0.008961565766994362,
+            "p90": 0.10209753273445496,
+            "p95": 0.14256631209168105,
+            "maximum": 0.4050584568129878
+          }
+        },
+        "sentaurus_drive_sensitivity": {
+          "all_edges_abs_error_dex": {
+            "count": 2842,
+            "median": 0.005499304028625973,
+            "p90": 0.08668845193570585,
+            "p95": 0.14440622768094716,
+            "maximum": 0.40740087398591274
+          },
+          "active_edges_abs_error_dex": {
+            "count": 1022,
+            "median": 0.008863456731200259,
+            "p90": 0.10208519905667218,
+            "p95": 0.14256182737672074,
+            "maximum": 0.4050584550670149
+          }
+        }
+      },
+      "projected_electron_line_current": {
+        "all_edges_abs_error_dex": {
+          "count": 1947,
+          "median": 0.06610620571788495,
+          "p90": 2.2351753466833206,
+          "p95": 3.7782223070984893,
+          "maximum": 12.592995045462585
+        },
+        "active_edges_abs_error_dex": {
+          "count": 1022,
+          "median": 0.07723944696452889,
+          "p90": 0.6724496586443445,
+          "p95": 1.2095841095351534,
+          "maximum": 9.662191992346086
+        },
+        "interpretation": "Sentaurus nodal current projected onto Vela primal edges; localization diagnostic, not an exact discretization identity"
+      },
+      "sentaurus_terminal_current_A_per_um": 0.000278225798429149,
+      "terminal_current_replay": {
+        "vela_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.0002784948698989484,
+          "hole_A_per_um": 3.7194189271249234e-20,
+          "total_A_per_um": 0.00027849486989894845,
+          "absolute_log10_error_dex": 0.0004198021389125728,
+          "relative_error": 0.0009670974845560639
+        },
+        "sentaurus_drive_vela_hfs": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.0002784898727012889,
+          "hole_A_per_um": 3.710001379180361e-20,
+          "total_A_per_um": 0.00027848987270128893,
+          "absolute_log10_error_dex": 0.0004120092670345521,
+          "relative_error": 0.0009491365417256755
+        },
+        "sentaurus_drive_vela_hfs_sensitivity": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.0002784899578984502,
+          "hole_A_per_um": 3.710091256480611e-20,
+          "total_A_per_um": 0.00027848995789845027,
+          "absolute_log10_error_dex": 0.00041214212878282197,
+          "relative_error": 0.0009494427576187327
+        },
+        "sentaurus_final_mobility": {
+          "crossing_edge_count": 7,
+          "electron_A_per_um": 0.00027841011276469465,
+          "hole_A_per_um": 3.841066496368037e-20,
+          "total_A_per_um": 0.0002784101127646947,
+          "absolute_log10_error_dex": 0.00028760883075973354,
+          "relative_error": 0.0006624631381644392
+        }
+      },
+      "artifacts": {
+        "edge_comparison": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/replay/n21_vd_1_vg_2p5/edge_replay_comparison.csv"
+      },
+      "state_import": {
+        "node_count": 1540,
+        "silicon_node_count": 993,
+        "state_sha256": "da0592920c8ea894842966c1b00281c4154ce6a7f906d29ae344eb1cf6cfa007"
+      },
+      "probe_statuses": {
+        "vela_drive_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_2p5\\vela_drive_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": false,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "vela_drive_sg_edges": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_2p5\\vela_drive_sg_edges.json",
+          "converged": true,
+          "edge_count": 4401,
+          "nodes": 1540,
+          "simulation_type": "sg_edge_flux_probe"
+        },
+        "sentaurus_mean_endpoint_magnitude_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_2p5\\sentaurus_mean_endpoint_magnitude_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_mean_endpoint_grad_qf_magnitude",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        },
+        "sentaurus_magnitude_of_mean_vector_edge_mobility": {
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m10_fixed_state_replay\\replay\\n21_vd_1_vg_2p5\\sentaurus_magnitude_of_mean_vector_edge_mobility.json",
+          "converged": true,
+          "diagnostic_schema": "vela.edge_mobility_probe.v2",
+          "edge_count": 4401,
+          "external_mobility_drive_override_used": true,
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "high_field_gradient_discretization": "transport_cell_vector",
+          "mobility_drive_override_provenance": "sentaurus_magnitude_of_mean_endpoint_grad_qf_vector",
+          "mobility_model": "phumob_field_lombardi",
+          "nodes": 1540,
+          "simulation_type": "edge_mobility_probe",
+          "state_carrier_populations_used": true,
+          "temperature_K": 300.0
+        }
+      }
+    }
+  ]
+}

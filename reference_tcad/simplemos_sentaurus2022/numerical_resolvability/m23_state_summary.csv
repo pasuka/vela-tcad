@@ -1,0 +1,5 @@
+case,state_variant,edge_count,maximum_sg_cancellation_condition,maximum_production_vs_decimal_relative_error,maximum_subtractive_vs_decimal_stable_relative_error,maximum_one_ulp_flux_relative_envelope,minimum_qf_drop_ulps,absolute_export_collapsed_edge_count,resolved_edge_count
+m21_stable_weak_inversion,baseline,11,2988661555.511642,4.4902674778984784e-15,2.759427863475027e-06,2.5160075895207333e-16,4222960360272217.5,0,11
+m21_stable_weak_inversion,sentaurus_import,11,3440411661.249867,3.675476386873527e-15,3.2757244068225076e-06,2.418803556211012e-16,4651059807505038.0,0,11
+m22_deep_off,full,7,1979426197951810.5,3.863182016200291e-15,857.6077931022805,1.973729821555834e-16,5066549580791808.0,5,7
+m22_deep_off,no_hfs,7,1979426197951810.5,3.664826899557497e-15,771.9470137920524,2.2078630892916767e-16,4529266351931392.0,5,7

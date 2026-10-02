@@ -1,0 +1,248 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M57 doping-well boundary flux closure",
+    "description": "Frozen 48-state complete DopingWells boundary reconstruction.",
+    "generatedAt": "2026-09-02T00:00:00+08:00",
+    "sources": [
+      {
+        "id": "src_m57",
+        "label": "M57 machine report",
+        "path": "reference_tcad/simplemos_sentaurus2022/doping_well_boundary_flux_closure/m57_doping_well_boundary_flux_closure_report.json"
+      },
+      {
+        "id": "src_contract",
+        "label": "Frozen M57 contract",
+        "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m57_doping_well_boundary_flux_closure_contract_v1.json"
+      }
+    ],
+    "tables": [
+      {
+        "id": "target",
+        "title": "Target carrier closure",
+        "dataset": "target",
+        "sourceId": "src_m57",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "contact",
+            "label": "Contact",
+            "type": "text"
+          },
+          {
+            "field": "component",
+            "label": "Carrier",
+            "type": "text"
+          },
+          {
+            "field": "default_A_per_um",
+            "label": "Default",
+            "format": "number"
+          },
+          {
+            "field": "predicted_default_A_per_um",
+            "label": "Reconstructed",
+            "format": "number"
+          },
+          {
+            "field": "default_closure_residual_A_per_um",
+            "label": "Residual",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M57 doping-well boundary flux closure"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "sourceId": "src_m57",
+        "body": "Outcome: `boundary_quadrature_limited`. Read-only reconstruction of 48 frozen M55 states."
+      },
+      {
+        "id": "target",
+        "type": "table",
+        "tableId": "target"
+      },
+      {
+        "id": "limits",
+        "type": "markdown",
+        "sourceId": "src_contract",
+        "body": "The result tests a frozen midpoint partition of exported nodal fields and does not authorize a production change."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-09-02T00:00:00+08:00",
+    "status": "ready",
+    "datasets": {
+      "target": [
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "source",
+          "component": "electron",
+          "well_label": 1,
+          "default_A_per_um": -1.18378828824186e-16,
+          "direct_A_per_um": 1.42186274465536e-15,
+          "signed_well_srh_charge_current_A_per_um": 1.1696558682202705e-27,
+          "physical_contact_terminal_oriented_flux_A_per_um": 1.0606013573310996e-15,
+          "interior_interface_terminal_oriented_flux_A_per_um": 1.2031202082183813e-16,
+          "other_exterior_terminal_oriented_flux_A_per_um": -1.2666768748322695e-15,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": -8.576349667933175e-17,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": -1.1463648540104315e-15,
+          "m55_inferred_surface_redistribution_A_per_um": -1.5402415734807157e-15,
+          "predicted_default_A_per_um": -8.57634966781621e-17,
+          "direct_anchor_residual_A_per_um": -3.6126138732426035e-16,
+          "direct_anchor_symmetric_relative_difference": 0.2540761326521887,
+          "default_closure_residual_A_per_um": 3.2615332146023915e-17,
+          "default_closure_symmetric_relative_difference": 0.27551659760431985,
+          "direct_anchor_within_tolerance": false,
+          "default_closure_within_tolerance": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "source",
+          "component": "hole",
+          "well_label": 1,
+          "default_A_per_um": 2.52519076483623e-25,
+          "direct_A_per_um": 7.80105692753562e-32,
+          "signed_well_srh_charge_current_A_per_um": -1.1696558682202705e-27,
+          "physical_contact_terminal_oriented_flux_A_per_um": 8.693301862118369e-32,
+          "interior_interface_terminal_oriented_flux_A_per_um": 4.605592023315399e-21,
+          "other_exterior_terminal_oriented_flux_A_per_um": -5.515239496840914e-26,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": 4.605536871007363e-21,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": 4.60553687092043e-21,
+          "m55_inferred_surface_redistribution_A_per_um": 2.5368865434127396e-25,
+          "predicted_default_A_per_um": 4.605535701351495e-21,
+          "direct_anchor_residual_A_per_um": 8.922449345827495e-33,
+          "direct_anchor_symmetric_relative_difference": 0.10263590851144433,
+          "default_closure_residual_A_per_um": 4.6052831822750115e-21,
+          "default_closure_symmetric_relative_difference": 0.9999451705311047,
+          "direct_anchor_within_tolerance": true,
+          "default_closure_within_tolerance": true
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "drain",
+          "component": "electron",
+          "well_label": 4,
+          "default_A_per_um": 8.58293890693139e-17,
+          "direct_A_per_um": 1.42224043507531e-15,
+          "signed_well_srh_charge_current_A_per_um": 1.8695888745080053e-18,
+          "physical_contact_terminal_oriented_flux_A_per_um": 1.5588298615358112e-15,
+          "interior_interface_terminal_oriented_flux_A_per_um": -8.029429183118885e-17,
+          "other_exterior_terminal_oriented_flux_A_per_um": 6.9045768590117605e-15,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": 8.383112428716382e-15,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": 6.824282567180572e-15,
+          "m55_inferred_surface_redistribution_A_per_um": -1.338280634880504e-15,
+          "predicted_default_A_per_um": 8.38498201759089e-15,
+          "direct_anchor_residual_A_per_um": 1.3658942646050124e-16,
+          "direct_anchor_symmetric_relative_difference": 0.0876230497187992,
+          "default_closure_residual_A_per_um": 8.299152628521576e-15,
+          "default_closure_symmetric_relative_difference": 0.989763914950652,
+          "direct_anchor_within_tolerance": false,
+          "default_closure_within_tolerance": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "drain",
+          "component": "hole",
+          "well_label": 4,
+          "default_A_per_um": 3.31209009844775e-20,
+          "direct_A_per_um": 3.31208062791424e-20,
+          "signed_well_srh_charge_current_A_per_um": -1.8695888745080053e-18,
+          "physical_contact_terminal_oriented_flux_A_per_um": 3.1860566227230885e-20,
+          "interior_interface_terminal_oriented_flux_A_per_um": -5.2940068029783344e-18,
+          "other_exterior_terminal_oriented_flux_A_per_um": 2.0671299312506914e-21,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": -5.260079106819853e-18,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": -5.291939673047084e-18,
+          "m55_inferred_surface_redistribution_A_per_um": 1.8695889692133404e-18,
+          "predicted_default_A_per_um": -7.129667981327858e-18,
+          "direct_anchor_residual_A_per_um": -1.260240051911517e-21,
+          "direct_anchor_symmetric_relative_difference": 0.03804979991399377,
+          "default_closure_residual_A_per_um": -7.162788882312335e-18,
+          "default_closure_symmetric_relative_difference": 1.0046455039801598,
+          "direct_anchor_within_tolerance": false,
+          "default_closure_within_tolerance": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "substrate",
+          "component": "electron",
+          "well_label": 0,
+          "default_A_per_um": 4.67098440284444e-17,
+          "direct_A_per_um": -2.37611367355765e-19,
+          "signed_well_srh_charge_current_A_per_um": 1.530362699466223e-17,
+          "physical_contact_terminal_oriented_flux_A_per_um": -2.376797223029523e-19,
+          "interior_interface_terminal_oriented_flux_A_per_um": -3.705259653620111e-17,
+          "other_exterior_terminal_oriented_flux_A_per_um": 2.7535405475920328e-17,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": -9.754870782583734e-18,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": -9.517191060280782e-18,
+          "m55_inferred_surface_redistribution_A_per_um": 3.1643828401137933e-17,
+          "predicted_default_A_per_um": 5.5487562120784974e-18,
+          "direct_anchor_residual_A_per_um": -6.835494718731313e-23,
+          "direct_anchor_symmetric_relative_difference": 0.0002875926752396078,
+          "default_closure_residual_A_per_um": -4.1161087816365906e-17,
+          "default_closure_symmetric_relative_difference": 0.8812079910029345,
+          "direct_anchor_within_tolerance": true,
+          "default_closure_within_tolerance": false
+        },
+        {
+          "state": "n23_vd_0p05_vg_0p05",
+          "device": "n23",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "contact": "substrate",
+          "component": "hole",
+          "well_label": 0,
+          "default_A_per_um": -1.71969132855088e-17,
+          "direct_A_per_um": -1.71908616765922e-17,
+          "signed_well_srh_charge_current_A_per_um": -1.530362699466223e-17,
+          "physical_contact_terminal_oriented_flux_A_per_um": -1.7157155842920134e-17,
+          "interior_interface_terminal_oriented_flux_A_per_um": 5.289401364043627e-18,
+          "other_exterior_terminal_oriented_flux_A_per_um": -2.745675134565037e-18,
+          "complete_well_terminal_oriented_surface_flux_A_per_um": -1.4613429613441545e-17,
+          "reconstructed_noncontact_surface_redistribution_A_per_um": 2.54372622947859e-18,
+          "m55_inferred_surface_redistribution_A_per_um": 1.529757538574563e-17,
+          "predicted_default_A_per_um": -2.991705660810378e-17,
+          "direct_anchor_residual_A_per_um": 3.37058336720649e-20,
+          "direct_anchor_symmetric_relative_difference": 0.0019606831993744783,
+          "default_closure_residual_A_per_um": -1.2720143322594979e-17,
+          "default_closure_symmetric_relative_difference": 0.42518030731503886,
+          "direct_anchor_within_tolerance": true,
+          "default_closure_within_tolerance": false
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "src_m57",
+      "label": "M57 machine report",
+      "path": "reference_tcad/simplemos_sentaurus2022/doping_well_boundary_flux_closure/m57_doping_well_boundary_flux_closure_report.json"
+    }
+  ]
+}

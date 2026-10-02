@@ -1,0 +1,6 @@
+name,amplitude_cm_3,current_A_per_um,exit_code,iterations,reason,local_violations,kcl_over_Id,current_relative_change,electron_global_qualified,hole_global_qualified,qualified
+zero,0.0,1.787614326121388e-08,0,0,stall_residual_floor,0,1.716926063867485e-11,0.0,False,False,True
+plus_1e13,10000000000000.0,1.7885463268568663e-08,0,3,reltol,0,3.7171519049435056e-16,4.877143133796835e-11,False,False,True
+minus_1e13,-10000000000000.0,1.7866828067698382e-08,0,3,reltol,0,8.98338168088606e-16,-4.8922088602409985e-11,False,False,True
+plus_5e12,5000000000000.0,1.7880802661252615e-08,0,11,stall_residual_floor,0,6.403663225842355e-16,1.3321344027872328e-11,False,False,True
+minus_5e12,-5000000000000.0,1.787148506112177e-08,0,7,stall_residual_floor,0,1.5534649265419264e-15,-6.272760089132134e-14,False,False,True

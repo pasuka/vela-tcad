@@ -1,0 +1,4 @@
+arm,four_point_gate_passed,M82_released,M83_released
+transport,False,False,False
+poisson_volume,False,False,False
+joint,True,False,False

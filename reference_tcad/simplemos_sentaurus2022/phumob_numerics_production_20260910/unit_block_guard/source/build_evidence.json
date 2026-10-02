@@ -1,0 +1,24 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/assembler.o": "9d51093eb9e7d26514a5b8d881fe477daabb806d2d13d3e8278d3f6efb9fdcb1",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/assembler.o_compile.json": "fb5f6bff4208fe53a755b6c06190e324765ffed6c1c468ac59773d72a823b847",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/assembler.o_compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/CoupledDDAssembler.cpp": "804ff0320c71699df2a8051ad4c381ee34986f7f12df55de13a453935c1aaa22",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/jacobian_runner.exe": "814081b9676928cce8e0e1b7bdfdf7f67aa2b015d37897a90ba3787dda763e18",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/jacobian_runner_link.json": "ab558b8f2ff83837055c944d788b413f2c9216a4c809d986901e9d99b3d85eb7",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/jacobian_runner_link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner.cpp": "9c73cd91f3d44109b87a08593bcb2e5cfa23ba5aa6d2b4e878d949852442cb9f",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner.exe": "445c85795acf3333dd02a5ecf5158db2d50b2f2679cb853ea9431cbe4dd4e97d",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner.o": "7b7c14741a91410cde06bf32447b754e823b15527d373bbfd9e9eab8e67f9a17",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner.o_compile.json": "6a1db4134fb1b1f00f9ef378e14af0ff118be8270d50d7295ef4b0b18287fc0d",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner.o_compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner_link.json": "9783b589c1385abdf2ce71bf0852ab1a1054740a7cc3e390861d753faf187cc7",
+    "build-release/phumob_numerics_production_20260910/unit_block_guard/source/runner_link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/unit_block_guard/validation_freeze.json": "dbb45e8310f339609c6d89f91a1bef62379728e038878e3e6bd3d76896603cc1",
+    "scripts/build_simplemos_constants_srh_calibration_20260907.py": "ecee71c121ee9603661c3d2690295717347ece2e7eb44801814da6621bfd9c84",
+    "scripts/calibrate_simplemos_phumob_local_source_20260909.py": "620a6536d6df9d7b69a3c34a08c25e62e49e88880ea9b78c775a78755ee9c6dd",
+    "scripts/validate_simplemos_production_source_20260910.py": "96f0ddd4e16d09d95f6b8e935d637c069c355fbf45377122c07b1b83ed410f85",
+    "src/equation/CoupledDDAssembler.cpp": "1d7ff86e020b2081e02d66ca4911d4cd53df0fa4249b4cdc1c1dbc199b2d243a",
+    "src/tools/vela_example_runner.cpp": "e70e87ff5f5e949dea2b536d99ebfd2419f8df02a651ce9b27108d62028a8526"
+  }
+}

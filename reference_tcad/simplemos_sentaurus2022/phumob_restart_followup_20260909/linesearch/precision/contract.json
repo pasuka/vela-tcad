@@ -1,0 +1,21 @@
+{
+  "scope": "Actual first-iteration 13 rejected candidates from the frozen e1089 failure; all Poisson and free Si carrier rows. Output-only replay preserves state, status, repeated residuals.",
+  "precisions": [
+    60,
+    100
+  ],
+  "modes": [
+    "rounded",
+    "kernel",
+    "split",
+    "ideal"
+  ],
+  "BGN": "Include intrinsic-density log drift in both carrier fluxes; independent unfactorized density-SG check on kernel operands.",
+  "coefficients": "Production double geometry, ni, mobility and lifetimes are fixed per candidate. Split/ideal arithmetic is a fixed-coefficient diagnostic, not full high-precision constitutive or self-consistent recomputation.",
+  "gates": {
+    "precision_agreement": 1e-20,
+    "reconstruction": 1e-10,
+    "row": 1e-06
+  },
+  "decisions": "Compare each representation against its own base. Preserve actual rejected candidates; no high precision diagnostic becomes an accepted state."
+}

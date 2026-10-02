@@ -1,0 +1,111 @@
+{
+  "schema": "vela.simplemos.sdevice.m57_doping_well_boundary_flux_closure_contract.v1",
+  "contract_id": "simplemos-sdevice-m57-doping-well-boundary-flux-closure-v1",
+  "objective": "At the exact 48 frozen M55 states, reconstruct the complete source-, drain-, and substrate-associated DopingWells boundary flux from exported nodal carrier-current density and test whether terminal-oriented full-well surface flux plus the frozen well-volume SRH charge term closes the Sentaurus default terminal carrier current.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m55_status": "accepted",
+    "required_m55_classification": "nwell_changes_well_topology_surface_redistribution",
+    "required_m55_state_count": 48,
+    "required_m55_well_row_count": 144,
+    "required_m55_terminal_component_row_count": 576,
+    "orientation_anchor": "M49/M50 establish that geometric outward exported contact-face flux is the negative of Sentaurus terminal orientation; M52 establishes DirectCurrent as the native physical-contact surface anchor.",
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment packing",
+      "M46 bitwise identity to M8",
+      "M47 default-BGN-on six-state attribution",
+      "M50 native physical-contact face observability",
+      "M51 CurrentWeighting and M52 DirectCurrent six-state attribution",
+      "M53 DirectCurrent full-matrix qualification",
+      "M54 source-drain common-mode decomposition",
+      "M55 contact-associated doping-well topology and SRH attribution"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "contacts": ["source", "drain", "substrate"],
+    "carrier_components": ["electron", "hole"],
+    "required_state_count": 48,
+    "required_well_count": 144,
+    "required_component_closure_count": 288
+  },
+  "fixed_state_policy": {
+    "source_states": "the exact existing M55 exported states and terminal/SRH ledgers",
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "allowed_operations": [
+      "read existing M55 nodes, Silicon triangles, contacts, DopingWells, eCurrentDensity, and hCurrentDensity",
+      "read frozen M55 default, DirectCurrent, and signed well-SRH ledger values",
+      "perform deterministic geometric reconstruction and write analysis artifacts"
+    ]
+  },
+  "boundary_reconstruction": {
+    "well_label_rule": "The named contact well label is the unique integer DopingWells value on every Silicon node of that contact; it must equal the frozen M55 seed-derived well index.",
+    "unassociated_wells": "Integer DopingWells labels not associated with source, drain, or substrate remain distinct neighboring partitions and are never merged into a terminal-associated well.",
+    "interior_interface_rule": "For a Silicon triangle containing exactly two DopingWells labels, the partition interface is the segment joining the midpoints of its two unlike-label edges. Nodal current density is linearly interpolated to those midpoints.",
+    "uniform_triangle_rule": "A Silicon triangle whose three vertices share a label is wholly assigned to that label.",
+    "exterior_edge_rule": "A Silicon exterior edge with equal endpoint labels belongs wholly to that label; an unlike-label exterior edge is split at its midpoint between the endpoint labels.",
+    "normal_rule": "Every reconstructed segment uses a unit normal pointing geometrically outward from the named well partition, selected from local triangle geometry without state-, device-, contact-, or component-dependent sign fitting.",
+    "quadrature_rule": "Use the trapezoidal average of linearly interpolated endpoint current-density vectors on each straight segment.",
+    "normalization_rule": "Current density in A/cm2 times segment length in um times 1e-8 yields 2-D current in A/um.",
+    "terminal_orientation_rule": "terminal-oriented carrier surface current equals negative geometric outward carrier flux for every state, contact, and carrier.",
+    "boundary_classes": [
+      "physical_contact",
+      "interior_doping_well_interface",
+      "other_semiconductor_exterior"
+    ],
+    "closure_formula": "default terminal carrier current = negative complete geometric outward associated-well boundary flux + frozen signed associated-well SRH charge current",
+    "direct_anchor_formula": "DirectCurrent terminal carrier current = negative geometric outward physical-contact flux"
+  },
+  "analysis": {
+    "target": {"device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.05},
+    "controls": [
+      "n23 adjacent Vg=0.00 and 0.10 V",
+      "matched low-NWell n19 at Vg=0.00, 0.05, and 0.10 V",
+      "all eight devices, both drain voltages, and all three low-gate states"
+    ],
+    "classifications": {
+      "full_doping_well_boundary_closure": "The DopingWells partition is unambiguous, every reconstructed physical-contact carrier flux matches its DirectCurrent anchor, and every complete-well surface-plus-SRH carrier prediction closes the default terminal current within the frozen tolerances.",
+      "boundary_quadrature_limited": "The DopingWells partition is unambiguous, but one or more exported nodal physical-contact reconstructions fail the DirectCurrent anchor tolerance, so the same nodal quadrature cannot decisively test complete-well closure.",
+      "doping_well_partition_ambiguous": "A contact label is non-unique, a label is non-integer, a Silicon triangle contains more than two labels, or the midpoint partition cannot form the required deterministic boundary.",
+      "closure_mismatch": "The DopingWells partition is unambiguous and all physical-contact anchors pass, but one or more complete-well surface-plus-SRH predictions fail to close the default terminal carrier current.",
+      "upstream_state_mismatch": "A frozen M55 report, state count, ledger count, contact-well index, topology invariance, or upstream hash check fails."
+    },
+    "claim_guard": "M57 tests one explicitly frozen reconstruction of the exported nodal DopingWells partition. Failure to close does not prove a Sentaurus defect or authorize a Vela production change; it identifies either exported-field quadrature limitation or a mismatch between this reconstruction and Sentaurus's internal default terminal integration surface."
+  },
+  "acceptance": {
+    "doping_well_integer_tolerance": 1e-9,
+    "required_maximum_labels_per_silicon_triangle": 2,
+    "direct_anchor_absolute_tolerance_A_per_um": 1e-22,
+    "direct_anchor_relative_tolerance": 0.005,
+    "default_closure_absolute_tolerance_A_per_um": 1e-20,
+    "default_closure_relative_tolerance": 0.005,
+    "opposite_interface_flux_absolute_tolerance_A_per_um": 1e-25,
+    "required_state_count": 48,
+    "required_well_count": 144,
+    "required_component_closure_count": 288,
+    "contract_hash_must_remain_unchanged": true,
+    "upstream_hashes_must_remain_unchanged": true,
+    "classification_must_be_declared": true,
+    "closed_topics_must_remain_closed": true
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela solves",
+    "HFS, SG, quasi-Fermi, BGN, SRH-model, mobility, contact-model, mesh, electrode, solve-path, or production-default changes",
+    "device-specific, bias-specific, state-specific, contact-specific, or carrier-specific normal/sign fitting",
+    "merging unassociated DopingWells labels into a terminal well",
+    "changing reconstruction rules, tolerances, or classifications after freezing the contract"
+  ],
+  "required_artifacts": [
+    "frozen contract and upstream hash manifest",
+    "boundary-segment flux ledger",
+    "144-row well boundary summary",
+    "288-row carrier closure ledger",
+    "matched-NWell and target/control summaries",
+    "machine-readable report, evidence manifest, regression test, and human-readable report"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "pairs": 122,
+  "qualified": 122,
+  "all_available_pairs_qualified": true,
+  "max_dual_Id_relative": 7.676833613246004e-10,
+  "max_psi_V": 1.509315e-11,
+  "max_phin_V": 1.0863621e-10,
+  "max_phip_V": 2.55854149e-09,
+  "max_density_relative": 9.896880759363569e-08,
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "scope": "Snapshot of already completed qualified pairs only. This does not certify the remaining curve targets or replace the final 204-point comparison."
+}

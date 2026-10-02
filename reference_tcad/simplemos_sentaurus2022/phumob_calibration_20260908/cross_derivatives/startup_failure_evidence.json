@@ -1,0 +1,6 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/freeze.json": "40d62702329afebc3a5fe84ec78561fc7130cec6a51b1a770719d7f4b2fdd0eb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/process.json": "e35cf1e0b727073ccb0b8a880a36e5967554d30b9416856e9c783bb7bd4c122f"
+  }
+}

@@ -1,0 +1,17 @@
+key,amplitude,port,derivative_A_per_um
+m65_n19_vd_0p050000_endpoint,full,drain,2.1827682639852244e-21
+m65_n19_vd_0p050000_endpoint,full,gate,0.0
+m65_n19_vd_0p050000_endpoint,full,source,0.0
+m65_n19_vd_0p050000_endpoint,full,substrate,-2.182765928217388e-21
+m65_n19_vd_0p050000_endpoint,half,drain,4.363649967115613e-21
+m65_n19_vd_0p050000_endpoint,half,gate,0.0
+m65_n19_vd_0p050000_endpoint,half,source,0.0
+m65_n19_vd_0p050000_endpoint,half,substrate,-4.36363626682036e-21
+m65_n23_vd_0p050000_endpoint,full,drain,6.223812651790283e-22
+m65_n23_vd_0p050000_endpoint,full,gate,0.0
+m65_n23_vd_0p050000_endpoint,full,source,0.0
+m65_n23_vd_0p050000_endpoint,full,substrate,-6.223812836679557e-22
+m65_n23_vd_0p050000_endpoint,half,drain,1.2439045701679188e-21
+m65_n23_vd_0p050000_endpoint,half,gate,0.0
+m65_n23_vd_0p050000_endpoint,half,source,0.0
+m65_n23_vd_0p050000_endpoint,half,substrate,-1.2439043513822771e-21

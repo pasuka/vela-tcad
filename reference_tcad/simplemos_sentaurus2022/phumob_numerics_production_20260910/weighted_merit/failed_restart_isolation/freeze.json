@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/weighted_merit/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_000/attempt_1/config.status.json": "90f18aab01b8efff63babcbac4108ba54c0d451c00d9d2eca32fa34ff7064436",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_000/attempt_1/state.csv": "ef51d6d7bd016af23c81a7f52cd920b7cbffb1b6e4fdacf697c73628c8455378",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/combined/original.json": "47055e804309e8e195e0ab4a175cf0d81754b4877d4371d1edbc2a8f1ff1a499",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/double_poisson/original.json": "952ff9c0ff51c97af2c24183f4d9369627872da54a3364224f8133bd3c23f6d5",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/ordinary_merit/original.json": "5a18e6742311f82b93cfb69903799e051425b820e4018608bad9ac848878e497",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/unprojected_contacts/original.json": "c1eeaa5780ae555b5d02f75b7d91dacf8be6cb3cc50c0480878e19674be60f5d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/contract.json": "109dc693a8fd4ea58e215ca03f33634cc3f7a3b338024bdec4a29f45b8eb6eee",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/validation_freeze.json": "a2c2f60327f4df6f1af1131ff972428ae6e54e8cbce57fb4d5c7ed66e9834b5c",
+    "scripts/isolate_simplemos_production_failed_restart_20260910.py": "6582abfe9a7537fac026efc59147c4b24ee10c744bed3b249d83df976da85729"
+  }
+}

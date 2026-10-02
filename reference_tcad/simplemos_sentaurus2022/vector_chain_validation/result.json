@@ -1,0 +1,10 @@
+{
+  "strict_states": 5,
+  "max_fd_adjoint_relative": 2.8220243475374218e-08,
+  "max_current_relative_change": 4.8922088602409985e-11,
+  "passed": true,
+  "new_nonlinear_solves": 5,
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

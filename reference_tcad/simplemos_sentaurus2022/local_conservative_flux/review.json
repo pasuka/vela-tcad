@@ -1,0 +1,421 @@
+{
+  "input_hashes": {
+    "scripts/review_simplemos_local_conservative_flux.py": "1b75eddf5fa20a5a409081eabbeb9fedcf828e05c158c7466cb881af1b990a8a"
+  },
+  "original_acceptance_passed": 26,
+  "states": [
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/channel/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 7.369764377649481e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/channel/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 4.188626110612891e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/channel/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.2881285187149735e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/channel/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.3911411988492272e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/drain_contact/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.4672212536640106e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/drain_contact/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 9.796369407758895e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/drain_contact/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.2202648960110706e-14,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/drain_contact/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.3090616340718565e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_0p050000_endpoint/zero",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.716926063867485e-11,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 3.1486177800320095e-10,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 4.037264060839283e-11,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.925889372885783e-10,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 2.520793895097571e-11,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/channel/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 7.44379334775117e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/channel/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 4.230387433376267e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/channel/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 2.8524373717368366e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/channel/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 5.9483910205976554e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/drain_contact/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.1599529112400736e-14,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/drain_contact/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 3.712133311442497e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/drain_contact/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 6.221784696620665e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/drain_contact/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 9.269182913165475e-15,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/m65_n23_vd_1p000000_endpoint/zero",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.1638567980496732e-10,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/minus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.7328072144907504e-09,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/minus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 5.276940053373609e-09,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/plus_full",
+      "original_acceptance": true,
+      "kcl_over_Id": 1.0988229656296085e-09,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    },
+    {
+      "path": "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/plus_half",
+      "original_acceptance": true,
+      "kcl_over_Id": 3.2627660563923334e-09,
+      "electron_global_qualified": false,
+      "hole_global_qualified": false
+    }
+  ],
+  "extractor_checks": [
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "region": "zero",
+      "relative_error": 3.7018303130831272e-16
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "region": "drain_contact",
+      "relative_error": 3.8966634874559233e-16
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "region": "channel",
+      "relative_error": 3.7018303130831272e-16
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "region": "zero",
+      "relative_error": 3.5851833596681083e-16
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "region": "drain_contact",
+      "relative_error": 5.660815831054907e-16
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "region": "channel",
+      "relative_error": 3.5851833596681083e-16
+    }
+  ],
+  "responses": [
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": false,
+      "region": "drain_contact",
+      "amplitude": "full",
+      "passed": false,
+      "failures": [
+        "even_fraction",
+        "signal_to_zero_drift",
+        "signed_response"
+      ],
+      "direct_A_per_um": -8.938071630453503e-10,
+      "feedback_prediction_A_per_um": 8.938071618435037e-10,
+      "feedback_fd_A_per_um": 8.938071618435826e-10,
+      "feedback_only_relative_error": 8.837375276016246e-14,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": false,
+      "region": "drain_contact",
+      "amplitude": "half",
+      "passed": false,
+      "failures": [
+        "even_fraction",
+        "signal_to_zero_drift",
+        "signed_response"
+      ],
+      "direct_A_per_um": -4.4690358152267516e-10,
+      "feedback_prediction_A_per_um": 4.4690358092175186e-10,
+      "feedback_fd_A_per_um": 4.4690358092170694e-10,
+      "feedback_only_relative_error": 1.0047518372857667e-13,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": false,
+      "region": "channel",
+      "amplitude": "full",
+      "passed": true,
+      "failures": [],
+      "direct_A_per_um": -0.0,
+      "feedback_prediction_A_per_um": 1.2508652136694051e-12,
+      "feedback_fd_A_per_um": 1.2508653209954991e-12,
+      "feedback_only_relative_error": 8.580148591619263e-08,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": false,
+      "region": "channel",
+      "amplitude": "half",
+      "passed": true,
+      "failures": [],
+      "direct_A_per_um": -0.0,
+      "feedback_prediction_A_per_um": 6.254326068347026e-13,
+      "feedback_fd_A_per_um": 6.254326593645121e-13,
+      "feedback_only_relative_error": 8.398956019561865e-08,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": false,
+      "region": "drain_contact",
+      "amplitude": "full",
+      "passed": false,
+      "failures": [
+        "two_amplitude_relative",
+        "even_fraction",
+        "signal_to_zero_drift",
+        "signed_response"
+      ],
+      "direct_A_per_um": -4.6144396510286295e-10,
+      "feedback_prediction_A_per_um": 4.6144396502606947e-10,
+      "feedback_fd_A_per_um": 4.6144396502604517e-10,
+      "feedback_only_relative_error": 5.262457136723242e-14,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": false,
+      "region": "drain_contact",
+      "amplitude": "half",
+      "passed": false,
+      "failures": [
+        "relative_error",
+        "two_amplitude_relative",
+        "even_fraction",
+        "signal_to_zero_drift",
+        "signed_response"
+      ],
+      "direct_A_per_um": -2.3072198255143148e-10,
+      "feedback_prediction_A_per_um": 2.3072198251303473e-10,
+      "feedback_fd_A_per_um": 2.3072198251308338e-10,
+      "feedback_only_relative_error": 2.1094237467877974e-13,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": false,
+      "region": "channel",
+      "amplitude": "full",
+      "passed": true,
+      "failures": [],
+      "direct_A_per_um": -0.0,
+      "feedback_prediction_A_per_um": 1.5059113013997258e-12,
+      "feedback_fd_A_per_um": 1.5059113394999987e-12,
+      "feedback_only_relative_error": 2.53004761585629e-08,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": false,
+      "region": "channel",
+      "amplitude": "half",
+      "passed": true,
+      "failures": [],
+      "direct_A_per_um": -0.0,
+      "feedback_prediction_A_per_um": 7.529556506998629e-13,
+      "feedback_fd_A_per_um": 7.529556628645479e-13,
+      "feedback_only_relative_error": 1.6155911719550886e-08,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": true,
+      "region": "drain_contact",
+      "amplitude": "full",
+      "passed": false,
+      "failures": [
+        "relative_error",
+        "two_amplitude_relative"
+      ],
+      "direct_A_per_um": -1.7876143260907006e-06,
+      "feedback_prediction_A_per_um": 1.7876143236870075e-06,
+      "feedback_fd_A_per_um": 1.7876143236824517e-06,
+      "feedback_only_relative_error": 2.548516953027047e-12,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "supplemental": true,
+      "region": "drain_contact",
+      "amplitude": "half",
+      "passed": false,
+      "failures": [
+        "two_amplitude_relative"
+      ],
+      "direct_A_per_um": -8.938071630453503e-07,
+      "feedback_prediction_A_per_um": 8.938071618435037e-07,
+      "feedback_fd_A_per_um": 8.938071618429088e-07,
+      "feedback_only_relative_error": 6.655787032627813e-13,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": true,
+      "region": "drain_contact",
+      "amplitude": "full",
+      "passed": false,
+      "failures": [
+        "relative_error",
+        "two_amplitude_relative",
+        "even_fraction",
+        "additional_state_guard"
+      ],
+      "direct_A_per_um": -9.22887930205726e-06,
+      "feedback_prediction_A_per_um": 9.22887930052139e-06,
+      "feedback_fd_A_per_um": 9.22887930050831e-06,
+      "feedback_only_relative_error": 1.4173107132364748e-12,
+      "feedback_only_does_not_qualify_net_response": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "supplemental": true,
+      "region": "drain_contact",
+      "amplitude": "half",
+      "passed": false,
+      "failures": [
+        "relative_error",
+        "two_amplitude_relative",
+        "even_fraction",
+        "additional_state_guard"
+      ],
+      "direct_A_per_um": -4.61443965102863e-06,
+      "feedback_prediction_A_per_um": 4.614439650260695e-06,
+      "feedback_fd_A_per_um": 4.614439650221286e-06,
+      "feedback_only_relative_error": 8.540168572324092e-12,
+      "feedback_only_does_not_qualify_net_response": true
+    }
+  ],
+  "supplemental_state_guard_passed": 6,
+  "response_amplitudes_passed": 4,
+  "response_amplitudes_total": 12,
+  "qualification": "Only the prescribed Vela channel edge continuity perturbation is qualified at both biases.",
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

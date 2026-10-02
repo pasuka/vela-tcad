@@ -1,6 +1,8 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include <array>
+#include <vector>
 
 namespace vela {
 
@@ -19,6 +21,7 @@ struct GeometryBuildReport {
     Real minAngleDegrees = 0.0;
     Real maxAngleDegrees = 0.0;
     Real minEdgeLength = 0.0;
+    Index transferredCellBoxEdges = 0;
 };
 
 /**
@@ -31,6 +34,15 @@ struct GeometryBuildReport {
  */
 class BoxGeometryBuilder {
 public:
+    enum class PoissonPermittivityPolicy { LegacyAverage, CellMaterial };
+    enum class CellBoxPolicy { LegacyPositive, DelaunayTransfer };
+
+    // Dimensionless d/l, ordered along (0,1), (1,2), (2,0).
+    // Node identity guards against accidentally reusing a reordered mesh.
+    struct PoissonCellEdgeCoefficients {
+        std::array<Index, 3> nodeIds{};
+        std::array<Real, 3> coefficients{};
+    };
     enum class NodeVolumePolicy {
         Barycentric,
         MixedVoronoi,
@@ -41,6 +53,10 @@ public:
         bool warnOnNegativeCotangent = false;
         bool requireNonObtuse = false;
         NodeVolumePolicy nodeVolumePolicy = NodeVolumePolicy::Barycentric;
+        PoissonPermittivityPolicy poissonPermittivityPolicy =
+            PoissonPermittivityPolicy::LegacyAverage;
+        std::vector<PoissonCellEdgeCoefficients> poissonCellEdgeCoefficients;
+        CellBoxPolicy cellBoxPolicy = CellBoxPolicy::LegacyPositive;
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);

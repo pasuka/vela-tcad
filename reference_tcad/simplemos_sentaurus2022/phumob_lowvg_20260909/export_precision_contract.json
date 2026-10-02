@@ -1,0 +1,6 @@
+{
+  "scope": "Frozen native densities, electrostatic potential, ni, geometry and native cell mobility; vary only exported electron/hole quasi-Fermi potentials.",
+  "diagnostic": "Aggregate signed drain sensitivity per node before taking absolute values. Estimate half-ULP round-to-nearest uncertainty; verify with one-ULP nextafter perturbations in the maximizing/minimizing gradient directions.",
+  "limitations": "A first-order conditioning estimate under an explicit rounding assumption, not reconstruction of hidden native values or proof of the export cause. No new acceptance threshold and no adjustment to reference current.",
+  "native_terminal_relative_gate": 1e-06
+}

@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "scripts/check_simplemos_split_contract_merit_20260911.py": "3097647cc2bd0840d839c4ec3af56df9de3e373bab3f99f0e3d66724574d4349",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/run_evidence.json": "0d21bd077a6e8d34ba93d22990174aaf0c349fab82a564169895a4e56546fcb3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/merit_correct/merit.csv": "887e38498c66aa8c2ca1c9f6d8c9213233f9fd7612b9b64632bdcc48b644c396",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/merit_correct/ports.csv": "c7465fa78a5be5ff84fdd215baf4dee31964128449f114c2d1ce57c8221b658b"
+  }
+}

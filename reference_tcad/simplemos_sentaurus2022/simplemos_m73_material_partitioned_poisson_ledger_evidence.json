@@ -1,0 +1,32 @@
+{
+  "schema": "vela.simplemos.sdevice.m73_material_partitioned_poisson_ledger_evidence.v2",
+  "status": "frozen",
+  "classification": "material_partition_material_but_not_dominant",
+  "contract_sha256": "34c6a1fa4d0ca8aff97067a9557a490996e643e42728f8bcac24d9850392a063",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m73_material_partitioned_poisson_ledger.py": "37fa1e4ec0d7fccf0e65aea85336bd7ce952a60e9470c753db3bc793c12deacd"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_material_partitioned_poisson_ledger_report.json": "f4faca829b79fe4cfa0d30d117df7930654325a4c9985fd9f8804d57cfc3fe86",
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_poisson_stage_ledger.csv": "ada0bdb8cf6decc233aa098fdb9e773596daaf83e7594b2ca1ab78a8a449cd8f",
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_poisson_pair_ledger.csv": "d68e6b87b167c777300cc6c6bd679a2d3df665903977e927ae5a01b530c1163c",
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_variant_summary.csv": "03c0d79b18f38f88ceb56fdb23d199daa3649f7f8efe4d3c181777f9e7fa058f",
+    "docs/validation/simplemos_m73_material_partitioned_poisson_ledger_2026-09-03.md": "6cbae07b09328ae10978fe972056253aba246cd73362958dfe21c5fac5be126f",
+    "docs/validation/reports/simplemos_m73/artifact.json": "d7aff89a37fd3b6e9595185b00b70a73a5dd50724dcc45a6275280bdc8554218"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_self_consistent_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "pair_count": true,
+    "case_count": true,
+    "stage_count": true,
+    "coordinate_identity": true,
+    "shared_node_potential_identity": true,
+    "vela_production_poisson_replay": true,
+    "component_sum_identity": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

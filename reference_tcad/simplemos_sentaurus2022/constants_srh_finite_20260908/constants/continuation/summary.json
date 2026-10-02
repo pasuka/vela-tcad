@@ -1,0 +1,7 @@
+{
+  "DC": 12,
+  "qualified_DC": 12,
+  "qualified_dual": 4,
+  "qualified": true,
+  "direct_native_failures_retained": 2
+}

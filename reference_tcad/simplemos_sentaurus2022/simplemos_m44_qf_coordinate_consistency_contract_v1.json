@@ -1,0 +1,38 @@
+{
+  "schema": "vela.simplemos.sdevice.m44_qf_coordinate_consistency_contract.v1",
+  "objective": "Preserve quasi-Fermi reference/increment coordinates through frozen-state packing and require the coupled terminal functional, SG contact cut, and ContactCurrent extractor to agree at deep-off precision.",
+  "upstream_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m43_sg_kernel_consistency_evidence.json",
+  "matrix": {
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05,
+    "equal_ni_flux_evaluations": [
+      "legacy_factor_difference",
+      "compensated_log_expm1"
+    ],
+    "srh": [true, false],
+    "state_count": 4
+  },
+  "baseline": {
+    "m43_maximum_terminal_functional_vs_contact_extractor_gap_dex": 0.0013470765785434935,
+    "m43_compensated_srh_on_gap_dex": 0.0007835665603952435
+  },
+  "acceptance": {
+    "maximum_cut_vs_terminal_functional_gap_dex": 1e-12,
+    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 1e-12,
+    "maximum_contact_edge_current_relative_difference": 1e-10,
+    "maximum_qf_relative_coordinate_difference_V": 1e-30,
+    "maximum_mobility_drive_relative_difference": 1e-13,
+    "maximum_mobility_relative_difference": 1e-13,
+    "require_all_four_frozen_states": true,
+    "require_read_only_frozen_state_replay": true
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_hfs_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "preserve_contact_node_reference_increment": true,
+    "subtract_references_before_adding_increment": true,
+    "new_sentaurus_execution": false
+  }
+}

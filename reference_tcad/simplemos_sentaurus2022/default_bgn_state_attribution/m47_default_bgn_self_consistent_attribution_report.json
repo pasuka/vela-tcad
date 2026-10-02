@@ -1,0 +1,1311 @@
+{
+  "schema": "vela.simplemos.sdevice.m47_default_bgn_self_consistent_attribution_report.v1",
+  "status": "complete",
+  "execution": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "sentaurus_state_count": 6,
+    "vela_state_count": 6,
+    "new_sentaurus_execution": true,
+    "runner": "build-release/vela_example_runner.exe",
+    "runner_sha256": "98f0b7ecb95aafbdb2a271ba27afb650adba6b4f12ea1de2bc2bf07cde0a4a4c",
+    "contract_sha256_before_and_after": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+    "default_physics_model_changed": false,
+    "historical_artifacts_rewritten": false
+  },
+  "target": {
+    "state": "n23_vd_0p05_vg_0p05",
+    "device": "n23",
+    "control_role": "target_device",
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05,
+    "sentaurus_current_A_per_um": 8.58625099702983e-17,
+    "vela_current_A_per_um": 1.1046438035358572e-16,
+    "signed_log10_vela_over_sentaurus_dex": 0.10941868092427424,
+    "qf_barrier_delta_mV": -1.2911292944462194,
+    "barrier_predicted_current_shift_dex": 0.021690017508659308,
+    "barrier_prediction_residual_dex": 0.08772866341561494,
+    "electrostatic_barrier_delta_mV": -1.3657887340081665,
+    "source_phin_signed_mean_mV": 0.0205415122708396,
+    "source_electron_density_signed_mean_dex": -0.013914550592535822,
+    "source_hole_density_signed_mean_dex": 0.013575939672144027,
+    "source_barrier_electron_density_log_ratio_dex": 0.021693906011265803,
+    "srh_spatial_pearson": 0.9998176136855699,
+    "srh_integrated_log_magnitude_ratio_dex": -0.009905381220791518,
+    "qf_roundtrip_max_abs_V": 6.938893903907228e-18,
+    "vela_anchor_shift_dex": 0.0,
+    "sentaurus_anchor_shift_dex": 0.0
+  },
+  "states": [
+    {
+      "state": "n23_vd_0p05_vg_0",
+      "device": "n23",
+      "control_role": "target_device",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.0,
+        "sentaurus_current_A_per_um": 5.06868449307167e-17,
+        "vela_current_A_per_um": 5.273933703957989e-17,
+        "absolute_log10_ratio": 0.01723940735425321,
+        "relative_error": 0.040493585893316454
+      },
+      "sentaurus_current_A_per_um": 5.06868449307167e-17,
+      "vela_current_A_per_um": 5.273933703957989e-17,
+      "signed_log10_vela_over_sentaurus_dex": 0.01723940735425321,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.7793096599259274,
+        "vela_electrostatic_V": 0.7780203576365188,
+        "electrostatic_vela_minus_sentaurus_mV": -1.2893022894086004,
+        "sentaurus_qf_referenced_V": 0.24940131517952224,
+        "vela_qf_referenced_V": 0.24818174147977967,
+        "qf_referenced_vela_minus_sentaurus_mV": -1.219573699742571,
+        "barrier_predicted_current_shift_dex": 0.0204879364245721,
+        "barrier_prediction_residual_dex": -0.003248529070318893,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.11858526902725167,
+            "median": -8.578552490590141e-05,
+            "median_absolute": 0.002839240536678389,
+            "p95_absolute": 1.8464110835034742,
+            "maximum_absolute": 14.016258445901736
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.0043891294268599895,
+            "median": 1.5265566588595902e-13,
+            "median_absolute": 4.150152443926913e-11,
+            "p95_absolute": 0.05459155718573472,
+            "maximum_absolute": 0.5521844408284751
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": -0.004006952902096334,
+            "median": -3.059428761353837e-13,
+            "median_absolute": 4.812087411362058e-13,
+            "p95_absolute": 0.22735786681474246,
+            "maximum_absolute": 0.7346770694509523
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.0019153628828960888,
+            "median": -1.5673305167517054e-05,
+            "median_absolute": 0.0002256182607837974,
+            "p95_absolute": 0.031016325186775152,
+            "maximum_absolute": 0.23546658834879242
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.0019281828541287648,
+            "median": 5.972914752634739e-06,
+            "median_absolute": 0.0005265931254932565,
+            "p95_absolute": 0.030726136947323495,
+            "maximum_absolute": 0.235460114943496
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -1.1647555429351693,
+            "median": -1.1016110361592004,
+            "median_absolute": 1.1016110361592004,
+            "p95_absolute": 1.8886232660253073,
+            "maximum_absolute": 2.06649799703984
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.06394045703358511,
+            "median": -2.332291304529832e-08,
+            "median_absolute": 2.332291304529832e-08,
+            "p95_absolute": 0.34195481849908943,
+            "maximum_absolute": 0.5523136797887449
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": -0.0008509565865582229,
+            "median": -2.2565474186902978e-08,
+            "median_absolute": 1.5531696695552226e-05,
+            "p95_absolute": 0.003846953441985714,
+            "maximum_absolute": 0.005024765918208655
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.018489946732528115,
+            "median": -0.018503244636182928,
+            "median_absolute": 0.018503244636182928,
+            "p95_absolute": 0.0317252740942954,
+            "maximum_absolute": 0.034713441815850996
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.019556412202041552,
+            "median": 0.01850888349670418,
+            "median_absolute": 0.01850888349670418,
+            "p95_absolute": 0.031667254856649826,
+            "maximum_absolute": 0.03463564118794984
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.8756782696342585,
+            "median": -0.9978238667271988,
+            "median_absolute": 1.10130395365691,
+            "p95_absolute": 1.6593716968294203,
+            "maximum_absolute": 1.8363679409065248
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.019553110024723715,
+            "median": 1.9956429925586337e-08,
+            "median_absolute": 1.9956429925586337e-08,
+            "p95_absolute": 0.09911026302476378,
+            "maximum_absolute": 0.12857772567829995
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": -3.5909752777214056e-13,
+            "median": -4.0316339850804175e-13,
+            "median_absolute": 4.0316339850804175e-13,
+            "p95_absolute": 6.616526375730752e-13,
+            "maximum_absolute": 6.956811097476206e-13
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.015036261272224077,
+            "median": -0.016760443906481265,
+            "median_absolute": 0.01849791759811932,
+            "p95_absolute": 0.027874047789709092,
+            "maximum_absolute": 0.030847457524207336
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.014714254677865411,
+            "median": 0.016766902905280497,
+            "median_absolute": 0.018504290296262563,
+            "p95_absolute": 0.027880507326939773,
+            "maximum_absolute": 0.03085392264486727
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9998032058691632,
+        "log_magnitude_ratio_dex": {
+          "count": 691,
+          "signed_mean": 0.0054750403802803676,
+          "median": 0.00043032534484190954,
+          "median_absolute": 0.001567596672706144,
+          "p95_absolute": 0.036467521325948105,
+          "maximum_absolute": 0.4354732310911042
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.6975788107546487e-17,
+        "vela_integrated_signed_A_per_um": -1.6588378054401304e-17,
+        "integrated_log_magnitude_ratio_dex": -0.010026021196463118,
+        "vela_srh_balance_net_A_per_um": -1.6588378054400244e-17,
+        "vela_srh_balance_generation_A_per_um": 1.6588378054400247e-17,
+        "vela_srh_balance_recombination_A_per_um": 2.0264931948989572e-33
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": 1.70828104803225e-17,
+          "vela_A_per_um": 1.6833176699418842e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.312124888263888e-20,
+          "vela_A_per_um": -3.307043401180186e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": 1.71159317292051e-17,
+          "vela_A_per_um": 1.6866247133430643e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.02049190627847022,
+      "source_barrier_hole_density_log_ratio_dex": -0.021655341006061122,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n23_vd_0p05_vg_0",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/accepted_state_bias_0p000000.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/vtk/state_0000_0V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json"
+      }
+    },
+    {
+      "state": "n23_vd_0p05_vg_0p05",
+      "device": "n23",
+      "control_role": "target_device",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.05,
+        "sentaurus_current_A_per_um": 8.58625099702983e-17,
+        "vela_current_A_per_um": 1.1046438035358572e-16,
+        "absolute_log10_ratio": 0.10941868092427424,
+        "relative_error": 0.28652633602019956
+      },
+      "sentaurus_current_A_per_um": 8.58625099702983e-17,
+      "vela_current_A_per_um": 1.1046438035358572e-16,
+      "signed_log10_vela_over_sentaurus_dex": 0.10941868092427424,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.7515667887296513,
+        "vela_electrostatic_V": 0.7502009999956432,
+        "electrostatic_vela_minus_sentaurus_mV": -1.3657887340081665,
+        "sentaurus_qf_referenced_V": 0.2217041902254346,
+        "vela_qf_referenced_V": 0.2204130609309884,
+        "qf_referenced_vela_minus_sentaurus_mV": -1.2911292944462194,
+        "barrier_predicted_current_shift_dex": 0.021690017508659308,
+        "barrier_prediction_residual_dex": 0.08772866341561494,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.10150808681486807,
+            "median": -8.133472884086501e-05,
+            "median_absolute": 0.002721028155683314,
+            "p95_absolute": 1.641498119535234,
+            "maximum_absolute": 14.016257824868482
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.00449288626080431,
+            "median": 1.8041124150158794e-13,
+            "median_absolute": 9.486161856031572e-11,
+            "p95_absolute": 0.060529163722509646,
+            "maximum_absolute": 0.5663186809122256
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": -0.003615986387638455,
+            "median": 1.1657690167015317e-12,
+            "median_absolute": 4.283750528580041e-10,
+            "p95_absolute": 0.2258437993193467,
+            "maximum_absolute": 0.7346794468929638
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.0016267449410374691,
+            "median": -1.5673305166456253e-05,
+            "median_absolute": 0.00022576408108816902,
+            "p95_absolute": 0.027573858498925838,
+            "maximum_absolute": 0.23546657791088457
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.001647875900382344,
+            "median": 5.924284883342152e-06,
+            "median_absolute": 0.0005396928519337418,
+            "p95_absolute": 0.027580307542608453,
+            "maximum_absolute": 0.23546010450922872
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -1.0899306247785414,
+            "median": -1.0524339193784606,
+            "median_absolute": 1.0524339193784606,
+            "p95_absolute": 1.6819384578041685,
+            "maximum_absolute": 1.8428194493226302
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.06579553304670445,
+            "median": -3.48964086793746e-08,
+            "median_absolute": 3.48964086793746e-08,
+            "p95_absolute": 0.3515466149266936,
+            "maximum_absolute": 0.5664433371987341
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": -0.0007831975355505541,
+            "median": 5.667022601482132e-09,
+            "median_absolute": 1.7354482669407772e-05,
+            "p95_absolute": 0.0037682839361262584,
+            "maximum_absolute": 0.005047054610458294
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.017201835221008172,
+            "median": -0.017677129820436163,
+            "median_absolute": 0.017677129820436163,
+            "p95_absolute": 0.028253151996087876,
+            "maximum_absolute": 0.030955837169061036
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.018300602913897162,
+            "median": 0.01768422153034063,
+            "median_absolute": 0.01768422153034063,
+            "p95_absolute": 0.028196454279276376,
+            "maximum_absolute": 0.030877662029608392
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.8079150158588512,
+            "median": -0.9587647854867598,
+            "median_absolute": 1.0220945100980483,
+            "p95_absolute": 1.4982883676546015,
+            "maximum_absolute": 1.6308737905958437
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.0205415122708396,
+            "median": 3.0174318213742575e-08,
+            "median_absolute": 3.0174318213742575e-08,
+            "p95_absolute": 0.10403248765066397,
+            "maximum_absolute": 0.1334913250341861
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": 5.320662390508957e-09,
+            "median": 4.228418483375336e-09,
+            "median_absolute": 4.228418483375336e-09,
+            "p95_absolute": 9.02501490533506e-09,
+            "maximum_absolute": 1.000827970112863e-08
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.013914550592535822,
+            "median": -0.01615647483181724,
+            "median_absolute": 0.017168266277018847,
+            "p95_absolute": 0.024719080687958646,
+            "maximum_absolute": 0.027395336383364614
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.013575939672144027,
+            "median": 0.01611020230775273,
+            "median_absolute": 0.0171747205219822,
+            "p95_absolute": 0.02517098832088952,
+            "maximum_absolute": 0.027401801572959683
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9998176136855699,
+        "log_magnitude_ratio_dex": {
+          "count": 691,
+          "signed_mean": 0.004852791479809939,
+          "median": 0.0004159531501365137,
+          "median_absolute": 0.0015593122888967466,
+          "p95_absolute": 0.03350607592861066,
+          "maximum_absolute": 0.3212442850567917
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.714273718353641e-17,
+        "vela_integrated_signed_A_per_um": -1.6756171077136696e-17,
+        "integrated_log_magnitude_ratio_dex": -0.009905381220791518,
+        "vela_srh_balance_net_A_per_um": -1.6756171077135603e-17,
+        "vela_srh_balance_generation_A_per_um": 1.675617107713561e-17,
+        "vela_srh_balance_recombination_A_per_um": 1.9817287288137524e-33
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": -3.254943975487211e-17,
+          "vela_A_per_um": 1.7002712286101867e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.312115350355398e-20,
+          "vela_A_per_um": -3.30695849623621e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": -3.25163186013687e-17,
+          "vela_A_per_um": 1.7035781871064234e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.021693906011265803,
+      "source_barrier_hole_density_log_ratio_dex": -0.02294017506881936,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n23_vd_0p05_vg_0p05",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/accepted_state_bias_0p050000.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/vtk/state_0001_0.05V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json"
+      }
+    },
+    {
+      "state": "n23_vd_0p05_vg_0p1",
+      "device": "n23",
+      "control_role": "target_device",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.1,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.1,
+        "sentaurus_current_A_per_um": 2.49495110503292e-16,
+        "vela_current_A_per_um": 2.730137802241387e-16,
+        "absolute_log10_ratio": 0.039122529446696364,
+        "relative_error": 0.09426505262329134
+      },
+      "sentaurus_current_A_per_um": 2.49495110503292e-16,
+      "vela_current_A_per_um": 2.730137802241387e-16,
+      "signed_log10_vela_over_sentaurus_dex": 0.039122529446696364,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.7230292336736251,
+        "vela_electrostatic_V": 0.7216063902584832,
+        "electrostatic_vela_minus_sentaurus_mV": -1.4228434151419833,
+        "sentaurus_qf_referenced_V": 0.19321793834498813,
+        "vela_qf_referenced_V": 0.19187224422387078,
+        "qf_referenced_vela_minus_sentaurus_mV": -1.3456941211173468,
+        "barrier_predicted_current_shift_dex": 0.02260666625247186,
+        "barrier_prediction_residual_dex": 0.016515863194224503,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.08637412596774827,
+            "median": -8.133472895188731e-05,
+            "median_absolute": 0.002669937949173473,
+            "p95_absolute": 1.4752933039908767,
+            "maximum_absolute": 14.016257133888017
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.004575812509916578,
+            "median": 2.0288725667837802e-13,
+            "median_absolute": 1.4182405250195984e-10,
+            "p95_absolute": 0.06393407564535963,
+            "maximum_absolute": 0.5746867808736831
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": -0.0031709576425250903,
+            "median": 7.970092588891127e-14,
+            "median_absolute": 4.0520454347221356e-11,
+            "p95_absolute": 0.2242767745470869,
+            "maximum_absolute": 0.734681686204215
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.0013711216925270228,
+            "median": -1.567323011274465e-05,
+            "median_absolute": 0.00022587542625286658,
+            "p95_absolute": 0.02433917612818326,
+            "maximum_absolute": 0.23546656629796442
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.0014011219042047687,
+            "median": 5.924274408574368e-06,
+            "median_absolute": 0.0005374850637445632,
+            "p95_absolute": 0.02447553558239569,
+            "maximum_absolute": 0.23546009289984532
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -1.0230169606316502,
+            "median": -0.9922097427815524,
+            "median_absolute": 0.9922097427815524,
+            "p95_absolute": 1.4915265844158723,
+            "maximum_absolute": 1.636379250819775
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.06709501176447516,
+            "median": -5.372938205461253e-08,
+            "median_absolute": 5.372938205461253e-08,
+            "p95_absolute": 0.3580564515215335,
+            "maximum_absolute": 0.5748056770047762
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": -0.0005825898797173229,
+            "median": 5.930469996573866e-10,
+            "median_absolute": 3.822559948996751e-05,
+            "p95_absolute": 0.003265821931148163,
+            "maximum_absolute": 0.004605687726979722
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.016055960598559762,
+            "median": -0.016665895082639395,
+            "median_absolute": 0.016665895082639395,
+            "p95_absolute": 0.025054402319322204,
+            "maximum_absolute": 0.02748782319798159
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.017179928615549615,
+            "median": 0.016671885467869768,
+            "median_absolute": 0.016671885467869768,
+            "p95_absolute": 0.025006145509409335,
+            "maximum_absolute": 0.02741706260211643
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.7501303851020314,
+            "median": -0.9339504865999992,
+            "median_absolute": 0.9610549971321436,
+            "p95_absolute": 1.4343321502911788,
+            "maximum_absolute": 1.4459066747351534
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.02123488782432824,
+            "median": 4.708987312522319e-08,
+            "median_absolute": 4.708987312522319e-08,
+            "p95_absolute": 0.10730889120319259,
+            "maximum_absolute": 0.13755427767653652
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": 4.350418592821772e-10,
+            "median": 3.398276897436692e-10,
+            "median_absolute": 3.398276897436692e-10,
+            "p95_absolute": 7.591136884208768e-10,
+            "maximum_absolute": 8.499766115678683e-10
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.01295551737039463,
+            "median": -0.015992681792892476,
+            "median_absolute": 0.016142268670879464,
+            "p95_absolute": 0.023449262212871073,
+            "maximum_absolute": 0.02428805333976372
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.01260525818989839,
+            "median": 0.01569253244279392,
+            "median_absolute": 0.016148738071687693,
+            "p95_absolute": 0.02409654316331414,
+            "maximum_absolute": 0.024294518465911987
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9998150823308939,
+        "log_magnitude_ratio_dex": {
+          "count": 691,
+          "signed_mean": 0.005855707724757261,
+          "median": 0.0004679557908137974,
+          "median_absolute": 0.0015335543680212943,
+          "p95_absolute": 0.03245665370586902,
+          "maximum_absolute": 0.4422857033876202
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.727475744773352e-17,
+        "vela_integrated_signed_A_per_um": -1.6890402151087663e-17,
+        "integrated_log_magnitude_ratio_dex": -0.009771968221315614,
+        "vela_srh_balance_net_A_per_um": -1.6890402151086594e-17,
+        "vela_srh_balance_generation_A_per_um": 1.6890402151086597e-17,
+        "vela_srh_balance_recombination_A_per_um": 1.4972005473641026e-33
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": 6.3584571117760096e-18,
+          "vela_A_per_um": 1.713791823491194e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.312039380219357e-20,
+          "vela_A_per_um": -3.306904828483813e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": 6.3915775055789755e-18,
+          "vela_A_per_um": 1.7170987283196776e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.02261047108597843,
+      "source_barrier_hole_density_log_ratio_dex": -0.023898567860716296,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n23_vd_0p05_vg_0p1",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/final_state.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n23/vtk/state_0002_0.1V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json"
+      }
+    },
+    {
+      "state": "n19_vd_0p05_vg_0",
+      "device": "n19",
+      "control_role": "low_nwell_control",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.0,
+        "sentaurus_current_A_per_um": 1.72908236564584e-15,
+        "vela_current_A_per_um": 1.8239200409561793e-15,
+        "absolute_log10_ratio": 0.023190113736065478,
+        "relative_error": 0.0548485585155545
+      },
+      "sentaurus_current_A_per_um": 1.72908236564584e-15,
+      "vela_current_A_per_um": 1.8239200409561793e-15,
+      "signed_log10_vela_over_sentaurus_dex": 0.023190113736065478,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.6908280102658051,
+        "vela_electrostatic_V": 0.6899083997121397,
+        "electrostatic_vela_minus_sentaurus_mV": -0.9196105536654064,
+        "sentaurus_qf_referenced_V": 0.16061993343688863,
+        "vela_qf_referenced_V": 0.1597563404963608,
+        "qf_referenced_vela_minus_sentaurus_mV": -0.8635929405278187,
+        "barrier_predicted_current_shift_dex": 0.014507722875606397,
+        "barrier_prediction_residual_dex": 0.00868239086045908,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.1513329089278348,
+            "median": -8.683349406179985e-05,
+            "median_absolute": 0.00831070277018675,
+            "p95_absolute": 1.4166573748672917,
+            "maximum_absolute": 7.485575642198289
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.0016815664320802462,
+            "median": 3.67378948830107e-13,
+            "median_absolute": 5.7021646959239526e-11,
+            "p95_absolute": 0.038412076444345467,
+            "maximum_absolute": 0.3099364902856491
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": 0.001606211428429887,
+            "median": -4.789840069626234e-13,
+            "median_absolute": 1.0802950740659965e-12,
+            "p95_absolute": 0.19956837223090648,
+            "maximum_absolute": 0.9425989562581467
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.002511085131199401,
+            "median": -1.7664536803514595e-05,
+            "median_absolute": 0.00028638848957776233,
+            "p95_absolute": 0.023796669666169668,
+            "maximum_absolute": 0.12574791229030732
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.0025727317374293797,
+            "median": 6.191884422392097e-06,
+            "median_absolute": 0.0007668935040644531,
+            "p95_absolute": 0.02380313813475793,
+            "maximum_absolute": 0.1257548853780207
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -0.7083438013949537,
+            "median": -0.4738192738952696,
+            "median_absolute": 0.4738192738952696,
+            "p95_absolute": 1.6118077737561185,
+            "maximum_absolute": 1.7760084536614373
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.03510490625174903,
+            "median": -9.496204864123392e-08,
+            "median_absolute": 9.496204864123392e-08,
+            "p95_absolute": 0.18811093347924468,
+            "maximum_absolute": 0.3101706842260077
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": -0.0005584291036174015,
+            "median": 7.162561116653532e-10,
+            "median_absolute": 5.727068652533812e-05,
+            "p95_absolute": 0.003160460181775785,
+            "maximum_absolute": 0.004358210774655828
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.01130710722060969,
+            "median": -0.00794070917703437,
+            "median_absolute": 0.00794070917703437,
+            "p95_absolute": 0.02707499197331477,
+            "maximum_absolute": 0.029833445295089654
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.011894088385443667,
+            "median": 0.00796483272920832,
+            "median_absolute": 0.00796483272920832,
+            "p95_absolute": 0.027028518479941276,
+            "maximum_absolute": 0.029766852793052637
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.5049084455751667,
+            "median": -0.4519996070898591,
+            "median_absolute": 0.47043643647737277,
+            "p95_absolute": 1.4000731342881378,
+            "maximum_absolute": 1.5629002091768207
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.011989363927013387,
+            "median": 9.343774847864253e-08,
+            "median_absolute": 9.343774847864253e-08,
+            "p95_absolute": 0.06162995236070603,
+            "maximum_absolute": 0.06732807978044891
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": 1.3781417008620943e-12,
+            "median": 1.2725342687717911e-12,
+            "median_absolute": 1.2725342687717911e-12,
+            "p95_absolute": 3.3530784052309755e-12,
+            "maximum_absolute": 5.118132377713105e-12
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.008680671073468831,
+            "median": -0.007597582944025947,
+            "median_absolute": 0.007900615365345776,
+            "p95_absolute": 0.023518035976091353,
+            "maximum_absolute": 0.02625341374398267
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.008485746202646471,
+            "median": 0.00759641492890137,
+            "median_absolute": 0.007907100878230077,
+            "p95_absolute": 0.02352450908683769,
+            "maximum_absolute": 0.026259889481071233
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9997669724892045,
+        "log_magnitude_ratio_dex": {
+          "count": 684,
+          "signed_mean": 0.006161416328585192,
+          "median": 0.0006996491541498966,
+          "median_absolute": 0.0017301267081384505,
+          "p95_absolute": 0.03270201385176655,
+          "maximum_absolute": 0.40509427691908156
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.8899887831517586e-17,
+        "vela_integrated_signed_A_per_um": -1.9104639436443283e-17,
+        "integrated_log_magnitude_ratio_dex": 0.004679618926262234,
+        "vela_srh_balance_net_A_per_um": -1.9104639436442824e-17,
+        "vela_srh_balance_generation_A_per_um": 1.9104639436442824e-17,
+        "vela_srh_balance_recombination_A_per_um": 4.2725071937625554e-33
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": 2.0359248047469998e-17,
+          "vela_A_per_um": 1.9540245002771538e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.290252355532914e-20,
+          "vela_A_per_um": -3.2806062168732696e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": 2.0392150571020052e-17,
+          "vela_A_per_um": 1.9573051064940414e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.014511439624159133,
+      "source_barrier_hole_density_log_ratio_dex": -0.015444525637405386,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n19_vd_0p05_vg_0",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/accepted_state_bias_0p000000.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/vtk/state_0000_0V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json"
+      }
+    },
+    {
+      "state": "n19_vd_0p05_vg_0p05",
+      "device": "n19",
+      "control_role": "low_nwell_control",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.05,
+        "sentaurus_current_A_per_um": 5.53168836745455e-15,
+        "vela_current_A_per_um": 5.862819932528419e-15,
+        "absolute_log10_ratio": 0.025248849940917265,
+        "relative_error": 0.05986084954135653
+      },
+      "sentaurus_current_A_per_um": 5.53168836745455e-15,
+      "vela_current_A_per_um": 5.862819932528419e-15,
+      "signed_log10_vela_over_sentaurus_dex": 0.025248849940917265,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.657091880752046,
+        "vela_electrostatic_V": 0.6561600702967693,
+        "electrostatic_vela_minus_sentaurus_mV": -0.9318104552767936,
+        "sentaurus_qf_referenced_V": 0.12699698026395415,
+        "vela_qf_referenced_V": 0.12611339311930014,
+        "qf_referenced_vela_minus_sentaurus_mV": -0.8835871446540022,
+        "barrier_predicted_current_shift_dex": 0.014843610721567353,
+        "barrier_prediction_residual_dex": 0.010405239219349912,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.13649525851858874,
+            "median": -8.582366683995701e-05,
+            "median_absolute": 0.009139843835215267,
+            "p95_absolute": 1.2935941399784268,
+            "maximum_absolute": 7.485341562465441
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.0018569076561011206,
+            "median": 8.974785688980458e-13,
+            "median_absolute": 1.6774776012695725e-10,
+            "p95_absolute": 0.04123824804961457,
+            "maximum_absolute": 0.3117329445708403
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": 0.002121683111613336,
+            "median": -1.4347361701045627e-14,
+            "median_absolute": 1.843385516264239e-10,
+            "p95_absolute": 0.19772841884515246,
+            "maximum_absolute": 0.9426026360311156
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.002258889018332995,
+            "median": -1.597704179012214e-05,
+            "median_absolute": 0.0002860111758433118,
+            "p95_absolute": 0.02172940939721795,
+            "maximum_absolute": 0.12574397999021847
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.002332140754767627,
+            "median": 6.100048499514993e-06,
+            "median_absolute": 0.00077427011990265,
+            "p95_absolute": 0.02173584431874655,
+            "maximum_absolute": 0.12575095301452976
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -0.6446833436394981,
+            "median": -0.4582331094535666,
+            "median_absolute": 0.4582331094535666,
+            "p95_absolute": 1.4183600914417307,
+            "maximum_absolute": 1.5658727725349486
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.03587254898201331,
+            "median": -1.8444744689927184e-07,
+            "median_absolute": 1.8444744689927184e-07,
+            "p95_absolute": 0.19163194645077625,
+            "maximum_absolute": 0.3119472226781883
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": -0.00015813440140831583,
+            "median": 1.0639513907239348e-07,
+            "median_absolute": 0.00015385946010733708,
+            "p95_absolute": 0.002308370904931412,
+            "maximum_absolute": 0.003322681871641039
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.010224822287618587,
+            "median": -0.007694064179412574,
+            "median_absolute": 0.007694064179412574,
+            "p95_absolute": 0.023825243064454067,
+            "maximum_absolute": 0.02630335008820939
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.010831423760321842,
+            "median": 0.0077043042487765145,
+            "median_absolute": 0.0077043042487765145,
+            "p95_absolute": 0.023796603778607685,
+            "maximum_absolute": 0.02625415359632745
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.4535220948932889,
+            "median": -0.4524540461463366,
+            "median_absolute": 0.4545047838706989,
+            "p95_absolute": 1.227072515446348,
+            "maximum_absolute": 1.3726054333417226
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.011710930440053514,
+            "median": 1.827284541183665e-07,
+            "median_absolute": 1.827284541183665e-07,
+            "p95_absolute": 0.05948487843618041,
+            "maximum_absolute": 0.07083223444630163
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": 8.617435911753556e-10,
+            "median": 8.306213816689438e-10,
+            "median_absolute": 8.306213816689438e-10,
+            "p95_absolute": 1.0588656140455668e-09,
+            "maximum_absolute": 1.1352258158142035e-09
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.007812803268038022,
+            "median": -0.007606119429920044,
+            "median_absolute": 0.007632563559229651,
+            "p95_absolute": 0.020611781687602297,
+            "maximum_absolute": 0.023056630141662066
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.007622555953010732,
+            "median": 0.007604137870377271,
+            "median_absolute": 0.007638841384056515,
+            "p95_absolute": 0.02061825481118862,
+            "maximum_absolute": 0.023063105891587082
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9997672980414039,
+        "log_magnitude_ratio_dex": {
+          "count": 685,
+          "signed_mean": 0.00623748360411633,
+          "median": 0.0007003605879594218,
+          "median_absolute": 0.0017240445918620358,
+          "p95_absolute": 0.028931635370655587,
+          "maximum_absolute": 0.4063282820680404
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.89567971085786e-17,
+        "vela_integrated_signed_A_per_um": -1.9161137164413115e-17,
+        "integrated_log_magnitude_ratio_dex": 0.0046563178450197175,
+        "vela_srh_balance_net_A_per_um": -1.9161137164412637e-17,
+        "vela_srh_balance_generation_A_per_um": 1.9161137164412647e-17,
+        "vela_srh_balance_recombination_A_per_um": 1.681165517065506e-33
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": 3.393745835170549e-18,
+          "vela_A_per_um": 1.9597723437634332e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.290200956665925e-20,
+          "vela_A_per_um": -3.2805264442518416e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": 3.4266478447301948e-18,
+          "vela_A_per_um": 1.9630528702077478e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.014847228713631422,
+      "source_barrier_hole_density_log_ratio_dex": -0.015649375856191507,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n19_vd_0p05_vg_0p05",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/accepted_state_bias_0p050000.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/vtk/state_0001_0.05V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json"
+      }
+    },
+    {
+      "state": "n19_vd_0p05_vg_0p1",
+      "device": "n19",
+      "control_role": "low_nwell_control",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.1,
+      "common_silicon_node_count": 942,
+      "maximum_coordinate_difference_um": 0.0,
+      "m46_anchor": {
+        "gate_voltage_V": 0.1,
+        "sentaurus_current_A_per_um": 1.82121522609723e-14,
+        "vela_current_A_per_um": 1.9347881804806703e-14,
+        "absolute_log10_ratio": 0.026272153113180808,
+        "relative_error": 0.06236108327889473
+      },
+      "sentaurus_current_A_per_um": 1.82121522609723e-14,
+      "vela_current_A_per_um": 1.9347881804806703e-14,
+      "signed_log10_vela_over_sentaurus_dex": 0.026272153113180808,
+      "vela_anchor_shift_dex": 0.0,
+      "sentaurus_anchor_shift_dex": 0.0,
+      "potential_barrier": {
+        "sentaurus_electrostatic_V": 0.6231330154019911,
+        "vela_electrostatic_V": 0.622191948191058,
+        "electrostatic_vela_minus_sentaurus_mV": -0.9410672109330109,
+        "sentaurus_qf_referenced_V": 0.09314991159228642,
+        "vela_qf_referenced_V": 0.09225886096287352,
+        "qf_referenced_vela_minus_sentaurus_mV": -0.8910506294129011,
+        "barrier_predicted_current_shift_dex": 0.014968991747148965,
+        "barrier_prediction_residual_dex": 0.011303161366031843,
+        "sentaurus_electrostatic_node": 343,
+        "vela_electrostatic_node": 343,
+        "sentaurus_qf_node": 343,
+        "vela_qf_node": 343
+      },
+      "state_differences": {
+        "bulk": {
+          "psi_mV": {
+            "count": 921,
+            "signed_mean": -0.12363586369754745,
+            "median": -8.578442400875019e-05,
+            "median_absolute": 0.009139812843783623,
+            "p95_absolute": 1.1646255162057195,
+            "maximum_absolute": 7.4850991207117135
+          },
+          "phin_mV": {
+            "count": 921,
+            "signed_mean": -0.0019637545117730483,
+            "median": 3.3960916808574918e-12,
+            "median_absolute": 3.625502675852488e-10,
+            "p95_absolute": 0.04204754141519558,
+            "maximum_absolute": 0.31912245042591686
+          },
+          "phip_mV": {
+            "count": 921,
+            "signed_mean": 0.0027093333217437176,
+            "median": -1.6463004540115595e-13,
+            "median_absolute": 2.1729336636099297e-11,
+            "p95_absolute": 0.19931386223900677,
+            "maximum_absolute": 0.9426061838247353
+          },
+          "electron_density_dex": {
+            "count": 921,
+            "signed_mean": -0.0020410767879440322,
+            "median": -1.5642555514167114e-05,
+            "median_absolute": 0.00028608902117095063,
+            "p95_absolute": 0.019312286542270504,
+            "maximum_absolute": 0.12573990721818998
+          },
+          "hole_density_dex": {
+            "count": 921,
+            "signed_mean": 0.0021259955439451397,
+            "median": 6.090982331882966e-06,
+            "median_absolute": 0.000775567439112639,
+            "p95_absolute": 0.01956927349956679,
+            "maximum_absolute": 0.12574688017537827
+          }
+        },
+        "channel_interface": {
+          "psi_mV": {
+            "count": 10,
+            "signed_mean": -0.5896623063526708,
+            "median": -0.45019615609786723,
+            "median_absolute": 0.45019615609786723,
+            "p95_absolute": 1.2431865462309757,
+            "maximum_absolute": 1.375067032991062
+          },
+          "phin_mV": {
+            "count": 10,
+            "signed_mean": -0.037235171382021814,
+            "median": -3.6278599915839926e-07,
+            "median_absolute": 3.6278599915839926e-07,
+            "p95_absolute": 0.19839278253456813,
+            "maximum_absolute": 0.3193175907064416
+          },
+          "phip_mV": {
+            "count": 10,
+            "signed_mean": 0.0005195679016426339,
+            "median": 2.815222098354935e-06,
+            "median_absolute": 0.00028319832566534416,
+            "p95_absolute": 0.002431929600210858,
+            "maximum_absolute": 0.0026910964066228296
+          },
+          "electron_density_dex": {
+            "count": 10,
+            "signed_mean": -0.0092776776699663,
+            "median": -0.007553422355027985,
+            "median_absolute": 0.007553422355027985,
+            "p95_absolute": 0.020882485238967886,
+            "maximum_absolute": 0.023097982714682903
+          },
+          "hole_density_dex": {
+            "count": 10,
+            "signed_mean": 0.00991855489608676,
+            "median": 0.007566462822825299,
+            "median_absolute": 0.007566462822825299,
+            "p95_absolute": 0.020885390296675813,
+            "maximum_absolute": 0.023080853073932095
+          }
+        },
+        "source_barrier": {
+          "psi_mV": {
+            "count": 11,
+            "signed_mean": -0.4113853470092028,
+            "median": -0.4543008262803683,
+            "median_absolute": 0.4611073609328553,
+            "p95_absolute": 1.074934286906054,
+            "maximum_absolute": 1.204679653380225
+          },
+          "phin_mV": {
+            "count": 11,
+            "signed_mean": 0.01235399733703878,
+            "median": 3.6205528804482277e-07,
+            "median_absolute": 3.6205528804482277e-07,
+            "p95_absolute": 0.062374462657863214,
+            "maximum_absolute": 0.07481813199227598
+          },
+          "phip_mV": {
+            "count": 11,
+            "signed_mean": 1.0498829511231386e-10,
+            "median": 1.002633099472961e-10,
+            "median_absolute": 1.002633099472961e-10,
+            "p95_absolute": 1.3522290831934034e-10,
+            "maximum_absolute": 1.5999937721158294e-10
+          },
+          "electron_density_dex": {
+            "count": 11,
+            "signed_mean": -0.007115802176855706,
+            "median": -0.007637701194009782,
+            "median_absolute": 0.0077436618489143605,
+            "p95_absolute": 0.018055999163636524,
+            "maximum_absolute": 0.020235628185948665
+          },
+          "hole_density_dex": {
+            "count": 11,
+            "signed_mean": 0.006914751867758301,
+            "median": 0.007635251305954389,
+            "median_absolute": 0.007749838520232298,
+            "p95_absolute": 0.018062472272113647,
+            "maximum_absolute": 0.020242103921098875
+          }
+        }
+      },
+      "srh_source": {
+        "spatial_pearson": 0.9997746564342413,
+        "log_magnitude_ratio_dex": {
+          "count": 687,
+          "signed_mean": 0.0066207456633311824,
+          "median": 0.0007027710569029901,
+          "median_absolute": 0.0016565816864898453,
+          "p95_absolute": 0.02687775555476697,
+          "maximum_absolute": 0.41307763354993793
+        },
+        "sentaurus_integrated_signed_A_per_um": -1.9063351110445994e-17,
+        "vela_integrated_signed_A_per_um": -1.926766026671784e-17,
+        "integrated_log_magnitude_ratio_dex": 0.00462973327764364,
+        "vela_srh_balance_net_A_per_um": -1.9267660266717347e-17,
+        "vela_srh_balance_generation_A_per_um": 1.9267660266717347e-17,
+        "vela_srh_balance_recombination_A_per_um": 5.484597957254933e-34
+      },
+      "source_drain_flux_balance": {
+        "electron": {
+          "sentaurus_A_per_um": 1.5846542100499422e-17,
+          "vela_A_per_um": 1.9705898366908464e-17
+        },
+        "hole": {
+          "sentaurus_A_per_um": 3.290149156453316e-20,
+          "vela_A_per_um": -3.2804637313506873e-20
+        },
+        "total": {
+          "sentaurus_A_per_um": 1.5879443591999123e-17,
+          "vela_A_per_um": 1.973870300422139e-17
+        }
+      },
+      "qf_coordinate_roundtrip_max_abs_V": 6.938893903907228e-18,
+      "source_barrier_electron_density_log_ratio_dex": 0.01497251032446106,
+      "source_barrier_hole_density_log_ratio_dex": -0.015804782780195502,
+      "bgn_field_nonzero_node_count": 942,
+      "inputs": {
+        "sentaurus_export": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/sentaurus_exports/n19_vd_0p05_vg_0p1",
+        "vela_state": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/final_state.csv",
+        "vela_vtk": "build-release/reference_tcad/simplemos_sentaurus2022/m47_default_bgn_state_attribution/vela/n19/vtk/state_0002_0.1V.vtk",
+        "mesh": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json"
+      }
+    }
+  ],
+  "attribution": {
+    "target_current_error_dex": 0.10941868092427424,
+    "barrier_predicted_current_shift_dex": 0.021690017508659308,
+    "barrier_prediction_residual_dex": 0.08772866341561494,
+    "localized_metrics": [],
+    "interpretation": "default_BGN_on_self_consistent_state_mismatch_with_controls; state attribution is mechanism-consistent evidence, not a model-fit authorization"
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "sentaurus_state_count": true,
+    "vela_state_count": true,
+    "all_biases_exact": true,
+    "all_states_converged": true,
+    "common_node_ids": true,
+    "coordinate_identity": true,
+    "required_fields_present": true,
+    "contact_flux_complete": true,
+    "m46_point_currents_reproduced": true,
+    "qf_reference_increment_preserved": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  },
+  "claim_policy": {
+    "primary_comparison": "Vela minus Sentaurus at n23, Vd=0.05 V, Vg=0.05 V",
+    "adjacent_gate_test": "compare the target discrepancy with the exact Vg=0.00 V and 0.10 V states in each solver",
+    "nwell_control_test": "compare n23 against matched n19 at every gate point and difference the cross-solver discrepancies",
+    "target_localization": "a metric may be called target-localized only when the n23 Vg=0.05 discrepancy is an interior extremum relative to both adjacent gates and exceeds the matched n19 discrepancy in the same direction",
+    "barrier_current_proxy": "-Delta(qf-referenced barrier)/(Vt*ln(10))",
+    "causal_claim_guard": "state correlation alone is descriptive; the report must separate observed state mismatch, current-consistent mechanism, and unresolved residual",
+    "outcome_policy": "a null or mixed attribution is a valid completed result"
+  },
+  "forbidden_work_respected": [
+    "global HFS parameter scans or default tuning",
+    "SG current-kernel re-investigation",
+    "contact-current extraction re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact, solver, or production-default changes",
+    "interpolation between gate points",
+    "rewriting M8, M45, or M46 artifacts"
+  ],
+  "artifacts": {
+    "state_summary": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_state_summary.csv",
+    "node_state_ledger": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_node_state_ledger.csv",
+    "contact_flux_ledger": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_contact_flux_ledger.csv",
+    "attribution_contrasts": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_attribution_contrasts.csv"
+  }
+}

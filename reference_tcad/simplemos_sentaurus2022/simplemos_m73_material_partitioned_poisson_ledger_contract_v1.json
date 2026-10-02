@@ -1,0 +1,86 @@
+{
+  "schema": "vela.simplemos.sdevice.m73_material_partitioned_poisson_ledger_contract.v1",
+  "milestone": "M73",
+  "status": "draft_before_freeze",
+  "objective": "Use the frozen M65/M69 drain and gate states to decompose the Poisson mismatch into dielectric-flux, electron-charge, hole-charge, and dopant-charge terms, then test whether material-local dielectric coupling and semiconductor-only barycentric or signed-AverageBox charge measures explain the residual high-NWell pair growth.",
+  "upstream": {
+    "required_m72_status": "frozen",
+    "required_m72_classification": "native_charge_qualified_full_profile_material_but_not_dominant",
+    "required_m69_status": "frozen",
+    "required_m69_classification": "gate_stage_dominant",
+    "state_path": "M65 matched-ni no-BGN",
+    "sentaurus_state_exports": "M69 T-2022.03-SP2 drain and gate TDR exports"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_self_consistent_solves": 0,
+    "offline_sparse_poisson_responses": true,
+    "stages": ["drain", "gate"],
+    "production_default_changed": false
+  },
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "state_count_per_solver": 32,
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.9},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.85},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8}
+    ]
+  },
+  "operators": {
+    "legacy_all_cell": "Production average-permittivity edge coupling and all-adjacent-cell barycentric charge measure.",
+    "region_local_all_cell": "Region-local permittivity edge coupling with the production all-cell charge measure.",
+    "legacy_signed_si": "Production dielectric coupling with semiconductor-only signed AverageBox charge measure.",
+    "region_local_barycentric_si": "Region-local dielectric coupling with semiconductor-only barycentric charge measure.",
+    "region_local_signed_si": "Region-local dielectric coupling with semiconductor-only signed AverageBox charge measure."
+  },
+  "analysis": {
+    "state_residual": "Apply each frozen-state Poisson operator to the Sentaurus potential and Sentaurus region-0 carrier densities with the frozen Vela doping field.",
+    "linear_response": "Solve A_free,free delta_psi=-residual_free with zero correction on all contact nodes.",
+    "control_node": "Use the M69 gate-stage Sentaurus source-interface control node for both drain and gate stages of a case.",
+    "pair_proxy_dex": "((gate-drain correction at high NWell)-(gate-drain correction at low NWell))/(Vt*ln(10)).",
+    "targets": [
+      "M65 matched-ni current pair growth",
+      "M65 matched-ni electrostatic barrier pair proxy"
+    ],
+    "dominant_minimum_same_sign_pair_count": 6,
+    "dominant_minimum_median_current_closure_fraction": 0.8,
+    "material_minimum_median_current_closure_fraction": 0.3,
+    "classifications": [
+      "material_partition_dominant",
+      "material_partition_material_but_not_dominant",
+      "material_partition_not_material",
+      "execution_or_identity_failure"
+    ]
+  },
+  "acceptance": {
+    "required_pair_count": 8,
+    "required_case_count": 16,
+    "required_stage_count": 32,
+    "maximum_coordinate_error_um": 1e-10,
+    "maximum_sentaurus_shared_node_potential_spread_V": 1e-10,
+    "maximum_vela_production_poisson_replay_correction_V": 1e-7,
+    "maximum_component_sum_identity_error_V": 1e-10,
+    "production_reference_must_not_be_replaced": true
+  },
+  "interpretation_guards": [
+    "A frozen linear Poisson response is an attribution diagnostic, not a self-consistent current prediction.",
+    "Signed AverageBox and region-local variants remain diagnostic unless a later full-matrix self-consistent task qualifies one.",
+    "Large individual dielectric and charge responses may cancel; classification uses their summed response and the eight paired controls.",
+    "No production-reference replacement."
+  ],
+  "closed_topic_guards": [
+    "no HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN or Nc/Nv tuning",
+    "no mesh or convergence tuning"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg020",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 6.4853828141673e-06
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg020",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 3.83983089057583e-05
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg020",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 2.08718282997021e-07
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg020",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 1.24108214099688e-06
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_masetti_runtime_20260907/geometry_runtime",
+  "prior_read_failures": [
+    "Edge-RegionWise eMobility is undefined in this Element averaging configuration.",
+    "Plot alias Potential is not accepted by runtime ReadScalar."
+  ],
+  "retained_scope": "Only the already successful vertex/element e/h mobility reads, explicit vertices/edges/element connectivity, native coefficients and measures. Native field values are available in the standard TDR plots.",
+  "no_data_write_api": true,
+  "physics_solver_and_gates_unchanged": true
+}

@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/floor_position_evidence.json": "fa1da6301f9ccda77d86a5da3c4f5ca801e1455c342cafdcc908e5557ef76ed4",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/v2/pilot_evidence.json": "b1f338be7ff1c4965d6f563fc6ffa1368435c21399908eb5753cd269b384ede8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/prior_floor_control_20260914/pilot_cells.csv": "7cbb9b880acc2608381589540c3efc92545afb7ca746a63b1a30b9cf44494dd8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/prior_floor_control_20260914/pilot_summary.csv": "132ab067db8998270e28af0ce7ca85220942adaaf020e4ac7a145edf163e3e87",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/prior_floor_control_20260914/pilot_summary.json": "6ddfd9afaef2cacece33fb1a84cecece4ef18d2b8855759cb1c2e3405c82985e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/roots.csv": "cd617ec3bd9fdbcc0701ddc8c5b5f192e27488374eb9e34e74158bf7f4d866a1",
+    "scripts/check_simplemos_hfs_prior_floor_20260914.py": "6cc0213fc4fd031e756551796bd8686e6fbcdd041e33e6f3dde8feed24422176"
+  }
+}

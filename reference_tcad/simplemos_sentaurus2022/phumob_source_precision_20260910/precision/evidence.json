@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/actual_deltas.csv": "03f6cf641d9893963c5081760268de96e0e8c3a104f09303a0dc1b5f9f1943b8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/checks.csv": "ffd5d5ca43646990b8fa03b2998bbadf76febfbcd0a6f869b4c3ec24e2d0c9fb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/coordinates.csv": "00ed3eebae41f086adc9b6077f28bc2dd927865b7a100e7a7ad101f65b8ae023",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/freeze.json": "2a2498968a13456a742d0c21c35f606d385f752895da76a180c023e764edb33d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/linear.csv": "76923ffd4d910baead319cbeea9b72b7269ae5f636163b21096361e88f53b640",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/merit.csv": "95080963882400fe6e72d8a75a546f071b27072ed28e144c0bf682a9a8936688",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/poisson_hotspots.csv": "ccee10e9a49f2d3423a54a0085baf2429a5c21f40c5c0d78f6a62a6f69b4a922"
+  }
+}

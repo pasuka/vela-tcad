@@ -1,0 +1,7 @@
+{
+  "scope": "300 K, same 8 native PhuMob states. No production change and no numerical gate change.",
+  "classification": "Group cell errors by the number of local vertices below the independently computed G minimum.",
+  "diagnostic_fit": "For each carrier infer a single effective G floor from the lexicographically first fully clamped cell. Validate its functional form on every other cell; do not treat fitted agreement as a native parameter or algorithm proof.",
+  "training_selection": "First (key, numeric cell) with all three P below the mathematical minimum and three positive vertex measures.",
+  "heldout_relative_gate": 1e-07
+}

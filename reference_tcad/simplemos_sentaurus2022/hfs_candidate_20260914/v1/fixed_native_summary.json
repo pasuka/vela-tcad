@@ -1,0 +1,11 @@
+{
+  "e": {
+    "count": 14000,
+    "max_relative": 1.3826380040882214e-09
+  },
+  "h": {
+    "count": 14000,
+    "max_relative": 7.355093348815345e-06
+  },
+  "scope": "Fixed raw native state; retains pre-existing unfitted PhuMob hole floor difference, not a self-consistent Id comparison. No gate changed."
+}

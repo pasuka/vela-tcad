@@ -1,0 +1,10 @@
+name,exit_code,qualified
+wrong_mesh,1,True
+wrong_count,1,True
+missing_record,1,True
+duplicate,1,True
+zero_ratio,1,True
+out_of_range_node,1,True
+extra,1,True
+bad_alpha,1,True
+missing_alpha,1,True

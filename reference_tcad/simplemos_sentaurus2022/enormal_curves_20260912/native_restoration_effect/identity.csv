@@ -1,0 +1,5 @@
+case,mesh_identical,other_physics_identical,math_identical
+m65_n19_vd_0p050000_endpoint,True,True,True
+m65_n19_vd_1p000000_endpoint,True,True,True
+m65_n23_vd_0p050000_endpoint,True,True,True
+m65_n23_vd_1p000000_endpoint,True,True,True

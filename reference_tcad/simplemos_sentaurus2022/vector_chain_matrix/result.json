@@ -1,0 +1,12 @@
+{
+  "new_nonlinear_solves": 30,
+  "new_strict_states": 30,
+  "on_passed_amplitudes": 8,
+  "off_passed_amplitudes": 0,
+  "max_on_fd_adjoint_relative": 5.562792726454546e-08,
+  "max_current_relative_change": 1.137982819088279e-09,
+  "passed": true,
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

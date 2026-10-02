@@ -1,0 +1,3 @@
+baseline_variant,first_layer_node_count,perturbation_column_count,predicted_cut_electron_delta_A_per_um,first_layer_predicted_cut_electron_delta_A_per_um,actual_cut_electron_delta_A_per_um,cut_prediction_relative_error,predicted_total_current_delta_A_per_um,maximum_direct_gradient_relative_disagreement,maximum_functional_cut_gradient_relative_disagreement,maximum_fd_term_closure_relative
+full,5,12,-2.8527926092038044e-17,-2.8527926092038044e-17,-2.854642024013066e-17,0.0006478622516253486,-2.8527926092038044e-17,6.092609554712303e-07,2.892368688147403e-16,2.325148939826063e-16
+no_hfs,5,12,-2.852794341471044e-17,-2.852794341471044e-17,-2.854642024013066e-17,0.0006472554269428847,-2.852794341471044e-17,8.884388077324295e-10,1.446183470606926e-16,2.6378235873669974e-16

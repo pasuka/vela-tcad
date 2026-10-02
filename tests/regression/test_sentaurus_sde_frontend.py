@@ -19,6 +19,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import jsonschema
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
 
@@ -52,24 +54,8 @@ def write_sde(root: Path, body: str) -> Path:
 def validate_against_schema(testcase: unittest.TestCase,
                             document: dict,
                             schema_path: Path) -> None:
-    """Validate ``document`` against ``schema_path``.
-
-    ``jsonschema`` is not a declared dependency of this repository, so the check
-    degrades to a structural assertion when the module is unavailable.  The
-    schema's ``required`` and ``additionalProperties`` rules are still enforced
-    for the top-level object in that case.
-    """
+    """Validate the complete document; missing jsonschema must fail the test."""
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    try:
-        import jsonschema  # type: ignore[import-not-found]
-    except ImportError:
-        for key in schema.get("required", []):
-            testcase.assertIn(key, document, f"missing required key {key!r}")
-        if schema.get("additionalProperties") is False:
-            unexpected = set(document) - set(schema.get("properties", {}))
-            testcase.assertEqual(set(), unexpected,
-                                 f"unexpected top-level keys {sorted(unexpected)}")
-        return
     jsonschema.validate(document, schema)
 
 
@@ -331,6 +317,31 @@ class ExecutionIrTest(unittest.TestCase):
         validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
         self.assertEqual("bv", ir["analysis"]["kind"])
         self.assertIn("avalanche", ir["analysis"]["reason"].lower())
+
+    def test_schema_preserves_model_paths_and_legacy_v1_documents(self) -> None:
+        ir = self.build(PN2D_BV_CMD)
+        self.assertIn("Recombination.Avalanche.VanOverstraeten",
+                      ir["physics"]["model_paths"])
+        validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
+        ir["physics"]["model_paths"] = []
+        validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
+        del ir["physics"]["model_paths"]
+        validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
+
+    def test_schema_rejects_invalid_model_paths(self) -> None:
+        for invalid in ("Mobility", ["Mobility", 42],
+                        ["Mobility", "Mobility"], None):
+            with self.subTest(model_paths=invalid):
+                ir = self.build(PN2D_IV_CMD)
+                ir["physics"]["model_paths"] = invalid
+                with self.assertRaises(jsonschema.ValidationError):
+                    validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
+
+    def test_schema_still_rejects_unknown_nested_physics_fields(self) -> None:
+        ir = self.build(PN2D_IV_CMD)
+        ir["physics"]["unknown_model_paths"] = ["Mobility"]
+        with self.assertRaises(jsonschema.ValidationError):
+            validate_against_schema(self, ir, EXECUTION_IR_SCHEMA)
 
     def test_stage_order_is_preserved_with_dependency_edges(self) -> None:
         ir = self.build(PN2D_IV_CMD)

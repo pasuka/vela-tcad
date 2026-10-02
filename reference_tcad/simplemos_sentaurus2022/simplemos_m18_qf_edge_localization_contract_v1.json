@@ -1,0 +1,63 @@
+{
+  "schema": "vela.simplemos.sdevice.m18_qf_edge_localization.v1",
+  "contract_id": "simplemos-sdevice-m18-qf-edge-localization-v1",
+  "scope": "SDevice-only edge localization of M17 quasi-Fermi imbalance and equation-feedback ledger",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": "diagnostic-only edge output for the M17 secant-factor probe",
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "edge_response": {
+    "factor_game": "reuse the exact M17 mobility, SG secant conductance, and QF log-imbalance eight-vertex game",
+    "edge_shapley": "calculate the three-factor Shapley value independently on each finite-volume edge",
+    "adjoint_weight": "lambda_electron(node1)-lambda_electron(node0), with constrained electron-continuity rows assigned zero lambda",
+    "closure": "sum of weighted edge factors must reproduce M17 node-factor totals"
+  },
+  "edge_partition": {
+    "contact_cut_rule": "an edge with exactly one endpoint in the named contact node set",
+    "contact_buckets": ["source_contact_cut", "drain_contact_cut", "substrate_contact_cut", "gate_contact_cut"],
+    "internal_channel": "no contact-cut classification and midpoint x_um<=0.25 and -0.3<=midpoint y_um<=0.3",
+    "internal_source": "no contact-cut classification and midpoint x_um<=0.25 and midpoint y_um<-0.3",
+    "internal_drain": "no contact-cut classification and midpoint x_um<=0.25 and midpoint y_um>0.3",
+    "internal_body": "no contact-cut classification and midpoint x_um>0.25",
+    "properties": ["mutually_exclusive", "exhaustive"]
+  },
+  "feedback_ledger": {
+    "electron_transport": "replace the M15 electron_transport term with the three M17 stable factors",
+    "poisson": "reuse M15 Poisson adjoint-weighted operator response",
+    "srh": "sum M15 electron_srh and hole_srh responses",
+    "boundary_gauge": "sum M15 electron/hole boundary and gauge responses",
+    "other_carrier": "sum M15 hole transport and impact terms plus electron impact",
+    "closure": "ledger must reproduce the complete M15 adjoint-weighted operator response"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "edge_probe_count": 16,
+    "probe_variant_count": 8,
+    "maximum_edge_to_node_absolute_closure_A_per_um": 1e-12,
+    "maximum_edge_to_node_relative_closure": 1e-8,
+    "maximum_feedback_ledger_absolute_closure_A_per_um": 1e-12,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "Do source or drain contact-cut edges carry a material share of the key-state QF-imbalance response?",
+    "Is the key-state QF response localized inside the channel rather than at terminal boundaries?",
+    "Are direct SRH residuals material in the self-consistent adjoint feedback ledger?",
+    "Which individual edges and lateral locations dominate the remaining QF response?"
+  ],
+  "interpretation_limits": [
+    "The adjoint edge response is first-order self-consistent sensitivity around the converged Vela state.",
+    "A negligible direct SRH operator term does not prove SRH had no historical influence on the converged state.",
+    "The edge partition localizes Vela operator response and is not a native Sentaurus residual decomposition.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not headline root-cause evidence."
+  ]
+}

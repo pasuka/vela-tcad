@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/config.json": "7549fcc2dd30fbedd85b4eb1d665ec4e5ac27dfd406bdbd0efbd75f454ae7eda",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/config.status.json": "fe43a408682c51475e8ac0ba630799d2b02202128660252dc82ad2df187156a0",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/config.stdout.txt": "6fa729011c5ff7e2ca0bcad82a095a3f30d95aa0dcf18c21ebb21df5b815e3b2",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/jvp.csv": "1efb22a614cba4b1707756c8d118cf2a96016924a90b9605392282db75572c26",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/rows.csv": "cde1f7820046be324f9af37903b6cb76820aa4b4527e69d3c21a0d1a55989fc8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/failures.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/input_evidence.json": "ecfd3537c9c2ef4ab00b9c50ad75ac00813bcc490bcfa0a6c5f3104afcaa69cc",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/summary.json": "d9236757f52ee0bb83aee91e42e7f28a3b75b974497bf16a040dfc30f61bda27"
+  }
+}

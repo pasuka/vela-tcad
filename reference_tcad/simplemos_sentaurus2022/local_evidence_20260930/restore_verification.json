@@ -1,0 +1,34 @@
+{
+  "clean_staged_export_before": {
+    "retained_verified": 1424,
+    "local_archive_copies_verified": 0
+  },
+  "restored_from_vm_download": {
+    "archive_members_verified": 1946,
+    "created": 522,
+    "existing_identical": 0
+  },
+  "clean_checkout_after": {
+    "retained_verified": 1424,
+    "local_archive_copies_verified": 522
+  },
+  "original_worktree_hashes": {
+    "retained_verified": 1424,
+    "local_archive_copies_verified": 522
+  },
+  "historical_link_targets_restored": 521,
+  "exact_ignored_paths": 522,
+  "new_evidence_remains_visible": true,
+  "untracked_remaining": 0,
+  "download_sha256": "88959a459ac9a93e62e6667787ddca92d8c26e6db1b47434a1dbf420e0031d79",
+  "environment_note": "First deeply nested checkout-index destination exceeded Windows MAX_PATH for some files. Retried with a shorter destination and command-local core.longpaths=true; no source evidence changes.",
+  "checks": {
+    "archive_unittests": 10,
+    "ctest": [
+      "simplemos_reference_package",
+      "simplemos_historical_provenance",
+      "simplemos_evidence_archive"
+    ],
+    "new_solver_runs": 0
+  }
+}

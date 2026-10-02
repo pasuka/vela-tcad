@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/freeze.json": "83878a91d2b9ae3e56430469fb9f106601dfdccd4cb7e003354c4c11e791d875",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/contract.json": "adf2a553d21882f1b89dd98874fc8747cdc2f9e637818c07d95947fa3f968542",
+    "scripts/analyze_simplemos_linesearch_precision_20260908.py": "9a4d2756271aaa34ec4bb33224abbd95d82629efd7984301004ce1ac9a6c1fd9",
+    "scripts/analyze_simplemos_minority_residual_20260906.py": "64fd54850bad255f9549497c510858da0d476144a22d444b8e704dd7f775f146"
+  }
+}

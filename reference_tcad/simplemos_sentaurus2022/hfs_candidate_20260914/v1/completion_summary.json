@@ -1,0 +1,104 @@
+{
+  "complete": true,
+  "source_and_binary_unchanged": true,
+  "archive_sha256": "a5a3b090dfe1cb86a2db017d389e98f1c0374158afd6d6c12e6f0a33062f1ff9",
+  "verified_evidence_manifests": [
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\branch_steps_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\comparison_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\dc_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\fields\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\fixed_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\jvp_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\contract_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_0p050000_endpoint_vg_040\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_0p050000_endpoint_vg_040\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_0p050000_endpoint_vg_050\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_0p050000_endpoint_vg_050\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_1p000000_endpoint_vg_040\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_1p000000_endpoint_vg_040\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_1p000000_endpoint_vg_050\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n19_vd_1p000000_endpoint_vg_050\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_0p050000_endpoint_vg_040\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_0p050000_endpoint_vg_040\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_0p050000_endpoint_vg_050\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_0p050000_endpoint_vg_050\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_1p000000_endpoint_vg_040\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_1p000000_endpoint_vg_040\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_1p000000_endpoint_vg_050\\evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\step_convergence\\m65_n23_vd_1p000000_endpoint_vg_050\\input_evidence.json",
+    "reference_tcad\\simplemos_sentaurus2022\\hfs_candidate_20260914\\v1\\tangent_evidence.json"
+  ],
+  "tests": [
+    {
+      "name": "production_numerics",
+      "exit_code": 0,
+      "assertions": 1232,
+      "cases": 14,
+      "qualified": true
+    },
+    {
+      "name": "split_dd_runtime",
+      "exit_code": 0,
+      "assertions": 33,
+      "cases": 6,
+      "qualified": true
+    },
+    {
+      "name": "split_dd_state",
+      "exit_code": 0,
+      "assertions": 48,
+      "cases": 3,
+      "qualified": true
+    },
+    {
+      "name": "sg_flux",
+      "exit_code": 0,
+      "assertions": 325,
+      "cases": 28,
+      "qualified": true
+    },
+    {
+      "name": "mobility",
+      "exit_code": 0,
+      "assertions": 138,
+      "cases": 28,
+      "qualified": true
+    },
+    {
+      "name": "newton_solver",
+      "exit_code": 0,
+      "assertions": 1601,
+      "cases": 112,
+      "qualified": true
+    },
+    {
+      "name": "permittivity_assembly",
+      "exit_code": 0,
+      "assertions": 45,
+      "cases": 6,
+      "qualified": true
+    },
+    {
+      "name": "element_box_transport",
+      "exit_code": 0,
+      "assertions": 4846,
+      "cases": 12,
+      "qualified": true
+    }
+  ],
+  "original_finite_amplitude_challenge_qualified": false,
+  "branch_local_Jv_qualified": true,
+  "DC_states": 16,
+  "dual_points": 8,
+  "field_reconstruction_points": 8,
+  "all_original_DC_gates_preserved": true,
+  "full_HFS_curves_qualified": false,
+  "VM_jobs_started_this_stage": 0,
+  "limits": [
+    "Original 99 finite-amplitude Jv failures retained",
+    "Unfitted PhuMob hole cell mobility gap retained",
+    "Local high-Vd quasi-Fermi and low-density field differences retained",
+    "Full HFS curves and original full cohort not validated"
+  ]
+}

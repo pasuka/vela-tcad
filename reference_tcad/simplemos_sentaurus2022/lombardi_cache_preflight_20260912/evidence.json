@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/lombardi_cache_preflight_20260912/benchmark.cpp": "becdccab72b14f2c8b744b998a6356f5751ccda7aa4cf17af1c77585bf97a6ac",
+    "build-release/lombardi_cache_preflight_20260912/benchmark.exe": "5f77ff86a4ee9c249450e9e707ab7354e63b0142f9848b828a8d609b54706335",
+    "build-release/lombardi_cache_preflight_20260912/benchmark.log": "730c02947bfd964b7ed50989f917671ee07ca4e3a00448b05a9d9df67874723c",
+    "build-release/lombardi_cache_preflight_20260912/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "include/vela/equation/SplitDDOperator.h": "a2e5e341c9ac9ed13596f3022a2ab01b6199ca995bfb1015d590991d2920cfe2",
+    "include/vela/numerics/SplitDDState.h": "c0aca3924ba3f9384f1bbb95cedb3b2d89ed2093a98f5443e65efff1895dd9f1",
+    "include/vela/physics/ElementLombardi.h": "49936f6e6aeea7caf4a7e7b5b6d670a8e07c62f228df07a6f0fe42893bb4ca33",
+    "include/vela/physics/MobilityModel.h": "7e01b49f95345b1f60248b596b615de9dd8093c67a53e8fe3e95030ddaba6480",
+    "reference_tcad/simplemos_sentaurus2022/lombardi_cache_preflight_20260912/summary.json": "cd35d31bbecd4351d74c0ccaa572f1033c4145553e851e509b31fd9d67498cbd",
+    "scripts/benchmark_simplemos_lombardi_cache_20260912.py": "e226c09c9face46a8d3f9d5c7bb73fc378fd467e5ad6e535e5ae9405e10a0369"
+  }
+}

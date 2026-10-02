@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/analysis/contract.json": "30cf5ac871a1e1e110d68f8923129de25090daa2d3eec850821a0467aa08e17e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/analysis/source_identity.json": "7dff60ec8bf296bb3db8ea9d8690c8330143df7c0e6b82459326bdbda9cec272",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/export_evidence.json": "85c9152d0bfc2efadcd884358df187acdb8947c13723f219696293f4c1f773e1",
+    "scripts/analyze_simplemos_phumob_floor_temperature_20260909.py": "5f6945ac6ecfe5fd251ede20d37fd72879436094d9cc02cd7664b7d3c913b2a4"
+  }
+}

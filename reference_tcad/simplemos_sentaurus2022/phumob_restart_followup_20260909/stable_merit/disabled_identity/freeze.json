@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/restart_coordinates/dc/native_reload/state.csv": "55e850988e1c50c5bb180c6b878cf15fc13fa5187868e703f6b3e2b37c50201f",
+    "build-release/phumob_restart_followup_20260909/linesearch/failed_e1089/plain/config.status.json": "055f0691a126f8115627faf16732b131aa3460bdc3ef14d1f4fcf60e46a1bda3",
+    "build-release/phumob_restart_followup_20260909/linesearch/failed_e1089/plain/state.csv": "f1687f37c202c8758230fba4067c2c54522bafc9d5f6b691a6714c2dc75fb0b8",
+    "build-release/phumob_restart_followup_20260909/settled_source/dc/m65_n19_vd_0p050000_endpoint/plus_full/config.status.json": "57697bad085caac63594dfea7bd8c049c0fddf8f8bf0a78cad92e2bba67127ed",
+    "build-release/phumob_restart_followup_20260909/settled_source/dc/m65_n19_vd_0p050000_endpoint/plus_full/state.csv": "4160c3420988c42d2d1a343ca3289f238e950b8c385dd820fabaafb5f6e46c55",
+    "build-release/phumob_restart_followup_20260909/stable_merit/disabled_identity/e1089/config.json": "ffe702709bcc7fc9a937a0ded6f318f3262963e238e59d0a25e68507eec0a3db",
+    "build-release/phumob_restart_followup_20260909/stable_merit/disabled_identity/lowvd_source/config.json": "fea00acb49a565c90045b6d5deee7a9a1366d700c7f0ba1d0d5ee37f699557c9",
+    "build-release/phumob_restart_followup_20260909/zero_plateau/m65_n19_vd_0p050000_endpoint/2/state.csv": "d2847a99e28ff1c291c8bdafa45b08a6631822a3d1bd8e03b874653b31dc24b7",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/stable_merit/build_evidence.json": "6f36d43d5dd2a32aed86e80fbccc30ca5601ab6c420a82b13245693cbcab1fbe",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/stable_merit/disabled_identity/contract.json": "d224cd9dc7f3e5adeb30771d728f9e8ca450d9a264e5c2e06b12229048a2f528",
+    "scripts/check_simplemos_stable_merit_disabled_20260909.py": "ef0dcebc53368a2dacdc23cc6fdd934b6f615be4b62a644d75dbd876dfa85a0e"
+  }
+}

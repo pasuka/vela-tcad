@@ -1,0 +1,30 @@
+{
+  "schema": "vela.simplemos.sdevice.m37_measure_contact_qf_ablation.v1",
+  "scope": "SDevice-only n23 independent boundary-measure, contact-SG, and quasi-Fermi-feedback ablation",
+  "device": "n23",
+  "bias": {
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "boundary_measure_variants": [
+    "historical_node_volume",
+    "external_boundary_contact_support_signed",
+    "all_transport_nodes_signed"
+  ],
+  "contact_sg_ablation": "same-state HFS on/off replacement on the native drain-contact cut",
+  "qf_feedback_ablation": "M26 frozen direct operator contribution versus adjoint self-consistent relaxation",
+  "acceptance": {
+    "boundary_variant_count": 3,
+    "maximum_existing_endpoint_replay_relative_error": 1e-14,
+    "minimum_drain_cut_edges": 1,
+    "maximum_contact_cut_mobility_log10_response_dex": 1e-14,
+    "maximum_m26_first_order_relative_error": 0.1,
+    "require_finite_values": true
+  },
+  "claim_policy": [
+    "Boundary measure, direct contact SG response, and self-consistent quasi-Fermi relaxation are reported as separate causal layers.",
+    "A same-state contact-cut replacement measures only the direct SG contribution and excludes self-consistent state relaxation.",
+    "The M26 adjoint is a first-order feedback attribution and retains its measured nonlinear error envelope.",
+    "No default geometry, HFS, contact, SG, or solver setting is changed by M37."
+  ]
+}

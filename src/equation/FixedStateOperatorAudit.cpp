@@ -199,9 +199,15 @@ FixedStateOperatorAuditResult evaluateFixedStateOperators(
     const std::vector<Real> ni = detail::buildValidatedEffectiveNodeNi(
         "FixedStateOperatorAudit", mesh, materials, dopingModel,
         config.bandgapNarrowing, thermalVoltage);
-    const auto mobility = makeMobilityModel(config.mobility);
-    const auto impact = makeImpactIonizationModel(config.impactIonization);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    MobilityModelConfig mobilityConfig = config.mobility;
+    if (isSurfaceMobilityModel(mobilityConfig)) {
+        detail::updateSurfaceMobilityCellGeometry(
+            mobilityConfig, mesh, edgeCells, state.psi,
+            mobilityConfig.surface.coordinateFieldFactor, &cellMaterials);
+    }
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto impact = makeImpactIonizationModel(config.impactIonization);
     const Real fieldFactor =
         config.inputScaling.unitSystem().fieldFromCoordinateDeltaFactor();
 
@@ -279,25 +285,33 @@ FixedStateOperatorAuditResult evaluateFixedStateOperators(
         const Real electronMobilityField =
             qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
+        const detail::EdgeMobilityCarrierState mobilityState{
+            state.n(i), state.n(j), state.p(i), state.p(j), &state.n, &state.p};
         const Real electronMobility = detail::edgeMobility(
             edgeCells, mesh, dopingModel, *mobility, cellMaterials, edgeId,
-            CarrierType::Electron, electronMobilityField, &config.mobility,
-            &state.psi);
+            CarrierType::Electron, electronMobilityField, &mobilityConfig,
+            &state.psi, &mobilityState);
         const Real holeMobility = detail::edgeMobility(
             edgeCells, mesh, dopingModel, *mobility, cellMaterials, edgeId,
-            CarrierType::Hole, holeMobilityField, &config.mobility, &state.psi);
+            CarrierType::Hole, holeMobilityField, &mobilityConfig, &state.psi,
+            &mobilityState);
+        const SGBoltzmannFluxPolicy boltzmannFluxPolicy{
+            config.bandgapNarrowing.model != "none",
+            config.bandgapNarrowing.equalNiFluxEvaluation ==
+                "compensated_log_expm1"};
         const Real electronRawSignedFlux = electronMobility > 0.0
-            ? sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            ? sgElectronBoltzmannContinuityFlux(
                   ni[edge.n0], ni[edge.n1], state.psi(i), state.psi(j),
                   state.phin(i), state.phin(j), thermalVoltage,
                   electronMobility * thermalVoltage * fieldFactor / edge.length,
-                  true)
+                  boltzmannFluxPolicy)
             : 0.0;
         const Real holeRawSignedFlux = holeMobility > 0.0
-            ? sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            ? sgHoleBoltzmannContinuityFlux(
                   ni[edge.n0], ni[edge.n1], state.psi(i), state.psi(j),
                   state.phip(i), state.phip(j), thermalVoltage,
-                  holeMobility * thermalVoltage * fieldFactor / edge.length)
+                  holeMobility * thermalVoltage * fieldFactor / edge.length,
+                  boltzmannFluxPolicy)
             : 0.0;
         electronMobilityByEdge[edgeId] = electronMobility;
         holeMobilityByEdge[edgeId] = holeMobility;

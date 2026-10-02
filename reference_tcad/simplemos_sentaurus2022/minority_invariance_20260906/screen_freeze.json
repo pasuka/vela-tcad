@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_minority_invariance_20260906/m65_n19_vd_0p050000_endpoint/vg_007/vela/result.json": "6a7f0136cb4e2ca9e20e6aa3e557af8e81c47a9d209773201b05c00a6b1eb84c",
+    "reference_tcad/simplemos_sentaurus2022/minority_invariance_20260906/freeze.json": "b2e17493b32c39836615d1e352698411fa359fd31d84cfdb75de9ce22b39b98f",
+    "reference_tcad/simplemos_sentaurus2022/minority_invariance_20260906/screen_contract.json": "1c74f24bc6955cdbabbf27e65529d3e6acd589ff00326570b95f2b8a47ff5494",
+    "scripts/screen_simplemos_minority_invariance_20260906.py": "88d6ed355413e6b53ad42414cb4058e722a47d8e8abb47ccd3db2a9736821bd5"
+  }
+}

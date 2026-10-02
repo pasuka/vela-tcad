@@ -1,0 +1,285 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 0,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 10,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_010\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "no_bgn",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "no_bgn",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "same_state",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n19_vd_0p050000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 0,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 10,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n19_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "no_bgn",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "no_bgn",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n19_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "same_state",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n19_vd_1p000000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 0,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 10,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_010\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "no_bgn",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "no_bgn",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_0p050000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "same_state",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n23_vd_0p050000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 0,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 10,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\old_slotboom\\m65_n23_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "no_bgn",
+      "index": 40,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "no_bgn",
+      "index": 50,
+      "kind": "post_solve",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\state_independent\\dc\\no_bgn\\m65_n23_vd_1p000000_endpoint\\vela\\vg_050\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "model": "old_slotboom",
+      "index": 40,
+      "kind": "same_state",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n23_vd_1p000000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    }
+  ],
+  "missing": []
+}

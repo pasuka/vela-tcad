@@ -1,0 +1,5 @@
+case,device,vd,vg,native_converged,exit_code,iterations,reason,failure,current_A_per_um,delta_log10_Id_dex,local_satisfied,local_violations,local_max_ratio,global_satisfied,electron_global_qualified,hole_global_qualified,kcl_over_Id,final_residual,qualified
+m65_n19_vd_0p050000_endpoint,n19,0.05,0.9,True,0,12,stall_residual_floor,,2.0520295259004272e-06,-3.182032060966005e-08,True,0,1.5644660582844554e-11,True,False,False,7.155877330102472e-13,6.405121341527103e-11,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,0.8,True,0,14,stall_residual_floor,,3.0219753193054917e-06,8.563006119690018e-09,True,0,1.9069010830090798e-11,True,False,False,3.3712421326698997e-15,1.0542889749942311e-10,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,0.9,True,0,13,stall_residual_floor,,1.7876143260907006e-08,6.15961261843816e-07,True,0,2.329459013337402e-09,True,False,False,8.192190929867963e-11,7.335127555269902e-11,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,0.8,True,0,11,stall_residual_floor,,9.228879302057258e-09,2.3349749412481884e-06,True,0,2.9740526702355537e-08,True,False,False,1.0090159090667882e-14,1.3109552383294348e-10,True

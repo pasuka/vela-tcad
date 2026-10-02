@@ -1,0 +1,111 @@
+{
+  "jobs": [
+    {
+      "key": "failed_e1089",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\repair\\failed_e1089",
+      "kind": "repair"
+    },
+    {
+      "key": "qualified_control",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\repair\\qualified_control",
+      "kind": "repair"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0005,
+      "label": "plus_half"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.0005,
+      "label": "minus_half"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0005,
+      "label": "plus_half"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.0005,
+      "label": "minus_half"
+    }
+  ],
+  "change": "Only replace unweighted L2 norm decrease comparison with exact-sign squared-norm difference. Existing zero-to-zero exception, carrier validity, damping grid, refinements, caps and row gate unchanged.",
+  "frozen_row_gate": 1e-06,
+  "kcl_over_Id": 1e-08,
+  "production_modified": false,
+  "finite_volume_replacement": false
+}

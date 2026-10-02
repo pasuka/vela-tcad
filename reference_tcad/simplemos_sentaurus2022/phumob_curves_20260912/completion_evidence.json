@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/phumob_curves_20260912/qualified_source_and_binary.tgz": "e0103c6dca128e3f8c836903cf3dffc1cb958d4542cf52e93c1241b8548a617d",
+    "docs/validation/simplemos_phumob_fullcurve_validation_2026-09-12.md": "afe80cc03848801fe8ac14036eabc6ad142768fa8b833828dc382c3f4c39d2d7",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/comparison_evidence.json": "c67b6683430c4e10363891c68a1542506007397d6131692a1db3dd32e27a0c54",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/idvg.pdf": "6fa0675fb9a231a58de2f57200d0d675de3d3bea514ccd9c13c11b36b2f358f9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/idvg.png": "49b5d639555e258f00349cc1ec90dd0a9193e6702a51c12a3ce661baffdec94d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/qualification_summary_evidence.json": "95ed67cec3ced4c4c50846862d98e473b3bce39573d9eeb2cd8a5000e072459d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/qualified_source_archive.json": "94450697a1f79da339b4268f0f3a105cba6a2d9f642420bf087ec7ca061d2eb3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/relative_error.pdf": "5c176d3c409e83ea146325696bef9e5fe2aa7d7556c41c97aca5570e5f8dc32d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/relative_error.png": "d5ad3d9e4df81abc3ed28f8a0827c63c3d45fe9aa08a6e3595cf6c87633c2605"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/comparison.csv": "a09916d86af4be590993adb27a0a0515946b60de567439b329c6931b73cf5ec6",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/increments.csv": "5d12865f082f82a9396e780c538c21f38c81ca18c3b65d31892c725e219793fd",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/jvp_evidence.json": "7885d1a3ba8add24f29f1a3f0f204395b42acba71a9479abc209bdecfec9de46",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/native_evidence.json": "870b8328b4bcafbf64544f130955cc87989004c48d1fbb9f8bf014f202190691",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/semantics_evidence.json": "0e58f06843b4fb2fb9d16258dab9effdab44b380000dc577673b4063024f74e7",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/summary.json": "bedb9a45c56c8c407fde4527e3d2bd92afea1efa663b1b07ad6df463b5728d57",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/vela_native_evidence.json": "3b322a50af9e9de3bddab01c2210a75170ba67289271b584c6901d6552373bdc",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/vela_vela_evidence.json": "e3f1b2c32dd8a6e077936353b498c50fc81aa60ba8648807490b5edab3f24a87"
+  }
+}

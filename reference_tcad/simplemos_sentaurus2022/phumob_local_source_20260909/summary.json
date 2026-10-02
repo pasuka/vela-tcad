@@ -1,0 +1,19 @@
+{
+  "local_source_DC": 20,
+  "qualified_local_source_DC": 20,
+  "field_responses": 8,
+  "qualified_field_responses": 6,
+  "port_responses": 8,
+  "qualified_port_responses": 8,
+  "maximum_port_prediction_relative": 4.0111144961052503e-07,
+  "restart_identity_corrected_passed": 7,
+  "restart_DC_qualified": 0,
+  "restart_DC": 2,
+  "native_uploaded": false,
+  "native_started": false,
+  "production_cpp_changed": false,
+  "finite_volume_replacement": false,
+  "threshold_changed": false,
+  "manifests_verified": 20,
+  "direct_hash_entries_verified": 1563
+}

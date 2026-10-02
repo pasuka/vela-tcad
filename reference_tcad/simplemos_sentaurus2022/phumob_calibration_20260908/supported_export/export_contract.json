@@ -1,0 +1,100 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n19_vd_0p050000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n19_vd_0p050000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n19_vd_0p050000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n19_vd_0p050000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n19_vd_0p050000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n19_vd_0p050000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n19_vd_0p050000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n19_vd_0p050000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n19_vd_1p000000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n19_vd_1p000000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n19_vd_1p000000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n19_vd_1p000000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n19_vd_1p000000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n19_vd_1p000000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n19_vd_1p000000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n19_vd_1p000000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n23_vd_0p050000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n23_vd_0p050000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n23_vd_0p050000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n23_vd_0p050000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n23_vd_0p050000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n23_vd_0p050000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n23_vd_0p050000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n23_vd_0p050000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n23_vd_1p000000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n23_vd_1p000000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\masetti_control\\m65_n23_vd_1p000000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\masetti_control\\m65_n23_vd_1p000000_endpoint_vg_050"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "index": "40",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n23_vd_1p000000_endpoint_vg_040\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n23_vd_1p000000_endpoint_vg_040"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\native_raw\\bundle\\phumob\\m65_n23_vd_1p000000_endpoint_vg_050\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_phumob_calibration_20260908\\supported_export\\exports\\phumob\\m65_n23_vd_1p000000_endpoint_vg_050"
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "remote_root": "/tmp/vela_simplemos_hfs_restore_20260912",
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "key": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "key": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "key": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "key": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n19_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "key": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "key": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "key": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "key": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n19_vd_1p000000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "key": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "key": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "key": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "key": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n23_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "key": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "baseline",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "key": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "arm": "observed",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "key": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "baseline",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "key": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "index": 50,
+      "arm": "observed",
+      "name": "m65_n23_vd_1p000000_endpoint_vg_050_observed"
+    }
+  ],
+  "pilot": [
+    "m65_n19_vd_0p050000_endpoint_vg_040_baseline",
+    "m65_n19_vd_0p050000_endpoint_vg_040_observed"
+  ],
+  "scope": "Restore HFS only after qualified Enormal curves. Eight targets, native baseline and mathematical Canali replacement observer. Original default contact field switch; no contact-QF override.",
+  "gates": {
+    "exit_zero": true,
+    "bias_V": 1e-10,
+    "kcl_over_Id": 1e-08,
+    "observer_Id_relative": 1e-12,
+    "observer_psi_V": 1e-12,
+    "observer_density_relative": 1e-10,
+    "observer_mobility_relative": 1e-12
+  },
+  "protocol": "Run the first pair, export and qualify actual baseline/observer identity before launching the other fourteen jobs. Compilation alone does not qualify samples. Missing or ambiguous cell context stays unqualified.",
+  "no_parameter_fit": true,
+  "production_changed": false,
+  "contact_QF_control": "Separate diagnostic only after default baseline/observer identity passes. Do not substitute its physics for original deck."
+}

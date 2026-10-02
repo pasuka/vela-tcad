@@ -1,0 +1,29 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/build_evidence.json": "aa0b627c29372b1616e437fd0f76fff71acb08ab7f977da2ebb6cd22cb7e1a0e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/replay_evidence.json": "7ce353bf3b69d8ee0be3f2521d32a75f0d78c746af2966a6dfcadd8647151040",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/analysis_evidence.json": "9e7f2391950a88c3ff37e337497eb6b56560461953e94330386f75d4e8e39424",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/partition_evidence.json": "30618768c418bca481e7d0c169816e7500178339742380642b2f851a77cbd614",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/all_direction_evidence.json": "e4e76e86f6a5bbc663498c7e63d048cc4ffe80e632013f7746acbbb35d2308fd",
+    "scripts/validate_simplemos_split_psi_20260911.py": "710dc28bf88d3a22223e7e8405f6f3c81881d47af1b4f66508c27f4cfce9b863",
+    "scripts/analyze_simplemos_split_psi_20260911.py": "9fea1e262a9cbfbcc63ac139c0e82c1dc522760af1f417203fd5db0dc0ffd72e",
+    "scripts/validate_simplemos_split_psi_v2_20260911.py": "66dd08ded90952b2be72f9282ad4d7b65cc838c06cd7024306c171bb8f057732",
+    "scripts/analyze_simplemos_split_psi_v2_20260911.py": "4e42c1618b64531f81326776cc7131f082f268f1797df3de058fa04de71287b0",
+    "scripts/check_simplemos_split_partition_20260911.py": "7488b8ec354d4b7914fe6f54eb7e8a03d1d9e34f38db41fb14c885471bb357f2",
+    "scripts/check_simplemos_split_all_direction_20260911.py": "6083a8274f340f051a5a8363d397ff18a7caae5e5b5319f0fdb44973534f96f3",
+    "scripts/report_simplemos_split_psi_20260911.py": "169eb874fed0b7a23ab382a88f6431b84b13787e64d2575ee7e20984d1cd691b",
+    "docs/validation/simplemos_split_coordinate_preflight_2026-09-11.md": "27f60e177f139231735ad3e516ff1d4f1999d3c5b33d40bced8e63e8a094158a",
+    "docs/validation/simplemos_branch_status.md": "a42eac2ab7201a1c4541a7c6b547ef02139c22d33085855566017f1a81f7ace9",
+    "build-release/psi_split_0911/unit.log": "0ffd6843246fa19d4268ee71d0205385a7adb6636230d34933fbfa38bc7d6941",
+    "build-release/psi_split_0911/ctest.log": "3f1d861992480544ef95ebbe3d17a99dbe111b790fbdba094d83cc5125232a55",
+    "build-release/psi_split_0911/ctest.xml": "c54e50e6e6e42da083897f412179c6760bc27762bb09b07f176f76594a3d5d42",
+    "build-release/psi_split_0911/build.log": "5e23ae1db7ae55e6762b106427c6257ffb68de9be270c5cbf63986fb5345024d",
+    "build-release/psi_split_0911/analysis.log": "cbd138bffff715d84f927eb290a28b297a9302eba3b199b41ee0870ad49dae00",
+    "build-release/psi_split_0911/probe_build.log": "4b0fa935b40ed869a7a83b287b037233340ddfb2d134ad241cb0f64e0f4add6a",
+    "build-release/psi_split_0911/verified_old_poisson.h": "ff923341946e01caf0c35f5c74735732ecdf5fb4dec0ce7c8d245a2150e188f4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/validation_freeze.json": "a2c2f60327f4df6f1af1131ff972428ae6e54e8cbce57fb4d5c7ed66e9834b5c",
+    "include/vela/numerics/SplitCoordinate.h": "1083b16c08c331ab6f9c2ac1e18e5631dbaa8169fd927a8916ec7207b30a430f",
+    "include/vela/equation/ExtendedPoissonResidual.h": "b23b776c151e918a653de459b5010a765d8be006410264c3790e98edcae8b368",
+    "tests/test_production_numerics.cpp": "4ebecdf005e8a1b202958c93a59b3f227ff0b664158a9d718415a8378095845e"
+  }
+}

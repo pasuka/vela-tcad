@@ -1,0 +1,19 @@
+{
+  "input_hashes": {
+    "build-release/m65_ni/vela/matched_materials.json": "3fe16b4e1e3ffb3b087ceb661ee87768694667779dca7d684ef314023891d78b",
+    "build-release/simplemos_masetti_local_20260907/native_exports/n19/elements.csv": "4592df4159b482764b542a7450cdd30f39390a20318ad0b1847554ae7537dc77",
+    "build-release/simplemos_masetti_local_20260907/native_exports/n19/nodes.csv": "48d4556b8596c0542a225ad8f2ce80f09f38311163c05c91c2331bdc2379d453",
+    "build-release/simplemos_masetti_local_20260907/native_exports/n23/elements.csv": "33a14f56ec2ea6a922a30451e049a910abd34f519afb91f056abc4bfd894d379",
+    "build-release/simplemos_masetti_local_20260907/native_exports/n23/nodes.csv": "9b64bd4a514ac285fe546be069d582dcc6f6ccb92e3eba36ed8dc77a5186b59b",
+    "build-release/simplemos_masetti_local_20260907/native_raw/bundle/n19/MeasureCoefficients.debug": "9dd353ccb67fce9c51892007f9f1b8330b749e7a5a36922b16a7b6e4c2da6297",
+    "build-release/simplemos_masetti_local_20260907/native_raw/bundle/n23/MeasureCoefficients.debug": "c68b10722aa9a8256a2c4dfe99b8915c182ef062366d51c0347a2798dd9d759d",
+    "include/vela/equation/AssemblerUtils.h": "db549da7cbe337de982d7759b49c5955b1fb96ef49fa82883229a437c4e2cc49",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/interface_formula.csv": "d57db26a64bebd9a972d6d5b8b401a263ec09bb987196b13ea22941443293bcc",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/interface_share.csv": "a2a59d5c3208170a54eda9ad9d50e3786d7817c770ad84a2d52a70c0c240c71a",
+    "reference_tcad/simplemos_sentaurus2022/remaining_poisson_20260907/ledger_evidence.json": "5f509123ec05bacbaf0d454fd699289498169c073c020bfa1d2b8e40b1773895",
+    "scripts/audit_simplemos_dielectric_interface_formula_20260907.py": "8cd6c7eb7bb9cac3d854b1ae03951f05691665ec85a1bbf36333f418833b1684",
+    "scripts/audit_simplemos_masetti_native_geometry_20260907.py": "b63b1b7e7fb25dc21d3488a9a6db571f7ce2fa4c9a5c5c28e210c5cc2cadf7f3",
+    "scripts/run_simplemos_m34_sentaurus_interface_box_probe.py": "971869ff9301beb9a610ae899f0e27981038b8c75752477820b16b03cdef7b89",
+    "src/equation/CoupledDDAssembler.cpp": "31f0db648e6dfaeadd61ffb765ae0fd795c26f5f89f8415b814686d875755e16"
+  }
+}

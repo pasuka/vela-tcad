@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/checks.csv": "dc472ff7227ef5c4b274fdc90d7999031833abc7e0b16fbc98adf113195e1004",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/coordinates.csv": "5373e1bf0255b631d2684f324fa0833bba8b533cc983b7afa70605611dc2ede8",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/freeze.json": "4182ffb7aee245096e5c2ad0ed22fb6147c3b830952c43452bee3917fea6bf32",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/linear_defect.csv": "103a035fc9326e5496dec71b42a4a69c7001d9de7f62347335135af8c6d0898e",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/merit.csv": "37c297e5475ab361eb9b8cad256104b9d669f3ea2b96d19afa734d8d4855c5c4",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/path_compatibility/worst_poisson.csv": "2d69537d7de6567071da7aa7759fba266af2b0c905f3b767cd98e8dd2a60fec8",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/replay_evidence.json": "67174adbb633356380df6104930a7dcccf3847f1e2b8c8375475156a9b778fff"
+  }
+}

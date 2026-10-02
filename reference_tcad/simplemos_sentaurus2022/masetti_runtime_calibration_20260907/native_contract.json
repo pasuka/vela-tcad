@@ -1,0 +1,53 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg020",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 6.4853828141673e-06
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg020",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 3.83983089057583e-05
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg020",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 2.08718282997021e-07
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg020",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 1.24108214099688e-06
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_masetti_runtime_20260907",
+  "scope": "Read-only CurrentPlot Tcl runtime scalar/vector data and explicit internal topology; four strict Masetti endpoints at Vg=1.",
+  "model_and_acceptance_changes": false,
+  "forbidden_interpretation": "ReadFlux is a scalar Laplacian-like quantity, not carrier edge current; it is not called.",
+  "gates": {
+    "current_reclosure_relative": 1e-08,
+    "kcl_over_Id": 1e-08,
+    "coordinate_um": 1e-12,
+    "mobility_identity_relative": 1e-08,
+    "edge_terminal_relative": 1e-06
+  },
+  "semantics": "No runtime mobility or current location is declared the solver edge operator before numerical conservation and same-state checks.",
+  "eventual_response_gates": {
+    "prediction_relative": 0.001,
+    "two_amplitude_relative": 0.001,
+    "even_over_odd": 0.01,
+    "zero_drift_dex": 1e-05,
+    "minimum_signal_over_zero_drift": 100
+  },
+  "source_calibration": "A distributed source is frozen only after its physical definition and support are explicit; no production model replacement."
+}

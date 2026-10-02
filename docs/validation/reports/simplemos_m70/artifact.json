@@ -1,0 +1,12 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M70 transport support partition",
+  "status": "accepted",
+  "classification": "transport_support_proxy_not_material",
+  "report": "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_partition_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_state_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/transport_support_partition/m70_transport_support_node_ledger.csv"
+  ]
+}

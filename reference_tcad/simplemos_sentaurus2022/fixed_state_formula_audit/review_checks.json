@@ -1,0 +1,26 @@
+{
+  "checks": {
+    "four_matrix_cases": true,
+    "eight_terminal_identities": true,
+    "sixteen_vector_AB_pairs": true,
+    "all_p95_improve": true,
+    "all_electron_vector_L2_worsen": true,
+    "all_hole_vector_L2_improve": true,
+    "classical_SRH_L1_below_1e-12": true,
+    "prior_strict_qualification_retained": true,
+    "thirty_six_probe_runs": true
+  },
+  "dependencies_sha256": {
+    "scripts/compare_genius_bjt_transport_fields.py": "4bee5b8332fca05780ca9b128ebac908f1276aa7980bb55913a2d881c9295a2f",
+    "scripts/audit_genius_bjt_srh_fixed_state.py": "450f5849b2d68186a4d30931f6af6583bd4ca1818ef3553ee9940e615517a7e4",
+    "scripts/run_simplemos_m80b_state_semantics.py": "7c02dc5d17a2da5db54a518a473659b73b54ae4a2dd0d535b713dfde45723971",
+    "scripts/run_simplemos_m80_absolute_current_attribution.py": "f38c638172236e8c70d7697837bb5515cd7ee5f55c2bf81526229e80a4d3c3e5",
+    "src/post/ContactCurrent.cpp": "88697626e17dc45ca5eb39d2df1131a766d2aedce9e76aa9a286178f8117772f",
+    "src/discretization/ScharfetterGummel.cpp": "9400db72cfffd9661620b2647b891d200c6f85ee5c8522e5a1062e3640541eff",
+    "include/vela/equation/AssemblerUtils.h": "b3a1f65565377a7529afb71241dfe072b0e089e6ff4fda6724254f5726613eb2",
+    "src/solver/GummelSolver.cpp": "fd6f48d0db13f707bab12114c2669a388c435b81b928278771d4ee88b1b18b42"
+  },
+  "python_version": "3.14.7 (main, Aug  8 2026, 21:15:19)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+  "numpy_version": "2.5.2",
+  "scope": "QA of completed audit; vector deterioration is retained, not a release pass."
+}

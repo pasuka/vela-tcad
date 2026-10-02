@@ -1,0 +1,14 @@
+{
+  "cases": 16,
+  "original_target_points": 816,
+  "current_planned_curves": 4,
+  "current_planned_targets": 204,
+  "original_lattice": "0..2.5 V step .05 V",
+  "current_lattice": "0..1 V step .02 V",
+  "shared_exact_biases_per_curve": 11,
+  "original_targets_covered_by_current_lattice": 44,
+  "remaining_original_targets": 772,
+  "scope": "Read-only input inventory, not a numerical qualification.",
+  "physics": "Original Boltzmann OldSlotboom, PhuMob HFS Enormal, doping SRH; current explicit candidate includes these model families.",
+  "numerics": "Reference uses ExtendedPrecision(128), Super, Digits12/RhsMin1e-20, reclosure and explicit target exports. This intentionally tightens original Extrapolate/Iterations20 protocol; not original numerical-method identity."
+}

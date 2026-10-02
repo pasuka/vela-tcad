@@ -1,0 +1,15 @@
+{
+  "syntax_passed": [
+    "calibrate_simplemos_phumob_local_source_20260909.py",
+    "complete_simplemos_phumob_local_source_20260909.py",
+    "validate_simplemos_phumob_pair_source_scaled_20260909.py",
+    "native_simplemos_phumob_pair_source_20260909.py",
+    "audit_simplemos_phumob_lowvg_failed_steps_20260909.py",
+    "trace_simplemos_phumob_lowvg_failed_restart_20260909.py",
+    "validate_simplemos_phumob_restart_coordinates_20260909.py",
+    "audit_simplemos_phumob_pair_source_ports_20260909.py",
+    "test_simplemos_phumob_pair_source_inputs_20260909.py"
+  ],
+  "production_cpp_changed_this_stage": false,
+  "full_ctest_run": false
+}

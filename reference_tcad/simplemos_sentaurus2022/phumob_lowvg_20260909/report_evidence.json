@@ -1,0 +1,12 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_phumob_lowvg_validation_2026-09-09.md": "bf0fafc0d86d6e0fbb382e115837dfceb3300382b21609fd0cf7cad485ce2bdb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/qa_evidence.json": "5c67de36c64e77f9a0cfaf29040b9b126439b7566e5e64f8d471882332a2628e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/review_evidence.json": "6a1186dcc3a7c81c35ceb61336e8d500a693106986c4faa941205a8bc00676a4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_evidence.json": "c4e8f9a42b1436ac1909a4ee361ec38d3d4141dda40a755545b9092d588f7599",
+    "scripts/report_simplemos_phumob_lowvg_20260909.py": "7f65ad06d786374a410e3db8dc3dac852f3c92e8563a529322f4d03c0f724976",
+    "build-release/phumob_lowvg_20260909/report_before_table_format.md": "7b34a970b1553470d8b1b06150ec577817df00c3ff6cd0ae450fc6d878292357",
+    "build-release/phumob_lowvg_20260909/report_evidence_before_table_format.json": "3b5250203d18c86594aaa5d1d8efcbbccea9f7ee1211f2fbb736261d1671067e"
+  },
+  "presentation_amendment": "Only three Markdown column labels replace unescaped absolute-value pipes with abs(...). Original draft and manifest preserved. Numerical results unchanged."
+}

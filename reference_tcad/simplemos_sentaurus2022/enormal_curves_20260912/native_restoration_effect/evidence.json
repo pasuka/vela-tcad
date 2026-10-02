@@ -1,0 +1,28 @@
+{
+  "input_hashes": {
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n19_vd_0p050000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n19_vd_0p050000_endpoint/native_des.cmd": "708d7aee923d6281fe643d208a83f206112bdea03532ebe631dfa7e1f7b01555",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n19_vd_1p000000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n19_vd_1p000000_endpoint/native_des.cmd": "708d7aee923d6281fe643d208a83f206112bdea03532ebe631dfa7e1f7b01555",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n23_vd_0p050000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n23_vd_0p050000_endpoint/native_des.cmd": "708d7aee923d6281fe643d208a83f206112bdea03532ebe631dfa7e1f7b01555",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n23_vd_1p000000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/enormal_curves_20260912/native_raw/bundle/m65_n23_vd_1p000000_endpoint/native_des.cmd": "708d7aee923d6281fe643d208a83f206112bdea03532ebe631dfa7e1f7b01555",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n19_vd_0p050000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n19_vd_0p050000_endpoint/native_des.cmd": "22f5b79f80f8938d471f7f967e36c4466cc756bd26796701bf971e6745140dd3",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n19_vd_1p000000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n19_vd_1p000000_endpoint/native_des.cmd": "22f5b79f80f8938d471f7f967e36c4466cc756bd26796701bf971e6745140dd3",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n23_vd_0p050000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n23_vd_0p050000_endpoint/native_des.cmd": "22f5b79f80f8938d471f7f967e36c4466cc756bd26796701bf971e6745140dd3",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n23_vd_1p000000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/phumob_curves_20260912/native_raw/bundle/m65_n23_vd_1p000000_endpoint/native_des.cmd": "22f5b79f80f8938d471f7f967e36c4466cc756bd26796701bf971e6745140dd3",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_evidence.json": "f9bd6e4d308d9c2c73f91d59a9122ca7df847526f7cfc9f301b9a79b39f595fd",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_restoration_effect/identity.csv": "4a3bb4a867d9349a03e92883e2099930ebc56cac07f797233818f65f87954073",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_restoration_effect/model_effect.pdf": "8b98342c90919ffad2ae5a3b5185434c92042726b28843832ec23e5e330cfd4b",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_restoration_effect/model_effect.png": "32d487301fd81cc62bac57074f665e76db5aee1f1cc9cedec59f57eac9b9ab00",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_restoration_effect/points.csv": "0ea7188a15697e38e731e16a27c9b8ccf08ccd7161083c50ee1c0f2042405eac",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_restoration_effect/summary.json": "ab4e1192ed29e450c3c055e15c1e8c27ae6e5846d97fc08c1f1a59a507a7c567",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/completion_evidence.json": "595cde35796703d433d1852b440d7cc07c1ecca98be2437f673c1b7724fcc80d",
+    "scripts/summarize_simplemos_enormal_native_effect_20260912.py": "f4db31bd358f0cfcdeb89f500a83bd69d50d432cd0f4e944967d2ab4e6fea99b"
+  }
+}

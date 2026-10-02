@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.sdevice.m19_drain_cut_audit.v1",
+  "contract_id": "simplemos-sdevice-m19-drain-cut-audit-v1",
+  "scope": "SDevice-only drain-contact boundary, quasi-Fermi endpoint mapping, SG cut flux, and self-consistent feedback audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": false,
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "contact_cut": {
+    "definition": "an edge with exactly one endpoint in the drain contact node set",
+    "contact_boundary_check": "compare Vela and imported Sentaurus drain-contact electron quasi-Fermi values against the configured drain bias",
+    "endpoint_mapping_check": "compare direct endpoint quasi-Fermi drops and secant gradients with exported Sentaurus eGradQuasiFermi and Vela transport-cell-vector drive",
+    "current_reconstruction": "sum the production SG edge particle line flux over the native drain cut with the ContactCurrent sign convention"
+  },
+  "frozen_cut_game": {
+    "factors": [
+      "drain_contact_endpoint_state",
+      "drain_adjacent_interior_phin",
+      "drain_adjacent_interior_other_state"
+    ],
+    "variants": 8,
+    "other_state_fields": ["psi", "phip", "electrons_m3", "holes_m3"],
+    "allocation": "three-factor Shapley allocation of exact frozen drain-cut current changes",
+    "full_state_control": "replay all imported Sentaurus fields through the unchanged Vela SG operator"
+  },
+  "self_consistent_feedback": {
+    "qf_cut_response": "reuse the M18 adjoint-weighted drain-contact-cut QF response",
+    "complete_ledger": "reuse the M18 mobility, SG secant conductance, QF imbalance, Poisson, SRH, boundary/gauge, and other-carrier ledger",
+    "interpretation": "report frozen direct contribution separately from first-order self-consistent operator sensitivity"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "probe_count": 144,
+    "probe_variants_per_state": 9,
+    "maximum_contact_phin_bias_error_V": 1e-12,
+    "maximum_strong_state_sg_cut_current_reconstruction_relative_error": 1e-6,
+    "maximum_shapley_closure_A_per_um": 1e-18,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "Do Vela and Sentaurus impose the same electron quasi-Fermi value at drain contact nodes?",
+    "Does the remaining QF difference originate at the constrained contact endpoint or the adjacent free interior endpoint?",
+    "Does the unchanged Vela SG operator reproduce Sentaurus terminal current when fed the imported Sentaurus state?",
+    "How does the exact frozen cut contribution relate to the M18 self-consistent adjoint response?"
+  ],
+  "interpretation_limits": [
+    "Imported Sentaurus nodal fields share the original TDR node IDs; no spatial interpolation is used.",
+    "Sentaurus eGradQuasiFermi is a nodal vector diagnostic and is not assumed to be its private SG face interpolation.",
+    "The frozen cut game is exact for the selected hybrid states but is not a self-consistent re-solve.",
+    "SG cut-current closure is an acceptance criterion only for Vg>=0.8 V; sub-fA and weak-current mapped-state cancellation is retained only as guarded context."
+  ]
+}

@@ -1,0 +1,17 @@
+case,device,vd,key,model,index,vg,exit_code,native_qualified,Id_A_per_um,kcl_over_Id,bias_error_V,runtime_prefix
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_000,masetti_control,0,0.0,0,True,2.44931076104027e-15,1.8821237338325214e-15,0.0,runtime_000
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_010,masetti_control,10,0.2,0,True,3.00627410806273e-13,1.000684994074133e-15,0.0,runtime_000
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_000,phumob,0,0.0,0,True,2.80617268975095e-15,8.740960191545722e-16,0.0,runtime_000
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_010,phumob,10,0.2,0,True,3.44623975664234e-13,1.0981798351035881e-15,0.0,runtime_000
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_000,masetti_control,0,0.0,0,True,3.80606218458409e-14,8.063877599810902e-16,0.0,runtime_000
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_010,masetti_control,10,0.2,0,True,4.91835232111477e-12,6.816078754385156e-16,0.0,runtime_000
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_000,phumob,0,0.0,0,True,4.3707534016642e-14,1.3423665083340802e-15,0.0,runtime_000
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_010,phumob,10,0.2,0,True,5.64043301461386e-12,5.106376477055991e-16,0.0,runtime_000
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_000,masetti_control,0,0.0,0,True,6.05926419406743e-17,1.5256743124206238e-15,0.0,runtime_000
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_010,masetti_control,10,0.2,0,True,2.6323074439504e-15,3.266089335994226e-16,0.0,runtime_000
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_000,phumob,0,0.0,0,True,6.963662273472e-17,4.425096723542257e-17,0.0,runtime_000
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_010,phumob,10,0.2,0,True,3.19765933391947e-15,5.945843013766647e-16,0.0,runtime_000
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_000,masetti_control,0,0.0,0,True,3.40086792322502e-16,7.248709401445789e-17,0.0,runtime_000
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_010,masetti_control,10,0.2,0,True,1.16447965683494e-14,4.1916377176753745e-15,0.0,runtime_000
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_000,phumob,0,0.0,0,True,3.71310556502558e-16,2.655664144898804e-15,0.0,runtime_000
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_010,phumob,10,0.2,0,True,1.41199433598035e-14,1.8471542706834676e-15,0.0,runtime_000

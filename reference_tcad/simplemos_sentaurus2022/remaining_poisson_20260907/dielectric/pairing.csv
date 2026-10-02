@@ -1,0 +1,17 @@
+axis,vg,vd,baseline,old_pair_error_dex,new_pair_error_dex,high_NWell_improved,low_NWell_not_worse,pair_improved,qualified
+all_native_K,0.8,0.05,production,0.0008904769938327112,1.038599266650271e-05,True,True,True,True
+all_native_K,0.8,0.05,mobility,0.0006752630559354339,1.038599266650271e-05,True,True,True,True
+all_native_K,0.8,1.0,production,0.0027735954863307003,1.6340820610734607e-05,True,True,True,True
+all_native_K,0.8,1.0,mobility,0.0010654023628829978,1.6340820610734607e-05,True,True,True,True
+all_native_K,1.0,0.05,production,0.0034365529611618947,1.9067553767870317e-05,True,True,True,True
+all_native_K,1.0,0.05,mobility,0.0005452193106628808,1.9067553767870317e-05,True,True,True,True
+all_native_K,1.0,1.0,production,0.0047425113550408635,1.830554251850152e-05,True,True,True,True
+all_native_K,1.0,1.0,mobility,0.0007579174462997877,1.830554251850152e-05,True,True,True,True
+Si_SiO2_only,0.8,0.05,production,0.0008904769938327112,1.3449717762062174e-05,True,True,True,True
+Si_SiO2_only,0.8,0.05,mobility,0.0006752630559354339,1.3449717762062174e-05,True,True,True,True
+Si_SiO2_only,0.8,1.0,production,0.0027735954863307003,-7.540174649395546e-06,True,True,True,True
+Si_SiO2_only,0.8,1.0,mobility,0.0010654023628829978,-7.540174649395546e-06,True,True,True,True
+Si_SiO2_only,1.0,0.05,production,0.0034365529611618947,-1.0962273603907242e-05,True,True,True,True
+Si_SiO2_only,1.0,0.05,mobility,0.0005452193106628808,-1.0962273603907242e-05,True,True,True,True
+Si_SiO2_only,1.0,1.0,production,0.0047425113550408635,-2.4712678089435063e-05,True,True,True,True
+Si_SiO2_only,1.0,1.0,mobility,0.0007579174462997877,-2.4712678089435063e-05,True,True,True,True

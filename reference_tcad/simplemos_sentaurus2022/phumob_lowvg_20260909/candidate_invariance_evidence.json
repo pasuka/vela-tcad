@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "build-release/phumob_lowvg_20260909/candidate_invariance.py": "8785b9c4ce924be456b616e19a9654d2cafaf586200c4d0cf9b9284e18013783",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate/dc_evidence.json": "7337aa5fdd2ce332c012d79a815a715eb60e34672b511d795563bd359bf7886c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate_invariance.csv": "18065ed84bd5771e8c365811804b44f70d68467728aba02c54be160c2ee974ff"
+  }
+}
