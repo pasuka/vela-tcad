@@ -1,0 +1,163 @@
+{
+  "format_version": 2,
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "node_doping_file": "doping.csv",
+  "materials_file": "materials.json",
+  "doping": [],
+  "mesh_geometry": {
+    "node_volume_policy": "barycentric",
+    "require_non_obtuse": false
+  },
+  "solver": {
+    "mobility": {
+      "model": "masetti_field_lombardi",
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "electron_mumin1_cm2_V_s": 52.2,
+      "hole_mumin1_cm2_V_s": 44.9,
+      "electron_mumin2_cm2_V_s": 52.2,
+      "hole_mumin2_cm2_V_s": 0.0,
+      "electron_mu1_cm2_V_s": 43.4,
+      "hole_mu1_cm2_V_s": 29.0,
+      "electron_pc_cm3": 0.0,
+      "hole_pc_cm3": 9.23e+16,
+      "electron_cr_cm3": 9.68e+16,
+      "hole_cr_cm3": 2.23e+17,
+      "electron_cs_cm3": 3.43e+20,
+      "hole_cs_cm3": 6.1e+20,
+      "electron_masetti_alpha": 0.68,
+      "hole_masetti_alpha": 0.719,
+      "electron_masetti_beta": 2.0,
+      "hole_masetti_beta": 2.0,
+      "electron_field_beta": 1.109,
+      "hole_field_beta": 1.213,
+      "electron_saturation_velocity_cm_s": 10700000.0,
+      "hole_saturation_velocity_cm_s": 8370000.0
+    },
+    "recombination": [
+      "srh"
+    ],
+    "impact_ionization": {
+      "model": "van_overstraeten",
+      "driving_force": "electric_field_parallel",
+      "electron_a_low_cm_inv": 703000.0,
+      "hole_a_low_cm_inv": 1582000.0,
+      "electron_a_high_cm_inv": 703000.0,
+      "hole_a_high_cm_inv": 671000.0,
+      "electron_b_low_V_per_cm": 1231000.0,
+      "hole_b_low_V_per_cm": 2036000.0,
+      "electron_b_high_V_per_cm": 1231000.0,
+      "hole_b_high_V_per_cm": 1693000.0,
+      "switch_field_V_per_cm": 400000.0,
+      "phonon_energy_eV": 0.063
+    },
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "coefficient_eV": 0.009,
+      "reference_doping_cm3": 1e+17,
+      "smoothing": 0.5
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
+    "band_to_band": {
+      "model": "e2"
+    },
+    "srh_doping_dependence": {
+      "enabled": true,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "tau_n_s": 1e-05,
+    "tau_p_s": 3e-06,
+    "temperature_K": 300.0,
+    "method": "gummel_newton",
+    "max_iter": 20
+  },
+  "output_csv": "stage01.csv",
+  "contacts": [
+    {
+      "name": "drain",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "source",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "gate",
+      "bias": 0.0,
+      "type": "metal_gate",
+      "work_function_eV": -0.55
+    },
+    {
+      "name": "substrate",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "sweep": {
+    "mode": "iv",
+    "contact": "drain",
+    "current_contact": "drain",
+    "start": 0.0,
+    "stop": 100000.0,
+    "step": 2500.0,
+    "initial_step": 0.01,
+    "min_step": 1e-05,
+    "max_step": 2500.0,
+    "growth_factor": 1.41,
+    "shrink_factor": 0.5,
+    "write_vtk": true,
+    "vtk_prefix": "stage01",
+    "vtk_format": "vtu",
+    "vtk_fields": [
+      "eDensity",
+      "hDensity",
+      "TotalCurrentDensity/Vector",
+      "eCurrentDensity/Vector",
+      "hCurrentDensity/Vector",
+      "ElectricField/Vector",
+      "ElectrostaticPotential",
+      "SpaceCharge",
+      "DopingConcentration",
+      "srhRecombination",
+      "Band2BandGeneration",
+      "AvalancheGeneration",
+      "eAvalancheGeneration",
+      "hAvalancheGeneration",
+      "eIonIntegral",
+      "hIonIntegral",
+      "MeanIonIntegral",
+      "eAlphaAvalanche",
+      "hAlphaAvalanche"
+    ],
+    "vtk_binary": false,
+    "csv_all_contacts": true,
+    "write_state_file": "stage01_state.h5",
+    "predictor": "linear",
+    "initial_state_file": "stage00_state.h5",
+    "vtk_bias_points": [],
+    "external_circuit": {
+      "mode": "series_resistor",
+      "resistance_ohm_um": 10000000.0
+    },
+    "breakdown": {
+      "current_contact": "drain",
+      "current_abs_A_per_um": 0.001443
+    }
+  }
+}

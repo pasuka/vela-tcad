@@ -320,11 +320,12 @@ void MaterialDatabase::loadJson(const std::string& jsonPath, UnitScalingConfig s
     try {
         nlohmann::json root;
         ifs >> root;
-        // A materials file inherits the deck's format version, so a version-2
-        // deck also gets the version-2 key contract on its materials file.
-        root = canonicalizeDeckKeys(root, scaling.deckFormatVersion);
-
         const bool versionedTemplatesLdmos = isTemplatesLdmosMaterialsV1(root);
+        // Versioned material documents declare their own TCAD unit contract.
+        // Only unversioned overrides inherit the deck's v1/v2 key spelling;
+        // rewriting C3 here would turn its native *_cm3 fields into *_m3.
+        if (!versionedTemplatesLdmos)
+            root = canonicalizeDeckKeys(root, scaling.deckFormatVersion);
         if (root.is_object() && root.contains("schema") &&
             !versionedTemplatesLdmos) {
             throw std::invalid_argument(

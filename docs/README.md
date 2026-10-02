@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SDevice WP4 stage/deck emitter, 2026-10-02](validation/sdevice_deck_emit_validation_2026-10-02.md):
+  local main merged; seven fixture goldens, v2 decks, HDF5 chaining and real-runner smoke checks.
+  WP4 acceptance passed with the confirmed current WP3 gate reference baseline; CLI orchestration remains WP5.
+
 - [Remote compute VM](office_vm_workflow.md): private SSH configuration,
   Micromamba GCC 16 builds, isolated Sentaurus environment, file transfer and
   detached job submission/status through `scripts/Invoke-VelaVm.ps1`.

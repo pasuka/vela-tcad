@@ -1,0 +1,243 @@
+{
+  "schema": "vela.stage_plan.v1",
+  "cmd": {
+    "path": "bjt_m0_des.cmd",
+    "sha256": "2fb58808df94b5229d7deb4e114d6f806f52a64a9fb4c45feb9ba53ea6a74465",
+    "execution_ir": "execution_ir.json"
+  },
+  "work_dir": "device_vela",
+  "exit_on_failure": false,
+  "threads": 1,
+  "inputs": {
+    "mesh_json": "mesh.json",
+    "doping_csv": "doping.csv",
+    "materials_json": "materials.json",
+    "mesh_qualification": "mesh_qualification.json",
+    "sidecar": null
+  },
+  "outputs": {
+    "log": "bjt_m0_des.log",
+    "final_vtu": "bjt_m0_des.vtu",
+    "pvd": "bjt_m0_des.pvd",
+    "plot_final_only": false,
+    "vtu_binary": false,
+    "keep_intermediate": true
+  },
+  "electrodes": [
+    {
+      "name": "emitter",
+      "contact": "emitter",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "base",
+      "contact": "base",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "collector",
+      "contact": "collector",
+      "initial_voltage_V": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "index": 0,
+      "ir_stage_index": 0,
+      "kind": "equilibrium",
+      "deck": "simulation_stage00.json",
+      "csv": "stage00.csv",
+      "input_state": null,
+      "output_state": "stage00_state.h5",
+      "electrode_voltages_start_V": {
+        "emitter": 0.0,
+        "base": 0.0,
+        "collector": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "emitter": 0.0,
+        "base": 0.0,
+        "collector": 0.0
+      },
+      "current_file": "bjt_m0_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": [
+          "bjt_m0_equilibrium_des.vtu"
+        ]
+      },
+      "required_t": [],
+      "sidecar_overrides": []
+    },
+    {
+      "index": 1,
+      "ir_stage_index": 2,
+      "kind": "sweep",
+      "deck": "simulation_stage01.json",
+      "csv": "stage01.csv",
+      "input_state": "stage00_state.h5",
+      "output_state": "stage01_state.h5",
+      "electrode_voltages_start_V": {
+        "emitter": 0.0,
+        "base": 0.0,
+        "collector": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "emitter": 0.0,
+        "base": 0.7,
+        "collector": 0.0
+      },
+      "current_file": "bjt_m0_base_bjt_m0_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": [
+          "bjt_m0_vbe070_des.vtu"
+        ]
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "sweep": {
+        "contact": "base",
+        "mode": "voltage",
+        "start_V": 0.0,
+        "stop_V": 0.7,
+        "step_V": 0.027999999999999997,
+        "initial_step_V": 0.0007,
+        "min_step_V": 6.999999999999999e-08,
+        "max_step_V": 0.027999999999999997,
+        "growth_factor": 1.35,
+        "shrink_factor": 2.0,
+        "t_to_bias": {
+          "v0": 0.0,
+          "v1": 0.7
+        }
+      }
+    },
+    {
+      "index": 2,
+      "ir_stage_index": 3,
+      "kind": "sweep",
+      "deck": "simulation_stage02.json",
+      "csv": "stage02.csv",
+      "input_state": "stage01_state.h5",
+      "output_state": "stage02_state.h5",
+      "electrode_voltages_start_V": {
+        "emitter": 0.0,
+        "base": 0.7,
+        "collector": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "emitter": 0.0,
+        "base": 0.7,
+        "collector": 3.0
+      },
+      "current_file": "bjt_m0_collector_bjt_m0_des.plt",
+      "plt_write": [
+        0.0,
+        0.03333333333333333,
+        0.06666666666666667,
+        0.1,
+        0.13333333333333333,
+        0.16666666666666666,
+        0.2,
+        0.23333333333333334,
+        0.26666666666666666,
+        0.3,
+        0.3333333333333333,
+        0.36666666666666664,
+        0.4,
+        0.43333333333333335,
+        0.4666666666666667,
+        0.5,
+        0.5333333333333333,
+        0.5666666666666667,
+        0.6,
+        0.6333333333333333,
+        0.6666666666666666,
+        0.7,
+        0.7333333333333333,
+        0.7666666666666667,
+        0.8,
+        0.8333333333333334,
+        0.8666666666666667,
+        0.9,
+        0.9333333333333333,
+        0.9666666666666667,
+        1.0
+      ],
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [
+          {
+            "file_prefix": "bjt_m0_vce",
+            "t": [
+              0.0,
+              0.0333333333333,
+              0.333333333333,
+              1.0
+            ],
+            "global_index_start": 0,
+            "pattern": "bjt_m0_vce_NNNN_des.vtu"
+          }
+        ],
+        "after_stage": []
+      },
+      "required_t": [
+        0.0,
+        0.0333333333333,
+        0.03333333333333333,
+        0.06666666666666667,
+        0.1,
+        0.13333333333333333,
+        0.16666666666666666,
+        0.2,
+        0.23333333333333334,
+        0.26666666666666666,
+        0.3,
+        0.333333333333,
+        0.3333333333333333,
+        0.36666666666666664,
+        0.4,
+        0.43333333333333335,
+        0.4666666666666667,
+        0.5,
+        0.5333333333333333,
+        0.5666666666666667,
+        0.6,
+        0.6333333333333333,
+        0.6666666666666666,
+        0.7,
+        0.7333333333333333,
+        0.7666666666666667,
+        0.8,
+        0.8333333333333334,
+        0.8666666666666667,
+        0.9,
+        0.9333333333333333,
+        0.9666666666666667,
+        1.0
+      ],
+      "sidecar_overrides": [],
+      "sweep": {
+        "contact": "collector",
+        "mode": "voltage",
+        "start_V": 0.0,
+        "stop_V": 3.0,
+        "step_V": 0.1,
+        "initial_step_V": 0.015,
+        "min_step_V": 3e-07,
+        "max_step_V": 0.15000000000000002,
+        "growth_factor": 1.35,
+        "shrink_factor": 2.0,
+        "t_to_bias": {
+          "v0": 0.0,
+          "v1": 3.0
+        }
+      }
+    }
+  ]
+}

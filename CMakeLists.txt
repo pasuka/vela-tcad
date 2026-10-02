@@ -1483,6 +1483,13 @@ set_tests_properties(sdevice_materials PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_materials)
 
+add_test(NAME sdevice_deck_emit
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_deck_emit)
+set_tests_properties(sdevice_deck_emit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+vela_set_windows_msys2_test_path(sdevice_deck_emit)
+
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sdevice_gate_contact_mapping)

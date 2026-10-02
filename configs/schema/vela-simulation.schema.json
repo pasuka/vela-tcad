@@ -292,7 +292,7 @@
           "type": "object"
         },
         "growth_factor": {
-          "exclusiveMinimum": 1.0,
+          "minimum": 1.0,
           "type": "number"
         },
         "initial_step": {
@@ -390,6 +390,7 @@
         "tau_min_s": {"minimum": 0.0, "type": "number"},
         "tau_max_s": {"exclusiveMinimum": 0.0, "type": "number"},
         "reference_doping_m3": {"exclusiveMinimum": 0.0, "type": "number"},
+        "reference_doping_cm3": {"exclusiveMinimum": 0.0, "type": "number"},
         "gamma": {"exclusiveMinimum": 0.0, "type": "number"}
       },
       "type": "object"

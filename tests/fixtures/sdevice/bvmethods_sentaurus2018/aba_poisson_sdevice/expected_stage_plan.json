@@ -1,0 +1,138 @@
+{
+  "schema": "vela.stage_plan.v1",
+  "cmd": {
+    "path": "aba_poisson_sdevice.cmd",
+    "sha256": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+    "execution_ir": "execution_ir.json"
+  },
+  "work_dir": "device_vela",
+  "exit_on_failure": false,
+  "threads": 1,
+  "inputs": {
+    "mesh_json": "mesh.json",
+    "doping_csv": "doping.csv",
+    "materials_json": "materials.json",
+    "mesh_qualification": "mesh_qualification.json",
+    "sidecar": null
+  },
+  "outputs": {
+    "log": "aba_poisson_des.log",
+    "final_vtu": "aba_poisson_des.vtu",
+    "pvd": "aba_poisson_des.pvd",
+    "plot_final_only": false,
+    "vtu_binary": false,
+    "keep_intermediate": true
+  },
+  "electrodes": [
+    {
+      "name": "drain",
+      "contact": "drain",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "source",
+      "contact": "source",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "gate",
+      "contact": "gate",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "substrate",
+      "contact": "substrate",
+      "initial_voltage_V": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "index": 0,
+      "ir_stage_index": 0,
+      "kind": "equilibrium",
+      "deck": "simulation_stage00.json",
+      "csv": "stage00.csv",
+      "input_state": null,
+      "output_state": "stage00_state.h5",
+      "electrode_voltages_start_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "current_file": "aba_poisson_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "break": {
+        "ionization_integral": {
+          "rank": 3,
+          "value": 1.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "ir_stage_index": 2,
+      "kind": "sweep",
+      "deck": "simulation_stage01.json",
+      "csv": "stage01.csv",
+      "input_state": "stage00_state.h5",
+      "output_state": "stage01_state.h5",
+      "electrode_voltages_start_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "drain": 100.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "current_file": "aba_poisson_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "sweep": {
+        "contact": "drain",
+        "mode": "voltage",
+        "start_V": 0.0,
+        "stop_V": 100.0,
+        "step_V": 2.5,
+        "initial_step_V": 0.01,
+        "min_step_V": 9.999999999999999e-06,
+        "max_step_V": 2.5,
+        "growth_factor": 1.41,
+        "shrink_factor": 2.0,
+        "t_to_bias": {
+          "v0": 0.0,
+          "v1": 100.0
+        }
+      },
+      "break": {
+        "ionization_integral": {
+          "rank": 3,
+          "value": 1.0
+        }
+      }
+    }
+  ]
+}
