@@ -42,6 +42,24 @@ endif()
 find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+# C9 launcher layout: vela[.exe] next to bin/vela_sdevice.pyz. The archive
+# includes schemas and default parameters and needs only Python's stdlib.
+file(GLOB_RECURSE VELA_SDEVICE_ARCHIVE_INPUTS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/vela_sdevice/*.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/schemas/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/configs/schema/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/*")
+add_custom_target(vela_sdevice_pyz ALL
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_vela_sdevice_pyz.py"
+            --out "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+    DEPENDS ${VELA_SDEVICE_ARCHIVE_INPUTS}
+        scripts/build_vela_sdevice_pyz.py scripts/sentaurus_parameter_ir.py
+        scripts/sentaurus_parameter_map.py scripts/compare_sentaurus_tdr_tdx.py
+        scripts/convert_tcad_export.py CMakeLists.txt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
+
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
 option(VELA_ENABLE_HDF5_STATE "Build required HDF5/HighFive restart storage" ON)
@@ -539,6 +557,7 @@ if(Git_FOUND)
     endif()
 endif()
 add_executable(vela src/tools/vela.cpp)
+add_dependencies(vela vela_sdevice_pyz)
 target_compile_definitions(vela PRIVATE
     VELA_VERSION="${PROJECT_VERSION}"
     VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
@@ -1489,6 +1508,16 @@ set_tests_properties(sdevice_deck_emit PROPERTIES
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 vela_set_windows_msys2_test_path(sdevice_deck_emit)
+
+add_test(NAME sdevice_orchestrator
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_orchestrator)
+set_tests_properties(sdevice_orchestrator PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_orchestrator)
+set_property(TEST sdevice_orchestrator APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>"
+    "VELA_LAUNCHER=$<TARGET_FILE:vela>"
+    "VELA_BIN=${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest

@@ -778,8 +778,7 @@ flowchart LR
 
 #### WP5 编排器 CLI（`vela_sdevice.pyz`）
 
-- 状态：**待开工**（组 C）。依赖 WP4 库接口；CLI/gates/log/锁/信号/`.plt` 增量部分可先用假 runner 与 golden
-  `expected_stage_plan.json` 开发。
+- 状态：**完成**（2026-10-02；CLI/zipapp、gates、锁/信号、阶段续接和输出发布；编排器 19 项验收、SDevice CTest 10/10、Release 全量 1020/1020；见 [验证记录](../../validation/sdevice_orchestrator_validation_2026-10-02.md)）。
 - 背景：`vela device` 的全部用户可见行为——CLI 选项镜像、退出码 0–8、单一 log、锁、信号、输出归位——已在第 5–7 节与 workflow
   文档冻结（决定 1/2/14/22，提案“退出码 8 / sidecar / 英文消息”均已采纳）；WP1/2/3/8 交付的是纯函数库，WP7 启动器按 C9 以子进程
   调用 `bin/vela_sdevice.pyz`。本 WP 是把这些组件串起来的唯一集成点，也是 WP10/WP11 的前置。
@@ -1062,7 +1061,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
-| 阶段 3 组装 | WP4 → WP5（+ 可选 WP6.1） | WP4 完成；WP5 待开工 | WP5 的 CLI/gates/锁/信号可先用假 runner 与 golden `stage_plan` 开发 |
+| 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
 | 阶段 4 验收与交付 | WP10、WP11、WP12 | 待开工 | WP11 可与 WP10 并行；WP12 最后 |
 | 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | 待用户授权 | 授权后即可执行；产物供 WP10 |
@@ -1111,8 +1110,8 @@ flowchart LR
 
 #### 10.5.3 剩余工作与推荐顺序
 
-WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）。后续：WP5（编排器与 zipapp）→ WP6.1（可选：`sweep.vtk_field_data`
-透传，小 C++ 增量，见 WP5 卡片步骤 10）→ WP14（**需用户授权**；越早越好，产物供 WP10）→ WP10（一致性验收；定符号因子与
+WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 2026-10-02 独立提交 `323983e0`，WP5 编排器与 zipapp 也已完成。
+后续：WP14（**需用户授权**；产物供 WP10）→ WP10（一致性验收；定符号因子与
 `time` 语义）→ WP11（打包与并发）→ WP12（文档收尾，DoD 逐条举证）。WP13 独立于以上顺序，随时可在独立分支执行；合入
 `main` 后回到本分支同步 WP3 的“遗留默认”测试与文档。
 

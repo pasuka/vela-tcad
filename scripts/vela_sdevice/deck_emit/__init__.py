@@ -13,8 +13,9 @@ from pathlib import Path
 import re
 
 from .. import schema_validator as sv
+from ..resources import resource_root
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = resource_root()
 SCHEMA_ID = "vela.stage_plan.v1"
 IMPLICIT_FIELDS = ("ElectrostaticPotential", "eDensity", "hDensity", "DopingConcentration")
 # src/io/VtuWriter.cpp owns the C++ catalogue (the header declares its API).
@@ -67,6 +68,7 @@ class EmitOptions:
     vtu_binary: bool = False
     keep_intermediate: bool = True
     allow_lossy: bool = False
+    defer_current_times: bool = False
 
 
 @dataclass
@@ -357,7 +359,10 @@ def emit_stage_plan(ir: dict, *, mesh_qualification: dict, materials_report: dic
 
 
 def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha: str,
-          options: EmitOptions, sidecar: dict | None, rebases: dict) -> StagePlanResult:
+          options: EmitOptions, sidecar: dict | None, rebases: dict,
+          current_starts: dict | None = None, saved_voltages: dict | None = None) -> StagePlanResult:
+    current_starts = current_starts or {}
+    saved_voltages = saved_voltages or {}
     if not ir["verdict"]["accepted"]:
         raise DeckEmitError(ir["verdict"]["fatal_ids"][0], detail="rejected execution IR")
     try:
@@ -447,7 +452,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="multiple Save aliases of one stage cannot be emitted")
             previous["output_state"] = state
             decks[-1]["sweep"]["write_state_file"] = state
-            snapshots[prefix] = (state, deepcopy(voltages))
+            snapshots[prefix] = (state, deepcopy(saved_voltages.get(state, voltages)))
             _decision(decisions, "Save", prefix, "sweep.write_state_file", state, "HDF5 snapshot", "W205")
             continue
         index = len(decks)
@@ -530,11 +535,19 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 raise DeckEmitError("E407", detail="invalid Quasistationary step controls")
             delta = abs(v1 - v0)
             if current:
-                if any(t not in (1.0,) for t in times):
+                if index not in current_starts and not options.defer_current_times and any(t != 1 for t in times):
                     raise DeckEmitError("E407", detail="current-goal Time points need the measured initial current (WP5)")
+                target = goal["current_A_per_um"]
+                direction = -1 if target < 0 else 1
+                current_points = [abs(target)]
+                if index in current_starts:
+                    initial = _finite(current_starts[index], "initial current")
+                    if direction * initial > abs(target):
+                        raise DeckEmitError("E407", detail="runner current goals must increase in the selected direction")
+                    current_points = sorted(set(direction * (initial + t * (target - initial))
+                                                for t in set(times) | {1.0}))
                 sweep["voltage_to_current"] = {"switch_voltage_V": v0,
-                    "current_points_A_per_um": [abs(goal["current_A_per_um"])],
-                    "current_direction": -1 if goal["current_A_per_um"] < 0 else 1}
+                    "current_points_A_per_um": current_points, "current_direction": direction}
                 _decision(decisions, "Current", goal["current_A_per_um"], "sweep.voltage_to_current",
                           sweep["voltage_to_current"], "Runner closes the final current goal; subsequent stages must rebase measured voltages", stage=index)
             elif delta:
@@ -611,7 +624,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         raise DeckEmitError("E409", file="sidecar", detail="apply_to names an absent stage")
     result = StagePlanResult(plan, decks, decisions, deepcopy({"ir": ir, "mesh": mesh, "report": report,
         "work_dir": work_dir, "cmd_name": cmd_name, "sha": sha, "options": options,
-        "sidecar": sidecar, "rebases": rebases}))
+        "sidecar": sidecar, "rebases": rebases, "current_starts": current_starts,
+        "saved_voltages": saved_voltages}))
     try:
         _validate_result(result)
     except DeckEmitError as error:
@@ -621,13 +635,29 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     return result
 
 
-def rebase_stage(result: StagePlanResult, stage_index: int, reached_voltages_V: dict) -> StagePlanResult:
+def rebase_stage(result: StagePlanResult, stage_index: int, reached_voltages_V: dict,
+                 *, update_saved_state: bool = False) -> StagePlanResult:
     """Regenerate this and later stages from measured voltages, preserving snapshots."""
     if not isinstance(stage_index, int) or not 0 <= stage_index < len(result.decks):
         raise DeckEmitError("E407", detail="invalid rebase stage index")
     context = deepcopy(result._context)
     if not context:
         raise DeckEmitError("E407", detail="rebase requires the original emitter result")
+    context["rebases"][stage_index] = deepcopy(reached_voltages_V)
+    if update_saved_state and stage_index:
+        previous = result.stage_plan["stages"][stage_index - 1]
+        context["saved_voltages"][previous["output_state"]] = {
+            **previous["electrode_voltages_start_V"], **reached_voltages_V}
+    return _emit(**context)
+
+
+def bind_current_start(result: StagePlanResult, stage_index: int,
+                       initial_current_A_per_um: float, reached_voltages_V: dict) -> StagePlanResult:
+    """Resolve Current-goal Time points from the preceding accepted CSV state."""
+    if result.stage_plan["stages"][stage_index].get("sweep", {}).get("mode") != "current":
+        raise DeckEmitError("E407", detail="current start binding requires a Current stage")
+    context = deepcopy(result._context)
+    context["current_starts"][stage_index] = _finite(initial_current_A_per_um, "initial current")
     context["rebases"][stage_index] = deepcopy(reached_voltages_V)
     return _emit(**context)
 
