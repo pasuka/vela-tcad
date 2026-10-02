@@ -1,0 +1,117 @@
+{
+  "format_version": 2,
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "node_doping_file": "doping.csv",
+  "materials_file": "materials.json",
+  "doping": [],
+  "mesh_geometry": {
+    "node_volume_policy": "barycentric",
+    "require_non_obtuse": false
+  },
+  "solver": {
+    "mobility": {
+      "model": "constant",
+      "doping_concentration_basis": "total_impurity"
+    },
+    "recombination": [],
+    "impact_ionization": {
+      "model": "van_overstraeten",
+      "driving_force": "electric_field",
+      "electron_a_low_cm_inv": 703000.0,
+      "hole_a_low_cm_inv": 1582000.0,
+      "electron_a_high_cm_inv": 703000.0,
+      "hole_a_high_cm_inv": 671000.0,
+      "electron_b_low_V_per_cm": 1231000.0,
+      "hole_b_low_V_per_cm": 2036000.0,
+      "electron_b_high_V_per_cm": 1231000.0,
+      "hole_b_high_V_per_cm": 1693000.0,
+      "switch_field_V_per_cm": 400000.0,
+      "phonon_energy_eV": 0.063
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
+    "temperature_K": 300.0,
+    "method": "gummel_newton",
+    "max_iter": 20
+  },
+  "output_csv": "stage00.csv",
+  "contacts": [
+    {
+      "name": "drain",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "source",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "gate",
+      "bias": 0.0,
+      "type": "metal_gate",
+      "work_function_eV": -0.55
+    },
+    {
+      "name": "substrate",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "sweep": {
+    "mode": "iv",
+    "contact": "drain",
+    "current_contact": "drain",
+    "start": 0.0,
+    "stop": 0.0,
+    "step": 1.0,
+    "initial_step": 1.0,
+    "min_step": 1.0,
+    "max_step": 1.0,
+    "growth_factor": 2.0,
+    "shrink_factor": 0.5,
+    "write_vtk": true,
+    "vtk_prefix": "stage00",
+    "vtk_format": "vtu",
+    "vtk_fields": [
+      "eDensity",
+      "hDensity",
+      "TotalCurrentDensity/Vector",
+      "eCurrentDensity/Vector",
+      "hCurrentDensity/Vector",
+      "ElectricField/Vector",
+      "ElectrostaticPotential",
+      "SpaceCharge",
+      "DopingConcentration",
+      "srhRecombination",
+      "Band2BandGeneration",
+      "AvalancheGeneration",
+      "eAvalancheGeneration",
+      "hAvalancheGeneration",
+      "eIonIntegral",
+      "hIonIntegral",
+      "MeanIonIntegral",
+      "eAlphaAvalanche",
+      "hAlphaAvalanche"
+    ],
+    "vtk_binary": false,
+    "csv_all_contacts": true,
+    "write_state_file": "stage00_state.h5",
+    "predictor": "linear",
+    "initialization": {
+      "mode": "poisson_block"
+    },
+    "bias_points": [
+      0.0
+    ],
+    "diagnostics": {
+      "path_ionization_integrals": {
+        "enabled": true,
+        "break_rank": 3,
+        "break_value": 1.0
+      }
+    }
+  }
+}

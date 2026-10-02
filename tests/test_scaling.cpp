@@ -4,11 +4,61 @@
 #include "vela/core/UnitScaling.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/material/MaterialDatabase.h"
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 
 using namespace vela;
 using namespace vela::constants;
+
+TEST_CASE("C3 material schema keeps its units under a v2 deck",
+          "[scaling][format_version][materials]")
+{
+    const auto path = std::filesystem::current_path() / "test_c3_v2_materials.json";
+    struct Cleanup {
+        std::filesystem::path path;
+        ~Cleanup() { std::error_code ec; std::filesystem::remove(path, ec); }
+    } cleanup{path};
+    const nlohmann::json document = {
+        {"schema", "vela.templates_ldmos.materials.v1"},
+        {"benchmark", "c3-v2-test"}, {"revision", 1},
+        {"unit_system", {
+            {"concentration", "cm^-3"}, {"mobility", "cm^2/(V*s)"},
+            {"energy", "eV"}, {"temperature", "K"},
+            {"thermal_conductivity", "W/(m*K)"},
+            {"specific_heat", "J/(kg*K)"}, {"mass_density", "kg/m^3"}}},
+        {"materials", nlohmann::json::array({{
+            {"name", "Si"}, {"role", "transport_semiconductor"},
+            {"provenance", "C3/v2 unit compatibility regression"}, {"eps_r", 11.7},
+            {"intrinsic_carrier_density_cm3", 1.2e10},
+            {"electron_mobility_cm2_per_V_s", 1400.0},
+            {"hole_mobility_cm2_per_V_s", 450.0},
+            {"conduction_band_density_of_states_cm3", 2.8e19},
+            {"valence_band_density_of_states_cm3", 3.1e19},
+            {"bandgap_eV", 1.124}, {"electron_affinity_eV", 4.05}}})}
+    };
+    { std::ofstream file(path); REQUIRE(file.good()); file << document.dump(2); }
+    for (int version : {1, 2}) {
+        const auto scaling = parseUnitScalingConfig(version == 2
+            ? nlohmann::json{{"format_version", 2}}
+            : nlohmann::json{{"scaling", {{"mode", "unit_scaling"}}}});
+        const MaterialDatabase database(path.string(), scaling);
+        const auto& material = database.getMaterial("Si");
+        const auto& units = scaling.unitSystem();
+        REQUIRE(material.ni == Catch::Approx(units.m3ToInternalConcentration(1.2e16)));
+        REQUIRE(material.mun == Catch::Approx(units.m2PerVSToInternalMobility(0.14)));
+        REQUIRE(*material.Nc_m3 == Catch::Approx(units.m3ToInternalConcentration(2.8e25)));
+        REQUIRE(*material.Nv_m3 == Catch::Approx(units.m3ToInternalConcentration(3.1e25)));
+        REQUIRE(material.bandgap_eV == Catch::Approx(1.124));
+    }
+    // The schema-specific whitelist still rejects a genuinely wrong unit key.
+    auto invalid = document;
+    invalid["materials"][0]["conduction_band_density_of_states_m3"] = 2.8e25;
+    { std::ofstream file(path); file << invalid.dump(2); }
+    REQUIRE_THROWS(MaterialDatabase(path.string(), parseUnitScalingConfig({{"format_version", 2}})));
+}
 
 // Helper: build a default ScalingSystem at 300 K with typical Si parameters
 static ScalingSystem makeSi300()

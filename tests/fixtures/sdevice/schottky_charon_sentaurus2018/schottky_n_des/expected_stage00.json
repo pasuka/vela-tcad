@@ -1,0 +1,106 @@
+{
+  "format_version": 2,
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "node_doping_file": "doping.csv",
+  "materials_file": "materials.json",
+  "doping": [],
+  "mesh_geometry": {
+    "node_volume_policy": "barycentric",
+    "require_non_obtuse": false
+  },
+  "solver": {
+    "mobility": {
+      "model": "constant",
+      "doping_concentration_basis": "total_impurity"
+    },
+    "recombination": [
+      "srh"
+    ],
+    "impact_ionization": {
+      "model": "none"
+    },
+    "srh_doping_dependence": {
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "tau_n_s": 1e-05,
+    "tau_p_s": 3e-06,
+    "temperature_K": 300.0,
+    "method": "newton",
+    "max_iter": 100
+  },
+  "output_csv": "stage00.csv",
+  "contacts": [
+    {
+      "name": "anode",
+      "bias": 0.0,
+      "type": "schottky",
+      "emission_model": "thermionic_robin",
+      "electron_surface_recombination_velocity_cm_per_s": 4910000.0,
+      "hole_surface_recombination_velocity_cm_per_s": 2740000.0,
+      "work_function_eV": 4.75
+    },
+    {
+      "name": "cathode",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "sweep": {
+    "mode": "iv",
+    "contact": "anode",
+    "current_contact": "anode",
+    "start": 0.0,
+    "stop": 0.0,
+    "step": 1.0,
+    "initial_step": 1.0,
+    "min_step": 1.0,
+    "max_step": 1.0,
+    "growth_factor": 2.0,
+    "shrink_factor": 0.5,
+    "write_vtk": true,
+    "vtk_prefix": "stage00",
+    "vtk_format": "vtu",
+    "vtk_fields": [
+      "ElectrostaticPotential",
+      "ElectricField/Vector",
+      "SpaceCharge",
+      "eDensity",
+      "hDensity",
+      "eCurrentDensity/Vector",
+      "hCurrentDensity/Vector",
+      "eQuasiFermiPotential",
+      "hQuasiFermiPotential",
+      "DonorConcentration",
+      "AcceptorConcentration",
+      "DopingConcentration",
+      "ConductionBandEnergy",
+      "ValenceBandEnergy",
+      "BandGap",
+      "srhRecombination",
+      "eMobility",
+      "hMobility"
+    ],
+    "vtk_binary": false,
+    "csv_all_contacts": true,
+    "write_state_file": "stage00_state.h5",
+    "predictor": "linear",
+    "initialization": {
+      "mode": "poisson_block"
+    },
+    "bias_points": [
+      0.0
+    ]
+  }
+}

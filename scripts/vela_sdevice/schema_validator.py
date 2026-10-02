@@ -7,10 +7,10 @@ Vela contract schemas use:
 
 ``type`` (incl. lists), ``enum``, ``const``, ``required``, ``properties``,
 ``additionalProperties`` (bool or schema), ``items`` (single schema),
-``minItems``/``maxItems``, ``minimum``/``maximum``/``exclusiveMinimum``/
+``minItems``/``maxItems``/``uniqueItems``, ``minimum``/``maximum``/``exclusiveMinimum``/
 ``exclusiveMaximum`` (draft-07 numeric form), ``minLength``/``maxLength``,
 ``pattern``, ``allOf``/``anyOf``/``oneOf``/``not`` and local ``$ref``
-(``#/definitions/...`` or any ``#/...`` JSON pointer).  ``default``,
+(``#/definitions/...``, ``#/$defs/...`` or any ``#/...`` JSON pointer).  ``default``,
 ``description``, ``title``, ``$schema``, ``$id`` and ``format`` are ignored.
 
 Unsupported keywords raise :class:`UnsupportedSchemaKeyword` so that a schema
@@ -37,11 +37,11 @@ __all__ = [
 
 _IGNORED_KEYWORDS = {
     "$schema", "$id", "$comment", "title", "description", "default", "examples", "format",
-    "definitions", "readOnly", "writeOnly",
+    "definitions", "$defs", "readOnly", "writeOnly",
 }
 _HANDLED_KEYWORDS = {
     "type", "enum", "const", "required", "properties", "additionalProperties", "items",
-    "minItems", "maxItems", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
+    "minItems", "maxItems", "uniqueItems", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
     "minLength", "maxLength", "pattern", "allOf", "anyOf", "oneOf", "not", "$ref",
 }
 
@@ -165,6 +165,9 @@ def _iter(root: dict, schema: Any, value: Any, path: str) -> Iterator[Validation
                 yield from _iter(root, additional, value[key], _join(path, key))
 
     if isinstance(value, list):
+        if schema.get("uniqueItems") and any(
+                _equal(item, previous) for i, item in enumerate(value) for previous in value[:i]):
+            yield ValidationError(path, "array items must be unique")
         if "minItems" in schema and len(value) < schema["minItems"]:
             yield ValidationError(path, f"expected at least {schema['minItems']} items, got {len(value)}")
         if "maxItems" in schema and len(value) > schema["maxItems"]:

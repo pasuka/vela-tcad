@@ -1,0 +1,121 @@
+{
+  "format_version": 2,
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "node_doping_file": "doping.csv",
+  "materials_file": "materials.json",
+  "doping": [],
+  "mesh_geometry": {
+    "node_volume_policy": "barycentric",
+    "require_non_obtuse": false
+  },
+  "solver": {
+    "mobility": {
+      "model": "masetti",
+      "doping_concentration_basis": "total_impurity",
+      "electron_mumin1_cm2_V_s": 52.2,
+      "hole_mumin1_cm2_V_s": 44.9,
+      "electron_mumin2_cm2_V_s": 52.2,
+      "hole_mumin2_cm2_V_s": 0.0,
+      "electron_mu1_cm2_V_s": 43.4,
+      "hole_mu1_cm2_V_s": 29.0,
+      "electron_pc_cm3": 0.0,
+      "hole_pc_cm3": 9.23e+16,
+      "electron_cr_cm3": 9.68e+16,
+      "hole_cr_cm3": 2.23e+17,
+      "electron_cs_cm3": 3.43e+20,
+      "hole_cs_cm3": 6.1e+20,
+      "electron_masetti_alpha": 0.68,
+      "hole_masetti_alpha": 0.719,
+      "electron_masetti_beta": 2.0,
+      "hole_masetti_beta": 2.0
+    },
+    "recombination": [
+      "srh"
+    ],
+    "impact_ionization": {
+      "model": "none"
+    },
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "coefficient_eV": 0.009,
+      "reference_doping_cm3": 1e+17,
+      "smoothing": 0.5
+    },
+    "srh_doping_dependence": {
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_cm3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "tau_n_s": 1e-05,
+    "tau_p_s": 3e-06,
+    "temperature_K": 300.0,
+    "method": "gummel_newton",
+    "max_iter": 100
+  },
+  "output_csv": "stage00.csv",
+  "contacts": [
+    {
+      "name": "Anode",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "Cathode",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "sweep": {
+    "mode": "iv",
+    "contact": "Anode",
+    "current_contact": "Anode",
+    "start": 0.0,
+    "stop": 0.0,
+    "step": 1.0,
+    "initial_step": 1.0,
+    "min_step": 1.0,
+    "max_step": 1.0,
+    "growth_factor": 2.0,
+    "shrink_factor": 0.5,
+    "write_vtk": true,
+    "vtk_prefix": "stage00",
+    "vtk_format": "vtu",
+    "vtk_fields": [
+      "ElectrostaticPotential",
+      "ElectricField",
+      "eDensity",
+      "hDensity",
+      "eQuasiFermiPotential",
+      "hQuasiFermiPotential",
+      "eCurrentDensity",
+      "hCurrentDensity",
+      "TotalCurrentDensity",
+      "DopingConcentration",
+      "DonorConcentration",
+      "AcceptorConcentration",
+      "srhRecombination",
+      "eMobility",
+      "hMobility"
+    ],
+    "vtk_binary": false,
+    "csv_all_contacts": true,
+    "write_state_file": "stage00_state.h5",
+    "predictor": "linear",
+    "initialization": {
+      "mode": "poisson_block"
+    },
+    "bias_points": [
+      0.0
+    ]
+  }
+}

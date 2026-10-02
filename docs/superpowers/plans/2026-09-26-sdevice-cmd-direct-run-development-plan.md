@@ -684,7 +684,7 @@ flowchart LR
 
 #### WP4 IR → stage 计划与 deck 发射器
 
-- 状态：**待开工**（组 B）。前置条件已全部满足：C1 golden IR（`tests/fixtures/sdevice/<case>/*.ir.json`，索引
+- 状态：**完成**（2026-10-02；WP4 22/22 项通过，基准确认后相关 CTest 11/11，其他 Debug CTest 1017/1017；见 [验证记录](../../validation/sdevice_deck_emit_validation_2026-10-02.md)）。C1 golden IR（`tests/fixtures/sdevice/<case>/*.ir.json`，索引
   `fixtures.json`）、C2 `mesh_qualification.json`（WP2）、C3 `materials.json` + `materials_report.json`（WP3）、C4 schema
   （`schemas/vela.stage_plan.v1.schema.json`）、C5 新增键（WP6，`docs/config_schema.md`）、C10 sidecar schema、栅接触发射规则
   （`docs/sentaurus_sdevice_workflow.md` §2.5）。
@@ -722,7 +722,8 @@ flowchart LR
      当前表值，`stop_V = goal.voltage_V`。`current_mode_contacts` 非空且 goal 为 `Current=` → `sweep.mode="current"` +
      `stop_current_A_per_um` → deck `sweep.voltage_to_current`。
   3. **`t` → 伏特**：`ΔV = |stop_V − start_V|`；`initial_step_V = initial_step·ΔV`，`max_step_V = max_step·ΔV`，`min_step_V = min_step·ΔV`，
-     `growth_factor = increment`，`shrink_factor = decrement`；`step_V`（名义输出间距）= `ΔV/intervals`（有 `CurrentPlot(Time=Intervals)`）
+     `growth_factor = increment`；C4 `shrink_factor = decrement` 保留除数，runner deck `shrink_factor = 1/decrement`；
+     `step_V`（名义输出间距）= `ΔV/intervals`（有 `CurrentPlot(Time=Intervals)`）
      否则 `= max_step_V`；`ΔV = 0` → 退化为单点平衡 stage 并写 W2xx 决策。
   4. **必经点与写出点**：`outputs.plot_files[].time`（`{range:[a,b], intervals:n}` 或列表）展开为 `t` 列表 → C4 `required_t`
      （排序去重；超出 `[0,1]` → E4xx）→ deck `sweep.vtk_bias_points = [start_V + t·(stop_V − start_V)]`；C4 `vtu_write` 记录每个 `t`
@@ -730,7 +731,7 @@ flowchart LR
      （`null` = 每接受步都写）。无任何 Plot 时 `vtk_format="vtu"` 且默认每接受点写文件（`plot_final_only=false`）。
   5. **`Plot{}` 字段**：IR `plot.fields[].data_name` + `component`（`scalar|vector`）→ deck `sweep.vtk_fields`（`Name` / `Name/Vector`）；
      `plot.explicit=false` 时追加 `ElectrostaticPotential`、`eDensity`、`hDensity`、`DopingConcentration`。把
-     `include/vela/io/VtuWriter.h::tdrFieldCatalogue()` 的名单抄成 Python 常量并加一个一致性测试（读头文件文本比对）；不在目录中的名字
+     `tdrFieldCatalogue()` 的实现（`src/io/VtuWriter.cpp`）名单抄成 Python 常量并加一个一致性测试；不在目录中的名字
      仍写入 deck，由 runner 记 `vtk_fields_skipped`（WP5 转 W202）。
   6. **物理映射**：IR `physics.effective[]{key,parameters,status,vela}` 中 `status=supported` 的 `vela`（形如
      `solver.bandgap_narrowing=old_slotboom`）逐条写入 deck；`status=unsupported` → 不生成 deck，透传 `finding_id`；数值参数一律取
@@ -745,7 +746,7 @@ flowchart LR
      `interfaces[].fixed_charge_cm2`（v2 名，cm 单位，写换算测试）。
   7. **电极映射**（workflow §2.5）：`attributes.barrier_V` → `contacts[]{type:"metal_gate", work_function_eV: barrier_V}`；
      `attributes.workfunction_eV` → `work_function_eV = Φ_M − Φ_S,i`，`Φ_S,i = χ + E_g/2 + (kT/2)ln(N_c/N_v)` 取 C3 中 `Si` 条目
-     （复用 `scripts/check_sdevice_gate_contact_mapping.py::intrinsic_work_function_eV`；Vela 默认库下 = 4.6228018936 eV）；
+     （与 `scripts/check_sdevice_gate_contact_mapping.py::intrinsic_work_function_eV` 同式计算；当前 WP3 默认库 300 K 下 = 4.611003610676079 eV，遗留内置 Si 才是 4.6228018936 eV）；
      `attributes.material` → 从 `materials_report.electrodes[]` 取 `work_function_eV` 再换算，缺失 → E4xx；`attributes.resist_ohm_um` →
      `sweep.external_circuit{mode:"series_resistor", resistance_ohm_um}` 并写 C4 `series_resistance_ohm_um`；`attributes.schottky` +
      `e/h_rec_velocity_cm_s` → `contacts[]{type:"schottky", emission_model:"thermionic_robin", ...}`（键名以 `docs/config_schema.md`
@@ -770,10 +771,10 @@ flowchart LR
   golden 相等，过 C4 schema 与公开 deck schema，并在 runner 冒烟中被接受；（2）`t` 换算性质：`MaxStep=0.025, |V1−V0|=10` → `max_step_V=0.25`；`intervals=400` →
   `len(vtk_bias_points)=401` 且端点误差为 0；（3）两段扫描（`genius_bjt` 夹具）：第二段 `electrode_voltages_start_V` 等于第一段
   goal；`rebase_stage(result, 1, {"collector": 3.2})` 后第二段从 3.2 V 起且 deck 同步；（4）sidecar 非白名单键 → 错误编号；白名单键深合并
-  正确；（5）decks 不含旧格式键；（6）电极映射：`Barrier=0.55` → `work_function_eV=0.55`；`WorkFunction=4.6228018936` →
+  正确；（5）decks 不含旧格式键；（6）电极映射：`Barrier=0.55` → `work_function_eV=0.55`；`WorkFunction=4.611003610676079` →
   `work_function_eV≈0`（1e-9）；`Material="Gold"` 取自报告；（7）`status=unsupported` 的 IR 不生成 deck 且透传编号；
   （8）`ctest --test-dir build -R sdevice` 全绿。
-- 不做：运行 runner（冒烟除外）；读 cmd 文本；改 C++。
+- 不做：运行 runner（冒烟除外）；读 cmd 文本。2026-10-02 用户明确授权例外：最小修复 C3 在 v2 deck 下加载时误改原生单位键的问题，并增加 C++ 回归测试。
 
 #### WP5 编排器 CLI（`vela_sdevice.pyz`）
 
@@ -1057,11 +1058,11 @@ flowchart LR
 
 ### 10.3 阶段与 WP 的对应
 
-| 阶段 | WP | 状态（2026-09-29） | 可并行 |
+| 阶段 | WP | 状态（2026-10-02） | 可并行 |
 | --- | --- | --- | --- |
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
-| 阶段 3 组装 | WP4 → WP5（+ 可选 WP6.1） | 待开工 | WP5 的 CLI/gates/锁/信号可先用假 runner 与 golden `stage_plan` 开发 |
+| 阶段 3 组装 | WP4 → WP5（+ 可选 WP6.1） | WP4 完成；WP5 待开工 | WP5 的 CLI/gates/锁/信号可先用假 runner 与 golden `stage_plan` 开发 |
 | 阶段 4 验收与交付 | WP10、WP11、WP12 | 待开工 | WP11 可与 WP10 并行；WP12 最后 |
 | 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | 待用户授权 | 授权后即可执行；产物供 WP10 |
@@ -1094,7 +1095,7 @@ flowchart LR
 | 组 A 集成 | `be073edb` | ASCII-only 测试源（`ascii_sources` 门）、Auger `H=0` 无效果规则、计划状态 | 全量 CTest 877/877 |
 
 契约状态：C1、C2、C5、C7、C8、C9 已冻结且有生产者与测试；C3 已冻结（不发布通用别名，`schema` 恒为
-`vela.templates_ldmos.materials.v1`，见 workflow §2.4）；C4、C10 只有 schema 与夹具，生产者/消费者（WP4）待做；C6 的写出器已
+`vela.templates_ldmos.materials.v1`，见 workflow §2.4）；C4、C10 的发射、校验与合并接口与 WP4 验收已于 2026-10-02 完成；C6 的写出器已
 就位，符号因子与多段 `time` 语义待 WP10/WP14 回填。验证：`be073edb` 全量 CTest 877/877；`0e87e661` 后
 `ctest -R "sdevice|ascii_sources"` 9/9（该提交只改 Python、生成的 `models.par` 与文档）。
 
@@ -1105,12 +1106,14 @@ flowchart LR
 2. WP3 验收（2）：默认 `models.par` 不再从 C++ 内置 Si 生成，改为 **Sentaurus 默认 Silicon 参数集**的文献值（用户：“同意改成
    sentaurus par 数据为参考”）；`vela device` 始终经材料文件，不受内置值影响。
 3. C++ 内置值对齐与重新基线化列入后续计划（WP13），不在 sdevice 路径内顺带完成。
+4. 2026-10-02，用户同意将 WP4 栅接触零偏移基准从遗留内置 Si 的 4.6228018936 eV 修正为当前 WP3 默认库的
+   4.611003610676079 eV；冻结公式、材料参数和容差未改。旧输入的 0.011798282923921377 eV 偏移同时加入回归断言。
 
 #### 10.5.3 剩余工作与推荐顺序
 
-1. WP4（deck 发射器，纯 Python）→ 2. WP5（编排器与 zipapp；可与 WP4 后半并行）→ 3. WP6.1（可选：`sweep.vtk_field_data`
-透传，小 C++ 增量，见 WP5 卡片步骤 10）→ 4. WP14（**需用户授权**；越早越好，产物供 WP10）→ 5. WP10（一致性验收；定符号因子与
-`time` 语义）→ 6. WP11（打包与并发）→ 7. WP12（文档收尾，DoD 逐条举证）。WP13 独立于以上顺序，随时可在独立分支执行；合入
+WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）。后续：WP5（编排器与 zipapp）→ WP6.1（可选：`sweep.vtk_field_data`
+透传，小 C++ 增量，见 WP5 卡片步骤 10）→ WP14（**需用户授权**；越早越好，产物供 WP10）→ WP10（一致性验收；定符号因子与
+`time` 语义）→ WP11（打包与并发）→ WP12（文档收尾，DoD 逐条举证）。WP13 独立于以上顺序，随时可在独立分支执行；合入
 `main` 后回到本分支同步 WP3 的“遗留默认”测试与文档。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
@@ -1387,6 +1390,7 @@ CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`referen
 | WP3 材料 | 完成 | `fcea7cad`、`be073edb`、`0e87e661` | PN2D `models.par`+IV 激活集 → C3 闭式值 1e-12 一致、通过 C3 schema；默认 `models.par` 为 Sentaurus 默认 Silicon 参数集（文献值）+ Oxide/Nitride，与 PN2D `sdevice -P` 转储的发射结果逐字段相等，支持的全部模型在 300/350 K 无损回退；HfO2 等未知材料 E403；`unsupported_*` E404、`approximated` 需 `--allow-lossy`；CTest `sdevice_materials`（30） |
 | WP6 C++ 增量 | 完成 | `0c9756ba` | `VtuWriter` XML `.vtu`（独立解析回读节点/单元/字段名/单位/FieldData，ASCII+binary）；TDR 字段目录与 `Name`/`Name/Vector` 选择；`vtk_bias_points` 落点 1e-12 V 且其它点不变；`breakdown.current_{abs,min,max}_A_per_um` 在单调电流序列上于正确点终止并标记 CSV；`csv_all_contacts`；Catch2 `vtu_writer`（5）、`dc_sweep_output_contract`（4）；全量 CTest 见集成检查 |
 | WP4a 栅接触能级 | 完成 | `e5cae3e9` | Vela `metal_gate` 与 Eq. 104 同参考能级：`work_function_eV = Barrier`；`WorkFunction` 经 `Φ_S,i = χ+E_g/2+(kT/2)ln(N_c/N_v)` 换算；MOS 电容夹具三个 Barrier 值平带偏差 2e-16 V；文档 `docs/validation/sdevice_gate_contact_reference_2026-09-29.md`；CTest `sdevice_gate_contact_mapping`（6） |
+| WP4 stage/deck 发射器 | 完成 | 本次提交 | 七个 accepted 夹具完整 golden、C4/公开 deck schema、步长/单位/电极/sidecar/rebase/Save/Load；真实 runner 平衡、电压、电流目标、Load 与 HDF5；22/22 单测、相关 CTest 11/11、其余 Debug CTest 1017/1017；C3/v2 最小修复与当前默认库栅基准已获用户授权 |
 
 WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 确认为 2026-06 从
 `models.par` 推导（计划 2026-06-13 / 提交 e2d9a1c8）但算法未记录；它等于 Sentaurus 接触边反推 `ni_eff`（≈1.65562e10）

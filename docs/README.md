@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SDevice WP4 stage/deck emitter, 2026-10-02](validation/sdevice_deck_emit_validation_2026-10-02.md):
+  local main merged; seven fixture goldens, v2 decks, HDF5 chaining and real-runner smoke checks.
+  WP4 acceptance passed with the confirmed current WP3 gate reference baseline; CLI orchestration remains WP5.
+
 - [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
   complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,
   persistent VM storage, restore tool and source-to-main commit mapping.

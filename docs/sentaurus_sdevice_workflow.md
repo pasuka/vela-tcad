@@ -1,9 +1,9 @@
-# `vela device`：SDevice 命令文件直跑工作流（契约初稿）
+# `vela device`：SDevice 命令文件直跑工作流
 
-状态：**WP0 契约冻结稿**（2026-09-26）。本文是
+状态：**组件接口已交付至 WP4，编排器待 WP5**（2026-10-02）。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
-计划文档保留决策依据。尚未实现的部分（解析器、编排器、C++ 增量）以“待 WPn”标注。
+计划文档保留决策依据。尚未实现的编排器与后续验收以“待 WPn”标注。
 
 ## 1. 契约文件索引
 
@@ -12,13 +12,13 @@
 | C1 执行 IR v2 | `schemas/vela.sentaurus_execution_ir.v2.schema.json` | WP1 → WP3/WP4/WP5 | 冻结 |
 | C2 网格包 | `schemas/vela.mesh_qualification.v1.schema.json` + 现有 `mesh.json`/`doping.csv` 契约 | WP2 → WP4/WP5 | 冻结 |
 | C3 材料文件 | `schemas/vela.templates_ldmos.materials.v1.schema.json`（WP3 不另设别名，见第 2.4 节） | WP3 → WP4 | 沿用现有 |
-| C4 stage 计划 | `schemas/vela.stage_plan.v1.schema.json` | WP4 → WP5/WP8 | 冻结 |
-| C5 求解器协议 | `docs/config_schema.md` + `configs/schema/vela-simulation.schema.json` | WP6 → WP4/WP5/WP8 | 新增键待 WP6 |
+| C4 stage 计划 | `schemas/vela.stage_plan.v1.schema.json` | WP4 → WP5/WP8 | 发射器已交付 |
+| C5 求解器协议 | `docs/config_schema.md` + `configs/schema/vela-simulation.schema.json` | WP6 → WP4/WP5/WP8 | WP6 已交付 |
 | C6 输出文件契约 | 本文第 3 节 | WP8/WP6 → WP10 | 初稿 |
 | C7 产物清单 | `schemas/vela.reference_artifact_manifest.v1.schema.json` | WP9 → WP10 | 冻结 |
 | C8 CLI/退出码/消息目录 | 本文第 2、4 节 | WP0 → WP5/WP7/WP12 | 冻结 |
-| C9 启动器协议 | 本文第 2.3 节 | WP7 → WP5 | 初稿 |
-| C10 sidecar | `schemas/vela.sdevice_sidecar.v1.schema.json` | WP0 → WP4 | 冻结 |
+| C9 启动器协议 | 本文第 2.3 节 | WP7 → WP5 | 启动器已交付，zipapp 待 WP5 |
+| C10 sidecar | `schemas/vela.sdevice_sidecar.v1.schema.json` | WP0 → WP4 | 校验与合并已交付 |
 
 校验工具：`python scripts/vela_sdevice/schema_validator.py <schema> <json>...`
 （纯标准库的 draft-07 子集校验器；安装了 `jsonschema` 时单测会交叉比对两者结论）。
@@ -61,7 +61,7 @@ Vela 自有选项：`--check`、`--allow-lossy`、`--keep-intermediate/--no-keep
 
 每个非 0 退出同时写 log 尾部 `[FATAL]` 摘要与 `<stem>_vela/fail_report.json{stage,message,details,exit_code}`。
 
-### 2.3 启动器协议（C9，待 WP7）
+### 2.3 启动器协议（C9，WP7）
 
 `vela device <args>` → 子进程 `<python> bin/vela_sdevice.pyz device <args>`，cwd 不变，退出码透传。
 `<python>` 查找顺序：`VELA_PYTHON` → `bin/python/` → PATH 中 `python3`/`python`（≥ 3.10，log 警告）。
@@ -78,6 +78,9 @@ electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令�
 把 Masetti/Scharfetter/OldSlotboom/van Overstraeten/HighField 参数按矩阵 `target` 换成 SI 值交给 WP4；
 `electrodes[]` 给出 `Electrode{Material=}` 的 `Bandgap.WorkFunction`；`inert[]`/`lossy[]` 列出被判定
 无效果或有损的参数及理由）。
+
+C3 的单位由自身 schema 与 `unit_system` 定义；装载到 `format_version: 2` deck 时不做 deck 键名转换。
+它仍接受原生 `_cm3`、`_cm2_V_s` 键并拒绝混用 `_m3` 等未声明的键。
 
 规则：
 
@@ -118,6 +121,10 @@ electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令�
 - `Electrode{ Material="X" }` → `Φ_M` 取 WP3 报告 `electrodes[].work_function_eV`（`.par` `Bandgap{WorkFunction}`），再按上条换算；
 - `Material="Silicon"(N=...)` 多晶硅栅与氧化层固定电荷不在本规则内（WP4 处理）。
 
+当前 WP3 默认库在 300 K 给出 `Φ_S,i=4.611003610676079 eV`；2026-10-02 用户同意将 WP4
+零偏移验收输入改为该值。遗留内置 Si 的 `4.6228018936 eV` 用作输入时应得到
+`work_function_eV=0.011798282923921377 eV`，测试同时覆盖这两个结果；公式和材料参数未改。
+
 ### 2.6 求解器新增键（C5，WP6）
 
 `format_version: 2` deck 的 `sweep` 块新增（定义与默认值见 `docs/config_schema.md`）：`vtk_format` (`legacy`|`vtu`)、
@@ -127,6 +134,48 @@ electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令�
 `criterion` 为 `current_abs|current_min|current_max`，CSV 增加 `stop_criterion`/`stop_current_A_per_um` 列）。
 `.vtu` 字段目录与单位由 `tdrFieldCatalogue()`（`include/vela/io/VtuWriter.h`）定义；不可提供的请求字段记入
 `DCSweepPoint::skippedVtkFields` 并写 runtime log `vtk_fields_skipped`，由 WP5 转为 W202。
+
+### 2.7 stage/deck 发射器（C4/C10，WP4）
+
+库模块 `vela_sdevice.deck_emit` 只消费 accepted C1、C2 网格资格报告与 WP3 材料报告；不读 cmd 文本、不运行求解器：
+
+```python
+emit_stage_plan(ir, *, mesh_qualification, materials_report, work_dir,
+                cmd_basename, cmd_sha256, options=None, sidecar=None)
+# -> StagePlanResult(stage_plan, decks, decisions)
+rebase_stage(result, stage_index, reached_voltages_V)
+write_stage_plan(out_dir, result)
+```
+
+`EmitOptions` 包含 `exit_on_failure`、`threads`、`plot_final_only`、`vtu_binary`、
+`keep_intermediate`、`allow_lossy`。`write_stage_plan` 先校验再写 `stage_plan.json`、
+`simulation_stageNN.json` 与 `decisions.json`。路径为交给 WP5 暂存的 ASCII 基名。
+独立 CLI（从仓库根设置 `PYTHONPATH=scripts`）为：
+
+```text
+python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mesh_qualification.json --materials-report materials_report.json --out device_vela
+```
+
+- 连续初始 Coupled 合并为平衡 stage；后段通过 `sweep.initial_state_file`/`write_state_file` 串接 HDF5。
+  Save 改写前段状态文件名并保存电压表；Load 用 `frozen_state` 恢复快照。同一段多个 Save 别名暂不支持，报 E407。
+- 电压步长乘以本段 `|V1−V0|`；反向扫描保留 `step` 的负号。缺省采用手册 T-2022.03 Table 348：
+  InitialStep=0.1、MinStep=0.001、MaxStep=1、Increment=2、Decrement=2。
+  C4 `shrink_factor` 保留 Decrement 除数；runner deck `shrink_factor=1/Decrement`。
+  零电压跨度变为单点平衡并记录 W211。
+- Plot/CurrentPlot 的 Time 范围展开后取排序去重并集；`vtk_bias_points` 保证电压必经点，C4 记录写出选择和全局 plot 序号。
+  Current 目标使用 `voltage_to_current`；达到后，WP5 必须将实测接触电压传给 `rebase_stage`。
+  电流目标的显式 Time 中间点需要实测初始电流，WP4 暂报 E407（仅终点 `t=1` 可发射）。
+- 数值参数取 WP3 报告，按公开 v2 单位键写出；`band_to_band` 保留其 SI 约定，Auger 合成值由 SI 转 cm⁶/s。
+  Scharfetter `taumax` 同时写入常数 SRH 的 `tau_n_s/tau_p_s`，避免回退到 C++ 内置寿命。
+  不同材料要求互异的全局求解参数时报 E407。材料界面固定电荷展开为网格 region 对。
+- metal_gate 使用第 2.5 节公式；Schottky 使用绝对功函数或 `barrier_eV`，采用 `thermionic_robin` 与 Newton。
+  串联电阻仅允许配置在本段扫描接触；与电流目标互斥。
+- sidecar 先按 C10 白名单校验，再递归合并对象、替换数组与标量；每个覆盖键记录 W207。
+  不允许覆盖材料物理参数。`mixed_voronoi` 要求资格报告最大角严格小于 90°且无钝角。
+- C4 和公开 deck schema 均校验；额外遍历拒绝非有限值与 v1 键。错误使用 `DeckEmitError(message_id, **fields)`。
+
+CTest `sdevice_deck_emit` 对七个 accepted 夹具比较完整 golden，并验证真实 runner 的平衡、电压扫描、电流目标与 HDF5 串接。
+夹具测试补 `Parameter="models.par"` 后重新解析，不改变原始 IR golden。
 
 ## 3. 输出契约（C6）
 
@@ -208,6 +257,7 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 | W207 | warning | — | `Sidecar override applied to stage {n}: {key} = {value}` | `<stem>.vela.json` |
 | W208 | warning | — | `Load restores electrode voltages to {table}` | `Load(FilePrefix=)` |
 | W209 | warning | — | `Schottky contact '{name}': default recombination velocities {e}/{h} cm/s injected` | 缺 `e/hRecVelocity` |
+| W211 | warning | — | `Stage {n} has zero voltage span; emitted as a single equilibrium point` | WP4 退化扫描 |
 | W210 | warning | — | `Thread count {n} taken from Math{NumberOfThreads}` | 无 `--threads` |
 | W701 | warning | — | `Stale lock from PID {pid} on {host} replaced` | 锁文件进程不存在 |
 | E101 | fatal | 1 | `Workbench preprocessor directive '{text}' is not supported; preprocess the deck first` | `#if #elif #else #endif #setdep #define #include #noprint #header #endheader #split #endsplit #exit` |
@@ -314,6 +364,8 @@ schema 之外、golden 夹具所依赖的确定性规则：
 ## 7. 待决与后续
 
 实施状态、剩余工作包票据与交接说明见 [2026-09-30 交接文档](validation/sdevice_cmd_frontend_handoff_2026-09-30.md)。
+该交接是当日快照；WP4 的后续实现、基准修正与完成验证见
+[2026-10-02 WP4 验证记录](validation/sdevice_deck_emit_validation_2026-10-02.md)。
 
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；A-3/A-4 已细化为开发方案的

@@ -1,0 +1,66 @@
+{
+  "schema": "vela.stage_plan.v1",
+  "cmd": {
+    "path": "pn2d_0v_sdevice.cmd",
+    "sha256": "6c53446fcab45e3fe39f62aa45ec38b2ba08fff47dca0bebc43e4cab9b35ee48",
+    "execution_ir": "execution_ir.json"
+  },
+  "work_dir": "device_vela",
+  "exit_on_failure": false,
+  "threads": 1,
+  "inputs": {
+    "mesh_json": "mesh.json",
+    "doping_csv": "doping.csv",
+    "materials_json": "materials.json",
+    "mesh_qualification": "mesh_qualification.json",
+    "sidecar": null
+  },
+  "outputs": {
+    "log": "pn2d_0v.log_des.log",
+    "final_vtu": "pn2d_0v_des.vtu",
+    "pvd": "pn2d_0v_des.pvd",
+    "plot_final_only": false,
+    "vtu_binary": false,
+    "keep_intermediate": true
+  },
+  "electrodes": [
+    {
+      "name": "Anode",
+      "contact": "Anode",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "Cathode",
+      "contact": "Cathode",
+      "initial_voltage_V": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "index": 0,
+      "ir_stage_index": 0,
+      "kind": "equilibrium",
+      "deck": "simulation_stage00.json",
+      "csv": "stage00.csv",
+      "input_state": null,
+      "output_state": "stage00_state.h5",
+      "electrode_voltages_start_V": {
+        "Anode": 0.0,
+        "Cathode": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "Anode": 0.0,
+        "Cathode": 0.0
+      },
+      "current_file": "pn2d_0v.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": []
+    }
+  ]
+}
