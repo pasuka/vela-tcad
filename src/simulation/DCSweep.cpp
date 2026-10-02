@@ -1675,6 +1675,33 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         }
     }
     sweep.vtkBinary = j.value("vtk_binary", sweep.vtkBinary);
+    if (j.contains("vtk_field_data")) {
+        const auto& metadata = j.at("vtk_field_data");
+        if (!metadata.is_object())
+            throw std::invalid_argument("DCSweep: sweep.vtk_field_data must be an object.");
+        const std::unordered_set<std::string> reserved = {
+            "VelaVersion", "SweepContact", "Bias_V", "PointIndex", "Converged",
+            "GoalReached", "goal_reached", sweep.contact + "_OuterVoltage_V",
+            sweep.contact + "_InnerVoltage_V"};
+        for (const auto& [name, value] : metadata.items()) {
+            const auto letter = [](unsigned char c) {
+                return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+            };
+            if (name.empty() || !letter(name.front()) ||
+                !std::all_of(name.begin(), name.end(), [&](unsigned char c) {
+                    return letter(c) || (c >= '0' && c <= '9');
+                }) || reserved.contains(name) || name.ends_with("_TotalCurrent_A_per_um"))
+                throw std::invalid_argument("DCSweep: invalid or reserved vtk_field_data key '" + name + "'.");
+            if (value.is_string()) {
+                sweep.vtkFieldDataStrings.emplace_back(name, value.get<std::string>());
+            } else if (value.is_number() && std::isfinite(value.get<Real>())) {
+                sweep.vtkFieldDataValues.emplace_back(name, value.get<Real>());
+            } else {
+                throw std::invalid_argument("DCSweep: vtk_field_data values must be strings or finite numbers.");
+            }
+        }
+        sweep.vtkFieldDataEnabled = true;
+    }
     if (j.contains("vtk_bias_points")) {
         const auto& biasPoints = j.at("vtk_bias_points");
         if (!biasPoints.is_array())
@@ -7504,6 +7531,35 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             vtkOptions.fieldDataValues.emplace_back("Bias_V", voltage);
             vtkOptions.fieldDataValues.emplace_back("PointIndex", static_cast<Real>(points.size()));
             vtkOptions.fieldDataValues.emplace_back("Converged", 1.0);
+            if (sweep.vtkFieldDataEnabled) {
+                vtkOptions.fieldDataStrings.insert(vtkOptions.fieldDataStrings.end(),
+                    sweep.vtkFieldDataStrings.begin(), sweep.vtkFieldDataStrings.end());
+                vtkOptions.fieldDataValues.insert(vtkOptions.fieldDataValues.end(),
+                    sweep.vtkFieldDataValues.begin(), sweep.vtkFieldDataValues.end());
+                const Real outer = boundaryControlEnabled ? boundaryObservation.outerVoltage_V : voltage;
+                Real t = sweep.stop == sweep.start ? 0.0 : (outer - sweep.start) / (sweep.stop - sweep.start);
+                bool reached = std::abs(outer - sweep.stop) <= 1.0e-12;
+                if (sweep.voltageToCurrent.enabled) {
+                    const Real current = sweep.voltageToCurrent.currentDirection *
+                        currentPerInternalDepthToAPerUm(sweep.scaling, point.totalCurrent);
+                    const Real initial = points.empty() ? current : sweep.voltageToCurrent.currentDirection *
+                        currentPerInternalDepthToAPerUm(sweep.scaling, points.front().totalCurrent);
+                    const Real goal = sweep.voltageToCurrent.currentPoints_A_per_um.back();
+                    t = goal == initial ? 0.0 : (current - initial) / (goal - initial);
+                    reached = boundaryObservation.mode == "current" &&
+                        std::abs(current - goal) <= sweep.voltageToCurrent.currentTolerance_A_per_um;
+                }
+                const bool suppliedTime = std::any_of(sweep.vtkFieldDataStrings.begin(), sweep.vtkFieldDataStrings.end(),
+                        [](const auto& item) { return item.first == "t"; }) ||
+                    std::any_of(sweep.vtkFieldDataValues.begin(), sweep.vtkFieldDataValues.end(),
+                        [](const auto& item) { return item.first == "t"; });
+                if (!suppliedTime)
+                    vtkOptions.fieldDataValues.emplace_back("t", t);
+                vtkOptions.fieldDataValues.emplace_back("GoalReached", reached ? 1.0 : 0.0);
+                vtkOptions.fieldDataValues.emplace_back("goal_reached", reached ? 1.0 : 0.0);
+                vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_OuterVoltage_V", outer);
+                vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_InnerVoltage_V", voltage);
+            }
             for (const auto& [name, currents] : point.contactCurrents) {
                 vtkOptions.fieldDataValues.emplace_back(
                     name + "_TotalCurrent_A_per_um",

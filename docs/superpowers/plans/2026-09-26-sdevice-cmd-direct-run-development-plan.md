@@ -867,7 +867,7 @@ flowchart LR
 
 #### WP6.1 `sweep.vtk_field_data` 透传（可选小 C++ 增量）
 
-- 状态：**待开工**（可选；建议在 WP5 步骤 10 之前完成，单独一个提交）。
+- 状态：**完成**（2026-10-02；独立 C++ 增量，ASCII/二进制回读、默认字节一致性和非法值测试通过；Release 全量 CTest 1020/1020；见 [验证记录](../../validation/sdevice_field_data_validation_2026-10-02.md)）。
 - 背景：C6 要求每个 `.vtu` 的 `FieldData` 含 `CmdSHA256`、`Stage`、`t`、`goal_reached`，这些只有编排器知道；WP6 只写了 runner
   自身可知的键（`VelaVersion/SweepContact/Bias_V/PointIndex/Converged/<contact>_TotalCurrent_A_per_um`）。
   `DDSolutionVtkOptions.fieldDataStrings/fieldDataValues`（`include/vela/solver/GummelSolver.h`）已存在，只缺 deck 入口。

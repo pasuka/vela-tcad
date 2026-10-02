@@ -325,6 +325,10 @@ struct DCSweepConfig {
     /// TDR field requests for `vtu` output (`Name` or `Name/Vector`); empty = all.
     std::vector<std::string> vtkFields;
     bool vtkBinary = false;
+    /// Opt-in frontend metadata; absent preserves the legacy VTU bytes.
+    bool vtkFieldDataEnabled = false;
+    std::vector<std::pair<std::string, std::string>> vtkFieldDataStrings;
+    std::vector<std::pair<std::string, Real>> vtkFieldDataValues;
     /// Biases the adaptive sweep must land on exactly; a VTK file is written at
     /// each of them even when `writeVtk` is false.
     std::vector<Real> vtkBiasPoints;

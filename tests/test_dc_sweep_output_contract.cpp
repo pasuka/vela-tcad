@@ -306,6 +306,56 @@ TEST_CASE("DCSweep writes TDR-named .vtu files at mandatory bias points with the
     }
 }
 
+TEST_CASE("DCSweep frontend FieldData preserves legacy bytes and supports binary metadata",
+          "[dc_sweep][output_contract][vtu][field_data]")
+{
+    const auto dir = makeUniqueDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshMicrometers(dir);
+    auto cfg = baseConfig(dir, mesh, dir / "metadata.csv");
+    cfg["sweep"]["vtk_format"] = "vtu";
+    cfg["sweep"]["write_vtk"] = true;
+    const auto run = [&](const nlohmann::json& value) {
+        DCSweep sweep;
+        return sweep.runWithResult(writeConfig(dir, value, "metadata.json").string());
+    };
+    const auto numeric = [](const std::string& text, const std::string& name) {
+        std::smatch match;
+        const std::regex pattern("Name=\\\"" + name + "\\\"[^>]*>\\s*([^<]+)<");
+        REQUIRE(std::regex_search(text, match, pattern));
+        return std::stod(match[1].str());
+    };
+    const auto baseline = run(cfg);
+    const std::string legacy = readText(baseline.points.back().outputVtk);
+    REQUIRE(legacy.find("Name=\"GoalReached\"") == std::string::npos);
+    for (bool binary : {false, true}) {
+        cfg["sweep"]["vtk_binary"] = binary;
+        cfg["sweep"]["vtk_field_data"] = {{"CmdSHA256", "abc"}, {"Stage", 1}, {"t", .25}};
+        const auto result = run(cfg);
+        const auto first = readText(result.points.front().outputVtk);
+        const auto last = readText(result.points.back().outputVtk);
+        REQUIRE(first.find("97 98 99 0") != std::string::npos);
+        REQUIRE(numeric(first, "Stage") == 1.0);
+        REQUIRE(numeric(first, "t") == .25);
+        REQUIRE(numeric(first, "GoalReached") == 0.0);
+        REQUIRE(numeric(last, "goal_reached") == 1.0);
+        REQUIRE(numeric(last, "anode_OuterVoltage_V") == .5);
+        cfg["sweep"]["vtk_field_data"].erase("t");
+        const auto dynamic = run(cfg);
+        REQUIRE(numeric(readText(dynamic.points[1].outputVtk), "t") == .5);
+    }
+    cfg["sweep"].erase("vtk_field_data");
+    cfg["sweep"]["vtk_binary"] = false;
+    REQUIRE(readText(run(cfg).points.back().outputVtk) == legacy);
+    for (const auto& invalid : std::vector<nlohmann::json>{
+             nlohmann::json::array(), {{"bad-name", 1}}, {{"Stage", true}},
+             {{"GoalReached", 1}}, {{"Bias_V", 1}}, {{"anode_TotalCurrent_A_per_um", 1}},
+             {{"nested", nlohmann::json::object()}}, {{"value", std::numeric_limits<double>::infinity()}}}) {
+        cfg["sweep"]["vtk_field_data"] = invalid;
+        REQUIRE_THROWS(run(cfg));
+    }
+}
+
 TEST_CASE("DCSweep vtk_format legacy keeps the ASCII .vtk output and write_vtk semantics",
           "[dc_sweep][output_contract][vtu]")
 {

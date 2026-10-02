@@ -295,6 +295,11 @@
           "minimum": 1.0,
           "type": "number"
         },
+        "vtk_field_data": {
+          "type": "object",
+          "additionalProperties": {"type": ["string", "number"]},
+          "description": "Opt-in VTU metadata. Keys must be ASCII identifiers and cannot replace runner-owned fields."
+        },
         "initial_step": {
           "exclusiveMinimum": 0.0,
           "type": "number"

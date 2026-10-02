@@ -135,6 +135,11 @@ C3 的单位由自身 schema 与 `unit_system` 定义；装载到 `format_versio
 `.vtu` 字段目录与单位由 `tdrFieldCatalogue()`（`include/vela/io/VtuWriter.h`）定义；不可提供的请求字段记入
 `DCSweepPoint::skippedVtkFields` 并写 runtime log `vtk_fields_skipped`，由 WP5 转为 W202。
 
+WP6.1 增加可选 `sweep.vtk_field_data` 对象：ASCII 标识符键、字符串或有限数值；拒绝布尔、嵌套值和内置键重名。
+例如 `{"CmdSHA256":"abc","Stage":1,"t":0.25}` 原样写入 FieldData。提供该对象时 runner 另写
+`GoalReached`/`goal_reached`（本段目标到达为 1，否则 0）以及被扫电极的内外电压；未给 `t` 时按本段电压区间
+计算，Current 模式按实测初始电流到最终电流目标计算。二进制 VTU 的 FieldData 同样可读；不提供该对象保持原有输出字节。
+
 ### 2.7 stage/deck 发射器（C4/C10，WP4）
 
 库模块 `vela_sdevice.deck_emit` 只消费 accepted C1、C2 网格资格报告与 WP3 材料报告；不读 cmd 文本、不运行求解器：
