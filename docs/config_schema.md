@@ -2119,6 +2119,20 @@ Output and current fields:
   `vtk_fields_skipped`.
 - vtk_binary: `false` (default, ASCII arrays) or `true` (base64 inline binary
   with a UInt32 header) for `vtk_format: "vtu"`.
+- vtk_field_data: optional object of string or finite numeric values, for
+  example `{"CmdSHA256":"abc","Stage":1,"t":0.25}`. Keys must match
+  `[A-Za-z_][A-Za-z0-9_]*`; booleans, arrays and nested objects are rejected.
+  Built-in names cannot be overridden: `VelaVersion`, `SweepContact`, `Bias_V`,
+  `PointIndex`, `Converged`, `GoalReached`, `goal_reached`, swept-contact
+  `<name>_OuterVoltage_V`/`<name>_InnerVoltage_V`, and any
+  `<name>_TotalCurrent_A_per_um`. FieldData stays readable ASCII in binary VTU.
+  Presence of this object enables per-point `GoalReached`/`goal_reached` (0/1)
+  and swept-contact inner/outer voltages. If `t` is not supplied, it is computed
+  from the voltage interval, or from the measured initial current and final
+  current target for voltage-to-current stages. Goal status is local to this
+  stage, using the existing voltage/current tolerance; it does not change
+  convergence or stopping decisions. Omitting the object preserves the
+  previous VTU bytes and metadata set.
 - vtk_bias_points: optional array of biases the adaptive sweep must land on
   exactly (to 1e-12 V). Each becomes an additional accepted point with a VTK
   file even when `write_vtk` is false; the adaptive step size is not changed,
