@@ -171,7 +171,8 @@ class MaterialsError(Exception):
 
 
 def default_models_par_path() -> Path:
-    return _SCRIPTS.parent / "share" / "vela" / "materials" / "models.par"
+    from ..resources import resource_root
+    return resource_root() / "share" / "vela" / "materials" / "models.par"
 
 
 # ---------------------------------------------------------------------------

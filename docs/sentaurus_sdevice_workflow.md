@@ -1,9 +1,9 @@
 # `vela device`：SDevice 命令文件直跑工作流
 
-状态：**组件接口已交付至 WP4，编排器待 WP5**（2026-10-02）。本文是
+状态：**WP5 编排器与 WP6.1 FieldData 已交付**（2026-10-02）。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
-计划文档保留决策依据。尚未实现的编排器与后续验收以“待 WPn”标注。
+计划文档保留决策依据。数值一致性与分发验收仍由 WP10/WP11 完成。
 
 ## 1. 契约文件索引
 
@@ -17,7 +17,7 @@
 | C6 输出文件契约 | 本文第 3 节 | WP8/WP6 → WP10 | 初稿 |
 | C7 产物清单 | `schemas/vela.reference_artifact_manifest.v1.schema.json` | WP9 → WP10 | 冻结 |
 | C8 CLI/退出码/消息目录 | 本文第 2、4 节 | WP0 → WP5/WP7/WP12 | 冻结 |
-| C9 启动器协议 | 本文第 2.3 节 | WP7 → WP5 | 启动器已交付，zipapp 待 WP5 |
+| C9 启动器协议 | 本文第 2.3 节 | WP7 → WP5 | 启动器与 zipapp 已交付 |
 | C10 sidecar | `schemas/vela.sdevice_sidecar.v1.schema.json` | WP0 → WP4 | 校验与合并已交付 |
 
 校验工具：`python scripts/vela_sdevice/schema_validator.py <schema> <json>...`
@@ -59,13 +59,31 @@ Vela 自有选项：`--check`、`--allow-lossy`、`--keep-intermediate/--no-keep
 | 7 | 并发冲突 | E7xx |
 | 8 | 被外部中止 | E8xx |
 
-每个非 0 退出同时写 log 尾部 `[FATAL]` 摘要与 `<stem>_vela/fail_report.json{stage,message,details,exit_code}`。
+取得工作目录锁后的每个非 0 退出同时写 log 尾部 `[FATAL]` 摘要与
+`<stem>_vela/fail_report.json{stage,message_id,message,details,exit_code}`。
+未取得锁时保留持有者文件；命令文件定位和 argparse 用法错误发生在创建本次工作目录之前，只写 stderr。
+CLI 输出和用户日志均为 UTF-8，包括 Windows 本地化系统错误详情。
 
 ### 2.3 启动器协议（C9，WP7）
 
 `vela device <args>` → 子进程 `<python> bin/vela_sdevice.pyz device <args>`，cwd 不变，退出码透传。
 `<python>` 查找顺序：`VELA_PYTHON` → `bin/python/` → PATH 中 `python3`/`python`（≥ 3.10，log 警告）。
 Windows 用宽字符 API 透传参数；`bin/` 前置到 `PATH`。
+
+CMake 默认构建生成 `<build>/bin/vela_sdevice.pyz`；`vela` 目标依赖该打包目标。每次构建重新记录当前 Git 提交。
+zipapp 包含标准库之外的四个仓库模块（`sentaurus_parameter_ir`、`sentaurus_parameter_map`、
+`compare_sentaurus_tdr_tdx`、`convert_tcad_export`）、默认材料库、schema 和版本记录；运行不依赖源码目录或第三方 Python 包。
+`VELA_BIN` 可覆盖 runner/importer 目录；默认查找 zipapp 目录及其父目录，再查 PATH。
+`VELA_EXAMPLE_RUNNER` / `VELA_SENTAURUS_IMPORT` 可指定对应工具。
+
+在 UCRT64 环境的仓库根运行：
+
+```powershell
+cmake --build --preset windows-ucrt64-release
+.\build-release\vela.exe device -h
+.\build-release\vela.exe device --check .\case\device_des.cmd
+.\build-release\vela.exe device --threads 4 .\case\device_des.cmd
+```
 
 ### 2.4 材料发射器（C3，WP3）
 
@@ -169,7 +187,11 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
   零电压跨度变为单点平衡并记录 W211。
 - Plot/CurrentPlot 的 Time 范围展开后取排序去重并集；`vtk_bias_points` 保证电压必经点，C4 记录写出选择和全局 plot 序号。
   Current 目标使用 `voltage_to_current`；达到后，WP5 必须将实测接触电压传给 `rebase_stage`。
-  电流目标的显式 Time 中间点需要实测初始电流，WP4 暂报 E407（仅终点 `t=1` 可发射）。
+  纯 WP4 发射器在没有实测初始电流时仍对显式 Time 中间点报 E407；WP5 用 `defer_current_times=True`
+  先生成可校验计划，在运行 Current 段前用 `bind_current_start` 绑定前段 CSV 的实测电流与电压。
+  `--check` 不求解，Current Time 映射会留待实际执行时绑定。
+  未达 Goal 或 Current 后续接时，WP5 调用 `rebase_stage(..., update_saved_state=True)`，
+  使前段 Save 对应的电压表也记录实测值；默认库调用继续保留原快照语义。
 - 数值参数取 WP3 报告，按公开 v2 单位键写出；`band_to_band` 保留其 SI 约定，Auger 合成值由 SI 转 cm⁶/s。
   Scharfetter `taumax` 同时写入常数 SRH 的 `tau_n_s/tau_p_s`，避免回退到 C++ 内置寿命。
   不同材料要求互异的全局求解参数时报 E407。材料界面固定电荷展开为网格 region 对。
@@ -181,6 +203,30 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
 
 CTest `sdevice_deck_emit` 对七个 accepted 夹具比较完整 golden，并验证真实 runner 的平衡、电压扫描、电流目标与 HDF5 串接。
 夹具测试补 `Parameter="models.par"` 后重新解析，不改变原始 IR golden。
+
+### 2.8 编排器执行与输出（WP5）
+
+`python -m vela_sdevice device ...`（源码运行时 `PYTHONPATH=scripts`）与原生入口使用同一 CLI。
+`--check/-n` 完成 C1/C2/C3/C4/C10 gates 后写 manifest，不调用 runner；`-i` 仅执行首段平衡。
+每个接受点回显一行，`-q` 关闭进度；线程数同时传入计划和四个 OMP/BLAS/Eigen 环境变量。
+HDF5 子进程固定 `HDF5_USE_FILE_LOCKING=FALSE`。第一段失败、异常进程结束或 ExitOnFailure 返回 5；
+runner 退出 2 映射为生成 deck 被拒的退出 4，并保留其输出详情。
+
+工作目录通常为 `<stem>_vela`；非 ASCII 命令文件基名使用 `device_<sha256前8位>_vela`，保持 runner 暂存基名为 ASCII。
+
+锁采用排他创建，记录 PID、主机、时间及所有权 token。存活进程、异地主机或无法读出所有权的锁返回 7；
+只有同主机已死进程的锁自动回收，记录 W701。SIGINT/SIGTERM/Windows CTRL_BREAK 中止子进程、
+保留最后接受点的 PLT/VTU/PVD，释放本进程锁，返回 8。
+
+PLT 只发布完整且收敛的 CSV 行，通过临时文件替换增量更新；读取时使用稳定行快照。
+VTU 在文件闭合后按 C4 全局编号及 FilePrefix 复制，PVD 原子更新，最终文件始终来自最后接受点。
+`--plot-final-only` 只发布最终 VTU；成功后的 `--no-keep-intermediate` 移除工作目录阶段 CSV/VTU，
+保留状态文件、输入、计划和诊断记录。失败与中止保留中间产物。FieldData 的 goal 状态针对该段；
+整个流程的完成状态见 `run_manifest.json` 的退出码和各段记录。
+
+runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后将 runtime 日志合并至唯一用户日志，
+以支持 Windows 中文和空格路径。用户日志含版本/提交/哈希、cmd 回显、映射决策、每段结果与结束摘要。
+`.plt` 电流符号因子仍为 +1，多段 time 每段重置，日志明确标记等待 WP10 定案。
 
 ## 3. 输出契约（C6）
 
