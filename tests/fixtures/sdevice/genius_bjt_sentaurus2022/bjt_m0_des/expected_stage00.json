@@ -20,6 +20,7 @@
     "impact_ionization": {
       "model": "none"
     },
+    "contact_boundary_minority_electron_relaxation": false,
     "srh_doping_dependence": {
       "electron": {
         "tau_min_s": 0.0,
@@ -32,7 +33,8 @@
         "tau_max_s": 3e-06,
         "reference_doping_cm3": 1e+16,
         "gamma": 1.0
-      }
+      },
+      "enabled": false
     },
     "tau_n_s": 1e-05,
     "tau_p_s": 3e-06,

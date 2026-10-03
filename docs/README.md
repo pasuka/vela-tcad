@@ -6,9 +6,13 @@ evidence.
 
 ## Current References
 
+- [SDevice IV/BV repair, 2026-10-03](validation/sdevice_iv_bv_repair_2026-10-03.md):
+  corrected model activation, Ohmic contacts and Newton continuation; IV reaches 10 V and passes,
+  BV reaches −20 V with passing curve/KCL gates; biased avalanche spatial thresholds remain unqualified.
+
 - [SDevice WP10 acceptance, 2026-10-03](validation/sdevice_acceptance_2026-10-03.md):
   verified native v2 archives, frozen current sign and per-stage Time, fail-closed
-  curve/field gates and zipapp exit-code repair; 0V passes, IV/BV qualification remains open.
+  curve/field gates and zipapp exit-code repair; initial failures retained as historical evidence.
 
 - [SDevice WP5 orchestration and WP6.1 metadata, 2026-10-02](validation/sdevice_orchestrator_validation_2026-10-02.md):
   native CLI and standalone zipapp, gates, locking, interruption and incremental outputs;

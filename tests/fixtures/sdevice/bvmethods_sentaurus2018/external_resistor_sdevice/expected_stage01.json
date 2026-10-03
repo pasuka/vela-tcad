@@ -41,6 +41,8 @@
     "impact_ionization": {
       "model": "van_overstraeten",
       "driving_force": "electric_field_parallel",
+      "generation": "current_density",
+      "current_approximation": "density_gradient",
       "electron_a_low_cm_inv": 703000.0,
       "hole_a_low_cm_inv": 1582000.0,
       "electron_a_high_cm_inv": 703000.0,
@@ -52,6 +54,7 @@
       "switch_field_V_per_cm": 400000.0,
       "phonon_energy_eV": 0.063
     },
+    "contact_boundary_minority_electron_relaxation": false,
     "bandgap_narrowing": {
       "model": "old_slotboom",
       "coefficient_eV": 0.009,
@@ -82,8 +85,32 @@
     "tau_n_s": 1e-05,
     "tau_p_s": 3e-06,
     "temperature_K": 300.0,
-    "method": "gummel_newton",
-    "max_iter": 20
+    "method": "newton",
+    "max_iter": 20,
+    "warm_start": true,
+    "quasi_fermi_reference": "contact_majority",
+    "quasi_fermi_update_limit_V": 0.1,
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 1e-18,
+      "min_newton_max_iter": 20
+    },
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.0,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1e+18
+    },
+    "global_continuity_closure": {
+      "mode": "enforce",
+      "tolerance": 0.01,
+      "source_floor": 1e-14
+    }
   },
   "output_csv": "stage01.csv",
   "contacts": [

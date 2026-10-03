@@ -41,6 +41,8 @@
     "impact_ionization": {
       "model": "van_overstraeten",
       "driving_force": "electric_field_parallel",
+      "generation": "current_density",
+      "current_approximation": "density_gradient",
       "electron_a_low_cm_inv": 703000.0,
       "hole_a_low_cm_inv": 1582000.0,
       "electron_a_high_cm_inv": 703000.0,
@@ -52,6 +54,7 @@
       "switch_field_V_per_cm": 400000.0,
       "phonon_energy_eV": 0.063
     },
+    "contact_boundary_minority_electron_relaxation": false,
     "bandgap_narrowing": {
       "model": "old_slotboom",
       "coefficient_eV": 0.009,

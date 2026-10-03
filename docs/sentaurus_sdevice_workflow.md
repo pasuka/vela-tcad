@@ -194,11 +194,28 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
   使前段 Save 对应的电压表也记录实测值；默认库调用继续保留原快照语义。
 - 数值参数取 WP3 报告，按公开 v2 单位键写出；`band_to_band` 保留其 SI 约定，Auger 合成值由 SI 转 cm⁶/s。
   Scharfetter `taumax` 同时写入常数 SRH 的 `tau_n_s/tau_p_s`，避免回退到 C++ 内置寿命。
+  材料参数声明不激活模型：普通 `SRH` 显式写 `srh_doping_dependence.enabled=false`，
+  `SRH(DopingDependence)` 才启用掺杂寿命。普通欧姆接触固定两种载流子的准费米电势，
+  前端显式关闭 Newton 的 minority-electron relaxation。
+  缺省高场迁移率和雪崩驱动力按 SDevice DD 语义取准费米梯度；显式驱动力优先。
+  雪崩采用 `generation=current_density` 与通用 SG edge `current_approximation=density_gradient`。
+  此映射不启用 PN2D BV 模板专用的 SG/GSS-Laux 与 mixed-Voronoi 原子配置。
   不同材料要求互异的全局求解参数时报 E407。材料界面固定电荷展开为网格 region 对。
+- 初始平衡保留 Gummel/Newton 初始化；已有状态的 Coupled 段用 warm-start Newton，
+  `quasi_fermi_reference=contact_majority`，避免逐点 Gummel 破坏延续初值。
+  同时启用现有局部连续性行检查（0.001）、行缩放和全局源/接触守恒检查（1%），
+  单次准费米更新上限 0.1 V；不放宽已有验收门限，`min_newton_max_iter` 保持源 Iterations。
 - metal_gate 使用第 2.5 节公式；Schottky 使用绝对功函数或 `barrier_eV`，采用 `thermionic_robin` 与 Newton。
   串联电阻仅允许配置在本段扫描接触；与电流目标互斥。
 - sidecar 先按 C10 白名单校验，再递归合并对象、替换数组与标量；每个覆盖键记录 W207。
-  不允许覆盖材料物理参数。`mixed_voronoi` 要求资格报告最大角严格小于 90°且无钝角。
+  不允许覆盖材料物理参数。`mixed_voronoi` 要求 C2 的非钝角资格、无钝角，
+  最大角不超过 90°（仅容许 1e−8° 浮点误差），与当前运行时 non-obtuse 检查一致。
+- sidecar 可显式选 `avalanche_current_support_profile=element_edge_sg_gss_laux` 或
+  `legacy_cell_reconstructed`，应用完整的电流支撑、源映射、中点密度、节点体积和网格资格配置；
+  拒绝拆分几何覆盖，必须已有 GradQF avalanche。它不激活模型或覆盖系数，记录 W207。
+  前者依赖非钝角资格；后者完整恢复 barycentric/no-guard 配置。源导数按 Math 使用 local AD 或 frozen，
+  接触元素保留原生 electric-field fallback。
+  PN2D BV 参考案例随附显式 sidecar；验收报告记录其哈希，复用旧输出也核验它。
 - C4 和公开 deck schema 均校验；额外遍历拒绝非有限值与 v1 键。错误使用 `DeckEmitError(message_id, **fields)`。
 
 CTest `sdevice_deck_emit` 对七个 accepted 夹具比较完整 golden，并验证真实 runner 的平衡、电压扫描、电流目标与 HDF5 串接。
@@ -277,7 +294,9 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   首三个正向 Anode 点及 Vela 原始 Anode 电流方向；PLT SHA-256
   `a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25`。
   符号核对采用已接受原始电流的 log-current 插值，只确定方向；数值幅值另行验收。
-  详见 [WP10 记录](validation/sdevice_acceptance_2026-10-03.md)，整体 IV/BV 资格尚未通过。
+  详见 [WP10 初次记录](validation/sdevice_acceptance_2026-10-03.md)及
+  [IV/BV 修复报告](validation/sdevice_iv_bv_repair_2026-10-03.md)：IV 到达 10 V 并通过既定验收，
+  BV 到达 −20 V 且曲线/KCL 通过；偏置雪崩场量阈值尚未获资格，WP10 整体仍未完全通过。
 - `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；字段名/单位用手册附录 F 的 TDR 数据名
   （计划附录 B），向量为同名 3 分量数组；`region_id` CellData；`FieldData` 含 `VelaVersion`、
   `CmdSHA256`、`Stage`、`t`、各电极 `OuterVoltage/InnerVoltage/TotalCurrent`、`goal_reached`。
@@ -427,7 +446,7 @@ schema 之外、golden 夹具所依赖的确定性规则：
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
   用户已授权并完成 PN2D 0V/IV/BV 和 BJT m0 的最小 v2 重跑。WP10 已固化 A-4 与 C6，
-  当前状态见 [WP10 验收记录](validation/sdevice_acceptance_2026-10-03.md)；其余 WP14 案例未执行。
+  当前状态见 [IV/BV 修复报告](validation/sdevice_iv_bv_repair_2026-10-03.md)；其余 WP14 案例未执行。
 - A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：开发方案 WP13（用户 2026-09-29 要求列入）；
   完成前第 2.4 节的“遗留默认”说明保持有效。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，

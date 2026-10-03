@@ -269,11 +269,29 @@ def prepare_reference(base, case, destination):
     destination.mkdir(parents=True, exist_ok=False)
     for path in (source, base/'source/models.par', base/'mesh'/case['grid']):
         shutil.copy2(path, destination/path.name)
-    return destination/source.name, {'source_relation':relation, 'original_sha256':sha(original), 'cmd_sha256':sha(source),
-                                     'parameter_sha256':sha(base/'source/models.par'), 'grid_sha256':sha(base/'mesh'/case['grid'])}
+    provenance = {'source_relation':relation, 'original_sha256':sha(original), 'cmd_sha256':sha(source),
+                  'parameter_sha256':sha(base/'source/models.par'), 'grid_sha256':sha(base/'mesh'/case['grid'])}
+    sidecar = original.with_suffix('.vela.json')
+    if sidecar.is_file():
+        shutil.copy2(sidecar,destination/sidecar.name)
+        provenance['sidecar_sha256'] = sha(sidecar)
+        provenance['sidecar'] = read_json(sidecar)
+    return destination/source.name, provenance
 
 
-def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=1800):
+def check_candidate_inputs(directory, case, provenance):
+    cmd = directory/case['cmd']
+    for path, expected in ((cmd,provenance['cmd_sha256']), (directory/'models.par',provenance['parameter_sha256']),
+                           (directory/case['grid'],provenance['grid_sha256'])):
+        if sha(path) != expected:
+            raise ValueError('reused candidate input hash differs')
+    sidecar = cmd.with_suffix('.vela.json')
+    if ('sidecar_sha256' in provenance and (not sidecar.is_file() or sha(sidecar)!=provenance['sidecar_sha256'])) \
+            or ('sidecar_sha256' not in provenance and sidecar.exists()):
+        raise ValueError('reused candidate numerical sidecar differs')
+
+
+def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200):
     case = contract['cases'][name]; base = staging/case['archive']/contract['reference_version']
     manifest_path = base/'artifact_manifest.json'
     if not manifest_path.is_file():
@@ -301,9 +319,7 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     cmd, provenance = prepare_reference(base, case, output/'candidate')
     if candidate_dir:
         cmd = candidate_dir/case['cmd']
-        for path,expected in ((cmd,provenance['cmd_sha256']),(candidate_dir/'models.par',provenance['parameter_sha256']),
-                              (candidate_dir/case['grid'],provenance['grid_sha256'])):
-            if sha(path)!=expected:raise ValueError('reused candidate input hash differs')
+        check_candidate_inputs(candidate_dir,case,provenance)
         code = read_json(candidate_dir/(cmd.stem+'_vela')/'run_manifest.json')['exit_code']
         if code is None:raise ValueError('candidate is still running')
     else:
@@ -427,7 +443,7 @@ def main(argv=None):
     parser.add_argument('--launcher',type=Path,required=True)
     parser.add_argument('--tdr-importer',type=Path,required=True)
     parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid hash checks')
-    parser.add_argument('--timeout-seconds',type=float,default=1800.,help='Bound each fresh candidate run; timeout never passes')
+    parser.add_argument('--timeout-seconds',type=float,default=7200.,help='Bound each fresh candidate run; timeout never passes (full BV retains 401 Plot biases)')
     args = parser.parse_args(argv)
     if args.timeout_seconds<=0:parser.error('--timeout-seconds must be positive')
     if args.reference_dir is None:

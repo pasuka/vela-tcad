@@ -177,13 +177,35 @@ class DeckEmitterTests(unittest.TestCase):
                     {"solver": {"max_iter": 0}}, {"apply_to": [9]}):
             self.assert_error("E409", emit, self.ir, sidecar={"schema": "vela.sdevice_sidecar.v1", **bad})
 
-    def test_mixed_voronoi_requires_strictly_acute_mesh(self):
+    def test_mixed_voronoi_accepts_right_angles_and_rejects_obtuse_mesh(self):
         sidecar = {"schema": "vela.sdevice_sidecar.v1", "mesh_geometry": {"node_volume_policy": "mixed_voronoi"}}
-        self.assert_error("E408", emit, self.ir, sidecar=sidecar)
         mesh = qualification(self.ir)
-        mesh["angles"]["max_deg"] = 89.9
         result = emit(self.ir, sidecar=sidecar, mesh_qualification=mesh)
         self.assertTrue(result.decks[0]["mesh_geometry"]["require_non_obtuse"])
+        mesh["angles"]["max_deg"] = 90.01
+        mesh["angles"]["obtuse_element_count"] = 1
+        mesh["qualification"]["non_obtuse"] = False
+        self.assert_error("E408", emit, self.ir, sidecar=sidecar, mesh_qualification=mesh)
+
+    def test_explicit_avalanche_profile_is_atomic_and_preserves_physics(self):
+        from generate_pn2d_config import BV_CONFIGURATION_PROFILES
+        ir = accepted("pn2d_sentaurus2018/pn2d_bv_sdevice.cmd")
+        baseline = emit(ir)
+        for name, bundle in BV_CONFIGURATION_PROFILES.items():
+            sidecar = {"schema": "vela.sdevice_sidecar.v1", "avalanche_current_support_profile": name}
+            result = emit(ir, sidecar=sidecar)
+            for before, after in zip(baseline.decks, result.decks):
+                self.assertEqual(after["mesh_geometry"], bundle["mesh_geometry"])
+                for key, value in bundle["impact_ionization"].items():
+                    self.assertEqual(after["solver"]["impact_ionization"][key], value)
+                self.assertEqual(before["solver"]["impact_ionization"]["electron_a_low_cm_inv"],
+                                 after["solver"]["impact_ionization"]["electron_a_low_cm_inv"])
+                self.assertEqual(before["solver"]["mobility"], after["solver"]["mobility"])
+                self.assertEqual(before["sweep"]["stop"], after["sweep"]["stop"])
+            self.assert_error("E409", emit, ir, sidecar={**sidecar, "mesh_geometry": {
+                "node_volume_policy": "barycentric" if name == "element_edge_sg_gss_laux" else "mixed_voronoi"}})
+        self.assert_error("E409", emit, self.ir, sidecar={"schema": "vela.sdevice_sidecar.v1",
+                          "avalanche_current_support_profile": "element_edge_sg_gss_laux"})
 
     def test_gate_barrier_workfunction_and_material(self):
         ir = deepcopy(self.ir)
@@ -279,6 +301,42 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(solver["tau_n_s"], solver["srh_doping_dependence"]["electron"]["tau_max_s"])
         self.assertEqual(solver["tau_p_s"], solver["srh_doping_dependence"]["hole"]["tau_max_s"])
 
+    def test_srh_parameter_declarations_do_not_enable_doping_dependence(self):
+        for option, enabled in (("", False), ("(DopingDependence)", True)):
+            with self.subTest(option=option):
+                ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
+                    Electrode { {Name="left" Voltage=0} {Name="right" Voltage=0} }
+                    Physics { Recombination(SRH''' + option + ''') }
+                    Solve { Coupled {Poisson Electron Hole} }''', path_name="srh.cmd")
+                solver = emit(ir).decks[0]["solver"]
+                self.assertFalse(solver["contact_boundary_minority_electron_relaxation"])
+                self.assertEqual(solver["srh_doping_dependence"]["enabled"], enabled)
+                self.assertEqual(solver["tau_n_s"], 1e-5)
+                self.assertEqual(solver["tau_p_s"], 3e-6)
+
+    def test_drift_diffusion_driving_force_defaults_and_explicit_override(self):
+        for force, expected in (("", "quasi_fermi_gradient"), ("(ElectricField)", "electric_field")):
+            ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
+                Electrode { {Name="left" Voltage=0} {Name="right" Voltage=0} }
+                Physics { Mobility(DopingDependence HighFieldSaturation''' + force + ''')
+                  Recombination(Avalanche(VanOverstraeten ''' + ("ElectricField" if force else "") + ''')) }
+                Solve { Coupled {Poisson Electron Hole} }''', path_name="force.cmd")
+            solver = emit(ir).decks[0]["solver"]
+            self.assertEqual(solver["mobility"]["high_field_driving_force"], expected)
+            self.assertEqual(solver["impact_ionization"]["driving_force"], expected)
+            self.assertEqual(solver["impact_ionization"]["generation"], "current_density")
+            self.assertEqual(solver["impact_ionization"]["current_approximation"], "density_gradient")
+
+    def test_coupled_continuation_preserves_state_and_resolves_tiny_currents(self):
+        result = emit(self.ir)
+        self.assertEqual(result.decks[0]["solver"]["method"], "gummel_newton")
+        for deck in result.decks[1:]:
+            self.assertEqual(deck["solver"]["method"], "newton")
+            self.assertTrue(deck["solver"]["warm_start"])
+            self.assertEqual(deck["solver"]["quasi_fermi_reference"], "contact_majority")
+            self.assertEqual(deck["solver"]["carrier_row_convergence"]["min_newton_max_iter"],
+                             deck["solver"]["max_iter"])
+
     def test_save_load_restores_voltages_and_rebase_preserves_snapshot(self):
         ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
             Electrode { {Name="left" Voltage=0} {Name="right" Voltage=0} }
@@ -352,6 +410,47 @@ class DeckEmitterTests(unittest.TestCase):
 
 
 class RunnerSmokeTests(unittest.TestCase):
+    def test_biased_p_contact_pins_minority_quasi_fermi_and_density(self):
+        runner = os.environ.get("VELA_EXAMPLE_RUNNER")
+        if not runner or not Path(runner).is_file():
+            self.skipTest("VELA_EXAMPLE_RUNNER is not available")
+        ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
+            Electrode { {Name="left" Voltage=0} {Name="right" Voltage=0} }
+            Physics { Recombination(SRH) }
+            Plot { eDensity hDensity eQuasiFermi hQuasiFermi }
+            Solve { Coupled {Poisson Electron Hole}
+              Quasistationary(Goal {Name="left" Voltage=0.2}) {Coupled {Poisson Electron Hole}} }''',
+            path_name="ohmic.cmd")
+        materials = material_result(ir)
+        result = emit(ir, materials_report=materials.report)
+        mesh = {"nodes": [{"id": i, "x": x, "y": y} for i, (x, y) in
+                          enumerate(((0, 0), (1, 0), (1, 1), (0, 1)))],
+            "triangles": [{"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                          {"id": 1, "region_id": 0, "node_ids": [0, 2, 3]}],
+            "regions": [{"id": 0, "name": "bulk", "material": "Si", "cell_ids": [0, 1]}],
+            "contacts": [{"id": 0, "name": "left", "region_id": 0, "node_ids": [0, 3], "edge_node_ids": [[0, 3]]},
+                         {"id": 1, "name": "right", "region_id": 0, "node_ids": [1, 2], "edge_node_ids": [[1, 2]]}]}
+        with tempfile.TemporaryDirectory(dir=REPO / "build") as temp:
+            root = Path(temp)
+            (root / "mesh.json").write_text(json.dumps(mesh))
+            (root / "doping.csv").write_text("node_id,donors_cm3,acceptors_cm3\n" +
+                                           "".join(f"{i},0,1e17\n" for i in range(4)))
+            write_materials(root, materials)
+            write_stage_plan(root, result)
+            for stage in result.stage_plan["stages"]:
+                done = subprocess.run([str(Path(runner).resolve()), "--config", stage["deck"], "--log", "off"],
+                                      cwd=root, capture_output=True, text=True, timeout=60)
+                self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+            import xml.etree.ElementTree as ET
+            from sdevice_acceptance import array_values, vtu_metadata
+            final = next(p for p in root.glob("stage01*.vtu") if abs(vtu_metadata(p)["Bias_V"] - .2) < 1e-9)
+            fields = {v.attrib["Name"]: array_values(v) for v in ET.parse(final).findall(".//PointData/DataArray")}
+            for name in ("eQuasiFermiPotential", "hQuasiFermiPotential"):
+                for node in (0, 3):
+                    self.assertAlmostEqual(fields[name][node], .2, delta=1e-12)
+            for name in ("eDensity", "hDensity"):
+                self.assertAlmostEqual(fields[name][0] / fields[name][1], 1., delta=1e-10)
+
     def test_equilibrium_voltage_and_current_goals_with_state_chain(self):
         runner = os.environ.get("VELA_EXAMPLE_RUNNER")
         if not runner or not Path(runner).is_file():
