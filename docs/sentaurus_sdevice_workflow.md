@@ -226,7 +226,7 @@ VTU 在文件闭合后按 C4 全局编号及 FilePrefix 复制，PVD 原子更�
 
 runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后将 runtime 日志合并至唯一用户日志，
 以支持 Windows 中文和空格路径。用户日志含版本/提交/哈希、cmd 回显、映射决策、每段结果与结束摘要。
-`.plt` 电流符号因子仍为 +1，多段 time 每段重置，日志明确标记等待 WP10 定案。
+`.plt` 电流符号因子全局固定为 +1，多段 time 每段重置；WP10 的原生参考证据见第 3.3 节。
 
 ## 3. 输出契约（C6）
 
@@ -269,9 +269,15 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 
 - `.plt` 数据组：`time` + 每个电极的 `OuterVoltage`、`InnerVoltage`、`eCurrent`、`hCurrent`、
   `TotalCurrent`（Table 179）；2-D 电流单位 A/µm；`time` = 当前 Quasistationary 的 `t`；
-  多段扫描的 `time` 语义（重置或累加）待 WP8 用 `bjt_m0_{base,collector}_*.plt` 与
-  transportmodels `IdVgs_n6_des.plt` 确定后回填本节。电流符号因子：全局常量，取自首个通过
-  第 12.4 节核对的 `pn2d_iv.plt`（待重跑），确定后连同文件哈希写入本节。
+  WP10 已用通过六项参考核对的 T-2022.03-SP2 v2 BJT m0 base/collector 文件确认：
+  **每段重置为 0～1，不累加**（36/31 行；SHA-256 分别为
+  `dd05b1888149055604614241312f51e8ba3da32028f5cf7b40d131d5aa391c26`、
+  `0aff50fa989d04249b606e9b811a1fd655a7ea545ab4dcefe2e8293bfae0ed9b`）。
+  电流符号全局固化为 `CURRENT_SIGN_FACTOR=+1.0`；依据同样通过核对的 v2 `pn2d_iv.plt`
+  首三个正向 Anode 点及 Vela 原始 Anode 电流方向；PLT SHA-256
+  `a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25`。
+  符号核对采用已接受原始电流的 log-current 插值，只确定方向；数值幅值另行验收。
+  详见 [WP10 记录](validation/sdevice_acceptance_2026-10-03.md)，整体 IV/BV 资格尚未通过。
 - `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；字段名/单位用手册附录 F 的 TDR 数据名
   （计划附录 B），向量为同名 3 分量数组；`region_id` CellData；`FieldData` 含 `VelaVersion`、
   `CmdSHA256`、`Stage`、`t`、各电极 `OuterVoltage/InnerVoltage/TotalCurrent`、`goal_reached`。
@@ -419,8 +425,9 @@ schema 之外、golden 夹具所依赖的确定性规则：
 [2026-10-02 WP4 验证记录](validation/sdevice_deck_emit_validation_2026-10-02.md)。
 
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
-  见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；A-3/A-4 已细化为开发方案的
-  WP14（Sentaurus 参考重跑，需用户授权）与 WP10 步骤 2–3。
+  旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
+  用户已授权并完成 PN2D 0V/IV/BV 和 BJT m0 的最小 v2 重跑。WP10 已固化 A-4 与 C6，
+  当前状态见 [WP10 验收记录](validation/sdevice_acceptance_2026-10-03.md)；其余 WP14 案例未执行。
 - A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：开发方案 WP13（用户 2026-09-29 要求列入）；
   完成前第 2.4 节的“遗留默认”说明保持有效。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，

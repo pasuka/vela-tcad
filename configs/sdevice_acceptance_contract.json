@@ -1,0 +1,23 @@
+{
+  "schema": "vela.sdevice_acceptance.v1",
+  "units": {"length": "um", "density": "cm^-3", "current": "A/um", "field": "V/cm"},
+  "reference_version": "v2",
+  "threshold_sources": {
+    "curve": "reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json: IV 0.2..0.3 V, 0.4 dex",
+    "conservation": "configs/sentaurus_e2e_contract.json: 0.02 relative, 1e-20 A/um floor",
+    "spatial": "reference_tcad/pn2d_sentaurus2018/variants/acceptance.json and variants/REPORT.md: static 300 K silicon, without avalanche; only equilibrium inherited here"
+  },
+  "curve": {"max_orders_of_magnitude": 0.4, "require_trend_match": true, "min_points": 2, "max_terminal_current_imbalance": 0.02, "current_floor_A_per_um": 1e-20},
+  "spatial": {"potential_rmse_V": 0.005, "potential_p95_V": 0.01, "carrier_active_reference_min_cm3": 100000.0, "carrier_log_rmse_dex": 0.05, "carrier_log_p95_dex": 0.1, "field_relative_l2": 0.1, "coordinate_tolerance_um": 1e-10, "junction_x_um": 1.0, "junction_half_width_um": 0.1},
+  "known_difference_ledger": [
+    {"case": "pn2d_bv", "bias_V": -13.2, "historical_candidate_reference_ratio": 0.70, "source": "docs/validation/pn2d_sentaurus_comparison.md", "policy": "diagnostic only; does not relax the curve gate"},
+    {"case": "pn2d_bv", "quantity": "biased spatial fields", "policy": "no inherited avalanche spatial qualification; report measurements as unqualified, never pass"},
+    {"case": "bvmethods", "policy": "v1 native decks differ physically from repository; check-only gate, no numeric acceptance"},
+    {"case": "schottky", "policy": "check-only gate; numeric differences are non-blocking"}
+  ],
+  "cases": {
+    "pn2d_0v": {"archive": "pn2d_sentaurus2018", "cmd": "pn2d_0v_sdevice.cmd", "grid": "pn2d_msh.tdr", "plt": "pn2d_0v.plt", "contact": "Anode", "bias_window_V": [0.0, 0.0], "equilibrium_tdr": "pn2d_0v_des.tdr", "require_biased_fields": false},
+    "pn2d_iv": {"archive": "pn2d_sentaurus2018", "cmd": "pn2d_iv_sdevice.cmd", "grid": "pn2d_msh.tdr", "plt": "pn2d_iv.plt", "contact": "Anode", "bias_window_V": [0.2, 0.3], "equilibrium_tdr": "pn2d_iv_multibias_0000_des.tdr", "require_biased_fields": true, "field_bias_V": 0.2},
+    "pn2d_bv": {"archive": "pn2d_sentaurus2018", "cmd": "pn2d_bv_sdevice.cmd", "grid": "pn2d_msh.tdr", "plt": "pn2d_bv.plt", "contact": "Anode", "bias_window_V": [-20.0, -0.05], "equilibrium_tdr": "pn2d_bv_multibias_0000_des.tdr", "require_biased_fields": true, "field_bias_V": -13.2}
+  }
+}

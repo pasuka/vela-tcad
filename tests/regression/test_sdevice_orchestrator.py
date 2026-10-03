@@ -239,6 +239,26 @@ class OrchestratorTests(unittest.TestCase):
                                   env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
             self.assert_exit(0, done)
 
+    def test_zipapp_preserves_numbered_nonzero_exit_codes(self):
+        archive = build_archive(self.root / "exit_codes.pyz")
+        self.cmd.write_text(self.cmd.read_text() + '\nThermode {{Name="anode" Temperature=300}}\n')
+        for arguments, expected, message in (([str(self.cmd),"--check"],1,"E105"),
+                                            (["--unsupported-option"],2,"E202"),
+                                            (["missing_des.cmd"],3,"E305")):
+            done = subprocess.run([sys.executable,"-I","-S",str(archive),"device",*arguments],cwd=self.root,
+                env=self.env,capture_output=True,text=True,encoding="utf-8",timeout=30)
+            self.assert_exit(expected,done)
+            self.assertIn(message,done.stderr)
+
+    def test_native_launcher_preserves_rejection_exit_code(self):
+        launcher=os.environ.get("VELA_LAUNCHER")
+        if not launcher or not Path(launcher).is_file():self.skipTest("VELA_LAUNCHER unavailable")
+        self.cmd.write_text(self.cmd.read_text() + '\nThermode {{Name="anode" Temperature=300}}\n')
+        env=dict(self.env,VELA_PYTHON=sys.executable);env.pop("VELA_SDEVICE_PYZ",None)
+        done=subprocess.run([launcher,"device",str(self.cmd),"--check"],cwd=self.root,
+            env=env,capture_output=True,text=True,encoding="utf-8",timeout=30)
+        self.assert_exit(1,done);self.assertIn("E105",done.stderr)
+
     def test_real_runner_pn2d_fixture_in_unicode_directory(self):
         runner = os.environ.get("VELA_EXAMPLE_RUNNER")
         if not runner or not Path(runner).is_file():
