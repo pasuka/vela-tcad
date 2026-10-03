@@ -6,9 +6,13 @@ evidence.
 
 ## Current References
 
+- [SDevice WP10 closeout, 2026-10-03](validation/sdevice_wp10_closeout_2026-10-03.md):
+  independent, pinned BV spatial qualification at −13.2 V under the original contract;
+  named breakdown-knee comparison and near-knee diagnostics, with the −20 V hole-density limitation retained.
+
 - [SDevice IV/BV repair, 2026-10-03](validation/sdevice_iv_bv_repair_2026-10-03.md):
   corrected model activation, Ohmic contacts and Newton continuation; IV reaches 10 V and passes,
-  BV reaches −20 V with passing curve/KCL gates; biased avalanche spatial thresholds remain unqualified.
+  BV reaches −20 V with passing curve/KCL gates; repair-stage snapshot preceding the scoped WP10 closeout.
 
 - [SDevice WP10 acceptance, 2026-10-03](validation/sdevice_acceptance_2026-10-03.md):
   verified native v2 archives, frozen current sign and per-stage Time, fail-closed

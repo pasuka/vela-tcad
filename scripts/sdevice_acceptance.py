@@ -28,6 +28,7 @@ from compare_reference_curves import compare_series, aligned_values, interpolate
 from vela_sdevice.plt import read_plt_document
 from vela_sdevice.plt.document import CURRENT_SIGN_FACTOR
 from vela_sdevice.orchestrator.outputs import vtu_metadata
+from analyze_pn2d_avalanche_on_bv_parity import CurvePoint, continuous_breakpoint, adjacent_slopes, slope_knee
 
 REPO = Path(__file__).resolve().parents[1]
 CONTRACT = REPO / 'configs/sdevice_acceptance_contract.json'
@@ -155,6 +156,31 @@ def curve_metrics(reference, candidate, case, contract):
     return metrics
 
 
+def breakdown_knee_metrics(reference, candidate, settings):
+    biases = settings['biases_V']
+    curves = []
+    for label, rows in [('reference', reference), ('candidate', candidate)]:
+        curve = {}
+        for bias in biases:
+            matches = [r for r in rows if abs(r['bias_V']-bias) <= 1e-9]
+            if len(matches) != 1:
+                raise ValueError('missing or duplicate exact breakdown-knee bias: '+label)
+            curve[bias] = CurvePoint(bias, finite(matches[0]['I']))
+        curves.append(curve)
+    reference_knee = continuous_breakpoint(curves[0], biases, 'reference')
+    candidate_knee = continuous_breakpoint(curves[1], biases, 'candidate')
+    error = abs(candidate_knee-reference_knee)
+    slope_knots = [slope_knee(adjacent_slopes(curve, biases, label))
+                   for curve, label in zip(curves, ('reference', 'candidate'))]
+    same_crossing = (slope_knots[0] is None) == (slope_knots[1] is None)
+    return {'status':'pass' if error <= settings['maximum_V_break_absolute_error_V'] and same_crossing else 'fail',
+            'definition':settings['definition'], 'threshold_source':settings['source'], 'biases_V':biases,
+            'reference_fitted_knee_V':reference_knee, 'candidate_fitted_knee_V':candidate_knee,
+            'absolute_error_V':error, 'maximum_absolute_error_V':settings['maximum_V_break_absolute_error_V'],
+            'slope_crossing_V':{'reference':slope_knots[0], 'candidate':slope_knots[1]},
+            'slope_outcome':'shared_no_crossing' if all(s is None for s in slope_knots) else 'both_cross' if same_crossing else 'mismatch'}
+
+
 def array_values(element):
     if element is None:
         raise ValueError('missing VTU array')
@@ -230,6 +256,8 @@ def field_metrics(export, vtu, mesh, limits, expected_bias=0.0, expected_sha=Non
                 raise ValueError('nonpositive carrier density')
             difference = [math.log10(c/r) for r,c in zip(reference,candidate) if r >= limits['carrier_active_reference_min_cm3']]
             rms_limit, p95_limit = limits['carrier_log_rmse_dex'], limits['carrier_log_p95_dex']
+            if len(difference) < limits.get('carrier_active_min_nodes', 1):
+                raise ValueError('insufficient active carrier support: '+field)
         else:
             difference = [c-r for r,c in zip(reference,candidate)]
             rms_limit, p95_limit = limits['potential_rmse_V'], limits['potential_p95_V']
@@ -254,7 +282,8 @@ def field_metrics(export, vtu, mesh, limits, expected_bias=0.0, expected_sha=Non
                 if not support or denominator <= 0: raise ValueError('empty electric-field support')
                 metric[label+'_relative_l2'] = math.sqrt(sum(weights[ids[j]]*squared_errors[j] for j in support)/denominator)
             metric['comparison'] = 'vector' if vector else 'magnitude_only'
-            metric['pass'] = vector and metric['global_relative_l2'] <= limits['field_relative_l2']
+            metric['pass'] = vector and metric['global_relative_l2'] <= limits['field_relative_l2'] \
+                and metric['junction_relative_l2'] <= limits.get('junction_field_relative_l2', math.inf)
         else:
             metric['pass'] = rms <= rms_limit and metric['absolute_p95'] <= p95_limit
         result[field] = metric
@@ -289,6 +318,85 @@ def check_candidate_inputs(directory, case, provenance):
     if ('sidecar_sha256' in provenance and (not sidecar.is_file() or sha(sidecar)!=provenance['sidecar_sha256'])) \
             or ('sidecar_sha256' not in provenance and sidecar.exists()):
         raise ValueError('reused candidate numerical sidecar differs')
+
+
+def stage_policy_sha256(deck):
+    policy = {key: deck[key] for key in ('solver', 'mesh_geometry', 'contacts')}
+    return hashlib.sha256(json.dumps(policy, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def bv_spatial_qualification(contract, name, provenance, version, manifest_sha256, decks, mesh):
+    """Admit only the independently qualified native inputs and numerical policy."""
+    qualification = contract.get('biased_spatial_qualification', {}).get(name)
+    if not qualification:
+        return None, 'No independent avalanche spatial qualification.'
+    if set(qualification.get('input_sha256', {})) != {'cmd_sha256', 'parameter_sha256', 'grid_sha256', 'sidecar_sha256'} or any(provenance.get(key) != value
+            for key, value in qualification['input_sha256'].items()):
+        return None, 'Avalanche spatial qualification input fingerprints differ.'
+    if version != qualification['reference_version'] or manifest_sha256 != qualification['reference_manifest_sha256']:
+        return None, 'Avalanche spatial qualification reference identity differs.'
+    if len(decks) != 2 or stage_policy_sha256(decks[1]) != qualification['stage_policy_sha256']:
+        return None, 'Avalanche spatial qualification solver/geometry/contact policy differs.'
+    expected = qualification['mesh']
+    if (mesh['nodes']['count'] != expected['nodes'] or mesh['elements']['count'] != expected['cells']
+            or mesh['qualification']['non_obtuse'] != expected['non_obtuse']):
+        return None, 'Avalanche spatial qualification mesh scope differs.'
+    anchors = qualification['anchors']
+    if not anchors or len({a['bias_V'] for a in anchors}) != len(anchors) or any(a['bias_V'] >= 0 for a in anchors):
+        raise ValueError('invalid avalanche qualification anchors')
+    required = qualification['required_biases_V']
+    if not required or len(set(required)) != len(required) or not set(required).issubset({a['bias_V'] for a in anchors}):
+        raise ValueError('invalid required avalanche qualification biases')
+    required_limits = {'potential_rmse_V', 'potential_p95_V', 'carrier_active_reference_min_cm3',
+        'carrier_active_min_nodes', 'carrier_log_rmse_dex', 'carrier_log_p95_dex', 'field_relative_l2',
+        'junction_field_relative_l2', 'coordinate_tolerance_um', 'junction_x_um', 'junction_half_width_um'}
+    if set(qualification['spatial']) != required_limits:
+        raise ValueError('incomplete independent avalanche qualification limits')
+    if any(finite(v) <= 0 for key, v in qualification['spatial'].items() if key != 'junction_x_um'):
+        raise ValueError('invalid avalanche qualification limits')
+    return qualification, None
+
+
+def biased_field_metrics(name, case, base, output, importer, work, mesh, provenance, limits, qualification=None, reason=None):
+    anchors = qualification['anchors'] if qualification else [{'bias_V': case['field_bias_V']}]
+    primary = case['field_bias_V']
+    if primary not in [a['bias_V'] for a in anchors]:
+        raise ValueError('qualified anchors omit the required field bias')
+    required = qualification['required_biases_V'] if qualification else [primary]
+    if primary not in required:
+        raise ValueError('qualification does not require the original field bias')
+    # Inspect metadata once, then require exactly one accepted VTU per anchor.
+    states = [(p, vtu_metadata(p)) for p in work.glob('stage*.vtu')]
+    measurements = []
+    for anchor in anchors:
+        target = anchor['bias_V']
+        matches = [p for p, m in states if m and m.get('Converged') == 1 and abs(m.get('Bias_V', math.inf)-target) <= 1e-9]
+        native = base/'tdr'/anchor.get('native_tdr', f'{name}_multibias_{round(abs(target)/.05):04d}_des.tdr')
+        if len(matches) != 1 or not native.is_file():
+            measurements.append({'status':'fail', 'error':'bias-matched native TDR or accepted VTU missing', 'bias_V':target})
+            continue
+        if qualification and sha(native) != anchor['native_tdr_sha256']:
+            raise ValueError('qualified native TDR fingerprint differs')
+        export = output/'biased_reference_fields'/f'bias_{target:g}V'
+        imported = subprocess.run([str(importer),'--tdr',str(native),'--export-dir',str(export)],capture_output=True,text=True)
+        if imported.returncode: raise ValueError(imported.stderr)
+        metric = field_metrics(export, matches[0], mesh, limits, target, provenance['cmd_sha256'])
+        metric.update(bias_V=target, reference_tdr_sha256=sha(native), candidate_vtu_sha256=sha(matches[0]))
+        measurements.append(metric)
+    for measurement in measurements:
+        measurement['acceptance_required'] = measurement['bias_V'] in required
+    result = dict(next(m for m in measurements if m['bias_V'] == primary))
+    result['anchors'] = measurements
+    result['status'] = 'pass' if all(m['status'] == 'pass' for m in measurements if m['acceptance_required']) else 'fail'
+    diagnostics = [m for m in measurements if not m['acceptance_required']]
+    result['diagnostic_status'] = ('pass' if all(m['status'] == 'pass' for m in diagnostics) else 'fail') if diagnostics else 'not_required'
+    if name == 'pn2d_bv':
+        if qualification:
+            result['qualification'] = {'id':qualification['id'], 'scope':qualification['scope'],
+                'evidence':qualification['evidence'], 'limits':qualification['spatial'], 'required_biases_V':required}
+        else:
+            result.update(status='unqualified_threshold', reason=reason)
+    return result
 
 
 def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200):
@@ -352,21 +460,12 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     if imported.returncode or not vtu: raise ValueError('equilibrium field export missing: '+imported.stderr)
     fields = field_metrics(export,vtu,read_json(work/'mesh.json'),contract['spatial'],expected_sha=provenance['cmd_sha256'])
     biased = {'status':'not_required'}
+    decks = [read_json(work/s['deck']) for s in plan['stages']]
     if case['require_biased_fields']:
-        target = case['field_bias_V']
-        matches = [p for p in work.glob('stage*.vtu') if (m:=vtu_metadata(p)) and abs(m.get('Bias_V',math.inf)-target) <= 1e-9]
-        index = round(abs(target)/(10.0 if name=='pn2d_iv' else 20.0)*(200 if name=='pn2d_iv' else 400))
-        native = base/'tdr'/f'{name}_multibias_{index:04d}_des.tdr'
-        biased_export = output/'biased_reference_fields'
-        if len(matches) != 1 or not native.is_file():
-            biased = {'status':'fail','error':'bias-matched native TDR or accepted VTU missing','bias_V':target}
-        else:
-            imported = subprocess.run([str(importer),'--tdr',str(native),'--export-dir',str(biased_export)],capture_output=True,text=True)
-            if imported.returncode: raise ValueError(imported.stderr)
-            biased = field_metrics(biased_export,matches[0],read_json(work/'mesh.json'),contract['spatial'],target,provenance['cmd_sha256'])
-            biased.update(bias_V=target,reference_tdr_sha256=sha(native))
-            if name == 'pn2d_bv':
-                biased.update(status='unqualified_threshold',reason='Avalanche spatial states are outside the inherited static no-avalanche qualification.')
+        qualification, reason = (bv_spatial_qualification(contract, name, provenance, manifest['sentaurus_version'],
+            sha(manifest_path), decks, read_json(work/'mesh_qualification.json')) if name == 'pn2d_bv' else (None, None))
+        biased = biased_field_metrics(name, case, base, output, importer, work, read_json(work/'mesh.json'), provenance,
+            qualification['spatial'] if qualification else contract['spatial'], qualification, reason)
     result = {'status':'pass' if goals and curves['status']=='pass' and fields['status']=='pass' and biased['status'] in ('pass','not_required') else 'fail',
               'goals_reached':goals,'curve':curves,'equilibrium_fields':fields,'provenance':provenance,
               'reference_version':manifest['sentaurus_version'],'reference_manifest_sha256':sha(manifest_path),
@@ -374,13 +473,19 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
               'biased_fields':biased}
     if name=='pn2d_bv':
         fields['threshold_scope']='equilibrium control only; does not qualify avalanche biased states'
+        try:
+            result['breakdown_knee'] = breakdown_knee_metrics(reference, candidate, case['breakdown_check'])
+        except ValueError as error:
+            result['breakdown_knee'] = {'status':'fail', 'error':str(error)}
+        if result['breakdown_knee']['status'] != 'pass': result['status'] = 'fail'
     result['cmd_exit_code']=code
     result['candidate_csv_sha256']={s['csv']:sha(work/s['csv']) for s in plan['stages'] if (work/s['csv']).is_file()}
     result['mesh']={'nodes':len(read_json(work/'mesh.json')['nodes']),'cells':len(read_json(work/'mesh.json')['triangles'])}
+    result['known_differences'] = [item for item in contract['known_difference_ledger'] if item['case'] == name]
     if name == 'pn2d_iv': result['sign_evidence'] = sign_evidence(reference,candidate)
     result['backend'] = {'runner_sha256':sha(launcher.parent/('vela_example_runner.exe' if os.name=='nt' else 'vela_example_runner')),
                          'materials_report':read_json(work/'materials_report.json'),
-                         'stage_decks': [read_json(work/s['deck']) for s in plan['stages']]}
+                         'stage_decks': decks}
     return result
 
 
@@ -442,7 +547,7 @@ def main(argv=None):
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--launcher',type=Path,required=True)
     parser.add_argument('--tdr-importer',type=Path,required=True)
-    parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid hash checks')
+    parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid/sidecar hash checks')
     parser.add_argument('--timeout-seconds',type=float,default=7200.,help='Bound each fresh candidate run; timeout never passes (full BV retains 401 Plot biases)')
     args = parser.parse_args(argv)
     if args.timeout_seconds<=0:parser.error('--timeout-seconds must be positive')
