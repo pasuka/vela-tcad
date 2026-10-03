@@ -20,6 +20,7 @@
     "impact_ionization": {
       "model": "none"
     },
+    "contact_boundary_minority_electron_relaxation": false,
     "srh_doping_dependence": {
       "electron": {
         "tau_min_s": 0.0,
@@ -32,13 +33,38 @@
         "tau_max_s": 3e-06,
         "reference_doping_cm3": 1e+16,
         "gamma": 1.0
-      }
+      },
+      "enabled": false
     },
     "tau_n_s": 1e-05,
     "tau_p_s": 3e-06,
     "temperature_K": 300.0,
-    "method": "gummel_newton",
-    "max_iter": 30
+    "method": "newton",
+    "max_iter": 30,
+    "warm_start": true,
+    "quasi_fermi_reference": "contact_majority",
+    "quasi_fermi_update_limit_V": 0.1,
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 1e-18,
+      "min_newton_max_iter": 30
+    },
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.0,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1e+18
+    },
+    "global_continuity_closure": {
+      "mode": "enforce",
+      "tolerance": 0.01,
+      "source_floor": 1e-14
+    }
   },
   "output_csv": "stage02.csv",
   "contacts": [

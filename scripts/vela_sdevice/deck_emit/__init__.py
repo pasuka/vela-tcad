@@ -18,6 +18,16 @@ from ..resources import resource_root
 REPO = resource_root()
 SCHEMA_ID = "vela.stage_plan.v1"
 IMPLICIT_FIELDS = ("ElectrostaticPotential", "eDensity", "hDensity", "DopingConcentration")
+AVALANCHE_PROFILES = {
+    "element_edge_sg_gss_laux": {
+        "impact_ionization": {"current_approximation": "element_edge_sg_gss_laux",
+            "source_mapping_mode": "element_vertex_box_measure", "cell_reconstructed_midpoint_density": "bernoulli"},
+        "mesh_geometry": {"node_volume_policy": "mixed_voronoi", "require_non_obtuse": True}},
+    "legacy_cell_reconstructed": {
+        "impact_ionization": {"current_approximation": "cell_reconstructed",
+            "source_mapping_mode": "triangle_gss_gradqf_truncated", "cell_reconstructed_midpoint_density": "gss_logistic"},
+        "mesh_geometry": {"node_volume_policy": "barycentric", "require_non_obtuse": False}},
+}
 # src/io/VtuWriter.cpp owns the C++ catalogue (the header declares its API).
 TDR_FIELDS = (
     "ElectrostaticPotential", "eQuasiFermiPotential", "hQuasiFermiPotential",
@@ -170,6 +180,9 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
     deck = {"solver": {"mobility": {"model": "constant", "doping_concentration_basis": "total_impurity"}, "recombination": [],
                        "impact_ionization": {"model": "none"}}}
     solver = deck["solver"]
+    # Ordinary SDevice Ohmic electrodes pin both carrier quasi-Fermi levels
+    # to the applied voltage, including the minority carrier at high bias.
+    solver["contact_boundary_minority_electron_relaxation"] = False
     suffixes = set()
     for model in ir["physics"]["effective"]:
         if model["status"] == "unsupported":
@@ -197,6 +210,15 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
             else:
                 _set(deck, path, value)
     solver["mobility"]["model"] += "".join(s for s in ("_field", "_lombardi") if s in suffixes)
+    if "_field" in suffixes:
+        solver["mobility"].setdefault("high_field_driving_force", "quasi_fermi_gradient")
+    if solver["impact_ionization"]["model"] != "none":
+        avalanche = solver["impact_ionization"]
+        avalanche.setdefault("driving_force", "quasi_fermi_gradient")
+        avalanche.update(generation="current_density", current_approximation="density_gradient")
+        _decision(decisions, "Avalanche", "SDevice drift-diffusion defaults",
+                  "solver.impact_ionization", avalanche,
+                  "Current-density source with explicit driving force; generic SG edge support")
     values = {}
     for row in report["solver_parameters"]:
         if row.get("status") == "approximated" and not report.get("allow_lossy"):
@@ -215,6 +237,10 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
         _set(deck, path, value)
         if row["section"] == "Scharfetter" and row["parameter"] == "taumax":
             _set(deck, "solver.tau_n_s" if row["carrier"] == "electron" else "solver.tau_p_s", value)
+    # A parameter declaration does not activate a Physics option. The C++
+    # schema otherwise enables doping dependence whenever this object exists.
+    if "srh_doping_dependence" in solver:
+        solver["srh_doping_dependence"].setdefault("enabled", False)
     solver["temperature_K"] = ir["physics"]["temperature_K"] or 300.0
     if report.get("temperature_K") != solver["temperature_K"]:
         raise DeckEmitError("E407", detail="IR and materials temperatures differ")
@@ -511,6 +537,24 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         elif source["equations"] == ["Poisson"]:
             method = "poisson_only"
         deck["solver"].update(method=method, max_iter=source["iterations"] or math_cfg["iterations"] or 100)
+        if input_state and method in ("gummel_newton", "newton"):
+            # Coupled continuation must preserve the accepted state. A fresh
+            # Gummel pass can destroy a good high-injection Newton predictor.
+            deck["solver"].update(method="newton", warm_start=True,
+                                  quasi_fermi_reference="contact_majority")
+            # A small normalized block residual alone cannot qualify leakage
+            # currents. Use the existing source-aware row and closure gates.
+            deck["solver"].update(
+                quasi_fermi_update_limit_V=0.1,
+                carrier_row_convergence={"mode": "enforce", "eps_row": 0.001,
+                    "scale_floor": 1e-30, "min_source_scale_fraction": 0.0,
+                    "min_source_scale": 1e-18, "min_newton_max_iter": deck["solver"]["max_iter"]},
+                continuity_row_scaling={"enabled": True, "flux_fraction": 0.0,
+                    "scale_floor": 1e-30, "min_source_scale": 1e-18,
+                    "min_weight": 1e-12, "max_weight": 1e18},
+                global_continuity_closure={"mode": "enforce", "tolerance": 0.01, "source_floor": 1e-14})
+            _decision(decisions, "Coupled", source["equations"], "solver.method", "newton",
+                      "Continue the accepted state with referenced quasi-Fermi coordinates", stage=index)
         _decision(decisions, "Iterations", source["iterations"] or math_cfg["iterations"],
                   "solver.max_iter", deck["solver"]["max_iter"], "Stage value takes precedence", "W201", index)
         sweep = {"mode": "iv", "contact": contact, "current_contact": contact,
@@ -605,13 +649,29 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
         deck["sweep"] = sweep
         if sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
-            _merge(deck, {k: v for k, v in sidecar.items() if k not in ("schema", "description", "apply_to")},
+            _merge(deck, {k: v for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile")},
                    "", entry["sidecar_overrides"], decisions, index)
+            if profile := sidecar.get("avalanche_current_support_profile"):
+                avalanche = deck["solver"]["impact_ionization"]
+                if avalanche["model"] == "none" or avalanche.get("driving_force") != "quasi_fermi_gradient":
+                    raise DeckEmitError("E409", file="sidecar", detail="avalanche profile requires active GradQF avalanche")
+                bundle = AVALANCHE_PROFILES[profile]
+                for key, value in bundle["mesh_geometry"].items():
+                    if key in sidecar.get("mesh_geometry", {}) and sidecar["mesh_geometry"][key] != value:
+                        raise DeckEmitError("E409", file="sidecar", detail="partial avalanche profile geometry override")
+                avalanche.update(bundle["impact_ionization"], quasi_fermi_gradient_discretization="cell_gradient",
+                                 contact_electric_field_fallback=True,
+                                 source_jacobian="local_ad" if math_cfg["aval_derivatives"] else "frozen")
+                deck["mesh_geometry"].update(bundle["mesh_geometry"])
+                entry["sidecar_overrides"].append("avalanche_current_support_profile")
+                _decision(decisions, "avalanche_current_support_profile", profile,
+                          "solver.impact_ionization + mesh_geometry", bundle,
+                          "Explicit atomic discretization; coefficients and physical models unchanged", "W207", index)
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]
         if geometry.get("node_volume_policy") == "mixed_voronoi":
-            if mesh["angles"]["max_deg"] >= 90 or mesh["angles"]["obtuse_element_count"]:
+            if mesh["angles"]["max_deg"] > 90 + 1e-8 or mesh["angles"]["obtuse_element_count"] or not mesh["qualification"]["non_obtuse"]:
                 raise DeckEmitError("E408", policy="mixed_voronoi", n=mesh["angles"]["obtuse_element_count"])
             geometry["require_non_obtuse"] = True
         if sidecar and kind == "load" and deck["solver"]["method"] != "frozen_state":

@@ -17,6 +17,27 @@ import sdevice_acceptance as a
 
 
 class AdmissionTests(unittest.TestCase):
+    def test_numerical_sidecar_is_pinned_when_reusing_results(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case = {'cmd':'pn2d_bv.cmd','grid':'mesh.tdr'}
+            for name in ('pn2d_bv.cmd','mesh.tdr','models.par'):
+                (root/name).write_bytes(name.encode())
+            sidecar = root/'pn2d_bv.vela.json'
+            sidecar.write_text('{"avalanche_current_support_profile":"element_edge_sg_gss_laux"}')
+            provenance = {'cmd_sha256':a.sha(root/case['cmd']), 'grid_sha256':a.sha(root/case['grid']),
+                          'parameter_sha256':a.sha(root/'models.par'), 'sidecar_sha256':a.sha(sidecar)}
+            a.check_candidate_inputs(root,case,provenance)
+            with self.assertRaisesRegex(ValueError,'sidecar'):
+                a.check_candidate_inputs(root,case,{k:v for k,v in provenance.items() if k!='sidecar_sha256'})
+            sidecar.write_text('{}')
+            with self.assertRaisesRegex(ValueError,'sidecar'):
+                a.check_candidate_inputs(root,case,provenance)
+            sidecar.unlink()
+            with self.assertRaisesRegex(ValueError,'sidecar'):
+                a.check_candidate_inputs(root,case,provenance)
+
     def test_all_six_checks_required_and_partial_is_not_pass(self):
         report = {'status':'pass','mode':'online','compared_with_source':True,
                   'checks':[{'number':i,'status':'pass','items':[{'status':'pass'}]} for i in range(1,7)]}

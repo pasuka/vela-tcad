@@ -922,9 +922,11 @@ flowchart LR
 #### WP10 一致性验收
 
 - 状态：**已执行，数值验收未完全通过**（2026-10-03）。契约/驱动/CTest、v2 参考核验、符号与 Time 已交付；
-  PN2D 0V 通过，IV minority-density 与全扫描、BV 全扫描失败，未改物理默认。
+  PN2D 0V 通过；后续已修复前端 SRH/接触/驱动力映射及延续，IV 到达 10 V 并通过，
+  BV 到达 −20 V 且曲线/KCL 通过。偏置雪崩场量阈值尚未获资格，未放宽既定验收门限。
   用户已授权并完成 WP14 所需 PN2D 0V/IV/BV 与 BJT m0 的最小子集；其余 WP14 案例未重跑。
-  当前证据见 [WP10 验收记录](../../validation/sdevice_acceptance_2026-10-03.md)。
+  当前证据见 [IV/BV 修复报告](../../validation/sdevice_iv_bv_repair_2026-10-03.md)，
+  [首次 WP10 记录](../../validation/sdevice_acceptance_2026-10-03.md)保留为历史对照。
 - 背景：决定 8/20：一致性阈值只能来自已验证证据，电流符号因子由首个通过第 12.4 节核对的参考 `.plt` 全局确定并固化为常量；
   WP8 目前以 `CURRENT_SIGN_FACTOR=+1` 占位，多段扫描 `time` 语义（A-4）未定。VM v1 归档中 `pn2d_iv/bv` 从未在 T-2022 运行，
   bvmethods 归档 deck 与仓库 deck 物理不一致（盘点文档 §4），因此优先使用 WP14 的 v2 产物。

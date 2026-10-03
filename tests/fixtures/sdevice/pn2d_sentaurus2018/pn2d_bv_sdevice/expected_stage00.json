@@ -13,6 +13,7 @@
     "mobility": {
       "model": "masetti_field",
       "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
       "electron_mumin1_cm2_V_s": 52.2,
       "hole_mumin1_cm2_V_s": 44.9,
       "electron_mumin2_cm2_V_s": 52.2,
@@ -39,6 +40,9 @@
     ],
     "impact_ionization": {
       "model": "van_overstraeten",
+      "driving_force": "quasi_fermi_gradient",
+      "generation": "current_density",
+      "current_approximation": "density_gradient",
       "electron_a_low_cm_inv": 703000.0,
       "hole_a_low_cm_inv": 1582000.0,
       "electron_a_high_cm_inv": 703000.0,
@@ -50,6 +54,7 @@
       "switch_field_V_per_cm": 400000.0,
       "phonon_energy_eV": 0.063
     },
+    "contact_boundary_minority_electron_relaxation": false,
     "bandgap_narrowing": {
       "model": "old_slotboom",
       "coefficient_eV": 0.009,
@@ -68,7 +73,8 @@
         "tau_max_s": 3e-06,
         "reference_doping_cm3": 1e+16,
         "gamma": 1.0
-      }
+      },
+      "enabled": false
     },
     "tau_n_s": 1e-05,
     "tau_p_s": 3e-06,
