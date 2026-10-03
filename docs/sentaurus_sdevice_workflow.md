@@ -3,7 +3,7 @@
 状态：**WP5 编排器与 WP6.1 FieldData 已交付**（2026-10-02）。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
-计划文档保留决策依据。数值一致性与分发验收仍由 WP10/WP11 完成。
+计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；分发验收由 WP11 完成。
 
 ## 1. 契约文件索引
 
@@ -14,7 +14,7 @@
 | C3 材料文件 | `schemas/vela.templates_ldmos.materials.v1.schema.json`（WP3 不另设别名，见第 2.4 节） | WP3 → WP4 | 沿用现有 |
 | C4 stage 计划 | `schemas/vela.stage_plan.v1.schema.json` | WP4 → WP5/WP8 | 发射器已交付 |
 | C5 求解器协议 | `docs/config_schema.md` + `configs/schema/vela-simulation.schema.json` | WP6 → WP4/WP5/WP8 | WP6 已交付 |
-| C6 输出文件契约 | 本文第 3 节 | WP8/WP6 → WP10 | 初稿 |
+| C6 输出文件契约 | 本文第 3 节 | WP8/WP6 → WP10 | 冻结 |
 | C7 产物清单 | `schemas/vela.reference_artifact_manifest.v1.schema.json` | WP9 → WP10 | 冻结 |
 | C8 CLI/退出码/消息目录 | 本文第 2、4 节 | WP0 → WP5/WP7/WP12 | 冻结 |
 | C9 启动器协议 | 本文第 2.3 节 | WP7 → WP5 | 启动器与 zipapp 已交付 |
@@ -294,9 +294,12 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   首三个正向 Anode 点及 Vela 原始 Anode 电流方向；PLT SHA-256
   `a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25`。
   符号核对采用已接受原始电流的 log-current 插值，只确定方向；数值幅值另行验收。
-  详见 [WP10 初次记录](validation/sdevice_acceptance_2026-10-03.md)及
-  [IV/BV 修复报告](validation/sdevice_iv_bv_repair_2026-10-03.md)：IV 到达 10 V 并通过既定验收，
-  BV 到达 −20 V 且曲线/KCL 通过；偏置雪崩场量阈值尚未获资格，WP10 整体仍未完全通过。
+  当前结果见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)：原契约验收完成。
+  IV 到达 10 V 并通过既定窗口，BV 到达 −20 V 且全窗口曲线/KCL 通过；BV 独立场量资格
+  仅限绑定输入/配置的 −13.2 V。该点不是击穿电压；现有分段 log(I) 膝点拟合给出原生与
+  Vela 均 −19.405 V，−19.5/−19.6/−19.7 V 场量诊断通过，−20 V 空穴密度诊断失败。
+  附加诊断失败随 JSON 保留，不推导全反偏范围的空间资格。后续核对可复用已完成候选，
+  cmd/par/grid/sidecar 必须通过指纹检查；配置漂移不能自动沿用 BV 场量资格。
 - `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；字段名/单位用手册附录 F 的 TDR 数据名
   （计划附录 B），向量为同名 3 分量数组；`region_id` CellData；`FieldData` 含 `VelaVersion`、
   `CmdSHA256`、`Stage`、`t`、各电极 `OuterVoltage/InnerVoltage/TotalCurrent`、`goal_reached`。
@@ -446,7 +449,7 @@ schema 之外、golden 夹具所依赖的确定性规则：
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
   用户已授权并完成 PN2D 0V/IV/BV 和 BJT m0 的最小 v2 重跑。WP10 已固化 A-4 与 C6，
-  当前状态见 [IV/BV 修复报告](validation/sdevice_iv_bv_repair_2026-10-03.md)；其余 WP14 案例未执行。
+  当前状态见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)；其余 WP14 案例未执行。
 - A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：开发方案 WP13（用户 2026-09-29 要求列入）；
   完成前第 2.4 节的“遗留默认”说明保持有效。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
