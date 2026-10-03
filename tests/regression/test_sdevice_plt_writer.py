@@ -444,5 +444,23 @@ class FileWritersTest(unittest.TestCase):
             self.assertEqual(sorted(path.name for path in root.iterdir()), ["pn2d_iv.plt"])
 
 
+class VerifiedCurrentSignTests(unittest.TestCase):
+    def test_first_three_verified_native_anode_points_freeze_global_sign(self):
+        # T-2022.03-SP2 v2 pn2d_iv.plt SHA-256:
+        # a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25
+        # Raw samples are log-current interpolation of accepted Anode CSV rows;
+        # they establish direction only, not magnitude agreement at these biases.
+        from vela_sdevice.plt.document import CURRENT_SIGN_FACTOR
+        evidence = [(0.01,5.80543692864973e-19,5.3887968315032304e-18),
+                    (0.02284,1.62155570626151e-18,1.3977546608561714e-17),
+                    (0.03942928,3.74720553099733e-18,2.9009156046579526e-17)]
+        self.assertEqual(CURRENT_SIGN_FACTOR,1.0)
+        for bias,native,raw in evidence:
+            text=plt.build_plt_document(['Anode'],[{'time':bias/10.,'Anode':electrode_values(bias,bias,raw,0.,raw)}])
+            _,rows=plt.read_plt_document(text,sign_factor=1.)
+            self.assertGreater(rows[0]['Anode']['total_current_A_per_um']*native,0.)
+            self.assertEqual(rows[0]['Anode']['total_current_A_per_um'],raw*CURRENT_SIGN_FACTOR)
+
+
 if __name__ == "__main__":
     unittest.main()

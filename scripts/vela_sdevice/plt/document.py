@@ -23,9 +23,10 @@ import re
 from typing import Any, Iterable, Mapping, Sequence
 
 # Global factor applied to eCurrent/hCurrent/TotalCurrent on output (Vela
-# terminal-current sign -> Sentaurus .plt sign). Placeholder value: WP10 fixes
-# it (+1.0 or -1.0) from the first verified reference ``pn2d_iv.plt`` and
-# freezes it with the file hash in docs/sentaurus_sdevice_workflow.md 3.3.
+# terminal-current sign -> Sentaurus .plt sign). Frozen by WP10 from the
+# verified T-2022.03-SP2 v2 pn2d_iv.plt (first three positive Anode points).
+# SHA-256 a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25.
+# Evidence and per-stage Time semantics: docs/sentaurus_sdevice_workflow.md 3.3.
 CURRENT_SIGN_FACTOR = 1.0
 
 TIME_DATASET = "time"

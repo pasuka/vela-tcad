@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SDevice WP10 acceptance, 2026-10-03](validation/sdevice_acceptance_2026-10-03.md):
+  verified native v2 archives, frozen current sign and per-stage Time, fail-closed
+  curve/field gates and zipapp exit-code repair; 0V passes, IV/BV qualification remains open.
+
 - [SDevice WP5 orchestration and WP6.1 metadata, 2026-10-02](validation/sdevice_orchestrator_validation_2026-10-02.md):
   native CLI and standalone zipapp, gates, locking, interruption and incremental outputs;
   Release 1020/1020 CTest and real-runner Windows Unicode-path smoke checks.

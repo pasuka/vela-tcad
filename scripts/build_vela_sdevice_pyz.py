@@ -34,7 +34,11 @@ def build_archive(target: Path) -> Path:
                                   cwd=REPO, capture_output=True, text=True)
         (assets / "version.json").write_text(json.dumps({"version": version,
             "commit": revision.stdout.strip() if revision.returncode == 0 else "unknown"}), encoding="utf-8")
-        zipapp.create_archive(root, target=target, main="vela_sdevice.__main__:main", interpreter=None)
+        # zipapp's generated entry point discards main()'s return value.
+        # Preserve numbered CLI exit codes for the native launcher.
+        (root / "__main__.py").write_text(
+            "from vela_sdevice.__main__ import main\nraise SystemExit(main())\n", encoding="utf-8")
+        zipapp.create_archive(root, target=target, interpreter=None)
     return target
 
 
