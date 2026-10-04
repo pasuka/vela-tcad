@@ -447,9 +447,12 @@ class RunnerSmokeTests(unittest.TestCase):
             fields = {v.attrib["Name"]: array_values(v) for v in ET.parse(final).findall(".//PointData/DataArray")}
             for name in ("eQuasiFermiPotential", "hQuasiFermiPotential"):
                 for node in (0, 3):
-                    self.assertAlmostEqual(fields[name][node], .2, delta=1e-12)
+                    self.assertEqual(len(fields[name][node]), 1)
+                    self.assertAlmostEqual(fields[name][node][0], .2, delta=1e-12)
             for name in ("eDensity", "hDensity"):
-                self.assertAlmostEqual(fields[name][0] / fields[name][1], 1., delta=1e-10)
+                self.assertEqual(len(fields[name][0]), 1)
+                self.assertEqual(len(fields[name][1]), 1)
+                self.assertAlmostEqual(fields[name][0][0] / fields[name][1][0], 1., delta=1e-10)
 
     def test_equilibrium_voltage_and_current_goals_with_state_chain(self):
         runner = os.environ.get("VELA_EXAMPLE_RUNNER")

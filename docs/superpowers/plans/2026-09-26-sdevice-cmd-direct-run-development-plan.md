@@ -956,17 +956,19 @@ flowchart LR
 
 #### WP11 打包与并发验证
 
-- 状态：**待开工**（组 D，可与 WP10 并行）。依赖 WP5 的 `build_vela_sdevice_pyz.py` 与 WP7 启动器。
+- 状态：**已完成**（2026-10-04）。Windows/Ubuntu 24.04 包、离线冒烟与 Linux 完整并发矩阵通过，
+  证据见 [WP11 验收记录](../../validation/sdevice_wp11_packaging_concurrency_2026-10-04.md)。依赖 WP5 的 `build_vela_sdevice_pyz.py` 与 WP7 启动器。
 - 背景：第 13 节（用户第 2 轮决定）：交付物为 `vela(.exe)` + `bin/`（子程序、运行库、随包 CPython 3.12），目标平台 Windows 与
-  Ubuntu 24.04，Linux 多进程并发默认单线程；仓库目前没有任何 `install()` 规则、打包脚本或第三方声明生成。
+  Ubuntu 24.04，Linux 多进程并发默认单线程；开工前仓库没有 `install()` 规则、打包脚本或第三方声明生成。
 - 目标：第 13 节目录树、随包 Python、干净机器冒烟、并发矩阵。
-- 独占文件：`scripts/package_vela.py`（新）、`CMakeLists.txt` 的 `install()` 规则块（仓库当前没有任何 `install()`）、
+- 独占文件：`scripts/package_vela.py`（新）、`CMakeLists.txt` 的 `install()` 规则块、
   `THIRD_PARTY_NOTICES` 生成脚本、`tests/regression/test_sdevice_concurrency.py`、`tests/regression/test_sdevice_package_smoke.py`。
 - 逐步：
   1. `install()`：`vela`、`vela_example_runner`、`sentaurus_import` → `bin/`；`share/vela/materials/models.par` → `share/vela/materials/`；
      `build/bin/vela_sdevice.pyz` → `bin/`；运行库用 `RUNTIME_DEPENDENCY_SET`（Windows 以 `ntldd`/`objdump -p` 实测列表校对：
      MSYS2 UCRT64 的 libstdc++/libgcc/winpthread、HDF5、spdlog 等）；Linux 设 `RPATH=$ORIGIN/../lib`。
-  2. 随包 Python：Windows 用 CPython 3.12 embeddable zip 解到 `bin/python/`（`python312._pth` 只含标准库 zip 与 `..`），
+  2. 随包 Python：Windows 用 CPython 3.12 embeddable zip 解到 `bin/python/`（`python312._pth` 含标准库 zip、`.` 与 `..`；
+     `.` 供原生标准库扩展加载，不启用 `import site`），
      Linux 用 python-build-standalone 3.12 解到 `bin/python/`；`package_vela.py --python-archive <file>` 取离线包，不联网。
   3. 冒烟：临时目录解包，`PATH` 只留系统目录，`bin/vela device <pn2d_iv 副本>`（合成网格，同 WP5 验收 2）退出 0；`vela device -P`
      写出 `models.par` 且能被同一 deck 使用；包清单中不含 `reference_staging/` 或任何 Synopsys 产物。
@@ -1069,7 +1071,7 @@ flowchart LR
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
-| 阶段 4 验收与交付 | WP10、WP11、WP12 | 待开工 | WP11 可与 WP10 并行；WP12 最后 |
+| 阶段 4 验收与交付 | WP10、WP11、WP12 | WP10/WP11 已完成，WP12 待开工 | WP11 两平台分发通过；WP12 最后 |
 | 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | 待用户授权 | 授权后即可执行；产物供 WP10 |
 
@@ -1303,25 +1305,28 @@ schema 文件 `schemas/vela.reference_artifact_manifest.v1.schema.json`。
 vela/                          # 解包根目录，可任意放置
   vela(.exe)                   # C++ 启动器：`vela device ...`
   bin/
+    vela(.exe)                 # bin 入口，与根目录入口等价
     vela_example_runner(.exe)  # 求解器
     sentaurus_import(.exe)     # TDR 导入（HDF5）
     vela_sdevice.pyz           # Python 编排器（zipapp，纯标准库）
     python/                    # 随包 CPython 3.12（见下）
-    *.dll | *.so*              # HDF5、zlib、libstdc++/libgcc/libwinpthread（UCRT64）、可选 UMFPACK 等
+    *.dll                     # Windows 运行库
+  lib/*.so*                   # Linux 非 glibc 运行库（含 HDF5 等）
   share/vela/
     schemas/  templates/                # JSON schema、deck 模板
     materials/models.par                # Vela 默认硬参数的 `.par`（`vela device -P` 的来源）
     docs/sentaurus_sdevice_workflow.md
   VERSION  LICENSE  THIRD_PARTY_NOTICES   # 后者含 CPython/OpenSSL/HDF5 等许可
+  PACKAGE_MANIFEST.json                  # 文件哈希、源码与 Python 输入身份
 ```
 
-- Linux：二进制以 RPATH `$ORIGIN`（`bin/` 内）链接；在 Ubuntu 24.04 或更旧 glibc 上构建；
+- Linux：二进制以可继承的 RPATH `$ORIGIN/../lib` 链接；在 Ubuntu 24.04 上构建；
   不依赖系统 HDF5 包。Windows：UCRT64 运行库与 HDF5 DLL 随 `bin/`；启动器在调用子
   程序前把 `bin/` 前置到 `PATH`。
 - **Python 随 `bin/` 携带**（决定 16）：固定 CPython 3.12（维护到 2028），编排器只用标准库。
   - Windows：python.org 官方 “Windows embeddable package (64-bit)”（`python-3.12.x-embed-amd64.zip`，
     解压约 15 MB，无 pip/tkinter，自带 `vcruntime140.dll`）放 `bin/python/`；通过
-    `python312._pth` 锁定 `sys.path`（只含自身与 `../vela_sdevice.pyz`），避免被用户系统
+    `python312._pth` 锁定 `sys.path`（`python312.zip`、`.`、`..`，不启用 `import site`），避免被用户系统
     Python 的环境变量干扰（官方 embeddable 包默认忽略 `PYTHONPATH`/用户 site）。
   - Linux：`python-build-standalone`（astral-sh，原 indygreg）的
     `cpython-3.12.x-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz`（约 30–40 MB，
@@ -1331,8 +1336,8 @@ vela/                          # 解包根目录，可任意放置
     `python3`/`python`（仅作应急，需 ≥ 3.10 并在 log 警告）。
   - 代价：包体增大 15–40 MB；需在 `THIRD_PARTY_NOTICES` 列出 PSF 与随带库许可；安全更新随
     Vela 发版升级。
-- 打包：CMake `install()` + `scripts/package_vela.py`（下载并校验 Python 运行时哈希、收集
-  依赖、生成 zipapp、写 VERSION。产出 `vela-<ver>-win64.zip` /
+- 打包：CMake `install()` + `scripts/package_vela.py`（接受离线 Python 归档及许可文本、校验输入哈希、收集
+  依赖与声明、使用构建生成的 zipapp、写 VERSION/清单。产出 `vela-<ver>-win64.zip` /
   `vela-<ver>-ubuntu24.04-x86_64.tar.gz`）。
 
 ### 13.2 并发安全约束（Linux 多进程，同目录或不同目录）

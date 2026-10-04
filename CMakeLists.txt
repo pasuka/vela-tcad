@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
+if(POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif()
 project(vela-tcad VERSION 0.1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
@@ -41,6 +44,8 @@ endif()
 # Catch2 v3 (unit test framework)
 find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(VELA_SOURCE_REVISION "" CACHE STRING
+    "Verified source commit for source archives or cross-host worktree builds")
 
 # C9 launcher layout: vela[.exe] next to bin/vela_sdevice.pyz. The archive
 # includes schemas and default parameters and needs only Python's stdlib.
@@ -52,6 +57,7 @@ file(GLOB_RECURSE VELA_SDEVICE_ARCHIVE_INPUTS CONFIGURE_DEPENDS
 add_custom_target(vela_sdevice_pyz ALL
     COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_vela_sdevice_pyz.py"
             --out "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+            --source-revision "${VELA_SOURCE_REVISION}"
     BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
     DEPENDS ${VELA_SDEVICE_ARCHIVE_INPUTS}
         scripts/build_vela_sdevice_pyz.py scripts/sentaurus_parameter_ir.py
@@ -544,7 +550,9 @@ target_link_libraries(vela_example_runner PRIVATE vela_core)
 # Configure-time snapshot; reconfigure to refresh after new commits.
 set(VELA_GIT_DESCRIBE "unknown")
 find_package(Git QUIET)
-if(Git_FOUND)
+if(VELA_SOURCE_REVISION)
+    set(VELA_GIT_DESCRIBE "${VELA_SOURCE_REVISION}")
+elseif(Git_FOUND)
     execute_process(
         COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR}
                 describe --tags --always --dirty
@@ -602,6 +610,47 @@ if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_executable(sentaurus_import src/tools/sentaurus_import.cpp)
     target_link_libraries(sentaurus_import PRIVATE vela_sentaurus)
 endif()
+
+# WP11: install only the frontend's runtime closure, never reference fixtures.
+# Keep both the documented root launcher and the conventional bin/ entry point.
+set(_vela_distribution_targets vela vela_example_runner)
+if(TARGET sentaurus_import)
+    list(APPEND _vela_distribution_targets sentaurus_import)
+endif()
+if(UNIX AND NOT APPLE)
+    set_target_properties(${_vela_distribution_targets} PROPERTIES
+        INSTALL_RPATH "$ORIGIN/../lib")
+    # DT_RPATH is inherited by the bundled libraries' transitive dependencies.
+    foreach(_vela_target IN LISTS _vela_distribution_targets)
+        target_link_options(${_vela_target} PRIVATE -Wl,--disable-new-dtags)
+    endforeach()
+endif()
+install(TARGETS ${_vela_distribution_targets}
+    RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+    RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
+install(PROGRAMS "$<TARGET_FILE:vela>" DESTINATION . COMPONENT SDeviceRuntime)
+if(WIN32)
+    install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+        DIRECTORIES "${VELA_MINGW_RUNTIME_DIR}"
+        PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+        POST_EXCLUDE_REGEXES ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\].*"
+        RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
+else()
+    install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+        PRE_EXCLUDE_REGEXES "^ld-linux.*" "^lib(c|m|pthread|dl|rt|resolv)\\.so.*"
+        LIBRARY DESTINATION lib COMPONENT SDeviceRuntime)
+endif()
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+    DESTINATION bin COMPONENT SDeviceRuntime)
+install(FILES share/vela/materials/models.par
+    DESTINATION share/vela/materials COMPONENT SDeviceRuntime)
+install(DIRECTORY schemas/ configs/schema/
+    DESTINATION share/vela/schemas COMPONENT SDeviceRuntime FILES_MATCHING PATTERN "*.json")
+install(DIRECTORY configs/templates/
+    DESTINATION share/vela/templates COMPONENT SDeviceRuntime FILES_MATCHING PATTERN "*.json")
+install(FILES docs/sentaurus_sdevice_workflow.md docs/sdevice_packaging.md
+    DESTINATION share/vela/docs COMPONENT SDeviceRuntime)
+install(FILES LICENSE DESTINATION . COMPONENT SDeviceRuntime)
 
 # ---------------------------------------------------------------------------
 # Tests
@@ -1485,6 +1534,8 @@ add_test(NAME sdevice_mesh_import
 set_tests_properties(sdevice_mesh_import PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_mesh_import)
+set_property(TEST sdevice_mesh_import APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
 add_test(NAME sdevice_vela_launcher
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -1505,9 +1556,10 @@ vela_set_windows_msys2_test_path(sdevice_materials)
 add_test(NAME sdevice_deck_emit
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_deck_emit)
 set_tests_properties(sdevice_deck_emit PROPERTIES
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_deck_emit)
+set_property(TEST sdevice_deck_emit APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
 add_test(NAME sdevice_orchestrator
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_orchestrator)
@@ -1523,6 +1575,16 @@ add_test(NAME sdevice_acceptance_tools
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_acceptance)
 set_tests_properties(sdevice_acceptance_tools PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_acceptance_tools)
+foreach(_vela_wp11_test package_smoke concurrency)
+    add_test(NAME sdevice_${_vela_wp11_test}
+        COMMAND ${Python3_EXECUTABLE} -m unittest -v tests.regression.test_sdevice_${_vela_wp11_test})
+    set_tests_properties(sdevice_${_vela_wp11_test} PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} LABELS "sdevice;packaging"
+        TIMEOUT 300)
+    vela_set_windows_msys2_test_path(sdevice_${_vela_wp11_test})
+    set_property(TEST sdevice_${_vela_wp11_test} APPEND PROPERTY ENVIRONMENT
+        "VELA_LAUNCHER=$<TARGET_FILE:vela>")
+endforeach()
 foreach(sdevice_case pn2d_0v pn2d_iv pn2d_bv gates)
     add_test(NAME sdevice_e2e_${sdevice_case}
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py

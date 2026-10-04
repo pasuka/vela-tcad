@@ -9,7 +9,9 @@ import subprocess
 import sys
 import tempfile
 import time
+import threading
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 REPO = Path(__file__).resolve().parents[2]
@@ -51,6 +53,34 @@ def inputs(root, *, multistage=False, fixture=False):
 
 
 class OrchestratorTests(unittest.TestCase):
+    def test_slow_background_publisher_finishes_before_final_publication(self):
+        from vela_sdevice.__main__ import main
+        from vela_sdevice.orchestrator.outputs import OutputPublisher
+        runner = self.root / "delayed_runner.py"
+        runner.write_text("import time,runpy\ntime.sleep(.3)\nrunpy.run_path(" + repr(str(FAKE)) +
+                          ",run_name='__main__')\n", encoding="utf-8")
+        started, active = threading.Event(), threading.Event()
+        original = OutputPublisher.update
+
+        def slow_update(publisher, index, *, final=False):
+            if threading.current_thread() is not threading.main_thread() and not started.is_set():
+                started.set()
+                active.set()
+                try:
+                    time.sleep(6)
+                finally:
+                    active.clear()
+            if final:
+                self.assertFalse(active.is_set(), "Final publication overlapped an unfinished background update")
+            return original(publisher, index, final=final)
+
+        environment = dict(self.env, VELA_EXAMPLE_RUNNER=str(runner))
+        with patch.dict(os.environ, environment), patch.object(OutputPublisher, "update", slow_update):
+            self.assertEqual(main(["device", str(self.cmd), "-q"]), 0)
+        self.assertTrue(started.is_set(), "Slow background publication was not exercised")
+        self.assertTrue((self.root / "final_des.vtu").is_file())
+        self.assertFalse((self.work / ".lock").exists())
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(dir=REPO / "build", prefix="wp5_test_")
         self.root = Path(self.temp.name)

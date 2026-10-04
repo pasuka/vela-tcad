@@ -6,6 +6,12 @@ evidence.
 
 ## Current References
 
+- [SDevice WP11 packaging and concurrency, 2026-10-04](validation/sdevice_wp11_packaging_concurrency_2026-10-04.md):
+  Windows and Ubuntu 24.04 relocatable packages, offline Python/license provenance,
+  both-platform frontend regression and exact Linux concurrency/thread-cap verification.
+- [SDevice packaging guide](sdevice_packaging.md): offline inputs, runtime layout,
+  manifests, licenses and extracted-package/concurrency checks.
+
 - [SDevice WP10 closeout, 2026-10-03](validation/sdevice_wp10_closeout_2026-10-03.md):
   independent, pinned BV spatial qualification at −13.2 V under the original contract;
   named breakdown-knee comparison and near-knee diagnostics, with the −20 V hole-density limitation retained.

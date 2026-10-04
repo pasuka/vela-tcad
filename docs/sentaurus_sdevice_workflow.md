@@ -3,7 +3,9 @@
 状态：**WP5 编排器与 WP6.1 FieldData 已交付**（2026-10-02）。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
-计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；分发验收由 WP11 完成。
+计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；
+WP11 分发与并发验收已完成（2026-10-04），见[打包指南](sdevice_packaging.md)与
+[验收记录](validation/sdevice_wp11_packaging_concurrency_2026-10-04.md)。
 
 ## 1. 契约文件索引
 
