@@ -1,0 +1,64 @@
+{
+  "schema": "vela.simplemos.sdevice.m66_matched_ni_full_curve_contract.v1",
+  "milestone": "M66",
+  "status": "draft_before_freeze",
+  "objective": "Extend the M65 matched-intrinsic-density Vela states to the complete 0-2.5 V Id-Vg path and determine whether the diagnostic-gate attribution represents the full smooth high-NWell curve error.",
+  "upstream": {
+    "required_m65_status": "frozen",
+    "required_m65_classification": "base_intrinsic_density_convention_material_but_not_dominant",
+    "sentaurus_curve_source": "M64 frozen explicit-no-BGN point ledger",
+    "vela_restart_source": "M65 matched-ni final state and prefix curve at each frozen diagnostic gate"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_equilibrium_or_drain_solves": 0,
+    "vela_continuation_count": 16,
+    "gate_grid_V": {"start": 0.0, "stop": 2.5, "step": 0.05, "point_count": 51},
+    "restart_rule": "Replay the M65 diagnostic gate from its accepted state, then continue only to larger gate voltages on the original M8 path.",
+    "physics": "Explicit no-BGN in both solvers; Vela copied Si ni remains exactly the M65 value.",
+    "production_default_changed": false
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21"},
+      {"low_device": "n18", "high_device": "n22"},
+      {"low_device": "n19", "high_device": "n23"},
+      {"low_device": "n20", "high_device": "n24"}
+    ],
+    "smooth_gate_window_V": [0.55, 0.9]
+  },
+  "analysis": {
+    "primary_metrics": [
+      "pointwise log10(Vela matched-ni/Sentaurus no-BGN)",
+      "low-to-high NWell error growth over the frozen smooth gate window",
+      "best-fit horizontal threshold shift and explained fraction"
+    ],
+    "classifications": [
+      "matched_ni_full_curve_dominant",
+      "matched_ni_full_curve_material_but_not_complete",
+      "matched_ni_full_curve_not_material",
+      "execution_or_restart_identity_failure"
+    ],
+    "dominant_maximum_median_absolute_pair_growth_dex": 0.01,
+    "material_maximum_median_absolute_pair_growth_dex": 0.05
+  },
+  "acceptance": {
+    "exact_bias_tolerance_V": 1e-10,
+    "required_curve_count_per_solver": 16,
+    "required_points_per_curve": 51,
+    "maximum_restart_current_replay_error_dex": 1e-8,
+    "required_m64_sentaurus_point_count": 816,
+    "production_reference_must_not_be_replaced": true
+  },
+  "closed_topic_guards": [
+    "no global HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN parameter tuning",
+    "no mesh or convergence tuning",
+    "no production material or reference replacement"
+  ]
+}

@@ -27,6 +27,208 @@ SENTAURUS_IMPORT_SPEC.loader.exec_module(sentaurus_import)
 
 
 class SentaurusImportToolsTest(unittest.TestCase):
+    def test_simplemos_physics_paths_preserve_model_scope(self) -> None:
+        text = """
+File { Grid="mesh.tdr" Plot="out.tdr" Current="out.plt" Output="out.log" }
+Electrode {
+  { Name="source" Voltage=0.0 }
+  { Name="drain" Voltage=0.0 }
+  { Name="gate" Voltage=0.0 }
+  { Name="substrate" Voltage=0.0 }
+}
+Physics { EffectiveIntrinsicDensity(OldSlotboom) }
+Physics(Material="Silicon") {
+  Mobility(PhuMob HighFieldSaturation Enormal)
+  Recombination(SRH(DopingDependence))
+}
+Solve { Coupled { Poisson Electron Hole } }
+"""
+        with tempfile.TemporaryDirectory(prefix="vela_simplemos_scope_") as tmp:
+            path = Path(tmp) / "simplemos_des.cmd"
+            path.write_text(text, encoding="utf-8")
+            summary = sentaurus_import.parse_cmd(path)
+
+        paths = {
+            model_path
+            for block in summary["physics"]
+            for model_path in block["model_paths"]
+        }
+        self.assertTrue({
+            "Mobility.PhuMob",
+            "Mobility.HighFieldSaturation",
+            "Mobility.Enormal",
+            "Recombination.SRH.DopingDependence",
+            "EffectiveIntrinsicDensity.OldSlotboom",
+        }.issubset(paths))
+
+    def test_simplemos_srh_doping_dependence_does_not_enable_masetti(self) -> None:
+        deck = {"solver": {"type": "newton"}}
+        summary = {
+            "physics": [{
+                "models": [
+                    "Mobility", "PhuMob", "HighFieldSaturation",
+                    "Recombination", "SRH", "DopingDependence",
+                    "EffectiveIntrinsicDensity", "OldSlotboom",
+                ],
+                "model_paths": [
+                    "Mobility",
+                    "Mobility.PhuMob",
+                    "Mobility.HighFieldSaturation",
+                    "Recombination",
+                    "Recombination.SRH",
+                    "Recombination.SRH.DopingDependence",
+                    "EffectiveIntrinsicDensity",
+                    "EffectiveIntrinsicDensity.OldSlotboom",
+                ],
+            }],
+        }
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck, summary, {"name": "idvg", "kind": "iv"},
+        )
+
+        self.assertEqual(deck["solver"]["mobility"]["model"], "phumob_field")
+        self.assertNotEqual(deck["solver"]["mobility"]["model"], "masetti")
+        self.assertTrue(deck["solver"]["srh_doping_dependence"]["enabled"])
+        self.assertEqual(deck["solver"]["bandgap_narrowing"], "old_slotboom")
+        self.assertEqual(warnings, [])
+
+    def test_simplemos_phumob_is_supported_after_m6(self) -> None:
+        summary = {
+            "unresolved_placeholders": [],
+            "files": {"grid": "mesh.tdr"},
+            "electrodes": [
+                {"name": "source", "voltage": 0.0},
+                {"name": "drain", "voltage": 0.0},
+                {"name": "gate", "voltage": 0.0},
+                {"name": "substrate", "voltage": 0.0},
+            ],
+            "thermodes": [],
+            "physics": [{
+                "models": ["Mobility", "PhuMob"],
+                "model_paths": ["Mobility", "Mobility.PhuMob"],
+            }],
+            "math": {},
+            "solve": {"initial_steps": [], "sweeps": []},
+            "sweeps": [],
+        }
+        models = sentaurus_import.sentaurus_models(summary)
+
+        execution_ir = sentaurus_import.build_execution_ir(
+            summary,
+            source="simplemos_des.cmd",
+            models=models,
+        )
+        self.assertEqual(
+            execution_ir["physics"]["model_paths"],
+            ["Mobility", "Mobility.PhuMob"],
+        )
+        self.assertEqual(execution_ir["unsupported"], [])
+        supported = {
+            item["model"] for item in execution_ir["physics"]["supported"]
+        }
+        self.assertIn("PhuMob", supported)
+
+    def test_simplemos_phumob_enormal_is_supported_after_m7(self) -> None:
+        summary = {
+            "unresolved_placeholders": [],
+            "files": {"grid": "mesh.tdr"},
+            "electrodes": [
+                {"name": "source", "voltage": 0.0},
+                {"name": "drain", "voltage": 0.0},
+                {"name": "gate", "voltage": 0.0},
+                {"name": "substrate", "voltage": 0.0},
+            ],
+            "thermodes": [],
+            "physics": [{
+                "models": ["Mobility", "PhuMob", "Enormal"],
+                "model_paths": [
+                    "Mobility", "Mobility.PhuMob", "Mobility.Enormal",
+                ],
+            }],
+            "math": {},
+            "solve": {"initial_steps": [], "sweeps": []},
+            "sweeps": [],
+        }
+        execution_ir = sentaurus_import.build_execution_ir(
+            summary,
+            source="simplemos_des.cmd",
+            models=sentaurus_import.sentaurus_models(summary),
+        )
+        self.assertEqual(execution_ir["unsupported"], [])
+
+        deck = {"solver": {"type": "newton"}}
+        sentaurus_import.apply_solver_physics(
+            deck, summary, {"name": "idvg", "kind": "iv"},
+        )
+        self.assertEqual(
+            deck["solver"]["mobility"]["model"], "phumob_lombardi",
+        )
+
+    def test_original_simplemos_mobility_maps_to_phumob_field_lombardi(self) -> None:
+        summary = {
+            "physics": [{
+                "models": [
+                    "Mobility", "PhuMob", "HighFieldSaturation", "Enormal",
+                ],
+                "model_paths": [
+                    "Mobility", "Mobility.PhuMob",
+                    "Mobility.HighFieldSaturation", "Mobility.Enormal",
+                ],
+            }],
+        }
+        deck = {"solver": {"type": "newton"}}
+        warnings = sentaurus_import.apply_solver_physics(
+            deck, summary, {"name": "idvg", "kind": "iv"},
+        )
+        self.assertEqual(
+            deck["solver"]["mobility"]["model"],
+            "phumob_field_lombardi",
+        )
+        self.assertEqual(
+            deck["solver"]["mobility"]["high_field_driving_force"],
+            "quasi_fermi_gradient",
+        )
+        self.assertEqual(warnings, [])
+
+    def test_runner_deck_applies_original_simplemos_physics(self) -> None:
+        summary = {
+            "electrodes": [
+                {"name": "drain", "voltage": 0.0},
+                {"name": "gate", "voltage": 0.0},
+            ],
+            "physics": [{
+                "models": [
+                    "Mobility", "PhuMob", "HighFieldSaturation", "Enormal",
+                    "Recombination", "SRH", "DopingDependence", "OldSlotboom",
+                ],
+                "model_paths": [
+                    "Mobility", "Mobility.PhuMob",
+                    "Mobility.HighFieldSaturation", "Mobility.Enormal",
+                    "Recombination", "Recombination.SRH",
+                    "Recombination.SRH.DopingDependence", "OldSlotboom",
+                ],
+            }],
+            "sweeps": [{"contact": "gate", "stop": 1.0}],
+        }
+
+        deck = sentaurus_import.build_runner_deck(
+            summary, "mesh.json", "idvg.csv",
+        )
+
+        self.assertEqual(
+            deck["solver"]["mobility"]["model"],
+            "phumob_field_lombardi",
+        )
+        self.assertEqual(
+            deck["solver"]["mobility"]["high_field_driving_force"],
+            "quasi_fermi_gradient",
+        )
+        self.assertEqual(deck["solver"]["recombination"], ["srh"])
+        self.assertTrue(deck["solver"]["srh_doping_dependence"]["enabled"])
+        self.assertEqual(deck["solver"]["bandgap_narrowing"], "old_slotboom")
+        self.assertEqual(deck["sentaurus_import"]["warnings"], [])
+
     def test_solver_physics_ignores_bare_mobility_model(self) -> None:
         deck = {"solver": {"type": "gummel"}}
         warnings = sentaurus_import.apply_solver_physics(
@@ -76,6 +278,7 @@ class SentaurusImportToolsTest(unittest.TestCase):
         )
 
         dependence = deck["solver"]["srh_doping_dependence"]
+        self.assertNotIn("mobility", deck["solver"])
         self.assertEqual(dependence["electron"]["reference_doping_m3"], 1.0e16)
         self.assertEqual(dependence["hole"]["reference_doping_m3"], 1.0e16)
         self.assertEqual(warnings, [])

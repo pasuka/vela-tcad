@@ -1,0 +1,37 @@
+{
+  "schema": "vela.simplemos.sdevice.m54_artifact.v1",
+  "title": "SimpleMOS M54 terminal common-mode attribution",
+  "status": "complete",
+  "classification": "direct_shift_mixed",
+  "report": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_common_mode_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_state_decomposition_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_component_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_case_summary.csv",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_nwell_pair_summary.csv"
+  ],
+  "document": "docs/validation/simplemos_m54_terminal_common_mode_attribution_2026-09-02.md",
+  "findings": {
+    "target_total_common_mode_fraction": 0.9338316369137208,
+    "worst_total_common_mode_fraction": 0.993973407875546,
+    "matrix_median_total_common_mode_fraction": 0.43078150003808113,
+    "common_mode_dominated_state_count": 42,
+    "default_opposite_sign_state_count": 816,
+    "direct_same_sign_state_count": 33,
+    "maximum_absolute_drain_identity_residual_A_per_um": 0.0
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "state_count": true,
+    "terminal_component_row_count": true,
+    "case_count": true,
+    "points_per_case": true,
+    "all_values_finite": true,
+    "drain_identities_close": true,
+    "classification_declared": true,
+    "no_new_solver_execution": true,
+    "historical_artifacts_preserved": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "device": "n19",
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "vd": 0.05,
+      "vg": 1.0
+    },
+    {
+      "device": "n23",
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "vd": 0.05,
+      "vg": 1.0
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_masetti_local_20260907",
+  "question": "Map native element mobility and box coefficients/measures on the unchanged Masetti model, then compare with local formula and Vela operators.",
+  "model_changes": false,
+  "math_change": "BoxMeasureFromFile(GrdNumbering) with no external input file in the fresh directory, to write the native MeasureCoefficients.debug as in M34. Same 128-bit reclosure settings.",
+  "gates": {
+    "current_reclosure_relative": 1e-08,
+    "bias_error_V": 1e-10,
+    "kcl_over_Id": 1e-08,
+    "coordinate_error_um": 1e-12
+  },
+  "scope": "Two meshes at Vd=.05,Vg=1. Mobility is bias-independent in frozen Masetti; no full-current or arbitrary native edge-operator equivalence assumed.",
+  "manual_reference": "T-2022.03 User Guide, Mobility Averaging p464 and box-method coefficient/measure export. Native node plots are not edge mobility.",
+  "raw_inputs_immutable": true,
+  "production_changes": false
+}

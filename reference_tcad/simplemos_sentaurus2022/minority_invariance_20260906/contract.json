@@ -1,0 +1,307 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_007\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_007\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_007\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_007\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_0p050000_endpoint\\vg_020\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_007\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_007\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_007\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_007\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_020\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_020\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_020\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n19_vd_1p000000_endpoint\\vg_020\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\vela\\m65_n19_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_007\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_007\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_007\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.35,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_007\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_020\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_020\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_020\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_0p050000_endpoint\\vg_020\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_0p050000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_007\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_007\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_007\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.35,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_007\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_007\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_020\\vela\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "hole_plus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_020\\hole_plus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "hole_minus",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_020\\hole_minus\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_020\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "initialization": "native",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_invariance_20260906\\m65_n23_vd_1p000000_endpoint\\vg_020\\native\\config.json",
+      "legacy_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\native_seed\\m65_n23_vd_1p000000_endpoint\\vg_020\\config.json"
+    }
+  ],
+  "new_gate": "All positive-density active electron/hole continuity rows, no source/flux exclusion and zero row scale floor; same eps_row=1e-6. Zero-scale rows separately unresolved.",
+  "legacy_gate": "Unmodified historical carrier-row/global/KCL gate also evaluated on each output; no historical qualification rewritten.",
+  "common_solver": "Existing isolated vector-chain runner with independently tested local transport step coefficient 1e-7; SparseLU; original physical residual.",
+  "initializations": "Existing Vela, coherent native, Vela hole phi +/-0.05 V on all free Si nodes with consistent p; original contacts unchanged.",
+  "gates": {
+    "all_row_relative": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06
+  },
+  "scope": "8 target biases, 32 independent reclosures; do not assume a failed state has converged; no production or physical model change.",
+  "m82_released": false,
+  "m83_released": false
+}

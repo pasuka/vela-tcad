@@ -1,0 +1,107 @@
+{
+  "schema": "vela.simplemos.sdevice.m73_material_partitioned_poisson_ledger_report.v2",
+  "status": "accepted",
+  "classification": "material_partition_material_but_not_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m73_material_partitioned_poisson_ledger_contract_v2.json",
+    "sha256": "34c6a1fa4d0ca8aff97067a9557a490996e643e42728f8bcac24d9850392a063"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_self_consistent_solves": 0,
+    "offline_sparse_poisson_stage_responses": 160,
+    "production_default_changed": false
+  },
+  "summary": {
+    "best_material_partition_variant": "region_local_barycentric_si",
+    "best_same_sign_current_pair_count": 8,
+    "best_median_current_closure_fraction": 0.7356930386994813,
+    "best_current_variant_median_electrostatic_closure_fraction": 0.4169999687716702,
+    "best_electrostatic_partition_variant": "legacy_signed_si",
+    "best_same_sign_electrostatic_pair_count": 8,
+    "best_median_electrostatic_closure_fraction": 0.8739975812547331,
+    "legacy_median_current_closure_fraction": 0.6446141245474943,
+    "maximum_vela_production_poisson_replay_correction_V": 4.912976877835192e-09,
+    "maximum_component_sum_identity_error_V": 1.0333348759994365e-12,
+    "maximum_coordinate_error_um": 0.0,
+    "maximum_sentaurus_shared_node_potential_spread_V": 0.0
+  },
+  "variant_summaries": [
+    {
+      "variant": "legacy_all_cell",
+      "same_sign_current_pair_count": 8,
+      "median_current_closure_fraction": 0.6446141245474943,
+      "minimum_current_closure_fraction": 0.3923194269538334,
+      "prediction_current_pearson": 0.365238269868876,
+      "same_sign_electrostatic_pair_count": 8,
+      "median_electrostatic_closure_fraction": 0.8262957722358787,
+      "minimum_electrostatic_closure_fraction": 0.5480912555945984,
+      "prediction_electrostatic_pearson": 0.9176089595060466,
+      "median_attributed_total_pair_proxy_dex": 0.025694252957248337
+    },
+    {
+      "variant": "region_local_all_cell",
+      "same_sign_current_pair_count": 8,
+      "median_current_closure_fraction": 0.01237764097902877,
+      "minimum_current_closure_fraction": 0.009371820054829949,
+      "prediction_current_pearson": 0.27492530838422236,
+      "same_sign_electrostatic_pair_count": 8,
+      "median_electrostatic_closure_fraction": 0.023201941590909547,
+      "minimum_electrostatic_closure_fraction": 0.011993077174402345,
+      "prediction_electrostatic_pearson": 0.8956130085163017,
+      "median_attributed_total_pair_proxy_dex": 0.0004461781469615811
+    },
+    {
+      "variant": "legacy_signed_si",
+      "same_sign_current_pair_count": 8,
+      "median_current_closure_fraction": 0.6463856951266399,
+      "minimum_current_closure_fraction": 0.42323915490197117,
+      "prediction_current_pearson": 0.4369325702495407,
+      "same_sign_electrostatic_pair_count": 8,
+      "median_electrostatic_closure_fraction": 0.8739975812547331,
+      "minimum_electrostatic_closure_fraction": 0.5640161238266382,
+      "prediction_electrostatic_pearson": 0.9411767130028896,
+      "median_attributed_total_pair_proxy_dex": 0.026236013632137414
+    },
+    {
+      "variant": "region_local_barycentric_si",
+      "same_sign_current_pair_count": 8,
+      "median_current_closure_fraction": 0.7356930386994813,
+      "minimum_current_closure_fraction": 0.4349808218339656,
+      "prediction_current_pearson": 0.4980465087945132,
+      "same_sign_electrostatic_pair_count": 8,
+      "median_electrostatic_closure_fraction": 0.4169999687716702,
+      "minimum_electrostatic_closure_fraction": 0.19543669928679464,
+      "prediction_electrostatic_pearson": 0.9443676044387851,
+      "median_attributed_total_pair_proxy_dex": 0.02911003917305198
+    },
+    {
+      "variant": "region_local_signed_si",
+      "same_sign_current_pair_count": 8,
+      "median_current_closure_fraction": 0.6440957587153386,
+      "minimum_current_closure_fraction": 0.4338700287673366,
+      "prediction_current_pearson": 0.43593698286400273,
+      "same_sign_electrostatic_pair_count": 8,
+      "median_electrostatic_closure_fraction": 0.8718763480431307,
+      "minimum_electrostatic_closure_fraction": 0.5411497307058255,
+      "prediction_electrostatic_pearson": 0.9413398869325168,
+      "median_attributed_total_pair_proxy_dex": 0.026653392766028364
+    }
+  ],
+  "causal_scope": {
+    "closed": "Tests material-local dielectric and semiconductor-only charge-volume hypotheses against all eight frozen high-NWell pairs.",
+    "not_closed": "No diagnostic operator is promoted to a production default without a later self-consistent full-matrix qualification."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "pair_count": true,
+    "case_count": true,
+    "stage_count": true,
+    "coordinate_identity": true,
+    "shared_node_potential_identity": true,
+    "vela_production_poisson_replay": true,
+    "component_sum_identity": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

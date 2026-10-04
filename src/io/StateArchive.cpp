@@ -1,5 +1,6 @@
 #include "vela/io/StateArchive.h"
 #include <highfive/highfive.hpp>
+#include <boost/multiprecision/cpp_bin_float.hpp>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -24,6 +25,8 @@ const std::map<std::string, std::string> units{
     {"electron_quantum_potential_V", "V"}, {"electron_quantum_potential_like_V", "V"},
     {"electron_qf_increment_V", "V"}, {"hole_qf_increment_V", "V"},
     {"electron_qf_reference_V", "V"}, {"hole_qf_reference_V", "V"},
+    {"packed_psi", "1"}, {"packed_electron_qf_increment", "1"}, {"packed_hole_qf_increment", "1"},
+    {"packed_psi_low", "1"}, {"packed_electron_qf_increment_low", "1"}, {"packed_hole_qf_increment_low", "1"},
     {"temperature_K", "K"}};
 [[noreturn]] void bad(const std::string& message) {
     throw std::runtime_error("HDF5 state: " + message);
@@ -68,6 +71,28 @@ void validateStateArchive(const StateArchive& s) {
                             "electron_qf_reference_V", "hole_qf_reference_V"})
         split += s.fields.contains(name);
     if (split != 0 && split != 4) bad("partial split quasi-Fermi state");
+    std::size_t packed = 0, low = 0;
+    for (const std::string name : {"packed_psi", "packed_electron_qf_increment", "packed_hole_qf_increment"}) {
+        packed += s.fields.contains(name);
+        low += s.fields.contains(name + "_low");
+    }
+    const bool scale = s.metadata.contains("packed_potential_scale_V");
+    const bool splitSchema = s.metadata.contains("split_state_schema");
+    const bool splitMesh = s.metadata.contains("split_mesh_fingerprint");
+    if ((packed != 0 && packed != 3) || (low != 0 && low != 3) ||
+        (packed != 0) != scale || (low && !packed) ||
+        (low != 0) != splitSchema || (low != 0) != splitMesh)
+        bad("incomplete packed DD state");
+    if (packed) {
+        if (mode != "dd" || split != 4 || !s.metadata.at("packed_potential_scale_V").is_number())
+            bad("packed coordinates require a referenced DD state");
+        const double value = s.metadata.at("packed_potential_scale_V");
+        if (!std::isfinite(value) || value <= 0.) bad("invalid packed potential scale");
+    }
+    if (low && (s.metadata.at("split_state_schema") != "vela.split-dd-state.v1" ||
+                !s.metadata.at("split_mesh_fingerprint").is_string() ||
+                s.metadata.at("split_mesh_fingerprint").get<std::string>().empty()))
+        bad("invalid split DD identity");
     for (const auto& [name, values] : s.fields) {
         if (!units.contains(name) || values.size() != s.nodeCount) bad("unknown or incomplete field " + name);
         if (!std::all_of(values.begin(), values.end(), [](double v) { return std::isfinite(v); }))
@@ -81,6 +106,26 @@ void validateStateArchive(const StateArchive& s) {
             if (!std::isfinite(combined) || std::abs(value - combined) >
                 32 * std::numeric_limits<double>::epsilon() * std::max({1., std::abs(value), std::abs(combined)}))
                 bad("inconsistent split quasi-Fermi state");
+        }
+    }
+    if (packed) {
+        using Wide = boost::multiprecision::cpp_bin_float_100;
+        const double scaleValue = s.metadata.at("packed_potential_scale_V");
+        const char* names[] = {"packed_psi", "packed_electron_qf_increment", "packed_hole_qf_increment"};
+        const char* physical[] = {"psi", "phin", "phip"};
+        for (std::size_t i = 0; i < s.nodeCount; ++i) for (int block = 0; block < 3; ++block) {
+            const std::string name = names[block];
+            const Wide increment = (Wide(s.fields.at(name)[i]) +
+                (low ? Wide(s.fields.at(name + "_low")[i]) : Wide(0))) * Wide(scaleValue);
+            Wide value = increment;
+            if (block) {
+                const std::string carrier = block == 1 ? "electron" : "hole";
+                if (static_cast<double>(increment) != s.fields.at(carrier + "_qf_increment_V")[i])
+                    bad("inconsistent packed DD increment");
+                value += Wide(s.fields.at(carrier + "_qf_reference_V")[i]);
+            }
+            if ((low || block == 0) && static_cast<double>(value) != s.fields.at(physical[block])[i])
+                bad("inconsistent packed DD physical field");
         }
     }
 }

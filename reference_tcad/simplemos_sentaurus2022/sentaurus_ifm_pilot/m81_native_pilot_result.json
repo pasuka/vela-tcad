@@ -1,0 +1,177 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "device": "n19",
+      "dc_current_A_per_um": 1.95731960115792e-06,
+      "dc_reclosure_dex": 3.115526918293436e-08,
+      "native_dI_A": 1.01255967603074e-09,
+      "response_change_relative": 0.0,
+      "ac_circuit_vs_device_current_opposite_sign_error": 0.0,
+      "green": [
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "s^-1",
+          "nodes": 942,
+          "min": 0.0,
+          "max": 98809207565.46495,
+          "max_abs": 98809207565.46495
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 1,
+          "region_name": "Oxide_1",
+          "unit": "s^-1",
+          "nodes": 243,
+          "min": 0.0,
+          "max": 94935662557.67241,
+          "max_abs": 94935662557.67241
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 2,
+          "region_name": "Nitride_1.1",
+          "unit": "s^-1",
+          "nodes": 176,
+          "min": 0.0,
+          "max": 62010057.719941676,
+          "max_abs": 62010057.719941676
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 3,
+          "region_name": "Nitride_1.2",
+          "unit": "s^-1",
+          "nodes": 176,
+          "min": 0.0,
+          "max": 33442788.665034823,
+          "max_abs": 33442788.665034823
+        },
+        {
+          "field": "CurECReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "1",
+          "nodes": 942,
+          "min": -5.000850869671835e-09,
+          "max": 0.9999999783657286,
+          "max_abs": 0.9999999783657286
+        },
+        {
+          "field": "CurHCReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "1",
+          "nodes": 942,
+          "min": -0.9999999783657286,
+          "max": 0.038622748700137675,
+          "max_abs": 0.9999999783657286
+        }
+      ],
+      "pass": true
+    },
+    {
+      "device": "n23",
+      "dc_current_A_per_um": 1.56350743583972e-08,
+      "dc_reclosure_dex": 3.5066717218428895e-10,
+      "native_dI_A": 1.09657877411713e-11,
+      "response_change_relative": 0.0,
+      "ac_circuit_vs_device_current_opposite_sign_error": 0.0,
+      "green": [
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "s^-1",
+          "nodes": 942,
+          "min": -0.7040281770947916,
+          "max": 1653641518.4236739,
+          "max_abs": 1653641518.4236739
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 1,
+          "region_name": "Oxide_1",
+          "unit": "s^-1",
+          "nodes": 245,
+          "min": 0.0,
+          "max": 1616010454.9820004,
+          "max_abs": 1616010454.9820004
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 2,
+          "region_name": "Nitride_1.1",
+          "unit": "s^-1",
+          "nodes": 177,
+          "min": 0.0,
+          "max": 291169.3011200815,
+          "max_abs": 291169.3011200815
+        },
+        {
+          "field": "CurPotReACGreenFunction",
+          "region": 3,
+          "region_name": "Nitride_1.2",
+          "unit": "s^-1",
+          "nodes": 177,
+          "min": 0.0,
+          "max": 346068.23512232606,
+          "max_abs": 346068.23512232606
+        },
+        {
+          "field": "CurECReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "1",
+          "nodes": 942,
+          "min": -1.3988594830781777e-10,
+          "max": 0.9999999999049891,
+          "max_abs": 0.9999999999049891
+        },
+        {
+          "field": "CurHCReACGreenFunction",
+          "region": 0,
+          "region_name": "Silicon_1",
+          "unit": "1",
+          "nodes": 942,
+          "min": -0.9999999999049891,
+          "max": 0.0005669228364612193,
+          "max_abs": 0.9999999999049891
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "fixed_charge_fd_released": true,
+  "m82_released": false,
+  "raw_hashes": {
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81.console.log": "36af9ef392b3ed75197031f29c17236b05fd98f69a523381bc67587183742a09",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81.log_des.log": "8b080a35e80b9ddfe40231a665c8e8f07bb44cd11e3b24ae53bcac09e180a027",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81_ac_ac_des.plt": "59e105705e75d9831e7f56afe6fd6039de9ac72375ba7dc2f1a11f82dfc7e893",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81_des.cmd": "fd6c5058718384277c3210b7b08d83fc70aaaeb015e375db0b5948c5ef2f7e39",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81_des.plt": "571629832949808027e0d8366a2fe6ce05a9d2aa95bc8f97d468ac551b0490f0",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81_des.tdr": "316c009457f3260b56e0a4cf24ca0052faba303f548acf11674b8ef99ddf1542",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/m81_green_N_drain_0000_acgf_des.tdr": "726970844f5182a8b38a0a0603d6488fe842b06568ae668b02db4fcf576f7754",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/reclosed_circuit_des.sav": "f7763d7898b911d1934916b0b030ebccc91053ba655de296421bee96b66861fc",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/reclosed_des.tdr": "af5ec1ea53470d8ac12f68eae12031bce1956c9059623abaf6f3ae72538d5131",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/state_des.tdr": "da4eeafa24fb35eb9080aad0c9a02e26df841086872d7a98cbf5db98209623ab",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81.console.log": "446af2e183198fd530776112d55d768c766d665abb203aa24177b0a43375d04d",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81.log_des.log": "7138a31234f37aab557be58f534ff6b2854bf9fe6f91bc2bc8c94b2644b5bb09",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81_ac_ac_des.plt": "60813582bdd62297652678204a3ffbc2e21a069b599545c673359922ac0ec6e9",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81_des.cmd": "fd6c5058718384277c3210b7b08d83fc70aaaeb015e375db0b5948c5ef2f7e39",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81_des.plt": "51a8e47ff8be318e06d442cf3b080d4c32fa18249762cad2b0d38f89c7af0772",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81_des.tdr": "1d2222253583ca0dc76947bbb862d1c5bb278dff7b62aa3126ffe249404dd5e6",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/m81_green_N_drain_0000_acgf_des.tdr": "3d68d86160b1ec9316cf4a904efa2203a10c098597815cda641c35f15b19f8b5",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/reclosed_circuit_des.sav": "7f8be197ec29970fc8836ed3d1af79a22e4622e29d3d0d6b9a662202c66f2e60",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/reclosed_des.tdr": "42baeb9062ef205ec40d462186b72fe746ee7563aaa4ef07da2f89bbedb8d589",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30"
+  }
+}

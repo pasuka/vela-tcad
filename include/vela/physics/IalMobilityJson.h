@@ -4,6 +4,22 @@
 #include <map>
 #include <stdexcept>
 namespace vela::ial_json {
+inline IalScreeningMethod screeningMethod(const nlohmann::json& input) {
+    return ialScreeningMethod(input.value("screening_method",
+        std::string(ialScreeningMethodName(defaultIalScreeningMethod))));
+}
+// The old electrothermal diagnostic key remains an explicit alias. Reject
+// conflicting declarations rather than report one method while using another.
+inline IalScreeningMethod electrothermalScreeningMethod(const nlohmann::json& input) {
+    const auto mobility=input.value("mobility_SI",nlohmann::json::object());
+    const auto options=mobility.is_object()?mobility.value("ialmob",nlohmann::json::object()):nlohmann::json::object();
+    const auto method=screeningMethod(options);
+    if (!input.contains("diagnostic_ialmob_screening_method")) return method;
+    const auto alias=ialScreeningMethod(input.at("diagnostic_ialmob_screening_method").get<std::string>());
+    if (options.contains("screening_method") && method!=alias)
+        throw std::invalid_argument("Conflicting IALMob screening_method and diagnostic alias");
+    return alias;
+}
 inline const std::map<std::string,vela::Real vela::IalMobilityParameters::*> fields{
     {"mumax",&vela::IalMobilityParameters::muMax},
     {"mumin",&vela::IalMobilityParameters::muMin},

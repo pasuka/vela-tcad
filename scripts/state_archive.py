@@ -7,6 +7,7 @@ import re
 import tempfile
 import hashlib
 import struct
+from decimal import Decimal, localcontext
 
 import h5py
 import numpy as np
@@ -20,6 +21,9 @@ UNITS.update(electrons_m3='m^-3', holes_m3='m^-3', temperature_K='K')
 REQUIRED = {'psi', 'phin', 'phip', 'electrons_m3', 'holes_m3'}
 SPLIT = {'electron_qf_increment_V', 'hole_qf_increment_V',
          'electron_qf_reference_V', 'hole_qf_reference_V'}
+PACKED = ('packed_psi', 'packed_electron_qf_increment', 'packed_hole_qf_increment')
+PACKED_LOW = tuple(name+'_low' for name in PACKED)
+UNITS.update({name:'1' for name in PACKED+PACKED_LOW})
 
 
 def mesh_identity(mesh, length_m_per_internal):
@@ -96,6 +100,8 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
     if not math.isfinite(subtract): raise ValueError('Invalid frame offset')
     if Path(destination).exists(): raise FileExistsError(destination)
     fields, metadata = read(source, expected_nodes, expected_mesh_sha256)
+    if any(name in fields for name in PACKED):
+        raise ValueError('Packed DD frame translation requires an explicit coordinate transformation')
     active = set(active_nodes)
     for i in range(expected_nodes):
         live = i in active
@@ -139,6 +145,22 @@ def validate(fields, metadata):
         raise ValueError('Partial quantum state')
     if len(SPLIT.intersection(fields)) not in (0, 4):
         raise ValueError('Partial split QF state')
+    packed = len(set(PACKED).intersection(fields))
+    low = len(set(PACKED_LOW).intersection(fields))
+    if (packed not in (0,3) or low not in (0,3) or (low and not packed)
+            or bool(packed) != ('packed_potential_scale_V' in metadata)
+            or bool(low) != ('split_state_schema' in metadata)
+            or bool(low) != ('split_mesh_fingerprint' in metadata)):
+        raise ValueError('Incomplete packed DD state')
+    if packed:
+        scale=metadata['packed_potential_scale_V']
+        if (metadata['mode'] != 'dd' or not SPLIT <= fields.keys()
+                or type(scale) not in (int,float) or not math.isfinite(scale) or scale<=0):
+            raise ValueError('Invalid packed DD state scale or mode')
+    if low and (metadata['split_state_schema'] != 'vela.split-dd-state.v1'
+                or not isinstance(metadata['split_mesh_fingerprint'],str)
+                or not metadata['split_mesh_fingerprint']):
+        raise ValueError('Invalid split DD identity')
     for name, values in fields.items():
         a = np.asarray(values, dtype='<f8')
         if a.shape != (count,) or not np.all(np.isfinite(a)):
@@ -150,6 +172,24 @@ def validate(fields, metadata):
             ceiling = 32*np.finfo(float).eps*np.maximum(1., np.maximum(abs(value), abs(combined)))
             if not np.all(np.isfinite(combined)) or np.any(abs(value-combined) > ceiling):
                 raise ValueError('Inconsistent split QF state')
+    if packed:
+        with localcontext() as context:
+            context.prec=100
+            d=lambda value:Decimal.from_float(float(value))
+            for i in range(count):
+                for block,name in enumerate(PACKED):
+                    increment=(d(fields[name][i])+(d(fields[name+'_low'][i]) if low else Decimal(0)))*d(scale)
+                    expected=increment
+                    if block:
+                        car='electron' if block==1 else 'hole'
+                        if float(increment)!=float(fields[car+'_qf_increment_V'][i]):
+                            raise ValueError('Inconsistent packed QF increment')
+                        expected+=d(fields[car+'_qf_reference_V'][i])
+                    value=float(fields[('psi','phin','phip')[block]][i])
+                    # Packed-without-tail uses the original rounded reference + increment.
+                    rounded=float(expected) if low or not block else float(fields[car+'_qf_reference_V'][i])+float(increment)
+                    if (low or not block) and value!=rounded:
+                        raise ValueError('Inconsistent packed physical field')
     return count
 
 

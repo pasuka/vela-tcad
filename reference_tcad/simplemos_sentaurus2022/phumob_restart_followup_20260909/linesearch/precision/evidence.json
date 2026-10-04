@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/checks.csv": "32ca70d67980cbc41d846ca4ba825a406b01d62e8adf71ec2cc40ef9e80aa4ac",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/coordinates.csv": "bafc640d4d236889ca43df2bb2a950e386f1f0b824b3f4f16a40949a6a214ba6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/freeze.json": "7e06564498ef90f0a57e7bb8bd8164d6c628c7f59e79128fcb992ad33e6f58a6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/independent_flux_checks.csv": "39f7615a3cd928161368a1d61f2249c4fa847c8a64ebee3a9b67959e0c851ef7",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/linear.csv": "254742f90e771e6f0295b21efca89555593275bccf7120bc9550983e767234ad",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/merit.csv": "fbce076df90526a5a856e9f2345f9a93f9b50e8034ef521d6c35d033c637bc36",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/poisson_hotspots.csv": "734e5220ffed7ee1dd311ae54095955bc6f9b74a1b5dbc4691293e27b72761f1"
+  }
+}

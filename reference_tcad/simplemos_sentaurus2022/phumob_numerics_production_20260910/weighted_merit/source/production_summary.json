@@ -1,0 +1,14 @@
+{
+  "DC": 20,
+  "qualified_DC": 20,
+  "responses": 8,
+  "qualified_responses": 8,
+  "native_response_qualified": false,
+  "finite_volume_replacement": false,
+  "qualified_native_ports": 16,
+  "native_ports": 16,
+  "max_native_relative": 9.908026436855621e-06,
+  "identical_states": 20,
+  "identical_ports": 20,
+  "production_numerics": true
+}

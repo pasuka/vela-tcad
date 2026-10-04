@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/diagnostic_identity.csv": "478a1a82a4b5334d2dacbcee22dea40244a22877d78bc3dfa0daa8b73575a297",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/evidence.json": "6902aecf8463a3003041a7df38546cdbfd81b14a5bdb7c53dfff571fc957239f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/native_ports.csv": "5f1956dac6402fff2f18ef595adee080954fd80fede82712d7eb2a7239cdfe63",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/production_summary.json": "05aabcb495af66c63746e62071e2347d0bd0deb92108443754ada4799228de0b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/full_source/combined_evidence.json": "18152fe8cb25b75eda8f7a7f6f3f7f4ac5be79527db8dbaeb5ef410d63c2e97d"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "vela.simplemos.reference-closeout.v1",
+  "date": "2026-09-30",
+  "implementation_commit": "cfcf13ff",
+  "numerical_evidence": "evidence/joined/summary.json",
+  "regression_evidence": "evidence/regression/status.json",
+  "numerical_passed": true,
+  "points": 816,
+  "curves": 16,
+  "field_rows": 4896,
+  "max_abs_Id_error_percent": 0.18661739467205063,
+  "full_regression_passed": true,
+  "ctest_passed": 993,
+  "scope": "Existing 300 K SimpleMOS meshes, n17-n24, Vd=0.05/1 V, Vg=0:0.05:2.5 V; M60 default terminal current; frozen dual and numerical gates unchanged",
+  "history": "Joined summary predates provenance repair: its full_regression_passed=false and remaining list are preserved, superseded only by the separately recorded regression result. No new simulations in this reference packaging.",
+  "limitations": [
+    "External mesh/doping, six full split seeds, and M60 TDR/PLT required for rerun; not included in Git",
+    "One historical source blob remains unrecovered; see provenance review",
+    "Mobility field definition coverage and controlled performance remain separate",
+    "Original n17 high-Vd retry exit file was empty; independently validated by read-only cached replay, not inferred as exit zero"
+  ]
+}

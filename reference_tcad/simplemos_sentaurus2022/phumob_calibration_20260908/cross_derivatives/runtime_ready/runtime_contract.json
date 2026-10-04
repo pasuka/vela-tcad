@@ -1,0 +1,5 @@
+{
+  "path_prefix": "D:/msys64/ucrt64/bin",
+  "prior_failure": "Executable could not load UCRT64 runtime DLLs in the initial subprocess environment. Original failure retained.",
+  "physics_and_input_matrix_changed": false
+}

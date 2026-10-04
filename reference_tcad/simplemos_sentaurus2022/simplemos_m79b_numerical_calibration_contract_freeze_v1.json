@@ -1,0 +1,16 @@
+{
+  "status": "frozen_before_execution",
+  "contract_sha256": "a26577b50e205db7a0c89f359c641440d1f41673218ed1a7f54b39047f1492dc",
+  "input_hashes": {
+    "scripts/run_simplemos_m79b_numerical_calibration.py": "8b5ab5addb3ff4222135662df55919c61bb46467d688fe3dbb749ba54df7d67e",
+    "build-release/m79b_numerical_calibration/vela_example_runner_calibrated.cpp": "88486e45df37f6d916afb1e6c1be0742488ebafcd2283874bfbac7e15c157f98",
+    "build-release/m79b_numerical_calibration/vela_example_runner_calibrated.exe": "bf7d267343568f45b0b8055b2f4cf4bf37888cd9aa25d8727f8cf68fb676a257",
+    "build-release/m79b_numerical_calibration/build_command.json": "c0e65a15bb849cbe96e4daecee5f6e3e5518e6710b4b06774490291b0b5f6013",
+    "build-release/libvela_core.a": "df56881450cf7434790d0eb68ca1dad598ef6cb056de9efbd457a63c7faea024",
+    "scripts/run_simplemos_m79_terminal_response_qualification.py": "78a8dc8945a7cfba0f87ae08b905521e021a956d7a40f56a391e769f3946e710",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_contract_v1.json": "1048594f8cefc9b997491f9d746734fb5a30f7ad760a02937fe98751d934c404",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_contract_freeze_v1.json": "b13f349fc7f8a296aff4adb54f35c64663b2d2521d094931eeaba1c38fbc2c69",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m79_terminal_response_qualification_evidence.json": "5c9c0f02058f7753286dfaba8b6fc4a00016fe313899f95a4803329f6f455b11",
+    "tests/regression/test_simplemos_m79b_numerical_calibration.py": "dd4d439cf386a02080005eaa94318ace54abea42748f20b29b10c6cd82573ddc"
+  }
+}

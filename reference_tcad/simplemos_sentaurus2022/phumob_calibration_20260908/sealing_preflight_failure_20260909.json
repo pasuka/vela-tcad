@@ -1,0 +1,5 @@
+{
+  "status": "sealing_preflight_failed",
+  "reason": "Existing column_scale_context.csv is protected from overwrite. Revised sealer compares recomputed contents for exact equality and preserves the existing file.",
+  "numerical_data_changed": false
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "vela.simplemos.sdevice.poisson_charge_volume_contract.v1",
+  "milestone": "M77",
+  "status": "draft_before_freeze",
+  "objective": "Requalify the frozen M77 combined electron-hole-dopant Poisson charge-volume A/B after merging local main, without replacing the original M77 evidence.",
+  "upstream": {
+    "matrix_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m74_electron_poisson_charge_volume_contract_v1.json",
+    "required_evidence": [
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m74_electron_poisson_charge_volume_evidence.json",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m75_hole_poisson_charge_volume_evidence.json",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m76_dopant_poisson_charge_volume_evidence.json",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m77_combined_poisson_charge_volume_evidence.json"
+    ],
+    "baseline": "M65 matched-ni no-BGN Vela workflows and frozen Sentaurus endpoints",
+    "merged_main_commit": "8e99e57",
+    "merge_commit_at_freeze": "3a46f85"
+  },
+  "intervention": {
+    "flags": {
+      "poisson_electron_transport_node_volume": true,
+      "poisson_hole_transport_node_volume": true,
+      "poisson_dopant_transport_node_volume": true
+    },
+    "changed_term": "all volumetric Poisson charge terms",
+    "candidate_measure": "semiconductor-only barycentric",
+    "unchanged": [
+      "continuity and recombination volumes",
+      "Poisson dielectric edges",
+      "transport edges and volumes"
+    ],
+    "production_default_changed": false
+  },
+  "analysis": {
+    "m73_prediction_column": "attributed_total_pair_proxy_dex",
+    "dominant_minimum_improved_pair_count": 6,
+    "dominant_minimum_median_pair_closure_fraction": 0.8,
+    "material_minimum_median_pair_closure_fraction": 0.3,
+    "decomposition_ledger_required": true
+  },
+  "acceptance": {
+    "required_case_count": 16,
+    "required_pair_count": 8,
+    "required_converged_candidate_count": 16,
+    "exact_bias_tolerance_V": 1e-12,
+    "maximum_baseline_manifest_hash_error_count": 0,
+    "maximum_unapproved_config_diff_count": 0
+  },
+  "guards": [
+    "no new Sentaurus solve",
+    "no HFS, SG, contact, quasi-Fermi, BGN, Nc/Nv, mesh, or convergence tuning",
+    "no production-reference replacement",
+    "do not overwrite original M77 evidence"
+  ]
+}

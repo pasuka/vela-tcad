@@ -1,0 +1,60 @@
+{
+  "schema": "vela.simplemos.sdevice.m16_transport_factor.report.v1",
+  "status": "complete",
+  "execution": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "probe_variant_count": 16,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_change_scope": "diagnostic-only production-equation factor probe",
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 9.867323971790576e-16,
+    "maximum_relative": 3.1768142962468244e-05,
+    "maximum_strong_state_relative": 1.497562478148901e-11,
+    "maximum_endpoint_absolute_A_per_um": 8.673617379884035e-19,
+    "maximum_node_shapley_flux_closure": 4.907827616529303e-13,
+    "maximum_grouped_node_shapley_flux_closure": 4.440892098500626e-16,
+    "reference": "M15 electron_transport adjoint response",
+    "strong_state_definition": "Vg >= 0.8 V"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "factor_relative_to_baseline_current": {
+      "mobility_state": -0.0005214769127961865,
+      "mobility_drive": -0.0025890692763628174,
+      "bernoulli_weights": -29.20873378740303,
+      "carrier_population": 29.338836594196
+    },
+    "factor_absolute_contribution_fraction": {
+      "mobility_state": 8.906419268451125e-06,
+      "mobility_drive": 4.421928550337394e-05,
+      "bernoulli_weights": 0.49886240987405056,
+      "carrier_population": 0.5010844644211775
+    },
+    "grouped_factor_relative_to_baseline_current": {
+      "mobility_state": -0.0005210004482502183,
+      "mobility_drive": -0.0025877759640011533,
+      "sg_state_kernel": 0.13010103701416173
+    },
+    "grouped_factor_absolute_contribution_fraction": {
+      "mobility_state": 0.003911126626853403,
+      "mobility_drive": 0.019426316255826567,
+      "sg_state_kernel": 0.9766625571173201
+    },
+    "region_relative_to_baseline_current": {
+      "source": 2.091328548155496e-09,
+      "channel": 0.12949594479365384,
+      "drain": -0.0025036862940140204,
+      "body": -6.295423252034707e-15
+    }
+  },
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response; they are not native Sentaurus residual terms.",
+    "Mobility-drive contribution covers Vela transport-cell-vector GradQuasiFermi construction and its HFS response, not an unpublished Sentaurus HFS formula.",
+    "Mobility-state contribution retains low-field mobility, state, and HFS interactions.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ]
+}

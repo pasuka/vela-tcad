@@ -1,0 +1,17 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/branch_steps_evidence.json": "b41e2211cadf2b3ae6f54fc2312d5b2f960fb7bbb3afe326210acb99c0c9ffde",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/jvp_evidence.json": "70284b669a854cd8c32acae3d7c2881ac0fa6d594cc21e1b73fad5fa7b38f032",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/contract_evidence.json": "98228264fb0d4db78c754ff79061d6289804d8348d38bacab670845054f7479a",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n19_vd_0p050000_endpoint_vg_040/evidence.json": "0bccc927641895239b9cb25b937489142c818ba8a9868939da903ae55613f351",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n19_vd_0p050000_endpoint_vg_050/evidence.json": "bf6473090b9696c0598c85a6321d0fed8a2c2307a3f396d0dc718f2261c4ed6c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n19_vd_1p000000_endpoint_vg_040/evidence.json": "439c5959b1d05c0dfb7849bf11f09030255ae9eea417d7965e655c74a2a7ccaf",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n19_vd_1p000000_endpoint_vg_050/evidence.json": "133447b445f850e227e6035c3b5ce2fa289981f60bbc737739b35292e33b0ccf",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_0p050000_endpoint_vg_040/evidence.json": "5c9ecbdb2165f6c8f544722a4e0678ae26a04c77a7c63f543b0b9b6161ae7a9c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_0p050000_endpoint_vg_050/evidence.json": "735e563c8dcbedcb1f821cf9e8d15626cc997079e0cf431b1a6f423cbdd8dca8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/evidence.json": "7f19aed36c35ab8fb31d9c37a30ca17a3ac9fa9ea99e096a05f3ad8b510700a7",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_050/evidence.json": "81d506c1924bd10b804bad41b82c00247572f271316ede5d69138de6732931e9",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/tangent_qualification.json": "1b3fe90a9fa25644632b356b2576d69e4f2f72551204d48b82e8f7f7f396e94a",
+    "scripts/qualify_simplemos_hfs_candidate_20260914.py": "25f7e5a97c54058040525cb92c716f7550dc66c1615138e2c03441c3b213a3b6"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "vela.simplemos.sdevice.m31_minority_poisson_perturbation.v1",
+  "scope": "SDevice-only frozen-state minority-hole and Poisson-floor causal perturbation",
+  "device": "n23",
+  "bias": {
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "physics": {
+    "bgn": false,
+    "srh": false,
+    "high_field_saturation": false,
+    "mobility": "PhuMob + Enormal"
+  },
+  "state_variants": [
+    "vela_baseline",
+    "hole_top20_replace",
+    "hole_full_replace",
+    "electron_full_replace",
+    "qf_full_replace",
+    "sentaurus_full_replace",
+    "poisson_top10_step",
+    "poisson_full_step"
+  ],
+  "cross_block_variants": [
+    "hole_full_replace",
+    "electron_full_replace",
+    "qf_full_replace"
+  ],
+  "selection": {
+    "minority_hole_nodes": 20,
+    "poisson_residual_nodes": 10,
+    "exclude_contact_nodes": true,
+    "silicon_only": true
+  },
+  "acceptance": {
+    "state_variant_count": 8,
+    "cross_block_variant_count": 3,
+    "minimum_common_silicon_nodes": 900,
+    "minimum_poisson_top10_l2_share": 0.5,
+    "maximum_adjoint_relative_residual": 1e-8,
+    "require_condition_estimates_skipped": true,
+    "require_finite_outputs": true
+  },
+  "claim_policy": [
+    "A frozen hole or electron replacement is a directional perturbation, not a self-consistent alternative solution.",
+    "The terminal-current functional gives the exact frozen direct response; the adjoint prediction is first order only.",
+    "A frozen psi-only perturbation can have zero direct terminal-current response while retaining an indirect self-consistent response through the Poisson-QFP cross blocks.",
+    "Poisson-only block steps diagnose the residual floor and do not change production solver defaults.",
+    "No default BGN, SRH, mobility, contact, SG, or convergence setting may be changed from this audit alone."
+  ]
+}

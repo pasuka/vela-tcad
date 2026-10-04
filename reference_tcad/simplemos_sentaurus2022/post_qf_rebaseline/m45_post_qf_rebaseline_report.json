@@ -1,0 +1,89 @@
+{
+  "schema": "vela.simplemos.sdevice.m45_post_qf_rebaseline_report.v1",
+  "status": "complete",
+  "baseline_revision": "9f64952",
+  "execution": {
+    "rerun_stages": [
+      "M31",
+      "M32",
+      "M37",
+      "M41",
+      "M42"
+    ],
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "historical_contracts_rewritten": false
+  },
+  "stage_impact": [
+    {
+      "stage": "M31",
+      "rebaseline_status": "complete",
+      "impact": "numeric refresh; qualitative conclusion retained",
+      "historical_contract": "retained"
+    },
+    {
+      "stage": "M32",
+      "rebaseline_status": "complete",
+      "impact": "numeric refresh; qualitative conclusion retained",
+      "historical_contract": "retained"
+    },
+    {
+      "stage": "M37",
+      "rebaseline_status": "complete",
+      "impact": "bitwise unchanged control",
+      "historical_contract": "retained"
+    },
+    {
+      "stage": "M41",
+      "rebaseline_status": "failed",
+      "impact": "M43 operator consistency now propagated",
+      "historical_contract": "superseded; failure retained"
+    },
+    {
+      "stage": "M42",
+      "rebaseline_status": "failed",
+      "impact": "M43/M44 operator and QF packing closure propagated",
+      "historical_contract": "superseded; failure retained"
+    }
+  ],
+  "findings": {
+    "m31_qualitative_conclusion_changed": false,
+    "m32_qualitative_conclusion_changed": false,
+    "m37_bitwise_unchanged": true,
+    "m41_historical_contract_superseded": true,
+    "m42_historical_legacy_mismatch_hypothesis_superseded": true,
+    "legacy_operator_consistency_restored_by_m43": true,
+    "compensated_reference_replay_closure_restored_by_m44": true,
+    "srh_feedback_conclusion_retained": true,
+    "contact_reconstruction_null_retained": true,
+    "qf_reference_increment_requirement_retained": true,
+    "m42_maximum_compensated_cut_reported_gap_dex": 2.314385919727895e-15,
+    "m42_minimum_legacy_cut_reported_gap_dex": 1.9286549331065747e-16,
+    "m42_maximum_compensated_free_electron_residual_l2": 1.6137405346095906e-20,
+    "m42_legacy_to_compensated_residual_ratio": 1207360597.1671124,
+    "attribution_note": "M41/M42 were stale across both M43 and M44; the large legacy-path change is attributed to M43 SG/contact operator unification, while the compensated sub-millidex closure is attributed to M44 reference/increment preservation."
+  },
+  "acceptance": {
+    "m44_complete": true,
+    "m31_complete": true,
+    "m32_complete": true,
+    "m37_complete_and_bitwise_unchanged": true,
+    "m41_workflows_converged": true,
+    "m41_historical_contract_superseded": true,
+    "m42_matrix_complete": true,
+    "m42_operator_cut_reported_closure": true,
+    "m42_historical_legacy_mismatch_superseded": true,
+    "m42_srh_feedback_retained": true,
+    "m42_contact_null_retained": true,
+    "m42_qf_reference_increment_requirement_retained": true,
+    "m42_compensated_residual_resolved": true,
+    "defaults_unchanged": true,
+    "no_new_sentaurus_execution": true,
+    "all_checks_pass": true
+  },
+  "claim_policy": [
+    "M41/M42 failed status records superseded historical expectations, not workflow nonconvergence.",
+    "M43 and M44 attribution is separated because M41/M42 had not been rerun between those fixes.",
+    "No production physics, HFS, equal-ni default, or Sentaurus reference was changed."
+  ]
+}

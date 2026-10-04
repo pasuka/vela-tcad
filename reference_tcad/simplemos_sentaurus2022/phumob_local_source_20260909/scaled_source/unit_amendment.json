@@ -1,0 +1,5 @@
+{
+  "prior": "Four zero/source preflights had relative insertion error 1; DC launch was blocked.",
+  "cause": "Scope source is in normalized continuity-row units. nodeRecombinationRate feeds an unscaled assembly; continuity residual is subsequently divided by C0*D0. The initial injection omitted this factor.",
+  "repair": "Multiply only the diagnostic additive source by C0*D0 before source assembly; preserve source definition, physical pair-source scope, alpha and all gates. No production source change."
+}

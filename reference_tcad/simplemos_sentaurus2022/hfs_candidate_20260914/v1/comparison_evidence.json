@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/comparison.csv": "160cc392989eb4c5072a11c1326c2417f0bb52a0b8a6e60717d46d4921af26dc",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/dc_evidence.json": "0ab06a111bcf09e72be97c1943cd052628a7329a135b17997ca35ec5e64b16d6",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/selected_states.csv": "d374f7ecb88f2b72e0c6a67b8a2fb21796222c2491536e9fd6d81bc1243c7085",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/summary.json": "35a4ddc1898d8ab476980dfe9c06a6ac926467b9a0962596fa15c2dc06314437"
+  }
+}

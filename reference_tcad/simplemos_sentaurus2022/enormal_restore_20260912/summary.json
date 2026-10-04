@@ -1,0 +1,15 @@
+{
+  "points": 8,
+  "native_states": 16,
+  "native_qualified": 16,
+  "identity_passed": 8,
+  "observer_final_state_exact": true,
+  "observer_field_max_V_per_cm": 1.6239937394857407e-08,
+  "cell_gradient_max_V_per_cm": 1.5832483768463135e-08,
+  "prior_diagnostic_floor_max_relative": 2.990253797907627e-06,
+  "mathematical_e_max_relative": 1.3826380040882214e-09,
+  "mathematical_h_max_relative": 7.35772248194877e-06,
+  "production_parameters_fitted": false,
+  "production_changed": false,
+  "acceptance_changed": false
+}

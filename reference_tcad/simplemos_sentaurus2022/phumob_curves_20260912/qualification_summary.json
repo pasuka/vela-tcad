@@ -1,0 +1,13 @@
+{
+  "points": 204,
+  "attempts": 408,
+  "failed_attempts": 0,
+  "reloads": 0,
+  "max_row": 3.5825851278589446e-07,
+  "max_port": 4.440892098500626e-16,
+  "max_dual_Id": 7.979680249903254e-10,
+  "max_dual_psi": 1.523753e-11,
+  "max_dual_phin": 5.6771846e-11,
+  "max_dual_phip": 2.96933173e-09,
+  "max_dual_density": 1.1485888729012572e-07
+}

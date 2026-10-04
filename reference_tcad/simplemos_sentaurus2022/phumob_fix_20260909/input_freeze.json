@@ -1,0 +1,28 @@
+{
+  "input_hashes": {
+    "build-release/phumob_fix_20260909/inputs/m65_n19_vd_0p050000_endpoint/native/config.json": "ebb2d15859b6c9b3f0fff31560fe846ab111571c16dcf6cd37b6ec5934833ccb",
+    "build-release/phumob_fix_20260909/inputs/m65_n19_vd_0p050000_endpoint/vela/config.json": "e16c532e0f934c8db1f9393447d3539efb5b1c531d203bf9543501cb22a0ae7e",
+    "build-release/phumob_fix_20260909/inputs/m65_n19_vd_1p000000_endpoint/native/config.json": "2ceb4cdfcedc9ecd0a10cd8eab5948d98b4fc6e4570ec866bc4d73eced775628",
+    "build-release/phumob_fix_20260909/inputs/m65_n19_vd_1p000000_endpoint/vela/config.json": "ad27d02447e0c3e6b88eebb84708bf788bcf73d50d87ac4897c42a8cea5ff224",
+    "build-release/phumob_fix_20260909/inputs/m65_n23_vd_0p050000_endpoint/native/config.json": "77fa66d3d6812347a1a03c6e1e32e9a2f23db2863f069c6df3a4dd3c7fe14554",
+    "build-release/phumob_fix_20260909/inputs/m65_n23_vd_0p050000_endpoint/vela/config.json": "07b2e59ad10ae39a3a01128526336232dca51f540ae2b9a7f2a4c37958908463",
+    "build-release/phumob_fix_20260909/inputs/m65_n23_vd_1p000000_endpoint/native/config.json": "e279f72e1f402059f3bc0825129123b1fbcda36c959e147b1764f57934b658f8",
+    "build-release/phumob_fix_20260909/inputs/m65_n23_vd_1p000000_endpoint/vela/config.json": "2c8e3effa61d2f934e6b936ccaa568689223ac3d765578857bb12faa87087635",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n19/doping.csv": "b6b41fa3f519c5ed4b645f1e9430cd1f86ec2093334e93054d9a881f4f4332c7",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n23/doping.csv": "e1afbfb11018166065a4917149541c55be835aa0fe23219432c58857a78dcd6a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json": "be50eb40a52bb13e049eaf1b8ddd12f706e45175415974484aad734dca069ff4",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json": "91a068dab450d03b6587762b257e66b7644e7f2704ca108da36f3a4b70e5c85f",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/initial/m65_n19_vd_0p050000_endpoint/vg_040/state.csv": "b46db9e64b305e8e7b2f0ffa1979281f81770c154c4d5e58cb1e53e16dab76d1",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/initial/m65_n19_vd_1p000000_endpoint/vg_040/state.csv": "9856b80cf6774b1ba2f54475a648113679834786941523d7e496ff0a52122625",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/initial/m65_n23_vd_0p050000_endpoint/vg_040/state.csv": "99e1e7098fe625a1b962e6cc9f94ae5e8c7f972652d2a7392cd982bdfe0e4c69",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/initial/m65_n23_vd_1p000000_endpoint/vg_040/state.csv": "0a83425a7f2bfbc8d093aae5ec664ff52d8fcc85fad3c8d733398a450ed60173",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/materials.json": "fccdc915c4d1da56035f8e93f8842fad544c6b277bfc262c10a7989b5006187f",
+    "build-release/simplemos_bgn_restore_20260908/vela/old_slotboom/m65_n19_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "e33b7f00a4f29975eb591d92ab33dc6c24eaad13f3dab6b8a6fd7b1731f50b7b",
+    "build-release/simplemos_bgn_restore_20260908/vela/old_slotboom/m65_n19_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "9b0ca124b4cd675a9b43f9bec0bd77c4640ced0e22fd455f0dabbd05b620332a",
+    "build-release/simplemos_bgn_restore_20260908/vela/old_slotboom/m65_n23_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "10db7e131cefdc15cc837dd90f15f8c45749b6e235cadc411c83e7f20ffdd864",
+    "build-release/simplemos_bgn_restore_20260908/vela/old_slotboom/m65_n23_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "327e0bc9fb9b84ae2adb994e04419211b9da253c92394f35c0853b4a4e5bf896",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/baseline.json": "b5cdb461527fded00d561d71464a4274409562327c00fd0705455ad221dd9fd4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/contract.json": "c77da5347f7d57a02d387beb9c9d0dc61b94b130d942cfbbd6264cb63c264ddd",
+    "scripts/validate_simplemos_phumob_chain_fix_20260909.py": "615b422fa6ab767635c785ff09671fc1d2a9841c3443f9ac39b1bd5d5a811776"
+  }
+}

@@ -189,6 +189,12 @@ struct NewtonConfig {
     Real quasiFermiTrustRegionExpansionThreshold = 0.75; ///< Minimum actual/predicted residual decrease ratio for radius expansion.
     Real quasiFermiTrustRegionShrinkFactor = 1.0; ///< Radius contraction after a backtracked accepted step; 1 disables contraction.
     Real quasiFermiTrustRegionMinMultiplier = 1.0; ///< Positive minimum multiplier used by adaptive contraction.
+    // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
+    int linearRefinementIterations = 0;
+    std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.
+    bool splitDDState = false; ///< Opt-in unified hi/lo plain-PhuMob state.
+    bool stableMeritComparison = false; ///< Exact-sign squared-norm comparison for unweighted L2 merit searches.
+    bool exactDirichletUpdates = false; ///< Remove direct-solve roundoff from exact Dirichlet identity-row updates.
     Real stallResidualFloor = 1.0e-9; ///< Residual floor for accepting line-search stalls as solved.
     Real poissonLineSearchStallResidualFloor = 1.0e-6; ///< Poisson-block floor for near-flat line-search stalls.
     Real poissonLineSearchStallRelativeIncrease = 1.0e-5; ///< Allowed best rejected residual increase at the Poisson floor.
@@ -200,6 +206,7 @@ struct NewtonConfig {
     bool carrierRowQualifiedStallAcceptance = false; ///< Accept a non-decreasing line-search stall within the configured block/contact floors only when enforced local carrier rows are all satisfied.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     CarrierDiagonalFloorRegularizationConfig carrierDiagonalFloor{}; ///< Optional absolute floor for depleted minority carrier-row diagonals.
+    RegionResolvedInterfaceAssemblyConfig regionResolvedInterfaceAssembly{}; ///< Diagnostic region-local interface geometry with shared potential nodes.
     NewtonCarrierRowConvergenceConfig carrierRowConvergence{}; ///< Optional per-carrier-row local residual convergence check.
     NewtonLocalUpdateDiagnosticsConfig localUpdateDiagnostics{}; ///< Opt-in raw/capped/applied Newton-step trace.
     NewtonCarrierRowRecoveryConfig carrierRowRecovery{}; ///< Optional recovery pass for locally unbalanced carrier rows.
@@ -551,6 +558,17 @@ struct NewtonCarrierRowDiagnostic {
     Real holeOffdiagAbsSum = 0.0;
     Real electronRowL2Norm = 0.0;
     Real holeRowL2Norm = 0.0;
+    Real electronPsiColumnAbsSum = 0.0;
+    Real electronPhinColumnAbsSum = 0.0;
+    Real electronPhipColumnAbsSum = 0.0;
+    Real electronContactColumnAbsSum = 0.0;
+    Real electronFreeColumnAbsSum = 0.0;
+    Real electronPsiContactColumnAbsSum = 0.0;
+    Real electronPsiFreeColumnAbsSum = 0.0;
+    Real electronPhinContactColumnAbsSum = 0.0;
+    Real electronPhinFreeColumnAbsSum = 0.0;
+    Real electronPhipContactColumnAbsSum = 0.0;
+    Real electronPhipFreeColumnAbsSum = 0.0;
     Real rawDeltaPhin_V = 0.0;
     Real rawDeltaPhip_V = 0.0;
     Real cappedDeltaPhin_V = 0.0;
@@ -683,6 +701,24 @@ struct NewtonCarrierTermDiagnosticsEvaluation {
     std::vector<CoupledDDCarrierTermDiagnostic> rows;
 };
 
+/// First-order terminal-current sensitivity evaluated on the production
+/// drift-diffusion Jacobian.  The packed vectors use the solver ordering
+/// [psi, phin, phip].  `stateDerivative` is the direct functional gradient
+/// dI/dx, while `adjoint` solves J^T lambda = dI/dx with the same boundary
+/// conditions and scaling as the Newton solve.
+struct NewtonTerminalCurrentAdjointEvaluation {
+    Real current = 0.0;
+    Real contactBias_V = 0.0;
+    Real potentialScale_V = 1.0;
+    Real stateDerivativeNorm = 0.0;
+    Real adjointNorm = 0.0;
+    Real adjointResidualNorm = 0.0;
+    Real adjointRelativeResidual = 0.0;
+    int nodeCount = 0;
+    VectorXd stateDerivative;
+    VectorXd adjoint;
+};
+
 struct NewtonJacobianBlockAuditRow {
     std::string block;
     std::string configurationFingerprint;
@@ -755,7 +791,8 @@ public:
     NewtonPoissonQfpCrossBlockEvaluation
     evaluatePoissonQfpCrossBlockDecomposition(
         const DDSolution& state,
-        const DDSolution& replacementState) const;
+        const DDSolution& replacementState,
+        bool computeConditionEstimates = true) const;
     NewtonDirectionalDerivativeEvaluation evaluateDirectionalDerivative(
         const DDSolution& state,
         const DDSolution& physicalPerturbation,
@@ -788,6 +825,14 @@ public:
         std::vector<Index> columnNodes = {}) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
+    std::vector<CoupledDDElectronTransportFactorDiagnostic>
+    evaluateElectronTransportFactorDiagnostics(
+        const DDSolution& state,
+        const DDSolution& replacementState) const;
+    CoupledDDElectronTransportSecantFactorEvaluation
+    evaluateElectronTransportSecantFactorDiagnostics(
+        const DDSolution& state,
+        const DDSolution& replacementState) const;
     std::vector<CoupledDDTransportEdgeJacobianDiagnostic>
     evaluateTransportEdgeJacobianDiagnostics(
         const DDSolution& state,
@@ -829,8 +874,19 @@ public:
         Real currentScale,
         const DDSolution* referenceState = nullptr) const;
 
+    /// State-aware terminal residual sum; retains split coordinate tails.
+    Real evaluateStateTerminalCurrent(const DDSolution& state,
+        const std::string& contactName,Real currentScale) const;
+
+    /// Solve J^T lambda = dI/dx for one terminal-current functional without
+    /// changing the device state or any configured physical model.
+    NewtonTerminalCurrentAdjointEvaluation evaluateTerminalCurrentAdjoint(
+        const DDSolution& state,
+        const std::string& contactName,
+        Real currentScale) const;
+
 private:
-    void configureQuasiFermiReferences(CoupledDDAssembler& assembler,
+    void configureAssemblerNumerics(CoupledDDAssembler& assembler,
                                       const DDSolution* state = nullptr) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;

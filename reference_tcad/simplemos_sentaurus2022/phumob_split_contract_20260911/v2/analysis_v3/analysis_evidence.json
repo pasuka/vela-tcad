@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "scripts/analyze_simplemos_split_contract_v3_20260911.py": "ad639789251177d2de5403ab9b21ff76416c7fb9d7e7caa7f329945394d1f6fd",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/run_evidence.json": "0d21bd077a6e8d34ba93d22990174aaf0c349fab82a564169895a4e56546fcb3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/analysis_v3/summary.csv": "cc2bfd9de5e7185f3e869501acd14270bf1ebe3d7541c993f357d95515feab25",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/analysis_v3/micro.csv": "2e7c8e3f691533964b18602b56906cc1a60745de373b307be7559f35ec581227",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/analysis_v3/directions.csv": "c6e26f77471c1195c11b0be6e141d72b7d98890a7c5c8480bf73a51bbdd2556e"
+  }
+}

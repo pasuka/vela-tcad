@@ -1,0 +1,46 @@
+{
+  "points": 204,
+  "native_qualified": 204,
+  "continuation_qualified": 204,
+  "independent_qualified": 204,
+  "dual_qualified": 204,
+  "comparison_qualified": 204,
+  "curves": [
+    {
+      "device": "n19",
+      "vd": 0.05,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.02059673131856732,
+      "error_max_percent": 0.0044925228224412805,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n19",
+      "vd": 1.0,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": 0.0012421334315115828,
+      "error_max_percent": 0.005535741920725812,
+      "worst_vg": 0.12
+    },
+    {
+      "device": "n23",
+      "vd": 0.05,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.02123459814876716,
+      "error_max_percent": 0.00592077971424132,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n23",
+      "vd": 1.0,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.8288028282056215,
+      "error_max_percent": 0.00675239841221309,
+      "worst_vg": 0.0
+    }
+  ]
+}

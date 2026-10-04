@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m75_poisson_charge_volume_report.v1",
+  "status": "accepted",
+  "milestone": "M75",
+  "classification": "hole_poisson_volume_not_material",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m75_hole_poisson_charge_volume_contract_v1.json",
+    "sha256": "6bbcca4b90cb91ccd7651e06c7ac11713c3f41a9084854244400d91d3ffc4cec"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_candidate_workflows": 16,
+    "reused_vela_baseline_workflows": 16,
+    "production_default_changed": false
+  },
+  "summary": {
+    "improved_pair_count": 7,
+    "median_pair_closure_fraction": 7.165804701281253e-07,
+    "minimum_pair_closure_fraction": 0.0,
+    "maximum_pair_closure_fraction": 1.3671532296255506e-06,
+    "median_baseline_pair_growth_dex": 0.03702897509661555,
+    "median_candidate_pair_growth_dex": 0.03702894558989098,
+    "median_self_consistent_pair_reduction_dex": 2.476755770960959e-08,
+    "median_m73_predicted_pair_reduction_dex": 0.0002632664221117742,
+    "m73_prediction_self_consistent_reduction_pearson": -0.22451684151029777,
+    "maximum_m73_prediction_error_dex": 0.00030104629994680276,
+    "high_nwell_median_baseline_absolute_error_dex": 0.05827133687010588,
+    "high_nwell_median_candidate_absolute_error_dex": 0.05827135068214406,
+    "high_nwell_maximum_baseline_absolute_error_dex": 0.06446948029244777,
+    "high_nwell_maximum_candidate_absolute_error_dex": 0.06446943709016657,
+    "maximum_curve_candidate_over_baseline_abs_log_shift_dex": 3.5454595008568837
+  },
+  "causal_scope": {
+    "closed": "Self-consistent M75 charge-volume intervention on all 16 M65 cases.",
+    "not_closed": "Diagnostic default-off result; no production-wide volume policy is qualified."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

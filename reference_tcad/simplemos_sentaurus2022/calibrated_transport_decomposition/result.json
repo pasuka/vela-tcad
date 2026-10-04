@@ -1,0 +1,11 @@
+{
+  "cases": 4,
+  "new_read_only_calls": 36,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "representation_passed": true,
+  "jvp_passed": true,
+  "linear_screen_passed_count": 4,
+  "m82_released": false,
+  "m83_released": false
+}

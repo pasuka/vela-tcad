@@ -1,0 +1,54 @@
+{
+  "schema": "vela.simplemos.sdevice.m42_no_bgn_self_consistent_interaction.v1",
+  "scope": "n23 Vd=0.05 V Vg=0.05 V, true no-BGN, HFS off",
+  "goal": "Separate transport arithmetic, SRH source, contact reconstruction, and quasi-Fermi state feedback after the M41 mixed-semantics finding.",
+  "self_consistent_factors": {
+    "equal_ni_flux_evaluation": [
+      "legacy_factor_difference",
+      "compensated_log_expm1"
+    ],
+    "srh": [true, false],
+    "contact_boundary_reconstruction": [
+      "dominant_signed_contact_mean",
+      "legacy_node_local"
+    ]
+  },
+  "frozen_operator_matrix": {
+    "state_contact_mode": "dominant_signed_contact_mean",
+    "operator_factor_count": 8,
+    "state_count": 4,
+    "probes": [
+      "sg_edge_flux_probe",
+      "newton_carrier_term_probe"
+    ]
+  },
+  "quasi_fermi_substitutions": [
+    "srh_on_baseline",
+    "absolute_qf_only_roundtrip",
+    "psi_from_srh_off",
+    "electron_qf_density_from_srh_off",
+    "hole_qf_density_from_srh_off",
+    "all_carriers_from_srh_off",
+    "full_srh_off_state"
+  ],
+  "pre_registered_hypotheses": [
+    "SRH has no direct effect on a frozen-state SG drain cut; any terminal response is state feedback.",
+    "A uniform SimpleMOS ohmic contact makes the two contact reconstruction policies a null or negligible control.",
+    "The SRH-dependent current response is primarily mediated by the electron quasi-Fermi and electron-density state.",
+    "Legacy equal-ni self-consistent states do not satisfy an operator-consistent drain-cut current at the reported terminal-current scale."
+  ],
+  "acceptance": {
+    "self_consistent_state_count": 8,
+    "frozen_operator_pair_count": 32,
+    "qf_substitution_count": 14,
+    "maximum_compensated_cut_reported_gap_dex": 0.01,
+    "minimum_legacy_cut_reported_gap_dex": 1.0,
+    "minimum_compensated_absolute_qf_roundtrip_loss_dex": 2.0
+  },
+  "claim_policy": [
+    "M42 changes no production default.",
+    "M42 reuses the frozen M40 Sentaurus reference and performs no new Sentaurus execution.",
+    "Operator-direct and self-consistent feedback effects are reported separately.",
+    "A failed hypothesis is retained as a completed causal result."
+  ]
+}

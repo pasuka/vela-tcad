@@ -1,0 +1,26 @@
+{
+  "status": "requested_audit_and_minimal_contrast_executed_strict_qualification_incomplete",
+  "read_only_states": 64,
+  "endpoint_identities_passed": 32,
+  "endpoint_count": 32,
+  "stall_identities_failed": 19,
+  "stall_count": 32,
+  "strict_initial_passed": 0,
+  "acceptance_only_passed": 1,
+  "acceptance_only_count": 4,
+  "qualified_high_low_pairs": 0,
+  "new_nonlinear_reclosures": 12,
+  "new_sentaurus_runs": 0,
+  "new_bias_sweeps": 0,
+  "max_observed_original_control_shift_dex": 2.3561026876378453e-06,
+  "control_and_acceptance_only_state_hashes_identical": true,
+  "limitations": [
+    "VTK-reconstructed states failing current identity are excluded from quantitative conclusions about the original saved solve.",
+    "Global source-relative gates are unqualified below the explicit source floor; satisfied=true is not source-relative closure evidence.",
+    "Failed strict states and small observed Id movement cannot establish an upper bound on the fully converged correction.",
+    "global_continuity_closure report/enforce both alter Newton line-search merit in the current implementation."
+  ],
+  "m79_m81_historical_evidence_preserved": true,
+  "m82_released": false,
+  "m83_released": false
+}

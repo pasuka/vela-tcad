@@ -1,0 +1,13 @@
+{
+  "schema": "vela.simplemos.sdevice.m73_material_partitioned_poisson_ledger_report.v1",
+  "status": "superseded_after_execution",
+  "classification": "material_partition_material_but_not_dominant",
+  "contract_sha256": "a216cf98a611cfb0aa7f9a6fa6d67b497c868a9003bf7487e3542037038a5d84",
+  "execution_identity": {
+    "maximum_vela_production_poisson_replay_correction_V": 4.912976877835192e-09,
+    "maximum_component_sum_identity_error_V": 1.0333348759994365e-12,
+    "maximum_coordinate_error_um": 0.0,
+    "maximum_sentaurus_shared_node_potential_spread_V": 0.0
+  },
+  "superseded_reason": "V1 compared each candidate operator's absolute correction directly with the observed Vela-minus-Sentaurus target. A candidate that removes the production residual should instead be scored by production correction minus candidate correction. V2 corrects only this attribution definition and reuses the identical frozen states and offline operator responses."
+}

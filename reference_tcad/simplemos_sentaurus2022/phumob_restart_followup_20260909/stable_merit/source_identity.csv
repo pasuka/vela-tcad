@@ -1,0 +1,11 @@
+key,label,configuration_identity,state_identity
+m65_n19_vd_0p050000_endpoint,zero,True,False
+m65_n19_vd_0p050000_endpoint,plus_full,True,True
+m65_n19_vd_0p050000_endpoint,minus_full,True,True
+m65_n19_vd_0p050000_endpoint,plus_half,True,True
+m65_n19_vd_0p050000_endpoint,minus_half,True,True
+m65_n23_vd_0p050000_endpoint,zero,True,True
+m65_n23_vd_0p050000_endpoint,plus_full,True,True
+m65_n23_vd_0p050000_endpoint,minus_full,True,True
+m65_n23_vd_0p050000_endpoint,plus_half,True,True
+m65_n23_vd_0p050000_endpoint,minus_half,True,True

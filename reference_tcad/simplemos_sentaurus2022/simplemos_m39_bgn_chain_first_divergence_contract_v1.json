@@ -1,0 +1,38 @@
+{
+  "schema": "vela.simplemos.sdevice.m39_bgn_chain_first_divergence_contract.v1",
+  "scope": "Read-only frozen-state audit of Sentaurus BGN model selection, doping observability, OldSlotboom deltaEg, density reconstruction, and band-edge split",
+  "states": [
+    "m27_full",
+    "m27_no_hfs",
+    "m29_bgn_on_srh_off",
+    "m29_bgn_off_srh_on"
+  ],
+  "evaluation_order": [
+    "C-1 effective model selection from sdevice log",
+    "C0 native donor and acceptor observability and input identity",
+    "C1 deltaEg from total, absolute-net, and maximum-species concentration conventions",
+    "C2 BandGap convention",
+    "C3 frozen Boltzmann density reconstruction",
+    "C4 frozen target-node and target-edge values",
+    "C5 conduction and valence band split"
+  ],
+  "doping_policy": {
+    "m27": "Use native doping.csv and independently exported DonorConcentration and AcceptorConcentration fields.",
+    "m29": "Do not score C0 because donor and acceptor fields were omitted. Permit the M27 full input doping only after exact node-id and coordinate identity; label all such downstream use explicitly."
+  },
+  "acceptance": {
+    "m27_c0_max_relative_difference": 1e-15,
+    "m27_c1_total_impurity_max_abs_difference_eV": 1e-12,
+    "m27_c3_max_joint_fit_rms": 1e-10,
+    "m27_c5_share_absolute_tolerance": 1e-10,
+    "require_m29_off_label_mismatch_detection": true,
+    "require_missing_m29_doping_not_silently_scored": true
+  },
+  "claim_policy": [
+    "The sdevice solver log is authoritative for the effective BGN model; omission of an explicit model is not interpreted as BGN off.",
+    "Missing donor or acceptor observables are not replaced by zeros for a C0 score.",
+    "A Bennett/Wilson versus Vela OldSlotboom deltaEg difference is diagnostic, not a same-model parity score.",
+    "M29 terminal currents remain measured results, but an invalid BGN-off label invalidates the corresponding causal effect estimate.",
+    "No Sentaurus rerun, Vela solve, or production default change is part of M39."
+  ]
+}

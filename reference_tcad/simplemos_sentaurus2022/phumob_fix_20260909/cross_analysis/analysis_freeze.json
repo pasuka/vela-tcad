@@ -1,0 +1,6 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/cross/raw_evidence.json": "a32f76293a5bbdbd3ecbe6d438f5fc5dcc962f7f326b0e1f38d217dc8e703586",
+    "scripts/analyze_simplemos_phumob_assembled_cross_20260909.py": "331b6f86c1da384372edda8d71dce3fb1aa060df799550895f144d1ad35b4a48"
+  }
+}

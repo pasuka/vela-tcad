@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -30,6 +31,7 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory,
                              bool includeFieldValues = false)
 {
     nlohmann::json data;
+    data["coordinate_unit"] = inventory.coordinate_unit;
     data["vertex_count"] = inventory.vertices.size();
     data["region_count"] = inventory.regions.size();
     data["dataset_count"] = inventory.fields.size();
@@ -39,6 +41,7 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory,
             {"index", region.index},
             {"name", region.name},
             {"material", region.material},
+            {"material_type", region.material_type},
             {"type", regionTypeCode(region.type)},
             {"triangles", region.triangles.size()},
             {"edges", region.edges.size()},
@@ -57,6 +60,7 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory,
             {"index", region.index},
             {"name", region.name},
             {"material", region.material},
+            {"material_type", region.material_type},
             {"type", regionTypeCode(region.type)},
             {"triangles", nlohmann::json::array()},
             {"edges", nlohmann::json::array()},
@@ -88,11 +92,86 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory,
     return data;
 }
 
+SentaurusTdrQualificationContract qualificationContractFromJson(
+    const nlohmann::json& document)
+{
+    const nlohmann::json& data = document.contains("input_tdr_qualification")
+        ? document.at("input_tdr_qualification")
+        : document;
+    if (data.value("schema", std::string{}) != "vela.sentaurus_tdr.qualification.v1") {
+        throw std::runtime_error(
+            "qualification contract schema must be vela.sentaurus_tdr.qualification.v1");
+    }
+    if (data.value("export_coordinate_unit", std::string{"um"}) != "um") {
+        throw std::runtime_error(
+            "qualification contract export_coordinate_unit must be um");
+    }
+
+    SentaurusTdrQualificationContract contract;
+    contract.requiredContactNames =
+        data.at("required_contacts").get<std::vector<std::string>>();
+    contract.requireExactContactSet = data.value("exact_contact_set", true);
+    contract.allowedMaterials =
+        data.at("allowed_materials").get<std::vector<std::string>>();
+    contract.semiconductorMaterials =
+        data.at("semiconductor_materials").get<std::vector<std::string>>();
+    contract.acceptedCoordinateUnits =
+        data.at("accepted_coordinate_units").get<std::vector<std::string>>();
+    contract.acceptedDopingUnits =
+        data.at("accepted_doping_units").get<std::vector<std::string>>();
+    contract.requireCompleteSemiconductorDoping =
+        data.value("require_complete_semiconductor_doping", true);
+    return contract;
+}
+
+nlohmann::json qualificationJson(
+    const SentaurusTdrQualificationReport& report,
+    const SentaurusTdrInventory& inventory,
+    const std::string& source,
+    const std::string& contractPath)
+{
+    nlohmann::json data = {
+        {"schema", "vela.sentaurus_tdr.qualification_report.v1"},
+        {"source", source},
+        {"contract", contractPath},
+        {"passed", report.passed},
+        {"inventory", {
+            {"coordinate_unit", inventory.coordinate_unit},
+            {"vertex_count", inventory.vertices.size()},
+            {"region_count", inventory.regions.size()},
+            {"dataset_count", inventory.fields.size()},
+        }},
+        {"checks", nlohmann::json::array()},
+    };
+    for (const auto& check : report.checks) {
+        data["checks"].push_back({
+            {"code", check.code},
+            {"passed", check.passed},
+            {"message", check.message},
+        });
+    }
+    return data;
+}
+
+void writeJsonFile(const std::string& path, const nlohmann::json& data)
+{
+    const std::filesystem::path output(path);
+    if (!output.parent_path().empty()) {
+        std::filesystem::create_directories(output.parent_path());
+    }
+    std::ofstream out(output);
+    if (!out.is_open()) {
+        throw std::runtime_error("cannot open JSON output: " + path);
+    }
+    out << data.dump(2) << "\n";
+}
+
 void usage()
 {
     std::cerr
         << "Usage: sentaurus_import --tdr FILE [--inventory-json FILE] [--export-dir DIR] "
            "[--field-values-json FILE] "
+           "[--qualification-contract FILE --qualification-report FILE] "
            "[--coordinate-unit um|cm] "
            "[--compensated-doping-policy reported|dominant_signed_region]\n";
 }
@@ -106,6 +185,8 @@ int main(int argc, char** argv)
         std::string inventoryPath;
         std::string fieldValuesPath;
         std::string exportDir;
+        std::string qualificationContractPath;
+        std::string qualificationReportPath;
         SentaurusTdrExportOptions exportOptions;
         for (int i = 1; i < argc; ++i) {
             const std::string arg = argv[i];
@@ -123,6 +204,10 @@ int main(int argc, char** argv)
                 fieldValuesPath = requireValue("--field-values-json");
             } else if (arg == "--export-dir") {
                 exportDir = requireValue("--export-dir");
+            } else if (arg == "--qualification-contract") {
+                qualificationContractPath = requireValue("--qualification-contract");
+            } else if (arg == "--qualification-report") {
+                qualificationReportPath = requireValue("--qualification-report");
             } else if (arg == "--compensated-doping-policy") {
                 exportOptions.compensatedDopingPolicy = requireValue("--compensated-doping-policy");
             } else if (arg == "--coordinate-unit") {
@@ -138,26 +223,43 @@ int main(int argc, char** argv)
             usage();
             return 2;
         }
+        if (qualificationContractPath.empty() != qualificationReportPath.empty()) {
+            throw std::runtime_error(
+                "--qualification-contract and --qualification-report must be provided together");
+        }
 
         SentaurusTdrReader reader;
-        if (!exportDir.empty()) {
-            reader.exportNeutral(tdrPath, exportDir, exportOptions);
-        }
         const auto inventory = reader.readInventory(tdrPath);
         const auto json = inventoryJson(inventory);
         if (!inventoryPath.empty()) {
-            std::ofstream out(inventoryPath);
-            out << json.dump(2) << "\n";
+            writeJsonFile(inventoryPath, json);
         } else {
             std::cout << json.dump(2) << "\n";
         }
-        if (!fieldValuesPath.empty()) {
-            std::ofstream out(fieldValuesPath);
-            if (!out.is_open()) {
+        if (!qualificationContractPath.empty()) {
+            std::ifstream contractInput(qualificationContractPath);
+            if (!contractInput.is_open()) {
                 throw std::runtime_error(
-                    "cannot open field-values JSON: " + fieldValuesPath);
+                    "cannot open qualification contract: " + qualificationContractPath);
             }
-            out << inventoryJson(inventory, true).dump(2) << "\n";
+            nlohmann::json contractDocument;
+            contractInput >> contractDocument;
+            const auto contract = qualificationContractFromJson(contractDocument);
+            const auto report = reader.qualify(inventory, contract);
+            writeJsonFile(
+                qualificationReportPath,
+                qualificationJson(
+                    report, inventory, tdrPath, qualificationContractPath));
+            if (!report.passed) {
+                throw std::runtime_error(
+                    "TDR qualification failed; see " + qualificationReportPath);
+            }
+        }
+        if (!exportDir.empty()) {
+            reader.exportNeutral(tdrPath, exportDir, exportOptions);
+        }
+        if (!fieldValuesPath.empty()) {
+            writeJsonFile(fieldValuesPath, inventoryJson(inventory, true));
         }
     } catch (const std::exception& ex) {
         std::cerr << "sentaurus_import: " << ex.what() << "\n";

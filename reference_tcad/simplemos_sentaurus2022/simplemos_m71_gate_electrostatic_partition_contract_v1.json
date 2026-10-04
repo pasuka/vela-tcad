@@ -1,0 +1,92 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_contract.v1",
+  "milestone": "M71",
+  "status": "draft_before_freeze",
+  "objective": "Determine whether the remaining matched-ni high-NWell Id-Vg error growth is carried by gate-induced surface-potential/oxide-drop partition and semiconductor charge response on the already frozen M65/M69 states.",
+  "upstream": {
+    "required_m69_status": "frozen",
+    "required_m69_classification": "gate_stage_dominant",
+    "required_m70_status": "frozen",
+    "required_m70_classification": "transport_support_proxy_not_material"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "state_source": "M69 drain and gate stages on the M65 matched-ni no-BGN path",
+    "oxide_relative_permittivity": 3.9,
+    "gate_footprint_lateral_um": [-0.125, 0.125],
+    "gate_charge_observer": "P1 oxide-boundary displacement-flux reconstruction on the common mesh; Sentaurus ContactCharge is an independent qualification observer",
+    "production_default_changed": false
+  },
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "stage_count_per_case": 2,
+    "stages": ["drain", "gate"],
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.9},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.85},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8}
+    ]
+  },
+  "observables": {
+    "fixed_node_partition": [
+      "gate-boundary potential response",
+      "Si surface-potential response",
+      "oxide potential-drop response",
+      "cross-solver surface-potential current proxy"
+    ],
+    "charge_partition": [
+      "reconstructed gate displacement charge",
+      "Sentaurus native ContactCharge",
+      "gate-footprint electron charge",
+      "gate-footprint hole charge",
+      "gate-footprint ionized-dopant charge",
+      "gate-footprint net semiconductor charge"
+    ],
+    "identity": "For each solver and fixed lateral line, delta gate-boundary potential = delta Si surface potential + delta oxide drop."
+  },
+  "analysis": {
+    "primary_metric": "median closure of M65 matched-ni NWell current-pair growth by the fixed-node surface-potential pair proxy",
+    "pair_closure": "clamp(1-abs(current_pair_growth_dex-surface_pair_proxy_dex)/abs(current_pair_growth_dex),0,1)",
+    "classification_thresholds": {
+      "surface_partition_dominant_minimum_median_closure": 0.8,
+      "surface_partition_material_minimum_median_closure": 0.3
+    },
+    "classifications": [
+      "gate_surface_partition_dominant",
+      "gate_surface_partition_material_but_not_dominant",
+      "gate_surface_partition_not_material",
+      "execution_or_identity_failure"
+    ]
+  },
+  "acceptance": {
+    "required_case_count": 16,
+    "required_stage_count": 32,
+    "required_pair_count": 8,
+    "maximum_coordinate_error_um": 1e-10,
+    "maximum_gate_partition_identity_error_V": 1e-10,
+    "maximum_sentaurus_gate_voltage_error_V": 1e-10,
+    "maximum_sentaurus_reconstructed_to_native_gate_charge_relative_error": 0.25,
+    "minimum_gate_boundary_edge_count": 40,
+    "production_reference_must_not_be_replaced": true
+  },
+  "interpretation_guards": [
+    "surface potential and oxide drop are complementary voltage-partition views, not independent causal knobs",
+    "a scalar integrated charge correlation does not prove a local transport closure",
+    "no production reference replacement"
+  ],
+  "closed_topic_guards": [
+    "no HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN or Nc/Nv tuning",
+    "no mesh or convergence tuning"
+  ]
+}

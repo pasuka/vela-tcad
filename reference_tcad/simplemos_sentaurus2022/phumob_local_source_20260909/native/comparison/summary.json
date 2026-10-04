@@ -1,0 +1,13 @@
+{
+  "native_DC": 20,
+  "qualified_native_DC": 20,
+  "source_site_checks": 160,
+  "qualified_source_sites": 160,
+  "native_responses": 8,
+  "qualified_native_responses": 8,
+  "qualified_cross_solver_responses": 8,
+  "maximum_raw_response_relative": 1.001879940321082e-05,
+  "maximum_charge_normalized_relative": 4.281926465621311e-07,
+  "previous_Vela_field_response_qualified": "6/8",
+  "finite_volume_replacement": false
+}

@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m61_path_sensitivity_gate_evidence.v1",
+  "status": "frozen",
+  "decision": "not_required_m60_decisive",
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m62_active_species_topology_intervention_evidence.json": "d452dd49895c8acc1dbcb72b86376cf7d261b45fe4b3daf89e2a97e9d871ddb7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m63_smooth_nwell_attribution_evidence.json": "2480a8ad273d8953566f525cb5806d56351b7bb365b4695baa9c0202a94ac38c"
+  },
+  "implementation_hashes": {
+    "scripts/run_simplemos_m61_path_sensitivity_gate.py": "1f4f7457d51baa07d726159d744e7b78fc587f412871dc493bb5d43ee73e0347"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/path_sensitivity_gate/m61_path_sensitivity_gate_report.json": "fdfc085de5a930a5ca9e63ccf3f1f31cdee0d7aefecbc10597d14e3052a37379",
+    "docs/validation/simplemos_m61_path_sensitivity_gate_2026-09-02.md": "15f8847ef904aa950dfc38771837e9349eadd28f6f5cbc4b93590dbfb0156070",
+    "docs/validation/reports/simplemos_m61/artifact.json": "a628a013606ca6a72c032376bf55550f5690258154b786e00911812a3bdd0feb"
+  },
+  "acceptance": {
+    "m60_evidence_frozen": true,
+    "m60_classification_decisive": true,
+    "m60_zero_remaining_bursts": true,
+    "m62_stop_result_frozen": true,
+    "m63_independent_track_frozen": true,
+    "m61_e2_not_executed": true,
+    "production_defaults_not_changed": true,
+    "all_checks_pass": true
+  }
+}

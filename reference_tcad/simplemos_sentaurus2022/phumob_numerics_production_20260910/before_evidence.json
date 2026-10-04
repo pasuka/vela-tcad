@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/before/build-release/CMakeFiles/vela_example_runner.dir/src/tools/vela_example_runner.cpp.obj": "c07650a3e55c990d22042e19bdf0a1f8b5fe1f1f4901058912e5adf883d33643",
+    "build-release/phumob_numerics_production_20260910/before/build-release/libvela_core.a": "45efc8522243b1d047fa674fc31b7a49c5ada5646b4e6c21d1ff68a5f48e9756",
+    "build-release/phumob_numerics_production_20260910/before/build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "build-release/phumob_numerics_production_20260910/before/docs/config_schema.md": "f303069858d573bb0c7d33dbd4c9be254dadd0d710e9f632e0e86674e34ac205",
+    "build-release/phumob_numerics_production_20260910/before/include/vela/equation/CoupledDDAssembler.h": "5ebc5d394397898eb883fb02cd47bec3d540cd21afaefefee29151c1e4674548",
+    "build-release/phumob_numerics_production_20260910/before/include/vela/solver/NewtonSolver.h": "4bd2a7d9920a33992ed6efb31f1fcb1f4c9f18e38cd2639eda070cc3393ec9bd",
+    "build-release/phumob_numerics_production_20260910/before/src/equation/CoupledDDAssembler.cpp": "8620d655c44702626f7051e399f872a8f01cc10b6d7108b2ca4218f05f5b8799",
+    "build-release/phumob_numerics_production_20260910/before/src/solver/NewtonSolver.cpp": "59201c936f6fa2519fd8f55542af6ebf9bcbb7f08d15309c22abe571ce0d40f0",
+    "build-release/phumob_numerics_production_20260910/before/tests/test_production_numerics.cpp": "27bff7ac3eeb2b4bb9d1f123e1481c8a7d73ec289290114ddf1c71295f9b06c2",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/before.json": "bd68ac2651e6cd07d35c6453c6e0be03013ace3501dbb12edc29b7fff4de1cee",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/stage_evidence.json": "9d2671f4ad2a5b45cb704f7d7084d19372b457df7a2e473c5c3e90adf2244cdf"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "vela.simplemos.sdevice.m54_terminal_common_mode_attribution_contract_freeze.v1",
+  "status": "frozen_before_analysis",
+  "frozen_on": "2026-09-02",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m54_terminal_common_mode_attribution_contract_v1.json",
+  "contract_sha256": "ca17c04edaa6adb237560e19ae6718f300250edb5292ac2efc0824378f23a3a7",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m53_direct_current_full_matrix_evidence.json": "7bfcc92c3732d5ed216f0080071b72ffcfe7bb21efd545c4819cf907aa25b678",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_current_full_matrix_report.json": "4c91a0a7eef0439b46aa6319d891c189e05ef954628ecb332f90ab32710587f2"
+  },
+  "thresholds_frozen_before_analysis": true,
+  "new_solver_execution": false
+}

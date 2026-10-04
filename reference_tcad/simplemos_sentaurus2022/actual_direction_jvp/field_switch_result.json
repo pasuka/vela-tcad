@@ -1,0 +1,8 @@
+{
+  "rows": 53352,
+  "residual_differences_identical": true,
+  "Jv_identical": true,
+  "interpretation": "Switch alone cannot repair observed vector-drive defect if both operators are identical. Current default is true; do not diagnose missing user configuration.",
+  "nonlinear_solves": 0,
+  "m82_released": false
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M59 port-observable decomposition",
+  "status": "accepted",
+  "classification": "port_observable_burst_association_plus_smooth_nwell_growth",
+  "summary": "The positive 0.36-scale drain-error association is low-drain-specific; default-minus-Direct is an observable gap, while continuity-residual causality remains an M60 hypothesis.",
+  "report": "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_port_observable_decomposition_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_pointwise_observable_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_curve_decomposition_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_pair_decomposition_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_threshold_scope_sensitivity_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_kcl_topology_stratification_ledger.csv"
+  ]
+}

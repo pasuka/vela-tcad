@@ -77,6 +77,12 @@
       "required": ["supported", "metadata_only"],
       "additionalProperties": false,
       "properties": {
+        "model_paths": {
+          "type": "array",
+          "description": "Distinct scope-qualified Physics model paths recorded by the parser. Optional for older v1 documents.",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
         "supported": {
           "type": "array",
           "items": {

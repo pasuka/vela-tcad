@@ -1,0 +1,53 @@
+{
+  "schema": "vela.simplemos.sdevice.m77_poisson_charge_volume_report.v1",
+  "status": "accepted",
+  "milestone": "M77",
+  "classification": "combined_poisson_volume_not_material",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m77_combined_poisson_charge_volume_contract_v1.json",
+    "sha256": "078c9afa451a721a52622a3212272991ecf783060af63780d14bc5a9a2cdc099"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_candidate_workflows": 16,
+    "reused_vela_baseline_workflows": 16,
+    "production_default_changed": false
+  },
+  "summary": {
+    "improved_pair_count": 3,
+    "median_pair_closure_fraction": 0.0,
+    "minimum_pair_closure_fraction": 0.0,
+    "maximum_pair_closure_fraction": 0.09214950486995244,
+    "median_baseline_pair_growth_dex": 0.03702897509661555,
+    "median_candidate_pair_growth_dex": 0.03493762632174033,
+    "median_self_consistent_pair_reduction_dex": -0.0002713055955963842,
+    "median_m73_predicted_pair_reduction_dex": 0.02911003917305198,
+    "m73_prediction_self_consistent_reduction_pearson": 0.8454162920932875,
+    "maximum_m73_prediction_error_dex": 0.055545630449343214,
+    "high_nwell_median_baseline_absolute_error_dex": 0.05827133687010588,
+    "high_nwell_median_candidate_absolute_error_dex": 0.0813750769156305,
+    "high_nwell_maximum_baseline_absolute_error_dex": 0.06446948029244777,
+    "high_nwell_maximum_candidate_absolute_error_dex": 0.0871967227410383,
+    "maximum_curve_candidate_over_baseline_abs_log_shift_dex": 3.545463032247203,
+    "median_independent_additive_reduction_dex": -0.0003463981575281376,
+    "median_combined_reduction_dex": -0.0002713055955963842,
+    "median_nonlinear_interaction_dex": 8.024199413376662e-05,
+    "maximum_absolute_nonlinear_interaction_dex": 0.00011660145004580708
+  },
+  "causal_scope": {
+    "closed": "Self-consistent M77 charge-volume intervention on all 16 M65 cases.",
+    "not_closed": "Diagnostic default-off result; no production-wide volume policy is qualified."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

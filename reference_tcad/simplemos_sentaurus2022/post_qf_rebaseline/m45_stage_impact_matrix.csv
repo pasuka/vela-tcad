@@ -1,0 +1,6 @@
+stage,rebaseline_status,impact,historical_contract
+M31,complete,numeric refresh; qualitative conclusion retained,retained
+M32,complete,numeric refresh; qualitative conclusion retained,retained
+M37,complete,bitwise unchanged control,retained
+M41,failed,M43 operator consistency now propagated,superseded; failure retained
+M42,failed,M43/M44 operator and QF packing closure propagated,superseded; failure retained

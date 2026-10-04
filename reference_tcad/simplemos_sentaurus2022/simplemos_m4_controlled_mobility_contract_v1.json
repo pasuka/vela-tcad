@@ -1,0 +1,132 @@
+{
+  "schema": "vela.simplemos.sdevice.m4_controlled_mobility.v1",
+  "contract_id": "simplemos-sdevice-m4-controlled-mobility-v1",
+  "scope": "SDevice-only controlled mobility comparison on the frozen nominal TDR",
+  "sentaurus_release": "T-2022.03-SP2",
+  "upstream_tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+  "controlled_invariants": {
+    "carrier_statistics": "maxwell_boltzmann",
+    "effective_intrinsic_density": "OldSlotboom NoFermi",
+    "recombination": "SRH(DopingDependence)",
+    "temperature_K": 300.0,
+    "electrodes": ["source", "drain", "gate", "substrate"],
+    "solve_sequence": ["poisson", "coupled_equilibrium", "drain_ramp", "gate_sweep"],
+    "gate_start_voltage_V": 0.0,
+    "gate_stop_voltage_V": 2.5
+  },
+  "variants": [
+    {
+      "id": "A0",
+      "change_from_previous": "baseline default constant mobility",
+      "sentaurus_mobility_models": [],
+      "vela_mobility_model": "constant"
+    },
+    {
+      "id": "A1",
+      "change_from_previous": "add low-field doping dependence",
+      "sentaurus_mobility_models": ["DopingDependence"],
+      "vela_mobility_model": "masetti"
+    },
+    {
+      "id": "A2",
+      "change_from_previous": "add lateral high-field saturation",
+      "sentaurus_mobility_models": ["DopingDependence", "HighFieldSaturation"],
+      "vela_mobility_model": "masetti_field",
+      "vela_high_field_driving_force": "quasi_fermi_gradient",
+      "vela_high_field_gradient_discretization": "transport_cell_vector"
+    },
+    {
+      "id": "A3",
+      "change_from_previous": "add interface-normal mobility degradation",
+      "sentaurus_mobility_models": ["DopingDependence", "HighFieldSaturation", "Enormal"],
+      "vela_mobility_model": "masetti_field_lombardi",
+      "vela_high_field_driving_force": "quasi_fermi_gradient",
+      "vela_high_field_gradient_discretization": "transport_cell_vector"
+    }
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {
+      "start_V": 0.0,
+      "stop_V": 2.5,
+      "step_V": 0.05,
+      "point_count": 51,
+      "values_V": [
+        0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+        1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+        1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95,
+        2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45,
+        2.5
+      ]
+    }
+  },
+  "vela_execution_protocol": {
+    "status": "frozen_before_A3_Vd1_recovery_execution",
+    "revision_note": "The first final A3 Vd=1 V process exited with code 0xFFFFFFFF after 302 accepted 1 mV points and no Newton failure. The recovery uses 5 mV auxiliary points to remain below that per-process path length; comparison thresholds and the gate lattice are unchanged.",
+    "purpose": "numerical continuation only; no physics or acceptance-lattice change",
+    "solver_controls": {
+      "state_chain_invariant": "SRH density coupling, quasi-Fermi reference, and continuity row scaling remain identical across equilibrium, drain, and gate stages",
+      "warm_start": true,
+      "equilibrium_quasi_fermi_update_limit_V": 0.1,
+      "drain_ramp_quasi_fermi_update_limit_V": 0.025,
+      "gate_sweep_quasi_fermi_update_limit_V": 0.025,
+      "quasi_fermi_reference": "contact_basin",
+      "srh_density_coupling": "sentaurus_default",
+      "continuity_row_scaling": true,
+      "drain_ramp_line_search_mode": "block_filter",
+      "gate_sweep_line_search_mode": "default"
+    },
+    "auxiliary_drain_ramp": {
+      "initial_step_V": 0.001,
+      "max_step_V": 0.01,
+      "acceptance_role": "none",
+      "overrides": [
+        {
+          "variant": "A3",
+          "drain_voltage_V": 1.0,
+          "initial_step_V": 0.005,
+          "reason": "bounded recovery after process-level exit on the 302-point pilot path"
+        }
+      ]
+    },
+    "gate_acceptance_lattice_unchanged": true
+  },
+  "comparison": {
+    "reference_bias_column": "gate_voltage_V",
+    "reference_current_column": "drain_total_current_A_per_um",
+    "candidate_bias_column": "bias_V",
+    "candidate_current_column": "current_total_A_per_um",
+    "current_sign_policy": "compare_absolute_magnitude",
+    "interpolation": "forbidden",
+    "exact_bias_tolerance_V": 1e-10,
+    "current_floor_A_per_um": 1e-18,
+    "metrics": [
+      "maximum_absolute_log10_ratio_above_floor",
+      "median_absolute_log10_ratio_above_floor",
+      "maximum_relative_error_above_floor",
+      "endpoint_log10_ratio",
+      "trend_match"
+    ],
+    "qualification_gates": {
+      "exact_51_point_lattice": true,
+      "unique_bias_rows": true,
+      "all_values_finite": true,
+      "all_candidate_points_converged": true,
+      "interpolation_forbidden": true
+    },
+    "numeric_parity": {
+      "status": "diagnostic_until_variant_execution",
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    },
+    "deep_off_below_floor": "diagnostic_only"
+  },
+  "exclusions": [
+    "PhuMob",
+    "original-deck B1 parity",
+    "SProcess",
+    "interpolated acceptance points"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/native_control_overlap.csv": "27d77f315380d51dea8ca8852f5774fec4948b3ae40c861f046673124ce6e12f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/native_points.csv": "3cba105b31fda7d64ebd99fa91d637243e763d2f4dd666189ff7875fc036f368",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/comparison.csv": "c4e6c3a75cd3380cd2800329afe6e5c0d3a33316dec541de8a990e165af4fd33"
+  }
+}

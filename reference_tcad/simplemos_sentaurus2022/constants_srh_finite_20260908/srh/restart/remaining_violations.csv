@@ -1,0 +1,3 @@
+key,axis,label,iteration,failure,psi_block,carrier,carrier_density_m3,density_qualified,flux,flux_qualified,impact,node_id,ratio,residual,scale,source_qualified,srh
+m65_n19_vd_1p000000_endpoint_vg016,node_1057,finite_native_seed,81,carrier_row_convergence_line_search_rejected,8.82332385145879e-11,hole,0.04605280326613378,True,6.3358427363672095e-21,False,0.0,1056,1.619557728179939e-06,2.75499005837412e-26,1.7010755531821528e-20,True,-6.335815186466626e-21
+m65_n23_vd_1p000000_endpoint_vg016,node_1057,finite_native_seed,18,carrier_row_convergence_line_search_rejected,8.794430563858865e-11,hole,0.35141939774978537,True,9.388345218490186e-20,False,0.0,1057,4.0548492800352795e-06,4.345741735862972e-25,1.0717394003421902e-19,True,-9.388301761072827e-20

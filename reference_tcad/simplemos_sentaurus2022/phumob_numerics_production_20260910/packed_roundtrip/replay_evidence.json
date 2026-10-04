@@ -1,0 +1,19 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/weighted_merit/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_000/attempt_1/config.json": "47801f334a8ed0e77652e8e507d9fe95eab8ca359601a4bd182ed0b340d6e4ec",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_000/attempt_1/state.csv": "ef51d6d7bd016af23c81a7f52cd920b7cbffb1b6e4fdacf697c73628c8455378",
+    "build-release/pr_audit/replay/config.json": "3a2d0b76d50a915e68698852a34a87bea8ec5cfac9545d3fe8be3508d7ede953",
+    "build-release/pr_audit/replay/config.status.json": "9d2460ae4ae2da3b776daa56d090b36b1b0a934d99d126bf5421952f39cbebe3",
+    "build-release/pr_audit/replay/config.stderr.txt": "2f4aab942639cd2b7abf52fb4d351988d08e7ec58cf29354e1366891e58bca52",
+    "build-release/pr_audit/replay/config.stdout.txt": "d87e2354b75e771b2ed21e3b78e35ecb6bb9a18651be027230f22de7b935f78d",
+    "build-release/pr_audit/replay/state.csv": "ef51d6d7bd016af23c81a7f52cd920b7cbffb1b6e4fdacf697c73628c8455378",
+    "build-release/pr_audit/replay/state_0.csv": "f3268b91032e5fb559459874bf6d18812798529ab75285f89596a0fe0f9f6761",
+    "build-release/pr_audit/replay/state_0_norms.csv": "f6a725239f5a7167dcf08ee49cc719191de90d9938a6961e470c6b0c8edb7cf5",
+    "build-release/pr_audit/replay/state_1.csv": "c48086407901ea5d2319b8412f861ea52d8acc99641606262a22cfa3e7b73927",
+    "build-release/pr_audit/replay/state_1_norms.csv": "1d453b591fd9d62a375440ded29545e4e10af1587a123b57bb4ccaa02ec23c16",
+    "build-release/pr_audit/replay/state_2.csv": "f3268b91032e5fb559459874bf6d18812798529ab75285f89596a0fe0f9f6761",
+    "build-release/pr_audit/replay/state_2_norms.csv": "f6a725239f5a7167dcf08ee49cc719191de90d9938a6961e470c6b0c8edb7cf5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/packed_roundtrip/build_evidence.json": "6c4268e75ae7961277ee724e86ca6a0bf4693860e3f55e8218fbc972ace2eb31",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/packed_roundtrip/identity.json": "0957e3f3dcbbda988949fadde3876c947d247a6ca6afe8e79b55e49c1b4ea995"
+  }
+}

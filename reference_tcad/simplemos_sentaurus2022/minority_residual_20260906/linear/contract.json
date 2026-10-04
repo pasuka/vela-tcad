@@ -1,0 +1,21 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "tag": "m65_n19_vd_0p050000_endpoint\\vg_007\\vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_residual_20260906\\linear\\m65_n19_vd_0p050000_endpoint\\vg_007\\vela\\config.json"
+    },
+    {
+      "tag": "m65_n23_vd_0p050000_endpoint\\vg_020\\vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_residual_20260906\\linear\\m65_n23_vd_0p050000_endpoint\\vg_020\\vela\\config.json"
+    },
+    {
+      "tag": "m65_n23_vd_1p000000_endpoint\\vg_007\\vela",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_minority_residual_20260906\\linear\\m65_n23_vd_1p000000_endpoint\\vg_007\\vela\\config.json"
+    }
+  ],
+  "trigger": "Exact n19 rejection replay: worst hole node 41 raw step=0 and local Jdx+F approximately F, despite globally small linear norm; original row weight=1.",
+  "axes": "Same complete J,F and Eigen SparseLU. Compare legacy row weighting with powers-of-two row/column equilibration; each gets zero through four refinement corrections using 100-digit Jdx+F.",
+  "scope": "Three fixed states, no nonlinear solves. Uncapped x+dx trial uses frozen original row scales only, and is never a DC qualification. Same physical residual and Jacobian model.",
+  "old_record": "Six exact trajectory replays and existing source/gates stay immutable."
+}

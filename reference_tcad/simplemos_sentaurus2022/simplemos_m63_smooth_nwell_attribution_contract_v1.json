@@ -1,0 +1,65 @@
+{
+  "schema": "vela.simplemos.sdevice.m63_smooth_nwell_attribution_contract.v1",
+  "status": "draft_for_freeze",
+  "objective": "Attribute the burst-free NWell-paired IdVg error growth to a threshold-like horizontal shift, a medium-inversion mobility factor, or a declared mixture without changing any solved state.",
+  "upstream": {
+    "required_m60_status": "frozen",
+    "required_m60_classification": "tight_convergence_suppresses_port_bursts",
+    "hashes": {
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+      "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_default_direct_point_ledger.csv": "52ec0f51a7f2b0095b4718e61ed288eb477fc013c6d432404cdf06ef196d2164",
+      "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_state_summary.csv": "0bcf21280739b7bcf297f4bd7cac19526ab903346456790cb2d904f059da3f7c",
+      "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455"
+    }
+  },
+  "matrix": {
+    "nwell_pairs": [["n17", "n21"], ["n18", "n22"], ["n19", "n23"], ["n20", "n24"]],
+    "drain_voltages_V": [0.05, 1.0],
+    "smooth_gate_window_V": [0.55, 0.9],
+    "constant_current_levels_A_per_um": [1e-12, 1e-10, 1e-8, 1e-6],
+    "subthreshold_current_window_A_per_um": [1e-12, 1e-9],
+    "fixed_state_mobility_crosscheck": {
+      "source": "M13",
+      "devices": ["n17", "n21"],
+      "drain_voltages_V": [0.05, 1.0],
+      "gate_voltage_V": 0.8
+    }
+  },
+  "analysis": {
+    "current_observer": "M60 tight-convergence default drain TotalCurrent",
+    "vela_observer": "M46/M8 production drain current, pointwise identical",
+    "signed_error": "log10(abs(Vela_Id)/abs(Sentaurus_Id))",
+    "horizontal_shift_model": "signed_error(Vg) approximately dlog10(abs(Sentaurus_Id))/dVg times DeltaV",
+    "pair_growth_gate": "the high-NWell member maximum absolute signed error inside the frozen smooth gate window",
+    "threshold_dominance_fraction": 0.8,
+    "classifications": [
+      "threshold_like_horizontal_shift_dominant",
+      "mobility_factor_dominant",
+      "mixed_threshold_and_mobility",
+      "smooth_growth_not_closed",
+      "upstream_or_completeness_failure"
+    ]
+  },
+  "interpretation_guards": [
+    "A horizontal-shift attribution is a curve-level electrostatic signature, not proof that BGN is the root cause.",
+    "The M13 mobility crosscheck covers n17/n21 at Vg=0.8 V only and cannot establish all-device mobility equivalence.",
+    "M40 is contextual evidence for a BGN/SRH interaction at the deep-off target and is not reused as a smooth-window intervention.",
+    "M60 tight-convergence data are a qualified secondary numerical reference and do not replace M8/M46 production references."
+  ],
+  "prohibitions": [
+    "no Sentaurus or Vela solve",
+    "no HFS, SG, BGN, SRH, contact, mesh, step, or convergence tuning",
+    "no production-default or reference replacement",
+    "no causal BGN claim from curve fitting alone"
+  ],
+  "acceptance": {
+    "required_curve_count": 16,
+    "required_pair_count": 8,
+    "required_point_count": 816,
+    "minimum_smooth_points_per_curve": 8,
+    "minimum_constant_current_levels_per_curve": 3,
+    "required_mobility_crosscheck_count": 2,
+    "contract_must_be_frozen_before_analysis": true,
+    "all_outputs_must_be_hash_frozen": true
+  }
+}

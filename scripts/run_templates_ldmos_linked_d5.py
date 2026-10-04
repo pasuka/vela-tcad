@@ -613,10 +613,7 @@ def preflight(bundle_path, workspace, runner_manifest, gate):
     return bundle,manifest
 
 
-def main():
-    global args, ROOT, HERE, BASE, RUNNER, EXPECTED, ENV, SEED, REFERENCE, stop, MAXIMUM, WORKER, PHYSICS_PROFILE, FRAME
-    WORKER=None
-    if not __debug__: raise RuntimeError("Run without Python -O; acceptance assertions are required")
+def build_parser():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--physics-profile',choices=['D5','D4'],default='D5')
     parser.add_argument('--workspace',type=Path,default=ROOT)
@@ -626,13 +623,21 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--gate',type=int,choices=[4,8],required=True)
     parser.add_argument('--points',type=int,choices=[2,8,31],default=8)
-    parser.add_argument('--linear-solver',choices=['sparselu','umfpack','sparselu_metis','umfpack_metis','mumps','mumps_metis','superlu_mt','superlu_mt_metis','strumpack'],default='sparselu')
+    parser.add_argument('--linear-solver',choices=['sparselu','umfpack','sparselu_metis','umfpack_metis','mumps','mumps_metis','superlu_mt','superlu_mt_metis','strumpack'],default='umfpack')
     parser.add_argument('--max-step',type=float,default=.2)
     parser.add_argument('--frame-offset',type=float,help='Potential gauge offset; defaults to bundle policy or 28 V; original equivalence gates remain enforced')
     parser.add_argument('--resume-from',type=Path,help='Read-only accepted prefix; copy its evidence into a new output and continue')
     parser.add_argument('--preflight',action='store_true')
-    parser.add_argument('--worker',action='store_true',help='Reuse one sequential DC worker with prepared input cache')
-    parser.add_argument('--reuse-linear-analysis',action='store_true',help='Default-off sequential Newton linear context; requires --worker')
+    parser.add_argument('--worker',action=argparse.BooleanOptionalAction,default=True,help='Reuse one sequential DC worker (default on)')
+    parser.add_argument('--reuse-linear-analysis',action=argparse.BooleanOptionalAction,default=True,help='Reuse Newton linear analysis (default on); requires --worker')
+    return parser
+
+
+def main():
+    global args, ROOT, HERE, BASE, RUNNER, EXPECTED, ENV, SEED, REFERENCE, stop, MAXIMUM, WORKER, PHYSICS_PROFILE, FRAME
+    WORKER=None
+    if not __debug__: raise RuntimeError("Run without Python -O; acceptance assertions are required")
+    parser=build_parser()
     args=parser.parse_args()
     if args.reuse_linear_analysis and not args.worker:parser.error('--reuse-linear-analysis requires --worker')
     PHYSICS_PROFILE=args.physics_profile

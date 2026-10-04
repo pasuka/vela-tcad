@@ -1,0 +1,26 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_native_substrate_face_flux_export_contract_execution_erratum.v1",
+  "status": "execution_erratum_pending_freeze",
+  "parent_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_v1.json",
+  "parent_contract_sha256": "8c2e7aa6db645ebd1b9c1285828958d8b40195ac5469feb5784a8e6d3bf73b53",
+  "reason": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "observed_runtime_error": "Tcl CurrentPlot: Cannot combine 'Contact' specification with other domain specifications",
+    "failed_remote_root": "/tmp/vela_simplemos_m50_native_substrate_face_flux_export",
+    "interpretation": "Contact=substrate alone uniquely selects the native substrate contact domain; adding Region=Silicon_1 is rejected by this release and is redundant for this deck."
+  },
+  "single_change": {
+    "from": "Integrate Contact=\"substrate\" Region=\"Silicon_1\" IntegrationUnit=cm",
+    "to": "Integrate Contact=\"substrate\" IntegrationUnit=cm"
+  },
+  "unchanged": [
+    "parent contract objective, state matrix, acceptance thresholds, and forbidden-work guard",
+    "M47 File, Electrode, Physics, Plot, Math, and Solve content",
+    "eCurrentDensity dot ContactSurfaceNormal integrand",
+    "native Contact-domain integration",
+    "raw A/cm to A/um conversion and orientation reporting"
+  ],
+  "new_remote_root": "/tmp/vela_simplemos_m50_native_substrate_face_flux_export_r2",
+  "parent_contract_may_not_be_modified": true,
+  "erratum_may_not_be_modified_after_freeze": true
+}

@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0
+    }
+  ],
+  "models": [
+    "no_bgn",
+    "old_slotboom"
+  ],
+  "indices": [
+    0,
+    10,
+    40,
+    50
+  ],
+  "vg": [
+    0.0,
+    0.2,
+    0.8,
+    1.0
+  ],
+  "target_states": 32,
+  "remote_root": "/tmp/vela_simplemos_bgn_restore_20260908",
+  "math": "Math { ExtendedPrecision(128) Method=Super RelErrControl Digits=12 ErrRef(Electron)=1e-2 ErrRef(Hole)=1e-2 RhsMin=1e-20 Iterations=40 ExitOnFailure CNormPrint }",
+  "single_axis": "Only EffectiveIntrinsicDensity: explicit NoBandGapNarrowing versus BandGapNarrowing(OldSlotboom).",
+  "fixed": "Masetti, SRH(DopingDependence), mesh, saved no-BGN input states, temperature, contacts and strengthened native Math.",
+  "gate": {
+    "native_exit_zero": true,
+    "runtime": "T-2022.03-SP2",
+    "bias_error_V": 1e-10,
+    "kcl_over_Id": 1e-08,
+    "bgn_max_abs_eV": 1e-12
+  },
+  "path": "At each bias independently load qualified no-BGN native state and reclose. No model ramp or tolerance relaxation.",
+  "semantic_audit": "Record actual runtime model, deltaEg(total impurity), effective ni, base ni inferred from exported Boltzmann identity; never fit material parameters.",
+  "acceptance_changed": false,
+  "defaults_changed": false
+}

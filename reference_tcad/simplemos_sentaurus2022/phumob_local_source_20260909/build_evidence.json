@@ -1,0 +1,19 @@
+{
+  "input_hashes": {
+    "build-release/CMakeFiles/vela_example_runner.dir/src/tools/vela_example_runner.cpp.obj": "c07650a3e55c990d22042e19bdf0a1f8b5fe1f1f4901058912e5adf883d33643",
+    "build-release/compile_commands.json": "2083d7f179f6e0f83cb4ec59b34ab9b1d87da98c781b17a1fa7c445121872624",
+    "build-release/libvela_core.a": "45efc8522243b1d047fa674fc31b7a49c5ada5646b4e6c21d1ff68a5f48e9756",
+    "build-release/phumob_local_source_20260909/assembler.o": "07ce5ec9727c0794b8657933016c68a15efd0c3766c84c93a5639a02abf08196",
+    "build-release/phumob_local_source_20260909/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/compile_command.json": "07918d157e71c51187dfd854570b31eb4f598594b5a14f52b44833def610a643",
+    "build-release/phumob_local_source_20260909/CoupledDDAssembler.cpp": "9cc0881378e3f2ff27062f98cd78bde4548939031cddc884f5bbdbf9af5c3cb8",
+    "build-release/phumob_local_source_20260909/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/link_command.json": "57a9889c667505fd10fc0fcf53e0a587ffe1516ad215361d337f6b0a64228a80",
+    "build-release/phumob_local_source_20260909/runner.exe": "43b44d1bdd0abf11d162e3012bfe69d41378f54d8b6220badbeebc8cca6f04b2",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/build_ledger.json": "240234a0b0001eab5cb3d2323f1d1cd4648245dc6c4dd0e6b03a23a11e0cb5da",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/external_libraries.json": "4039bbec046b0c093a62af10d35d48a5737212cbbc93d23c215faea199576a5a",
+    "scripts/calibrate_simplemos_phumob_local_source_20260909.py": "620a6536d6df9d7b69a3c34a08c25e62e49e88880ea9b78c775a78755ee9c6dd",
+    "src/equation/CoupledDDAssembler.cpp": "8620d655c44702626f7051e399f872a8f01cc10b6d7108b2ca4218f05f5b8799"
+  },
+  "amendment": "Prepare stopped before writing inputs: Geometry.coords is indexed dict. Fixed coordinate-array materialization only; original driver and manifest retained in build directory. Binary unchanged."
+}

@@ -1,0 +1,11 @@
+{
+  "status": "completed_screening_with_explicit_dirichlet_rows",
+  "supersedes_component_interpretation_of": "poisson_transport_screening.csv",
+  "prior_issue": "Physical contact-node Poisson charges are not Dirichlet equation residuals. The raw total retained cancellation, but native/remainder component projections were not usable. The prior file remains diagnostic and is not used for attribution.",
+  "limitations": "Channel electron source calibration does not qualify these distinct Poisson or distributed continuity sources, nor a finite model replacement.",
+  "input_hashes": {
+    "scripts/qualify_simplemos_masetti_free_row_ledger_20260907.py": "fcd6c71df325068ff6af01378a56cde157716a1f7c911f6fb53efec41de3ada0",
+    "reference_tcad/simplemos_sentaurus2022/masetti_local_discretization_20260907/poisson_constants_addendum.json": "1890929cd37256b4507ae6ea19c710b204a79241b2250b7b0b0d77a561687744",
+    "reference_tcad/simplemos_sentaurus2022/masetti_local_discretization_20260907/poisson_transport_screening.csv": "e66e4022d0a34e0809f02a5e6b7dc7a326b61c77761de98c0ab2e0309c0b400b"
+  }
+}

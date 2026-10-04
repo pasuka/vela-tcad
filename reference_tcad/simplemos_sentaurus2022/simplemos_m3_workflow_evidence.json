@@ -1,0 +1,54 @@
+{
+  "schema": "vela.simplemos.sdevice.m3_evidence.v1",
+  "milestone": "M3",
+  "status": "pass",
+  "verified_on": "2026-08-26",
+  "scope": "SDevice workflow orchestration only",
+  "implementation": {
+    "path": "scripts/run_simplemos_m3_workflow.py",
+    "sha256": "16746fee4e290803f543a317bf3e22f9bc7df8571ffe8733bde5bea0916c326d"
+  },
+  "regression_test": {
+    "path": "tests/regression/test_simplemos_m3_workflow.py",
+    "sha256": "59d37c2ac4d514cdb35151608db6e358f0e57949e7c413ef7b3056bde355e8dd",
+    "test_count": 6,
+    "result": "pass"
+  },
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_sdevice_validation_contract_v1.json",
+    "sha256": "2933cd429df4b49a8843fc644a9e907d8011cc5b8b7ebf65918d854de29da8fc"
+  },
+  "branches": [
+    {
+      "drain_voltage_V": 0.05,
+      "drain_initial_step_V": 0.005,
+      "drain_min_step_V": 5e-7,
+      "drain_max_step_V": 0.05
+    },
+    {
+      "drain_voltage_V": 1.0,
+      "drain_initial_step_V": 0.1,
+      "drain_min_step_V": 1e-5,
+      "drain_max_step_V": 1.0
+    }
+  ],
+  "gate_sweep": {
+    "start_voltage_V": 0.0,
+    "stop_voltage_V": 2.5,
+    "initial_step_V": 0.025,
+    "min_step_V": 2.5e-5,
+    "max_step_V": 0.125
+  },
+  "acceptance_gate": {
+    "strict_stage_sequence": true,
+    "previous_accepted_state_only": true,
+    "predecessor_state_sha256_rechecked": true,
+    "pointwise_reclosure_forbidden": true,
+    "terminal_bias_and_all_points_converged_required": true
+  },
+  "claims": {
+    "workflow_contract_validated": true,
+    "original_deck_phumob_executed": false,
+    "sentaurus_current_parity": false
+  }
+}

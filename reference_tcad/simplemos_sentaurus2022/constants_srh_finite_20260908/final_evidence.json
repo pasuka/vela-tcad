@@ -1,0 +1,29 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_constants_and_srh_finite_validation_2026-09-08.md": "4984884ef06d956818f540eb0533d714b6e7b966e81be264283ac8919cec07ad",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/constant_baseline_fields.csv": "9fbe7c95094d55e12e6cf836a594a8601358af11caa1b1cecbe18ef14fd1f811",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/constant_baseline_local.csv": "c6fad6db482dd5ec7754d9e0c5802d05683372aa828e8cf7886c00cd654fc313",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/constants/continuation/validation_evidence.json": "e6085a54fbbb6a6129a17d7205b90d9fa628d7e374a10c44951c2079919d252a",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/constants/validation_evidence.json": "e9d7c22cbdc8b70b7ccfbfc43216bfa6c50faf0f6ecc05fb4f09d135758527da",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/final_summary.json": "02074e72b918b9581a66d1c183cc98e0ae1b729c57a00d97d13f7781cec4cf52",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/remaining_update_trace.csv": "f3866adbaf36dc0428cbf94a6a5da2f70ceebcd3e28843656ffc7e55c6e21423",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/report_checks.json": "4be39186ea920f9593f708b7cbaa730996b106d80f05f31a732e03b5ee3a1fec",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/selected_currents.csv": "5ade57953a446a863d848cff55be82e6b07db727d192c74a97e46173310fe2a4",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/selected_ports.csv": "bbaf0fa2efa1ff440883a6bd2276e8bd0ecbe326adbe8a3a8c5ab097f3577694",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/build_evidence.json": "4b0b9f424d78d4b5205e0664c4225c365740c570676f19d63ffc9d348dcde60f",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/input_tests_evidence.json": "fc52d1e23e403a699ef62f5971bbc17dbbeb1af889557936b1e5764c33607e1d",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/native_rows/evidence.json": "ff12864356d86f896bc3e0a75401035eb044e1ddd9099594b69457deeee37861",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/preflight_evidence.json": "94238bbd46c03fe59d71d44bf055b7308b26f0047307dca86e626572bffcbf57",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/response_evidence.json": "fd3f5ffbd3b26264ce59561a364dfb3da405ede9d104ae18b31ea28a470da1f6",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/restart/validation_evidence.json": "81f976c5964c7689675965d154e2c9ab56cd7a3bcbf36bb0833ba5ba6fdbd633",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/validation_evidence.json": "e6e8d122a3a14f08b4910c7f9ace5a79ccf02f528535b08b4b2243d0b86cd232",
+    "scripts/audit_simplemos_native_srh_rows_20260908.py": "592f4137a1144baf61f2d7def4ce0a6e52a70d1766d8ec21e3f7c0cd66b620b5",
+    "scripts/build_simplemos_srh_finite_20260908.py": "71317d7d5ab3c1eefbffa37d22f464a3113de339696fed319ee4c43ea47b127d",
+    "scripts/continue_simplemos_constants_finite_20260908.py": "6022cf4ace75ca3a789c073343e3024b60d8a2d82bb6aaea7dad4fd7a2e99849",
+    "scripts/report_simplemos_constants_srh_finite_20260908.py": "e824be974f09671f768178608104d0577c48612bd1cd1f90059483e7fd02b90f",
+    "scripts/restart_simplemos_srh_finite_20260908.py": "f703826fd4ef30d5bd4875befdd78f7b4f3e1d0b902ede4fbae702d15fda9813",
+    "scripts/test_simplemos_srh_finite_inputs_20260908.py": "b23ac7cdb1ec9a3fe9e2bafefce02e9fcac60c1d4da572a24c1ed239fd55150d",
+    "scripts/validate_simplemos_constants_finite_20260908.py": "701894b270abd42f01316c61b9bdda3c597de166810239bf67b28e30c0781a5b",
+    "scripts/validate_simplemos_srh_finite_20260908.py": "2b9163a54ef6baf373b0a157cb75b642af9c4d83d54e3fdf9c1d7306c30e80d9"
+  }
+}

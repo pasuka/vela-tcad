@@ -1,0 +1,126 @@
+{
+  "status": "frozen_before_execution",
+  "device": "n23",
+  "vd": 0.05,
+  "vg": 0.9,
+  "cases": [
+    {
+      "name": "zero",
+      "charge_cm_3": 0.0
+    },
+    {
+      "name": "plus_1e13",
+      "charge_cm_3": 10000000000000.0
+    },
+    {
+      "name": "minus_1e13",
+      "charge_cm_3": -10000000000000.0
+    },
+    {
+      "name": "plus_5e12",
+      "charge_cm_3": 5000000000000.0
+    },
+    {
+      "name": "minus_5e12",
+      "charge_cm_3": -5000000000000.0
+    }
+  ],
+  "selected_nodes": 186,
+  "source": "Physical nodal Q=q*amplitude_cm^-3*1e6*native_signed_Si_area_m2. Add Q to existing fixedInterfaceChargeRhs before scaling and Dirichlet replacement. Constant Poisson-only source; same nodal mask and signed Si areas as native calibration and prior Vela adjoint.",
+  "source_environment_variable": "VELA_DIAGNOSTIC_NODAL_CHARGE_C_PER_M_FILE",
+  "frozen_poisson_residual_per_physical_charge": 373397378603.2244,
+  "vela_prediction_at_1e13_A_per_um": 9.285954416133963e-12,
+  "solver": {
+    "method": "newton",
+    "max_iter": 200,
+    "reltol": 1e-07,
+    "abstol": 1e-12,
+    "damping_psi": 0.35,
+    "warm_start": true,
+    "quasi_fermi_update_limit_V": 0.025,
+    "srh_density_coupling": "sentaurus_default",
+    "quasi_fermi_reference": "contact_basin",
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1000000000000.0
+    },
+    "mobility": {
+      "model": "phumob_field_lombardi",
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector"
+    },
+    "recombination": [
+      "srh"
+    ],
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "temperature_dependence": false,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "bandgap_narrowing": {
+      "model": "none",
+      "fermi_statistics_correction": false,
+      "equal_ni_flux_evaluation": "compensated_log_expm1"
+    },
+    "impact_ionization": {
+      "model": "none"
+    },
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 1e-06,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-12,
+      "min_source_scale_fraction": 0.001,
+      "min_source_global_fraction": 1e-06,
+      "min_carrier_density_m3": 0.0,
+      "min_flux_scale_fraction": 1e-08,
+      "min_flux_scale": 1e-12,
+      "min_newton_max_iter": 200
+    },
+    "global_continuity_closure": {
+      "mode": "off",
+      "tolerance": 1e-06,
+      "source_floor": 1e-10
+    },
+    "diagnostics": true
+  },
+  "global_audit_profile": {
+    "mode": "enforce",
+    "tolerance": 1e-06,
+    "source_floor": 1e-10
+  },
+  "gates": {
+    "all_states_strict_qualified": true,
+    "kcl_over_Id": 1e-08,
+    "zero_drift_dex": 1e-05,
+    "fd_vs_adjoint_relative": 0.001,
+    "two_amplitude_derivative_relative": 0.001,
+    "even_nonlinear_fraction": 0.01,
+    "minimum_signal_to_zero_drift": 100,
+    "source_relative_L2": 1e-08,
+    "carrier_source_absolute": 0
+  },
+  "scope": "Five local nonlinear reclosures only; original acceptance unchanged, no production algorithm change, no new Sentaurus run or curve sweep.",
+  "m82_released": false,
+  "m83_released": false
+}

@@ -1,0 +1,14 @@
+{
+  "paths": [
+    "continuation",
+    "native"
+  ],
+  "workers_per_path": 2,
+  "total_workers": 4,
+  "distinct_output_roots": true,
+  "native_references_qualified": 204,
+  "dual_controls_qualified": 16,
+  "runner_sha256": "d9848e77096647530f1c3f0622542a2ce6e9f8be6dae8b8507d9ff27cb36dbe3",
+  "acceptance_changed": false,
+  "current_error": "n23 Vd1 Vg0 error is -1.0504991046%; full curves quantify its bias extent. State convergence qualification does not imply 1% current agreement."
+}

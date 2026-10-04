@@ -1,0 +1,8 @@
+{
+  "pairs": 7,
+  "qualified": 7,
+  "all_identity_qualified": true,
+  "samples_final_state_qualified": false,
+  "cell_formation_qualified": false,
+  "scope": "Native replacement identity only; no production or field-formation promotion."
+}

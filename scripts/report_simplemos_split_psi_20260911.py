@@ -1,0 +1,110 @@
+"""Publish the qualified arithmetic component and explicit full-DD gate failure."""
+import ast,re
+from pathlib import Path
+import validate_simplemos_split_psi_v2_20260911 as v
+
+def main():
+    manifests=[v.OUT/n for n in ('build_evidence.json','replay_evidence.json','analysis_evidence.json','partition_evidence.json','all_direction_evidence.json')]
+    for p in manifests:v.verify(p)
+    summary=v.rows(v.OUT/'summary.csv');partition=v.rows(v.OUT/'partition.csv');direction=v.rows(v.OUT/'all_direction.csv')
+    assert sum(int(r['split_decreases']) for r in summary)==78
+    assert all(r['full_partition_invariant']=='False' for r in partition)
+    ideal=[r for r in direction if r['mode']=='all_coordinates'];assert len(ideal)==12 and all(r['passes_previous_direction_gate']=='True' for r in ideal)
+    unit=v.LOCAL.parent/'unit.log';ctest=v.LOCAL.parent/'ctest.log'
+    assert '1232 assertions in 14 test cases' in unit.read_text(encoding='utf-8-sig')
+    assert '100% tests passed out of 11' in ctest.read_text(encoding='utf-8-sig')
+    old_kernel=v.LOCAL.parent/'verified_old_poisson.h'
+    prior=v.ROOT/'reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/validation_freeze.json'
+    assert v.sha(old_kernel)==v.read(prior)['input_hashes']['include/vela/equation/ExtendedPoissonResidual.h']
+    names=['validate_simplemos_split_psi_20260911','analyze_simplemos_split_psi_20260911','validate_simplemos_split_psi_v2_20260911','analyze_simplemos_split_psi_v2_20260911','check_simplemos_split_partition_20260911','check_simplemos_split_all_direction_20260911','report_simplemos_split_psi_20260911']
+    scripts=[v.ROOT/'scripts'/(n+'.py') for n in names]
+    for p in scripts:ast.parse(p.read_text(encoding='utf-8'))
+    rows=[]
+    for p in partition:
+        d=next(r for r in ideal if r['device']==p['device'] and r['vd']==p['vd'] and r['index']==p['index'] and float(r['alpha'])<1.)
+        rows.append(f"| {p['device']} | {p['vd']} | {int(p['index'])*.02:g} | 0 → 13 | {float(d['poisson_jv_relative']):.6g} | {p['phin_residual_changed']} / {p['phip_residual_changed']} |")
+    prefix='../../reference_tcad/simplemos_sentaurus2022/phumob_split_psi_20260911/v2/'
+    report=v.ROOT/'docs/validation/simplemos_split_coordinate_preflight_2026-09-11.md'
+    text=f'''# SimpleMOS 微小坐标更新的补偿表示与全方程预检
+
+日期：2026-09-11；分支 `codex/simplemos-sdevice-validation`。
+
+## 结论和范围
+
+已实现并验证“主值＋低位补偿”的数值表示，以及 Poisson 内核对电势低位的读取。六个失败态原有 78 个不下降候选，在仅修复 Poisson 电势输入、保持载流子残差为原候选值的隔离比较中，**78/78 变为下降**。这支持微小电势更新丢失是本轮停滞的直接数值原因。
+
+但 **Poisson 单支路方案未通过全方程资格**：保持精确电势不变，只重新分配主值和低位，Poisson 结果 6/6 不变，当前电子/空穴支路 6/6 发生变化。另一个小阻尼控制揭示准费米增量也会被舍入；同时保留三块坐标后，该点 Poisson 方向误差从 0.00256472 降至 1.82162e-15。
+
+本轮是候选内核实现及固定状态预检，**没有新增自洽 DC，没有将低位候选接入 Newton 接受流程，也未重新执行统一 16 点**。整体验收仍沿用前一轮 10/16 的失败记录；本轮不能改记为通过。前置报告见 [检查点修复与停滞定位](simplemos_packed_restart_and_stalls_2026-09-10.md)。
+
+## 实现和测试
+
+- 新增 `include/vela/numerics/SplitCoordinate.h`：用 TwoSum 保留 double 加法丢失的部分，支持多次微小更新与归一化的双分量表示；非有限和拒绝处理。调用方必须消费两部分，不能再以普通 double 直接相加后丢弃低位。
+- `ExtendedPoissonResidual::evaluate` 增加可选 `packedPsiLow`，在 binary128 中先组合主值和低位，再形成边势差及 Boltzmann 电荷。没有低位参数时保留原接口；错误长度或非 packed 用法拒绝。
+- 新增两个 Catch2 用例：小于 1 ULP 的累积/逆向更新、Poisson 边通量和电荷的微扰响应、同值分拆不变性及错误输入。数值测试 **14 个用例、1232 项断言通过**；重新链接 Newton 与 CSV 相关测试后，选取的 **11/11 CTest 通过**。
+
+现有装配器仍调用不带低位的接口，现有 Newton 状态、CSV、端口和输运支路没有开启新方案。没有新增生产配置开关或修改默认值。Release 相关目标构建完成；本轮没有重跑完整 CTest，不将上一轮 781/797 作为本轮完整结果。
+
+## 输入、单位和接受协议
+
+使用上一轮六个正式未通过的原生初始化重载状态，n19/n23 原匹配网格分别为 1480/1482 节点。维持原生 box、Si 输运几何、signed Si 三项 Poisson 电荷体积、逐单元介电系数，以及 300 K、Boltzmann、OldSlotboom/匹配 ni、plain PhuMob `element_box_phumob`、掺杂相关 SRH；Enormal/HFS 关闭，物理常数和 SRH 体积未改。
+
+状态原 DC 使用 Eigen SparseLU 与四次线性修正。本轮仅运行只读残差探针和独立内核计算，没有新的线性求解/自洽迭代；UCRT64 Release 配置检测到 HDF5、SPQR 和 UMFPACK，但没有将这些可用性写成此次求解后端。packed 坐标无量纲，physical potential 为 V、电流 A/μm、密度 m⁻³。
+
+沿用原实际方向、原截断、原 13 个阻尼 1～1/4096、原残差块缩放与权重。逐行 1e-6、KCL/Id 和端口 1e-8、双初始化势差 1e-6 V、密度相对差 1e-4、Id 相对差 1e-6、一次重载协议都未改变。正式方向精度对照沿用 1e-4；内核与独立参考的求值门槛为按各行原始通量/电荷绝对量归一的 1e-25，与 DC 接受门槛不同。
+
+## 基态身份与实际方向隔离
+
+六个只读基态共 **26658 个三块残差分量**与原 Newton 记录逐项一致。每态基态加 13 个候选，共 **124404 个 rounded Poisson 分量**复现原值；同样数量的 split 坐标精确等于原主值加实际阻尼更新。
+
+对两种表示合计 **248808 个 Poisson 分量**，C++ binary128 与独立 60/100 位 Decimal 的最大归一差为 {max(float(r['max_kernel_scaled_error']) for r in summary):.9g}，通过 1e-25；两档 Decimal 也通过。边系数、材料系数及体积保留其冻结的 double 值，没有借提升精度重拟合物理参数。
+
+隔离比较将载流子残差固定为各自原实际候选的结果，只重新计算 Poisson 的低位响应。因此下表“下降”是混合路径的诊断结果，不能称为已经接受的完整 DD Newton 步。[基态身份]({prefix}identity.csv)、[全部候选贡献]({prefix}comparison.csv)、[高精度检查汇总]({prefix}summary.csv)。
+
+| 工况 | Vd / V | Vg / V | 原 / 补偿后的下降候选数 | 保留三块更新后，α=1/4096 的 Poisson 方向相对差 | 同值分拆时发生变化的电子 / 空穴行数 |
+|---|---:|---:|---:|---:|---:|
+{chr(10).join(rows)}
+
+## 为什么不能只接入 Poisson
+
+第一项独立检查只改变 double 主值与低位的分配。每个自由节点用相邻可表示值作主值，低位作精确补偿；两者之和与基态坐标完全相同，接触节点不改。Poisson 读取两部分后结果逐项不变；用现有输运路径计算对应主值再与该 Poisson 结果组合，六个控制的电子与空穴残差均变化。n19、Vd=0.05、Vg=0.8 的电子残差最大变化为 4.68742439e-16（内部连续性残差单位）。这些数值不能直接当作端口电流误差。[分拆一致性结果]({prefix}partition.csv)。
+
+这是一项对拟议混合路径的预检：现有生产求解器没有宣称接收低位字段，不能据此称生产 CSV 不满足其现有契约；结果表明若仅接入 Poisson，将缺少全 DD 同一精确状态的表示一致性。
+
+第二项检查对原 Jacobian 和原线性方向做同扰动响应对照。只保留 ψ 低位时，n19、Vd=0.05、Vg=0.8、α=1/4096 的 Poisson 方向相对差为 0.00256472077725，未过 1e-4。其准费米坐标加法的最大舍入差约 1.10974e-16（无量纲）。独立参考同时保留 ψ、电子和空穴准费米更新后，误差降到 1.82162246e-15。
+
+六个状态在 α=1 和 1/4096 共 **12/12 个完整坐标 Poisson 方向检查通过**，最大相对差为 {max(float(r['poisson_jv_relative']) for r in ideal):.9g}。这验证的是 Poisson 块沿当前方向的响应，不能扩展为完整三块 Jacobian、迁移率链式导数或任意源扰动已经通过。[三块更新对照]({prefix}all_direction.csv)。
+
+## 下一阶段边界
+
+下一步应将三块坐标的低位累积、检查点格式、Poisson 电荷、SG 势差/密度、迁移率输入、SRH 与端口求值统一为同一状态契约，并验证相同精确值的分拆不变性及小于 1 ULP 的方向响应。需要保留 n19、低 Vd、Vg=0.8 的电子支路反例；只有这些预检通过后，才进入原独立种子、原一次重载协议的 16 点自洽对照。
+
+本轮没有放宽门槛、修改权重、增加重载、启动完整曲线或恢复 Enormal/HFS，也未新增 Sentaurus 仿真或上传下载。未提交或推送。
+
+## 证据与失败记录
+
+首个输出型探针遗漏了 `<fstream>` 直接包含，修正后编译通过，失败日志保留。首批几何导出捕获了端口函数内部无边界条件的调用，导致基态身份检查失败；原批次保留，v2 只捕获有完整边界条件的正式调用，六个基态及全部 rounded 分量重新通过。没有屏蔽边界行来使其通过。
+
+修改前 Poisson 内核由本轮差异逆向恢复后，逐字节匹配前置冻结 SHA256，保存在忽略目录中；本轮全部脚本、源文件、测试与诊断产物由 [完成清单]({prefix}completion_evidence.json) 索引。保存本报告不改变此前失败批次及前一轮整体验收结果。
+'''
+    assert not report.exists();report.write_text(text,encoding='utf-8')
+    status=v.ROOT/'docs/validation/simplemos_branch_status.md';s=status.read_text(encoding='utf-8')
+    marker='## 当前检查点修复与剩余收敛限制';assert s.count(marker)==1
+    addition='''## 当前微小更新补偿表示预检
+
+最新报告为 [微小坐标更新的补偿表示与全方程预检](simplemos_split_coordinate_preflight_2026-09-11.md)。新增双分量坐标工具及 Poisson 低位读取接口；数值测试 14 个用例、1232 项断言和相关 CTest 11/11 通过。现有 Newton/CSV/输运尚未启用低位方案。
+
+六个失败态的 78 个原拒绝候选，仅修复 Poisson 电势输入后均能使混合路径的原加权范数下降，248808 个内核分量通过独立高精度参考。但 Poisson 单支路方案的全方程分拆不变性为 0/6，不能用于正式自洽验收。
+
+n19、低 Vd、Vg=0.8 的小阻尼 Poisson 方向差还包含准费米更新舍入：只保留 ψ 时为 0.00256472，同时保留三块更新后为 1.82162e-15。12 个完整坐标 Poisson 方向对照全部通过；这不等于完整 DD Jacobian 或自洽对照通过。
+
+下一阶段需要统一三块坐标、SG/迁移率/SRH、端口与检查点的低位状态契约，再按原协议重跑 16 点。本轮未新增 DC、完整曲线或原生仿真，整体验收仍保留前一轮 10/16 失败记录，未提交或推送。
+
+## 前置检查点修复与剩余收敛限制'''
+    status.write_text(s.replace('更新：2026-09-10。','更新：2026-09-11。',1).replace(marker,addition),encoding='utf-8')
+    files=manifests+scripts+[report,status,unit,ctest,v.LOCAL.parent/'ctest.xml',v.LOCAL.parent/'build.log',v.LOCAL.parent/'analysis.log',v.LOCAL.parent/'probe_build.log',old_kernel,prior,v.ROOT/'include/vela/numerics/SplitCoordinate.h',v.ROOT/'include/vela/equation/ExtendedPoissonResidual.h',v.ROOT/'tests/test_production_numerics.cpp']
+    v.freeze(v.OUT/'completion_evidence.json',files)
+    for target in re.findall(r'\]\(([^)]+)\)',text):assert (report.parent/target).exists(),target
+    v.verify(v.OUT/'completion_evidence.json');print(report)
+
+if __name__=='__main__':main()

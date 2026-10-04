@@ -62,6 +62,13 @@ struct ElectrothermalHoleRowAudit {
 /// This does not change the qualified isothermal production solver.
 class ElectrothermalAssembler {
 public:
+    struct StructureCache {
+        std::shared_ptr<SparseAssemblyStructure> coupled=std::make_shared<SparseAssemblyStructure>();
+        std::shared_ptr<SparseAssemblyStructure> heat=std::make_shared<SparseAssemblyStructure>();
+    };
+    void setStructureCache(std::shared_ptr<StructureCache> cache) {
+        structure_=std::move(cache);heat_.setStructureCache(structure_?structure_->heat:nullptr);
+    }
     ElectrothermalAssembler(const DeviceMesh& mesh, const DopingModel& doping_SI,
         ElectrothermalGeometry geometry, LatticeHeatAssembler heat,
         MobilityModelConfig mobility_SI, SiliconThermalPhysics physics=SiliconThermalPhysics{},
@@ -85,6 +92,8 @@ public:
     /// Density evaluations, Newton proposals, bisections, neighbor probes, legacy fallbacks.
     std::array<std::size_t,5> neutralRootIterationCounts() const {return neutralRootIterationCounts_;}
 private:
+    void prepareStructure(const ElectrothermalBoundary&,const std::vector<bool>& constrained) const;
+    std::shared_ptr<StructureCache> structure_;
     const SiliconThermalPhysics::TemperaturePreparation& preparedAt(Index,Real temperature) const;
     const DeviceMesh& mesh_;
     const DopingModel& doping_;

@@ -1,0 +1,3 @@
+key,label,original_max_row_ratio,restarted_max_row_ratio,restarted_worst_node,restarted_worst_carrier,Id_relative,psi_max_V,phin_max_V,phip_max_V,density_max_relative,restart_iterations,qualified
+m65_n19_vd_1p000000_endpoint_vg020,replacement_native,9.42202810492024e-07,1.4777694897106876e-10,1088,hole,0.0,3e-16,2.319716641e-09,1.726726279e-08,6.679273211185333e-07,5,True
+m65_n19_vd_1p000000_endpoint_vg016,replacement_native,6.410559990669074e-07,1.2190488862677736e-10,1086,hole,7.438494264988549e-15,3e-16,6.99269739e-10,1.23617413e-08,4.781733897729623e-07,9,True

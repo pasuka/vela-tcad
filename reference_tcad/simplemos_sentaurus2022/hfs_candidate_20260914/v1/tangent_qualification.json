@@ -1,0 +1,84 @@
+{
+  "cases": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "initial_failed_directions": 4,
+      "micro_checks": 26640,
+      "additional_checks": 35520,
+      "max_micro_relative": 6.826259840214008e-11,
+      "max_refined_relative": 1.0649767515315363e-09,
+      "qualified": true
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "initial_failed_directions": 3,
+      "micro_checks": 26640,
+      "additional_checks": 26640,
+      "max_micro_relative": 6.404435975841009e-11,
+      "max_refined_relative": 1.3406590329865896e-09,
+      "qualified": true
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "initial_failed_directions": 3,
+      "micro_checks": 26640,
+      "additional_checks": 26640,
+      "max_micro_relative": 1.487521441349702e-09,
+      "max_refined_relative": 1.487521441349702e-09,
+      "qualified": true
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "initial_failed_directions": 3,
+      "micro_checks": 26640,
+      "additional_checks": 26640,
+      "max_micro_relative": 6.725522118382277e-10,
+      "max_refined_relative": 1.8885200963670174e-09,
+      "qualified": true
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "initial_failed_directions": 5,
+      "micro_checks": 26676,
+      "additional_checks": 44460,
+      "max_micro_relative": 3.655456200319452e-11,
+      "max_refined_relative": 7.558809537473749e-06,
+      "qualified": true
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "initial_failed_directions": 5,
+      "micro_checks": 26676,
+      "additional_checks": 44460,
+      "max_micro_relative": 3.110694762429818e-11,
+      "max_refined_relative": 1.0078713097357452e-08,
+      "qualified": true
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "initial_failed_directions": 3,
+      "micro_checks": 26676,
+      "additional_checks": 26676,
+      "max_micro_relative": 4.566661607096985e-10,
+      "max_refined_relative": 1.5819313178500296e-09,
+      "qualified": true
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "initial_failed_directions": 3,
+      "micro_checks": 26676,
+      "additional_checks": 26676,
+      "max_micro_relative": 2.177640670685284e-10,
+      "max_refined_relative": 1.1817526873872572e-07,
+      "qualified": true
+    }
+  ],
+  "qualified": true,
+  "original_failed_entries": 99,
+  "original_challenge_passed": false,
+  "row_relative_gate": 0.0001,
+  "weak_entries_excluded": 0,
+  "acceptance_tolerance_changed": false,
+  "source_changed_since_freeze": false,
+  "claim": "Branch-local assembled Jv validated by all original microsteps and two smaller same-branch steps for every failed direction. The original 1e-6 finite-amplitude challenge remains failed; no claim of global smoothness or finite-candidate qualification."
+}

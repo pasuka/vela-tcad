@@ -1,0 +1,8 @@
+{
+  "checked_states": 24,
+  "identical_states": 24,
+  "mesh_supports_checked": 8,
+  "production_changed": false,
+  "acceptance_changed": false,
+  "scope": "Read-only regression on existing n19/n23 states plus full eight-mesh row-support inventory; other device self-consistent qualification pending."
+}

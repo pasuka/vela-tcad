@@ -1,0 +1,10 @@
+{
+  "status": "frozen_before_execution",
+  "configs": [
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\reclosure\\m65_n23_vd_0p050000_endpoint\\vg_002\\config.json",
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_fullfield_20260906\\reclosure\\m65_n23_vd_1p000000_endpoint\\vg_002\\config.json"
+  ],
+  "axis": "Newton reltol 1e-7 -> 1e-10 and abstol 1e-12 -> 1e-14; same native-coherent initial state, physics and strict carrier/global/KCL acceptance.",
+  "previous_failures_retained": true,
+  "physical_or_production_changes": false
+}

@@ -1,0 +1,5 @@
+{
+  "remote_root": "/tmp/vela_simplemos_hfs_observer_build_20260912",
+  "scope": "CMI compile only. No mesh/state upload, no SDevice run, no production changes or model release.",
+  "native_identity_required_before_observer_analysis": true
+}

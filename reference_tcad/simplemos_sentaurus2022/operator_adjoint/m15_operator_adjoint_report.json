@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.sdevice.m15_operator_adjoint.report.v1",
+  "status": "complete",
+  "execution": {
+    "state_count": 16,
+    "carrier_term_probe_count": 32,
+    "new_sentaurus_execution": false,
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 8.61940727125976e-18,
+    "maximum_relative": 4.254330518892175e-14,
+    "reference": "M14 field_all adjoint relaxation"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "terminal_signed_log10_error_dex": 0.06399183621494026,
+    "component_relative_to_baseline_current": {
+      "poisson": 0.0057591010019365715,
+      "electron_transport": 0.1269922606019102,
+      "electron_srh": 4.098288323801466e-11,
+      "electron_impact": 0.0,
+      "electron_gauge": 0.0,
+      "electron_boundary": 4.3399377255752426e-15,
+      "hole_transport": 2.6330022405628004e-14,
+      "hole_srh": 7.057512165582859e-15,
+      "hole_impact": 0.0,
+      "hole_gauge": 0.0,
+      "hole_boundary": -1.976765670132065e-16
+    },
+    "region_relative_to_baseline_current": {
+      "source": 4.988252176705786e-07,
+      "channel": 0.13525399930103885,
+      "drain": -0.002503136537435597,
+      "body": 5.604621416211008e-11
+    },
+    "m11_frozen_log10_current_factorial_effect_dex": {
+      "phumob": -1.5731491379587554,
+      "enormal": -3.6596640052621865e-05,
+      "hfs": -1.390038182336184e-07
+    }
+  },
+  "interpretation_limits": [
+    "This decomposes the Vela residual response to a mapped Sentaurus state; Sentaurus equation-term residuals are not available.",
+    "Electron-transport dominance identifies the broad transport operator, not HFS uniquely.",
+    "M11 factorial effects are cross-checks on frozen Vela formula response and are not Sentaurus operator terms.",
+    "Sub-fA states remain conditioning-sensitive and are retained but not used for headline attribution."
+  ]
+}

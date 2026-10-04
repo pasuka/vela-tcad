@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M64 BGN smooth-NWell intervention",
+  "status": "accepted",
+  "classification": "bgn_independent_threshold_shift_dominant",
+  "summary": "Paired BGN-on/off difference-in-differences attribution",
+  "report": "reference_tcad/simplemos_sentaurus2022/bgn_smooth_nwell_intervention/m64_bgn_smooth_nwell_intervention_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/bgn_smooth_nwell_intervention/m64_bgn_on_off_point_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/bgn_smooth_nwell_intervention/m64_bgn_on_off_curve_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/bgn_smooth_nwell_intervention/m64_bgn_nwell_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/bgn_smooth_nwell_intervention/m64_execution_case_ledger.csv"
+  ]
+}

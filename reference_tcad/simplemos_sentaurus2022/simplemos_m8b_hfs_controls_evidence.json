@@ -1,0 +1,190 @@
+{
+  "schema": "vela.simplemos.sdevice.m8b_hfs_controls_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only Sentaurus HFS controls; no SProcess claims",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "devices": [
+      "n17",
+      "n21"
+    ],
+    "drain_voltages_V": [
+      0.05,
+      1.0
+    ],
+    "controls": 5,
+    "curves": 20,
+    "points_per_curve": 51,
+    "total_direct_bias_points": 1020,
+    "interpolation": "forbidden",
+    "vela_basis": "fixed M8-A full-physics Vela curves",
+    "numerical_retry_cases": [
+      "n17_eparallel_vd_1",
+      "n21_eparallel_vd_1"
+    ],
+    "convergence_probe_cases": 6,
+    "convergence_probe_complete_curves": 3
+  },
+  "findings": {
+    "null_control_pass": true,
+    "best_mean_error_change_control": "qf_at_contacts",
+    "best_mean_maximum_error_change_dex": -0.0006862459709705299,
+    "material_in_all_conditions": [
+      "eparallel",
+      "qf_at_contacts",
+      "refdens_efield_1e8"
+    ],
+    "improves_all_conditions": [],
+    "worsens_all_conditions": [
+      "eparallel",
+      "refdens_efield_1e8"
+    ],
+    "variant_summaries": [
+      {
+        "variant": "explicit_gradqf",
+        "dimension": "default-equivalence guard",
+        "condition_count": 4,
+        "maximum_response_dex": 0.0,
+        "minimum_response_dex": 0.0,
+        "maximum_error_changes_dex": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "improves_all_conditions": false,
+        "worsens_all_conditions": false,
+        "material_in_all_conditions": false
+      },
+      {
+        "variant": "eparallel",
+        "dimension": "driving force",
+        "condition_count": 4,
+        "maximum_response_dex": 0.22169878546706237,
+        "minimum_response_dex": 0.08832762311669255,
+        "maximum_error_changes_dex": [
+          0.20741651304588546,
+          0.03633374132750783,
+          0.15136606399219682,
+          0.008973941689772037
+        ],
+        "improves_all_conditions": false,
+        "worsens_all_conditions": true,
+        "material_in_all_conditions": true
+      },
+      {
+        "variant": "qf_at_contacts",
+        "dimension": "contact treatment",
+        "condition_count": 4,
+        "maximum_response_dex": 0.004647381570790211,
+        "minimum_response_dex": 0.00010875895644246531,
+        "maximum_error_changes_dex": [
+          -0.0005688614949531587,
+          3.164029877614216e-07,
+          -0.0021808333667213686,
+          4.3945748046461675e-06
+        ],
+        "improves_all_conditions": false,
+        "worsens_all_conditions": false,
+        "material_in_all_conditions": true
+      },
+      {
+        "variant": "no_parallel_boundary",
+        "dimension": "interface boundary layer",
+        "condition_count": 4,
+        "maximum_response_dex": 4.778191493596369e-05,
+        "minimum_response_dex": 1.6338289637907908e-08,
+        "maximum_error_changes_dex": [
+          -3.248349186825428e-05,
+          -4.721953730801864e-10,
+          -3.578662514729103e-05,
+          5.839592698286822e-12
+        ],
+        "improves_all_conditions": false,
+        "worsens_all_conditions": false,
+        "material_in_all_conditions": false
+      },
+      {
+        "variant": "refdens_efield_1e8",
+        "dimension": "low-density interpolation",
+        "condition_count": 4,
+        "maximum_response_dex": 0.5197204751320837,
+        "minimum_response_dex": 0.1141095811543876,
+        "maximum_error_changes_dex": [
+          0.34650761675877434,
+          0.10165645591623859,
+          0.5197204751320837,
+          0.32833582421385565
+        ],
+        "improves_all_conditions": false,
+        "worsens_all_conditions": true,
+        "material_in_all_conditions": true
+      }
+    ],
+    "selected_eparallel_line_search_damping": 0.01,
+    "eparallel_damping_robustness_pairs": [
+      {
+        "device": "n21",
+        "left_probe": "damping_0p1",
+        "right_probe": "damping_0p01",
+        "maximum_absolute_log10_current_difference_dex": 0.00016229401332445653,
+        "maximum_relative_current_difference": 0.0003736259601934699
+      }
+    ]
+  },
+  "attribution": {
+    "verified": [
+      "Explicit GradQuasiFermi is treated as a numerical null control",
+      "All controls reuse the same TDR, contacts, drain biases, and exact 51-point gate lattice",
+      "Vela curves are fixed while only one Sentaurus HFS control changes",
+      "LineSearchDamping=0.01 restores both Vd=1 V Eparallel cases with all 51 exact gate points"
+    ],
+    "unresolved": [
+      "A control response identifies a contributing option family but not a proprietary internal formula",
+      "The RefDens experiment tests one value (1e8 cm^-3) rather than a full parameter sweep"
+    ]
+  },
+  "artifacts": {
+    "comparison_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_controls/comparisons/comparison_report.json",
+      "sha256": "0d7a9773b820411c770fe0b5006fea97071d887255465469eccc92a45c47e6be"
+    },
+    "convergence_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_controls/convergence/convergence_report.json",
+      "sha256": "d829772ff16b42286240741d0b7e5cb7c873c505faae91437181830ab703fc2b"
+    },
+    "summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_controls/hfs_controls_summary.csv",
+      "sha256": "c53552f5c1432620498fef17520c42f2845b7a52f29307e3c645ebfca64fbb56"
+    },
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m8b/simplemos_m8b_sentaurus_response.png",
+        "sha256": "6e59b8ca3b5f83a8b1025caf47b0f61539f5d651cbacaf688fe47fc5482753e0"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8b/simplemos_m8b_error_change.png",
+        "sha256": "8d0663092032eb487c7bf7854da44aa73cf9bec0c24b58a0ab5187b331c943e5"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8b/simplemos_m8b_residual.png",
+        "sha256": "be4766632aa89f175c2f38e94a4f37d704cb23640bddad032576b63c85b06c1d"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8b/simplemos_m8b_best_control_idvg.png",
+        "sha256": "b82e31a42b881fbaebb9b4ce9ad8119b1aee9da95d56d1be35e1625ddbfa8866"
+      }
+    ]
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8b_hfs_controls_contract_v1.json": "047dc4b2bbaa66ca08ceb0dcdfc617a5bd882994a44722b36f657d98abe534fd",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8b_eparallel_convergence_contract_v1.json": "c480ac5bc9f2f9c5038976897a2fe56d725c456dd51e078f7c6a57d75d844667",
+    "scripts/run_simplemos_m8b_hfs_controls.py": "22c38769298ac639dc32efb31d7618f3849f80d3f5a861d67cbb130c6d935a17",
+    "scripts/run_simplemos_m8b_eparallel_convergence.py": "3a970fc237befad43ce4153e6bfa6af44f4472afedca5c90047b0da1a24a8fe5",
+    "scripts/plot_simplemos_m8b_hfs_controls.py": "7fcc71b72f3d3b5eaa0091272fb0c55a26acff82ee454b107e12cf5810ed1e05",
+    "scripts/freeze_simplemos_m8b_hfs_controls_evidence.py": "6056853c11e15ebe853ffc4a2cc0dc04c3bc61ce0036070511240341b7c2a81b",
+    "scripts/build_simplemos_m8b_report_artifact.py": "dab76c6675502a6404c4cf0265d96e3a18a8e0845efc1597227c9f79e8fe7128",
+    "tests/regression/test_simplemos_m8b_hfs_controls.py": "7dfdf92f0f11bcd228b3f19c46bcf85ff838d8b86c24faec3a75e6efcd223606",
+    "tests/regression/test_simplemos_m8b_eparallel_convergence.py": "10a0fc841de2d5500e490b2f19f54e408dc150689dc4675ce180ecb3c2be80bd"
+  }
+}

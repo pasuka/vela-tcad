@@ -1,0 +1,21 @@
+{
+  "schema": "vela.simplemos.sdevice.m72_native_gate_reaction_evidence.v3",
+  "status": "frozen",
+  "classification": "native_charge_qualified_full_profile_material_but_not_dominant",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m72_native_gate_reaction_contract_v3.json",
+  "contract_sha256": "fd5e86080485c1eee70004eb52fd93089c990bd392b4980b933fff99c00be805",
+  "hashes": {
+    "scripts/run_simplemos_m72_native_gate_reaction.py": "67efbf92476ee58450c2120eeb11415bbb6b3b2c05de0353e1b08ef736b8e136",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m72_native_gate_reaction_contract_v3.json": "fd5e86080485c1eee70004eb52fd93089c990bd392b4980b933fff99c00be805",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m72_native_gate_reaction_contract_freeze_v3.json": "f69f1bde3cd348da57ef16387142db61e4c9cedb80a249e238c455a1646bc0da",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_observer_replay_manifest.json": "51ac902b6579f783947daa9c72d310eba1106e424eb1f4c757239df9004d873e",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_report.json": "2a9bce2d606feaf8e2ef56d9b146bb6465fd52297fa395c399b4f5719300155a",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_stage_ledger.csv": "7ef8f06b67313382a081cf20849ec0820bf14835de5d8bc91b18594fc7421ae5",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_interface_profile_ledger.csv": "3788c22b83807f419120bed26ffd173aeac23d7b54a60070c5a3d50406a29163",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_interface_response_ledger.csv": "b12361599a0ad94d206f72ba4f4d79b127562e5ed3f3798f913a15a16f00141b",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_pair_ledger.csv": "9fe3a92590604b57c02a52b63294026e29b4dec220da88fdc0defe06a98ba39b",
+    "docs/validation/simplemos_m72_native_gate_reaction_2026-09-03.md": "f97cb0363472c2669bb74ab5a6d2755f928f63e072da5d9f43e7f9241fa4ab63",
+    "docs/validation/reports/simplemos_m72/artifact.json": "9fa0d0d0b69b3beb03f6208ee11ac971fd60cb60733530425fb56939197726d4"
+  },
+  "production_default_changed": false
+}

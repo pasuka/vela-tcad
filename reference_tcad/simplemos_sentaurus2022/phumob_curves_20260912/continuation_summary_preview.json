@@ -1,0 +1,37 @@
+{
+  "curves": [
+    {
+      "device": "n19",
+      "vd": 0.05,
+      "points": 51,
+      "min_error_percent": -0.03145670879629581,
+      "max_error_percent": 0.004351757382781152,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n19",
+      "vd": 1.0,
+      "points": 51,
+      "min_error_percent": 0.0012212710211123579,
+      "max_error_percent": 0.005319955472238291,
+      "worst_vg": 0.16
+    },
+    {
+      "device": "n23",
+      "vd": 0.05,
+      "points": 51,
+      "min_error_percent": -0.01819671931904132,
+      "max_error_percent": 0.005725237350007184,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n23",
+      "vd": 1.0,
+      "points": 51,
+      "min_error_percent": -0.8081352367043548,
+      "max_error_percent": 0.006529639249874819,
+      "worst_vg": 0.0
+    }
+  ],
+  "scope": "All 204 continuation states qualified. Final dual initialization pending."
+}

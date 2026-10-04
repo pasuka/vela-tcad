@@ -1,4 +1,5 @@
 #include "vela/post/ContactCurrent.h"
+#include "vela/equation/SplitDDRuntime.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/discretization/Bernoulli.h"
@@ -19,6 +20,16 @@ Real validatedThermalVoltage(Real temperature_K)
     if (temperature_K <= 0.0)
         throw std::invalid_argument("ContactCurrent: temperature_K must be positive.");
     return constants::kb * temperature_K / constants::q;
+}
+
+Real referencedValueRelativeTo(Real valueReference,
+                               Real valueIncrement,
+                               Real targetReference)
+{
+    return static_cast<Real>(
+        (static_cast<long double>(valueReference) -
+         static_cast<long double>(targetReference)) +
+        static_cast<long double>(valueIncrement));
 }
 
 struct NeumaierSum {
@@ -83,11 +94,18 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , matdb_(matdb)
     , doping_(doping)
     , edgeCells_(detail::buildEdgeCellMap(mesh))
-    , couple_(detail::computeTransportEdgeCouplings(mesh))
+    , couple_(detail::computeEffectiveTransportEdgeCouplings(
+          mesh, edgeCells_, detail::buildCellMaterials(mesh, matdb, temperature_K),
+          scaling.regionResolvedInterfaceAssembly))
     , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))
     , scaling_(scaling)
+    , bandgapConfig_(bandgapNarrowingConfig)
+    , bgnEnabled_(bandgapNarrowingConfig.model != "none")
+    , compensatedEqualNiFlux_(
+          bandgapNarrowingConfig.equalNiFluxEvaluation ==
+              "compensated_log_expm1")
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "ContactCurrent",
           mesh,
@@ -102,7 +120,17 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , Nv_(detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, false))
     , carrierStatistics_(std::move(carrierStatistics))
     , electronQuantumPotentialConfig_(std::move(electronQuantumPotential))
-{}
+{
+    detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
+    if (bandgapNarrowingConfig.equalNiFluxEvaluation !=
+            "legacy_factor_difference" &&
+        bandgapNarrowingConfig.equalNiFluxEvaluation !=
+            "compensated_log_expm1") {
+        throw std::invalid_argument(
+            "ContactCurrent: equal_ni_flux_evaluation must be "
+            "'legacy_factor_difference' or 'compensated_log_expm1'.");
+    }
+}
 
 
 MobilityModelConfig ContactCurrent::prepareMobility(const DDSolution& solution) const
@@ -187,18 +215,34 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     if (contact == nullptr)
         throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
 
+    if(solution.packedLow.size()!=0) {
+        if(!overrides.holeQuasiFermiDropByEdge.empty())throw std::invalid_argument("Split DD current overrides are unqualified");
+        if(!solution.hasConsistentSplitPackedState())throw std::invalid_argument("Stale split current state");
+        CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage_,mobilityConfig_,RecombinationModelConfig{},bandgapConfig_,ImpactIonizationModelConfig{},{},{},scaling_,{},carrierStatistics_,electronQuantumPotentialConfig_);
+        assembler.setQuasiFermiReferenceFields(solution.electronQfReference,solution.holeQfReference);
+        assembler.enableSplitDDState(true);auto runtime=assembler.splitRuntime();auto x=runtime->restore(solution);
+        return runtime->contact(x,contactName);
+    }
     std::unordered_set<Index> contactNodes(contact->node_ids.begin(), contact->node_ids.end());
     const Real temperature_K = thermalVoltage_ * constants::q / constants::kb;
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
+    MobilityModelConfig evaluatedMobilityConfig = mobilityConfig_;
+    if (isSurfaceMobilityModel(evaluatedMobilityConfig)) {
+        detail::updateSurfaceMobilityCellGeometry(
+            evaluatedMobilityConfig, mesh_, edgeCells_, solution.psi,
+            evaluatedMobilityConfig.surface.coordinateFieldFactor,
+            &cellMaterials);
+    }
     const Real fieldFactor = scaling_.enabled
         ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     auto [electronQf, holeQf] = contactQuasiFermi(solution);
     const bool hasReferencedElectronQf = solution.phinIncrement.size() == solution.phin.size();
     const bool hasReferencedHoleQf = solution.phipIncrement.size() == solution.phip.size();
-    MobilityModelConfig liveMobilityConfig = mobilityConfig_;
+    MobilityModelConfig liveMobilityConfig = evaluatedMobilityConfig;
     updateIalTransportState(liveMobilityConfig,mesh_,doping_,solution.psi,
         solution.n,solution.p,electronQf,holeQf);
+    evaluatedMobilityConfig = liveMobilityConfig;
     const bool vectorQfMobility =
         mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient" &&
         mobilityConfig_.highFieldGradientDiscretization == "transport_cell_vector";
@@ -492,16 +536,20 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                              : std::abs(holeQfDrop / edgeLength) * fieldFactor,
             electricField, contactElectricMobilityFields);
 
+        const detail::EdgeMobilityCarrierState mobilityState{
+            n_i, n_j, p_i, p_j, &solution.n, &solution.p, &solution.phin, &solution.phip};
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
-            &liveMobilityConfig,
-            &solution.psi, &solution.n, &solution.p);
+            &evaluatedMobilityConfig,
+            &solution.psi,
+            &mobilityState);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,
-            &liveMobilityConfig,
-            &solution.psi, &solution.n, &solution.p);
+            &evaluatedMobilityConfig,
+            &solution.psi,
+            &mobilityState);
 
         // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
         // use the cancellation-free quasi-Fermi balanced form, including the
@@ -552,10 +600,10 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 const Real electronPsiFromNode0Qf = electronPsi_i - phin_i;
                 const Real electronPsiFromNode0QfAtJ =
                     electronPsi_j - phin_j + electronQfDrop;
-                electronContinuityFlux01 = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                electronContinuityFlux01 = sgElectronBoltzmannContinuityFlux(
                     niElectron_[idxI], niElectron_[idxJ],
                     electronPsiFromNode0Qf, electronPsiFromNode0QfAtJ,
-                    0.0, electronQfDrop, thermalVoltage_, coef);
+                    0.0, electronQfDrop, thermalVoltage_, coef, SGBoltzmannFluxPolicy{bgnEnabled_, compensatedEqualNiFlux_});
             }
             if (!fermiDirac)
                 electronContinuityFluxLongDouble01 = electronContinuityFlux01;
@@ -591,11 +639,11 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 const Real holePsiFromNode0Qf = holePsi_i - phip_i_forHole;
                 const Real holePsiFromNode0QfAtJ =
                     holePsi_j - phip_j_forHole + holeQfDropForFlux;
-                holeContinuityFlux01 = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                holeContinuityFlux01 = sgHoleBoltzmannContinuityFlux(
                     niHole_[idxI], niHole_[idxJ],
                     holePsiFromNode0Qf, holePsiFromNode0QfAtJ,
                     0.0, holeQfDropForFlux,
-                    thermalVoltage_, coef);
+                    thermalVoltage_, coef, SGBoltzmannFluxPolicy{bgnEnabled_, compensatedEqualNiFlux_});
             }
             if (!fermiDirac)
                 holeContinuityFluxLongDouble01 = holeContinuityFlux01;
@@ -695,6 +743,17 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.phin1 = phin_j + electronReference_j;
         edgeDiag.phip0 = phip_i_forHole + holeReference_i;
         edgeDiag.phip1 = phip_j_forHole + holeReference_j;
+        edgeDiag.electronQfReference0 = electronReference_i;
+        edgeDiag.electronQfReference1 = electronReference_j;
+        edgeDiag.electronSgPhin0Relative = phin_i;
+        edgeDiag.electronSgPhin1Relative = referencedValueRelativeTo(
+            electronReference_j, phin_j, electronReference_i);
+        edgeDiag.electronSgPsi0Relative = electronPsi_i;
+        edgeDiag.electronSgPsi1Relative = static_cast<Real>(
+            static_cast<long double>(psi_j) -
+            static_cast<long double>(electronReference_i) -
+            static_cast<long double>(1.0 - exponentialWeight) *
+                static_cast<long double>(quantum_j));
         edgeDiag.holeQfDropOverrideApplied = holeQfDropOverrideApplied;
         edgeDiag.n0 = n_i;
         edgeDiag.n1 = n_j;
@@ -702,6 +761,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.p1 = p_j;
         edgeDiag.ni0 = ni_i;
         edgeDiag.ni1 = ni_j;
+        edgeDiag.electronMobilityDriveInternal = electronMobilityField;
+        edgeDiag.holeMobilityDriveInternal = holeMobilityField;
         edgeDiag.mun = mun;
         edgeDiag.mup = mup;
         edgeDiag.electronContinuityFlux = electronContinuityFlux01;

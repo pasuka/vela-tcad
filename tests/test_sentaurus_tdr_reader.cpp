@@ -110,7 +110,7 @@ void writeDoubleDatasetWithAttrs(hid_t group,
 std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopingFields = {
     {"PhosphorusActiveConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
     {"BoronActiveConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
-})
+}, const std::string& coordinateUnit = "um", bool includeInsulatorDoping = false)
 {
     const auto path = uniqueTempPath("vela_synthetic_sentaurus", ".tdr");
     std::error_code ec;
@@ -119,6 +119,7 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
     hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     hid_t collection = createGroup(file, "collection");
     hid_t geometry = createGroup(collection, "geometry_0");
+    writeStringAttribute(geometry, "unit:name", coordinateUnit);
 
     const std::vector<Vertex2D> vertices = {
         {0.0, 0.0},
@@ -141,6 +142,7 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
     hid_t silicon = createGroup(geometry, "region_0");
     writeStringAttribute(silicon, "name", "Silicon_1");
     writeStringAttribute(silicon, "material", "Silicon");
+    writeIntAttribute(silicon, "material type", 1);
     writeIntAttribute(silicon, "type", 0);
     writeSizeAttribute(silicon, "number of elements", 2);
     writeIntDataset(silicon, "elements_0", {2, 0, 1, 2, 2, 0, 2, 3});
@@ -160,6 +162,17 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
     writeIntDataset(iface, "elements_0", {0, 0, 0, 3, 1, 2, 3});
     H5Gclose(iface);
 
+    if (includeInsulatorDoping) {
+        hid_t oxide = createGroup(geometry, "region_3");
+        writeStringAttribute(oxide, "name", "Oxide_1");
+        writeStringAttribute(oxide, "material", "Oxide");
+        writeIntAttribute(oxide, "material type", 0);
+        writeIntAttribute(oxide, "type", 0);
+        writeSizeAttribute(oxide, "number of elements", 2);
+        writeIntDataset(oxide, "elements_0", {2, 0, 1, 2, 2, 0, 2, 3});
+        H5Gclose(oxide);
+    }
+
     hid_t state = createGroup(geometry, "state_0");
     int datasetIndex = 0;
     for (const auto& field : dopingFields) {
@@ -167,6 +180,20 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
         hid_t dataset = createGroup(state, datasetName.c_str());
         writeDoubleDatasetWithAttrs(dataset, "values", field.values, field.name, 0, 4, "cm^-3");
         H5Gclose(dataset);
+    }
+    if (includeInsulatorDoping) {
+        const std::string donorName = "dataset_" + std::to_string(datasetIndex++);
+        hid_t donor = createGroup(state, donorName.c_str());
+        writeDoubleDatasetWithAttrs(
+            donor, "values", {9.0e20, 9.0e20, 9.0e20, 9.0e20},
+            "PActive", 3, 4, "cm^-3");
+        H5Gclose(donor);
+        const std::string acceptorName = "dataset_" + std::to_string(datasetIndex++);
+        hid_t acceptor = createGroup(state, acceptorName.c_str());
+        writeDoubleDatasetWithAttrs(
+            acceptor, "values", {8.0e20, 8.0e20, 8.0e20, 8.0e20},
+            "BActive", 3, 4, "cm^-3");
+        H5Gclose(acceptor);
     }
     hid_t d2 = createGroup(state, ("dataset_" + std::to_string(datasetIndex++)).c_str());
     writeDoubleDatasetWithAttrs(d2, "values", {0.0, 1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0},
@@ -481,6 +508,7 @@ TEST_CASE("SentaurusTdrReader reads mesh regions contacts and state datasets", "
     const SentaurusTdrInventory inventory = reader.readInventory(path.string());
 
     REQUIRE(inventory.vertices.size() == 4);
+    REQUIRE(inventory.coordinate_unit == "um");
     REQUIRE(inventory.regions.size() == 3);
     REQUIRE(inventory.fields.size() == 7);
 
@@ -514,6 +542,103 @@ TEST_CASE("SentaurusTdrReader reads mesh regions contacts and state datasets", "
     const auto* contactVoltage = inventory.findField("ContactExternalVoltage", 1);
     REQUIRE(contactVoltage != nullptr);
     REQUIRE(contactVoltage->values.at(0) == Catch::Approx(5.0));
+}
+
+TEST_CASE("SentaurusTdrReader converts explicit centimeter coordinates to micrometers",
+          "[sentaurus][tdr][units]")
+{
+    const auto path = writeSyntheticTdr({}, "cm");
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_cm_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string());
+
+    const auto rows = readCsvRows(outDir / "nodes.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[1][1]) == Catch::Approx(1.0e4));
+    REQUIRE(std::stod(rows[2][2]) == Catch::Approx(1.0e4));
+    const auto metadata = nlohmann::json::parse(readFile(outDir / "metadata.json"));
+    REQUIRE(metadata["source_coordinate_unit"] == "cm");
+    REQUIRE(metadata["export_coordinate_unit"] == "um");
+    REQUIRE(metadata["coordinate_scale_to_um"].get<double>() == Catch::Approx(1.0e4));
+}
+
+TEST_CASE("SentaurusTdrReader qualifies a complete device input contract",
+          "[sentaurus][tdr][qualification]")
+{
+    const auto path = writeSyntheticTdr({
+        {"PActive", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"AsActive", {5.0e16, 6.0e16, 7.0e16, 8.0e16}},
+        {"BActive", {1.0e16, 2.0e16, 3.0e16, 4.0e16}},
+    }, "cm");
+    SentaurusTdrReader reader;
+    const auto inventory = reader.readInventory(path.string());
+    SentaurusTdrQualificationContract contract;
+    contract.requiredContactNames = {"drain"};
+    contract.allowedMaterials = {"Silicon"};
+    contract.semiconductorMaterials = {"Silicon"};
+    contract.acceptedCoordinateUnits = {"cm", "um"};
+    contract.acceptedDopingUnits = {"cm^-3"};
+
+    const auto report = reader.qualify(inventory, contract);
+
+    REQUIRE(report.passed);
+    REQUIRE(report.checks.size() == 6);
+    for (const auto& check : report.checks) {
+        REQUIRE(check.passed);
+    }
+}
+
+TEST_CASE("SentaurusTdrReader qualification fails closed on missing contacts and doping",
+          "[sentaurus][tdr][qualification]")
+{
+    const auto path = writeSyntheticTdr({
+        {"PActive", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+    }, "cm");
+    SentaurusTdrReader reader;
+    const auto inventory = reader.readInventory(path.string());
+    SentaurusTdrQualificationContract contract;
+    contract.requiredContactNames = {"source", "drain", "gate", "substrate"};
+    contract.allowedMaterials = {"Silicon"};
+    contract.semiconductorMaterials = {"Silicon"};
+    contract.acceptedCoordinateUnits = {"cm"};
+    contract.acceptedDopingUnits = {"cm^-3"};
+
+    const auto report = reader.qualify(inventory, contract);
+
+    REQUIRE_FALSE(report.passed);
+    const auto failed = [&](const std::string& code) {
+        return std::any_of(report.checks.begin(), report.checks.end(), [&](const auto& check) {
+            return check.code == code && !check.passed;
+        });
+    };
+    REQUIRE(failed("geometry.contacts"));
+    REQUIRE(failed("doping.coverage"));
+}
+
+TEST_CASE("SentaurusTdrReader imports short active names only from semiconductor regions",
+          "[sentaurus][tdr][doping]")
+{
+    const auto path = writeSyntheticTdr({
+        {"PActive", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"AsActive", {5.0e16, 6.0e16, 7.0e16, 8.0e16}},
+        {"BActive", {1.0e16, 2.0e16, 3.0e16, 4.0e16}},
+    }, "um", true);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_short_active_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string());
+
+    const auto rows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(1.5e17));
+    REQUIRE(std::stod(rows[0][2]) == Catch::Approx(1.0e16));
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.8e17));
+    REQUIRE(std::stod(rows[3][2]) == Catch::Approx(4.0e16));
 }
 
 TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[sentaurus][tdr]")

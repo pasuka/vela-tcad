@@ -1,0 +1,18 @@
+{
+  "points": 16,
+  "qualified": 15,
+  "attempts": 38,
+  "failed_attempts": 7,
+  "qualified_selected": 31,
+  "max_row_ratio": 0.00044150373776080475,
+  "max_dual_Id_relative": 6.017408793468348e-14,
+  "max_native_error_percent": 0.8081352366533956,
+  "source_components": 64,
+  "source_relative_active": 0,
+  "acceptance_changed": false,
+  "options": {
+    "poisson_residual_precision": "binary128",
+    "stable_merit_comparison": true,
+    "exact_dirichlet_updates": true
+  }
+}

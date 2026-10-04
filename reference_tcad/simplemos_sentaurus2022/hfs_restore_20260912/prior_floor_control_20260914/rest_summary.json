@@ -1,0 +1,7 @@
+{
+  "new_fitted_parameters": 0,
+  "production_parameter_qualified": false,
+  "left_max_relative": 2.6606468139789285e-09,
+  "right_max_relative": 2.989758948523935e-06,
+  "scope": "Held-out prior diagnostic floor; does not repair the original mathematical floor gate."
+}

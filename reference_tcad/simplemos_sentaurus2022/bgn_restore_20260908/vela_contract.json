@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n19_vd_0p050000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n19_vd_1p000000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n23_vd_0p050000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n23_vd_1p000000_endpoint\\template.json"
+    }
+  ],
+  "target_states": 32,
+  "paths": 2,
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "single_axis": "Only solver.bandgap_narrowing.model; all material parameters, constants, geometry, mobility, SRH volume and solver settings are retained.",
+  "paths_description": "Each target independently starts from its qualified no-BGN Vela state, or corresponding native target potentials with Vela-consistent BGN densities.",
+  "recovery": "At most one same-bias saved-state reload on failure; preserve original attempt. No failed state propagates to another target.",
+  "current_metric": "100*(Id_Vela/Id_Sentaurus-1); report physical BGN increment in each solver separately. No absolute-current acceptance threshold invented.",
+  "semantics": {
+    "delta_eg_max_abs_eV": 1e-12,
+    "native_identity_max_V": 1e-12,
+    "base_ni_relative": 1e-05,
+    "note": "Model parity gate only; never retune ni or constants."
+  },
+  "jvp": {
+    "states": "Both models, four n19/n23 x Vd cases at Vg=.8; first qualified Vela-start state.",
+    "directions": "Every third free Si node, separately psi/phin/phip, three amplitudes 1e-4/3e-5/1e-5 V.",
+    "metric": "True per-block norm error divided by max(analytic, finite-difference), undo built-in max(1,FD) floor.",
+    "strong_block_relative": 0.0001,
+    "qualification": "Two smaller amplitudes must pass strong nonzero blocks. Weak cross-carrier source blocks reported separately; this is not a full Jacobian audit."
+  },
+  "defaults_changed": false,
+  "gates_changed": false,
+  "source_changes": false
+}

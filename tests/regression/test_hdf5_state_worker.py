@@ -61,6 +61,19 @@ class Hdf5WorkerTest(unittest.TestCase):
             for i in (1,3):
                 self.assertIn('error',responses[i])
                 self.assertFalse((root/f'out{i}.h5').exists())
+            # Fixed-state terminal diagnostics need the same independently
+            # prepared mesh/origin scope as the production solve path.
+            for seed,expected in (('seed.h5',0),('wrong_mesh.h5',1),('wrong_origin.h5',1)):
+                probe=dict(cfg,simulation_type='terminal_current_functional_probe',
+                           state_file=seed,contact='anode',solver=dict(method='newton',impact_ionization='none'))
+                probe.pop('sweep');probe.pop('output_csv')
+                path=root/'probe.json';path.write_text(json.dumps(probe))
+                result=subprocess.run([str(RUNNER),'--config',str(path),'--log','off'],
+                                      capture_output=True,text=True,timeout=60)
+                self.assertEqual(result.returncode,expected,result.stderr)
+                if expected==0:
+                    status=json.loads(result.stdout.strip().splitlines()[-1])
+                    self.assertTrue(np.isfinite(status['current_A_per_um']))
 
 
 if __name__=='__main__':

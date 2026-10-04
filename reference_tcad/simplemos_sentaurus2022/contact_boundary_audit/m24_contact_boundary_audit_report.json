@@ -1,0 +1,53 @@
+{
+  "schema": "vela.simplemos.sdevice.m24_contact_boundary_audit_report.v1",
+  "status": "complete",
+  "execution": {
+    "contact_node_count": 3,
+    "drain_cut_edge_count": 7,
+    "first_layer_node_count": 5,
+    "read_only_probe_count": 4,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_contact_qf_bias_error_V": 3.00000013988e-18,
+    "maximum_sg_cut_current_relative_disagreement": 0.00036897060541553665,
+    "maximum_sg_cut_current_absolute_disagreement_A_per_um": 5.1290802635486806e-20,
+    "maximum_continuity_term_absolute_closure": 1.7946585593778019e-28
+  },
+  "findings": {
+    "maximum_full_no_hfs_contact_physical_state_delta": 0.0,
+    "maximum_full_no_hfs_contact_qf_increment_delta_V": 9.47261455263292e-26,
+    "full_cut_electron_current_A_per_um": 1.1046411849295576e-16,
+    "no_hfs_cut_electron_current_A_per_um": 1.3901053873308642e-16,
+    "self_consistent_cut_current_effect_dex": -0.099826495218532,
+    "maximum_first_layer_contact_column_share": 0.41647017505538897,
+    "maximum_first_layer_qf_increment_delta_V": 9.394977098351018e-17,
+    "signed_first_layer_contact_flux_delta_sum": -1.49963578427903e-12,
+    "signed_first_layer_internal_flux_delta_sum": 1.4964462126203687e-12,
+    "signed_first_layer_source_delta_sum": -1.4823725961827987e-21
+  },
+  "conclusions": {
+    "supported": [
+      "The Vela drain-contact physical state is identical between the self-consistent HFS-on and HFS-off states.",
+      "The drain electron quasi-Fermi target remains pinned to the applied drain bias in both states.",
+      "The approximately 0.10 dex current response is carried by tiny first-layer quasi-Fermi increment changes and balanced contact/internal flux changes, not by a changed contact boundary value."
+    ],
+    "not_supported": [
+      "Claiming that the Vela ohmic contact target directly causes the HFS-on/off response.",
+      "Claiming Vela/Sentaurus n23 contact-boundary equivalence without an n23 Sentaurus node-state export.",
+      "Changing a contact or transport default from this audit."
+    ]
+  },
+  "artifacts": {
+    "contact_nodes": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_contact_node_ledger.csv",
+    "drain_cut_edges": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_drain_cut_edge_ledger.csv",
+    "first_layer_rows": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_first_layer_continuity_ledger.csv"
+  },
+  "claim_policy": [
+    "Identical Vela HFS-on/off contact states exclude a direct contact-boundary response, not a private Sentaurus contact implementation difference.",
+    "Contact and internal flux terms must be reported together at the first free-node layer.",
+    "Sub-fA relative changes must be accompanied by absolute current and quasi-Fermi increment changes.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ]
+}

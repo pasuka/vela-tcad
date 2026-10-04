@@ -1,0 +1,19 @@
+{
+  "schema": "vela.simplemos.sdevice.m38_ldmos_mechanism_crosscheck.v1",
+  "scope": "Read-only cross-device check of boundary geometry, contact HFS/SG, and electron quasi-Fermi feedback",
+  "simplemos_source": "M37 frozen evidence",
+  "ldmos_source_worktree": "D:/code-repo/vela-tcad/.worktrees/templates-ldmos-phase-a",
+  "ldmos_bias_V": 0.5,
+  "acceptance": {
+    "maximum_signed_cotangent_attribution_change_dex": 0.001,
+    "minimum_ldmos_phin_fraction_of_feedback": 0.9,
+    "minimum_ldmos_contact_operator_improvement_dex": 0.5,
+    "require_finite_values": true
+  },
+  "claim_policy": [
+    "The LDMOS source worktree is read-only and dirty; M38 is a qualified snapshot, not frozen final LDMOS evidence.",
+    "A shared dominant quasi-Fermi feedback pathway does not imply identical direct contact-HFS behavior across devices.",
+    "AverageBox residual improvement is not called sufficient unless the self-consistent current also closes.",
+    "No LDMOS or SimpleMOS production default is changed by this crosscheck."
+  ]
+}

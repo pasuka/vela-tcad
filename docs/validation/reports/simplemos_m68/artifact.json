@@ -1,0 +1,10 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M68 DOS intrinsic level",
+  "status": "accepted",
+  "classification": "dos_ratio_inactive_in_frozen_boltzmann_path",
+  "report": "reference_tcad/simplemos_sentaurus2022/dos_intrinsic_level/m68_dos_intrinsic_level_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/dos_intrinsic_level/m68_dos_null_intervention_ledger.csv"
+  ]
+}

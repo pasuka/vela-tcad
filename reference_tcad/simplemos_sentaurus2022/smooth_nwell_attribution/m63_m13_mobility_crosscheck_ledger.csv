@@ -1,0 +1,3 @@
+low_device,high_device,drain_voltage_V,gate_voltage_V,low_sentaurus_drive_active_p95_mobility_error_dex,high_sentaurus_drive_active_p95_mobility_error_dex,mobility_error_growth_dex,terminal_error_growth_dex,sign_supports_mobility_growth
+n17,n21,0.05,0.8,0.16695366568435377,0.15706347207165727,-0.009890193612696496,0.03914737817139223,0
+n17,n21,1.0,0.8,0.18537332460900832,0.18291431325462776,-0.0024590113543805636,0.04136449962557141,0

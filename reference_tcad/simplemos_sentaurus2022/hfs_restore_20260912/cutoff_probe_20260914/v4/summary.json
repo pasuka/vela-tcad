@@ -1,0 +1,13 @@
+{
+  "samples": 69076,
+  "eligible_nodes": 868,
+  "excluded_calls": 4424,
+  "all_samples_qualified": true,
+  "native_threshold_bracket_V_cm": [
+    0.999999,
+    1.000001
+  ],
+  "exact_boundary_differentiable": false,
+  "DC_qualified": false,
+  "scope": "This fixed-state native probe isolates field formation; contact-QF and boundary projection disabled only here. Does not qualify a self-consistent response or production Jacobian."
+}

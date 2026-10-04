@@ -1,0 +1,18 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_evidence.v1",
+  "status": "failed",
+  "classification": "execution_or_identity_failure",
+  "contract_sha256": "a031425dacd2254d03cc5303db06c186426d622b512f246dcb0b3343e7759706",
+  "failure_reason": "The oxide-only P1 displacement observer exposed 22 gate edges, below the frozen 40-edge requirement, and did not qualify against native Sentaurus ContactCharge.",
+  "implementation_hashes": {},
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_partition_report_v1_failed.json": "119542ba1d0bb4a9fc623ee6700beea8ab59629712074edfcf16bd369be112a0",
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_state_ledger_v1_failed.csv": "90142f551bfb10479079ab0989bcce8abbbb92c548ac84084c1068025179381d",
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_pair_ledger_v1_failed.csv": "4d920f9095b0690794b9a3bd15c9208bafe1efc2f073bdf95b03c6dbe28ec824",
+    "docs/validation/simplemos_m71_gate_electrostatic_partition_v1_failed_2026-09-03.md": "930d7f585a8b4eb0106804ec9fe82af9112be3198c49904e86a46f543e73fe56",
+    "docs/validation/reports/simplemos_m71/artifact_v1_failed.json": "1b322b0174316f11a66dcf3d36809e066d9b6b56ce9e245b5ed70c227a54a12b"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "production_reference_replaced": false
+}

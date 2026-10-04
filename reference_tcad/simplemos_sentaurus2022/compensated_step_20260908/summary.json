@@ -1,0 +1,12 @@
+{
+  "DC": 14,
+  "carry_qualified": 8,
+  "carry_total": 12,
+  "identity_passed": 2,
+  "carry_failures_qualified": 0,
+  "failure_cases": 4,
+  "carry_controls_qualified": 8,
+  "control_cases": 8,
+  "ports_passed": 14,
+  "production_changes": false
+}

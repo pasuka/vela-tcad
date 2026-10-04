@@ -1,0 +1,19 @@
+{
+  "attempts": 16,
+  "failed_attempts": 0,
+  "states": 16,
+  "qualified_states": 16,
+  "points": 8,
+  "dual_qualified": 8,
+  "comparison_qualified": 8,
+  "max_row_ratio": 3.432834274184589e-08,
+  "max_port_relative": 2.220446049250313e-16,
+  "max_dual_Id_relative": 2.0442758597027932e-11,
+  "max_dual_psi_V": 1.71862e-12,
+  "max_dual_phin_V": 3.789322e-11,
+  "max_dual_phip_V": 7.466283e-11,
+  "max_dual_density_relative": 2.8880835500899593e-09,
+  "acceptance_changed": false,
+  "current_error_gate": "Report the original relative metric; do not invent a new absolute-current tolerance.",
+  "all_qualified": true
+}

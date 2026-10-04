@@ -1,0 +1,36 @@
+{
+  "previous_evidence": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\bgn_restore_20260908\\final_evidence.json",
+  "entries": [
+    {
+      "original": "build-release/vela_example_runner.exe",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\build-release\\vela_example_runner.exe",
+      "sha256": "d12649f7945cca1637bb3813263b95990dae94c7f3138c9ec3fdd90e91f98248"
+    },
+    {
+      "original": "build-release/libvela_core.a",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\build-release\\libvela_core.a",
+      "sha256": "040f9a6f7c3149c3de6ee730f5802f0a4db39b5aa9b7578eab5a3c4ce14d4668"
+    },
+    {
+      "original": "src/equation/CoupledDDAssembler.cpp",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\src\\equation\\CoupledDDAssembler.cpp",
+      "sha256": "220570efd4f26300e394fbd708077347c32d65f23b5e919dd6a63de443ff12c7"
+    },
+    {
+      "original": "include/vela/discretization/StableSGDerivative.h",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\include\\vela\\discretization\\StableSGDerivative.h",
+      "sha256": "6a47e29cfe2e45d6663835e16f4eaf1a55d4d4554b0019921e7833a3759009a4"
+    },
+    {
+      "original": "tests/test_production_numerics.cpp",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\tests\\test_production_numerics.cpp",
+      "sha256": "1bc04a2efacccce1c632d193bfcbdad969d9286c9bf4d6a095589b0961152c6f"
+    },
+    {
+      "original": "tests/test_sg_flux.cpp",
+      "retained": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_psi_derivative_20260908\\preimage\\tests\\test_sg_flux.cpp",
+      "sha256": "e9be56a977e5b4119318c1791d4d44a68501df3defb5d673eda93f6208d104cd"
+    }
+  ],
+  "scope": "Independent high precision audit and BGN fixed-mobility psi derivative repair; physics, acceptance and prior evidence unchanged."
+}

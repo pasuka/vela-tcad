@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.sdevice.nominal_tdr_evidence.v1",
+  "status": "passed",
+  "verified_on": "2026-08-26",
+  "source": {
+    "workbench_process_node": 17,
+    "parameters": {
+      "Lg_um": 0.25,
+      "NWell_cm3": 1e17,
+      "GOxTime_min": 10.0,
+      "LDD_Dose_cm2": 1e14
+    },
+    "expanded_sprocess_sha256": "93e1266cef19fbd19721d11689658124a56c1600bd9c9c90b34d29ef8f65d883",
+    "tdr_filename": "n17_fps.tdr",
+    "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+    "tdr_size_bytes": 1799958,
+    "generation_warnings": [
+      "The official deck does not select an AdvancedCalibration parameter set."
+    ]
+  },
+  "inventory": {
+    "coordinate_unit": "cm",
+    "export_coordinate_unit": "um",
+    "coordinate_scale_to_um": 10000.0,
+    "vertex_count": 1542,
+    "region_count": 8,
+    "dataset_count": 132,
+    "material_regions": [
+      {"index": 0, "name": "Silicon_1", "material": "Silicon", "material_type": 1, "triangles": 1850},
+      {"index": 1, "name": "Nitride_1.1", "material": "Nitride", "material_type": 0, "triangles": 313},
+      {"index": 2, "name": "Oxide_1", "material": "Oxide", "material_type": 0, "triangles": 388},
+      {"index": 3, "name": "Nitride_1.2", "material": "Nitride", "material_type": 0, "triangles": 313}
+    ],
+    "contacts": [
+      {"index": 4, "name": "substrate", "edges": 28},
+      {"index": 5, "name": "source", "edges": 2},
+      {"index": 6, "name": "drain", "edges": 2},
+      {"index": 7, "name": "gate", "edges": 48}
+    ],
+    "silicon_doping_fields": [
+      {"name": "BActive", "carrier": "acceptor", "unit": "cm^-3", "values": 993},
+      {"name": "PActive", "carrier": "donor", "unit": "cm^-3", "values": 993},
+      {"name": "AsActive", "carrier": "donor", "unit": "cm^-3", "values": 993}
+    ],
+    "doping_export": {
+      "row_count": 1542,
+      "silicon_node_count": 993,
+      "non_silicon_node_count": 549,
+      "non_silicon_nonzero_doping_count": 0
+    }
+  },
+  "qualification_checks": [
+    "source.sha256",
+    "geometry.coordinate_unit",
+    "geometry.vertices",
+    "geometry.material_regions",
+    "geometry.contacts",
+    "doping.units",
+    "doping.coverage"
+  ],
+  "binary_commit_policy": "ignored_build_artifact"
+}

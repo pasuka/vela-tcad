@@ -1,0 +1,15 @@
+# SimpleMOS M8-A chart map
+
+| Artifact | Analytical question | Form and fields | Supported takeaway | Palette and non-color encoding |
+|---|---|---|---|---|
+| `simplemos_m8a_paired_idvg.png` | Do the paired curves retain the same Id-Vg shape under every first-round model configuration? | 2x4 logarithmic line small multiples; Vg vs absolute drain current | All variants except No OldSlotboom retain close curve overlap; the largest gaps occur in deep off | Orange solid Sentaurus, blue dashed Vela |
+| `simplemos_m8a_signed_residual.png` | Where in gate bias does each paired mismatch occur? | 2x4 signed log-ratio lines; weak-inversion band and three key-bias markers | The accepted full residual peaks at Vg=0.05 V; weak- and strong-inversion residuals are smaller | Blue line, dark zero reference, gold window, orange markers |
+| `simplemos_m8a_gap_change.png` | Which single ablation improves or worsens paired agreement? | Horizontal grouped bars with full-range and near-zero views | No HFS is the best first-round improvement; No OldSlotboom is a large adverse outlier | Blue/orange/gold metric roots plus signed zero line |
+| `simplemos_m8a_model_response.png` | Do Sentaurus and Vela react similarly to each model switch? | 2x4 line small multiples of variant/full current response | Response curves nearly coincide except when OldSlotboom is removed; the small HFS separation matches the residual improvement | Orange solid Sentaurus, blue dashed Vela |
+| `simplemos_m8a_confirmation_full_idvg.png` | Does the accepted full model remain aligned across control devices and drain biases? | 2x2 logarithmic line small multiples | Full-physics parity remains the reference for all four controls | Orange solid Sentaurus, blue dashed Vela |
+| `simplemos_m8a_confirmation_residual.png` | Is the HFS effect stable across n17/n21 and Vd=0.05/1 V? | 2x2 signed residual lines for full, No HFS, and PhuMob only | Direction and gate-bias dependence of the candidate contribution can be compared directly | Three declared roots; PhuMob-only also dashed |
+| `simplemos_m8a_confirmation_improvement.png` | Does the candidate reduce maximum error consistently? | Grouped horizontal signed bars by control condition | Negative bars confirm improvement; mixed signs reject a universal attribution | Orange No HFS and gold PhuMob-only with exact signed labels |
+| Portable report first-round chart | Which non-outlier variants change maximum error near zero? | Native categorical bar, variant vs change from full | Preserves visibility of small changes while the No OldSlotboom value remains an explicit metric | Single-series default root and signed zero context |
+| Portable report confirmation chart | Does the candidate generalize across the four controls? | Native grouped bar, condition vs change, grouped by variant | Separates HFS-specific consistency from broader mobility simplification | Two semantic variant groups and visible legend |
+
+All static figures use direct simulation rows at 51 exact gate-bias points. No figure uses interpolated currents.

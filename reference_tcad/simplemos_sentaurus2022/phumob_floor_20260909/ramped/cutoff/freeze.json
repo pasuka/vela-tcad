@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/analysis/evidence.json": "4037c93332449dc6591bd2a64836ef14a9cebce7addeeb4b58f4f89897f0e465",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/contract.json": "bfeb217f8ec1ab9debb9fc7670d7aaf4c9e5fc63d7cfb352dfce0aee087f8ea7",
+    "scripts/audit_simplemos_phumob_native_cutoff_20260909.py": "64086a8f03a1a44d860241ef772dc3e96797edeb8afddee31b8800c91600f7b0"
+  }
+}

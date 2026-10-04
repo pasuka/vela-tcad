@@ -1,0 +1,53 @@
+{
+  "schema": "vela.simplemos.sdevice.m20_drain_adjacent_row_audit.v1",
+  "contract_id": "simplemos-sdevice-m20-drain-adjacent-row-audit-v1",
+  "scope": "SDevice-only electron-continuity balance and production-Jacobian audit at drain-adjacent free nodes",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "diagnostic_cpp_extension_only": true,
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "variants": ["vela_self_consistent", "sentaurus_imported"],
+    "interpolation": "forbidden"
+  },
+  "node_support": {
+    "definition": "all free endpoints of edges with exactly one endpoint in the drain contact node set",
+    "n21_focus_nodes": [990, 991, 992],
+    "flux_partition": ["drain_contact_cut_edges", "internal_edges"],
+    "source_partition": ["srh_recombination", "impact", "gauge", "boundary"]
+  },
+  "jacobian_partition": {
+    "matrix": "the production coupled-DD Jacobian evaluated at each frozen state",
+    "column_blocks": ["psi", "phin", "phip"],
+    "column_constraints": ["contact", "free"],
+    "exact_partition": "partition every nonzero production-Jacobian entry by psi/phin/phip and contact/free column",
+    "edge_derivative_control": "retain the existing edge-projection transport derivative only as a non-closing diagnostic control because the SimpleMOS production mobility drive is transport_cell_vector"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "probe_count": 96,
+    "maximum_raw_edge_flux_closure": 1e-10,
+    "maximum_raw_term_sum_closure": 1e-10,
+    "maximum_exact_jacobian_partition_relative_error": 1e-12,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "At the first free drain-adjacent nodes, is the imported-state electron residual created by contact-cut flux, internal flux, or local sources?",
+    "Does the exact incident-edge SG sum reproduce the raw continuity flux term?",
+    "Which variable and constrained/free column blocks dominate the production Jacobian row?",
+    "Can the full electron-phin row be reconstructed from incident-edge transport derivatives plus a local nontransport diagonal?"
+  ],
+  "interpretation_limits": [
+    "The audit evaluates both frozen states with the unchanged Vela operator; it does not expose a private Sentaurus Jacobian.",
+    "Raw continuity terms are separated before row weighting; the production Jacobian and residual retain configured row scaling.",
+    "The existing per-edge Jacobian probe constructs an edge-projection mobility drive and therefore is not used to reconstruct a transport-cell-vector production row.",
+    "Deep-off cancellation is retained as a condition-number diagnostic and is not used for headline HFS attribution."
+  ]
+}

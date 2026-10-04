@@ -1,0 +1,24 @@
+{
+  "input_hashes": {
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/all_row.csv": "0410237e2b489091638977e5bbb66c7fa50e3a8844e02f88914ede37748bfbdd",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/config.status.json": "2f2a0394f293a2110a9df99bde6714fa1999e3b004312ea6ef8c1ead52a95431",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/functional.status.json": "a08b6beab5c0bfed97e5427465556cf17fe93ca21fad11c9332d5a16a09753dc",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/independent_acceptance.json": "ceb726c7def2c2bb579f10548c32da82ff8533dba14563cf0525b45565c3aca6",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/input_freeze.json": "6bbc654ba3d073f4f893167a7cb8ffe2253c4f6f5aefd063142af4b916f0989b",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/result.json": "f74b0f77060a567c04d05ad711f06a847f2f95e9df71162ec6f073377c670280",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_021/attempt_0/state.csv": "965cb679d2430a11a6f340f0191badb54239fe725b3f5f81921bd5bf4b51a7e5",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/all_row.csv": "4e9eedb87c067298b1e406cbf1603d9018624dcc028a7e97b79526131ab9e488",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/config.status.json": "9d172e4fd19e9b0dcad3ca1a4c982b5e02e04d6ddf89fcaff07f22c31b67ab34",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/functional.status.json": "f4b9612b24cfa3000754006a0f3a7af76d58e60d64b68f538965505328e05288",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/independent_acceptance.json": "1279a5142f7933239851ecd1d91ed717e8b2b5af6cd2c73367274aaeabc1f8e9",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/input_freeze.json": "d69b3049f44fa19b9f521a6f89a6071c074dd363ebfe4eb8264373cb27213311",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/result.json": "aa1bc8ebc3c343f1be39ffc4207dfc59be10fda4baf1ba8be12985fd0e19b347",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/native/vg_021/attempt_0/state.csv": "f3b87ce54f3cb7477d6c03958de6bc3a814c3c31e4eb02ead39929491809493e",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/control_evidence.json": "4621241e911d2ec7496f0411fafa181f7fdb2710947821c39669b8f2e18500d2",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_evidence.json": "f9bd6e4d308d9c2c73f91d59a9122ca7df847526f7cfc9f301b9a79b39f595fd",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/partial_dual/first_overlap/comparison.csv": "27097b338ffe2d5dc626fcbabdcaf1b2830b2ac161de745598f0d1b3b93bfc40",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/partial_dual/first_overlap/summary.json": "89a46076573d75d9a096407915f987489c0f920c6cf56839c80556ac28ba17a1",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/supplemental_source_evidence.json": "4f6150696dfbbeab31e51794bab72e29361e6024f5f2e7bdae58f464abff7a7e",
+    "scripts/audit_simplemos_enormal_partial_dual_20260912.py": "6a399a00e9bc048a7d4024598dd47312a98af4c24b12cc3b7281e8991cf25d44"
+  }
+}

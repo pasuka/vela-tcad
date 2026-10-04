@@ -1,0 +1,9 @@
+{
+  "status": "frozen_preparation_blocked_upload",
+  "contract_sha256": "487c5f2bc3494ea12f6ec6f872a586378de75ae704edbb7bb01d41d16fa24ff8",
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_ifm_pilot/m81_execution_status.json": "35810d0b2648ceddf64eeb558dfb8f4b06d1fcc0c247d6bbfbe6dea2839aeac5",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_ifm_pilot/m80_pair_release_review.csv": "6abcc024ef67d1f6b7fac1c14b13957aaf67216c30969101a1ab52b2ab9f17a1",
+    "docs/validation/simplemos_m79_m81_execution_progress_2026-09-05.md": "f61196fdedcf24568d6f5e47645d3a5efa213262353182115399b3ed1864d11f"
+  }
+}

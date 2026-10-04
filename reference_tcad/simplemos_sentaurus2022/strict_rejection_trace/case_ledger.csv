@@ -1,0 +1,4 @@
+case,state_identity,iterations,failed_iteration,failure_reason,local_violations,capped_carrier_rows_on_failed_step,max_raw_step_V,raw_linear_residual_L2,capped_linear_residual_L2,global_residual,trial_count,best_trial_over_current
+m65_n19_vd_1p000000_endpoint,True,13,14,carrier_row_convergence_line_search_rejected,4,0,2.743068123753535e-09,8.249048397120962e-26,8.249048397120962e-26,1.1818450650002246e-10,13,1.0000105030399222
+m65_n23_vd_0p050000_endpoint,True,12,13,carrier_row_convergence_line_search_rejected,5,0,2.626082788702218e-11,2.6599387018096625e-25,2.6599387018096625e-25,7.450960238163814e-11,13,1.0000841046687206
+m65_n23_vd_1p000000_endpoint,True,15,16,carrier_row_convergence_line_search_rejected,23,0,1.2248882346580374e-05,2.3401173637081473e-24,2.3401173637081473e-24,1.4062404175497966e-10,13,1.0000854562846384

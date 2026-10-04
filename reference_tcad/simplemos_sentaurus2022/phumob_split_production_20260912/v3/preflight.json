@@ -1,0 +1,18 @@
+[
+  {
+    "arm": "vela",
+    "restart_exact": true,
+    "flux_reconstruction": 2.1428849170912124e-16,
+    "port_relative": 0.0,
+    "jvp_max": 6.340501511331797e-10,
+    "qualified": true
+  },
+  {
+    "arm": "native",
+    "restart_exact": true,
+    "flux_reconstruction": 2.0171055379259053e-16,
+    "port_relative": 2.220446049250313e-16,
+    "jvp_max": 6.340501511331797e-10,
+    "qualified": true
+  }
+]

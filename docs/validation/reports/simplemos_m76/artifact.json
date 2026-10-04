@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M76 dopant Poisson charge volume",
+  "status": "accepted",
+  "classification": "dopant_poisson_volume_not_material",
+  "report": "reference_tcad/simplemos_sentaurus2022/dopant_poisson_charge_volume/m76_dopant_poisson_charge_volume_report.json",
+  "document": "docs/validation/simplemos_m76_dopant_poisson_charge_volume_2026-09-03.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/dopant_poisson_charge_volume/m76_case_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/dopant_poisson_charge_volume/m76_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/dopant_poisson_charge_volume/m76_curve_response_ledger.csv"
+  ],
+  "manifest": "reference_tcad/simplemos_sentaurus2022/dopant_poisson_charge_volume/m76_execution_manifest.json"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "vela.simplemos.sdevice.m68_dos_intrinsic_level_report.v1",
+  "status": "accepted",
+  "classification": "dos_ratio_inactive_in_frozen_boltzmann_path",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m68_dos_intrinsic_level_contract_v1.json",
+    "sha256": "d9beb419f45ed9f5ef8905995e0d488936d5c9d0ec281b69fa6cedd1abe8412e"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_single_point_newton_reclosures": 2,
+    "production_default_changed": false
+  },
+  "summary": {
+    "baseline_Nc_m3": 2.8e+19,
+    "baseline_Nv_m3": 1.04e+19,
+    "perturbed_Nc_m3": 1.12e+20,
+    "perturbed_Nv_m3": 2.6e+18,
+    "ni_cm3_as_material_input": 10750038488.844236,
+    "implied_intrinsic_level_shift_V_if_dos_ratio_were_active": -0.035838481527607456,
+    "baseline_current_A_per_um": 1.7876142940971415e-08,
+    "perturbed_current_A_per_um": 1.7876142940971415e-08,
+    "absolute_current_difference_A_per_um": 0.0,
+    "log_current_difference_dex": 0.0,
+    "state_hash_identity": true
+  },
+  "code_path_proof": {
+    "boltzmann_electron_uses_ni_not_Nc": true,
+    "boltzmann_hole_uses_ni_not_Nv": true,
+    "boltzmann_equilibrium_uses_ni_not_dos": true,
+    "generalized_srh_dos_is_fermi_guarded": true
+  },
+  "causal_scope": {
+    "closed": "Nc/Nv cannot change this frozen classical Boltzmann current path once ni is fixed.",
+    "not_closed": "Sentaurus may allocate its intrinsic energy reference asymmetrically; Vela currently cannot represent that as an Nc/Nv knob in this path. M69 localizes the remaining stage dependence."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "replay_count": true,
+    "all_code_path_anchors_present": true,
+    "current_bit_identity": true,
+    "state_hash_identity": true,
+    "ni_unchanged": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

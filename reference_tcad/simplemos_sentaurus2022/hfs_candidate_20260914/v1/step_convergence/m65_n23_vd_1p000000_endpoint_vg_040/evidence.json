@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/config.json": "c7c909a51032273a8d43634a851e6c9924d0831c04ec197e09223aa5da3a5a72",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/config.status.json": "ee1ba1f7134a1c460d199bb365908182e5c6e2fe0b2ea2751144ea0fd1e2506f",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/config.stdout.txt": "95ca447faa91da6d7515c8b2fd04f05b43b56647f2dbc6d13ef2008adf7229e1",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/jvp.csv": "14f81567aef6ce6b20ac265c72d8f20c94962dcb23b01b47ad1362e95e3f19f5",
+    "build-release/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/rows.csv": "ceaf4b07e6afae05439e3eff543463d732ac9fc43e498ea2673753aaf7a50c1c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/failures.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/input_evidence.json": "cda23d2ffabfdf7df58f8ba44e143b8ae83a12c5e2830a231a6f052760c0b0e6",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/m65_n23_vd_1p000000_endpoint_vg_040/summary.json": "aee38204dc7cdc7502a57dccbde4962bb121b2a6bfdfd322f5cbb85bf3fe1ed5"
+  }
+}

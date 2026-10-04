@@ -1,0 +1,6 @@
+{
+  "scope": "Two spatially matched nodes in four native Vg=.8 states. Native cell-weighted Masetti + native processed box g; no Vela state substituted.",
+  "residual": "sum outward SG particle flux + native plotted SRH * selected volume, cm units. Inspect signed Si and original Vela SRH volume independently.",
+  "retained": "Both density and qf SG representations. Tiny net source or rounded qf gradients may preclude a precise inferred volume; not a pass/fail native FD qualification.",
+  "native_new_runs": false
+}

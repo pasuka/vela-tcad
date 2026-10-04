@@ -1,0 +1,17 @@
+{
+  "scope": "Six existing failed states; exact split/checkpoint invariance and fixed-state operator preflight, not DC acceptance.",
+  "partition": "Exact equality of every exported observable",
+  "model_relative": 2e-12,
+  "production_residual_over_flux_scale": 1e-10,
+  "independent_reference_relative": 1e-60,
+  "reference_precision_agreement": 1e-70,
+  "micro_response_relative": 1e-10,
+  "micro_response_absolute_floor": 1e-85,
+  "directional_relative": 0.0001,
+  "directional_formal_amplitude": "1/4096 of the original Newton direction",
+  "precisions": [
+    120,
+    160
+  ],
+  "production_defaults_changed": false
+}

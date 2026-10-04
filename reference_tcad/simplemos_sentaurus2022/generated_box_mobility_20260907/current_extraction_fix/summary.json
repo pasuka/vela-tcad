@@ -1,0 +1,10 @@
+{
+  "DC": 32,
+  "qualified_DC": 32,
+  "qualified_dual": 8,
+  "qualified_migration": 8,
+  "qualified_ports": 32,
+  "maximum_row_ratio": 8.249645556894346e-07,
+  "maximum_KCL_over_Id": 1.6218028745806847e-14,
+  "maximum_migration_Id_relative": 1.4247014679114045e-10
+}

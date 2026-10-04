@@ -1,0 +1,3 @@
+carrier,training_key,training_cell,mathematical_P_min,mathematical_G_min,inferred_effective_G_floor,G_difference,production_parameter_qualified
+e,m65_n19_vd_0p050000_endpoint_vg_040,148,0.32461283737163577,0.09810869654913677,0.09810965009295847,9.535438216939918e-07,False
+h,m65_n19_vd_0p050000_endpoint_vg_040,148,0.2891460536218377,0.07994310999664854,0.07994487380175797,1.7638051094254203e-06,False

@@ -1,0 +1,8 @@
+{
+  "schema": "vela.simplemos.sdevice.m49_substrate_electron_transport_attribution_contract_freeze.v1",
+  "status": "frozen_before_analysis",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_v1.json",
+  "contract_sha256": "77169ce197bd8d2fb21cbd184fe18ef6ea9b3d8e881535ba9317049931ce713c",
+  "frozen_at": "2026-09-01T00:00:00+08:00",
+  "analysis_may_not_modify_contract": true
+}

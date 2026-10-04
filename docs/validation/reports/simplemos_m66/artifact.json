@@ -1,0 +1,12 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M66 matched-ni full curve",
+  "status": "accepted",
+  "classification": "matched_ni_full_curve_material_but_not_complete",
+  "report": "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_point_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_matched_ni_full_curve_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/matched_ni_full_curve/m66_execution_case_ledger.csv"
+  ]
+}

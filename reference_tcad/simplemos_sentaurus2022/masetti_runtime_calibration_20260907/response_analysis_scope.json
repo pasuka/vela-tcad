@@ -1,0 +1,15 @@
+{
+  "status": "completed_continuity_and_calibrated_direction_analysis",
+  "accepted_amplitudes": [
+    0.001,
+    0.0005
+  ],
+  "unit_response": "Derivative with respect to alpha at the frozen state; alpha=1 has not been simulated.",
+  "local_attribution": "Edge contributions are an additive adjoint decomposition of a calibrated combined direction; individual edge experiments have not all been performed.",
+  "input_hashes": {
+    "scripts/analyze_simplemos_transport_calibration_20260907.py": "5fe38f047ba5cfc3f7440659d9f8fdaf465af1028afcd490c06286bb4f552d5b",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/box_mobility_scope.json": "1f58f06ea9db60b82ef5122649d0ee68dd958d66292e3157124da606e0fa9458",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/distributed_response/freeze.json": "14d84d43cffeb44ff5889cf4cca4829edb1d74588600ca8fae34c88b0798222b",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/distributed_response/calibration.csv": "c594a9a54d19ea02761cfc47e75ec2433e70aa08d823a3d371858720c27fddc2"
+  }
+}

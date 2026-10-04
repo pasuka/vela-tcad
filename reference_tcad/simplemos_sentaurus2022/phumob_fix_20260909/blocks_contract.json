@@ -1,0 +1,22 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\blocks\\m65_n19_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\blocks\\m65_n19_vd_1p000000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\blocks\\m65_n23_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\blocks\\m65_n23_vd_1p000000_endpoint\\config.json"
+    }
+  ],
+  "gate": 0.0001,
+  "gated_steps": "Smaller three amplitudes, excluding weak cross blocks already compared to independent HP references. All outputs retained."
+}

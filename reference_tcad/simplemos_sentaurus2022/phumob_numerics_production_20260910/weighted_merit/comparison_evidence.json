@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/native_points.csv": "0009d7088e577a8379eda85acc4fa5cb87277951f20e28839f3e2da734ff2b52",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_points.csv": "0e3bfa67bf44d4c4e1b6df0a11c540a576eeab7fd4bd4598bc43d3a8590a0928",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/comparison.csv": "b8afbed735087b952f010129fb9a50d820a899ccfeb1845b66dd4ddef2054e7e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/comparison_summary.json": "601d079ba5292df75ebf933461f1c0a8e462c1140f5969e7e417fdd5b8d05f8d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/dc_evidence.json": "aa09bd49e46ca9b3b4adbd9f3e03fba2b9914aebfa7c2c28dcf893c5a29c1f35",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/selected_states.csv": "c27fec0bb65f29da71af5f49a08496f200b4cd834a4e5b663a2fbd433e3f548a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source_activation.csv": "b4d52496eec8dd01bc1b6269cd8c43816040e20dad36e9049bba62f54a4a6f0e"
+  }
+}

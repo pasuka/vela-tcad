@@ -1,0 +1,40 @@
+{
+  "checks": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "error_budget_relative": 1.1102230246251565e-16,
+      "max_secant_edge_node_weighted_difference_A_per_um": 3.784494690844628e-22
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "error_budget_relative": 2.220446049250313e-16,
+      "max_secant_edge_node_weighted_difference_A_per_um": 6.064261397753636e-22
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "error_budget_relative": 0.0,
+      "max_secant_edge_node_weighted_difference_A_per_um": 3.2164450435462046e-24
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "error_budget_relative": 2.220446049250313e-16,
+      "max_secant_edge_node_weighted_difference_A_per_um": 2.9490189719248624e-24
+    }
+  ],
+  "paired_checks": [
+    {
+      "vd": 0.05,
+      "exact_high_minus_low_relative_error": 0.09494850510432155,
+      "budget": 0.09494850510432154
+    },
+    {
+      "vd": 1.0,
+      "exact_high_minus_low_relative_error": 0.08122225489599169,
+      "budget": 0.08122225489599168
+    }
+  ],
+  "passed": true,
+  "input_hashes": {
+    "scripts/review_simplemos_calibrated_transport.py": "e67387d41060d3f18cbb5a5d5ba2350c2b08ad6e1841d9429f18a06e17f7bfa6"
+  }
+}

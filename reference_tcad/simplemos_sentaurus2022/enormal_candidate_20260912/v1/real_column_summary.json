@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "elapsed_seconds": 385.89259990000573,
+      "checks": 26640,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "elapsed_seconds": 389.7651576000062,
+      "checks": 26640,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "elapsed_seconds": 283.7696114999999,
+      "checks": 26640,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "elapsed_seconds": 283.3004738000018,
+      "checks": 26640,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "elapsed_seconds": 332.2686928000039,
+      "checks": 26676,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "elapsed_seconds": 337.8663560999994,
+      "checks": 26676,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "elapsed_seconds": 445.4183320000011,
+      "checks": 26676,
+      "failed": 0,
+      "qualified": true
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "elapsed_seconds": 448.0721696999972,
+      "checks": 26676,
+      "failed": 0,
+      "qualified": true
+    }
+  ],
+  "qualified": true,
+  "scope": "All residual rows for the three columns of node 1000, at two amplitudes, across eight real states. This does not certify every column of each real-state matrix; all columns and weak nonlocal entries are additionally checked on the controlled synthetic mesh.",
+  "gate": 0.0001,
+  "excluded_weak_entries": 0
+}

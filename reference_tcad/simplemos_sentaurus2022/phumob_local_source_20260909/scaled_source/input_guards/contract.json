@@ -1,0 +1,59 @@
+{
+  "jobs": [
+    {
+      "label": "size",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\size\\source.txt",
+      "alpha": "0",
+      "error": "Invalid pair-source manifest"
+    },
+    {
+      "label": "count",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\count\\source.txt",
+      "alpha": "0",
+      "error": "Invalid pair-source manifest"
+    },
+    {
+      "label": "duplicate",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\duplicate\\source.txt",
+      "alpha": "0",
+      "error": "Invalid pair-source record"
+    },
+    {
+      "label": "contact",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\contact\\source.txt",
+      "alpha": "0",
+      "error": "Invalid pair-source record"
+    },
+    {
+      "label": "truncated",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\truncated\\source.txt",
+      "alpha": "0",
+      "error": "Invalid pair-source record"
+    },
+    {
+      "label": "extra",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\extra\\source.txt",
+      "alpha": "0",
+      "error": "Extra pair-source data"
+    },
+    {
+      "label": "alpha_range",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\alpha_range\\source.txt",
+      "alpha": "1.1",
+      "error": "Invalid pair-source amplitude"
+    },
+    {
+      "label": "alpha_trailing",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\alpha_trailing\\source.txt",
+      "alpha": "0junk",
+      "error": "Invalid pair-source amplitude"
+    },
+    {
+      "label": "alpha_missing",
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\input_guards\\alpha_missing\\source.txt",
+      "alpha": null,
+      "error": "Missing pair-source amplitude"
+    }
+  ],
+  "expected": "All nine rejected before emitting a terms CSV. No change to accepted output or thresholds."
+}

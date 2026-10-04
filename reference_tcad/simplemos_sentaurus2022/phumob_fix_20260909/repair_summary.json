@@ -1,0 +1,19 @@
+{
+  "points": 4,
+  "initial_attempts_before": 8,
+  "initial_attempts_after": 8,
+  "failed_attempts_before": 0,
+  "failed_attempts_after": 0,
+  "dual_points_before": 4,
+  "dual_points_after": 4,
+  "max_Id_change_relative": 1.6653345369377348e-15,
+  "cross_checks_before": 328,
+  "cross_failed_before": 212,
+  "cross_failed_after": 0,
+  "source_relative_active": 0,
+  "source_components": 32,
+  "production_changed": true,
+  "physics_or_acceptance_changed": false,
+  "native_element_box_phumob_restored": false,
+  "metadata_note": "Reused cross analyzer writes production_changed=false to mean the diagnostic itself does not edit source; this experiment explicitly changes the production Jacobian, with baseline/candidate identities frozen separately."
+}

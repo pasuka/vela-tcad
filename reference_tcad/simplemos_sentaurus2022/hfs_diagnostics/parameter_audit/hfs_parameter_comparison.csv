@@ -1,0 +1,15 @@
+carrier,parameter,sentaurus,vela,status,relevance_at_300K
+electron,vsat0_m_s,107000.0,107000.0,exact,active
+electron,beta0,1.109,1.109,exact,active
+electron,alpha,0.0,0.0,implicit_exact,active
+electron,betaexp,0.66,,neutral_at_300K,T/T0=1
+electron,vsatexp,0.87,,neutral_at_300K,T/T0=1
+electron,ku,1.0,1.0,implicit_exact,active scale
+electron,kv,1.0,1.0,implicit_exact,active scale
+hole,vsat0_m_s,83700.0,83700.0,exact,active
+hole,beta0,1.213,1.213,exact,active
+hole,alpha,0.0,0.0,implicit_exact,active
+hole,betaexp,0.17,,neutral_at_300K,T/T0=1
+hole,vsatexp,0.52,,neutral_at_300K,T/T0=1
+hole,ku,1.0,1.0,implicit_exact,active scale
+hole,kv,1.0,1.0,implicit_exact,active scale

@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/compile_command.json": "69aa54021036921075be418589effbd1c9cf05d84855eb9d512da127359293df",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/link_command.json": "bb82692d6b9e0c0c470b727d8871e267206d3151a14589a475ac6c433dab7876",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/newton.o": "04b659bb207a24fc9031285def085456ebe981336e5d0bdc8d114734faa7753f",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/NewtonSolver.cpp": "7454f5293013c5b0bcb2d4f53370e4be11ff20778a9e5105857f4fd383f39819",
+    "build-release/phumob_source_precision_20260910/poisson_candidate/contact_step/runner.exe": "90f76aa83ab84a3cf4ecd708f22ee30c959add14f29edef9472421bd18824165",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/build_evidence.json": "1ad4237dc2e7dc91a4e03e4e3f17c455fd2a8668a95e603e19cac55724971b1c",
+    "scripts/validate_simplemos_exact_contact_step_20260910.py": "7e76be1f4619e251905c4cbddab36ccf555a5ca4a9c2cfa0505ec9c27f6af238"
+  }
+}

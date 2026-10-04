@@ -1,11 +1,126 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/physics/IalMobility.h"
+#include "vela/physics/IalMobilityJson.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include "vela/core/IalKernelProfiling.h"
+#include <chrono>
+#include <iostream>
+#include <vector>
 
 using namespace vela;
+
+TEST_CASE("IALMob omitted screening method uses safeguarded Halley and keeps explicit legacy", "[mobility][ialmob][screening_default]") {
+    IalKernelProfilingScope profile(false);
+    const auto root=ialScreeningMinimum(1.258,401.);
+    CHECK(ialKernelProfile.screeningCandidateCalls==1);
+    CHECK(root==ialScreeningMinimum(1.258,401.,IalScreeningMethod::Halley));
+    IalScreeningCache cache;
+    CHECK(cache.minimum(1.258,401.)==root);
+    CHECK(cache.minimum(1.258,401.,IalScreeningMethod::Halley)==root);
+    CHECK(cache.size()==1);
+    const auto before=ialKernelProfile.screeningCandidateCalls;
+    cache.minimum(1.258,401.,IalScreeningMethod::Legacy);
+    CHECK(ialKernelProfile.screeningCandidateCalls==before);
+    CHECK(cache.size()==2);
+    IalMobility model(IalMobility::siliconDefaults(true),true);
+    CHECK(model.screeningMethod()==IalScreeningMethod::Halley);
+    CHECK(model.withScreeningMethod(IalScreeningMethod::Legacy).screeningMethod()==IalScreeningMethod::Legacy);
+    using nlohmann::json;
+    json cfg={{"mobility_SI",{{"ialmob",json::object()}}}};
+    CHECK(ial_json::electrothermalScreeningMethod(cfg)==IalScreeningMethod::Halley);
+    cfg["mobility_SI"]["ialmob"]["screening_method"]="legacy";
+    CHECK(ial_json::electrothermalScreeningMethod(cfg)==IalScreeningMethod::Legacy);
+    cfg["diagnostic_ialmob_screening_method"]="halley";
+    CHECK_THROWS_AS(ial_json::electrothermalScreeningMethod(cfg),std::invalid_argument);
+    cfg["mobility_SI"]["ialmob"].erase("screening_method");
+    cfg["diagnostic_ialmob_screening_method"]="legacy";
+    CHECK(ial_json::electrothermalScreeningMethod(cfg)==IalScreeningMethod::Legacy);
+}
+
+TEST_CASE("Screening candidate scalar timing", "[.][screening_benchmark]") {
+    const std::array methods{IalScreeningMethod::Legacy,IalScreeningMethod::Newton,IalScreeningMethod::Halley,IalScreeningMethod::Toms748};
+    const std::array names{"legacy","newton","halley","toms748"};
+    std::vector<std::pair<Real,Real>> inputs;
+    for(Real mass:{1.,1.258})for(int i=0;i<257;++i)inputs.emplace_back(mass,50.+950.*i/256.);
+    for(int round=0;round<3;++round)for(int order=0;order<4;++order){
+        const int index=round%2?3-order:order;IalKernelProfilingScope scope(false);
+        Real checksum=0.;const auto start=std::chrono::steady_clock::now();
+        for(int repeat=0;repeat<256;++repeat)for(const auto& [mass,temp]:inputs)
+            checksum+=ialScreeningMinimum(mass,temp,methods[index]);
+        const double seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        REQUIRE(std::isfinite(checksum));
+        std::cout<<"SCREENING_BENCH {\"round\":"<<round<<",\"method\":\""<<names[index]
+            <<"\",\"calls\":"<<inputs.size()*256<<",\"seconds\":"<<seconds
+            <<",\"function_evaluations\":"<<ialKernelProfile.screeningFunctionEvaluations
+            <<",\"fallbacks\":"<<ialKernelProfile.screeningFallbacks<<",\"checksum\":"<<checksum<<"}\n";
+    }
+}
+
+TEST_CASE("Screening candidates preserve positive stationary roots and method cache identity", "[mobility][ialmob][screening_candidate]") {
+    using MP=boost::multiprecision::cpp_dec_float_50;
+    for(Real mass:{.01,.258,1.,1.258,100.})for(Real temperature:{50.,299.,300.,301.,600.,1000.,100000.}){
+        CAPTURE(mass,temperature);
+        const MP a=pow(MP(temperature)/(MP(300)*MP(mass)),MP(".28227"));
+        const MP b=pow(MP(mass)*MP(300)/MP(temperature),MP(".72169"));
+        MP lo("1e-12"),hi("1e12");
+        for(int i=0;i<210;++i){
+            const MP p=sqrt(lo*hi);
+            const MP derivative=MP(".89233")*MP(".19778")*a/pow(MP(".41372")+a*p,MP("1.19778"))
+                -MP(".005978")*MP("1.80618")*b/pow(b*p,MP("2.80618"));
+            if(derivative<0)lo=p;else hi=p;
+        }
+        const Real reference=static_cast<Real>(sqrt(lo*hi));
+        IalScreeningCache cache;
+        for(auto method:{IalScreeningMethod::Legacy,IalScreeningMethod::Newton,IalScreeningMethod::Halley,IalScreeningMethod::Toms748}){
+            CAPTURE(static_cast<int>(method));
+            const Real root=ialScreeningMinimum(mass,temperature,method);
+            REQUIRE(std::isfinite(root));REQUIRE(root>0.);
+            CHECK(std::abs(root/reference-1.)<1e-12);
+            const MP p(root);
+            const MP left=MP(".89233")*MP(".19778")*a/pow(MP(".41372")+a*p,MP("1.19778"));
+            const MP right=MP(".005978")*MP("1.80618")*b/pow(b*p,MP("2.80618"));
+            CHECK(static_cast<Real>(abs((left-right)/left))<3e-12);
+            CHECK(cache.minimum(mass,temperature,method)==root);
+            CHECK(cache.minimum(mass,temperature,method)==root);
+        }
+        CHECK(cache.size()==4);
+    }
+    for(auto method:{IalScreeningMethod::Newton,IalScreeningMethod::Halley,IalScreeningMethod::Toms748}){
+        IalKernelProfilingScope profile(false);
+        CHECK(ialScreeningMinimum(.001,400.,method)==ialScreeningMinimum(.001,400.,IalScreeningMethod::Legacy));
+        CHECK(ialKernelProfile.screeningFallbacks==1);
+        CHECK_THROWS_AS(ialScreeningMinimum(1.,49.,method),std::invalid_argument);
+        CHECK_THROWS_AS(ialScreeningMinimum(0.,300.,method),std::invalid_argument);
+    }
+    CHECK_THROWS_AS(ialScreeningMethod("invalid"),std::invalid_argument);
+}
+
+TEST_CASE("Screening candidates preserve mobility and coupled temperature response", "[mobility][ialmob][screening_candidate]") {
+    for(bool electron:{true,false})for(Real t:{50.,299.,300.,301.,400.,1000.})for(Real density:{1e18,1e23,1e28}){
+        const IalMobility base(IalMobility::siliconDefaults(electron),electron,IalScreeningMethod::Legacy);
+        const IalMobilityState state{density,.8*density,.3*density,.7*density,1e6,2e-8,t};
+        const auto old=base.evaluateWithDerivatives(state);
+        for(auto method:{IalScreeningMethod::Newton,IalScreeningMethod::Halley,IalScreeningMethod::Toms748}){
+            CAPTURE(electron,t,density,static_cast<int>(method));
+            const auto model=base.withScreeningMethod(method);
+            const auto now=model.evaluateWithDerivatives(state);
+            const Real scale=old.result.mobility_m2_per_Vs;
+            CHECK(std::abs(now.result.mobility_m2_per_Vs/scale-1.)<2e-12);
+            const std::array<Real,6> units{density,density,density,density,1e6,2e-8};
+            for(int i=0;i<6;++i)CHECK(std::abs(now.derivative_SI[i]-old.derivative_SI[i])*units[i]/scale<2e-10);
+            CHECK(std::abs(now.temperatureDerivative_m2_per_Vs_K-old.temperatureDerivative_m2_per_Vs_K)*t/scale<2e-10);
+            if(t>50.){
+                auto plus=state,minus=state;const Real step=t*1e-5;plus.temperature_K+=step;minus.temperature_K-=step;
+                const Real fd=(model.evaluate(plus).mobility_m2_per_Vs-model.evaluate(minus).mobility_m2_per_Vs)/(2.*step);
+                CHECK(std::abs(fd-now.temperatureDerivative_m2_per_Vs_K)*t/scale<2e-5);
+            }
+        }
+    }
+}
 
 TEST_CASE("IALMob differentiated evaluation preserves every scalar component", "[mobility][ialmob][temperature]")
 {
@@ -50,7 +165,7 @@ TEST_CASE("IALMob screening optimization retains the frozen bisection root", "[m
                     -.005978*1.80618*b/std::pow(b*p,2.80618);
                 if(derivative<0.)lower=p;else upper=p;
             }
-            CHECK(cache.minimum(mass,temperature)==std::sqrt(lower*upper));
+            CHECK(cache.minimum(mass,temperature,IalScreeningMethod::Legacy)==std::sqrt(lower*upper));
         }
     }
 }
@@ -73,7 +188,7 @@ TEST_CASE("IALMob predicted screening bracket preserves roots and stationarity",
                 const Real p=std::sqrt(lower*upper);const auto t=terms(p);
                 if(t[0]-t[1]<0.)lower=p;else upper=p;
             }
-            const Real result=cache.minimum(mass,temperature);
+            const Real result=cache.minimum(mass,temperature,IalScreeningMethod::Legacy);
             CHECK(result==std::sqrt(lower*upper));
             const auto t=terms(result);
             CHECK(std::abs(t[0]-t[1])/std::max(t[0],t[1])<1e-12);

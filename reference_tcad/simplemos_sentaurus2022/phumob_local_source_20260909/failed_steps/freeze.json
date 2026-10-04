@@ -1,0 +1,20 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/failed_steps/native_first/config.json": "b9ab4dccdfee078042e2631754d0e4d593f17d5145e450554ca5702050277a21",
+    "build-release/phumob_local_source_20260909/failed_steps/native_reload/config.json": "bdf39f0057ce939ee9e9db731d35ff076e886f4fd508d1a781519c9e9cc62053",
+    "build-release/phumob_local_source_20260909/failed_steps/qualified_control/config.json": "73c5b3b1ebfc678474c42186113cfcff398557df35918d44b234fe815d3f3873",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_0/all_row.csv": "7ac4fa30571d5ca92cdb77152f95faebb98c63fe5faeef4955b98e56ab64cab1",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_0/config.status.json": "80cb6daffbdaa15f0822d3385aaa7580bab37710b89e4169b7ffd7dbbf33b0e6",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_0/state.csv": "1f1556751757e2ab1643698155decfca7588e6b849f3b4e1d1850062a293bf7f",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_1/all_row.csv": "9499999c9df0dfab2995c6b3616d8ea2f46ef5e86ae72b8d92dc939e23565094",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_1/config.status.json": "9df3663b91f7ef427d1edbee683eec02510792d9af8f1f7b5090ac1a7b515df6",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_1/state.csv": "0530522071827d57b3bd8ed9f53f267937f2006f7665d536ff8fdcd525c47612",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/vela/vg_010/attempt_0/all_row.csv": "9f0009fce66ffbc45c92b8b711e60dc99d843f767043a98cc850d54ef153834b",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/vela/vg_010/attempt_0/config.status.json": "0cb6c55480576bcf24fa168d397f9ea8b25848f44c06a4a22382fc8b01150964",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/vela/vg_010/attempt_0/state.csv": "3de99b005ee41147f07ce57bd94096cb584471630a762f9d8d1e306b914e2392",
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/failed_steps/contract.json": "0e83c70012b6259c47192254c5043ce77254355e58d71d58ce8d65eaaf3bf574",
+    "scripts/audit_simplemos_phumob_lowvg_failed_steps_20260909.py": "fbd4dee8e98e8a8c799437fd2559eb1c3c6ab7d18f8864c58e865eae2bcc72bd",
+    "src/solver/NewtonSolver.cpp": "59201c936f6fa2519fd8f55542af6ebf9bcbb7f08d15309c22abe571ce0d40f0"
+  }
+}

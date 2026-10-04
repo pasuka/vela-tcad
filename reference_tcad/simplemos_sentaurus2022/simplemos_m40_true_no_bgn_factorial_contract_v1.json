@@ -1,0 +1,55 @@
+{
+  "schema": "vela.simplemos.sdevice.m40_true_no_bgn_factorial.v1",
+  "scope": "SDevice-only n23 HFS-off OldSlotboom versus explicit NoBandGapNarrowing by SRH(DopingDependence) 2x2 causal ablation",
+  "bias": {
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "manual_contract": {
+    "release": "T-2022.03-SP2",
+    "manual": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/manuals/PDFManual/data/sdevice_ug.pdf",
+    "manual_page": 305,
+    "old_slotboom_syntax": "EffectiveIntrinsicDensity(BandGapNarrowing(OldSlotboom))",
+    "no_bgn_syntax": "EffectiveIntrinsicDensity(NoBandGapNarrowing)",
+    "default_behavior": "Bandgap narrowing is active unless explicitly disabled."
+  },
+  "fixed_invariants": {
+    "hfs_enabled": false,
+    "mobility": "PhuMob Enormal",
+    "statistics": "Boltzmann",
+    "bias_route": "equilibrium then drain ramp then DoZero gate ramp"
+  },
+  "cells": [
+    {"id": "bgn_on_srh_on", "bgn_model": "old_slotboom", "srh": true},
+    {"id": "bgn_on_srh_off", "bgn_model": "old_slotboom", "srh": false},
+    {"id": "bgn_off_srh_on", "bgn_model": "none", "srh": true},
+    {"id": "bgn_off_srh_off", "bgn_model": "none", "srh": false}
+  ],
+  "required_sentaurus_fields": [
+    "DonorConcentration",
+    "AcceptorConcentration",
+    "BandgapNarrowing",
+    "EffectiveIntrinsicDensity",
+    "ElectrostaticPotential",
+    "eQuasiFermiPotential",
+    "hQuasiFermiPotential",
+    "eDensity",
+    "hDensity"
+  ],
+  "acceptance": {
+    "maximum_bias_error_V": 1e-10,
+    "minimum_common_silicon_nodes": 900,
+    "maximum_doping_identity_relative_error": 1e-15,
+    "maximum_no_bgn_field_absolute_eV": 1e-14,
+    "require_solver_log_model_match": true,
+    "require_manual_keyword_confirmation": true
+  },
+  "claim_policy": [
+    "The solver log, not the deck label, is authoritative for the effective BGN model.",
+    "A no-BGN cell is accepted only when NoBandGapNarrowing is explicit and both log and exported field confirm it.",
+    "Donor and acceptor observability is mandatory; missing fields fail the run instead of being treated as zero.",
+    "Only BGN and SRH are varied; HFS remains disabled in all four cells.",
+    "No production default is changed."
+  ]
+}

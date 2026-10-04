@@ -186,7 +186,9 @@ inline Scalar localAdFieldLimitedMobility(
 
 inline bool localAdUsesFieldMobility(const std::string& model)
 {
-    return model == "caughey_thomas_field" ||
+    return model == "constant_field" ||
+           model == "constant_field_lombardi" ||
+           model == "caughey_thomas_field" ||
            model == "caughey_thomas_field_surface" ||
            model == "masetti_field" ||
            model == "masetti_field_lombardi";
@@ -195,6 +197,9 @@ inline bool localAdUsesFieldMobility(const std::string& model)
 inline bool localAdSupportedMobility(const std::string& model)
 {
     return model == "constant" ||
+           model == "constant_field" ||
+           model == "constant_lombardi" ||
+           model == "constant_field_lombardi" ||
            model == "caughey_thomas" ||
            model == "caughey_thomas_field" ||
            model == "caughey_thomas_field_surface" ||

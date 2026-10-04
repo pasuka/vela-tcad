@@ -1,0 +1,8 @@
+{
+  "schema": "vela.simplemos.sdevice.m51_current_weighting_attribution_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m51_current_weighting_attribution_contract_v1.json",
+  "contract_sha256": "b507d8d07a44c1163437c41cdcf9feef7f8d2286ebdc28c0d0a3d73a18b9f11b",
+  "frozen_at": "2026-09-01T00:00:00+08:00",
+  "execution_may_not_modify_contract": true
+}

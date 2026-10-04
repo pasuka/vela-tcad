@@ -139,6 +139,12 @@ struct TerminalCurrentMethodCompareDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct PoissonDirichletReactionDiagnosticsConfig {
+    bool enabled = false;
+    std::vector<std::string> contacts;
+    std::string csvFile;
+};
+
 struct NewtonHistoryDiagnosticsConfig {
     bool enabled = false;
     std::string csvFile;
@@ -167,6 +173,7 @@ struct SweepDiagnosticsConfig {
     AvalancheInternalSourceCurrentAuditConfig avalancheInternalSourceCurrentAudit;
     ReleaseBVConfigAuditConfig releaseBVConfigAudit;
     TerminalCurrentMethodCompareDiagnosticsConfig terminalCurrentMethodCompare;
+    PoissonDirichletReactionDiagnosticsConfig poissonDirichletReaction;
     NewtonHistoryDiagnosticsConfig newtonHistory;
     QfBoundsDiagnosticsConfig qfBounds;
     ContactCurrentQfFloorDiagnosticsConfig contactCurrentQfFloor;

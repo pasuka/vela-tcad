@@ -1,0 +1,40 @@
+{
+  "schema": "vela.simplemos.sdevice.m40_true_no_bgn_factorial_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "manual_keyword": "NoBandGapNarrowing",
+    "manual_sha256": "f33068f5040c1c8c7993bdc1c86a0d777925792780ab4405752accd682706e88",
+    "production_gap_dex": 0.09039871358507992,
+    "true_no_bgn_srh_on_gap_dex": 0.010870601028172609,
+    "bgn_response_mismatch_srh_on_dex": 0.07952811255690584,
+    "bgn_related_fraction_of_production_gap": 0.8797482774138918,
+    "factorial_main_effect_qualified": false,
+    "sentaurus_state_count": 4,
+    "vela_state_count": 4,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json",
+      "sha256": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_factorial_matrix.csv",
+      "sha256": "660e2fb609db7243f529da5b1a302c9982ac85e2faf79b1a93545773c9d49810"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_factor_effects.csv",
+      "sha256": "d4232b3e509f93fb0786836096f58b6ddc443835e53879da6643ecf34f6c7542"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m40_true_no_bgn_factorial_contract_v1.json": "b8c9ba697dfeae3050916ba1d229020d253b62d10b9cb28719557999339d5b3d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_evidence.json": "ddce32b03a1505530ac63c1db58928c3d261e7da7492580b52c77a64edc6904e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+    "scripts/run_simplemos_m40_true_no_bgn_factorial.py": "102f1c149d82321976f7e0aeaba4ec70f151791ca8c57611013f60ab6cfa6321",
+    "scripts/freeze_simplemos_m40_true_no_bgn_factorial_evidence.py": "31af534283d085fed5952ee4caaf8d6d6c5ffc353d6585586577c50da8d6e528",
+    "tests/regression/test_simplemos_m40_true_no_bgn_factorial.py": "daa1eeb7e5c9d1437ae9f235dfc4c332e703ae58e7d6187a227c8decc6bd95d0",
+    "docs/validation/simplemos_m40_true_no_bgn_factorial_2026-09-01.md": "e6471114771940af7c8f03e930249ea35eea0bcb71752d039df179395d7fd6fd",
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "input_hashes": {
+    "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/state.csv": "b510194c45d45d428b1d042876a5ee60e7168962053cab12b0715483ef9da878",
+    "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/state.csv": "97b1eccb5d1a51ab2b6b430d52c9c6473776a99083155081de1b4ce67b7984cd",
+    "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/state.csv": "234fe70655f443ec788cfec80ae8f0c7e0e4815fa04ef70f0bef6b86532201f1",
+    "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/state.csv": "bdce6adcac5bb13df2bed73d4532703b3b6217b3067a8548165127037ada6fdc",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n19_vd_0p050000_endpoint/config.json": "d19630535c8bc968c0ec5b51f3b999f3b911197bddd8912cccd3efe002587471",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n19_vd_1p000000_endpoint/config.json": "f6fe08816c51305404a879675ce799068890548a359aae7b1ef4099a92801cd9",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n23_vd_0p050000_endpoint/config.json": "5ccda37f616b9672c922e0ed79a1f7e30ad780dfcfcbca22ab1f5f3117dbfd36",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n23_vd_1p000000_endpoint/config.json": "517d425b52a4a169624bb72a0ffd3f876d4ee855bb23d52c8a0df60bee606bfc",
+    "build-release/simplemos_strict_flux_precision/m65_n19_vd_0p050000_endpoint/config.json": "4b90b21a17129a0eec7b241a53fa8b8f0cb36a47188819f1c6b9bb1ef4a9702b",
+    "build-release/simplemos_strict_flux_precision/m65_n19_vd_1p000000_endpoint/config.json": "ac4db30209479c763c3350311bc272ddfcf36f2aab14c7f85aa48a48460cc7fb",
+    "build-release/simplemos_strict_flux_precision/m65_n23_vd_0p050000_endpoint/config.json": "beb4d6db66b019e3d502ef1f95c024e411d09f8ccae1b3b0361a06286a9ed423",
+    "build-release/simplemos_strict_flux_precision/m65_n23_vd_1p000000_endpoint/config.json": "a661e0b3fc4448a574c25b5323e7c09ba5e27cb5449fd8c99b2dc83dc19debfe",
+    "build-release/vela_example_runner.exe": "6642a845d9d6dd30fea4e23ce8950428b852d57e09a6752d3c43db88f99dccf9",
+    "reference_tcad/simplemos_sentaurus2022/convergence_acceptance_isolation/case_ledger.csv": "a1c3eea24715fb36f363b490dfd0a55af7720bf0e1117e1467d24fa3165b502c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_convergence_acceptance_isolation_contract_v1.json": "b34cfaa9c5e8c60f498ec82770051cc2bbb71595c817a07a1a7822532ec18c82",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_convergence_acceptance_isolation_freeze_v1.json": "f1cac83b7f87f8f0dcf6ba877c2eb0ea157d45126b60d9a3318c4f1954ef9ce2",
+    "reference_tcad/simplemos_sentaurus2022/strict_flux_precision/contract.json": "a6de7ea93150483af19d28ee152e8a9829723616b80bd83a244a1dc7463c679e",
+    "reference_tcad/simplemos_sentaurus2022/strict_rejection_trace/contract.json": "b4b720cc223ba9038efd6946dae8c313a3cd7e38770f394fc156b123bcb204ee",
+    "scripts/run_simplemos_strict_flux_precision.py": "39364190f4f9dbab3c98a451069ae0d577c17ee430aef6de9d8b870782d3a246",
+    "src/discretization/ScharfetterGummel.cpp": "9400db72cfffd9661620b2647b891d200c6f85ee5c8522e5a1062e3640541eff",
+    "src/equation/CoupledDDAssembler.cpp": "450bb381d14ea748385e8b19784d9b62cbd62dc5b0c9939c4b7916ea2fd902ae",
+    "src/post/ContactCurrent.cpp": "88697626e17dc45ca5eb39d2df1131a766d2aedce9e76aa9a286178f8117772f"
+  }
+}

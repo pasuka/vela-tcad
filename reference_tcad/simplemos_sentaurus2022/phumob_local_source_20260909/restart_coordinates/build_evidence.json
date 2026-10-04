@@ -1,0 +1,16 @@
+{
+  "input_hashes": {
+    "build-release/libvela_core.a": "45efc8522243b1d047fa674fc31b7a49c5ada5646b4e6c21d1ff68a5f48e9756",
+    "build-release/phumob_local_source_20260909/restart_coordinates/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/restart_coordinates/compile_command.json": "277f09283bbd57b90b2d2bffee69de32859c1c1d7e6ddd94be9afe6045677feb",
+    "build-release/phumob_local_source_20260909/restart_coordinates/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/restart_coordinates/link_command.json": "d505b4a604458111644f52e80f2c58009564f692b6c65c4b3b99a04e7e676cda",
+    "build-release/phumob_local_source_20260909/restart_coordinates/newton.o": "fab45eb29c4b26568120c24833bbea454de8ed99ab62df6af166df3e8a7a61d4",
+    "build-release/phumob_local_source_20260909/restart_coordinates/NewtonSolver.cpp": "5604547d739bddaea9462ac98e2ff348d47b8f2c8f83345bd8582c80ecfdfda9",
+    "build-release/phumob_local_source_20260909/restart_coordinates/runner.exe": "8f225cff34eaba4a1272ceb04f6ac8135cee90c51b81607f4e8d62ad8ab02f13",
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/failed_trace/evidence.json": "48534396bcfcd3c470726fd459ad2e6f053c84cc540bf4e028d53507a4af2453",
+    "scripts/validate_simplemos_phumob_restart_coordinates_20260909.py": "bddbd4858fe64eefe0d5e2a2c06931a7d9d5c9ba9d274ef4e4d86a986b8c87ce",
+    "src/solver/NewtonSolver.cpp": "59201c936f6fa2519fd8f55542af6ebf9bcbb7f08d15309c22abe571ce0d40f0"
+  }
+}

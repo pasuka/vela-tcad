@@ -1,0 +1,15 @@
+{
+  "scope": "Explicit element_box_phumob candidate, plain PhuMob only; nodal constitutive and complete adjacent-cell carrier columns. Independent exact-formula checks before diagnostic eight-point self-consistent comparison.",
+  "native_G_floor": "Unchanged precise Vela minimum; native floor discrepancies remain unqualified, no fitted parameters.",
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "predecessor": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\phumob_fix_20260909\\completion_evidence.json"
+}

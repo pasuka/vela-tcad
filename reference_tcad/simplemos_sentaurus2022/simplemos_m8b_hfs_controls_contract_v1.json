@@ -1,0 +1,127 @@
+{
+  "schema": "vela.simplemos.sdevice.m8b_hfs_controls.v1",
+  "contract_id": "simplemos-sdevice-m8b-hfs-controls-v1",
+  "scope": "SDevice-only single-variable diagnosis of Sentaurus HighFieldSaturation driving-force and numerical controls",
+  "sentaurus_release": "T-2022.03-SP2",
+  "comparison_design": {
+    "sentaurus_baseline": "M8-A confirmation full-physics reference",
+    "vela_candidate": "M8-A confirmation full-physics Vela result",
+    "policy": "hold the Vela solution fixed and change one Sentaurus HFS control at a time",
+    "baseline_reuse_required": true
+  },
+  "devices": [
+    {
+      "id": "n17",
+      "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+      "NWell_cm3": 1e17
+    },
+    {
+      "id": "n21",
+      "tdr_sha256": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+      "NWell_cm3": 2e17
+    }
+  ],
+  "variants": [
+    {
+      "id": "explicit_gradqf",
+      "dimension": "default-equivalence guard",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [],
+      "expected_interpretation": "must reproduce the implicit default before other controls are interpreted"
+    },
+    {
+      "id": "eparallel",
+      "dimension": "driving force",
+      "hfs_option": "HighFieldSaturation(Eparallel)",
+      "math_options": [],
+      "expected_interpretation": "isolates current-parallel electric field from quasi-Fermi-gradient drive"
+    },
+    {
+      "id": "qf_at_contacts",
+      "dimension": "contact treatment",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": ["ComputeGradQuasiFermiAtContacts=UseQuasiFermi"],
+      "expected_interpretation": "removes the default electric-field substitution in elements touching contacts"
+    },
+    {
+      "id": "no_parallel_boundary",
+      "dimension": "interface boundary layer",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": ["-ParallelToInterfaceInBoundaryLayer"],
+      "expected_interpretation": "disables the default tangential-field correction in boundary elements"
+    },
+    {
+      "id": "refdens_efield_1e8",
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e8",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e8"
+      ],
+      "expected_interpretation": "interpolates the HFS quasi-Fermi-gradient drive toward electric field below 1e8 cm^-3"
+    }
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {
+      "start_V": 0.0,
+      "stop_V": 2.5,
+      "step_V": 0.05,
+      "point_count": 51,
+      "values_V": [
+        0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+        1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+        1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95,
+        2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45,
+        2.5
+      ]
+    }
+  },
+  "diagnostic_windows": {
+    "deep_off_gate_voltages_V": [0.0, 0.05],
+    "weak_inversion_min_V": 0.65,
+    "weak_inversion_max_V": 0.95,
+    "strong_inversion_gate_voltage_V": 2.5
+  },
+  "comparison": {
+    "reference_bias_column": "gate_voltage_V",
+    "reference_current_column": "drain_total_current_A_per_um",
+    "candidate_bias_column": "bias_V",
+    "candidate_current_column": "current_total_A_per_um",
+    "current_sign_policy": "compare_absolute_magnitude",
+    "interpolation": "forbidden",
+    "exact_bias_tolerance_V": 1e-10,
+    "current_floor_A_per_um": 1e-18,
+    "numeric_parity": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    }
+  },
+  "attribution_policy": {
+    "null_control_max_response_dex": 1e-10,
+    "material_response_min_dex": 1e-4,
+    "stable_direction_requires_all_four_conditions": true,
+    "single_control_is_diagnostic_not_unique_causality": true
+  },
+  "numerical_retry_policy": {
+    "principle": "retry only a nonconverged case; retain identical physics and exact CurrentPlot lattice",
+    "cases": [
+      {
+        "case": "n17_eparallel_vd_1",
+        "reason": "default continuation reached MinStep; convergence probe selected the shared damping that succeeds for both high-drain Eparallel cases",
+        "coupled_iterations": 100,
+        "gate_min_step": 1e-8,
+        "line_search_damping": 0.01
+      },
+      {
+        "case": "n21_eparallel_vd_1",
+        "reason": "default and 40-iteration continuation reached MinStep; convergence probe selected the shared damping that succeeds for both high-drain Eparallel cases",
+        "coupled_iterations": 100,
+        "gate_min_step": 1e-8,
+        "line_search_damping": 0.01
+      }
+    ]
+  }
+}

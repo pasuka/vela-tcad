@@ -1,0 +1,30 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_phumob_local_source_and_restart_validation_2026-09-09.md": "ea3004eb090f38fbb09877aae79efd30c351516c49cb9d3af8d6192e29a98c5a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/build_evidence.json": "d6e3e2339d117c46f8027c5bb8f1cb1e48a0006678373301d49d2c5510bd5403",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/execution_environment.json": "7fa64b78d7aa938dc8b6cdb4b3ffe2419784cbd9cc963a9854057ee69f068d34",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/failed_steps/evidence.json": "c465e9053a36db798f92c408701301344a3703266cb4cc07d92e3dfd3feecafe",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/failed_trace/evidence.json": "48534396bcfcd3c470726fd459ad2e6f053c84cc540bf4e028d53507a4af2453",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/freeze.json": "3435a31bf16944d668ea64d52d4ef15c4da128fd6e399f091012303494a385da",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/jacobian_build_evidence.json": "fe955e53823a6afac8adec3525bbd45f716bb6ed1fcf65c1cf5000b15abc1b53",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/native/freeze.json": "6457d5f0d12350af2e8f24b02b50ecbeb8304907e46368980dd2078ad8e56cd1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/native_transfer_status.json": "6d08db95747e69318bfef99bc869c85523c8c0b0c20c6a5500f6b158bb79de22",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/preflight_evidence.json": "92c952c0b361c7c366e8bcd01ed5969b711e966b5003c2da824a7ec7019c9507",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/restart_coordinates/build_evidence.json": "008aef65c997c1561f956d88dde3dbdbaf4231340ad24725a1e3e2ea552e016b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/restart_coordinates/dc_evidence.json": "b83d1a88bec5dadec7423ce83537589791a14a4928a530a4c21ed52e4ecbbb93",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/restart_coordinates/freeze.json": "7854cbc20146957dabdd859f13eb3b4c1f19a8e9cfa9ef9ce9cb471437a42051",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/restart_coordinates/identity_evidence.json": "c941b59d78e555e7e32fc1fb1784e4701f1a42928d799cac759e058e778d13cf",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/build_evidence.json": "442eb7ef19c1c5788529b5f772c8f4cf45fb1de02d32591e8f0f09ef4f52690f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/dc_evidence.json": "661a64b3ec52c0873faaffea2c9ca5d439b1a3b0133763bc51e5765a6cd0a10d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/evidence.json": "27aebab3a194d1bd9d0cdceb3724eca1cd91a782ea86211263e23ab0e40129c8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/freeze.json": "3126c3831e6082be93eab2881653255bd9d982b041c9cc165a62fba06e1dcd46",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/input_guards/evidence.json": "4eb0474ce4d49dc543b1fd18f0092295cdd51b9280a4f4dbc1cd9914d928c33e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/jacobian_build_evidence.json": "5054d537de5592e668da05b1afbd1653f462813eac5aabab0afe93cedd03a9dd",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/jacobian_probe_freeze.json": "205d8a0852c6b1ee04d7eaafd1a8d7c903aa8b34ad2ebc54b78dcf8c7e25cb65",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/port_calibration/evidence.json": "ed05a5c92df294bbfb25b2027baccfc478c91a83a3c53cc265463f92e1283e5f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/preflight_evidence.json": "ff341113e143e6247487337f2a3e24833916a40c7a4989a04ff4f8361bd6a86a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/script_qa.json": "1317746d6c5afce8d167ed20da858ade27dec54ed69454b10cd7b18266e7ef7f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/summary.json": "8ce1d03f774094717ea07181768679639303fda55d9edd08203d8487a747de83",
+    "scripts/report_simplemos_phumob_local_source_20260909.py": "455ce66632ac60435a11050ccfc8f2fbec54f3bcde1e08baaec300fcd7d1072b"
+  }
+}

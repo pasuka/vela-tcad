@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_masetti_curves_20260908/parallel_finish.sh": "7251362976fb59a662e1566f09e91b7100b09a842dfd14b57a4f4f4967a4812d",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/native_freeze.json": "36b714d64ec177f1aa96f162757ac9c835670c71c71de9d28fc3e388314fae09",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/parallel_dispatch_addendum.json": "22709f8ebb6d199113962a76170f19aa3402156e03ac6491e87ea4d795bdc0b4"
+  }
+}

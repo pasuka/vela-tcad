@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_freeze.json": "e265cdaaf6b65055c62cb0c5a2ed0a283306bc2745f944a0b856cde3b9424b23",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_summary.json": "31556fe48c8de9fb7e7e901bc5351d3769f0571c5f203b98a6308439b19d78ea",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/native_cells.csv": "692e7890392029ef622dfcdf58bd04e1d0aa73f2ea301f90e460dff5c077503b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/native_edges.csv": "b42fa14b446acab144b52db3d9cea8324c92d4ac197c31bc7a8d5c29aa77b4b5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/native_groups.csv": "ac11236f15784e973885a6a9c2a6bd4a97f4e874cae2637ca6a45e6cf16724ea",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/native_ports.csv": "e65f4c81aa5cb74fda06a1c940eaa75dbec312ce5cf5707423ba4829013974e3"
+  }
+}

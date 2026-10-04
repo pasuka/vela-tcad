@@ -1,0 +1,6 @@
+{
+  "production_qualified": true,
+  "DC": 32,
+  "required_DC_qualified": 24,
+  "refinement_off_qualified": 0
+}

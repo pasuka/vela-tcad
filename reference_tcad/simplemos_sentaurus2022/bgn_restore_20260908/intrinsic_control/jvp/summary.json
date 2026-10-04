@@ -1,0 +1,9 @@
+{
+  "states": 4,
+  "directions": 48,
+  "block_checks": 144,
+  "smaller_amplitude_strong_checks": 84,
+  "smaller_amplitude_strong_failures": 18,
+  "derivative_gate_passed": false,
+  "max_true_relative": 1.0000001520798
+}

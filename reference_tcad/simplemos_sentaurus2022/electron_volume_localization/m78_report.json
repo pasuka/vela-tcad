@@ -1,0 +1,229 @@
+{
+  "schema": "vela.simplemos.m78_report.v1",
+  "status": "qualified",
+  "classification": "gate_response_requires_distributed_support_no_m79_local_ab",
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "fixed_state_linear_observers_only": true,
+    "production_changes": false
+  },
+  "acceptance": {
+    "case_and_stage_count": true,
+    "pair_count": true,
+    "historical_hash_identity": true,
+    "single_axis_config_identity": true,
+    "bias_identity": true,
+    "native_gate_replay": true,
+    "baseline_poisson_replay": true,
+    "candidate_poisson_replay": true,
+    "charge_response_balance": true,
+    "m73_replay": true,
+    "pair_accounting": true,
+    "m74_prediction_replay": true,
+    "pair_charge_response_identity": true,
+    "all_checks_pass": true
+  },
+  "checks": {
+    "maximum_native_gate_replay_error_C_per_m": 6.307252170716836e-24,
+    "maximum_baseline_poisson_replay_V": 2.2067080223580654e-08,
+    "maximum_candidate_poisson_replay_V": 2.206908217443992e-08,
+    "maximum_m73_control_replay_error_V": 3.8267999880048365e-15,
+    "maximum_charge_response_balance_error_V": 1.3292841090015162e-10,
+    "maximum_bias_error_V": 6.661338147750939e-16,
+    "maximum_boltzmann_delta_identity_dex": 1.099120794378905e-14
+  },
+  "summary": {
+    "low_current_shift_dex": {
+      "median": 0.01598205472364835,
+      "p95": 0.02114531438960445,
+      "maximum": 0.0218091637142919
+    },
+    "high_current_shift_dex": {
+      "median": 0.0014682244685153838,
+      "p95": 0.0022300633750346062,
+      "maximum": 0.002305498916797909
+    },
+    "pair_reduction_dex": {
+      "median": 0.014540770411374578,
+      "p95": 0.018952871738977604,
+      "maximum": 0.01950366479749399
+    },
+    "baseline_pair_growth_dex": {
+      "median": 0.03702897509661555,
+      "p95": 0.0376393506464935,
+      "maximum": 0.03765139866357063
+    },
+    "candidate_pair_growth_dex": {
+      "median": 0.019842902622230613,
+      "p95": 0.02271017082732058,
+      "maximum": 0.023002604868422996
+    },
+    "pair_gate_psi_absolute_share": {
+      "median": 0.9996082589163122,
+      "p95": 0.9997917090315611,
+      "maximum": 0.9997938178845783
+    },
+    "pair_gate_barrier_absolute_share": {
+      "median": 0.9993922714842778,
+      "p95": 0.9998115365577648,
+      "maximum": 0.9998130907626872
+    },
+    "low_interface_psi_l1_share": {
+      "median": 0.12106815301791121,
+      "p95": 0.12977106443390724,
+      "maximum": 0.13160290635298885
+    },
+    "high_interface_psi_l1_share": {
+      "median": 0.12437117873539719,
+      "p95": 0.13356973961802637,
+      "maximum": 0.1356672353888184
+    },
+    "low_forcing_interface_l1_share": {
+      "median": 0.012776390451062075,
+      "p95": 0.019919569928001785,
+      "maximum": 0.020025966874844738
+    },
+    "high_forcing_interface_l1_share": {
+      "median": 0.008077802185583509,
+      "p95": 0.012126633422860408,
+      "maximum": 0.01248580764461562
+    },
+    "low_forcing_increment_interface_l1_share": {
+      "median": 0.15571633989097844,
+      "p95": 0.2140532767834097,
+      "maximum": 0.2162301309469924
+    },
+    "high_forcing_increment_interface_l1_share": {
+      "median": 0.10319835756254729,
+      "p95": 0.1431190515789278,
+      "maximum": 0.1481076080744863
+    },
+    "low_interface_volume_weighted_psi_l1_share": {
+      "median": 0.0014185064156489848,
+      "p95": 0.0019140305981994068,
+      "maximum": 0.001980846903240858
+    },
+    "high_interface_volume_weighted_psi_l1_share": {
+      "median": 0.002727451111038601,
+      "p95": 0.003646697101191375,
+      "maximum": 0.003716020855396041
+    },
+    "actual_gate_psi_reduction_proxy_dex": {
+      "median": 0.012850933374521933,
+      "p95": 0.021609351905655355,
+      "maximum": 0.02269337684283778
+    },
+    "actual_gate_barrier_reduction_proxy_dex": {
+      "median": 0.019252833391440266,
+      "p95": 0.0782840177826424,
+      "maximum": 0.10776084822910074
+    },
+    "actual_gate_phin_contribution_dex": {
+      "median": 0.0013778067100971032,
+      "p95": 0.0650720690015697,
+      "maximum": 0.0971396055512773
+    },
+    "m73_electron_state_operator_difference_dex": {
+      "median": 0.001325516257264115,
+      "p95": 0.002460137445501074,
+      "maximum": 0.0027939758570361545
+    },
+    "m73_electron_missing_feedback_difference_dex": {
+      "median": 0.014887254945022178,
+      "p95": 0.028822637967453223,
+      "maximum": 0.033138739780951026
+    },
+    "m73_electron_missing_feedback_error_fraction": {
+      "median": 0.91569143077205,
+      "p95": 0.9232070893871928,
+      "maximum": 0.9237255504020464
+    },
+    "pair_gate_forcing_reduction_proxy_dex": {
+      "median": 0.027530413549306916,
+      "p95": 0.05043198987310858,
+      "maximum": 0.055832116623788806
+    },
+    "pair_gate_electron_relaxation_reduction_proxy_dex": {
+      "median": -0.014630135339242633,
+      "p95": -0.011834219108357417,
+      "maximum": -0.011780413668233963
+    },
+    "pair_gate_hole_relaxation_reduction_proxy_dex": {
+      "median": -0.0002584737590442845,
+      "p95": -0.00013109910958426533,
+      "maximum": -0.0001309838673502451
+    },
+    "low_source_gate_increment_psi_l1_share": {
+      "median": 0.22247311408195203,
+      "p95": 0.30135372602697924,
+      "maximum": 0.30321127469545095
+    },
+    "low_channel_gate_increment_psi_l1_share": {
+      "median": 0.6712314133089804,
+      "p95": 0.6954907449230069,
+      "maximum": 0.6960750126457013
+    },
+    "low_drain_gate_increment_psi_l1_share": {
+      "median": 0.09865922718365841,
+      "p95": 0.16209896664152404,
+      "maximum": 0.16678919526402797
+    },
+    "low_substrate_gate_increment_psi_l1_share": {
+      "median": 0.015415341274633445,
+      "p95": 0.01893119848065348,
+      "maximum": 0.01926907528930851
+    },
+    "high_source_gate_increment_psi_l1_share": {
+      "median": 0.30458579582598844,
+      "p95": 0.4147063884446349,
+      "maximum": 0.41783716422886485
+    },
+    "high_channel_gate_increment_psi_l1_share": {
+      "median": 0.5514487750253345,
+      "p95": 0.5865321534819358,
+      "maximum": 0.5903910261352434
+    },
+    "high_drain_gate_increment_psi_l1_share": {
+      "median": 0.13735636175556726,
+      "p95": 0.20940807070464298,
+      "maximum": 0.20974814128130978
+    },
+    "high_substrate_gate_increment_psi_l1_share": {
+      "median": 0.0011337917588742992,
+      "p95": 0.001387812790594296,
+      "maximum": 0.0014691045981688991
+    },
+    "absolute_m73_total_vs_actual_psi_error_dex": {
+      "median": 0.016440397619525884,
+      "p95": 0.0315824095924814,
+      "maximum": 0.03623178415042033
+    },
+    "absolute_m73_total_vs_current_error_dex": {
+      "median": 0.01547905664235526,
+      "p95": 0.034238889759159154,
+      "maximum": 0.03942149619576412
+    },
+    "absolute_m73_electron_vs_actual_psi_error_dex": {
+      "median": 0.01619862377261082,
+      "p95": 0.031282775412954295,
+      "maximum": 0.03593271563798718
+    },
+    "absolute_m73_electron_vs_current_error_dex": {
+      "median": 0.015237282795440198,
+      "p95": 0.03393925557963205,
+      "maximum": 0.03912242768333097
+    },
+    "same_sign_improvement_pair_count": 8,
+    "localized_mixed_node_pair_count": 0,
+    "all_case_absolute_errors_worsen": true,
+    "gate_si_nitride_forcing_l1_share": {
+      "median": 0.99136522214476,
+      "p95": 0.9963069570056239,
+      "maximum": 0.9966289943203791
+    },
+    "maximum_control_barrier_proxy_current_error_dex": 0.09500394033183694
+  },
+  "interpretation": "Pair reduction equals low-current increase minus high-current increase. All endpoint errors increase; geometric forcing localization does not prove localized self-consistent potential response.",
+  "m79_local_support_ab_qualified": false
+}

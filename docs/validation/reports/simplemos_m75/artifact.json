@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M75 hole Poisson charge volume",
+  "status": "accepted",
+  "classification": "hole_poisson_volume_not_material",
+  "report": "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_hole_poisson_charge_volume_report.json",
+  "document": "docs/validation/simplemos_m75_hole_poisson_charge_volume_2026-09-03.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_case_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_curve_response_ledger.csv"
+  ],
+  "manifest": "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_execution_manifest.json"
+}

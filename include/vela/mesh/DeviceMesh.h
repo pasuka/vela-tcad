@@ -68,6 +68,10 @@ public:
     const Region&  getRegion (Index id) const;
     const Contact& getContact(Index id) const;
     const GeometryBuildReport& lastGeometryBuildReport() const { return lastGeometryBuildReport_; }
+    BoxGeometryBuilder::PoissonPermittivityPolicy poissonPermittivityPolicy() const
+    { return poissonPermittivityPolicy_; }
+    const std::array<Real, 3>& poissonCellEdgeCoefficients(Index cell) const
+    { return poissonCellEdgeCoefficients_.at(cell); }
 
     // Accessors to full collections (read-only)
     const std::vector<Node>&    nodes()    const { return nodes_;    }
@@ -87,6 +91,9 @@ private:
     std::vector<Region>  regions_;
     std::vector<Contact> contacts_;
     GeometryBuildReport lastGeometryBuildReport_;
+    BoxGeometryBuilder::PoissonPermittivityPolicy poissonPermittivityPolicy_ =
+        BoxGeometryBuilder::PoissonPermittivityPolicy::LegacyAverage;
+    std::vector<std::array<Real, 3>> poissonCellEdgeCoefficients_;
 };
 
 } // namespace vela

@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/cells.csv": "6b58d7c437c466a5b92f147bda6b5cf385b23dad89acdc62b60cfa848a969db4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/freeze.json": "0ea56def32428e90c8b5c8d19db5bacf2bdce07155b5523c9fdbd92435e2a98d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/results.csv": "55659038420ef7cabd89ebb61d54a07b99e16aff42d3397105d5748a81b88527",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/roots.csv": "cd617ec3bd9fdbcc0701ddc8c5b5f192e27488374eb9e34e74158bf7f4d866a1"
+  }
+}

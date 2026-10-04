@@ -1,0 +1,128 @@
+{
+  "schema": "vela.simplemos.sdevice.m48_terminal_partition_continuity_closure_contract.v1",
+  "contract_id": "simplemos-sdevice-m48-terminal-partition-continuity-closure-v1",
+  "objective": "Decompose the M47 n23, Vd=0.05 V, Vg=0.05 V residual into fixed-state four-terminal partition, carrier-continuity closure, and volumetric SRH-source terms without changing any solved state or production default.",
+  "upstream": {
+    "m47_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json",
+    "m47_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json",
+    "required_m47_status": "frozen",
+    "required_m47_target_current_error_dex": 0.10941868092427424,
+    "required_m47_barrier_residual_dex": 0.08772866341561494,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration"
+    ]
+  },
+  "scope": {
+    "target": {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05
+    },
+    "devices": ["n23", "n19"],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "drain_voltages_V": [0.05],
+    "state_count_per_solver": 6,
+    "solvers": ["sentaurus", "vela"],
+    "contacts": ["source", "drain", "gate", "substrate"],
+    "components": ["electron", "hole", "total"],
+    "interpolation": "forbidden"
+  },
+  "execution_protocol": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "sentaurus_source": "M47 exact CurrentPlot rows and exported SRH fields, reused read-only",
+    "vela_source": "M47 terminal_balance, srh_balance, and exact state ledgers, reused read-only",
+    "state_mutation": false,
+    "analysis_only": true,
+    "historical_artifacts_rewritten": false,
+    "production_defaults_changed": false
+  },
+  "current_semantics": {
+    "sentaurus": {
+      "electron_conventional_current": "eCurrent",
+      "hole_conventional_current": "hCurrent",
+      "total_current_identity": "eCurrent + hCurrent"
+    },
+    "vela": {
+      "electron_conventional_current": "current_electron_A_per_um",
+      "hole_conventional_current": "-current_hole_A_per_um",
+      "total_current_identity": "current_electron_A_per_um - current_hole_A_per_um"
+    },
+    "positive_terminal_direction": "solver-reported conventional current into the external terminal",
+    "four_terminal_kcl_A_per_um": "sum of signed conventional total currents over source, drain, gate, and substrate",
+    "electron_continuity_residual_A_per_um": "sum(electron conventional contact currents) + q integral(SRH net rate) dA",
+    "hole_continuity_residual_A_per_um": "sum(hole conventional contact currents) - q integral(SRH net rate) dA"
+  },
+  "required_decompositions": {
+    "terminal_identity": {
+      "equation": "Delta_Id = Delta_KCL - Delta_Isource - Delta_Isubstrate - Delta_Igate",
+      "delta_definition": "Vela minus Sentaurus at the same exact state",
+      "report": [
+        "signed contribution A/um",
+        "fraction of signed drain-current gap",
+        "absolute fraction of drain-current gap"
+      ]
+    },
+    "carrier_continuity": {
+      "report": [
+        "electron terminal sum",
+        "hole terminal sum",
+        "volumetric signed SRH current",
+        "electron closure residual",
+        "hole closure residual",
+        "four-terminal KCL residual"
+      ]
+    },
+    "terminal_partition": {
+      "report": "all four contacts by electron, conventional hole, and total current for both solvers"
+    }
+  },
+  "attribution_rules": {
+    "primary_quantity": "signed drain-current gap in A/um at n23, Vd=0.05 V, Vg=0.05 V",
+    "numerical_resolution_gate": "abs(drain total current) / max(abs(four-terminal KCL residual), 1e-300) >= 10 for each solver",
+    "target_localization": "a contribution may be called target-localized only when its absolute gap fraction at n23 Vg=0.05 exceeds both n23 adjacent-gate values and the matched n19 Vg=0.05 value",
+    "dominant_bookkeeping_contribution": "largest absolute term in the exact terminal identity; this label is descriptive and not causal",
+    "srh_materiality": "the cross-solver integrated SRH difference is material only if its absolute magnitude is at least 10 percent of the drain-current gap and is target-localized",
+    "causal_claim_guard": "terminal identities and continuity balances establish current partition and numerical closure only; they do not by themselves identify the physical operator that caused the state",
+    "outcome_policy": "resolved, mixed, null, or numerically limited outcomes are all valid completed results"
+  },
+  "acceptance": {
+    "required_solver_state_count": 12,
+    "required_terminal_row_count": 144,
+    "required_continuity_row_count": 12,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "maximum_terminal_identity_relative_error": 1e-12,
+    "maximum_component_identity_relative_error": 1e-12,
+    "m47_currents_reproduced": true,
+    "maximum_allowed_log_current_anchor_difference_dex": 1e-10,
+    "contract_hash_unchanged_during_analysis": true,
+    "resolution_status_reported_for_every_state": true,
+    "default_physics_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_required_artifacts_frozen": true
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela solves",
+    "global HFS parameter scans or default tuning",
+    "SG current-kernel re-investigation",
+    "contact-current extraction re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact, solver, or production-default changes",
+    "interpolation between gate points",
+    "rewriting M8, M45, M46, or M47 artifacts"
+  ],
+  "deliverables": [
+    "machine-readable M48 report",
+    "four-terminal component ledger",
+    "carrier-continuity closure ledger",
+    "exact terminal-identity contribution ledger",
+    "control-contrast ledger",
+    "human-readable technical report",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

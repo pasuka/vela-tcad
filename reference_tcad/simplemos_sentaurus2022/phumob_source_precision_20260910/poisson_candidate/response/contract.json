@@ -1,0 +1,125 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "index": 0,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\inputs\\m65_n19_vd_0p050000_endpoint_0\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\state.csv",
+      "attempt": 0,
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "qualified": true,
+      "exit_code": 0,
+      "failure": "",
+      "elapsed_seconds": 44.84798349999983,
+      "current_A_per_um": 2.805289960179692e-15,
+      "max_row_ratio": 2.4177913815578926e-10,
+      "row_violations": 0,
+      "kcl_over_Id": 2.968028422645325e-15,
+      "iterations": 4,
+      "global_electron_ratio": 2.54253025196353e-15,
+      "global_hole_ratio": 1.5651000359584874e-15,
+      "port_relative": 0.0,
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "baseline": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\zero_plateau\\m65_n19_vd_0p050000_endpoint\\2",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "jobs": [
+        {
+          "label": "zero",
+          "alpha": 0.0,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\zero"
+        },
+        {
+          "label": "plus_full",
+          "alpha": 0.001,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\plus_full"
+        },
+        {
+          "label": "minus_full",
+          "alpha": -0.001,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\minus_full"
+        },
+        {
+          "label": "plus_half",
+          "alpha": 0.0005,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\plus_half"
+        },
+        {
+          "label": "minus_half",
+          "alpha": -0.0005,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n19_vd_0p050000_endpoint\\minus_half"
+        }
+      ]
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "index": 0,
+      "model": "phumob",
+      "arm": "vela",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\inputs\\m65_n23_vd_0p050000_endpoint_0\\vela\\config.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\vela\\old_slotboom\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0\\state.csv",
+      "attempt": 0,
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "qualified": true,
+      "exit_code": 0,
+      "failure": "",
+      "elapsed_seconds": 52.19773680000071,
+      "current_A_per_um": 6.962395115402423e-17,
+      "max_row_ratio": 1.5114239900466928e-10,
+      "row_violations": 0,
+      "kcl_over_Id": 3.076001954299919e-14,
+      "iterations": 4,
+      "global_electron_ratio": 3.746142666713541e-16,
+      "global_hole_ratio": 1.7306977171824822e-15,
+      "port_relative": 6.8833827526759706e-15,
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "baseline": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\zero_plateau\\m65_n23_vd_0p050000_endpoint\\2",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "jobs": [
+        {
+          "label": "zero",
+          "alpha": 0.0,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n23_vd_0p050000_endpoint\\zero"
+        },
+        {
+          "label": "plus_full",
+          "alpha": 0.001,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n23_vd_0p050000_endpoint\\plus_full"
+        },
+        {
+          "label": "minus_full",
+          "alpha": -0.001,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n23_vd_0p050000_endpoint\\minus_full"
+        },
+        {
+          "label": "plus_half",
+          "alpha": 0.0005,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n23_vd_0p050000_endpoint\\plus_half"
+        },
+        {
+          "label": "minus_half",
+          "alpha": -0.0005,
+          "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\settled_source\\dc\\m65_n23_vd_0p050000_endpoint\\minus_half"
+        }
+      ]
+    }
+  ],
+  "gates": {
+    "row": 1e-06,
+    "kcl": 1e-08,
+    "source_relative": 1e-05,
+    "linear_relative": 1e-08,
+    "prediction": 0.001,
+    "two_amplitude": 0.001,
+    "even_over_odd": 0.01,
+    "signal_over_drift": 100
+  },
+  "scope": "Fresh full Jacobian and fixed source insertion on the identical original settled baselines, using the same packed-Poisson candidate binary. Original full/half DC outputs retained in their own directories. No fitted direction or relaxed thresholds."
+}

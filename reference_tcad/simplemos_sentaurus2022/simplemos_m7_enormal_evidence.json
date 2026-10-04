@@ -1,0 +1,143 @@
+{
+  "schema": "vela.simplemos.enormal_evidence.v1",
+  "milestone": "M7",
+  "recorded_on": "2026-08-27",
+  "branch": "codex/simplemos-sdevice-validation",
+  "source_contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m7_enormal_contract_v1.json",
+    "sha256": "6fc5e5d14afb656133c873dffc2cc88bd82ede3743aba8326546a4fa16715893"
+  },
+  "sentaurus_evidence": {
+    "release": "T-2022.03-SP2",
+    "parameter_export_command": "sdevice -P:Silicon",
+    "parameter_export_sha256": "aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f",
+    "official_simplemos_deck_sha256": "3fd501cad368aa43c55a780253309428872a4b3349aa03727f8a875d04a4b536"
+  },
+  "implementation": [
+    {
+      "path": "include/vela/physics/MobilityModel.h",
+      "sha256": "c2899e8bff385d8b635375f2990b8eeb97964003da12a6949204a0b6b03eb8e2"
+    },
+    {
+      "path": "src/physics/MobilityModel.cpp",
+      "sha256": "e2186d9d95b926d6221b2b954678d4d8181f72722c43891b1a2192c9916e3002"
+    },
+    {
+      "path": "include/vela/equation/AssemblerUtils.h",
+      "sha256": "90cba11baddc4c93b1a704bc02705f5dcd5fcf1e165068ee080a9b0197f3c7cd"
+    },
+    {
+      "path": "include/vela/equation/CoupledDDAssembler.h",
+      "sha256": "43cde5e04b9fbfc4467f6de681c3cd610bb1a92b093e622eda728d40364aa7bc"
+    },
+    {
+      "path": "src/equation/CoupledDDAssembler.cpp",
+      "sha256": "8d5a61d2d11898b873af271e57b9a472c7f416a5125652e9b6192ad46200a542"
+    },
+    {
+      "path": "src/equation/DDAssembler.cpp",
+      "sha256": "069af6895af1c0e254ab9fcaccad1a0572344834c3a562f8f120586a746a2df9"
+    },
+    {
+      "path": "src/equation/FixedStateOperatorAudit.cpp",
+      "sha256": "49c214396cc1ae0a1de18df7979fde7ade6128e767041b13a53c96164838e1a9"
+    },
+    {
+      "path": "src/post/ContactCurrent.cpp",
+      "sha256": "fb35e04b8357a268da316b6e2f0bcfd09368a8f482f49479228a5da8d9f2642a"
+    },
+    {
+      "path": "scripts/sentaurus_execution_ir.py",
+      "sha256": "c840c3d6db177e9bdba37c092e4e98d7ef077ed473e809287bbfda4851ef1a2a"
+    },
+    {
+      "path": "scripts/sentaurus_import.py",
+      "sha256": "d5d80533cdb1f0541687abe2b94b857256c0511698390316554bf3a758344969"
+    },
+    {
+      "path": "scripts/sentaurus_parameter_map.py",
+      "sha256": "ef5e2e9f1919ba8d338fe68c68cd0475ee69557336179290b7febd029d899a43"
+    },
+    {
+      "path": "tests/test_phumob.cpp",
+      "sha256": "24e5f5586e6c9f2274f1868a8ba6eccd2d00986430424cc8957221af26a1f4c0"
+    },
+    {
+      "path": "tests/regression/test_sentaurus_import_tools.py",
+      "sha256": "c87323cb7e77bd8b96545b5aff18d60742969aa829fda48196d3478bfab112d0"
+    },
+    {
+      "path": "tests/regression/test_sentaurus_parameter_map.py",
+      "sha256": "a71008af5e58c602959dea3cd9f30f50382a74149337ef7813d20e30bc79ecd2"
+    }
+  ],
+  "verification": [
+    {
+      "name": "PhuMob M5-M7 scalar, spatial, solver, and Jacobian tests",
+      "command": "build-release/test_phumob.exe --reporter compact",
+      "result": "pass",
+      "test_cases": 15,
+      "assertions": 97
+    },
+    {
+      "name": "analytical two-cell MOS Enormal spatial comparison",
+      "result": "pass",
+      "first_live_field_V_per_m": 500000.0,
+      "second_live_field_V_per_m": 1000000.0,
+      "mobility_comparison_relative_tolerance": 1e-12
+    },
+    {
+      "name": "coupled Newton surface-field Jacobian comparison",
+      "result": "pass",
+      "comparison": "assembled full Jacobian versus global centered finite difference",
+      "maximum_relative_error": 0.0004
+    },
+    {
+      "name": "parameter-map and import Python regression",
+      "command": "python -m unittest tests.regression.test_sentaurus_import_tools tests.regression.test_sentaurus_parameter_map",
+      "result": "pass",
+      "tests": 104
+    },
+    {
+      "name": "official original-deck import gate",
+      "result": "pass",
+      "generated_deck_sha256": "f6f6e1d0355efa9fb51544ef041b29c20d868f1b14013228050b958ffaabc35",
+      "mobility_model": "phumob_field_lombardi",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "recombination": ["srh"],
+      "srh_doping_dependence": true,
+      "bandgap_narrowing": "old_slotboom",
+      "unsupported_physics": [],
+      "warnings": []
+    },
+    {
+      "name": "release build",
+      "command": "cmake --build build-release --parallel 4",
+      "result": "pass"
+    },
+    {
+      "name": "full serial CTest regression",
+      "command": "ctest --test-dir build-release --output-on-failure --parallel 1",
+      "result": "pass",
+      "tests": 722,
+      "elapsed_seconds": 197.61
+    }
+  ],
+  "claims": {
+    "t2022_enormal_parameters_frozen": true,
+    "phumob_enormal_low_field_composition_implemented": true,
+    "phumob_enormal_high_field_order_implemented": true,
+    "semiconductor_insulator_spatial_interface_closure_implemented": true,
+    "live_normal_field_reconstruction_implemented": true,
+    "gummel_dd_path_implemented": true,
+    "coupled_newton_residual_implemented": true,
+    "coupled_newton_surface_field_jacobian_implemented": true,
+    "contact_current_and_fixed_state_paths_implemented": true,
+    "production_import_phumob_enormal_enabled": true,
+    "production_import_original_simplemos_mobility_enabled": true,
+    "lossy_masetti_substitution_used": false,
+    "original_simplemos_b1_comparison_ready": true,
+    "original_simplemos_b1_current_parity_completed": false
+  },
+  "next_milestone": "M8: execute original-deck B1 Id-Vg comparisons at Vd=0.05 V and Vd=1.0 V, then expand to the frozen eight-TDR matrix"
+}

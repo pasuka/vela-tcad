@@ -13,10 +13,53 @@
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/CarrierStatistics.h"
 #include <memory>
+#include <string>
 #include <vector>
 #include <unordered_map>
 
 namespace vela {
+
+/**
+ * Diagnostic shared-node interface assembly controls.
+ *
+ * The default keeps the historical global-node geometry.  Individual flags
+ * opt into region-local finite-volume contributions while retaining one
+ * electrostatic degree of freedom at coincident material-interface nodes.
+ */
+struct RegionResolvedInterfaceAssemblyConfig {
+    // Charge-only policy: continuity/recombination volumes are independent.
+    std::string poissonChargeNodeVolume = "inherit";
+    // SRH-only blend: 0 preserves legacy, 1 uses signed transport area.
+    // Negative small fractions are reserved for response calibration.
+    Real srhSignedTransportVolumeFraction = 0.0;
+    std::string transportEdgeGeometry = "inherit";
+    // Explicit mesh-edge multipliers. Empty retains the historical geometry.
+    std::vector<Real> transportEdgeCouplingRatios;
+    bool poissonEdgeCoupling = false;
+    bool transportEdgeCoupling = false;
+    bool transportNodeVolume = false;
+    bool transportSignedAverageBoxNodeVolume = false;
+    std::string transportSignedAverageBoxNodeVolumeScope =
+        "all_transport_nodes";
+    // Diagnostic-only split: use the transport-material barycentric measure
+    // for the electron term in Poisson while leaving hole, dopant, continuity,
+    // and transport geometry on the production volume.
+    bool poissonElectronTransportNodeVolume = false;
+    bool poissonHoleTransportNodeVolume = false;
+    bool poissonDopantTransportNodeVolume = false;
+
+    bool enabled() const
+    {
+        return srhSignedTransportVolumeFraction != 0.0 ||
+               poissonChargeNodeVolume != "inherit" || transportEdgeGeometry != "inherit" ||
+               !transportEdgeCouplingRatios.empty() ||
+               poissonEdgeCoupling || transportEdgeCoupling ||
+               transportNodeVolume || transportSignedAverageBoxNodeVolume ||
+               poissonElectronTransportNodeVolume ||
+               poissonHoleTransportNodeVolume ||
+               poissonDopantTransportNodeVolume;
+    }
+};
 
 struct DDScalingSpec {
     bool enabled = false;
@@ -31,6 +74,7 @@ struct DDScalingSpec {
     Real chargeLineFactor = 1.0;
     Real fieldFromCoordinateDeltaFactor = 1.0;
     Real currentDensityLineIntegralFactor = 1.0;
+    RegionResolvedInterfaceAssemblyConfig regionResolvedInterfaceAssembly{};
     /// Discretization contract; independent of whether unit scaling is active.
     PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         PoissonChargeVolumePolicy::Global;

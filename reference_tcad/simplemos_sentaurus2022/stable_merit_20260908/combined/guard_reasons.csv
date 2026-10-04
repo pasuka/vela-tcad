@@ -1,0 +1,10 @@
+guard,expected,actual,matched
+wrong_mesh,Invalid finite SRH node manifest,vela_example_runner failed: Invalid finite SRH node manifest,True
+wrong_count,Invalid finite SRH node manifest,vela_example_runner failed: Invalid finite SRH node manifest,True
+missing_record,Invalid finite SRH volume record,vela_example_runner failed: Invalid finite SRH volume record,True
+duplicate,Invalid finite SRH volume record,vela_example_runner failed: Invalid finite SRH volume record,True
+zero_ratio,Invalid finite SRH volume record,vela_example_runner failed: Invalid finite SRH volume record,True
+out_of_range_node,Invalid finite SRH volume record,vela_example_runner failed: Invalid finite SRH volume record,True
+extra,Extra finite SRH data,vela_example_runner failed: Extra finite SRH data,True
+bad_alpha,SRH amplitude outside frozen interpolation range,vela_example_runner failed: SRH amplitude outside frozen interpolation range,True
+missing_alpha,Missing finite SRH amplitude,vela_example_runner failed: Missing finite SRH amplitude,True

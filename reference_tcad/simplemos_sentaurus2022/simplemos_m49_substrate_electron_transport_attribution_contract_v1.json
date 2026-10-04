@@ -1,0 +1,131 @@
+{
+  "schema": "vela.simplemos.sdevice.m49_substrate_electron_transport_attribution_contract.v1",
+  "contract_id": "simplemos-sdevice-m49-substrate-electron-transport-attribution-v1",
+  "objective": "Determine whether the M48 target-localized substrate electron-current partition difference is carried by a substrate-side electron quasi-Fermi-gradient, carrier-density, mobility/conductivity, or boundary-field reconstruction term on the unchanged M47 default-BGN-on self-consistent states.",
+  "upstream": {
+    "m47_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json",
+    "m47_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json",
+    "m48_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json",
+    "m48_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_evidence.json",
+    "required_status": "frozen",
+    "required_m48_target_substrate_electron_difference_A_per_um": -4.6947034945330634e-17,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "M48 four-terminal bookkeeping identity"
+    ]
+  },
+  "scope": {
+    "target": {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "contact": "substrate",
+      "carrier": "electron"
+    },
+    "devices": ["n23", "n19"],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "drain_voltages_V": [0.05],
+    "state_count_per_solver": 6,
+    "solvers": ["sentaurus", "vela"],
+    "interpolation": "forbidden"
+  },
+  "execution_protocol": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "sentaurus_source": "M47 exact-state TDR field exports, reused read-only",
+    "vela_source": "M47 exact-state accepted states and VTK diagnostics, reused read-only",
+    "terminal_anchor_source": "M48 frozen four-terminal component ledger, reused read-only",
+    "state_mutation": false,
+    "analysis_only": true,
+    "historical_artifacts_rewritten": false,
+    "production_defaults_changed": false
+  },
+  "required_observables": {
+    "substrate_boundary": {
+      "topology": "Silicon boundary edges whose two endpoints are M47 substrate-contact nodes",
+      "normal": "outward from the adjacent Silicon triangle",
+      "fields": [
+        "electron current-density vector",
+        "electron quasi-Fermi-gradient vector",
+        "electron density",
+        "electron mobility",
+        "electrostatic potential",
+        "SRH source"
+      ],
+      "quadrature": "edge length times endpoint average",
+      "current_unit": "A/um"
+    },
+    "substrate_rows": {
+      "definition": "Silicon graph-distance layers from substrate contact nodes",
+      "maximum_graph_distance": 4,
+      "report": [
+        "node count",
+        "median and p95 absolute cross-solver quasi-Fermi-gradient difference",
+        "electron-density log ratio",
+        "mobility log ratio",
+        "electron-current-density magnitude ratio",
+        "electrostatic-potential difference",
+        "SRH magnitude ratio"
+      ]
+    },
+    "transport_product": {
+      "identity": "Jn = q n mu_n grad(Phi_n)",
+      "decomposition": "three-factor Shapley decomposition of the boundary-normal reconstructed flux into density, mobility, and quasi-Fermi-gradient contributions",
+      "residuals": [
+        "exported-field minus q*n*mu*grad(Phi_n) for each solver",
+        "terminal anchor minus boundary-integrated exported field for each solver"
+      ]
+    }
+  },
+  "attribution_rules": {
+    "primary_quantity": "Vela-minus-Sentaurus substrate conventional electron terminal-current difference at the M49 target",
+    "mechanism_share_denominator": "absolute M48 substrate electron difference",
+    "dominant_factor": "largest absolute signed contribution among density, mobility, quasi-Fermi gradient, exported-field constitutive residual difference, and terminal-to-boundary reconstruction residual difference",
+    "resolved_mechanism_gate": "one factor explains at least 80 percent of the target substrate electron difference in absolute magnitude, the exact bridge closes, and the same normalized factor is target-localized",
+    "target_localization": "the normalized absolute factor contribution at n23 Vg=0.05 exceeds both n23 adjacent-gate values and the matched n19 Vg=0.05 value",
+    "boundary_observable_gate": "if the target terminal-to-boundary reconstruction residual exceeds 20 percent of the M48 substrate electron difference, field-based mechanism attribution is boundary-observable-limited",
+    "causal_claim_guard": "fixed-state spatial decomposition can identify the state variable and region carrying the terminal manifestation; it cannot assign a production-code defect or justify a default change without a separate intervention",
+    "outcome_policy": "resolved, mixed, null, or boundary-observable-limited outcomes are all valid completed results"
+  },
+  "acceptance": {
+    "required_solver_state_count": 12,
+    "required_cross_solver_state_count": 6,
+    "all_biases_exact": true,
+    "common_node_ids_and_coordinates_required": true,
+    "maximum_coordinate_difference_um": 1e-12,
+    "all_required_fields_present": true,
+    "all_values_finite": true,
+    "m48_terminal_anchors_reproduced": true,
+    "maximum_allowed_terminal_anchor_difference_A_per_um": 1e-30,
+    "maximum_shapley_identity_relative_error": 1e-12,
+    "maximum_exact_bridge_relative_error": 1e-12,
+    "contract_hash_unchanged_during_analysis": true,
+    "default_physics_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_required_artifacts_frozen": true
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela solves",
+    "global HFS parameter scans or default tuning",
+    "SG current-kernel re-investigation",
+    "contact-current extraction re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact, solver, or production-default changes",
+    "interpolation between gate points",
+    "rewriting M8, M45, M46, M47, or M48 artifacts"
+  ],
+  "deliverables": [
+    "machine-readable M49 report",
+    "substrate boundary-edge transport ledger",
+    "substrate graph-distance row ledger",
+    "exact transport-factor bridge ledger",
+    "control-localization ledger",
+    "human-readable technical report",
+    "portable HTML technical report",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

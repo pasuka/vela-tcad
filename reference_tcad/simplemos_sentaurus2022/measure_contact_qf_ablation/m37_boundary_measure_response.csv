@@ -1,0 +1,4 @@
+variant,converged,current_A_per_um,log_current_shift_vs_historical_dex,absolute_error_dex
+historical_node_volume,True,1.0552456893367724e-16,0.0,0.08955000692897094
+external_boundary_contact_support_signed,True,1.0548062813155578e-16,-0.00018087941371138985,0.08936912751525959
+all_transport_nodes_signed,True,1.0428196013000024e-16,-0.005144400978631938,0.08440560595033898

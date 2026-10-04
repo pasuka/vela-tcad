@@ -1,0 +1,19 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/weighted_merit/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_000/attempt_1/state.csv": "ef51d6d7bd016af23c81a7f52cd920b7cbffb1b6e4fdacf697c73628c8455378",
+    "build-release/pp_zero/0/config.json": "53487e675f9b585ec0fb9dbc3f12605bd9e1313104fcdf15fff69538a857343f",
+    "build-release/pp_zero/0/config.status.json": "dc7d41405b47e45d8e3a8dfc877210c9ee6020000fc7012e68c1627896a9b21e",
+    "build-release/pp_zero/0/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pp_zero/0/config.stdout.txt": "a71c909dc46a3f994bec85dd4963b38a07a818f20a3235b7d15b392bd0a0d9a4",
+    "build-release/pp_zero/0/state.csv": "d4e3e1fce7114d1ffde289916b09fd902e43ce4e2de6f45c49e280f8c743affb",
+    "build-release/pp_zero/1/config.json": "2de3905ad7129d5165c6e666b4b0157e6d805f333d5728c65fea136ea5cf2c40",
+    "build-release/pp_zero/1/config.status.json": "8c0cef7ed0c4a33aadf109be2e38e534b832c7e028abdf0c0ee86de4834501df",
+    "build-release/pp_zero/1/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pp_zero/1/config.stdout.txt": "86be4ca2fcfc7ccadaada050f820aa4e2169672562d7bb6ca392060d44c955c9",
+    "build-release/pp_zero/1/state.csv": "d4e3e1fce7114d1ffde289916b09fd902e43ce4e2de6f45c49e280f8c743affb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/evidence.json": "daacfd5983845ccc5899b40c2d731622ecdbc23b701d3ba1b5d6b48f9733b86c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_roundtrip/roundtrip.csv": "b0f1ab13e16ea5ba8de82b18eb64e5257c00c877ab1b5d0631971d40450e2e62",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_roundtrip/summary.json": "92795e459151085552f1af0d658e397948524ea992ae2bed1f15cba59f32c447",
+    "scripts/check_simplemos_failed_state_roundtrip_20260910.py": "2dbe140dc00a5d7f54d251c51040e402f29c18bc6189a654f7ec83a443179626"
+  }
+}

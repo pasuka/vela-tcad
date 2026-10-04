@@ -1,0 +1,158 @@
+{
+  "schema": "vela.simplemos.phumob_dd_evidence.v1",
+  "milestone": "M6",
+  "recorded_on": "2026-08-27",
+  "branch": "codex/simplemos-sdevice-validation",
+  "source_contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m6_phumob_dd_contract_v1.json",
+    "sha256": "93b276175da36b57640432d19def26496ef37162d7e56dc72850e1e7d5e4e5a0"
+  },
+  "implementation": [
+    {
+      "path": "include/vela/physics/MobilityModel.h",
+      "sha256": "4b731e8a00e5eebb2a6f268adbbbc1ed242a50aa79aa7ee8abca989520fc79da"
+    },
+    {
+      "path": "src/physics/MobilityModel.cpp",
+      "sha256": "22312e341e851460ba464dd6d310a2ca537a0951210d056c32bb87adae5aa844"
+    },
+    {
+      "path": "include/vela/equation/AssemblerUtils.h",
+      "sha256": "77f793739b9ccc6d9efe2a003e8d0469ac27d2698ac8c0dfeb513018962d295e"
+    },
+    {
+      "path": "include/vela/equation/CoupledDDAssembler.h",
+      "sha256": "43cde5e04b9fbfc4467f6de681c3cd610bb1a92b093e622eda728d40364aa7bc"
+    },
+    {
+      "path": "src/equation/CoupledDDAssembler.cpp",
+      "sha256": "8df25e16a44c1cde30d4c47b716ee66b240762f05a49f17964e394c07217175f"
+    },
+    {
+      "path": "src/equation/DDAssembler.cpp",
+      "sha256": "43f277a5fd7b483653978195b4b317f9cf9466e42e45cda11a3db289b2e3eaa3"
+    },
+    {
+      "path": "src/post/ContactCurrent.cpp",
+      "sha256": "cf6f788a4358b03926b86ad543f374b4737df4091f4fe8040fb8bf04cf9d8b07"
+    },
+    {
+      "path": "src/equation/FixedStateOperatorAudit.cpp",
+      "sha256": "e362ef8d57b71f16a6c4d1068161fb5465dd648e06448a5e5532ff6c1f5b0119"
+    },
+    {
+      "path": "scripts/sentaurus_parameter_map.py",
+      "sha256": "76df1207ddf75eaad93136edc4bf90d8872d8ac4778e87c3cfb08d5c99c1cfbd"
+    },
+    {
+      "path": "scripts/sentaurus_execution_ir.py",
+      "sha256": "a27e8f0a42eb313bdf01f021f6afa436b45f2fdb528de7dab1e4f74904802198"
+    },
+    {
+      "path": "scripts/sentaurus_import.py",
+      "sha256": "cfb7b278f073fa2352fbda0ed2302ec6a5ce0a0e3c8a19ad950749846639788b"
+    },
+    {
+      "path": "tests/test_phumob.cpp",
+      "sha256": "58cfc5299e7dd10cca7bf50c36c0e48c9e649b8edc4197a6f606a4786e119981"
+    },
+    {
+      "path": "tests/regression/test_sentaurus_parameter_map.py",
+      "sha256": "69f8641050a21c96e9fd07ba811020cd12440086eb7b2049a0055101a7c72cb3"
+    },
+    {
+      "path": "tests/regression/test_sentaurus_import_tools.py",
+      "sha256": "0476fef3b20345f059e95f8bb840008afaa8bbe3e64e170de12e43b9d8fd8eed"
+    }
+  ],
+  "verification": [
+    {
+      "name": "PhuMob scalar, state, field, and Jacobian tests",
+      "command": "build-release/test_phumob.exe",
+      "result": "pass",
+      "test_cases": 11,
+      "assertions": 73
+    },
+    {
+      "name": "existing mobility regression",
+      "command": "build-release/test_mobility.exe",
+      "result": "pass",
+      "test_cases": 27,
+      "assertions": 130
+    },
+    {
+      "name": "Gummel DD regression",
+      "command": "build-release/test_dd_gummel.exe",
+      "result": "pass",
+      "test_cases": 12,
+      "assertions": 206
+    },
+    {
+      "name": "mixed-material MOS regression",
+      "command": "build-release/test_mos_mixed_material.exe",
+      "result": "pass",
+      "test_cases": 10,
+      "assertions": 1439
+    },
+    {
+      "name": "coupled Newton regression",
+      "command": "build-release/test_newton_solver.exe",
+      "result": "pass",
+      "test_cases": 96,
+      "assertions": 1287
+    },
+    {
+      "name": "fixed-state operator audit regression",
+      "command": "build-release/test_fixed_state_operator_audit.exe",
+      "result": "pass",
+      "test_cases": 7,
+      "assertions": 103
+    },
+    {
+      "name": "electric-field diagnostics regression",
+      "command": "build-release/test_electric_field_diagnostics.exe",
+      "result": "pass",
+      "test_cases": 9,
+      "assertions": 54
+    },
+    {
+      "name": "parameter-map and import Python regression",
+      "command": "python -m unittest tests.regression.test_sentaurus_parameter_map tests.regression.test_sentaurus_import_tools",
+      "result": "pass",
+      "tests": 101
+    },
+    {
+      "name": "focused M2-M6 CTest selection",
+      "command": "ctest --test-dir build-release --output-on-failure -R \"PhuMob|simplemos_m[234]\"",
+      "result": "pass",
+      "tests": 14,
+      "elapsed_seconds": 7.85
+    },
+    {
+      "name": "release build",
+      "command": "cmake --build build-release --parallel 4",
+      "result": "pass"
+    },
+    {
+      "name": "full CTest regression",
+      "command": "ctest --test-dir build-release --output-on-failure --parallel 4",
+      "result": "pass",
+      "tests": 718,
+      "elapsed_seconds": 131.03
+    }
+  ],
+  "claims": {
+    "separate_ionized_donor_and_acceptor_state_implemented": true,
+    "self_consistent_electron_and_hole_scattering_implemented": true,
+    "gummel_dd_transport_implemented": true,
+    "coupled_newton_residual_implemented": true,
+    "coupled_newton_mobility_jacobian_implemented": true,
+    "cross_carrier_jacobian_blocks_implemented": true,
+    "production_import_bare_phumob_enabled": true,
+    "production_import_phumob_high_field_enabled": true,
+    "production_import_phumob_enormal_enabled": false,
+    "phumob_enormal_import_remains_fail_closed": true,
+    "original_simplemos_deck_b1_direct_comparison_ready": false
+  },
+  "next_milestone": "M7: implement and validate the T-2022.03 Enormal spatial closure before enabling the original SimpleMOS B1 deck for direct comparison"
+}

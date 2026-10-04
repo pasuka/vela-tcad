@@ -1,0 +1,12 @@
+[
+  {
+    "arm": "vela",
+    "state_identical": true,
+    "status_identical": true
+  },
+  {
+    "arm": "native",
+    "state_identical": true,
+    "status_identical": true
+  }
+]

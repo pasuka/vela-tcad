@@ -47,6 +47,7 @@ struct LineSearchResult {
 
 class BacktrackingLineSearch {
 public:
+    using CandidateFunction = std::function<VectorXd(const VectorXd&,const VectorXd&,Real)>;
     using ResidualFunction = std::function<VectorXd(const VectorXd&)>;
     using AcceptFunction = std::function<bool(const VectorXd&, const VectorXd&)>;
     using NormFunction = std::function<Real(const VectorXd&)>;
@@ -60,7 +61,8 @@ public:
                             const ResidualFunction& residualFunction,
                             const AcceptFunction& acceptFunction = {},
                             const NormFunction& normFunction = {},
-                            const DecreaseAcceptFunction& decreaseAcceptFunction = {}) const;
+                            const DecreaseAcceptFunction& decreaseAcceptFunction = {},
+                            const CandidateFunction& candidateFunction = {}) const;
 
 private:
     LineSearchConfig cfg_;

@@ -1,0 +1,46 @@
+{
+  "schema": "vela.simplemos.sdevice.m59_port_observable_decomposition_evidence.v1",
+  "status": "frozen",
+  "classification": "port_observable_burst_association_plus_smooth_nwell_growth",
+  "contract_sha256": "5479ea7835ac60eeef1b26c3733fbfa2148f53aed2bd16ae08cfdb88142f0a3e",
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "historical_artifacts_rewritten": false,
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_pointwise_delta.csv": "346b2b28d17eb26d5b29d4457ab493a37379d14c9700fa843f82b4b563ef9d9e",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_component_ledger.csv": "53abf1031067a55b468fc1e354501485c79d03087bb37783ff5540395c5b982a",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_state_decomposition_ledger.csv": "acb5cac9540821a60389c20a1882825b5601f76515e7c1216965b9edf8690815",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_device_compensation_mesh_ledger.csv": "25e10dcf942e54b6897b8ebaf0070fb89c1e866ac239f00a0a2ee91a5d16505d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m58_compensation_contour_mesh_audit_evidence.json": "ff2b1e08f0c9e0f8304f792ddaf23821c97ec1ed438f26c3fe1a49a9fe4b685b"
+  },
+  "implementation_hashes": {
+    "scripts/run_simplemos_m59_port_observable_decomposition.py": "a4562301b0eef0d509970264a240d751211c4621b0a361b1b5b2f45665f5bd81",
+    "scripts/analyze_simplemos_port_residual_ledger.py": "2533bb29ec7d7e23c3738deb78bafbd32c36ad54caa7b96cd046e50d8ed41709"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_port_observable_decomposition_report.json": "af0d460b5715f919fc5d1f7b0a2f1aed39bb03548bd00efae160e014917f287a",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_pointwise_observable_ledger.csv": "27543ac5b6efc71495622dbe6e207ad5968c0accf8b927d64584319c80b54876",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_curve_decomposition_ledger.csv": "0af7116a45dea1b8be9025247bdcf7d112a0cdd4f9e0fd30a57fc10e20544544",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_pair_decomposition_ledger.csv": "0c9500c24eeb4a619ba297af472b7158bd1ca580a77d14febf5e8d5e562b1655",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_threshold_scope_sensitivity_ledger.csv": "a08bddae95f5eaae4ec5f15a0a8f522c0fc72deef4f75c74c0438a5f7a59e8fa",
+    "reference_tcad/simplemos_sentaurus2022/port_observable_decomposition/m59_kcl_topology_stratification_ledger.csv": "ed34b1392a98a81a71fb484c3c6fd9f22ceef8cee2dbeb87ef045dbfe521ecc4",
+    "docs/validation/simplemos_m59_port_observable_decomposition_2026-09-02.md": "c7dbbb1fdb8e81fb83afd01ada058de1af13027f342dcae880cd04bc796c71e5",
+    "docs/validation/reports/simplemos_m59/artifact.json": "f5e933c7adc9e749aab1c577334f5dc3fd84446e9be73aa8546052fb780330ac"
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "point_count": true,
+    "curve_count": true,
+    "pair_row_count": true,
+    "component_count": true,
+    "burst_free_growth_threshold_robust": true,
+    "low_drain_slope_in_range": true,
+    "low_drain_pearson_pass": true,
+    "floating_device_set_exact": true,
+    "kcl_topology_stratification": true,
+    "historical_artifacts_not_rewritten": true,
+    "no_new_solve": true,
+    "residual_causality_not_claimed": true,
+    "all_checks_pass": true
+  }
+}

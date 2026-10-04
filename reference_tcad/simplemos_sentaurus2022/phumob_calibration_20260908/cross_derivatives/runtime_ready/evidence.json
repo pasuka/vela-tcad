@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_phumob_calibration_20260908/cross_derivatives/runtime_ready/cpp.csv": "76d3f8aa2cd242e02cc673b1af82abc898a4ca870645115b0c9b906e8f593734",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/runtime_ready/derivatives.csv": "ea983857f2b34c209fbe7aa8607cc681aff9339f2edcc0763bea9096d8072245",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/runtime_ready/freeze.json": "40aeb24d4a27c6dc5819058e1776d2f3533893f709d5d0ca5473a7af60b397d0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/runtime_ready/process.json": "ff6b56353bdacc2b76e557e533f1bb1804b464ae3d2a54c2545d3e2587244e3c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/cross_derivatives/runtime_ready/summary.json": "5e8db80b0f9622c2fb1f01ac8912cd1e6fe616f08c55e232d7de6a50f3b7d16e"
+  }
+}

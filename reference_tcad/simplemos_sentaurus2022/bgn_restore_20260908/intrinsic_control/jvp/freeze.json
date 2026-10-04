@@ -1,0 +1,16 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/config.json": "ea93a613725f745efd71643e63478ab8aa1afce858f5ec5d7584dd2351dcc654",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/config.json": "4848c31fc59ef1cc8c497cf667259d528d459b1987c856ec9aa4030c8fdb49ad",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/config.json": "ec5281aa11b349bb82f4b0bb2d33fb74ebc4230f0822e77c4c13e8c967a405eb",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/config.json": "d15ceb5aedb705a694cc42e40ec8c530005a837b4c0ff7c0012e5e040ba4943f",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n19_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "4edb3bb9688215d783cfe9b29f632d7225e9ff8f163957b0533f38aa8ecf1e83",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n19_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "8fc0e1a7c873aa35e8cfa533f4919d69a08feb58c4fd11d47c3e8f566342c920",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n23_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "192a5f8fe225882739e373321173bcbb2be70ff5149068318ae29936df8c67a9",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/vela/m65_n23_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "b9df015662aa30a2e9086b92e8b9c175dfc0c9e30dc7dae3d17cde10ea96c133",
+    "build-release/vela_example_runner.exe": "d12649f7945cca1637bb3813263b95990dae94c7f3138c9ec3fdd90e91f98248",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/comparison_evidence.json": "fce52e6937e1409355206eafc119e3a5cb99f16a232d4e738728677744278245",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/jvp/contract.json": "1ce2ce0a3f09129395ddf65fb16e45cd8cb4ebbda6277b461e27aa779ab2f768",
+    "scripts/audit_simplemos_bgn_matched_jvp_20260908.py": "1c77d0abfb1975a9766427f6de93629e9eafa52e91227ceab93ecef47bf0704a"
+  }
+}

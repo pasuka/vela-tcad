@@ -576,9 +576,25 @@ TEST_CASE("Experimental electrothermal symbolic reuse checks exact indices and a
     b.setZero();b.resize(200,200);
     const auto kept=cached.solve(rhs);
     REQUIRE(kept[0]==Catch::Approx(1.));REQUIRE(kept[1]==Catch::Approx(2.));
+    // Failed numerical factors must not qualify later symbolic reuse.
+    b=makeSparseMatrix(2,2,{{0,0,2.},{1,1,3.}});
+    b.coeffRef(1,1)=0.;cached.compute(b,true);
+    REQUIRE(cached.info()!=Eigen::Success);
+    const auto failedAnalyses=cached.analyses();
+    b.coeffRef(1,1)=3.;cached.compute(b,true);
+    REQUIRE(cached.info()==Eigen::Success);
+    REQUIRE(cached.analyses()==failedAnalyses+1);
+    REQUIRE((b*cached.solve(rhs)-rhs).norm()<1e-12);
+
 }
 
 TEST_CASE("Electrothermal direct solver rejects unavailable or unknown backends", "[linear][electrothermal]") {
+    experimental::ElectrothermalDirectSolver defaultSolver;
+#if defined(VELA_HAS_UMFPACK)
+    CHECK(defaultSolver.backend()=="umfpack");
+#else
+    CHECK(defaultSolver.backend()=="sparselu_colamd");
+#endif
     REQUIRE_THROWS_AS(experimental::ElectrothermalDirectSolver("unknown"),std::invalid_argument);
 #if !defined(VELA_HAS_UMFPACK)
     REQUIRE_THROWS_AS(experimental::ElectrothermalDirectSolver("umfpack"),std::invalid_argument);

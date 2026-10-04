@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/pr_fix/before/build-release/CMakeFiles/vela_example_runner.dir/src/tools/vela_example_runner.cpp.obj": "634f19984fceaed6746b9d9b80dd6264c3f88c7a7973c0ddb9243df342a28eee",
+    "build-release/pr_fix/before/build-release/libvela_core.a": "600f7abc16aad6fe81aee5f39c7cd4796b5a09ac3f75222cbca1cfedb2efac66",
+    "build-release/pr_fix/before/build-release/vela_example_runner.exe": "b67baaea5b71a4a4d3bf049509d5eb7de387482e8ce4515167ada6ac41fb6844",
+    "build-release/pr_fix/before/docs/config_schema.md": "c1ab337e002ed3e8359c6a8ddba76243065dc1b23fce88d61bcdfb68ce1bc8d1",
+    "build-release/pr_fix/before/include/vela/solver/GummelSolver.h": "3d9976bf595537a8846c9db8ebeb1545e9a628f04a876c934aa29652ca7177d1",
+    "build-release/pr_fix/before/src/io/DDSolutionCsv.cpp": "c97a30d610df6de32ecbea1834ca2ebe69dd7c0680b6adf71dc672755b746154",
+    "build-release/pr_fix/before/src/solver/NewtonSolver.cpp": "f830761d169c74f6dec3ac05560a72106a7739531add61a9b800b661d37082f3",
+    "build-release/pr_fix/before/tests/test_dc_sweep.cpp": "f2afa5c1ee13846528dc3c03623c00906583ac83c5676af3911d963a6a34e67a",
+    "build-release/pr_fix/before/tests/test_newton_solver.cpp": "36d10c899e589f7073ab4d9bb37087cab81a74182384cbcb919fd80983febeaf",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/packed_roundtrip/replay_evidence.json": "29f12a7ad77ed12da33372808f5839212049b8f366ab1d1c0e527f4a25572aad",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/before.json": "d779a1aa188679a14c83a260cd26dd32bd0d767ebba21abf56eaa75fad2a91c5"
+  }
+}

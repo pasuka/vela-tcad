@@ -1,0 +1,29 @@
+{
+  "schema": "vela.simplemos.sdevice.m36_boundary_contact_measure_audit.v1",
+  "scope": "SDevice-only n23 AverageBox Measure audit for external boundaries and contacts",
+  "device": "n23",
+  "sentaurus_release": "T-2022.03-SP2",
+  "raw_oracle": "M34 MeasureCoefficients.debug",
+  "measure_local_permutation": [0, 2, 1],
+  "required_classes": [
+    "interior",
+    "material_interface",
+    "external_boundary",
+    "contact_first_layer",
+    "direct_contact"
+  ],
+  "acceptance": {
+    "triangle_count": 2746,
+    "minimum_source_nodes": 1,
+    "minimum_drain_nodes": 1,
+    "minimum_substrate_nodes": 1,
+    "maximum_assembled_si_node_relative_error": 1e-10,
+    "require_finite_values": true
+  },
+  "claim_policy": [
+    "The audit distinguishes direct contact nodes from neighbouring free nodes.",
+    "A raw circumcentric share is not called Sentaurus-equivalent outside classes that close against MeasureCoefficients.debug.",
+    "Contact vertex expansion and geometric boundary clipping remain separate candidate mechanisms.",
+    "No production model or geometry default is changed by M36."
+  ]
+}

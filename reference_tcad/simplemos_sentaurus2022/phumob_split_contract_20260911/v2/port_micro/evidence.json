@@ -1,0 +1,24 @@
+{
+  "input_hashes": {
+    "scripts/check_simplemos_split_contract_port_micro_20260911.py": "0f91f81b675f9d511cf82d83fdf59d0947c2c2106a5dd9624890e0f5580fc870",
+    "scripts/analyze_simplemos_split_contract_v2_20260911.py": "7367c61c3bdaa29cdf1927cb3cac5c4a387a1e963bc78151d89146f8a68012eb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/final_kernel/build.json": "a9b9a87bbaed65a3069d8539a6326ab0c629e7251c7989e93ce4dc52194119b8",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/port_micro/responses.csv": "83a13196086efe23d442cf09b3473c17444e336fd7229bd855f60a6f1b642a25",
+    "build-release/split_contract_0911/v2/states/n19/0.05/40/operator.json": "a896f64e342ac906ee4ad82ff9ae90d0bd6ff303bd8a7b7f38d943b793ab4be0",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/jobs.json": "68388e646f0b1e84aa09fc9eb9fa5f419753ec9a6202708f90e32baf2742d097",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/results.csv": "9430f668dbc1aa8793bbd2ecbc78c4f9b202670526fbb8b1a3b5f3508ccbfd4e",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/results.csv.base.json": "e507e519b0e75e6774506b08b2620de6a3d286237c871af3ef94cb528a43b488",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/results.csv.port_0.json": "fcfbed4e2eb8a86840402093d57a2184d69716885c50dc942c124842ffffd445",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/results.csv.port_1.json": "15757b40d3749f514ceec151abd0aedb66c6b09b674e5cd7fbb64974db1b7324",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/results.csv.port_2.json": "40b8fd29a561830ee5bece5165f6c734a6f9229ca9638529483737a65f630ba7",
+    "build-release/split_contract_0911/v2/port_micro/n19/0.05/40/run.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/split_contract_0911/v2/states/n23/1.0/0/operator.json": "8d1f03339b2fa09e0ac8b554a2d198af252467dc89cbce8ca24eaf82a1bb59d1",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/jobs.json": "884f3681c2fefcca0f8c49e87467a981b691b038c8657ecf1e85b467323e1027",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/results.csv": "deb46432198c02240caf816388e833a978fc887ae96bb5a8a30d48e3cf9b0d36",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/results.csv.base.json": "2e2700ab8bca95392d6b31cc5ac2ed18517e06bebe6f6d5fbb8bff85f30696d9",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/results.csv.port_0.json": "203eb0d21bc6ee2511237a4b4c97786528ce055d3662492eda86b5001f5b8e7f",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/results.csv.port_1.json": "fe2a7342c26ee844126a37da636e1efb6c2ffed95084e8434655d0b5fcc3f4b1",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/results.csv.port_2.json": "706e83942ae5ea9e00028fb86a4e5c2081d6626d0fbd645f98f0546f2cae5829",
+    "build-release/split_contract_0911/v2/port_micro/n23/1.0/0/run.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

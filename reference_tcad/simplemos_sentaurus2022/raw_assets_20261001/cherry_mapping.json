@@ -1,0 +1,398 @@
+[
+  {
+    "source": "d7fdfc33f59595df669285dba642ea1840d591d5",
+    "target": "1886d8ab84a530fe9c54861b93280f72721d76ad",
+    "resolution": "reviewed material union and automatic/explicit coordinates; preserved both CLI interfaces"
+  },
+  {
+    "source": "50898678e6a68ab29ef23f9b0f8996cbce658ba5",
+    "target": "ab48001c0534930075a227a608e9ba475df54e39",
+    "merge_mainline": null
+  },
+  {
+    "source": "ee1b11bbcdc397a97375aeb002603303a1c02c7b",
+    "target": "4743f774dc8ea11e1e6025c6833b07ba5134c209",
+    "resolved_from_qualified_final": [
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/equation/DDAssembler.cpp",
+      "src/physics/MobilityModel.cpp",
+      "src/post/ContactCurrent.cpp"
+    ]
+  },
+  {
+    "source": "419ec6c99993442ca8b51d15986e42e150d48645",
+    "target": "5fb8fee1a2d670ac0355bf554a7ed95b1ab85cb6",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "6c6325f89bc541e72851b216465875267c22c174",
+    "target": "f5fdc3536d2320517f77af6e579a287e8db216ed",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "2583ea56bc9fa1e84b2dea1e1638d1ec47dd8a13",
+    "target": "fce745c521f803c34a8c4d2e0e6148539ddbc207",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "src/tools/vela_example_runner.cpp"
+    ]
+  },
+  {
+    "source": "319eb036adc5b935f2b579f5254853924944d393",
+    "target": "96442b7f9a696ba17a2215318440224e1e741dc3",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "64a92a53c6d5fc00d03e91af9a5eb22363f4a614",
+    "target": "fbc705bc794a41c4bf001ec12e2b4c29705347d0",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "src/equation/CoupledDDAssembler.cpp"
+    ]
+  },
+  {
+    "source": "3753e52f12a0bf50a099cd46489f92e5e43e6114",
+    "target": "26a57c03ecc625bb353057eb69644652ec13504f",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "d32df8098371bb467896b4ca154ef1eeff21506b",
+    "target": "12891eaf240edff27b7562f95f9c51724eab2d12",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/tools/vela_example_runner.cpp"
+    ]
+  },
+  {
+    "source": "8bb5e5c6169a1f9037da089416976e092dd8c16c",
+    "target": "698c595c0e2b112af5758ff276f9c29d9c5800a7",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "include/vela/equation/CoupledDDAssembler.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/tools/vela_example_runner.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "4dd484aee2cb4e9387bbaf7984aa6b4865c196b3",
+    "target": "823a06b4a3f285736ac57c3ee4b508ab934ce54c",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "c9439b17ca93bf12b063cf3927615d9a7fe12af6",
+    "target": "130277f4c1767013bbe96928fd552d122333b445",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "8dc5562ba930765a01adba92c5d13429392604d0",
+    "target": "0b04c5320e9bc2c2548d452d4adb7c2e658e9f03",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "163994b44cff0311ca87fe5610a6a851c8ddedf9",
+    "target": "ad16d35c3e9f36904cc7add0229af911543fdcd6",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "4efa4dfd7d8b25582d3c812af7522be39566b412",
+    "target": "d4d28e9b85a1263feb7a94026f4ab04e9e1b06b9",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "e9715277e59858166144281ce9f690b85b868daa",
+    "target": "48222ca42376f843a06baa17a6d824c8d85c481d",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "include/vela/equation/DDAssembler.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/simulation/DCSweep.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "tests/test_mos_mixed_material.cpp"
+    ]
+  },
+  {
+    "source": "eaa61d7f4727ccd6e0312f53206697d83d5d2de7",
+    "target": "11ce8c30f90fda280915ca78cdb70c555e2f4688",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "1dfb9aeb3f87b87966dac6f473cc59f230721fbf",
+    "target": "24695474be66fb7b00cf2d77029005deb5e12801",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "include/vela/equation/DDAssembler.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "tests/test_mos_mixed_material.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "db9f97ffd5caa043d65f6d677d6a74b50032b63e",
+    "target": "d6f45f6f2018da20004960ab380c1b6204df25ac",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "include/vela/equation/DDAssembler.h",
+      "src/solver/NewtonSolver.cpp",
+      "tests/test_mos_mixed_material.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "60647def350d3b2760e8ed94526013d47b39e7c9",
+    "target": "2ab561498e4e6886c539188cae6f50da4856fc88",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "8921861138ccd28803cdef23457cf5c8352edc0d",
+    "target": "478a9fe7b903b0468a70489373f416c6610ebd48",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/post/ContactCurrent.cpp",
+      "src/tools/vela_example_runner.cpp",
+      "tests/test_mobility.cpp",
+      "tests/test_newton_solver.cpp",
+      "tests/test_sg_flux.cpp"
+    ]
+  },
+  {
+    "source": "9f64952580cd2394d40f7878d9c6493c1aa1d7e6",
+    "target": "24f8ff02cc2f901abb5e89a322b4c982e1d01356",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "src/solver/NewtonSolver.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "1c2bab15a3a2c62a4e9205130673431f1acb801a",
+    "target": "9e5f5c50163dd89cc989f43a1c44ac12cfab5af2",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "54ced9a30af0003ec738d881219285cf7f7a1245",
+    "target": "84a8861b5296ee32f78577a9138815436c286826",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "e2e96c87213b9b1672331f726192e88ee83f14c4",
+    "target": "dfbe1ca0dcac24213246910be418e897b69d5aa4",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "ee6472f509cc46178c52008bebd56433e2f81da3",
+    "target": "41b010dd352739010851858bcf721a6ae1566521",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "0b27754f009edc2cc37db2d3138cce1c02fbe896",
+    "target": "43475ac9c4828a94a03f0aeb7aecf79eb13927c9",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "725f29429273c64cd6c21edbc4002c2baddcbf7a",
+    "target": "f8092205f10e6a83c91f8225dc374ad273bdc440",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "0802d7cb59ad9f67737cd793ae6f7309efab0a52",
+    "target": "fd1cedb963d00b02304ca0fe5dc8312a6f242cd4",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "0c6a33685eddc4ed3ece593609bff478e6a76c95",
+    "target": "eb7c2f4bdc919b8071a3340888e5370b04dc0992",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "a1561dc0f63bb66d8258317bb836a7edca9717bd",
+    "target": "5ecb2fe356c07b0214a2efedb6fc6af0dee0e50b",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "e4460f03a5136bf03dad5124145c1bf90e9cf5d0",
+    "target": "76a74151af757c4d022003016d0e5d918bcb9caf",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "e3f1c89c1f06583c9c5082d978a614d014ac37ce",
+    "target": "b40d8af306caa3464d2f676c16e021d628de7f37",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "b7bf65d293cd483c2b398134132f4f0c23e13b7a",
+    "target": "22c874b6931d5585239eb2f2a7f63f55d7177369",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "tests/test_mos_mixed_material.cpp"
+    ]
+  },
+  {
+    "source": "89533eb7a5d6dd5f97ba74c958d1673c7b67e1a0",
+    "target": "33dc0813fdedb92a78358d522286c7aa3183314c",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "include/vela/equation/CoupledDDAssembler.h",
+      "include/vela/equation/DDAssembler.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "tests/test_mos_mixed_material.cpp"
+    ]
+  },
+  {
+    "source": "3a46f857764205b041b0884ab304227fac195fb9",
+    "target": "ef6ed5bd544729db7e5d06f3379bd8ef4e6f220b",
+    "merge_mainline": 1,
+    "resolved_from_qualified_final": [
+      "AGENTS.md",
+      "CMakeLists.txt",
+      "docs/architecture.md",
+      "docs/config_schema.md",
+      "docs/superpowers/plans/2026-08-31-ac-small-signal-simulation-development-plan.md",
+      "include/vela/physics/RecombinationModel.h",
+      "include/vela/solver/GummelSolver.h",
+      "include/vela/solver/NewtonSolver.h",
+      "reference_tcad/README.md",
+      "reference_tcad/genius_bjt_sentaurus2022/vela/configs/m0_base_ramp.json",
+      "reference_tcad/genius_bjt_sentaurus2022/vela/configs/m0_collector_sweep.json",
+      "reference_tcad/genius_bjt_sentaurus2022/vela/configs/m1_collector_sweep.json",
+      "reference_tcad/genius_bjt_sentaurus2022/vela/configs/m1_model_relaxation.json",
+      "reference_tcad/genius_bjt_sentaurus2022/vela/configs/m1_spatial_vce3.json",
+      "scripts/run_cell_first_cross_device_validation.py",
+      "scripts/run_genius_bjt_accepted_state_pipeline.py",
+      "scripts/run_genius_bjt_mesh_sensitivity.py",
+      "scripts/run_pn2d_same_mesh_sdevice_vector_export.py",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/simulation/DCSweep.cpp",
+      "src/solver/GummelSolver.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "src/tools/vela_example_runner.cpp",
+      "tests/regression/README.md",
+      "tests/regression/test_cell_first_cross_device_validation.py",
+      "tests/regression/test_pn2d_same_mesh_sdevice_vector_export.py",
+      "tests/test_dc_sweep.cpp",
+      "tests/test_external_state.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "72551ec1280899b758959520cb09dc3e0ba69d3d",
+    "target": "68819dfb895ad5a4b3b55270fef81cfc8fa00b39",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "1ff79fec622837641912472ba7463dd4a4523e9d",
+    "target": "efed50a2d99e26895d539cb6a391e307a9d2c4a3",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "d5b65a71e953179eff97ac1ce8e86bc5ccc0e175",
+    "target": "deb990a9c9ce3b4abec72a86d56ca612dd02e3a9",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "CMakeLists.txt",
+      "docs/config_schema.md",
+      "include/vela/equation/AssemblerUtils.h",
+      "include/vela/equation/DDAssembler.h",
+      "include/vela/solver/NewtonSolver.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/equation/DDAssembler.cpp",
+      "src/equation/PoissonAssembler.cpp",
+      "src/physics/MobilityModel.cpp",
+      "src/simulation/ConfigParsing.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "src/tools/vela_example_runner.cpp",
+      "tests/test_newton_solver.cpp"
+    ]
+  },
+  {
+    "source": "c4e2a4f1228fd33a6abfdb30030666c90689ae7d",
+    "target": "cb7db0691754075772b07333385799304d246680",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "0b59f12f71adc4cf484e6ac7126da75960a5f5fa",
+    "target": "cd96d74edd3df78d8c1a797d490f43795e3558c9",
+    "merge_mainline": 1,
+    "resolved_from_qualified_final": [
+      "docs/config_schema.md",
+      "include/vela/equation/AssemblerUtils.h",
+      "include/vela/io/SentaurusTdrReader.h",
+      "src/equation/CoupledDDAssembler.cpp",
+      "src/physics/MobilityModel.cpp",
+      "src/simulation/DCSweep.cpp",
+      "src/solver/NewtonSolver.cpp",
+      "tests/regression/README.md",
+      "tests/test_dc_sweep.cpp",
+      "tests/test_material_local_poisson_charge.cpp"
+    ]
+  },
+  {
+    "source": "06d0acb425b052f0df424341ab86a5994ed45bf5",
+    "target": "bca0409ce4fa80ec95a268c0a76c8e0152c2fb70",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  },
+  {
+    "source": "cfcf13fff48dc37fa845ce74da0e820c9f9df4fc",
+    "target": "c6b389ef2d6fc92e6c724b9ffadacdaaedd55416",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "CMakeLists.txt",
+      "docs/config_schema.md",
+      "src/tools/vela_example_runner.cpp"
+    ]
+  },
+  {
+    "source": "2e96e02a1508c24c14a8dc0d8543be814fe80999",
+    "target": "9e5816c10769385b413f64b3332ac15e4f42e0f5",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "CMakeLists.txt"
+    ]
+  },
+  {
+    "source": "20d8f6f2517aecfea4b4b319a8969eee2d319bb0",
+    "target": "baa611561d377673394d663c0cd8aa863466f5ba",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": [
+      "CMakeLists.txt"
+    ]
+  },
+  {
+    "source": "8680319e99fd3b2759f83788ffec9a76924d6e12",
+    "target": "810dc63a172e2635b1e48eb592ae6f89a6ce8b70",
+    "merge_mainline": null,
+    "resolved_from_qualified_final": []
+  }
+]

@@ -1,0 +1,165 @@
+{
+  "cases": [
+    {
+      "case": "n17_vd_0p05",
+      "device": "n17",
+      "vd": 0.05,
+      "reference": "n17/n17_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n17_vd_1",
+      "device": "n17",
+      "vd": 1.0,
+      "reference": "n17/n17_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n18_vd_0p05",
+      "device": "n18",
+      "vd": 0.05,
+      "reference": "n18/n18_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n18_vd_1",
+      "device": "n18",
+      "vd": 1.0,
+      "reference": "n18/n18_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n19_vd_0p05",
+      "device": "n19",
+      "vd": 0.05,
+      "reference": "n19/n19_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n19_vd_1",
+      "device": "n19",
+      "vd": 1.0,
+      "reference": "n19/n19_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n20_vd_0p05",
+      "device": "n20",
+      "vd": 0.05,
+      "reference": "n20/n20_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n20_vd_1",
+      "device": "n20",
+      "vd": 1.0,
+      "reference": "n20/n20_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n21_vd_0p05",
+      "device": "n21",
+      "vd": 0.05,
+      "reference": "n21/n21_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n21_vd_1",
+      "device": "n21",
+      "vd": 1.0,
+      "reference": "n21/n21_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n22_vd_0p05",
+      "device": "n22",
+      "vd": 0.05,
+      "reference": "n22/n22_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n22_vd_1",
+      "device": "n22",
+      "vd": 1.0,
+      "reference": "n22/n22_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n23_vd_0p05",
+      "device": "n23",
+      "vd": 0.05,
+      "reference": "n23/n23_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n23_vd_1",
+      "device": "n23",
+      "vd": 1.0,
+      "reference": "n23/n23_vd_1_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n24_vd_0p05",
+      "device": "n24",
+      "vd": 0.05,
+      "reference": "n24/n24_vd_0p05_reference.csv",
+      "points": 51
+    },
+    {
+      "case": "n24_vd_1",
+      "device": "n24",
+      "vd": 1.0,
+      "reference": "n24/n24_vd_1_reference.csv",
+      "points": 51
+    }
+  ],
+  "scope": [
+    {
+      "device": "n17",
+      "nodes": 1542,
+      "carrier_rows": 1916
+    },
+    {
+      "device": "n18",
+      "nodes": 1542,
+      "carrier_rows": 1916
+    },
+    {
+      "device": "n19",
+      "nodes": 1480,
+      "carrier_rows": 1814
+    },
+    {
+      "device": "n20",
+      "nodes": 1480,
+      "carrier_rows": 1814
+    },
+    {
+      "device": "n21",
+      "nodes": 1540,
+      "carrier_rows": 1916
+    },
+    {
+      "device": "n22",
+      "nodes": 1540,
+      "carrier_rows": 1916
+    },
+    {
+      "device": "n23",
+      "nodes": 1482,
+      "carrier_rows": 1814
+    },
+    {
+      "device": "n24",
+      "nodes": 1482,
+      "carrier_rows": 1814
+    }
+  ],
+  "targets": 816,
+  "reference": "Frozen M8 original-deck native curves; no interpolation. Keep distinct from strengthened HFS 204-point references.",
+  "source_manifest_sha256": "115aeee7514baecbe9dc1fe7049065cbf865d29e4c166222825e8ba3dfc6b691",
+  "mesh_manifest_sha256": "17b46b67238f319213304d634af76a0e4b055d1c234530ab7de28d3fd0108e15",
+  "launch_gate": "SRH fixed-state, derivative, two-amplitude, 16-point dual and field checks must pass first.",
+  "current_relative_percent": 2.0,
+  "cold_start": "Poisson block -> coupled equilibrium -> drain ramp -> gate sweep; only accepted predecessors may propagate."
+}

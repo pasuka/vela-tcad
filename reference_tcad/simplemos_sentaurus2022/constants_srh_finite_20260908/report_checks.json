@@ -1,0 +1,8 @@
+{
+  "script_syntax_passed": 8,
+  "local_links_checked": 25,
+  "stage_hash_manifests_verified": 9,
+  "strictly_qualified_joint_endpoints": 8,
+  "strictly_qualified_joint_pairs": 4,
+  "full_CTest_rerun": false
+}

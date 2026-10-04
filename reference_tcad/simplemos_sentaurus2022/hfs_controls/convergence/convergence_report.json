@@ -1,0 +1,138 @@
+{
+  "schema": "vela.simplemos.sdevice.m8b_eparallel_convergence_report.v1",
+  "status": "complete",
+  "selection_policy": {
+    "required_devices": 2,
+    "success_requires_exit_code_zero": true,
+    "success_requires_no_failure_marker": true,
+    "success_requires_all_51_exact_gate_points": true,
+    "selected_probe": "for each device, use the largest line_search_damping that succeeds; prefer a shared value only when available"
+  },
+  "selected_probe": {
+    "probe": "damping_0p01",
+    "line_search_damping": 0.01,
+    "successful_devices": [
+      "n17",
+      "n21"
+    ],
+    "success_count": 2
+  },
+  "selected_by_device": {
+    "n17": "damping_0p01",
+    "n21": "damping_0p1"
+  },
+  "robustness_pairs": [
+    {
+      "device": "n21",
+      "left_probe": "damping_0p1",
+      "right_probe": "damping_0p01",
+      "maximum_absolute_log10_current_difference_dex": 0.00016229401332445653,
+      "maximum_relative_current_difference": 0.0003736259601934699
+    }
+  ],
+  "probe_summaries": [
+    {
+      "probe": "damping_0p5",
+      "line_search_damping": 0.5,
+      "successful_devices": [],
+      "success_count": 0
+    },
+    {
+      "probe": "damping_0p1",
+      "line_search_damping": 0.1,
+      "successful_devices": [
+        "n21"
+      ],
+      "success_count": 1
+    },
+    {
+      "probe": "damping_0p01",
+      "line_search_damping": 0.01,
+      "successful_devices": [
+        "n17",
+        "n21"
+      ],
+      "success_count": 2
+    }
+  ],
+  "cases": [
+    {
+      "case": "n17_eparallel_vd_1_damping_0p5",
+      "device": "n17",
+      "probe": "damping_0p5",
+      "line_search_damping": 0.5,
+      "deck_sha256": "0c7d53c9adc985efef35c4f2ac8ce8fd9f360df4a3dcc7d94a70e4c35f31ab36",
+      "exit_code": 2,
+      "success": false,
+      "exact_gate_point_count": 0,
+      "last_continuation_t": 0.97,
+      "failed_step_size": "9.5367e-09",
+      "console_log_sha256": "0165d50c34eb71b6541b4cf9a996448f2940712df1a223addd79170e857b78c8"
+    },
+    {
+      "case": "n17_eparallel_vd_1_damping_0p1",
+      "device": "n17",
+      "probe": "damping_0p1",
+      "line_search_damping": 0.1,
+      "deck_sha256": "53246fcdb05d4ce35054dab627a79fa1ea8b6a8164939ae35df66f0fdb984e83",
+      "exit_code": 2,
+      "success": false,
+      "exact_gate_point_count": 0,
+      "last_continuation_t": 0.975,
+      "failed_step_size": "9.5367e-09",
+      "console_log_sha256": "39b05a5fcd9a059b6c8e72c11b7a070fe641e88afb77ed5c435e8a05afcae2f8"
+    },
+    {
+      "case": "n17_eparallel_vd_1_damping_0p01",
+      "device": "n17",
+      "probe": "damping_0p01",
+      "line_search_damping": 0.01,
+      "deck_sha256": "c161a1684b330cb52bb17e30b9e9fe383a66a2e522fdec95b01516f5fad14ce0",
+      "exit_code": 0,
+      "success": true,
+      "exact_gate_point_count": 51,
+      "last_continuation_t": 0.998187,
+      "failed_step_size": null,
+      "console_log_sha256": "405c6e764aa235462a527aea9bb47d7a4dda0c7494d667f589dd0a133beba288"
+    },
+    {
+      "case": "n21_eparallel_vd_1_damping_0p5",
+      "device": "n21",
+      "probe": "damping_0p5",
+      "line_search_damping": 0.5,
+      "deck_sha256": "dbe742fb3606dfc2d22c5b38ff345da67b9e22d3f9727683121450d700fc3723",
+      "exit_code": 2,
+      "success": false,
+      "exact_gate_point_count": 0,
+      "last_continuation_t": 0.418027,
+      "failed_step_size": "8.8010e-09",
+      "console_log_sha256": "e289e4050b1f09ecf9853b54d979a952a335f0f2b4b3062104302d7a2fcf7c45"
+    },
+    {
+      "case": "n21_eparallel_vd_1_damping_0p1",
+      "device": "n21",
+      "probe": "damping_0p1",
+      "line_search_damping": 0.1,
+      "deck_sha256": "d89c465d70ea3cd51082f2b1b832449351ad42e6c439f4c49f3fa15e8c664932",
+      "exit_code": 0,
+      "success": true,
+      "exact_gate_point_count": 51,
+      "last_continuation_t": 0.98,
+      "failed_step_size": null,
+      "console_log_sha256": "15553b4f4885d5555c96340f6d9734a69b062d481b110301899d70a5e41dd5c2"
+    },
+    {
+      "case": "n21_eparallel_vd_1_damping_0p01",
+      "device": "n21",
+      "probe": "damping_0p01",
+      "line_search_damping": 0.01,
+      "deck_sha256": "6b09c278b79b847c8068aaed802b42738745eac245caac60086500f63e10a9c1",
+      "exit_code": 0,
+      "success": true,
+      "exact_gate_point_count": 51,
+      "last_continuation_t": 0.98,
+      "failed_step_size": null,
+      "console_log_sha256": "c64319833e8faaa9560245dd04609514932de0a7ad8998043794051d27043150"
+    }
+  ]
+}

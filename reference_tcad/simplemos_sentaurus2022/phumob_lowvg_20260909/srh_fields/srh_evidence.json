@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_freeze.json": "3029cc8434cb1d84417b6f046cfabc5cab96476dc493c055190dafe096f40986",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_nodes.csv": "8195b9752a960ff48cba675b857eeec92f447e9194fe5942c05ecf088e42c281",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_summary.csv": "877c70b83b2b561987b39405db6e48f6d146e55e516b28dc4224ec19700a7768"
+  }
+}

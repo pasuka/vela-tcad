@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/comparison_evidence.json": "5868dbbd76a8a7db3f76640cb940c09f1120d4672693ce5760b116a8f5163c9d",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/control_evidence.json": "f9d59be466ab5f26eab0c65b5a3f7a5d24e94ff321cbf0ca3f51e226dd49a82c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/early_low_evidence.json": "c2a5fe67ac3cc9576e7d6d60253485267b7f598e31f6ba8323e7822d3142cbae",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/sixteen_comparison.csv": "a2229dd8cf1485c44212857ee278ca7c5cf6d48b2b50073152f6cc12dae98240",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/sixteen_summary.json": "d6b7d166880c83e428092e16baebbf92d86213324bc1c69013efbb438939b0f1",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/supplemental_source_evidence.json": "1cf47f486ea2c7786883f69aa37d9069fd730f86e69c6e284cf6a179e3a9e587",
+    "scripts/summarize_simplemos_hfs_sixteen_20260914.py": "ce3b16a76a561b1ffd21d6b362a2224aef7493e62ad92820806ac30ff9810ceb"
+  }
+}

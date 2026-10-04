@@ -1,0 +1,5 @@
+key,residual_identity,state_identity,psi_max_V,phin_max_V,phip_max_V,density_max_relative,qualified
+m65_n19_vd_0p050000_endpoint,False,False,0.0,0.0,0.0,0.0,False
+m65_n19_vd_1p000000_endpoint,False,False,0.0,0.0,0.0,0.0,False
+m65_n23_vd_0p050000_endpoint,False,False,0.0,0.0,0.0,0.0,False
+m65_n23_vd_1p000000_endpoint,False,False,0.0,0.0,0.0,0.0,False

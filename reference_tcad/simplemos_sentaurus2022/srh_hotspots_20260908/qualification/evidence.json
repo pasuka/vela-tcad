@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/evidence.json": "994405ba9b569d7beba354c35e37f3b534cf5ed91330f542ac37e4c68f1da550",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/guards_evidence.json": "b68516f101aee4496e60c7c7ce327b57acc2c6f5308a174d2eac6a96b6a16a00",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/summary.json": "ee25351800f8986b4fa372534ee5d299c1b9ab0d48b47fa1a88c1e3170c971b6",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/zero_drift.csv": "449d142e2ad4ff43268381a5524584611a485a5e252ece77711e30ac45904154"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "vela.simplemos.sdevice.m56_si_oxide_interface_topology_contract_freeze.v1",
+  "status": "frozen_before_analysis",
+  "frozen_on": "2026-09-02",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m56_si_oxide_interface_topology_contract_v1.json",
+  "contract_sha256": "074478d116353371cb3f1392a62ae4ceae4349c2c98ac22abd924868ff3027a2",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_evidence.json": "bb715a2c060d0350950350d544948e0d4a83f1aa43f0f33a664d3fdeecdb5cf9",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_attribution_report.json": "45b6bc2d88ffd264ccda1e45cb6169d7921b99020f0b15f34ec6f084faaca628"
+  },
+  "thresholds_frozen_before_analysis": true,
+  "new_solver_execution": false
+}

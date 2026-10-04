@@ -1,0 +1,51 @@
+{
+  "schema": "vela.simplemos.sdevice.m72_native_gate_reaction_report.v1",
+  "status": "accepted",
+  "classification": "native_charge_qualified_full_profile_material_but_not_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m72_native_gate_reaction_contract_v3.json",
+    "sha256": "fd5e86080485c1eee70004eb52fd93089c990bd392b4980b933fff99c00be805"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "vela_observer_replays": 32,
+    "production_default_changed": false
+  },
+  "summary": {
+    "native_charge_qualified": true,
+    "maximum_native_differential_gate_charge_relative_error": 0.022389159760610074,
+    "median_native_differential_gate_charge_relative_error": 0.01853315100587652,
+    "median_full_profile_pair_closure_fraction": 0.32893732780326423,
+    "minimum_full_profile_pair_closure_fraction": 0.17075788428219119,
+    "maximum_full_profile_pair_closure_fraction": 0.44585483075011334,
+    "full_profile_proxy_current_pearson": 0.27389678705483567,
+    "native_charge_error_current_pair_pearson": -0.682193757475801,
+    "median_interface_point_response_abs_error_V": 0.0010728134575364034,
+    "p95_interface_point_response_abs_error_V": 0.002667317103918185,
+    "maximum_interface_point_response_abs_error_V": 0.005229755703137329,
+    "minimum_interface_node_count": 19,
+    "minimum_gate_contact_node_count": 47,
+    "maximum_frozen_state_replay_psi_error_V": 0.0,
+    "maximum_frozen_state_replay_qf_error_V": 0.0,
+    "maximum_frozen_state_replay_density_relative_error": 0.0
+  },
+  "causal_scope": {
+    "closed": "Qualifies the Vela native gate-reaction observable and quantifies complete-interface electrostatic response on frozen states.",
+    "not_closed": "Gate charge and surface potential are electrostatic observables, not a direct local current-continuity decomposition."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "stage_count": true,
+    "pair_count": true,
+    "interface_support": true,
+    "gate_contact_support": true,
+    "frozen_state_psi_identity": true,
+    "frozen_state_qf_identity": true,
+    "frozen_state_density_identity": true,
+    "native_reaction_unit_test": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

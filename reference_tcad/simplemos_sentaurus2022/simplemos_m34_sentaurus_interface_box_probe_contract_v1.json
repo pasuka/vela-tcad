@@ -1,0 +1,32 @@
+{
+  "schema": "vela.simplemos.sdevice.m34_sentaurus_interface_box_probe.v1",
+  "scope": "SDevice-only direct geometry oracle for the n23 Si/Oxide interface",
+  "device": "n23",
+  "input_tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+  "sentaurus_release": "T-2022.03-SP2",
+  "probe": {
+    "box_method": "AverageBoxMethod",
+    "debug_keyword": "BoxMeasureFromFile(GrdNumbering)",
+    "solve_scope": "single Poisson initialization",
+    "requested_blocks": [
+      "Measure",
+      "Coefficients"
+    ]
+  },
+  "interface": {
+    "region_a": "Silicon_1",
+    "region_b": "Oxide_1"
+  },
+  "acceptance": {
+    "minimum_interface_edges": 1,
+    "require_complete_triangle_mapping": true,
+    "require_finite_measures_and_coefficients": true,
+    "require_original_default_box_method": "CVPL_AverageBoxMethod = TRUE"
+  },
+  "claim_policy": [
+    "Input-grid shared node ids and SDevice internal vertex counts are reported separately.",
+    "An internal vertex-count increase is not attributed to material double points unless contact expansion is excluded.",
+    "Measure and Coefficients are interpreted as region-local element contributions, not as independent electrostatic degrees of freedom.",
+    "No production model default is changed by this probe."
+  ]
+}

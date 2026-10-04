@@ -1,0 +1,4 @@
+tag,rows,max_residual_difference_scaled,max_step_difference_V,max_row_weight_difference
+m65_n19_vd_0p050000_endpoint\vg_007\vela,1814,0.0,0.0,0.0
+m65_n23_vd_0p050000_endpoint\vg_020\vela,1814,0.0,0.0,0.0
+m65_n23_vd_1p000000_endpoint\vg_007\vela,1814,0.0,0.0,0.0

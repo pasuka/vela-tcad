@@ -1,0 +1,13 @@
+{
+  "device": "n23",
+  "integrated_delta_A_per_um": 1.0965682572568285e-11,
+  "native_dI_A": 1.09657877411713e-11,
+  "relative_error": 9.5906108614669e-06,
+  "same_sign": true,
+  "silicon_nodes": 942,
+  "silicon_measure_sum_um2": 0.9949540618291826,
+  "pass": true,
+  "new_solves": 0,
+  "scope": "n23 uniform Silicon charge only; existing M34 signed native volumes, one volume factor. Does not qualify arbitrary source shapes or n19 native geometry.",
+  "m82_released": false
+}

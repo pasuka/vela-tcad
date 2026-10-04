@@ -1,6 +1,8 @@
 #include "vela/equation/ElectrothermalAssembler.h"
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/core/IalKernelProfiling.h"
+#include "vela/core/ElectrothermalCostProfile.h"
+#include "vela/solver/ElectrothermalIterationControl.h"
 #include <sstream>
 #include "vela/solver/ElectrothermalTangent.h"
 #include <Eigen/SparseLU>
@@ -21,6 +23,34 @@
 #include <chrono>
 
 using namespace vela;
+TEST_CASE("Electrothermal cost diagnostics isolate stages and preserve solutions", "[electrothermal][cost_profile]") {
+    using P=ElectrothermalCostProfile;
+    ElectrothermalCostScope disabled("off");
+    SparseMatrixd matrix(2,2);std::vector<Eigen::Triplet<Real>> entries{{0,0,3.},{0,1,-1.},{1,0,-1.},{1,1,2.}};
+    matrix.setFromTriplets(entries.begin(),entries.end());
+    VectorXd rhs(2);rhs<<2.,1.;
+    for(const auto* mode:{"off","heat","screening","linear"}){
+        ElectrothermalCostScope scope(mode);
+        experimental::ElectrothermalDirectSolver solver;
+        solver.compute(matrix,true);const VectorXd first=solver.solve(rhs);
+        solver.compute(matrix,true);const VectorXd second=solver.solve(rhs);
+        CHECK((matrix*second-rhs).norm()<1e-13);CHECK((first-second).norm()==0.);
+        CHECK(solver.analyses()==1);CHECK(solver.factorizations()==2);
+        CHECK(electrothermalCostProfile.calls[P::Symbolic]==(std::string(mode)=="linear"?1:0));
+        CHECK(electrothermalCostProfile.calls[P::Numeric]==(std::string(mode)=="linear"?2:0));
+        IalMobility model(IalMobility::siliconDefaults(true),true);
+        const IalMobilityState state{1e22,1e20,1e21,1e15,1e6,1e-8,350.};
+        const auto result=model.evaluate(state);
+        CHECK(result.mobility_m2_per_Vs>0.);
+        // Construction prepares the 300 K minimum; evaluation solves at 350 K.
+        CHECK(electrothermalCostProfile.calls[P::ScreeningRoot]==(std::string(mode)=="screening"?2:0));
+        CHECK(electrothermalCostProfile.calls[P::HeatTotal]==0);
+    }
+    CHECK(electrothermalCostProfile.mode==P::Off);
+    CHECK(electrothermalCostProfile.calls[P::Symbolic]==0);
+    CHECK_THROWS_AS(ElectrothermalCostScope("invalid"),std::invalid_argument);
+    CHECK(electrothermalCostProfile.mode==P::Off);
+}
 TEST_CASE("Sweep preparation observes exact sources and never caches carrier state", "[electrothermal][preparation_context]") {
     using J=nlohmann::json;
     const auto path=std::filesystem::temp_directory_path()/
@@ -43,13 +73,24 @@ TEST_CASE("Sweep preparation observes exact sources and never caches carrier sta
         cfg["boundaries"].push_back({{"node",i},{"kind",std::array{"psi","fn","fp","temperature"}[k]},{"value",v}});}
     for(auto e:std::array<std::array<int,2>,5>{{{0,1},{1,2},{0,2},{2,3},{0,3}}})
         cfg["edge_geometry"].push_back({{"nodes",e},{"poisson_F_per_m",1e-10},{"transport_weight",0.}});
+    const auto originalCfg=cfg;
     ElectrothermalPreparationContext context;std::ostringstream log;
     const auto compare=[&](bool hit){
         auto actual=solveElectrothermalPoint(cfg,log,&context),expected=solveElectrothermalPoint(cfg,log);
         CHECK(actual["performance"]["static_preparation_reused"]==hit);
         actual.erase("performance");expected.erase("performance");CHECK(actual==expected);
     };
-    compare(false);compare(true);
+    cfg["reuse_jacobian_structure"]=false;compare(false);compare(true);
+    cfg.erase("reuse_jacobian_structure");
+    const auto first=solveElectrothermalPoint(cfg,log,&context);
+    CHECK(first["performance"]["jacobian_structure_reuse_enabled"]==true);
+    CHECK(first["performance"]["jacobian_structure_builds"]==1);
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==0);
+    context.clear();
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==1);
+    cfg["reuse_jacobian_structure"]=false;compare(true);
+    cfg["reuse_jacobian_structure"]=true;
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==1);
     cfg["state_interleaved"][3]=350.;cfg["boundaries"][0]["value"]=.1;compare(true);
     cfg["donors_m3"][0]=1e20;compare(false);compare(true);
     cfg["coordinate_to_metres"]=2.;compare(false);
@@ -60,6 +101,42 @@ TEST_CASE("Sweep preparation observes exact sources and never caches carrier sta
     REQUIRE(std::filesystem::file_size(path)==size);compare(false);compare(true);
     {std::ofstream f(path);f<<"bad mesh";}
     CHECK_THROWS(solveElectrothermalPoint(cfg,log,&context));write();compare(true);
+    // Fresh point states, changing bias/temperature, one exact symbolic pattern.
+    cfg=originalCfg;cfg["diagnostic_newton_max_iterations"]=8;
+    std::vector<std::string> backends{"sparselu_colamd","sparselu_amd"};
+#if defined(VELA_HAS_UMFPACK)
+    backends.push_back("umfpack");
+#endif
+    context.clear();
+    for(const auto& backend:backends){
+        cfg["electrothermal_linear_solver"]=backend;
+        const auto checkPoint=[&](bool reused,unsigned analyses){
+            auto actual=solveElectrothermalPoint(cfg,log,&context);
+            auto expected=solveElectrothermalPoint(cfg,log);
+            REQUIRE(actual["diagnostic_stop"]=="diagnostic_scaled_residual");
+            REQUIRE(actual["performance"]["factorizations"].get<unsigned>()>0);
+            CHECK(actual["performance"]["linear_object_reused"]==reused);
+            CHECK(actual["performance"]["symbolic_analyses"]==analyses);
+            actual.erase("performance");expected.erase("performance");CHECK(actual==expected);
+        };
+        cfg["boundaries"][0]["value"]=.04;checkPoint(false,1);
+        cfg["boundaries"][0]["value"]=.06;
+        cfg["boundaries"][3]["value"]=301.;checkPoint(true,0);
+        cfg["reuse_linear_analysis"]=false;checkPoint(false,1);
+        cfg.erase("reuse_linear_analysis");checkPoint(false,1);checkPoint(true,0);
+        cfg["reuse_sparselu_symbolic"]=false;checkPoint(false,1);
+        cfg.erase("reuse_sparselu_symbolic");checkPoint(false,1);
+        cfg["edge_geometry"][0]["poisson_F_per_m"]=
+            cfg["edge_geometry"][0]["poisson_F_per_m"].get<double>()*1.1;
+        checkPoint(false,1);
+        cfg["diagnostic_newton_max_iterations"]=0;
+        CHECK(solveElectrothermalPoint(cfg,log,&context)["diagnostic_stop"]=="frozen_state");
+        cfg["diagnostic_newton_max_iterations"]=8;checkPoint(false,1);
+        auto bad=cfg;bad["boundaries"][0]["kind"]="invalid";
+        CHECK_THROWS(solveElectrothermalPoint(bad,log,&context));checkPoint(false,1);
+        context.clear();checkPoint(false,1);
+    }
+
 }
 namespace {
 struct Fixture {
@@ -656,10 +733,23 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         options->element.reuseThermalHighField=true;options->element.explicitHighFieldPartials=true;
         options->element.generatedLowFieldPartials=true;f.mobility.ialmob=options;
     }
+    bool reuseStructure=false;
+    const auto screening=[&](IalScreeningMethod method){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        for(auto& [family,model]:options->electrons)model=model.withScreeningMethod(method);
+        for(auto& [family,model]:options->holes)model=model.withScreeningMethod(method);
+        f.mobility.ialmob=options;
+    };
+    SECTION("Tight bracket Newton screening preserves coupled columns"){screening(IalScreeningMethod::Newton);}
+    SECTION("Tight bracket Halley screening preserves coupled columns"){screening(IalScreeningMethod::Halley);}
+    SECTION("Explicit legacy screening preserves coupled columns"){screening(IalScreeningMethod::Legacy);}
+    SECTION("TOMS748 screening preserves coupled columns"){screening(IalScreeningMethod::Toms748);}
+    SECTION("Cached four-equation structure retains all coupled partials"){reuseStructure=true;}
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
     ElectrothermalAssembler coupled(f.mesh,f.doping,g,heat,f.mobility);
+    if(reuseStructure)coupled.setStructureCache(std::make_shared<ElectrothermalAssembler::StructureCache>());
     VectorXd x(24);for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=350.+12.*i;}
     for(int mode:{0,1,2}){
         const bool constrained=mode!=0;
@@ -1208,4 +1298,83 @@ TEST_CASE("Observed IALMob avalanche assembles every live potential column in bo
         CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
         CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
     }
+}
+
+TEST_CASE("Shared IALMob JSON applies default and explicit screening methods to both carriers", "[ialmob][screening_default][config]") {
+    using nlohmann::json;
+    json options={{"geometry_file",(std::filesystem::temp_directory_path()/"screening_geometry.json").string()},
+        {"effective_electrodes",{"gate"}},{"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
+        {"electron_parameters_cm",{{"100",json::object()}}},{"hole_parameters_cm",{{"100",json::object()}}}};
+    const auto check=[&](IalScreeningMethod expected){
+        const auto config=mobilityModelConfigFromJson({{"model","ialmob"},
+            {"high_field_driving_force","quasi_fermi_gradient"},{"ialmob",options}});
+        REQUIRE(config.ialmob);
+        CHECK(config.ialmob->electrons.at(100).screeningMethod()==expected);
+        CHECK(config.ialmob->holes.at(100).screeningMethod()==expected);
+    };
+    check(IalScreeningMethod::Halley);
+    options["screening_method"]="legacy";check(IalScreeningMethod::Legacy);
+    options["screening_method"]="halley";check(IalScreeningMethod::Halley);
+    options["screening_method"]="invalid";
+    CHECK_THROWS_AS(ialTransportOptionsFromJson(options),std::invalid_argument);
+}
+
+
+TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature and constraint changes", "[electrothermal][structure]") {
+    Fixture f;ElectrothermalGeometry g;
+    g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
+    for(const auto& e:f.mesh.edges()){
+        g.poissonEdge_F_per_m[e.id]=constants::eps0*8.*e.couple/e.length;
+        g.transportWeight[e.id]=e.transport_couple/e.length;
+    }
+    LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
+    law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
+    LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
+    auto cache=std::make_shared<ElectrothermalAssembler::StructureCache>();
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,f.mobility);
+    cached.setStructureCache(cache);
+    ElectrothermalBoundary bc;
+    VectorXd x(24);for(int i=0;i<6;++i){x[4*i]=.48;x[4*i+1]=0.;x[4*i+2]=0.;x[4*i+3]=300.;}
+    const auto check=[&](){
+        const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+        CHECK((a.residual.array()==b.residual.array()).all());
+        CHECK((Eigen::MatrixXd(a.jacobian).array()==Eigen::MatrixXd(b.jacobian).array()).all());
+        CHECK((a.electronOutflow_A_per_m.array()==b.electronOutflow_A_per_m.array()).all());
+        CHECK((a.holeOutflow_A_per_m.array()==b.holeOutflow_A_per_m.array()).all());
+        CHECK(a.latticeSource_W_per_m==b.latticeSource_W_per_m);
+        CHECK(a.boundaryHeat_W_per_m==b.boundaryHeat_W_per_m);
+        const auto count=cache->coupled->hits;
+        ElectrothermalCostScope cost("heat");
+        const auto residual=cached.assemble(x,bc,{},{},false);
+        CHECK(residual.jacobian.rows()==0);CHECK((residual.residual.array()==b.residual.array()).all());
+        CHECK(cache->coupled->hits==count);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::HeatTotal]==1);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::HeatMatrixFill]>0);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::ScreeningRoot]==0);
+        return b.jacobian;
+    };
+    const auto first=check();const Eigen::MatrixXd retained=first;
+    const auto nnz=first.nonZeros();
+    for(Real temperature:{401.,299.,514.,300.}){
+        for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=temperature+3.*i;}
+        CHECK(check().nonZeros()==nnz);
+    }
+    CHECK(cache->coupled->builds==1);CHECK(cache->heat->builds==1);
+    CHECK((Eigen::MatrixXd(first).array()==retained.array()).all());
+    bc.neutralContactBias_V={{0,0.}};check();CHECK(cache->coupled->builds==2);
+    bc.holeRecombination={{0,{1.93e4,1e-7}}};check();CHECK(cache->coupled->builds==3);
+    bc.temperature_K={{4,350.}};check();CHECK(cache->coupled->builds==4);
+    bc.temperature_K[4]=410.;check();CHECK(cache->coupled->builds==4);
+    // A new point assembler may share structure, but never old matrix values.
+    ElectrothermalAssembler next(f.mesh,f.doping,g,heat,f.mobility);next.setStructureCache(cache);
+    const auto a=next.assemble(x,bc);CHECK(cache->coupled->builds==4);
+    CHECK((a.jacobian-check()).norm()==0.);
+    g.poissonEdge_F_per_m[0]*=1.1;
+    ElectrothermalAssembler changed(f.mesh,f.doping,g,heat,f.mobility),fresh(f.mesh,f.doping,g,heat,f.mobility);
+    changed.setStructureCache(cache);
+    CHECK((changed.assemble(x,bc).jacobian-fresh.assemble(x,bc).jacobian).norm()==0.);
+    CHECK(cache->coupled->builds==5);
+    cached.setStructureCache(nullptr);CHECK((cached.assemble(x,bc).jacobian-plain.assemble(x,bc).jacobian).norm()==0.);
 }

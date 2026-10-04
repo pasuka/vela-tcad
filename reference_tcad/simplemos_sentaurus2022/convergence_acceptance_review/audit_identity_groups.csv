@@ -1,0 +1,5 @@
+branch,stage,states,identity_pass,local_pass_on_valid_states,max_kcl_over_Id_on_valid_states
+m65,endpoint,16,16,0,1.867842947883482e-07
+m65,stall,16,7,0,358.6243063199114
+m77,endpoint,16,16,0,6.928854478839376e-08
+m77,stall,16,6,0,180.37777821797908

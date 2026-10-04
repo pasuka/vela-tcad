@@ -1,0 +1,72 @@
+{
+  "schema": "vela.simplemos.sdevice.m60_tight_convergence_port_burst_report.v1",
+  "status": "accepted",
+  "classification": "tight_convergence_suppresses_port_bursts",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_contract_v1.json",
+    "sha256": "a674891c9e73ee6efb2580bb0efb86e1b45a7d2e180c4dea966622262460ccc4"
+  },
+  "sentaurus": {
+    "banner": "****************************************************************************\n***                           Sentaurus Device                           ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***",
+    "case_count": 32,
+    "tight_math": "Math { Extrapolate RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint }"
+  },
+  "target": {
+    "case": "n23_vd_0p05",
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05,
+    "m46_default_drain_current_A_per_um": 8.58625099702983e-17,
+    "tight_default_drain_current_A_per_um": 1.04429687447921e-16,
+    "tight_direct_drain_current_A_per_um": 1.42227355588159e-15,
+    "vela_drain_current_A_per_um": 1.1046438035358572e-16,
+    "m46_default_vela_error_dex": 0.10941868092427424,
+    "tight_default_vela_error_dex": 0.024398282551395253,
+    "tight_default_vs_m46_log_shift_dex": 0.08502039837287902,
+    "tight_default_substrate_eCurrent_A_per_um": -7.73503494838923e-19,
+    "tight_direct_substrate_eCurrent_A_per_um": -2.37611367356926e-19,
+    "tight_substrate_default_minus_direct_A_per_um": -5.358921274819969e-19,
+    "tight_signed_observable_fraction": -0.005131607118418753,
+    "tight_burst_flag": 0,
+    "m59_burst_flag": 1,
+    "m59_substrate_default_minus_direct_A_per_um": "4.694745539580017e-17",
+    "observable_gap_reduction_fraction": 0.9885852785211883
+  },
+  "matrix": {
+    "paired_point_count": 816,
+    "tight_burst_point_count": 0,
+    "m59_burst_point_count": 15,
+    "maximum_nonburst_default_vs_m46_log_shift_dex": 0.002689137194000915,
+    "maximum_tight_default_vela_error_dex": 0.06443303032085607
+  },
+  "state_invariance": {
+    "row_count": 255,
+    "all_fields_invariant": true,
+    "maximum_absolute_difference": 0.0,
+    "maximum_symmetric_relative_difference": 0.0,
+    "failure_count": 0
+  },
+  "secondary_reference_policy": {
+    "eligible": true,
+    "replaces_m8_m46": false,
+    "required_math": "Math { Extrapolate RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint }",
+    "required_diagnostics": [
+      "CNormPrint logs",
+      "paired default and DirectCurrent currents",
+      "pointwise observable-fraction flag"
+    ]
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "case_count": true,
+    "paired_point_count": true,
+    "terminal_component_count": true,
+    "exact_biases": true,
+    "cnormprint_logs_retained": true,
+    "observer_state_fields_invariant": true,
+    "classification_declared": true,
+    "historical_artifacts_not_rewritten": true,
+    "production_defaults_not_changed": true,
+    "all_checks_pass": true
+  }
+}

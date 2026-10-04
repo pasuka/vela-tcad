@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_fullfield_20260906/native_seed/m65_n23_vd_0p050000_endpoint/vg_002/config.json": "4ef35274f68f4ebe1c1cde2800b178c06fd9615140932587de4e2a13f407c99c",
+    "build-release/simplemos_fullfield_20260906/native_seed/m65_n23_vd_0p050000_endpoint/vg_002/initial.csv": "16d24f9076ecbee53cd7b492ba4a88dceb29841e0e72f302502e2016f27584da",
+    "build-release/simplemos_fullfield_20260906/native_seed/m65_n23_vd_1p000000_endpoint/vg_002/config.json": "885397f0f85b2932dbf6f478398ba65a1fa722b59fba23f6dbb4923bedd259eb",
+    "build-release/simplemos_fullfield_20260906/native_seed/m65_n23_vd_1p000000_endpoint/vg_002/initial.csv": "04ede71d75a428541a124b0f1d1f0e7a42c4891d7b82f620ab877d8c48a4f53d",
+    "build-release/simplemos_fullfield_20260906/reclosure/m65_n23_vd_0p050000_endpoint/vg_002/config.json": "87c59ae58601dd71d452f79e90e88dc6e2c7703f93ba9274b470c7b3287a0816",
+    "build-release/simplemos_fullfield_20260906/reclosure/m65_n23_vd_1p000000_endpoint/vg_002/config.json": "07ca76d60a9cf8798f772481b0ddef2f4a05aa9cae9839f2c633a043258e5614",
+    "build-release/simplemos_local_conservative_flux_20260906/local_flux_runner.exe": "fec476ecd50afb11e9d6bffe5269b6d1ddbd6366bee2ba122a715b8b7ab861c7",
+    "reference_tcad/simplemos_sentaurus2022/fullfield_validation_20260906/reclosure_contract.json": "612e16f73ab5f105d77bd15b39cd3f7ae2bb4eb16e4a9e27ca62a083562dd400",
+    "reference_tcad/simplemos_sentaurus2022/fullfield_validation_20260906/recovery_freeze.json": "09592e7cc03af0b0c55f707ee2617163ec507c3241162fdf24a51bf2a7e6eb0d",
+    "reference_tcad/simplemos_sentaurus2022/fullfield_validation_20260906/vela_recovery.csv": "5c867a3d5bd71c938945699c16c6e0c3c983dfb64748bc17045b2c76f69f0138",
+    "scripts/reclose_simplemos_fullfield_gaps_20260906.py": "cce30988c0edc6054c2fe5b97a3eabec3595c1e1b4861b0c85083f2a3613b658"
+  }
+}

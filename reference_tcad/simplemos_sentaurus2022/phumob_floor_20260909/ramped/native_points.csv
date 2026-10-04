@@ -1,0 +1,5 @@
+case,device,vd,key,model,index,vg,temperature_K,exit_code,native_qualified,points,Id_A_per_um,kcl_over_Id,bias_error_V,runtime_prefix
+m65_n19_vd_0p050000_endpoint,n19,0.05,T299,phumob,50,1.0,299,0,True,4,8.24461944387211e-06,1.0081712814764454e-15,0.0,runtime_003
+m65_n19_vd_0p050000_endpoint,n19,0.05,T300,phumob,50,1.0,300,0,True,1,8.25225411449733e-06,2.0711769816443786e-16,0.0,runtime_000
+m65_n19_vd_0p050000_endpoint,n19,0.05,T301,phumob,50,1.0,301,0,True,4,8.25965999230694e-06,8.424995326467662e-16,0.0,runtime_003
+m65_n19_vd_0p050000_endpoint,n19,0.05,T350,phumob,50,1.0,350,0,True,4,8.40029525023523e-06,1.1051666786437692e-15,0.0,runtime_003

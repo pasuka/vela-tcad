@@ -23,6 +23,7 @@ struct SentaurusTdrRegion {
     int index = -1;
     std::string name;
     std::string material;
+    int material_type = -1;
     SentaurusTdrRegionType type = SentaurusTdrRegionType::Other;
     std::vector<std::array<std::size_t, 3>> triangles;
     std::vector<std::array<std::size_t, 2>> edges;
@@ -41,6 +42,7 @@ struct SentaurusTdrField {
 };
 
 struct SentaurusTdrInventory {
+    std::string coordinate_unit;
     std::vector<SentaurusTdrVertex> vertices;
     std::vector<SentaurusTdrRegion> regions;
     std::vector<SentaurusTdrField> fields;
@@ -52,13 +54,37 @@ struct SentaurusTdrExportOptions {
     std::string compensatedDopingPolicy = "reported";
     /// Unit carried by the raw TDR geometry dataset. Neutral nodes are always
     /// exported in micrometres. SDevice TDR commonly uses um; SProcess TDR
-    /// commonly uses cm, so callers must declare the source contract.
-    std::string coordinateUnit = "um";
+    /// commonly uses cm. An empty override uses the geometry's unit metadata.
+    std::string coordinateUnit;
+};
+
+struct SentaurusTdrQualificationContract {
+    std::vector<std::string> requiredContactNames;
+    bool requireExactContactSet = true;
+    std::vector<std::string> allowedMaterials;
+    std::vector<std::string> semiconductorMaterials;
+    std::vector<std::string> acceptedCoordinateUnits;
+    std::vector<std::string> acceptedDopingUnits;
+    bool requireCompleteSemiconductorDoping = true;
+};
+
+struct SentaurusTdrQualificationCheck {
+    std::string code;
+    bool passed = false;
+    std::string message;
+};
+
+struct SentaurusTdrQualificationReport {
+    bool passed = false;
+    std::vector<SentaurusTdrQualificationCheck> checks;
 };
 
 class SentaurusTdrReader {
 public:
     SentaurusTdrInventory readInventory(const std::string& filename) const;
+    SentaurusTdrQualificationReport qualify(
+        const SentaurusTdrInventory& inventory,
+        const SentaurusTdrQualificationContract& contract) const;
     void exportNeutral(const std::string& filename, const std::string& outputDirectory) const;
     void exportNeutral(const std::string& filename,
                        const std::string& outputDirectory,

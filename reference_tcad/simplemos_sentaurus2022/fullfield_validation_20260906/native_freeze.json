@@ -1,0 +1,25 @@
+{
+  "input_hashes": {
+    "build-release/m69_stage_v2/sentaurus_bundle/n19/vd_0p050000/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/m69_stage_v2/sentaurus_bundle/n19/vd_0p050000/m69_n19_vd_0p050000_vg_0p900000_des.cmd": "866d2109303c2d2eec0e4711edc7657709f0dc9f236d3eb255f317cf2ce71991",
+    "build-release/m69_stage_v2/sentaurus_bundle/n19/vd_1p000000/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/m69_stage_v2/sentaurus_bundle/n19/vd_1p000000/m69_n19_vd_1p000000_vg_0p800000_des.cmd": "4641bb092475c54e76cbd501ca0a51a315db60e07ce6de65f45060dc41e917c1",
+    "build-release/m69_stage_v2/sentaurus_bundle/n23/vd_0p050000/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/m69_stage_v2/sentaurus_bundle/n23/vd_0p050000/m69_n23_vd_0p050000_vg_0p900000_des.cmd": "72354954935e5267679cc3087211af52b6a66e4377500a8592e8e5282faa709e",
+    "build-release/m69_stage_v2/sentaurus_bundle/n23/vd_1p000000/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/m69_stage_v2/sentaurus_bundle/n23/vd_1p000000/m69_n23_vd_1p000000_vg_0p800000_des.cmd": "44565d5cdcf7aae8242e606dc2a46b70c20d194d7700a18e96dc852f2044d3de",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n19_vd_0p050000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n19_vd_0p050000_endpoint/native_des.cmd": "83a87bff5928d337f6d5a8de21b6866b836ef02f6c2ced44c8febb0d25ba5e97",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n19_vd_1p000000_endpoint/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n19_vd_1p000000_endpoint/native_des.cmd": "4194dbac473c1408df718e139dc92ca019cabfada93f8e612ea106a903822bb2",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n23_vd_0p050000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n23_vd_0p050000_endpoint/native_des.cmd": "83a87bff5928d337f6d5a8de21b6866b836ef02f6c2ced44c8febb0d25ba5e97",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n23_vd_1p000000_endpoint/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/simplemos_fullfield_20260906/bundle/m65_n23_vd_1p000000_endpoint/native_des.cmd": "4194dbac473c1408df718e139dc92ca019cabfada93f8e612ea106a903822bb2",
+    "build-release/simplemos_fullfield_20260906/run.sh": "b9429eb912d196f13c970b69e2c0546d4c0b923823708e04691f0591c08df81c",
+    "reference_tcad/simplemos_sentaurus2022/calibrated_transport_decomposition/evidence.json": "7f42d316c788643be8db171fd7d5bc31dd4ec14235696c99a2342420266f2f85",
+    "reference_tcad/simplemos_sentaurus2022/calibrated_transport_decomposition/freeze.json": "4aa98948de5ca282280f758feaf6c4b72411d66da6893f4f50e858281a02ca4a",
+    "reference_tcad/simplemos_sentaurus2022/fullfield_validation_20260906/native_contract.json": "7dc0979ed4f62f91eb43de29457f86b7195795e4b8df375df5845f01da007253",
+    "scripts/prepare_simplemos_fullfield_native_20260906.py": "60563b94f295c4e0ff50407753818a39837528030a539be3736b7976ee5f35cc"
+  }
+}

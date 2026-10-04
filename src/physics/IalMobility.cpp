@@ -1,5 +1,6 @@
 #include "vela/physics/IalMobility.h"
 #include "vela/core/IalKernelProfiling.h"
+#include "vela/core/ElectrothermalCostProfile.h"
 #include "vela/physics/detail/IalMobilityEvaluation.h"
 #include "vela/physics/detail/IalMobilityGenerated.h"
 #include "vela/core/PhysicsCallCounters.h"
@@ -7,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <boost/math/tools/toms748_solve.hpp>
 
 namespace vela {
 namespace {
@@ -15,9 +17,8 @@ Real screeningGDerivative(Real p, Real a, Real b)
     return .89233 * .19778 * a / std::pow(.41372 + a * p, 1.19778)
         - .005978 * 1.80618 * b / std::pow(b * p, 2.80618);
 }
-Real screeningMinimum(Real mass, Real temperature)
+Real legacyScreeningMinimum(Real mass, Real temperature)
 {
-    ++physicsCallCounters.ialScreeningMinimumSolves;
     const Real a = std::pow(temperature / (300. * mass), .28227);
     const Real b = std::pow(mass * 300. / temperature, .72169);
     Real predictedLower = 0., predictedUpper = 0.;
@@ -60,6 +61,57 @@ Real screeningMinimum(Real mass, Real temperature)
     return std::sqrt(lower * upper);
 }
 
+Real candidateScreeningMinimum(Real mass,Real temperature,IalScreeningMethod method) {
+    ++ialKernelProfile.screeningCandidateCalls;
+    const auto fallback=[&]{++ialKernelProfile.screeningFallbacks;return legacyScreeningMinimum(mass,temperature);};
+    if(mass<.01 || mass>100. || temperature>1e5)return fallback();
+    constexpr Real u=1.19778,v=2.80618,c=.41372,alpha=.28227;
+    constexpr Real eps=std::numeric_limits<Real>::epsilon();
+    const Real logr=std::log(temperature/(300.*mass));
+    const Real d=std::log(.005978*1.80618/(.89233*.19778))
+        +(v-1.)*(alpha+.72169)*logr-(v-u)*std::log(c);
+    const auto inverse=[](Real z){return z<0.?z/v:z/(v-u);};
+    Real lo=inverse(d),hi=inverse(d+u*std::log(2.));
+    // Outward slack plus actual sign checks account for endpoint rounding.
+    lo-=16.*eps*(1.+std::abs(lo));hi+=16.*eps*(1.+std::abs(hi));
+    const auto evaluate=[&](Real y){
+        ++ialKernelProfile.screeningFunctionEvaluations;
+        const Real e=std::exp(-std::abs(y));
+        const Real soft=std::max(y,0.)+std::log1p(e);
+        const Real sigmoid=y>=0.?1./(1.+e):e/(1.+e);
+        return std::array<Real,4>{v*y-u*soft-d,v-u*sigmoid,
+            -u*sigmoid*(1.-sigmoid),4.*eps*(1.+std::abs(d)+v*std::abs(y)+u*soft)};
+    };
+    const Real flo=evaluate(lo)[0],fhi=evaluate(hi)[0];
+    if(!std::isfinite(flo)||!std::isfinite(fhi)||flo>0.||fhi<0.)return fallback();
+    Real y=lo+(hi-lo)/2.;
+    if(method==IalScreeningMethod::Toms748){
+        std::uintmax_t budget=64;
+        const auto interval=boost::math::tools::toms748_solve(
+            [&](Real x){return evaluate(x)[0];},lo,hi,flo,fhi,
+            [](Real a,Real b){return b-a<=8.*eps*(1.+std::abs(a)+std::abs(b));},budget);
+        y=interval.first+(interval.second-interval.first)/2.;
+    }else{
+        for(int iteration=0;iteration<32;++iteration){
+            const auto q=evaluate(y);
+            if(std::abs(q[0])<=q[3])break;
+            if(q[0]<0.)lo=y;else hi=y;
+            Real next=y-q[0]/q[1];
+            if(method==IalScreeningMethod::Halley){
+                const Real denominator=2.*q[1]*q[1]-q[0]*q[2];
+                if(std::isfinite(denominator)&&denominator>0.)next=y-2.*q[0]*q[1]/denominator;
+            }
+            if(!std::isfinite(next)||next<=lo||next>=hi)next=lo+(hi-lo)/2.;
+            if(next==y)break;
+            y=next;
+        }
+    }
+    const auto final=evaluate(y);
+    const Real result=std::exp(std::log(c)+y-alpha*logr);
+    if(!std::isfinite(result)||result<=0.||std::abs(final[0])>final[3]*4.)return fallback();
+    return result;
+}
+
 void validateState(const IalMobilityState& state) {
     for(Real value:{state.donors_m3,state.acceptors_m3,state.electrons_m3,
                    state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m})
@@ -70,6 +122,31 @@ void validateState(const IalMobilityState& state) {
 
 
 
+}
+
+IalScreeningMethod ialScreeningMethod(const std::string& name) {
+    if(name=="legacy")return IalScreeningMethod::Legacy;
+    if(name=="newton")return IalScreeningMethod::Newton;
+    if(name=="halley")return IalScreeningMethod::Halley;
+    if(name=="toms748")return IalScreeningMethod::Toms748;
+    throw std::invalid_argument("Unknown IALMob screening root method");
+}
+const char* ialScreeningMethodName(IalScreeningMethod method) {
+    switch(method) {
+    case IalScreeningMethod::Legacy: return "legacy";
+    case IalScreeningMethod::Newton: return "newton";
+    case IalScreeningMethod::Halley: return "halley";
+    case IalScreeningMethod::Toms748: return "toms748";
+    }
+    throw std::invalid_argument("Unknown IALMob screening root method");
+}
+Real ialScreeningMinimum(Real mass,Real temperature,IalScreeningMethod method) {
+    if(!std::isfinite(mass)||mass<=0.||!std::isfinite(temperature)||temperature<50.)
+        throw std::invalid_argument("Invalid IALMob screening mass/temperature");
+    ElectrothermalCostTimer cost(ElectrothermalCostProfile::ScreeningRoot,
+        electrothermalCostProfile.mode==ElectrothermalCostProfile::Screening);
+    ++physicsCallCounters.ialScreeningMinimumSolves;
+    return method==IalScreeningMethod::Legacy?legacyScreeningMinimum(mass,temperature):candidateScreeningMinimum(mass,temperature,method);
 }
 
 struct IalMobilityPreparationCache::Impl {
@@ -90,13 +167,13 @@ IalMobilityPreparationCache::~IalMobilityPreparationCache()=default;
 std::size_t IalMobilityPreparationCache::hits() const {return impl_->hits;}
 std::size_t IalMobilityPreparationCache::size() const {return impl_->scalar.size()+impl_->differentiated.size()+impl_->generatedScalar.size()+impl_->generatedDifferentiated.size();}
 
-Real IalScreeningCache::minimum(Real mass,Real temperature) {
+Real IalScreeningCache::minimum(Real mass,Real temperature,IalScreeningMethod method) {
     ++ialKernelProfile.screeningRequests;
     if(!std::isfinite(mass)||mass<=0.||!std::isfinite(temperature)||temperature<50.)
         throw std::invalid_argument("Invalid IALMob screening mass/temperature");
-    const auto key=std::make_pair(mass,temperature);
+    const auto key=std::make_tuple(mass,temperature,method);
     if(const auto found=roots_.find(key);found!=roots_.end()){++ialKernelProfile.screeningHits;return found->second;}
-    const Real result=screeningMinimum(mass,temperature);roots_.emplace(key,result);return result;
+    const Real result=ialScreeningMinimum(mass,temperature,method);roots_.emplace(key,result);return result;
 }
 
 IalMobilityParameters IalMobility::siliconDefaults(bool electron)
@@ -110,8 +187,8 @@ IalMobilityParameters IalMobility::siliconDefaults(bool electron)
     return p;
 }
 
-IalMobility::IalMobility(IalMobilityParameters p, bool electron)
-    : params_(p), electron_(electron)
+IalMobility::IalMobility(IalMobilityParameters p, bool electron,IalScreeningMethod method)
+    : params_(p), electron_(electron),screeningMethod_(method)
 {
     for (Real value : {p.muMax,p.muMin,p.alpha,p.nRef,p.mass,p.otherMass,
                       p.nRefD,p.nRefA,p.cRefD,p.cRefA,p.nDopRef,p.nScRef,
@@ -131,7 +208,7 @@ IalMobility::IalMobility(IalMobilityParameters p, bool electron)
     if (p.muMax <= p.muMin)
         throw std::invalid_argument("IALMob requires muMax > muMin");
     // Keep the original fast path for the isothermal coupled solver.
-    pMin_ = screeningMinimum(p.mass, 300.);
+    pMin_ = ialScreeningMinimum(p.mass, 300.,screeningMethod_);
 }
 
 IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeningCache* cache,
@@ -139,7 +216,7 @@ IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeni
 {
     validateState(state);
     const auto minimum=[&]{return state.temperature_K==300.?pMin_:
-        cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);};
+        cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);};
     if(generated) {
         const std::array<Real,7> input{state.donors_m3,state.acceptors_m3,state.electrons_m3,
             state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
@@ -194,14 +271,14 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
     // partial dG/dT; differentiating the numerical minimizer is unnecessary.
     const auto prepare=[&]{
         const Real minimum=state.temperature_K==300.?pMin_:
-            cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);
+            cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);
         return ial_detail::prepare(variables,params_,electron_,minimum);
     };
     const auto differentiated=[&]{
         if(generated){
             const auto make=[&]{
                 const Real minimum=state.temperature_K==300.?pMin_:
-                    cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);
+                    cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);
                 return ial_detail::generatedPreparePartials(inputs,params_,electron_,minimum);
             };
             if(!preparation)return ial_detail::generatedEvaluatePartials(make(),state.normalField_V_per_m,params_);

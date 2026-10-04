@@ -930,6 +930,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
     Real temperature_K,
     const DDSolution& sol,
     const std::vector<Real>& effectiveNi,
+    const BandgapNarrowingConfig& bandgapNarrowing,
     const CarrierStatisticsConfig& carrierStatistics,
     const RecombinationModelConfig& recombinationCfg,
     const std::vector<std::string>& contacts,
@@ -1001,7 +1002,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                     sol.n(i), sol.n(j), etaI, etaJ, driftPotential,
                     sol.phin(i), sol.phin(j), Vt, coef);
             }
-            return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            return sgElectronBoltzmannContinuityFlux(
                 niElectron[edge.n0],
                 niElectron[edge.n1],
                 sol.psi(i),
@@ -1009,7 +1010,11 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                 sol.phin(i),
                 sol.phin(j),
                 Vt,
-                coef);
+                coef,
+                SGBoltzmannFluxPolicy{
+                    bandgapNarrowing.model != "none",
+                    bandgapNarrowing.equalNiFluxEvaluation ==
+                        "compensated_log_expm1"});
         }
         if (usesFermiDirac(carrierStatistics)) {
             const Real etaI = (sol.phip(i) - sol.psi(i)) / Vt
@@ -1024,7 +1029,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                 sol.p(i), sol.p(j), etaI, etaJ, driftPotential,
                 sol.phip(i), sol.phip(j), Vt, coef);
         }
-        return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        return sgHoleBoltzmannContinuityFlux(
             niHole[edge.n0],
             niHole[edge.n1],
             sol.psi(i),
@@ -1032,7 +1037,11 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
             sol.phip(i),
             sol.phip(j),
             Vt,
-            coef);
+            coef,
+            SGBoltzmannFluxPolicy{
+                bandgapNarrowing.model != "none",
+                bandgapNarrowing.equalNiFluxEvaluation ==
+                    "compensated_log_expm1"});
     };
 
     auto nodeContribution = [&](Index edgeId, Index node, CarrierType carrier) {
@@ -2288,6 +2297,18 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.diagnostics.terminalCurrentMethodCompare.csvFile =
             compareCfg.value("csv_file", std::string{});
     }
+    if (diagnosticsCfg.contains("poisson_dirichlet_reaction")) {
+        const auto& reactionCfg = diagnosticsCfg.at("poisson_dirichlet_reaction");
+        if (!reactionCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.poisson_dirichlet_reaction must be an object.");
+        sweep.diagnostics.poissonDirichletReaction.enabled =
+            reactionCfg.value("enabled", sweep.diagnostics.poissonDirichletReaction.enabled);
+        sweep.diagnostics.poissonDirichletReaction.contacts =
+            reactionCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.poissonDirichletReaction.csvFile =
+            reactionCfg.value("csv_file", std::string{});
+    }
     if (diagnosticsCfg.contains("newton_history")) {
         const auto& newtonHistoryCfg = diagnosticsCfg.at("newton_history");
         if (!newtonHistoryCfg.is_object())
@@ -2566,6 +2587,17 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         } else {
             sweep.diagnostics.terminalCurrentMethodCompare.csvFile =
                 resolve(sweep.diagnostics.terminalCurrentMethodCompare.csvFile);
+        }
+    }
+    if (sweep.diagnostics.poissonDirichletReaction.enabled) {
+        if (sweep.diagnostics.poissonDirichletReaction.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.poissonDirichletReaction.csvFile =
+                (csvPath.parent_path() /
+                 (csvPath.stem().string() + "_poisson_dirichlet_reaction.csv")).string();
+        } else {
+            sweep.diagnostics.poissonDirichletReaction.csvFile =
+                resolve(sweep.diagnostics.poissonDirichletReaction.csvFile);
         }
     }
     if (sweep.diagnostics.newtonHistory.enabled) {
@@ -2890,6 +2922,9 @@ void canonicalizeSweepContactsInPlace(const DeviceMesh& mesh,
     canonicalizeContactListInPlace(
         mesh, sweep.diagnostics.terminalCurrentMethodCompare.contacts,
         "sweep.diagnostics.terminal_current_method_compare.contacts");
+    canonicalizeContactListInPlace(
+        mesh, sweep.diagnostics.poissonDirichletReaction.contacts,
+        "sweep.diagnostics.poisson_dirichlet_reaction.contacts");
     canonicalizeContactListInPlace(
         mesh, sweep.diagnostics.contactCurrentQfFloor.contacts,
         "sweep.diagnostics.contact_current_qf_floor.contacts");
@@ -3561,6 +3596,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
+    ddScaling.regionResolvedInterfaceAssembly =
+        newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     if (sweep.scaling.isUnitScaling()) {
         // Derive DDScalingSpec from the unit scaling system.
@@ -3775,6 +3812,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         diagnosticContacts(sweep.diagnostics.contactCurrentQfFloor.contacts, sweep.currentContact);
     const std::vector<std::string> terminalCurrentMethodCompareContacts =
         diagnosticContacts(sweep.diagnostics.terminalCurrentMethodCompare.contacts, sweep.currentContact);
+    const std::vector<std::string> poissonDirichletReactionContacts =
+        diagnosticContacts(sweep.diagnostics.poissonDirichletReaction.contacts, sweep.contact);
 
     std::unique_ptr<CSVWriter> terminalBalanceCsv;
     if (sweep.diagnostics.terminalBalance.enabled) {
@@ -3948,6 +3987,25 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "I_sgflux_with_qf_floor_A_per_um",
             "anode_hole_qf_drop_V",
             "sg_avalanche_source_integral_total"});
+    }
+
+    std::unique_ptr<CSVWriter> poissonDirichletReactionCsv;
+    if (sweep.diagnostics.poissonDirichletReaction.enabled) {
+        const std::filesystem::path diagPath(
+            sweep.diagnostics.poissonDirichletReaction.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        poissonDirichletReactionCsv =
+            std::make_unique<CSVWriter>(diagPath.string());
+        poissonDirichletReactionCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "contact",
+            "node_id",
+            "x_um",
+            "y_um",
+            "reaction_charge_C_per_m",
+            "contact_total_charge_C_per_m"});
     }
 
     std::unique_ptr<CSVWriter> sgAvalancheEdgesCsv;
@@ -6838,6 +6896,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     temperature_K,
                     sol,
                     effectiveNi,
+                    sweepBgnConfig,
                     sweepCarrierStatistics,
                     sweepRecombinationConfig,
                     continuityBalanceContacts,
@@ -6921,6 +6980,51 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, qfFloorDetailed.totals.totalCurrent)),
                     formatReal(maxHoleQfDrop),
                     formatReal(sgAvalancheSourceTotal)});
+            }
+        }
+
+
+        if (converged && poissonDirichletReactionCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            const Real potentialScale = terminalCurrentResidualAssembler.usesScaledState()
+                ? terminalCurrentResidualAssembler.potentialScale()
+                : 1.0;
+            const VectorXd reactionX = terminalCurrentResidualAssembler.pack({
+                sol.psi / potentialScale,
+                sol.phin / potentialScale,
+                sol.phip / potentialScale});
+            const VectorXd nodalReaction =
+                terminalCurrentResidualAssembler
+                    .poissonDirichletReactionChargePerMeter(reactionX);
+            const PhysicalUnitSystem& units = sweep.scaling.unitSystem();
+            for (const std::string& contactName : poissonDirichletReactionContacts) {
+                const Contact* selectedContact = nullptr;
+                for (const Contact& contact : mesh.contacts()) {
+                    if (contact.name == contactName) {
+                        selectedContact = &contact;
+                        break;
+                    }
+                }
+                if (selectedContact == nullptr) {
+                    throw std::logic_error(
+                        "DCSweep: canonical Poisson-reaction contact is missing: " +
+                        contactName);
+                }
+                Real total = 0.0;
+                for (Index nodeId : selectedContact->node_ids)
+                    total += nodalReaction(static_cast<int>(nodeId));
+                for (Index nodeId : selectedContact->node_ids) {
+                    const Node& node = mesh.getNode(nodeId);
+                    poissonDirichletReactionCsv->writeRow({
+                        std::to_string(pointIndex),
+                        formatReal(point.bias),
+                        contactName,
+                        std::to_string(nodeId),
+                        formatReal(units.internalLengthToMeters(node.x) * 1.0e6),
+                        formatReal(units.internalLengthToMeters(node.y) * 1.0e6),
+                        formatReal(nodalReaction(static_cast<int>(nodeId))),
+                        formatReal(total)});
+                }
             }
         }
 
@@ -8560,13 +8664,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 sweep.writeStateEveryAcceptedStepPrefix,
                                 event.voltage,
                                 attempt.solution);
+                            // The next predictor uses this intermediate state,
+                            // so its two history states must carry their actual
+                            // accepted biases, not the enclosing output target.
+                            acceptPredictorHistory(
+                                localPreviousSolution, localPreviousBias, event.voltage);
                             localPreviousSolution = attempt.solution;
                             localPreviousBias = event.voltage;
                         },
                         &pointStepState);
 
                     if (ok) {
-                        acceptPredictorHistory(previousSolution, currentSolutionBias, recordedVoltage);
                         previousSolution = std::move(localPreviousSolution);
                         initial = &previousSolution;
                     } else if (failureReason.empty()) {

@@ -1,0 +1,5 @@
+{
+  "reason": "Original analyzer stopped before calculations because the shared CSV helper requires pathlib.Path; normalize only path argument types.",
+  "numerical_contract_changed": false,
+  "original_freeze": "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/precision/freeze.json"
+}

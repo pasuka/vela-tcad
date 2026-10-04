@@ -1,0 +1,76 @@
+{
+  "schema": "vela.simplemos.sdevice.m4_evidence.v1",
+  "status": "accepted",
+  "scope": "SDevice-only controlled mobility comparison",
+  "qualification_date": "2026-08-26",
+  "contract": "simplemos_m4_controlled_mobility_contract_v1.json",
+  "contract_sha256": "287cdeb826f9edcb99ea770f232cc158a078a06d31a8dc7c89e2f56c6d99e240",
+  "source_tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+  "sentaurus_release": "T-2022.03-SP2",
+  "reference_manifest": "controlled_mobility/reference_manifest.json",
+  "reference_manifest_sha256": "bd6eede83710246221af89812248184bf316451a6830cb219c8b3d32ab0abeb6",
+  "reference_qualification": {
+    "curve_count": 8,
+    "points_per_curve": 51,
+    "direct_point_count": 408,
+    "interpolation": "forbidden"
+  },
+  "vela_execution": {
+    "runner_sha256": "4ab179beb0b3c4400172e5ac36311777b070d8990a9081f5ef45ac2faba4cbed",
+    "qualified_variants": ["A0", "A1", "A2", "A3"],
+    "qualified_cases": 8,
+    "all_gate_points_converged": true,
+    "a3_vd1_recovery": {
+      "pilot_status": "process_exit_after_302_accepted_auxiliary_points",
+      "pilot_returncode_hex": "0xFFFFFFFF",
+      "pilot_newton_failure_observed": false,
+      "recovery_auxiliary_step_V": 0.005,
+      "recovery_auxiliary_points": 201,
+      "recovery_status": "accepted",
+      "gate_lattice_changed": false,
+      "comparison_thresholds_changed": false
+    }
+  },
+  "comparison": {
+    "status": "pass",
+    "report": "controlled_mobility/comparisons/comparison_report.json",
+    "report_sha256": "29a6e0ba40d808e997acc15e1264963b069bb6b0be4c9dc21978942fab668f56",
+    "case_count": 8,
+    "passed_cases": 8,
+    "maximum_absolute_log10_ratio_observed": 0.045523601284718794,
+    "maximum_relative_error_observed": 0.11051288336863549,
+    "maximum_absolute_endpoint_log10_ratio_observed": 0.024626392672202985,
+    "trend_matches": 8,
+    "limits": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    },
+    "cases": [
+      {"case": "a0_vd_0p05", "status": "pass", "max_log10_ratio": 0.042484784088849634, "median_log10_ratio": 0.006577627453952456, "max_relative_error": 0.1027695966141063, "endpoint_log10_ratio": 0.002725578358257851},
+      {"case": "a0_vd_1", "status": "pass", "max_log10_ratio": 0.03329477098939969, "median_log10_ratio": 0.008511041641494733, "max_relative_error": 0.07967929002364434, "endpoint_log10_ratio": 0.0034358333480257255},
+      {"case": "a1_vd_0p05", "status": "pass", "max_log10_ratio": 0.04106895422068835, "median_log10_ratio": 0.008642108559487187, "max_relative_error": 0.09918034569649749, "endpoint_log10_ratio": -0.009753114531468583},
+      {"case": "a1_vd_1", "status": "pass", "max_log10_ratio": 0.03210364637070389, "median_log10_ratio": 0.006707884758264917, "max_relative_error": 0.07672214765004737, "endpoint_log10_ratio": -0.007906045482352455},
+      {"case": "a2_vd_0p05", "status": "pass", "max_log10_ratio": 0.045523601284718794, "median_log10_ratio": 0.007111602255241728, "max_relative_error": 0.11051288336863549, "endpoint_log10_ratio": -0.008021200748718843},
+      {"case": "a2_vd_1", "status": "pass", "max_log10_ratio": 0.03364021254473858, "median_log10_ratio": 0.005913534302927105, "max_relative_error": 0.08053841782358281, "endpoint_log10_ratio": 0.002192373496358723},
+      {"case": "a3_vd_0p05", "status": "pass", "max_log10_ratio": 0.024626392672202985, "median_log10_ratio": 0.020455102477354086, "max_relative_error": 0.05646434384173776, "endpoint_log10_ratio": -0.024626392672202985},
+      {"case": "a3_vd_1", "status": "pass", "max_log10_ratio": 0.013300058549082252, "median_log10_ratio": 0.010163265295583021, "max_relative_error": 0.031098270856343157, "endpoint_log10_ratio": -0.012254339302338805}
+    ]
+  },
+  "visualization": {
+    "report": "../../docs/validation/simplemos_m4_visual_report.md",
+    "figures": {
+      "simplemos-m4-device-mesh.png": "eedc816074bfe8dc8fe61d5e54d59350cbef0305652aebffd03265df67684c58",
+      "simplemos-m4-net-doping.png": "e651291ead9f2b20345ecf686d76ea5d6af98afc81b4dbf58351a6c8caf1ee8c",
+      "simplemos-m4-idvg-comparison.png": "7e738e158b7a8c94d60dcbe154dba6c091d1c4ba948c00561a535243784c7749",
+      "simplemos-m4-physical-fields-comparison.png": "93a389dccf05bfbfb071a1ff1a9174bbaad5ea828f1178766d7a5de46ff447cc"
+    }
+  },
+  "implementation_sha256": {
+    "scripts/run_simplemos_m4_controlled_matrix.py": "490ca58d777e5ac25f4fadd5272be48ce5c583f2a0c2f47e469271421d496808",
+    "scripts/compare_simplemos_m4_controlled_matrix.py": "931e323a5a87dbba2c3671f12bc11d16587c32fdee64b4e96d10af0fec4c9a94",
+    "scripts/plot_simplemos_m4_validation.py": "5e16409a7df522d62fe2dcf33290b26a0d3d5521e7d4f2b07d1d613238d22246",
+    "tests/regression/test_simplemos_m4_controlled_matrix.py": "3fd186ebe5afb5c15ab0754179c17d725a959b32781bd90d5f9e717eaccff308"
+  },
+  "raw_artifact_policy": "Sentaurus TDR/PLT/log and generated Vela states remain ignored"
+}

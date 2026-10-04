@@ -1,0 +1,42 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n19_vd_0p050000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n19_vd_1p000000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n23_vd_0p050000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\jvp\\m65_n23_vd_1p000000_endpoint\\config.json",
+      "state": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\state.csv"
+    }
+  ],
+  "steps_V": [
+    0.0001,
+    3e-05,
+    1e-05,
+    3e-06
+  ],
+  "vg": 0.8,
+  "purpose": "Read-only derivative diagnostic at matched OldSlotboom intrinsic concentration. Does not change DC acceptance or repair the Jacobian.",
+  "gate": "Same true per-block relative threshold 1e-4 as R1; an extra 3e-6 V amplitude tests the error plateau. Cross-carrier source blocks remain separately labeled.",
+  "hypotheses": "BGN uses the variable-ni SG path; production stable psi-derivative replacement is currently restricted to no-BGN/equal-ni. A failed Jv is not alone proof of the failure mechanism."
+}

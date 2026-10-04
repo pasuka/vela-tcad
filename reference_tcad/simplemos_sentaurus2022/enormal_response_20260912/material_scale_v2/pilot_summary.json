@@ -1,0 +1,9 @@
+{
+  "stage": "pilot",
+  "native_points": 5,
+  "zero_passed": 1,
+  "response_checks": 2,
+  "response_passed": 2,
+  "all_qualified": true,
+  "acceptance_relaxed": false
+}

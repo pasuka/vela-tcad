@@ -1,0 +1,27 @@
+{
+  "input_hashes": {
+    "build-release/enormal_candidate_20260912/v1/bin/vela_example_runner.exe": "78598555862218fb68ae1c3cd506db4c2725fbb3c705f93c826bcf73ce9585c8",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n19_vd_0p050000_endpoint/phumob_seed/vg_040/attempt_0/config.json": "4da7ccad62a6063dd97fac4f2e18d3169209dfcab5bb4d8e297ac93a7257f0fb",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n19_vd_0p050000_endpoint/phumob_seed/vg_040/attempt_0/state.csv": "8fc9b1fff157ea584864c4384196d09d603f15d6d2560db9a37a70ac8d5af409",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n19_vd_1p000000_endpoint/phumob_seed/vg_040/attempt_0/config.json": "13a26b50318a1db4bb8ad8602c7ee61c9fcda5e869b7266a1b0bf0dc9096ff3d",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n19_vd_1p000000_endpoint/phumob_seed/vg_040/attempt_0/state.csv": "179366c55fce83c91d09b1501431980b749c6978075853ad38200994d90abb4e",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n23_vd_0p050000_endpoint/phumob_seed/vg_040/attempt_0/config.json": "ec9b191cc15d4fa314a3afefb0be6ea506c964caebb70612c1e452e10de4b3c3",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n23_vd_0p050000_endpoint/phumob_seed/vg_040/attempt_0/state.csv": "b88583fba9da0c01cd9fd75345933a0c18eb34c1ebc6f1ce5e46583c71e9eecf",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n23_vd_1p000000_endpoint/phumob_seed/vg_040/attempt_0/config.json": "5f753a781ae40000ee66fe4f6df1b4d7095783ea370f587efb40dfa04c9d82ae",
+    "build-release/enormal_candidate_20260912/v1/vela/m65_n23_vd_1p000000_endpoint/phumob_seed/vg_040/attempt_0/state.csv": "e75513539aafdb72b0af8b8acb48e128bf701994c7015815976cb81f12aa1b67",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/template.json": "b7e624ee7f272c6912415e393c8e9d8febbde19e9a41df1a460cbe1727f2567e",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_1p000000_endpoint/template.json": "f7ccfa0196fcc3f53b92cc86c63d9765c6b506b2a8a5ae679b090117f7c14176",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_0p050000_endpoint/template.json": "762bb6a2144452bd1ac482a43b8a8e56f6d3d537e0cc3df26f4ee10e630e9be9",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_1p000000_endpoint/template.json": "6e9946316e55ca034fc4eb0e898e697757e0d4e702bae8e95220b8c4bc836dd7",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n19/doping.csv": "b6b41fa3f519c5ed4b645f1e9430cd1f86ec2093334e93054d9a881f4f4332c7",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/neutral/n23/doping.csv": "e1afbfb11018166065a4917149541c55be835aa0fe23219432c58857a78dcd6a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n19/mesh.json": "be50eb40a52bb13e049eaf1b8ddd12f706e45175415974484aad734dca069ff4",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/vela/n23/mesh.json": "91a068dab450d03b6587762b257e66b7644e7f2704ca108da36f3a4b70e5c85f",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/materials.json": "fccdc915c4d1da56035f8e93f8842fad544c6b277bfc262c10a7989b5006187f",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/comparison_evidence.json": "335f2d6d59c3168b716f178cb7f7c1d16d8f3eb07a3440fc4d559391789f30d5",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/export_evidence.json": "292fee82707dcfc52fbd813965934f343145a42301cb47230840e57535a8225b",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/vela_contract.json": "855bd887092dbb544b0842e15b13df1166c8a87ee5eac81125820411b9baed41",
+    "reference_tcad/simplemos_sentaurus2022/enormal_same_response_20260912/comparison_evidence.json": "1ed223c6f40b0ef1fab620d0591abf257d27e0dd98d496ee48ea2b83110417e9",
+    "scripts/simplemos_enormal_curves_20260912.py": "26c2788aeb8039ad3161243096b6d5ab30f6551692f3d14e1fccfaf427a852f2"
+  }
+}

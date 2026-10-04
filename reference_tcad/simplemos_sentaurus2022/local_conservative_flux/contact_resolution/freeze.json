@@ -1,0 +1,16 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/minus_full/config.json": "ada4cb978ba479eaed49f9e200591d126ac7e4ee7fde39f6a430730b270453e0",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/minus_half/config.json": "4bf7a4e734ce12053886e00d27fda5bd6574cc6ca573790e3d596f7eb8320421",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/plus_full/config.json": "02f0053b76e3d8cddf9ebd2bd79649084a95757d445dc5b31b2e7642677206f7",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_0p050000_endpoint/plus_half/config.json": "be3eb66d3b2ccb850292171db46ee092fa06d5884a4f859c2cb321c977b75e49",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/minus_full/config.json": "04689d812e2dd51dce626003fbff749a40fc3b4e6484d88f366c6f5ba0a69340",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/minus_half/config.json": "a7458e0cb015655894e3f60f8a1311121d9ce92d6f7ee005a7ec3584ed187e3c",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/plus_full/config.json": "1f703998a84429988aafe4119366c915fea6a5c96c0b58f70f1778cf055c4ca3",
+    "build-release/simplemos_local_conservative_flux_20260906/contact_resolution/m65_n23_vd_1p000000_endpoint/plus_half/config.json": "c8e3a8c44d3b99aedb21bf98e6989a78ae0bd006176d165d4cb7e60087261aed",
+    "build-release/simplemos_local_conservative_flux_20260906/local_flux_runner.exe": "fec476ecd50afb11e9d6bffe5269b6d1ddbd6366bee2ba122a715b8b7ab861c7",
+    "reference_tcad/simplemos_sentaurus2022/local_conservative_flux/contact_resolution/contract.json": "da440f0a037b3f6457f9e51fe67e161f2f40e998205686cb76151753567440c7",
+    "reference_tcad/simplemos_sentaurus2022/local_conservative_flux/freeze.json": "637968af1e67c3039398f14bd49d442637e5f227a672771f7fcbf4751287a57b",
+    "scripts/resolve_simplemos_contact_flux_signal.py": "ea1879753b2421ee3d53bfe3d6e15d5cf2a8d91042f3ba42924b1b365a64de10"
+  }
+}

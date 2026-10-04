@@ -1,0 +1,121 @@
+{
+  "schema": "vela.simplemos.sdevice.m53_direct_current_full_matrix_contract.v1",
+  "contract_id": "simplemos-sdevice-m53-direct-current-full-matrix-v1",
+  "objective": "Run the complete eight-device, two-drain-voltage, 51-gate-point SimpleMOS matrix with Sentaurus DirectCurrent as the only intervention, quantify its effect on Vela-Sentaurus Id-Vg agreement and the matched NWell trend, and preserve the original-deck default matrix as an immutable baseline.",
+  "upstream": {
+    "m46_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json",
+    "m52_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_evidence.json",
+    "required_status": "frozen",
+    "required_m52_classification": "direct_matches_weighted",
+    "required_m46_curve_count": 16,
+    "required_m46_point_count": 816,
+    "required_m46_maximum_absolute_log10_ratio_dex": 0.10941868092427424,
+    "required_m46_maximum_relative_error": 0.28652633602019956,
+    "m52_state_invariance_scope": "n19 and n23 at Vd=0.05 V and Vg=0.00, 0.05, and 0.10 V",
+    "closed_topics": [
+      "SG current kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "default-BGN self-consistent state attribution",
+      "native substrate contact-face flux export",
+      "CurrentWeighting and DirectCurrent six-state attribution"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "device_parameters": {
+      "n17": {"NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      "n18": {"NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      "n19": {"NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      "n20": {"NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14},
+      "n21": {"NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      "n22": {"NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      "n23": {"NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      "n24": {"NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14}
+    },
+    "matched_nwell_pairs": [
+      {"low": "n17", "high": "n21"},
+      {"low": "n18", "high": "n22"},
+      {"low": "n19", "high": "n23"},
+      {"low": "n20", "high": "n24"}
+    ],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {"start_V": 0.0, "stop_V": 2.5, "step_V": 0.05, "point_count": 51},
+    "curve_count": 16,
+    "direct_bias_point_count": 816,
+    "interpolation": "forbidden"
+  },
+  "diagnostic_replay": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "input_tdrs": "exact copies from the frozen M8 Sentaurus bundle",
+    "baseline_decks": "frozen M8 original-physics decks",
+    "deck_rule": "insert only DirectCurrent in the global Math section; no CurrentWeighting, Plot, CurrentPlot Tcl, physics, mesh, electrode, solve-path, or bias change",
+    "intervention": "Math DirectCurrent flag only",
+    "new_sentaurus_execution": true,
+    "new_vela_execution": false,
+    "production_defaults_changed": false,
+    "historical_artifacts_rewritten": false
+  },
+  "analysis": {
+    "primary_response": "drain TotalCurrent",
+    "comparison_sign_policy": "compare absolute current magnitude",
+    "current_floor_A_per_um": 1e-18,
+    "default_reference": "frozen M46 default Sentaurus current",
+    "vela_candidate": "frozen M46 Vela current",
+    "direct_reference": "new M53 DirectCurrent Sentaurus current",
+    "terminal_replay": "compare all source, drain, gate, and substrate electron, hole, and total currents against the 72 frozen M52 DirectCurrent terminal rows at the six shared states",
+    "nwell_metric": "for every matched pair and drain voltage, compare the high-minus-low maximum absolute log-error amplification under default and DirectCurrent observations",
+    "classifications": {
+      "direct_reduces_global_and_nwell_amplification": "the global maximum log error decreases and DirectCurrent does not increase the high-minus-low maximum-error amplification in any matched NWell pair",
+      "direct_reduces_global_partial_nwell": "the global maximum log error decreases but at least one matched NWell pair has larger high-minus-low amplification",
+      "direct_global_error_unchanged": "the global maximum log error is unchanged within the frozen comparison tolerance",
+      "direct_increases_global_error": "the global maximum log error increases",
+      "terminal_replay_mismatch": "one or more of the 72 shared M52 terminal-component anchors does not replay within tolerance",
+      "replay_incomplete": "the required curve, point, bias, or terminal matrix is incomplete"
+    },
+    "claim_guard": "M53 evaluates a diagnostic observation algorithm. The original official-deck default remains the primary compatibility baseline, and no result authorizes changing Vela or Sentaurus production defaults."
+  },
+  "acceptance": {
+    "required_curve_count": 16,
+    "required_point_count": 816,
+    "required_points_per_curve": 51,
+    "required_terminal_replay_rows": 72,
+    "exact_bias_tolerance_V": 1e-10,
+    "terminal_replay_absolute_tolerance_A_per_um": 1e-24,
+    "terminal_replay_relative_tolerance": 1e-6,
+    "global_error_comparison_tolerance_dex": 1e-12,
+    "original_parity_maximum_absolute_log10_ratio_dex": 0.3,
+    "original_parity_maximum_relative_error": 1.0,
+    "trend_match_required_for_original_parity": true,
+    "all_values_finite": true,
+    "contract_hash_unchanged_during_execution": true,
+    "outcome_must_match_one_declared_classification": true,
+    "closed_topics_not_reopened": true,
+    "all_required_artifacts_frozen": true,
+    "hypothesis_rejection_is_valid_completion": true
+  },
+  "forbidden_work": [
+    "HFS parameter scans or tuning",
+    "SG current-kernel re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact model, mesh, electrode, solve-path, or production-default changes",
+    "CurrentWeighting in a DirectCurrent deck",
+    "adding HeteroInterface, Thermionic, or Discontinuity physics",
+    "interpolation between gate points",
+    "rewriting M8, M45 through M52, or M46 baseline artifacts",
+    "changing acceptance thresholds after execution"
+  ],
+  "deliverables": [
+    "machine-readable M53 report",
+    "16 direct-current reference curves",
+    "16-row case summary",
+    "816-row pointwise comparison ledger",
+    "8-row matched-NWell ledger",
+    "72-row M52 terminal replay ledger",
+    "human-readable technical report",
+    "portable report artifact",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

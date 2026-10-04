@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/candidate_freeze.json": "4dfcdb7c36441a25d2bb0ba079a13acc4bd665fe34561a95582f0f0f237586bd",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/step_convergence/contract.json": "d9aaad06834c52bb5e00429afc9f06f82ee03ccb8ae91e04bfb598e84ff8bf8a",
+    "scripts/refine_simplemos_hfs_jvp_20260914.py": "01289ac096f5850056ce0948763b96e6af75c40c2e0cc5c16d691d82eba56eb6"
+  }
+}

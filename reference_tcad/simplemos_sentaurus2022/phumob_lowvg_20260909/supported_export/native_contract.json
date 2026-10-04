@@ -1,0 +1,175 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "m65_n19_vd_0p050000_endpoint_vg_000",
+      "model": "masetti_control",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "m65_n19_vd_0p050000_endpoint_vg_010",
+      "model": "masetti_control",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "m65_n19_vd_0p050000_endpoint_vg_000",
+      "model": "phumob",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "key": "m65_n19_vd_0p050000_endpoint_vg_010",
+      "model": "phumob",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "key": "m65_n19_vd_1p000000_endpoint_vg_000",
+      "model": "masetti_control",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "key": "m65_n19_vd_1p000000_endpoint_vg_010",
+      "model": "masetti_control",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "key": "m65_n19_vd_1p000000_endpoint_vg_000",
+      "model": "phumob",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "key": "m65_n19_vd_1p000000_endpoint_vg_010",
+      "model": "phumob",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "key": "m65_n23_vd_0p050000_endpoint_vg_000",
+      "model": "masetti_control",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "key": "m65_n23_vd_0p050000_endpoint_vg_010",
+      "model": "masetti_control",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "key": "m65_n23_vd_0p050000_endpoint_vg_000",
+      "model": "phumob",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "key": "m65_n23_vd_0p050000_endpoint_vg_010",
+      "model": "phumob",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "key": "m65_n23_vd_1p000000_endpoint_vg_000",
+      "model": "masetti_control",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "key": "m65_n23_vd_1p000000_endpoint_vg_010",
+      "model": "masetti_control",
+      "index": 10,
+      "vg": 0.2
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "key": "m65_n23_vd_1p000000_endpoint_vg_000",
+      "model": "phumob",
+      "index": 0,
+      "vg": 0.0
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "key": "m65_n23_vd_1p000000_endpoint_vg_010",
+      "model": "phumob",
+      "index": 10,
+      "vg": 0.2
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_phumob_lowvg_20260909",
+  "target_states": 16,
+  "scope": "Eight low-Vg PhuMob states and eight same-bias Masetti controls; qualified supported export callback; no other physics change.",
+  "physics_axis": "Mobility(DopingDependence) -> Mobility(PhuMob), default arsenic; total impurities and both live carrier populations retained.",
+  "gates": {
+    "native_exit_zero": true,
+    "runtime": "T-2022.03-SP2",
+    "bias_error_V": 1e-10,
+    "kcl_over_Id": 1e-08,
+    "masetti_current_reclosure_relative": 1e-08,
+    "cell_mobility_relative": 1e-07,
+    "edge_mobility_relative": 1e-07,
+    "native_SG_terminal_relative": 1e-06,
+    "isolated_derivative_relative": 1e-05
+  },
+  "constitutive_candidates": [
+    "box-weighted vertex mobility at local n,p",
+    "box-weighted vertex mobility at cell arithmetic n,p",
+    "box-weighted vertex mobility at cell geometric n,p",
+    "mobility at box-averaged donors,acceptors,n,p"
+  ],
+  "source_and_state_gates": "Unchanged inherited BGN contracts. Global SRH source-relative closure was inactive below its existing source floor; do not treat that as a passed small-source response calibration.",
+  "interpretation": "Runtime edge/node mobility storage is not declared the solver operator before cell/edge/port checks. No fitting to drain current.",
+  "production_changed": false,
+  "acceptance_changed": false,
+  "prior_failure": "Unsupported Edge-RegionWise eMobility request in initial export callback; initial results retained separately.",
+  "export_amendment": "Use previously qualified vertex/element mobility and mesh/box geometry reads only. All physical fields come from supported TDR Plot datasets. Native physics, seeds, solver and gates unchanged."
+}

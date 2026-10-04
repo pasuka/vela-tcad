@@ -1,0 +1,2 @@
+case,device,vd,vg,index,psi_max_V,phin_max_V,phip_max_V,density_max_relative,dual_Id_relative,qualified
+m65_n19_vd_0p050000_endpoint,n19,0.05,0.42,21,2e-15,6e-17,1.5654e-14,6.055156376305604e-13,4.218847493575595e-15,True

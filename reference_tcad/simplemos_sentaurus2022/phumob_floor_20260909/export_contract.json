@@ -1,0 +1,28 @@
+{
+  "jobs": [
+    {
+      "case": "T299",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\native_raw\\bundle\\phumob\\T299\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\exports\\phumob\\T299"
+    },
+    {
+      "case": "T300",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\native_raw\\bundle\\phumob\\T300\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\exports\\phumob\\T300"
+    },
+    {
+      "case": "T301",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\native_raw\\bundle\\phumob\\T301\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\exports\\phumob\\T301"
+    },
+    {
+      "case": "T350",
+      "index": "50",
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\native_raw\\bundle\\phumob\\T350\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_floor_20260909\\exports\\phumob\\T350"
+    }
+  ]
+}

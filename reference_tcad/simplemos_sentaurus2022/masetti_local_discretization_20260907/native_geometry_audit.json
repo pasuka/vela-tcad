@@ -1,0 +1,14 @@
+{
+  "status": "completed_diagnostic_audit",
+  "input_hashes": {
+    "scripts/audit_simplemos_masetti_native_geometry_20260907.py": "b63b1b7e7fb25dc21d3488a9a6db571f7ce2fa4c9a5c5c28e210c5cc2cadf7f3",
+    "scripts/audit_simplemos_subset_mobility_export_20260907.py": "25b80fa7b9444e5a0036ced9d11f3e95fde9b6e8b887550580927ff30e78fc7a",
+    "scripts/run_simplemos_m34_sentaurus_interface_box_probe.py": "971869ff9301beb9a610ae899f0e27981038b8c75752477820b16b03cdef7b89",
+    "build-release/simplemos_masetti_local_20260907/results.tgz": "39d0fb48aaa69536ca5b4b384e133297861558a15fae16dd30475fc5108c5b39",
+    "reference_tcad/simplemos_sentaurus2022/masetti_local_discretization_20260907/native_checks.csv": "9ccbde5a44a974e90083b1354d52d6cda0e92af353f4863293d24e50a0337b0d"
+  },
+  "mobility": "No averaging candidate is accepted unless its all-cell maximum relative error is <=1e-8. Failed candidates are retained; cell plots are not silently equated to internal edge mobility.",
+  "poisson": "Native coefficients/measures are actual exported geometry. The reconstructed charge equation and derived responses are kept distinct from an exported native residual or a calibrated self-consistent correction.",
+  "fitted_physical_parameters": false,
+  "production_changes": false
+}

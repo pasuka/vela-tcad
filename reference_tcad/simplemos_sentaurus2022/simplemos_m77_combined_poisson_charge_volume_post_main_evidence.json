@@ -1,0 +1,35 @@
+{
+  "schema": "vela.simplemos.sdevice.m77_poisson_charge_volume_evidence.v1",
+  "status": "frozen",
+  "milestone": "M77",
+  "classification": "combined_poisson_volume_post_main_not_material",
+  "contract_sha256": "954271365df663b56c9d0059d8d054fb5c3219fe2f41a06eb30b64d47110171e",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m77_post_main_requalification.py": "db32e32679deac8eff3d2e8851b74168acd7aa5a35b2f367a028e17bcbb4add1"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_combined_poisson_charge_volume_post_main_report.json": "7de001da8f7ee0ab4a296acb5d118be9fd66db4d92b7d5980efbe42a1d7241f8",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_case_ledger.csv": "86af7a0c1ba830339a8b428d2519f50c60f42766455c1a987c2cfb73eeb684e1",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_pair_ledger.csv": "5a1189249d62aab74f245c7f8812d2155e120b78a1eb814c3c5febd1f1a3b28d",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_curve_response_ledger.csv": "185e4afe591eb58ccb457243985ff1b9f25ed828e5e34ec964de4217f859400a",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_charge_volume_decomposition_ledger.csv": "98762456c22d958b729d2043059f71285b7c9d796c2cdf02b064a1921744232c",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_execution_manifest.json": "1eda32306e489dbd256770180c6ac95e32b60fba76ee56a64be61a79ab1d5798",
+    "docs/validation/simplemos_m77_combined_poisson_charge_volume_post_main_2026-09-05.md": "916b80d7d07d64890479f6a27f229f3c4beb2a6b4e19111ea03437141229f83f",
+    "docs/validation/reports/simplemos_m77_post_main/artifact.json": "d22c7d8109cbd4c0a9d45fe9c09d194d7f6c1f2894902d5d2535fe63361f87c9"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_self_consistent_execution": true,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

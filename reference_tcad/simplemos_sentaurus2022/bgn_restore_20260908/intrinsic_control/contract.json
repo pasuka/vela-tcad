@@ -1,0 +1,55 @@
+{
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n19_vd_0p050000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n19_vd_1p000000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n23_vd_0p050000_endpoint\\template.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "template": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_curves_20260908\\vela\\m65_n23_vd_1p000000_endpoint\\template.json"
+    }
+  ],
+  "indices": [
+    0,
+    10,
+    40,
+    50
+  ],
+  "target_states": 16,
+  "paths": 2,
+  "source_ni_cm3": 10750038488.844236,
+  "native_derived_ni_cm3": 14638805412.559193,
+  "gates": {
+    "all_row": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "global_tolerance": 1e-06,
+    "source_floor": 1e-10,
+    "initialization_phi_max_V": 1e-06,
+    "initialization_density_relative": 0.0001,
+    "initialization_Id_relative": 1e-06,
+    "port_relative": 1e-08
+  },
+  "single_axis": "Only copied material Si.ni; compare against R1 OldSlotboom with original no-BGN ni. Same native OldSlotboom states, mesh, mobility, BGN, SRH, constants, geometry and solver.",
+  "selection": "Median of independently inferred native base-ni bounds from 16 states; require spatial/cross-bias constancy 1e-12. Derived from exported ni_eff, deltaEg and source Boltzmann identity; no current fitting.",
+  "initialization": "Qualified R1 OldSlotboom Vela-start target versus native target potentials with densities recomputed at the matched base ni.",
+  "recovery": "At most one same-bias reload; preserve all failures; no propagation between biases.",
+  "model_restored": false,
+  "defaults_changed": false,
+  "acceptance_changed": false
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "vela.simplemos.m78_evidence.v1",
+  "status": "qualified",
+  "contract_sha256": "07489e524431570d2036457782124097dfd3b6d04eb4e46d89969fde8aab5ad3",
+  "implementation_sha256": "7950a7d3b8f2467c362686e794f339ea699e82dfbd77b786a7ecb82a9c3dc9e4",
+  "test_sha256": "2b30f1a91d5790d472e2e81cad3b2e695b69b5e4c51576c217142482c65e1850",
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_stage_ledger.csv": "11d7e7949ed03e029f37381965b593ee352970ec91ce7a5d3bc2cf4649965322",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_spatial_field_ledger.csv": "52ef2d1be09ef3b69fc46ca826086da91258d409beaf04df83a5776dbe0c9fbf",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_pair_field_ledger.csv": "6558435ba3aaef55ebdd6909d8386ac95879f3f506e0191d4b3a9d9e8a8c0b51",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_pair_ledger.csv": "3685c1fb741eb94a5bdfe29dd736569a217ba27f230e9f5ea63c2b86d5a93664",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_interface_node_ledger.csv": "c4d2be6765db86327b99d294c4702019e12439d128298ca1d8a2e9c8d1af1b20",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_gate_node_reaction_ledger.csv": "5c6cf15fe2e6473c51e1a40cb05d0ab9e5e8fa1ecc95c3826062d0f9470a1e03",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_prediction_ledger.csv": "678d37583558809ea298bdecfeca072ffb85915f22180ba30904929dc6585b24",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_partition_sensitivity_ledger.csv": "5d048713737960a8dad010fce1a88d588e226bcce15126fc21af5f7021b9525c",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_identity_ledger.csv": "fe9d8c00ce11873cb3a73fdeba26678819f99823fb10bbc636251f0103bf855a",
+    "reference_tcad/simplemos_sentaurus2022/electron_volume_localization/m78_report.json": "b7da317445e961362be590905bd2b5e5c3311c677429e2963befa6a826ff02c8",
+    "docs/validation/simplemos_m78_electron_volume_localization_2026-09-05.md": "2ded2b7be55ef9319ef79a29d2981c574ecb81786594d65e56150bcef79c4be5",
+    "build-release/m78_electron_volume_localization/m78_all_node_ledger.csv": "7833c3f84c1b2737323dd2c4af00143c0648d8ad1c773ec1c9c4c1e6e9325260"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": "frozen_before_evaluation",
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m81_green_integral_contract_v1.json": "66f3f7407aa72d47fd4df35656ee20201c427962e4700bc5fbe8b1d6ffdfea3b",
+    "scripts/audit_simplemos_m81_native_green_integral.py": "f66b6beff878ef1f9d1a1a40f57a019b8ce2b955800609019ef3d33b0967a000",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m34_interface_box_probe/sentaurus_raw/sentaurus_bundle/n23/MeasureCoefficients.debug": "c68b10722aa9a8256a2c4dfe99b8915c182ef062366d51c0347a2798dd9d759d",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_sentaurus_interface_box_probe_report.json": "2c1c690ff8851565f659a4cb77bbf941c8adc57f11e1895ccf9493b21f2499a5",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_ifm_pilot/m81_native_pilot_result.json": "e291daebe9a22938e98409ca79b16cbef7e67811d0be8d6596ef493251ee18b3",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m34_interface_box_probe/n23_import/nodes.csv": "9b64bd4a514ac285fe546be069d582dcc6f6ccb92e3eba36ed8dc77a5186b59b",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m34_interface_box_probe/n23_import/elements.csv": "33a14f56ec2ea6a922a30451e049a910abd34f519afb91f056abc4bfd894d379",
+    "build-release/m81_sentaurus_ifm_pilot/green_exports/n23/nodes.csv": "9b64bd4a514ac285fe546be069d582dcc6f6ccb92e3eba36ed8dc77a5186b59b",
+    "build-release/m81_sentaurus_ifm_pilot/green_exports/n23/elements.csv": "33a14f56ec2ea6a922a30451e049a910abd34f519afb91f056abc4bfd894d379",
+    "build-release/m81_sentaurus_ifm_pilot/green_exports/n23/fields/CurPotReACGreenFunction_region0.csv": "56e47336e233ac7b2b0163d9637d5f9f2e9effd15033b3c74d33972eb68ede98"
+  }
+}

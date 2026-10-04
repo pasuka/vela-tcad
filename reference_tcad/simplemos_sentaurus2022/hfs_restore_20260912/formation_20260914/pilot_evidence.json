@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/m79_research/sdevice_ug_local_2022.txt": "a9f446d57a1ccfe2a2c16d9ccb263c74b9b3e295ad97e077a1d5997a46a852ae",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_cells.csv": "597154baae0a02cc4b76c5c05fd8d403779cd23ac38f6b0d17af7ac0b13c2619",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_contract.json": "e6e5f8fcb9b5bcbf0eac25906a9bdf5ac87716967e90ec0dc4c0ec24853af82b",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_coverage.csv": "d9a707dd173f15433041cf7b410b50c3118a80959a6ea43b58af29a640d70bdd",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_samples.csv": "e3431cbccdba5a404274664086993bc5e90ea742694f73959cf03cb7f7b31c3c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_summary.csv": "c5bc3e856498bdbd4ed854c2aa84f95f3268b74773940a512b45e7c7d9fc85b1",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/pilot_summary.json": "3951aac8707f8bec0da73f0cd99cba4c4e0c8fcb44ca3bd6403331599409c8a5",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/pilot_observer_evidence.json": "aad7e30a45fdf5a3dd21af554dff7ed30c88030a8bf176d09df9e36a204612cd",
+    "scripts/calibrate_simplemos_enormal_20260912.py": "54f95c2a78e7ae80a611163a0416cfa1a64b61b35101145f4216358814588ddd",
+    "scripts/calibrate_simplemos_hfs_formation_20260914.py": "30078a058dfc089e91914a0be799f535c5bbdbfee833a338b3b9861fc195e99e"
+  }
+}

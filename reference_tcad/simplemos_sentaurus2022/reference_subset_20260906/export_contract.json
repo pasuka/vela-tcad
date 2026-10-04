@@ -1,0 +1,120 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "model": "baseline",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n19_vd_0p050000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n19_vd_0p050000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "model": "baseline",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n19_vd_0p050000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n19_vd_0p050000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "model": "masetti",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n19_vd_0p050000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n19_vd_0p050000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "model": "masetti",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n19_vd_0p050000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n19_vd_0p050000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "model": "baseline",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n19_vd_1p000000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n19_vd_1p000000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "model": "baseline",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n19_vd_1p000000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n19_vd_1p000000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "model": "masetti",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n19_vd_1p000000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n19_vd_1p000000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "model": "masetti",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n19_vd_1p000000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n19_vd_1p000000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "model": "baseline",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n23_vd_0p050000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n23_vd_0p050000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "model": "baseline",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n23_vd_0p050000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n23_vd_0p050000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "model": "masetti",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n23_vd_0p050000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n23_vd_0p050000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "model": "masetti",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n23_vd_0p050000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n23_vd_0p050000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "model": "baseline",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n23_vd_1p000000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n23_vd_1p000000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "model": "baseline",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\baseline\\m65_n23_vd_1p000000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\baseline\\m65_n23_vd_1p000000_endpoint\\vg_020"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "model": "masetti",
+      "index": 16,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n23_vd_1p000000_endpoint\\result_016_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n23_vd_1p000000_endpoint\\vg_016"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "model": "masetti",
+      "index": 20,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_raw\\bundle\\masetti\\m65_n23_vd_1p000000_endpoint\\result_020_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\native_exports\\masetti\\m65_n23_vd_1p000000_endpoint\\vg_020"
+    }
+  ],
+  "input_hashes": {
+    "build-release/simplemos_reference_subset_20260906/results.tgz": "4332df4e2a5592b46170dd828545f12e689a91fba1d4183397cf7c961424a66b",
+    "scripts/prepare_simplemos_reference_subset_20260906.py": "f04528863d5306540dca406c4193623e632fb92a6688320d517f964b3f57f3e2"
+  }
+}

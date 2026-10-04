@@ -1,0 +1,344 @@
+{
+  "status": "frozen_before_restart",
+  "trigger_ratio": 5e-07,
+  "jobs": [
+    {
+      "case": {
+        "key": "m65_n19_vd_1p000000_endpoint_vg020",
+        "device": "n19",
+        "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_020",
+        "vd": 1.0,
+        "vg": 1.0,
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\distributed_response\\m65_n19_vd_1p000000_endpoint_vg020\\source.txt",
+        "base_Id_A_per_um": 3.895049726726436e-05,
+        "unit_feedback_A_per_um": -2.381155694460036e-06,
+        "unit_direct_A_per_um": -2.7968412478357038e-08,
+        "unit_prediction_A_per_um": -2.409124106938393e-06,
+        "jobs": [
+          {
+            "arm": "baseline",
+            "label": "zero",
+            "scale": 0.0,
+            "T": 0.0,
+            "P": 0.0,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\baseline\\zero\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "plus_full",
+            "scale": 0.001,
+            "T": 0.001,
+            "P": 0.001,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\plus_full\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "minus_full",
+            "scale": -0.001,
+            "T": -0.001,
+            "P": -0.001,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\minus_full\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "plus_half",
+            "scale": 0.0005,
+            "T": 0.0005,
+            "P": 0.0005,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\plus_half\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "minus_half",
+            "scale": -0.0005,
+            "T": -0.0005,
+            "P": -0.0005,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\minus_half\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "replacement",
+            "scale": 1.0,
+            "T": 1.0,
+            "P": 1.0,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\replacement\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "replacement_native",
+            "scale": 1.0,
+            "T": 1.0,
+            "P": 1.0,
+            "initialization": "native",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\replacement_native\\config.json"
+          }
+        ],
+        "ratios": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\ratios\\n19",
+        "native_initial": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_020\\initial.csv",
+        "native_Id_A_per_um": 3.83983089057583e-05,
+        "probes": [
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\baseline\\functional.json"
+          },
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\baseline\\edges.json"
+          },
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\baseline\\jvp.json"
+          },
+          {
+            "arm": "transport",
+            "T": 1.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\transport\\functional.json"
+          },
+          {
+            "arm": "transport",
+            "T": 1.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\transport\\edges.json"
+          },
+          {
+            "arm": "transport",
+            "T": 1.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\transport\\jvp.json"
+          },
+          {
+            "arm": "poisson_volume",
+            "T": 0.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\poisson_volume\\functional.json"
+          },
+          {
+            "arm": "poisson_volume",
+            "T": 0.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\poisson_volume\\edges.json"
+          },
+          {
+            "arm": "poisson_volume",
+            "T": 0.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\poisson_volume\\jvp.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\joint\\functional.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\joint\\edges.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\preflight\\joint\\jvp.json"
+          }
+        ],
+        "root": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020",
+        "evidence_root": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\joint_stable_20260907"
+      },
+      "label": "replacement_native",
+      "old": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_stable_20260907\\m65_n19_vd_1p000000_endpoint_vg020\\joint\\replacement_native",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\near_threshold_restart\\m65_n19_vd_1p000000_endpoint_vg020\\replacement_native",
+      "original_info": {
+        "current_A_per_um": 3.800904691956764e-05,
+        "qualified": true,
+        "active_rows": 1814,
+        "row_violations": 0,
+        "zero_scale_rows": 0,
+        "max_row_ratio": 9.42202810492024e-07,
+        "kcl_over_Id": 3.187343521847781e-16,
+        "iterations": 4
+      },
+      "worst_original_row": {
+        "node_id": 1019,
+        "carrier": "hole",
+        "x_um": 0.0159416,
+        "y_um": 0.09890192,
+        "row_ratio": 9.42202810492024e-07,
+        "residual": 6.251324867479364e-26,
+        "absolute_edge_flow": 6.634797516911337e-20,
+        "net_edge_flow": 1.3230444758767883e-20,
+        "SRH": -1.3230382245519208e-20,
+        "impact": 0.0,
+        "scale": 6.634797516911337e-20
+      }
+    },
+    {
+      "case": {
+        "arm": "masetti_refined",
+        "model": "masetti",
+        "case": "m65_n19_vd_1p000000_endpoint",
+        "device": "n19",
+        "vd": 1.0,
+        "vg": 0.8,
+        "index": 16,
+        "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_016\\config.json",
+        "native_Id_A_per_um": 5.2568207047148e-06,
+        "native_qualified": true,
+        "native_kcl_over_Id": 4.9970170943574354e-17,
+        "key": "m65_n19_vd_1p000000_endpoint_vg016",
+        "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_016",
+        "mapped": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_016\\initial.csv",
+        "strict": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_016\\state.csv",
+        "probes": [
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\baseline\\functional.json"
+          },
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\baseline\\edges.json"
+          },
+          {
+            "arm": "baseline",
+            "T": 0.0,
+            "P": 0.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\baseline\\jvp.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\joint\\functional.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\joint\\edges.json"
+          },
+          {
+            "arm": "joint",
+            "T": 1.0,
+            "P": 1.0,
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\preflight\\joint\\jvp.json"
+          }
+        ],
+        "base_Id_A_per_um": 5.471827035197867e-06,
+        "native_initial": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_016\\initial.csv",
+        "ratios": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_geometry_20260907\\ratios\\n19",
+        "jobs": [
+          {
+            "arm": "baseline",
+            "label": "zero",
+            "scale": 0.0,
+            "T": 0.0,
+            "P": 0.0,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\baseline\\zero\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "plus_full",
+            "scale": 0.001,
+            "T": 0.001,
+            "P": 0.001,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\plus_full\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "minus_full",
+            "scale": -0.001,
+            "T": -0.001,
+            "P": -0.001,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\minus_full\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "plus_half",
+            "scale": 0.0005,
+            "T": 0.0005,
+            "P": 0.0005,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\plus_half\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "minus_half",
+            "scale": -0.0005,
+            "T": -0.0005,
+            "P": -0.0005,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\minus_half\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "replacement",
+            "scale": 1.0,
+            "T": 1.0,
+            "P": 1.0,
+            "initialization": "vela",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\replacement\\config.json"
+          },
+          {
+            "arm": "joint",
+            "label": "replacement_native",
+            "scale": 1.0,
+            "T": 1.0,
+            "P": 1.0,
+            "initialization": "native",
+            "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\replacement_native\\config.json"
+          }
+        ],
+        "root": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016",
+        "evidence_root": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\joint_eight_point_20260907"
+      },
+      "label": "replacement_native",
+      "old": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\m65_n19_vd_1p000000_endpoint_vg016\\joint\\replacement_native",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_joint_eight_point_20260907\\near_threshold_restart\\m65_n19_vd_1p000000_endpoint_vg016\\replacement_native",
+      "original_info": {
+        "current_A_per_um": 5.241699834344535e-06,
+        "qualified": true,
+        "active_rows": 1814,
+        "row_violations": 0,
+        "zero_scale_rows": 0,
+        "max_row_ratio": 6.410559990669074e-07,
+        "kcl_over_Id": 3.4143837087857187e-16,
+        "iterations": 4
+      },
+      "worst_original_row": {
+        "node_id": 1019,
+        "carrier": "hole",
+        "x_um": 0.0159416,
+        "y_um": 0.09890192,
+        "row_ratio": 6.410559990669074e-07,
+        "residual": 2.350386326369198e-25,
+        "absolute_edge_flow": 3.6664290323939183e-19,
+        "net_edge_flow": 1.0881011499628109e-19,
+        "SRH": -1.0880987995764845e-19,
+        "impact": 0.0,
+        "scale": 3.6664290323939183e-19
+      }
+    }
+  ],
+  "unchanged_gates": true
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "vela.simplemos.sdevice.m67_residual_barrier_partition_evidence.v1",
+  "status": "frozen",
+  "classification": "residual_qf_barrier_material_but_not_complete",
+  "contract_sha256": "8dcccb58f6ef52597a2c209cfb4fae565999671d581cae9bdb3f0b23b695b22b",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m67_residual_barrier_partition.py": "f8b488970160da9b3454d00cf36d47d2dbffff38d5fc017cc8510b2bea9f0511"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_residual_barrier_partition_report.json": "73c97a51ae9f92163c664a635c183f24320f1a6e66cfd6ce67a815e04d86fa1e",
+    "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_fixed_node_state_ledger.csv": "138250efdfae6562664190527f8b4af2a8f66c440ec1153ecca3b4ef617216a2",
+    "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_pair_partition_ledger.csv": "4ccf4863fb614e28a4d48d6798b609143e8d007ea3b9718158d63b9de8cd0675",
+    "docs/validation/simplemos_m67_residual_barrier_partition_2026-09-03.md": "a998a73f04fbe1482b8f9a5071a99ea9ddf46217b9be14b434c39edb81a70fc4",
+    "docs/validation/reports/simplemos_m67/artifact.json": "7248bac6878aafe24d06a28de5617fde68549d89ea62f546a3e1ed62c488acf1"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "state_count": true,
+    "pair_count": true,
+    "partition_identity": true,
+    "coordinate_identity_reused_from_m65": true,
+    "boltzmann_density_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

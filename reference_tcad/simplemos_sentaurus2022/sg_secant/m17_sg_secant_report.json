@@ -1,0 +1,65 @@
+{
+  "schema": "vela.simplemos.sdevice.m17_sg_secant.report.v1",
+  "status": "complete",
+  "execution": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "probe_variant_count": 8,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_change_scope": "diagnostic-only production-equation secant-factor probe",
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 5.204170427930421e-18,
+    "maximum_relative": 1.797338152915072e-15,
+    "maximum_strong_state_relative": 1.786389514494699e-15,
+    "maximum_endpoint_absolute_A_per_um": 0.0,
+    "maximum_node_shapley_flux_closure": 4.440892098500626e-16,
+    "reference": "M15 electron_transport adjoint response"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "factor_relative_to_baseline_current": {
+      "mobility": -0.003108508614059112,
+      "sg_secant_conductance": -0.007413541243536472,
+      "qf_log_imbalance": 0.1375143104595058
+    },
+    "factor_absolute_contribution_fraction": {
+      "mobility": 0.020998277770410793,
+      "sg_secant_conductance": 0.05007919154224201,
+      "qf_log_imbalance": 0.9289225306873472
+    },
+    "region_relative_to_baseline_current": {
+      "source": 2.0913285481314644e-09,
+      "channel": 0.12949594480446655,
+      "drain": -0.0025036862938785432,
+      "body": -6.295423252034722e-15
+    },
+    "cancellation_amplification": {
+      "m16_ungrouped_four_factor": 461.0570805606357,
+      "m17_stable_three_factor": 1.1657116710533981,
+      "reduction_factor": 395.515539570776
+    }
+  },
+  "strong_state_fraction_range": {
+    "mobility": {
+      "minimum": 0.007381265989307258,
+      "maximum": 0.1607413539968712
+    },
+    "sg_secant_conductance": {
+      "minimum": 0.05007919154224201,
+      "maximum": 0.9304040472845039
+    },
+    "qf_log_imbalance": {
+      "minimum": 0.0046519469364331096,
+      "maximum": 0.9289225306873472
+    }
+  },
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response; they are not native Sentaurus residual terms.",
+    "The positive secant conductance retains coupled electrostatic, variable-ni, carrier-population, and quasi-Fermi common-mode effects.",
+    "The quasi-Fermi log imbalance is distinct from the HFS mobility driving field.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "status": "completed_retrieved_analyzed",
+  "remote_root": "/tmp/vela_simplemos_channel_fd_20260905",
+  "authorization": "User explicitly approved payload, destination, five DC runs and retrieval in latest request.",
+  "supersedes": "Preparation report upload block and upload_payload_audit.json pre-execution status snapshot.",
+  "input_archive_sha256": "f8473838e3f0d3f605b7965f9b626800c126f7b4a6ea76ca4aec319ab4f0132d",
+  "result_archive_sha256": "0097e658cf83bae6760b385eded9ad9873dd79708978bb158fd061fa27480892",
+  "cases": [
+    {
+      "name": "zero",
+      "exit_code": 0,
+      "wallclock_s": 199.79,
+      "cpu_s": 7.2,
+      "termination": "Error smaller than 1 ( 1.4411E-02 )."
+    },
+    {
+      "name": "plus_1e13",
+      "exit_code": 0,
+      "wallclock_s": 200.99,
+      "cpu_s": 11.84,
+      "termination": "Error smaller than 1 ( 6.1559E-08 )."
+    },
+    {
+      "name": "minus_1e13",
+      "exit_code": 0,
+      "wallclock_s": 197.33,
+      "cpu_s": 6.68,
+      "termination": "Error smaller than 1 ( 6.8426E-08 )."
+    },
+    {
+      "name": "plus_5e12",
+      "exit_code": 0,
+      "wallclock_s": 196.69,
+      "cpu_s": 6.55,
+      "termination": "Error smaller than 1 ( 7.5652E-01 )."
+    },
+    {
+      "name": "minus_5e12",
+      "exit_code": 0,
+      "wallclock_s": 196.56,
+      "cpu_s": 8.29,
+      "termination": "Error smaller than 1 ( 7.5652E-01 )."
+    }
+  ],
+  "native_dc_runs": 5,
+  "new_ac_runs": 0,
+  "new_bias_sweeps": 0
+}

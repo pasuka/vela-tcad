@@ -77,6 +77,7 @@ MODEL_ALIASES = {
 
 SECTION_MODELS = {
     "DopingDependence": "DopingDependence",
+    "PhuMob": "PhuMob",
     "HighFieldDependence": "HighFieldSaturation",
     "Scharfetter": "SRH",
     "Auger": "Auger",
@@ -298,6 +299,48 @@ def _rows() -> list[MappingEntry]:
             note="Arora (Formula 2) doping dependence is not implemented",
         ))
 
+    phumob = {
+        "mumax_As": "solver.mobility.phumob.electron_arsenic.mu_max_m2_V_s",
+        "mumin_As": "solver.mobility.phumob.electron_arsenic.mu_min_m2_V_s",
+        "theta_As": "solver.mobility.phumob.electron_arsenic.theta",
+        "n_ref_As": "solver.mobility.phumob.electron_arsenic.n_ref_m3",
+        "alpha_As": "solver.mobility.phumob.electron_arsenic.alpha",
+        "mumax_P": "solver.mobility.phumob.electron_phosphorus.mu_max_m2_V_s",
+        "mumin_P": "solver.mobility.phumob.electron_phosphorus.mu_min_m2_V_s",
+        "theta_P": "solver.mobility.phumob.electron_phosphorus.theta",
+        "n_ref_P": "solver.mobility.phumob.electron_phosphorus.n_ref_m3",
+        "alpha_P": "solver.mobility.phumob.electron_phosphorus.alpha",
+        "mumax_B": "solver.mobility.phumob.hole_boron.mu_max_m2_V_s",
+        "mumin_B": "solver.mobility.phumob.hole_boron.mu_min_m2_V_s",
+        "theta_B": "solver.mobility.phumob.hole_boron.theta",
+        "n_ref_B": "solver.mobility.phumob.hole_boron.n_ref_m3",
+        "alpha_B": "solver.mobility.phumob.hole_boron.alpha",
+        "nref_D": "solver.mobility.phumob.donor_cluster_reference_m3",
+        "nref_A": "solver.mobility.phumob.acceptor_cluster_reference_m3",
+        "cref_D": "solver.mobility.phumob.donor_cluster_coefficient",
+        "cref_A": "solver.mobility.phumob.acceptor_cluster_coefficient",
+        "me_over_m0": "solver.mobility.phumob.electron_mass_ratio",
+        "mh_over_m0": "solver.mobility.phumob.hole_mass_ratio",
+        "f_CW": "solver.mobility.phumob.conwell_weisskopf_factor",
+        "f_BH": "solver.mobility.phumob.brooks_herring_factor",
+        "f_e": "solver.mobility.phumob.electron_hole_scattering_factor",
+        "f_h": "solver.mobility.phumob.hole_electron_scattering_factor",
+        "alpha1_g_k": "solver.mobility.phumob.g_alpha_prime = -source",
+    }
+    for name, target in phumob.items():
+        rows.append(MappingEntry(
+            section="PhuMob", parameter=name,
+            status=STATUS_EXACT, target=target,
+            requires_model="PhuMob",
+            note=(
+                "Source alpha1_g_k is the negative exponent stored as the "
+                "positive g_alpha_prime coefficient"
+                if name == "alpha1_g_k" else
+                "T-2022.03 scalar formula, DD state coupling, and Jacobian "
+                "coupling are implemented"
+            ),
+        ))
+
     # HighFieldDependence: Vela has the Caughey-Thomas shape but no
     # temperature laws for beta or vsat, and no Transferred-Electron terms.
     rows.append(MappingEntry(
@@ -344,6 +387,38 @@ def _rows() -> list[MappingEntry]:
             note=(
                 "Transferred-Electron / driving-force smoothing term has no "
                 "Vela counterpart"
+            ),
+        ))
+
+    # T-2022.03 Silicon EnormalDependence (Enhanced Lombardi).  Vela stores
+    # these coefficients in SI-reduced form and applies the documented
+    # exp(-distance/l_crit) semiconductor/insulator-interface closure.
+    enormal = {
+        "B": "solver.mobility.electron_lombardi.B / hole_lombardi.B",
+        "C": "solver.mobility.electron_lombardi.C / hole_lombardi.C",
+        "N0": "solver.mobility.electron_lombardi.N0 / hole_lombardi.N0",
+        "N2": "solver.mobility.electron_lombardi.N2 / hole_lombardi.N2",
+        "lambda": "solver.mobility.electron_lombardi.lambda / hole_lombardi.lambda",
+        "k": "solver.mobility.electron_lombardi.k / hole_lombardi.k",
+        "delta": "solver.mobility.electron_lombardi.delta / hole_lombardi.delta",
+        "A": "solver.mobility.electron_lombardi.A / hole_lombardi.A",
+        "alpha": "solver.mobility.electron_lombardi.alpha / hole_lombardi.alpha",
+        "aother": "solver.mobility.electron_lombardi.aOther / hole_lombardi.aOther",
+        "N1": "solver.mobility.electron_lombardi.N1 / hole_lombardi.N1",
+        "nu": "solver.mobility.electron_lombardi.nu / hole_lombardi.nu",
+        "eta": "solver.mobility.electron_lombardi.eta / hole_lombardi.eta",
+        "l_crit": "solver.mobility.electron_lombardi.criticalLength / hole_lombardi.criticalLength",
+        "a_ac": "solver.mobility.electron_lombardi.acousticFactor / hole_lombardi.acousticFactor",
+        "a_sr": "solver.mobility.electron_lombardi.roughnessFactor / hole_lombardi.roughnessFactor",
+    }
+    for name, target in enormal.items():
+        rows.append(MappingEntry(
+            section="EnormalDependence", parameter=name,
+            status=STATUS_EXACT, target=target,
+            requires_model="Enormal",
+            note=(
+                "T-2022.03 Enhanced Lombardi formula and spatial "
+                "semiconductor/insulator-interface closure are implemented"
             ),
         ))
     rows.append(MappingEntry(

@@ -1,0 +1,9 @@
+{
+  "points": 8,
+  "reconstruction_qualified": 8,
+  "scope": "Qualified HFS Vg=0/.2 V low control fields, comparing Vela with native, not comparing two Vela initializations.",
+  "units": "Potentials V; densities and SRH rates cm^-3 and cm^-3 s^-1. Legacy all_row *_m3 headers are internal cm^-3 for this unit-scaling deck; state CSV density columns are SI m^-3.",
+  "SRH_meaning": "Common positive barycentric Si weights isolate rate/state differences. These charge equivalents are not each solver own source integral, terminal current differences, or source-to-drain transfer predictions.",
+  "acceptance": "Descriptive field metrics; no new acceptance threshold. The SRH formula is checked against the production integrated source before use.",
+  "all_reconstruction_qualified": true
+}

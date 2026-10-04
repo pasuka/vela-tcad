@@ -1,0 +1,12 @@
+{
+  "samples": 32,
+  "distinct_partials": 128,
+  "fd_checks": 768,
+  "cpp_value_max_relative": 4.506788403618432e-16,
+  "analytic_hp_max_relative": 1.6667176803244835e-51,
+  "hp_step_max_relative": 1.6666666665e-41,
+  "cpp_fd_failures": 490,
+  "cpp_fd_zero_values": 403,
+  "unresolved_partials": 76,
+  "native_values_not_yet_compared": true
+}

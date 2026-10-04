@@ -28,6 +28,7 @@ EXECUTION_IR_SCHEMA = "vela.sentaurus_execution_ir.v1"
 # Models that map onto an implemented Vela physics path.
 SUPPORTED_MODELS: dict[str, str] = {
     "Mobility": "mobility model container",
+    "PhuMob": "Philips unified mobility with carrier-coupled DD Jacobian",
     "DopingDependence": "doping-dependent low-field mobility",
     "DopingDep": "doping-dependent low-field mobility",
     "HighFieldSaturation": "high-field mobility saturation",
@@ -99,6 +100,16 @@ def classify_models(models: Iterable[str]) -> dict[str, list[dict[str, str]]]:
         "metadata_only": metadata_only,
         "unsupported": unsupported,
     }
+
+
+def _model_paths(cmd_summary: dict[str, Any]) -> list[str]:
+    """Return scope-qualified Physics model paths recorded by the parser."""
+    paths: set[str] = set()
+    for physics in cmd_summary.get("physics", []):
+        if not isinstance(physics, dict):
+            continue
+        paths.update(str(path) for path in physics.get("model_paths", []))
+    return sorted(paths)
 
 
 def _numeric(value: Any) -> float | None:
@@ -263,6 +274,7 @@ def build_execution_ir(cmd_summary: dict[str, Any],
             f"{', '.join(unresolved)}; supply --template-var for each")
 
     classification = classify_models(models)
+    model_paths = set(_model_paths(cmd_summary))
     permitted = set(permitted_unsupported_models)
     blocking_unsupported = [
         item for item in classification["unsupported"]
@@ -314,6 +326,7 @@ def build_execution_ir(cmd_summary: dict[str, Any],
         "physics": {
             "supported": classification["supported"],
             "metadata_only": classification["metadata_only"],
+            "model_paths": _model_paths(cmd_summary),
         },
         "unsupported": classification["unsupported"],
         "math": dict(cmd_summary.get("math", {})),

@@ -1,0 +1,129 @@
+{
+  "schema": "vela.simplemos.sdevice.m58_compensation_contour_mesh_audit_contract.v1",
+  "contract_id": "simplemos-sdevice-m58-compensation-contour-mesh-audit-v1",
+  "objective": "Using the eight immutable original SimpleMOS process TDRs, determine whether increasing the Workbench parameter named NWell (implemented by the process deck as background active boron) systematically creates shallow gate-edge donor-acceptor compensation, changes the NetActive zero-contour and mesh topology, and co-varies with the frozen M46 Id-Vg error amplification without changing any solved physics or production default.",
+  "created_at": "2026-09-02",
+  "semantic_guard": {
+    "workbench_parameter": "NWell",
+    "physical_interpretation": "uniform p-type body/substrate background introduced by init field=Boron; it is not a masked conventional n-well implant",
+    "process_deck_anchor": "build-release/reference_tcad/simplemos_sentaurus2022/source/simplemos_nominal_fps.cmd",
+    "sdevice_scope": "n19 and n23 use the same SDevice physics and solve deck except for input/output names; process-generated TDR content is the intervention"
+  },
+  "upstream": {
+    "required_m46_status": "complete",
+    "required_m46_curve_count": 16,
+    "required_m46_point_count": 816,
+    "required_m55_status": "accepted",
+    "required_m55_classification": "nwell_changes_well_topology_surface_redistribution",
+    "required_m57_status": "accepted",
+    "required_m57_classification": "boundary_quadrature_limited",
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment packing",
+      "M46 bitwise identity to M8",
+      "M47 default-BGN-on state attribution",
+      "M48-M50 fixed-state terminal and native substrate-face attribution",
+      "M51-M53 CurrentWeighting and DirectCurrent qualification",
+      "M54 source-drain common-mode decomposition",
+      "M55 contact-associated DopingWell topology and SRH attribution",
+      "M56 Si/SiO2 interface topology",
+      "M57 exported nodal well-boundary quadrature"
+    ]
+  },
+  "matrix": {
+    "devices": [
+      {"id": "n17", "NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      {"id": "n18", "NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      {"id": "n19", "NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      {"id": "n20", "NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14},
+      {"id": "n21", "NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      {"id": "n22", "NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      {"id": "n23", "NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      {"id": "n24", "NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14}
+    ],
+    "matched_pairs": [
+      {"low": "n17", "high": "n21"},
+      {"low": "n18", "high": "n22"},
+      {"low": "n19", "high": "n23"},
+      {"low": "n20", "high": "n24"}
+    ],
+    "drain_voltages_V": [0.05, 1.0]
+  },
+  "fixed_input_policy": {
+    "tdr_pattern": "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/{device}/input_fps.tdr",
+    "tdr_fields": ["NetActive", "BActive", "AsActive", "PActive"],
+    "field_identity": "DonorActive=AsActive+PActive; AcceptorActive=BActive; reconstructed NetActive=DonorActive-AcceptorActive",
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "allowed_operations": [
+      "read and locally export the eight immutable original process TDRs with the existing sentaurus_import executable",
+      "read frozen M46 case and pointwise comparison artifacts",
+      "read accepted M55 and M57 reports as interpretation anchors",
+      "perform deterministic geometry, connectivity, contour, compensation, species, and correlation analysis",
+      "write analysis artifacts, evidence, tests, and documentation"
+    ]
+  },
+  "frozen_analysis_rules": {
+    "silicon_region": 0,
+    "gate_edge_abs_y_um": 0.125,
+    "gate_edge_half_width_um": 0.03,
+    "surface_depth_max_um": 0.03,
+    "near_compensation_abs_net_max_cm3": 5e15,
+    "high_compensation_ratio_min": 50.0,
+    "compensation_ratio_floor_cm3": 1e10,
+    "compensation_ratio": "(AsActive + PActive + BActive) / max(abs(NetActive), floor)",
+    "zero_contour": "piecewise-linear NetActive=0 intersections in Silicon triangles, with edge crossings determined without state- or device-specific tolerance fitting",
+    "contour_vertex_distance": "minimum physical distance from each linearly interpolated contour-edge crossing to either endpoint of that mesh edge",
+    "connectivity": "same-sign Silicon nodes are connected by Silicon triangle edges; a component is contact-associated only when it intersects Silicon nodes belonging to that physical contact",
+    "common_coordinate_round_digits": 12,
+    "correlation": "report Pearson and rank correlation as descriptive eight-device evidence only; no causal threshold is inferred from correlation magnitude"
+  },
+  "analysis": {
+    "target": {"device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.05},
+    "controls": [
+      "matched low-background-boron n19",
+      "all four matched low/high background-boron pairs",
+      "both frozen M46 drain voltages",
+      "AsActive and PActive species decomposition rather than net-doping-only reconstruction"
+    ],
+    "classifications": {
+      "compensation_contour_mesh_sensitivity_supported": "All eight matched NWell/drain-voltage comparisons increase the M46 maximum Id error, every high-background-boron device has a stronger frozen shallow gate-edge compensation indicator than its matched low device, and at least one high device introduces an uncontacted or single-node same-sign component or a closer NetActive zero-contour-to-vertex approach.",
+      "compensation_strength_only": "The M46 error trend and stronger high-background-boron shallow compensation are systematic, but the frozen connectivity and zero-contour proximity diagnostics do not change materially.",
+      "mesh_topology_without_systematic_compensation": "The error trend and mesh/connectivity changes are systematic, but shallow donor-acceptor compensation is not stronger in every high-background-boron device.",
+      "no_systematic_frozen_tdr_relation": "The frozen M46 error amplification does not co-vary systematically with the predefined compensation, contour, connectivity, or mesh diagnostics.",
+      "upstream_or_field_identity_mismatch": "An upstream hash, accepted status, required field, matrix size, active-species identity, or immutable TDR check fails."
+    },
+    "claim_guard": "M58 is a frozen-input structural attribution. A systematic relation supports a targeted local-remesh or compensated-mobility control, but does not prove that process diffusion, PhuMob, Sentaurus DopingWell construction, or Vela discretization is individually defective and does not authorize a production-model change."
+  },
+  "acceptance": {
+    "required_device_count": 8,
+    "required_pair_voltage_rows": 8,
+    "required_tdr_fields_per_device": 4,
+    "active_field_identity_absolute_tolerance_cm3": 1e7,
+    "active_field_identity_relative_tolerance": 1e-12,
+    "required_m46_case_count": 16,
+    "required_m46_point_count": 816,
+    "contract_hash_must_remain_unchanged": true,
+    "upstream_hashes_must_remain_unchanged": true,
+    "classification_must_be_declared": true,
+    "closed_topics_must_remain_closed": true
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela solve",
+    "HFS, SG, quasi-Fermi, BGN, SRH, mobility-parameter, interface, contact-current, electrode, bias-path, or production-default change",
+    "process rerun, local remesh, dopant perturbation, contour repair, or floating-well merging in M58",
+    "choosing region limits, compensation thresholds, contour tolerances, classifications, or correlation gates after inspecting the complete matrix result",
+    "claiming causality or a solver defect from descriptive correlation alone"
+  ],
+  "required_artifacts": [
+    "frozen contract and immutable TDR/upstream hash manifest",
+    "eight-device compensation and mesh ledger",
+    "piecewise-linear zero-contour segment ledger",
+    "same-sign connectivity component ledger",
+    "critical shallow gate-edge node ledger",
+    "four-pair species and common-coordinate comparison ledger",
+    "eight-row matched-NWell/drain-voltage error attribution ledger",
+    "machine-readable report, evidence manifest, regression test, and human-readable report"
+  ]
+}

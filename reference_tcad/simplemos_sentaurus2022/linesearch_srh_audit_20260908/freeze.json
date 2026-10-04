@@ -1,0 +1,17 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_constants_srh_finite_20260908/srh/m65_n19_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/state.csv": "d673d1481d803def2e0038c76abeefdc58d56d1e031b779b5e5ac992d5139cc9",
+    "build-release/simplemos_constants_srh_finite_20260908/srh/m65_n23_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/state.csv": "eed9419109b56534d1540f2b406138b5233b1b6b366785877d458748e5c6be01",
+    "build-release/simplemos_constants_srh_finite_20260908/srh/restart/m65_n19_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/config.status.json": "42132944a5e67c90c9002f9d7fa433fb001d5db371dd02d45da2c6138c5dacc9",
+    "build-release/simplemos_constants_srh_finite_20260908/srh/restart/m65_n19_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/state.csv": "7e055ed48420a244475bdd3be9c2c833acbc2b62d937a007f0d9f553a8b80390",
+    "build-release/simplemos_constants_srh_finite_20260908/srh/restart/m65_n23_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/config.status.json": "d76879720090e36b9cba74f3d8e1e9cc1d61eac58cff97f93b7c80d079c2a59b",
+    "build-release/simplemos_constants_srh_finite_20260908/srh/restart/m65_n23_vd_1p000000_endpoint_vg016/node_1057/finite_native_seed/state.csv": "94872f8b1bf8019ec9304485ddba465214e2034cdce571a2e4093c1d93115b1f",
+    "build-release/simplemos_linesearch_srh_audit_20260908/m65_n19_vd_1p000000_endpoint_vg016/config.json": "ca429ae82c15c82faebaa261071437bad527640cb471767f9192afe9b1fa4fc6",
+    "build-release/simplemos_linesearch_srh_audit_20260908/m65_n23_vd_1p000000_endpoint_vg016/config.json": "a05ad2169e4588f5048ee5ee2527c91e5cf4e8b322e4c94e48f8b34aa4a033b2",
+    "build-release/simplemos_linesearch_srh_audit_20260908/runner.exe": "05a3c8dae8942e55d1d865c3a31b946e26cc3e368ff4096f6baf51eb0c5dfabe",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/restart/validation_evidence.json": "81f976c5964c7689675965d154e2c9ab56cd7a3bcbf36bb0833ba5ba6fdbd633",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/build_evidence.json": "bac94ee5720034e9a669ee36c52db886263e40a68f399f8b128dd5e9d1f4c14a",
+    "reference_tcad/simplemos_sentaurus2022/linesearch_srh_audit_20260908/contract.json": "4235b2ab443ac947220f206699093d34624ec20b33708df38e9c20b7e82270c9",
+    "scripts/audit_simplemos_linesearch_precision_20260908.py": "7d4f76faacc57edf26762dc83c4dc36d33a4e19675a0277b1a0fabcbfd4b5332"
+  }
+}

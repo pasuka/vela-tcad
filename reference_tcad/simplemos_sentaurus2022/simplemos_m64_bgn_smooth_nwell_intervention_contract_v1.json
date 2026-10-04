@@ -1,0 +1,86 @@
+{
+  "schema": "vela.simplemos.sdevice.m64_bgn_smooth_nwell_intervention_contract.v1",
+  "contract_id": "simplemos-sdevice-m64-bgn-smooth-nwell-intervention-v1",
+  "objective": "Discriminate whether the M63 threshold-like NWell error growth is dominated by the cross-solver self-consistent response to OldSlotboom BGN by replaying the immutable 16-curve matrix with BGN explicitly disabled in both solvers and otherwise frozen settings.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m60_status": "frozen",
+    "required_m60_classification": "tight_convergence_suppresses_port_bursts",
+    "required_m63_status": "frozen",
+    "required_m63_classification": "threshold_like_horizontal_shift_dominant",
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general contact-current extraction",
+      "quasi-Fermi packing",
+      "HFS calibration",
+      "SRH, mobility, interface, mesh, doping, contact, and bias-path selection",
+      "M60 convergence-residual burst attribution"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "nwell_pairs": [["n17", "n21"], ["n18", "n22"], ["n19", "n23"], ["n20", "n24"]],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": {"start": 0.0, "stop": 2.5, "step": 0.05, "count": 51},
+    "smooth_gate_window_V": [0.55, 0.9],
+    "sentaurus_case_count": 16,
+    "vela_workflow_count": 16,
+    "paired_smooth_point_count": 128,
+    "nwell_pair_count": 8
+  },
+  "intervention": {
+    "single_conceptual_axis": "OldSlotboom BGN on versus explicit no-BGN in both solvers",
+    "sentaurus_bgn_on": "Physics { EffectiveIntrinsicDensity(OldSlotboom) }",
+    "sentaurus_bgn_off": "Physics { EffectiveIntrinsicDensity(NoBandGapNarrowing) }",
+    "sentaurus_math": "Math { Extrapolate RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint }",
+    "vela_bgn_on": {"model": "old_slotboom", "fermi_statistics_correction": false},
+    "vela_bgn_off": {"model": "none", "fermi_statistics_correction": false},
+    "physics_change_other_than_bgn": false,
+    "mesh_change": false,
+    "bias_path_change": false,
+    "current_observer_change": false,
+    "production_default_change": false,
+    "reference_policy": "M64 is a causal diagnostic intervention and does not replace M8, M46, or M60 references"
+  },
+  "analysis": {
+    "point_error_dex": "log10(abs(Vela drain current) / abs(Sentaurus drain current))",
+    "bgn_mismatch_component_dex": "BGN-on point error minus BGN-off point error",
+    "nwell_growth_dex": "high-NWell point error minus paired low-NWell point error at the frozen M63 diagnostic gate",
+    "bgn_explained_nwell_growth_dex": "BGN-on NWell growth minus BGN-off NWell growth",
+    "pair_closure_fraction": "one minus abs(BGN-off NWell growth) divided by abs(BGN-on NWell growth), clipped to [0,1] only for classification",
+    "horizontal_shift_crosscheck": "fit the same local-slope least-squares horizontal-shift model independently to BGN-on and BGN-off smooth-window curves",
+    "classification_thresholds": {"dominant_median_closure_fraction": 0.8, "material_median_closure_fraction": 0.3},
+    "classifications": [
+      "bgn_self_consistent_response_dominant",
+      "bgn_material_but_not_dominant",
+      "bgn_independent_threshold_shift_dominant",
+      "bgn_changes_curve_regime_noncomparably",
+      "execution_or_replay_mismatch"
+    ],
+    "claim_guard": "A dominant result attributes the paired smooth growth to the cross-solver self-consistent response to BGN; it does not identify an error in the shared OldSlotboom delta-Eg formula, authorize parameter fitting, or change production defaults."
+  },
+  "acceptance": {
+    "required_sentaurus_release": "T-2022.03-SP2",
+    "exact_bias_tolerance_V": 1e-10,
+    "required_sentaurus_case_count": 16,
+    "required_vela_workflow_count": 16,
+    "required_curve_point_count_per_solver_condition": 816,
+    "required_smooth_point_count": 128,
+    "required_pair_count": 8,
+    "minimum_positive_current_A_per_um": 1e-300,
+    "maximum_difference_in_differences_identity_residual_dex": 1e-12,
+    "maximum_bgn_on_anchor_replay_error_dex": 1e-12,
+    "minimum_smooth_points_per_curve": 8,
+    "contract_hash_must_remain_unchanged": true,
+    "upstream_hashes_must_remain_unchanged": true,
+    "historical_artifacts_must_not_be_rewritten": true
+  },
+  "forbidden_work": [
+    "changing Digits, ErrRef, RelErrControl, Iterations, or CNormPrint",
+    "changing HFS, SG, SRH, mobility, interface, contact, mesh, doping, statistics, or bias path",
+    "using DirectCurrent or revisiting generic contact extraction",
+    "tuning either solver after observing the no-BGN result",
+    "replacing M8, M46, or M60 reference data",
+    "claiming that BGN formula parity is broken without an independent formula-level contradiction"
+  ]
+}

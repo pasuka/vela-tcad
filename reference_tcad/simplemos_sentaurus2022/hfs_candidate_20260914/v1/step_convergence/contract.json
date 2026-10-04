@@ -1,0 +1,13 @@
+{
+  "steps_V": [
+    1e-10,
+    1e-12
+  ],
+  "row_relative_gate": 0.0001,
+  "original_microstep_V": 1e-20,
+  "weak_entries_excluded": 0,
+  "scope": "Resolve finite-amplitude challenges by same-matrix branch-local step convergence. Preserve the initial 1e-6 V failure and do not certify finite-amplitude response from a tangent check.",
+  "required": "All original 1e-20 entries pass. Every failed direction is repeated with all rows at both smaller amplitudes. Both new amplitudes pass the original relative tolerance. The unchanged source/binary and all DC gates remain frozen.",
+  "production_change": false,
+  "acceptance_tolerance_change": false
+}

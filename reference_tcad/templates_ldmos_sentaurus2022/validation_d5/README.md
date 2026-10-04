@@ -56,3 +56,10 @@ KCL 在结束后独立审计。完整曲线的工程/最终判据来自
 `source_csv_path` 是历史来源，不是运行依赖。曲线和掺杂仍使用 CSV。
 输出与性能文件保留在忽略的 `build/` 内。历史完整曲线资格与本次默认值验证
 分别记录于 [当前状态](../../../docs/validation/templates_ldmos_current_status.md)。
+
+## 运行入口默认值同步
+
+`run_templates_ldmos_linked_d5.py` 与本 reference 入口均默认使用 UMFPACK、
+持久 DC worker 和跨点线性分析复用。旧实验若需重现独立子进程/SparseLU，
+须显式传入 `--linear-solver sparselu --no-worker --no-reuse-linear-analysis`。
+既有 manifest 必须匹配实际选择的后端；历史结果及其资格不会被重写。

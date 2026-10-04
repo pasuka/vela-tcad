@@ -1,0 +1,20 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_evidence.v2",
+  "status": "frozen",
+  "classification": "gate_surface_partition_material_but_not_dominant_charge_proxy_unqualified",
+  "contract_sha256": "55d5dbc188c5724e0e6e71926f8d060829cb16eaf246f39e0fac9303438a7e4a",
+  "v1_failure_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m71_gate_electrostatic_partition_evidence_v1_failed.json",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m71_gate_electrostatic_partition.py": "bdfb11e1a56384994d1d5e6ac74b0a43fbb465580c4c705ce476ed6159f8b352"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_partition_report.json": "ba47e167a5f10b11c00f2956d6e21309dd35ab238da8d5abd76109068e888fcc",
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_state_ledger.csv": "cc3b056bfc9adb006da1db016b4e679eb3e3f6c5addcb64b4eb1aaa2cb7d9848",
+    "reference_tcad/simplemos_sentaurus2022/gate_electrostatic_partition/m71_gate_electrostatic_pair_ledger.csv": "aefdf9287f571d24dec8333b52d8e81be2f46d13db2d8aacb5c91d9ff6a0b9aa",
+    "docs/validation/simplemos_m71_gate_electrostatic_partition_2026-09-03.md": "0297b8da7962abd3d18a938deac7c79f2e5282b9cc6f69b4a2cfdf9f35aff3fc",
+    "docs/validation/reports/simplemos_m71/artifact.json": "8dbcc46f51f7eeeafceab7297f2571650ac01a68cd4ef00047761d2f9b13d00e"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "production_reference_replaced": false
+}

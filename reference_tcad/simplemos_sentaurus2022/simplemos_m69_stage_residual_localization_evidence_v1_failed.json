@@ -1,0 +1,33 @@
+{
+  "schema": "vela.simplemos.sdevice.m69_stage_residual_localization_evidence.v1",
+  "status": "failed",
+  "classification": "execution_or_identity_failure",
+  "contract_sha256": "6e64b4cd041dc49182f784e750b90d84628e4baf6e372d1d4edcc4ffd2bd5463",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m69_stage_residual_localization.py": "b27147936a2782cb3d5cbe434f6384c46449bb2358c83720574237f6e7bb1da2"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_stage_residual_localization_report.json": "a1916b7ae4fa2d62afd739520bdbacfc1bb75a86e870404996a7350d21c47dbc",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_stage_state_ledger.csv": "d9f7e088495cc0766c96483f038ec7dcb967e5f82726eb4e2f225cc31e87cbd4",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_pair_stage_ledger.csv": "a831f545532497ce656c5726e6325afd2999e93dd1714a196185a7e35f9cf278",
+    "reference_tcad/simplemos_sentaurus2022/stage_residual_localization/m69_execution_case_ledger.csv": "82c3b324adcebfd397ef04ff9c2b1140b265744b5a65a302dd9173822f9d7c05",
+    "docs/validation/simplemos_m69_stage_residual_localization_2026-09-03.md": "b414d41d32c959c7c685e28ba294fc44012e13629ed08a202307a900fd8a8eba",
+    "docs/validation/reports/simplemos_m69/artifact.json": "280b5de8fa4520e9fcc57d50e313b47b111dfb657a08e126f414c225384db65b"
+  },
+  "new_sentaurus_execution": true,
+  "new_vela_execution": false,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "sentaurus_release": true,
+    "case_count": true,
+    "state_counts": true,
+    "pair_stage_count": true,
+    "final_current_replay": false,
+    "coordinate_identity": true,
+    "boltzmann_density_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": false
+  }
+}

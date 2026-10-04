@@ -1,0 +1,3 @@
+device,case,vd,vg,current_A_per_um,relative_drift,kcl_over_Id
+n19,m65_n19_vd_0p050000_endpoint,0.05,1.0,6.4853828141673e-06,0.0,2.8489229705603585e-16
+n23,m65_n23_vd_0p050000_endpoint,0.05,1.0,2.08718282997021e-07,0.0,8.796373579121758e-16

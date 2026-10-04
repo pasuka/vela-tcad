@@ -1,0 +1,14 @@
+{
+  "schema": "vela.simplemos.sdevice.m53_direct_current_full_matrix_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "frozen_on": "2026-09-02",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m53_direct_current_full_matrix_contract_v1.json",
+  "contract_sha256": "9a65362e91a25a75a20d41e8cfcbae190547360fb226fe8b417e78a99c4805c6",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json": "cc4eab4af3f33dc5d57c15eb984c475447b0aee10c8dedd3f1f7be82237ccd28",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_evidence.json": "bb715a2c060d0350950350d544948e0d4a83f1aa43f0f33a664d3fdeecdb5cf9"
+  },
+  "only_intervention": "Math DirectCurrent flag",
+  "thresholds_frozen_before_execution": true,
+  "hypothesis_rejection_is_valid_completion": true
+}

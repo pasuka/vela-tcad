@@ -94,6 +94,64 @@ evidence.
   original isotropic parameter and element replay, strict 2 V checkpoint,
   single-factor error budget and complete mobility/avalanche Jacobian work.
   High-voltage and external-resistor qualification are recorded separately.
+
+- [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
+  complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,
+  persistent VM storage, restore tool and source-to-main commit mapping.
+
+- [SimpleMOS historical evidence archive and recovery](../reference_tcad/simplemos_sentaurus2022/local_evidence_20260930/README.md):
+  1,424 small records in Git; complete 1,946-file archive on the Sentaurus VM,
+  with exact hashes and recovery of 522 detailed historical artifacts to their original paths.
+
+- [Latest D0 Release closeout, 2026-09-25](validation/templates_ldmos_release_closeout_2026-09-25.md):
+  Codespaces Release 858/858 CTest, 590 exact points, 698 identical state pairs,
+  62 native local fields and six checkpoints passed. Three paired rounds reduce
+  mean dual-gate wall time by 1.10%; all 6,390 archive members verified remotely,
+  with the small verification report retrieved locally at the user's request.
+
+- [Linked defaults and electrothermal cross-point linear reuse, 2026-09-25](validation/templates_ldmos_thermal_linear_reuse_2026-09-25.md):
+  unified production defaults, exact-pattern reuse and failure/restart invalidation;
+  UCRT64 Debug 858-test regression passed; subsequent full-curve timing is recorded
+  in the latest D0 Release closeout above.
+
+- [Shared Halley default integration, 2026-09-25](validation/templates_ldmos_halley_default_2026-09-25.md):
+  C++ and isothermal/electrothermal JSON defaults unified, explicit legacy retained.
+  Codespaces Release 858/858 CTest and seven full D0/G3/D5/D4 curves (217 points)
+  passed. Default D0 states match the qualified explicit Halley run exactly.
+
+- [Screening-root full D0 qualification and repeats, 2026-09-25](validation/templates_ldmos_screening_full_2026-09-25.md):
+  20 full curves / 620 exact points, 10 native joint checks and 744 state pairs
+  passed. Halley reduced aggregate wall time by 6.70% over three fresh
+  interleaved dual-gate rounds (5.68%-7.24% per round); all six gate pairs were
+  faster. Newton work is unchanged, with small assembly-count differences.
+  Evidence was retrieved; default was legacy in that experiment. The subsequent
+  shared-default integration above promotes Halley after full regression.
+
+- [Screening-root candidates on Codespaces, 2026-09-24](validation/templates_ldmos_screening_candidates_2026-09-24.md):
+  local main merged; Release 856/856 CTest and eight short D0 curves passed.
+  Safeguarded Newton/Halley/TOMS748 retain states and Newton work; one-round
+  paired wall reductions are 6.36%/7.18%/6.32%. Legacy was the default then;
+  full curves and repeated end-to-end qualification are tracked in the newer
+  2026-09-25 report above.
+
+- [Codespaces build environment](codespaces.md): container dependencies and
+  PowerShell/Codex commands for remote builds, tests, and result retrieval.
+
+- [T470p electrothermal subcost measurements, 2026-09-24](validation/templates_ldmos_thermal_subcost_2026-09-24.md):
+  eight full D0 curves and four joint checks passed with identical states/work;
+  screening roots dominate the three measured candidates. Thermal scatter
+  requires explicit clock-bias qualification; diagnostic timers default off.
+
+- [T470p electrothermal gprof, 2026-09-24](validation/templates_ldmos_thermal_gprof_2026-09-24.md):
+  latest default structure reuse, full D0 Release/gprof controls and original gates;
+  assembly/IALMob and factorization dominate. Four-equation linear-object reuse
+  across points remains distinct from the completed assembly cache.
+
+- [Default electrothermal assembly structure reuse, 2026-09-24](validation/templates_ldmos_thermal_structure_2026-09-24.md):
+  four-equation/thermal structure reuse; C560/T470p full regression, D0 curves,
+  three paired repetitions and omitted-option checks passed. Default is on;
+  measured aggregate timing improvement is small (0.70%).
+
 - [Default DC assembly structure reuse, 2026-09-23](validation/templates_ldmos_structure_default_2026-09-23.md):
   production option, invalidation boundaries and T470p default-path regression.
 - [Restart state storage](state_archive.md): current `vela.state/2` fields, units,
@@ -287,6 +345,13 @@ evidence.
 - [SLOT/main integration and template comparison, 2026-09-21](validation/slot_ldmos_main_integration_2026-09-21.md):
   retained SLOT compatibility, imported template capabilities, and separate
   numerical qualification boundaries.
+
+- [SimpleMOS engineering reference](../reference_tcad/simplemos_sentaurus2022/engineering/README.md):
+  qualified configuration, run entry, external input requirements, 816-point
+  evidence and a portable read-only hash/coverage audit.
+- [SimpleMOS branch status](validation/simplemos_branch_status.md): explicit
+  production options, diagnostic boundaries, local evidence dependencies, and
+  the current n23 Id-Vg comparison.
 - [Validation evidence](validation/): dated reports and machine-readable
   contracts for checked-in reference TCAD work.
 - [LDMOS performance summary, 2026-09-11](validation/templates_ldmos_stage4_performance_summary_2026-09-11.md):

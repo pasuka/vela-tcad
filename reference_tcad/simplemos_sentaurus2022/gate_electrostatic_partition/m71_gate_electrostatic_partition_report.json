@@ -1,0 +1,46 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_report.v2",
+  "status": "accepted",
+  "classification": "gate_surface_partition_material_but_not_dominant_charge_proxy_unqualified",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m71_gate_electrostatic_partition_contract_v2.json",
+    "sha256": "55d5dbc188c5724e0e6e71926f8d060829cb16eaf246f39e0fac9303438a7e4a"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_surface_pair_closure_fraction": 0.3697151894043339,
+    "minimum_surface_pair_closure_fraction": 0.20998415047801122,
+    "maximum_surface_pair_closure_fraction": 0.5459418621292966,
+    "median_current_pair_growth_dex": 0.03702897509661555,
+    "median_surface_response_pair_proxy_dex": 0.012407138021977238,
+    "surface_proxy_current_pearson": 0.47105832048220064,
+    "gate_charge_pair_current_pearson": 0.6660079722055027,
+    "maximum_gate_partition_identity_error_V": 5.551115123125783e-17,
+    "maximum_sentaurus_gate_voltage_error_V": 0.0,
+    "maximum_sentaurus_reconstructed_to_native_gate_charge_relative_error": 0.7288562089345475,
+    "median_sentaurus_reconstructed_to_native_gate_charge_relative_error": 0.30330231739340585,
+    "gate_charge_proxy_qualified": false,
+    "minimum_oxide_gate_boundary_edge_count": 22,
+    "minimum_full_dielectric_gate_boundary_edge_count": 46
+  },
+  "causal_scope": {
+    "closed": "Quantifies the gate-stage surface/oxide voltage partition and charge response on frozen matched-ni states.",
+    "not_closed": "Voltage partition is an identity and integrated charge is not a local finite-volume current closure; no production parameter is tuned."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "stage_count": true,
+    "pair_count": true,
+    "coordinate_identity": true,
+    "gate_partition_identity": true,
+    "sentaurus_gate_voltage_identity": true,
+    "full_dielectric_gate_boundary_support": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

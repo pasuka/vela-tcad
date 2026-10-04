@@ -1,0 +1,23 @@
+{
+  "status": "qualified_native_uniform_charge_response",
+  "passed": true,
+  "calibration_rows": 4,
+  "passed_rows": 4,
+  "max_relative_error": 0.016452070629843305,
+  "max_two_amplitude_derivative_change": 1.0501619613911828e-06,
+  "sign_convention": "Compare native dI directly to device drain TotalCurrent difference; AC i(,N_drain) has the opposite sign and is not substituted for dI.",
+  "units": "Native AC dI in A for the default 1 um 2D device depth; numerically equals the device current difference in A/um. Fixed charge density in cm^-3.",
+  "scope": "Qualifies uniform Silicon fixed-charge integrated response at n19/n23 Vd=.05 V Vg=.9 V only. This FD comparison alone does not qualify raw Green volume weighting (see the separate n23 native Green integral audit), local source shapes, high Vd, or a Vela physics correction.",
+  "counts_this_execution": {
+    "initial_dc_reclosures": 2,
+    "amendment_dc_reclosures": 2,
+    "initial_ac_ifm_points": 2,
+    "amendment_ac_ifm_points": 2,
+    "perturbed_dc_solves": 8,
+    "zero_charge_control_dc_solves": 2,
+    "new_bias_sweeps": 0
+  },
+  "m82_released": false,
+  "m83_released": false,
+  "supersedes_status": "sentaurus_ifm_pilot/m81_execution_status.json: previous upload block resolved by explicit user authorization; historical file retained."
+}

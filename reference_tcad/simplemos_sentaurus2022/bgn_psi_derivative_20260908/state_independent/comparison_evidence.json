@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/comparison.csv": "0296766a5972f8e1e0e33933eb21ffcdad91d615d34dc44f8710a2445141983a",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/jvp_evidence.json": "dd822e0f4f9c733ddd7118866415927a11d7cca823908be99652ef422c4f8152",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/state_independent/summary.json": "b00ad9a934168840cd4240b0860308b0434b9c6393500a90c4cd59bac114b2c0"
+  }
+}

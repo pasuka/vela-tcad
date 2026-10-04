@@ -1,0 +1,10 @@
+{
+  "points": 32,
+  "native_dc_qualified": 32,
+  "semantic_qualified": 16,
+  "dual_qualified": 30,
+  "comparison_qualified": 14,
+  "attempts": 66,
+  "failed_attempts": 4,
+  "qualified_pairs": 0
+}

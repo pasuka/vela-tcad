@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-01",
+  "release_build": {
+    "passed": true,
+    "build_steps": 198,
+    "followup_noop_exit": 0,
+    "toolchain": "MSYS2 UCRT64 C++20",
+    "directory": "source worktree/build-release"
+  },
+  "full_ctest": {
+    "passed": true,
+    "tests": 997,
+    "failed": 0,
+    "seconds": 174.99,
+    "first_run_failed": {
+      "tests": 997,
+      "failed": [
+        "ascii_sources"
+      ],
+      "repair": "ASCII hyphen in tests/regression/README.md"
+    }
+  },
+  "main_registered_simplemos_before_archive_commit": {
+    "passed": true,
+    "checks": 51,
+    "detail": "main_registered_checks.json"
+  },
+  "archive_unit_tests": {
+    "passed": true,
+    "tests": 5
+  },
+  "main_extra_unregistered_discovery": {
+    "passed": false,
+    "tests": 525,
+    "failures": 20,
+    "errors": 19,
+    "skipped": 4,
+    "scope": "All test_simplemos_*.py, including unregistered historical exploration and external-cache dependencies; not the CTest suite",
+    "log": "main_python_regression_v4.log"
+  },
+  "archive_verification": {
+    "passed": true,
+    "files": 60954,
+    "bytes": 7783314109,
+    "remote_member_sha256_verified": true
+  },
+  "checkout_materialization": "checkout_materialization.json",
+  "limitations": [
+    "Full CTest uses content-identical numerical sources in the existing worktree Release build, not a fresh main build.",
+    "No new 816-point Sentaurus/Vela campaign.",
+    "Remote-only T470p/Codespaces states were not copied.",
+    "h5py reports runtime HDF5 2.2.0 versus build HDF5 2.1.1; registered checks passed without dependency changes."
+  ]
+}

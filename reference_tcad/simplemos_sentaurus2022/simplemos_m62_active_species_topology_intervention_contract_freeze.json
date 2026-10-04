@@ -1,0 +1,23 @@
+{
+  "schema": "vela.simplemos.sdevice.m62_active_species_topology_intervention_contract_freeze.v1",
+  "status": "frozen_before_tool_inventory",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m62_active_species_topology_intervention_contract_v1.json",
+  "contract_sha256": "411549d350201f9655eb0778a1333d2f502d0f43365ca6d35538b2ef5ac35aa3",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m58_compensation_contour_mesh_audit_evidence.json": "ff2b1e08f0c9e0f8304f792ddaf23821c97ec1ed438f26c3fe1a49a9fe4b685b",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m63_smooth_nwell_attribution_evidence.json": "2480a8ad273d8953566f525cb5806d56351b7bb365b4695baa9c0202a94ac38c",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_critical_gate_edge_node_ledger.csv": "9255ba29b1a705d0daad5615f173679375a8428a2d0d8184447ffb1784f28ea5",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n21/input_fps.tdr": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_bundle/n24/input_fps.tdr": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128"
+  },
+  "execution_policy": {
+    "inventory_is_read_only": true,
+    "mutation_requires_all_writer_gates": true,
+    "stop_without_mutation_if_gate_fails": true,
+    "production_reference_replacement": false,
+    "threshold_or_classification_changes_after_freeze": false
+  }
+}

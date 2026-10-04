@@ -1,0 +1,76 @@
+{
+  "schema": "vela.simplemos.sdevice.m4_reference_curves.v1",
+  "status": "qualified",
+  "sentaurus_banner": "****************************************************************************\n***                           Sentaurus Device                           ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***",
+  "source_tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+  "contract": "../simplemos_m4_controlled_mobility_contract_v1.json",
+  "contract_sha256": "287cdeb826f9edcb99ea770f232cc158a078a06d31a8dc7c89e2f56c6d99e240",
+  "interpolation": "forbidden",
+  "artifacts": [
+    {
+      "case": "a0_vd_0p05",
+      "variant": "A0",
+      "drain_voltage_V": 0.05,
+      "path": "a0_vd_0p05_reference.csv",
+      "sha256": "3ef37025a1144ac5d8c8fc2b08212e141db1b108c2b1fb3e4237e4d44839fd80",
+      "point_count": 51
+    },
+    {
+      "case": "a0_vd_1",
+      "variant": "A0",
+      "drain_voltage_V": 1.0,
+      "path": "a0_vd_1_reference.csv",
+      "sha256": "4694b872a46001651734c180f482b593a3d0857d196f186443883f649401bd69",
+      "point_count": 51
+    },
+    {
+      "case": "a1_vd_0p05",
+      "variant": "A1",
+      "drain_voltage_V": 0.05,
+      "path": "a1_vd_0p05_reference.csv",
+      "sha256": "edcfdfc12cccfd0222e6215e5539f695662831b78c9baad98dfe67db471f709a",
+      "point_count": 51
+    },
+    {
+      "case": "a1_vd_1",
+      "variant": "A1",
+      "drain_voltage_V": 1.0,
+      "path": "a1_vd_1_reference.csv",
+      "sha256": "280a7aae076d8030bcd992f8dc3ae1d929c68efe922eeb6553862d845aa80d56",
+      "point_count": 51
+    },
+    {
+      "case": "a2_vd_0p05",
+      "variant": "A2",
+      "drain_voltage_V": 0.05,
+      "path": "a2_vd_0p05_reference.csv",
+      "sha256": "5ee1559bec60e794d5c4ee3623ca5912f0e202078cd6c1bbfc55fec6a0c55647",
+      "point_count": 51
+    },
+    {
+      "case": "a2_vd_1",
+      "variant": "A2",
+      "drain_voltage_V": 1.0,
+      "path": "a2_vd_1_reference.csv",
+      "sha256": "897f300245fd7ca7ea521dd872c9157ea74d8a1b7a9f99cce2f67f901983a9fc",
+      "point_count": 51
+    },
+    {
+      "case": "a3_vd_0p05",
+      "variant": "A3",
+      "drain_voltage_V": 0.05,
+      "path": "a3_vd_0p05_reference.csv",
+      "sha256": "0909be878ff4e3ca9ba95f2c4fe5d7ead046be068103949ff1e8b53af0161747",
+      "point_count": 51
+    },
+    {
+      "case": "a3_vd_1",
+      "variant": "A3",
+      "drain_voltage_V": 1.0,
+      "path": "a3_vd_1_reference.csv",
+      "sha256": "44f989045f7a21449681277e509d71f3057b73cb985c1fa0f600e426fdc61801",
+      "point_count": 51
+    }
+  ],
+  "raw_binary_commit_policy": "excluded"
+}

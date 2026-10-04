@@ -1,0 +1,10 @@
+{
+  "algorithms": [
+    "exact G derivative root",
+    "Charon Newton, correction 1e-5, 500 iterations",
+    "Genius 10 K table, ternary .33 interval, width 1e-3"
+  ],
+  "inferred_floor": "One first fully clamped native cell per carrier and T; diagnostic only, never a production parameter.",
+  "cell_relative_gate": 1e-07,
+  "temperature_gate_K": 1e-08
+}

@@ -1,0 +1,8 @@
+{
+  "schema": "vela.simplemos.sdevice.m52_direct_current_attribution_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_contract_v1.json",
+  "contract_sha256": "b37c7fb9e6426123df98e1a8286890811e2443f5def4e254b4e08cd7a226bb12",
+  "frozen_at": "2026-09-02T00:00:00+08:00",
+  "execution_may_not_modify_contract": true
+}

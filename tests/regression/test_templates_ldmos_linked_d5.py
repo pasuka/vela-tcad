@@ -12,6 +12,18 @@ import run_templates_ldmos_linked_d5 as linked
 
 
 class LinkedD5Test(unittest.TestCase):
+    def test_production_defaults_and_explicit_legacy_execution(self):
+        parser=linked.build_parser()
+        required=['--manifest','manifest.json','--output','output','--gate','4']
+        defaults=parser.parse_args(required)
+        self.assertEqual(defaults.linear_solver,'umfpack')
+        self.assertTrue(defaults.worker)
+        self.assertTrue(defaults.reuse_linear_analysis)
+        legacy=parser.parse_args(required+['--linear-solver','sparselu','--no-worker','--no-reuse-linear-analysis'])
+        self.assertEqual(legacy.linear_solver,'sparselu')
+        self.assertFalse(legacy.worker)
+        self.assertFalse(legacy.reuse_linear_analysis)
+
     def test_checked_in_bundle_dependencies_keep_exact_hashes(self):
         folder = ROOT / 'reference_tcad/templates_ldmos_sentaurus2022/profiles'
         bundles = list(folder.glob('linked_*_inputs.json'))

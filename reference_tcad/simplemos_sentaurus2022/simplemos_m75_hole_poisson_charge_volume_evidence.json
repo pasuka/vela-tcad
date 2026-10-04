@@ -1,0 +1,34 @@
+{
+  "schema": "vela.simplemos.sdevice.m75_poisson_charge_volume_evidence.v1",
+  "status": "frozen",
+  "milestone": "M75",
+  "classification": "hole_poisson_volume_not_material",
+  "contract_sha256": "6bbcca4b90cb91ccd7651e06c7ac11713c3f41a9084854244400d91d3ffc4cec",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m75_m77_poisson_charge_volume_decomposition.py": "d8682f1d88ebf5b1ca63f82562b343ea85e59a3849f4100ec8838629a561e923"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_hole_poisson_charge_volume_report.json": "7d284ffbee9fc7967b7f122a9bc55ec92d133654eab5942836eba00383497e1d",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_case_ledger.csv": "a3affcd1cf8816b9719f8c38f7b8ca4dbc4587743cabd43e62428a66ea43a8b2",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_pair_ledger.csv": "42d0055a0fd4c3c4a8c639c8088474a8f6040c1511278177e4c29c453054f55d",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_curve_response_ledger.csv": "79e95aeffb4ba605baa6d9e4d6bc845b1b7cb8542ac63a5ab4f7229572a29c99",
+    "reference_tcad/simplemos_sentaurus2022/hole_poisson_charge_volume/m75_execution_manifest.json": "ea9eb8db7e5b55fef4e6a2831cd2eb7b8b815ed8dc3961681e677852d768609a",
+    "docs/validation/simplemos_m75_hole_poisson_charge_volume_2026-09-03.md": "4f1ad586a0eb3fe843ae66927f2923e6cd561856fb6cab3caafe92bcaff86b0b",
+    "docs/validation/reports/simplemos_m75/artifact.json": "6fe8f181fe96d89cc7e13fa0d93ae0784c76391f4dfbbcfef92918e312c58707"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_self_consistent_execution": true,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

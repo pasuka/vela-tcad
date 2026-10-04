@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v4/export_evidence.json": "d0b95a6785ab6e438243aad0946df021d727df1372d23522bed403e5388822ac",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v4/integrity_summary.json": "90bc901c781d89dfb501d2a23df04396a3046ae93e1b6931aac358ad1c7bda8f",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v4/load_integrity.csv": "1baa1eea17566788fba0904870dc4e34388a9d93fd66bd3529b9d2446387f745",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v4/observer_identity.csv": "568565b53817376e119a6c0d11ecbd51368dfee8f40546d93024c96e53a72370",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/cutoff_probe_20260914/v4/requested.csv": "2c20029fff2fe06b4964b02e3504fc9f35e6164e28276f4f2ea51a294438589d",
+    "scripts/analyze_simplemos_hfs_cutoff_v4_20260914.py": "433fbc38e43e46988650b1ea4c852b430ffc55c8b7c144dc7e17e5ea4ceea969"
+  }
+}

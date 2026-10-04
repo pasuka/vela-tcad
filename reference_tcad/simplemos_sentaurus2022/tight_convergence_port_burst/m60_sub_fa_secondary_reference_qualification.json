@@ -1,0 +1,10 @@
+{
+  "eligible": true,
+  "replaces_m8_m46": false,
+  "required_math": "Math { Extrapolate RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint }",
+  "required_diagnostics": [
+    "CNormPrint logs",
+    "paired default and DirectCurrent currents",
+    "pointwise observable-fraction flag"
+  ]
+}

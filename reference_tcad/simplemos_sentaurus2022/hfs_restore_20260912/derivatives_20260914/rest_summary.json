@@ -1,0 +1,9 @@
+{
+  "samples": 13188,
+  "qualified": 13188,
+  "zero_field_samples": 6123,
+  "max_error": 3.6767247090180006e-12,
+  "all_local_partials_qualified": true,
+  "device_chain_qualified": false,
+  "production_changed": false
+}

@@ -1,0 +1,86 @@
+{
+  "schema": "vela.simplemos.m81.fixed_charge_fd.v1",
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "device": "n19",
+      "case": "zero",
+      "fixed_charge_cm_3": 0.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/zero/m81_des.cmd"
+    },
+    {
+      "device": "n19",
+      "case": "plus_1e13",
+      "fixed_charge_cm_3": 10000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/plus_1e13/m81_des.cmd"
+    },
+    {
+      "device": "n19",
+      "case": "minus_1e13",
+      "fixed_charge_cm_3": -10000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/minus_1e13/m81_des.cmd"
+    },
+    {
+      "device": "n19",
+      "case": "plus_5e12",
+      "fixed_charge_cm_3": 5000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/plus_5e12/m81_des.cmd"
+    },
+    {
+      "device": "n19",
+      "case": "minus_5e12",
+      "fixed_charge_cm_3": -5000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/minus_5e12/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "case": "zero",
+      "fixed_charge_cm_3": 0.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/zero/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "case": "plus_1e13",
+      "fixed_charge_cm_3": 10000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/plus_1e13/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "case": "minus_1e13",
+      "fixed_charge_cm_3": -10000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/minus_1e13/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "case": "plus_5e12",
+      "fixed_charge_cm_3": 5000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/plus_5e12/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "case": "minus_5e12",
+      "fixed_charge_cm_3": -5000000000000.0,
+      "deck": "build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/minus_5e12/m81_des.cmd"
+    }
+  ],
+  "remote_root": "/tmp/vela_simplemos_m81_ifm_20260905/fixed_charge_bundle",
+  "perturbation": "Uniform bulk Silicon FixedCharge; Conc is signed charge number density in cm^-3, UG pp543-545. No dopant profile, mobility, BGN or SRH parameter change.",
+  "baseline": "Keep ImplicitACSystem and exact M81 electrode/Load/DC configuration; remove diagnostic noise and deterministic variations; no AC solve.",
+  "amplitude_rationale": "Pilot predicts 5.17e-4 and 7.01e-4 relative Id at 1e13 cm^-3; half-amplitude plus central differences check linearity while staying above measured closure drift.",
+  "additional_counts": {
+    "perturbed_dc_solves": 8,
+    "zero_charge_control_dc_solves": 2,
+    "ac_ifm_points": 0,
+    "bias_sweeps": 0
+  },
+  "comparison": "central_delta=(Id(+a)-Id(-a))/2; compare directly to native dI*(a/1e13), with no fitted sign or scaling; device depth is the default 1 um.",
+  "gates": {
+    "all_exit_zero": true,
+    "zero_control_reclosure_dex": 1e-05,
+    "fd_vs_ifm_relative_error": 0.05,
+    "two_amplitude_derivative_relative_change": 0.05,
+    "same_sign": true,
+    "minimum_signal_to_zero_control_drift": 100
+  },
+  "m82_released": false
+}

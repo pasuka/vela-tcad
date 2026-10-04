@@ -1,0 +1,17 @@
+{
+  "points": 16,
+  "qualified_points": 16,
+  "attempts": 32,
+  "failed_attempts": 0,
+  "reloads": 0,
+  "max_row_ratio": 2.211846194343558e-07,
+  "max_port_relative": 4.440892098500626e-16,
+  "max_abs_Id_error_percent": 1.0504991046347167,
+  "max_dual_Id_relative": 6.596740931286149e-10,
+  "max_dual_phi_V": 2.37097259e-09,
+  "max_dual_density_relative": 9.171331738500044e-08,
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_candidate_20260914\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "d9848e77096647530f1c3f0622542a2ce6e9f8be6dae8b8507d9ff27cb36dbe3",
+  "acceptance_changed": false,
+  "all_qualified": true
+}

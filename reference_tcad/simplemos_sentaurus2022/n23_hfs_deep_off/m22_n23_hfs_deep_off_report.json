@@ -1,0 +1,71 @@
+{
+  "schema": "vela.simplemos.sdevice.m22_n23_hfs_deep_off_report.v1",
+  "status": "complete",
+  "state_count": 8,
+  "frozen_formula_evaluations": 16,
+  "key_state": {
+    "gate_voltage_V": 0.05,
+    "sentaurus_full_current_A_per_um": 8.58625099702983e-17,
+    "sentaurus_no_hfs_current_A_per_um": 1.12874484001395e-16,
+    "sentaurus_hfs_self_consistent_effect_dex": -0.11879219816170544,
+    "vela_full_current_A_per_um": 1.1046438035358572e-16,
+    "vela_no_hfs_current_A_per_um": 1.3899350016539832e-16,
+    "vela_hfs_self_consistent_effect_dex": -0.09977223082251109,
+    "cross_solver_full_error_dex": 0.10941868092427424,
+    "cross_solver_no_hfs_error_dex": 0.09039871358507992,
+    "cross_solver_full_absolute_error_A_per_um": 2.4601870383287426e-17,
+    "cross_solver_no_hfs_absolute_error_A_per_um": 2.6119016164003313e-17,
+    "cross_solver_error_improvement_dex": 0.019019967339194324,
+    "full_state_frozen_hfs_effect_dex": -4.311819507600958e-06,
+    "no_hfs_state_frozen_hfs_effect_dex": -3.4285383821453817e-06,
+    "full_state_direct_hfs_delta_A_per_um": -1.0970581393467128e-21,
+    "no_hfs_state_direct_hfs_delta_A_per_um": -1.0976849598773321e-21,
+    "full_state_total_condition_number": 1.0,
+    "no_hfs_state_total_condition_number": 1.0,
+    "full_state_electron_condition_number": 1.0,
+    "no_hfs_state_electron_condition_number": 1.0,
+    "rerun_full_current_A_per_um": 1.1046438035358572e-16,
+    "rerun_no_hfs_current_A_per_um": 1.3899350016539832e-16
+  },
+  "findings": {
+    "key_cross_solver_gap_closed_by_no_hfs_fraction": 0.17382742305546103,
+    "key_self_consistent_hfs_effect_mismatch_dex": 0.019019967339194352,
+    "key_absolute_error_change_no_hfs_minus_full_A_per_um": 1.5171457807158861e-18,
+    "key_full_state_frozen_hfs_effect_dex": -4.311819507600958e-06,
+    "key_total_condition_number": 1.0,
+    "key_electron_condition_number": 1.0,
+    "key_max_per_edge_sg_cancellation_condition": 1979426197951810.5,
+    "key_max_frozen_drain_cut_mobility_effect_dex": 0.0,
+    "key_max_self_consistent_drain_cut_mobility_change_dex": 0.0,
+    "key_max_self_consistent_phin_drop_delta_V": 9.020562075079397e-17,
+    "key_max_self_consistent_endpoint_density_change_dex": 0.0
+  },
+  "artifacts": {
+    "summary_csv": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_summary.csv",
+    "edge_csv": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_drain_cut_frozen_edges.csv",
+    "key_edge_csv": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_drain_cut_edges.csv",
+    "self_consistent_edge_csv": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_drain_cut_self_consistent_edges.csv",
+    "key_self_consistent_edge_csv": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_self_consistent_edges.csv"
+  },
+  "interpretation_limits": {
+    "self_consistent_response_includes_state_feedback": true,
+    "frozen_response_is_direct_vela_formula_response": true,
+    "sub_fA_relative_error_is_conditioning_sensitive": true,
+    "no_private_sentaurus_face_formula_claim": true,
+    "no_default_model_change": true
+  },
+  "conclusions": {
+    "supported": [
+      "At Vg=0.05 V, removing HFS reduces the cross-solver log error by 0.01902 dex, closing 17.38 percent of the log gap.",
+      "The same-state direct Vela HFS response is only about 4.31e-6 dex, so the observed self-consistent HFS response is state-feedback dominated.",
+      "Drain-cut mobility and endpoint carrier density are unchanged to exported precision between the full and no-HFS states.",
+      "Individual drain-cut SG fluxes have cancellation condition numbers up to about 1.98e15, and the controlling quasi-Fermi drops are at binary64-resolution scale.",
+      "Removing HFS slightly increases, rather than decreases, the absolute cross-solver current error at the key sub-fA point."
+    ],
+    "not_supported": [
+      "Claiming that direct HFS mobility degradation causes the n23 deep-off spike.",
+      "Using the 0.01902 dex log-gap reduction as a stable physical calibration target below the sub-fA numerical floor.",
+      "Changing the production HFS default from this diagnostic."
+    ]
+  }
+}

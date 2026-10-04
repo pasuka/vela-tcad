@@ -1,0 +1,519 @@
+{
+  "schema": "vela.simplemos.sdevice.m72_observer_replay_manifest.v1",
+  "status": "complete",
+  "contract_sha256": "fd5e86080485c1eee70004eb52fd93089c990bd392b4980b933fff99c00be805",
+  "replays": [
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n17/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/config.json": "a296a8bc5a8126824b04de9f671f824a39e9d873797a64ddcb8be41df01c3672",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/gate_reaction.csv": "6e0cb8ceeb8f78b95b67fed52305e2f564686a5a4986ba6cded3f71ddefe0020",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/replayed_state.csv": "a669515e9fc2162b514aeb60e184f60363cc664ecf945642b4d25116cf5aa4be",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/stdout.txt": "1a01fbb18aae1767758f0fa2acae1be249d66203610f5f7148465556eba545e0",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n17/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/config.json": "eeccc03012ed4ea2acd71381f3d25d4048e552b49db86755e20f52727ef30cc7",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/gate_reaction.csv": "7718f73404b5c3e967c3dc52059892dd2f2021cb9d7ede1557674d0b640014da",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/replayed_state.csv": "633fcb5102a89ec17e6c1ac4e8266c33450bc933a27d8f23ab823f78d81ec1fd",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/stdout.txt": "fcec957104af07b4e5ffae32b01b57200089d6302e6779098876e5d652bc7f46",
+        "build-release/m72_native_gate_reaction/n17/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n17/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/config.json": "6e04e41f4ef3c9074eced94fd5cda0bcfc043f577736d21f2b7514574fcd2e78",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/gate_reaction.csv": "1b07c93405846004f6e744e24a762387a3711e359eb4e9b6eb9508f3735f7bcf",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/replayed_state.csv": "d9e31b3e88741bb5ffc6adc2a02f385b93db6345c09876ac479fafbc4759c144",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/stdout.txt": "fe1263e76994eac67144737f8d6113b64e2fbda24cebc3dbc808229dd5469ccf",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.75,
+      "source_state": "build-release/m65_ni/vela/n17/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/config.json": "16f60979d42e5589d50fde7268c64ee7d9d139c238b9e9b43da48c950bfc4569",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/curve.csv": "9551964b1b1eab974a9b7924269910f9c7f6f6f5d5264eabe539c660ec86af61",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/gate_reaction.csv": "857c302fd7abec3af2aef2e7bce195727dd472f20516caffc5d3b444148ab0d8",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/replayed_state.csv": "48b120cf7ef780b974203f949961bb5a5f1f187974dcd58ffa2c1cb56ee132f9",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/stdout.txt": "164f68de38351a2da913fae5ea35083316c8b83cb9b66a16a7bad00f2a18998f",
+        "build-release/m72_native_gate_reaction/n17/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n18/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/config.json": "c34850fae958c5d93454b15892b57e02b22477c382da82e25dd093ac7d2b882a",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/gate_reaction.csv": "95b801ebc8e75895443be7a58b000dae209ce5ae8c37b69aa3a01c30cc7e0f17",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/replayed_state.csv": "c14d892eb32f2744aa6e65b7ffd05d701cce7c729cb056182d1ea6f17e6ed908",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/stdout.txt": "ef165bd3803452e1cbb54f65c40b9a7cba5476bc51fb6248fedcb85766d20854",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n18/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/config.json": "4f0e378c2a263c2c95dedf1c0f843d7a4087fbc460392420c11bf88ce6e2f1c0",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/gate_reaction.csv": "eaf4f44b6323ea0808d66816ecb52eca61b6ff4106b452172b88a754fa21dc4a",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/replayed_state.csv": "0adb0d6e4ee22a323e8d860602a157daea5fb00e39c4fff0ccbf5b8a84c1efc9",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/stdout.txt": "5f0214793799099c98745b09c6b319c6c0907cf60a973c2c89b69bca4f90c7c3",
+        "build-release/m72_native_gate_reaction/n18/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n18/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/config.json": "68ba5c47372b877fbc35bc55194aaf0200c42178784cdd8c52581b52921afafe",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/gate_reaction.csv": "70c2c770c5d5d3a8d996fa07d4956249fce7b23acfb6540e0fb5344ac70c625f",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/replayed_state.csv": "092fa5033469a2fd29d4b92389eb6be5b108e244e49914e87325a0fe780ed90e",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/stdout.txt": "57f54431bf9308d2bbb2348420fa111ac5e3547131db2369431fdccd733d4ac5",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.75,
+      "source_state": "build-release/m65_ni/vela/n18/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/config.json": "050cae53c42e3dc5c172ccf29f7d75903625a29db1a6828efdfa59d048387862",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/curve.csv": "9551964b1b1eab974a9b7924269910f9c7f6f6f5d5264eabe539c660ec86af61",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/gate_reaction.csv": "7cef61379252a07afd7d2639ccf0249ef3b9a6058ca3407b8bc705c4f55431d8",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/replayed_state.csv": "2e6b89154ab861d44048d01ebd4d9dd086117ab919c894c331da890292f6343e",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/stdout.txt": "52caa01c3bf9cae6f96d929897b1ddea7fef902696d2b84b20abf3f638b23ad7",
+        "build-release/m72_native_gate_reaction/n18/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n19/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/config.json": "92e7511c70c9a58fb2ed51d8da048cdc103357a8dd752859cd434c76b751ad40",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/gate_reaction.csv": "be63eb533a73fbe8851ed705e510e3d7f79d52ed54a9e6aea813a3570e2ae68b",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/replayed_state.csv": "431f8790b814803906e4f334790f9ca74771fe37e69be4374b38e6e2f9aa8459",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/stdout.txt": "3a575b59de9290e1d11b95b31a83ad450556883b73760ae21f4bd15376616caf",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.9,
+      "source_state": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/config.json": "8b7ec8baf547def1c062132dd76ab28010f2708037f5119ce5b0580d24830c93",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/curve.csv": "40ef9ba46649d3e6345bd06aa3a334aa3701113b231760c6cc3227885e27fa94",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/gate_reaction.csv": "277f6e2fa1bebc8f643be56ac9899398410499d24da04da998affa0316d26660",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/replayed_state.csv": "b510194c45d45d428b1d042876a5ee60e7168962053cab12b0715483ef9da878",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/stdout.txt": "246ea9bdad2bf4a83e966106c460b1ed7baf054ba27b3fd536ca83a1b4fe5ddc",
+        "build-release/m72_native_gate_reaction/n19/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n19/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/config.json": "4009e8cd7f15fc859cd04c5e326e8064a5babb081ce4394f23e1978df3fbbf9f",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/gate_reaction.csv": "626772d5aa2cdf36e8e9eb9612cf96e98f545d59d14ab7a2982e9850d3d87c04",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/replayed_state.csv": "eca638c84e522cdfe69ed2c3223d31f4909967df2b06908d0b8f98399fa9d746",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/stdout.txt": "14c37b17e93f4c566d2e4b3b1029aaae535a363736d198aaafd6f1f68ba06ba2",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/config.json": "f19fa601079e2d2451dbcaf893af84c0354f47b9f244446bc13790c9be4b7eb1",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/gate_reaction.csv": "e20f8beefd6cecf0df89492409c9cc72f9ca4b5aeb31d1e2f2305a8f7e2ad2a4",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/replayed_state.csv": "97b1eccb5d1a51ab2b6b430d52c9c6473776a99083155081de1b4ce67b7984cd",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/stdout.txt": "b1032cde631d1b118480c377dc0a383680bb2e2cf5e77491619285d40da023b2",
+        "build-release/m72_native_gate_reaction/n19/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n20/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/config.json": "2efaea839704cc1ee40f651c94de03a5e48e62eafe97cb9fa60dc6d243d6feb3",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/gate_reaction.csv": "70a8921627989cc8976206e50124700f9d6421ea00d30cc068d598a1c82ed18d",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/replayed_state.csv": "17ecec4087ec744f0bf5305c0f5c56f7f5e4f481ad76c33849ed06a6f0217fc2",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/stdout.txt": "15dab35ff558ab6e7549ca602fc708389091e198a418362a1ecb81828047c3c2",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.85,
+      "source_state": "build-release/m65_ni/vela/n20/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/config.json": "7d321a0eca10375e6cdac1b81b89a196d4d435b65d143299d205fcba82487606",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/curve.csv": "594d3514c7598e88e2b7ded607f67d12676823763945a47bfc87c210b06e71de",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/gate_reaction.csv": "41e70a5bf128c53da076b61735f57823925a92f05ae53ee0f01f32dbeae49b82",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/replayed_state.csv": "e264eeb7c25c0f206a388f9f605c4a9618a638f585e4f4b95401b2b2e12c53bf",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/stdout.txt": "42cf0c9223f596a0b7dadd7e3c1f1382e07a6d99759a5823133a2f08d81dace2",
+        "build-release/m72_native_gate_reaction/n20/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n20/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/config.json": "635a04e731e2ed716740ee07dcabaed84340e1cf0274edd0ad43f04f012145a9",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/gate_reaction.csv": "4bae274adea8de41c1ba429d3d3a22419244011f0878a75d2f51e18b7efb332b",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/replayed_state.csv": "cd17b844014df51c7be33e8aebb0d19dff3efd0c544cc32400ea463b1eeaf67f",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/stdout.txt": "24a4a8f18c222a0cd4bab631abc3c92cf9dccac46370ceb3eaab17271bd7870b",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n20/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/config.json": "c83b12e213edd4b39db395db65057cbf6b08450868baf5e71cdbdc51d163b836",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/gate_reaction.csv": "c5261eeaad56cdd0acc561f77a9b23a435f9cc1ca4f6a77bbdcae47247b2be12",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/replayed_state.csv": "b99d28c3b03a7992cb97e0c35e56ed0f77f0bc95e411e16dfe5dee5dd1829160",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/stdout.txt": "263149a7468438c192860f9bbe5f3539ce16624f318b47f40f4a557b02b03f14",
+        "build-release/m72_native_gate_reaction/n20/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n21/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/config.json": "5d192f838e0ffa35988e924494ec7335f3eb379dd004120562b41a3aead769a1",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/gate_reaction.csv": "a0b6416400e88c739d6c7f5da29771920224c402f3e1eaa3dbaabfc31658eed0",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/replayed_state.csv": "cb0df3f48115af33db49074be6b556da98f010d948229e1ad2a7945c6a6a4d09",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/stdout.txt": "0d9243676455321a08328fb00ffd2a8b8545cba2a312b56dee242d2e90cceca8",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n21/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/config.json": "d373fdbc5066292a684c5cdd2d111aabb41166a204de2de8e9be47ef4ad4e4a7",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/gate_reaction.csv": "c1aa602165d4826d24b585c2d787bbb7ebcaf0fdf05415218d91d1432edd15a6",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/replayed_state.csv": "96ee45da376cf2168a3935fa12d03437d73acc32fe3606686169a20a94d0d5d7",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/stdout.txt": "eb4d20a9d2831d8af4cba642ba1f834ff124b8a7c5fe4854eea4ced566cdcb95",
+        "build-release/m72_native_gate_reaction/n21/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n21/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/config.json": "190bad5fe3745062408e1453a3396a39eb3ccd28cb2653ddafc5860439b81e9a",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/gate_reaction.csv": "f43ac730cd0dc70e999836860a7592e8591b93af6a48cbffb6702a85956b0cb3",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/replayed_state.csv": "413dca170dda3ba3c3dfef9254c2f8a912ddcb02e7a3c02238c299bb7882839f",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/stdout.txt": "39c63491032b3d3470a0d094a206d8ad47479eaaaf0046a0c3ab84a882a1a92c",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.75,
+      "source_state": "build-release/m65_ni/vela/n21/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/config.json": "575ec05bf405c7ceba24f374e3529b264a9cc0cf4f464166e52465fa0557dc04",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/curve.csv": "9551964b1b1eab974a9b7924269910f9c7f6f6f5d5264eabe539c660ec86af61",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/gate_reaction.csv": "ea0475f5b22a2020db0f4a41943c56d9a5b249c42589b45d3a040fc20a79f536",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/replayed_state.csv": "9b8b323f898ddac7f43cc9319699f3ac461374431d55c7d3c48fce1ecc2b142b",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/stdout.txt": "669257a218f50d6d592172e3d7b1b982d969db5a45597f1def18738fecc6da57",
+        "build-release/m72_native_gate_reaction/n21/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n22/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/config.json": "55ba9799aa4e81aec875a046a133c1d2a41145fa2ccb25a6e1307f62313822f9",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/gate_reaction.csv": "6290b53db35cc7be006ab45af46cf120cf7f4031428811cdc984eae87cb666f0",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/replayed_state.csv": "f30178a1793e361eddea7b80754b24542de2cf64edb5883dc09fcfac93c70668",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/stdout.txt": "4274df714e165bfbcad181a2e483ab86630eb32272ddf1df58247de89d54e535",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n22/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/config.json": "5e44b20c2c30390dafe19e9225d34343b0fb0685dfc7975b489fb14391c68edc",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/gate_reaction.csv": "60837248a39ce5ab9b2fd462833979747e24c992f3c1fdd0659e4fca3faf8085",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/replayed_state.csv": "243b1feeedc05266f0319cee29bc639415654609e967291a2915beab087d775d",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/stdout.txt": "ae663cf43d031718176136ae689d41d637e680690ded154555683803fbfe4d2d",
+        "build-release/m72_native_gate_reaction/n22/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n22/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/config.json": "4ea3bb67bf89f8358613da841f7c39d7ad2a1cfcf2a1ce1e8f93b9f704410bd5",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/gate_reaction.csv": "bdc610d75be8a9d49d50efd5ea171326e700798dab9c40427f0ac3a4e137aee9",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/replayed_state.csv": "b1e71c7a4f1e1cb0fdb0648dc51877fce65a5fb882291293fd27201db2a2855a",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/stdout.txt": "deac8393714dcc3f8e7a11d28d5f0559e21b6474fe72d6198297e4151f439df1",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.75,
+      "source_state": "build-release/m65_ni/vela/n22/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/config.json": "5784aeb7b4fe03309bcef3599001805906f220b591efb2901666b725eaa586f9",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/curve.csv": "9551964b1b1eab974a9b7924269910f9c7f6f6f5d5264eabe539c660ec86af61",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/gate_reaction.csv": "16d23e5c03b5a7f5b50d0b60653d3204745439f51e67bfec8789286c8e45d592",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/replayed_state.csv": "f0f2b9c54966ab842352d070990b4d6bf1ec9899e6b6c3206862f09576584cd6",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/stdout.txt": "0f780e71a5c749b08b61054419d03f9b09b6c478edb55403c7f693f6ca9886c7",
+        "build-release/m72_native_gate_reaction/n22/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n23/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/config.json": "c060c77866bb2f02561362774242484aa42ecccb0169cbca616b95475d7fc6e6",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/gate_reaction.csv": "31a6f1d53eceab1315a17f92569e9dc55c3c3abf6ce5bdd948b69e3d7af76443",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/replayed_state.csv": "98c6c20ba5446ad080cd42358723686fe984e348e3a2e80a41d1be9796b71338",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/stdout.txt": "6c323fdf25db46a030efb54a5c9c953d3cccf45eaf366c6298f20c463a19ff73",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.9,
+      "source_state": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/config.json": "1e83fd35fb3ce0fc964c5994b588140a2de6d66a806b674bd11bdf6dbfd98cd6",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/curve.csv": "40ef9ba46649d3e6345bd06aa3a334aa3701113b231760c6cc3227885e27fa94",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/gate_reaction.csv": "90ed25ae0853a9953d07496ebf8f36762c5a119534372e080857dee726d2325d",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/replayed_state.csv": "234fe70655f443ec788cfec80ae8f0c7e0e4815fa04ef70f0bef6b86532201f1",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/stdout.txt": "f0f265548369978eca0d0b5663f987b0ba94baedeff8aca08f952f037f9ebc61",
+        "build-release/m72_native_gate_reaction/n23/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n23/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/config.json": "8ceedf499bf92ce895e0854657411202b0bacf0b7e7e0a8f844f32b6457d330a",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/gate_reaction.csv": "366b2a89bf545080e1050f5fc6beb0149061972b4c1738c710799d8c96ec97eb",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/replayed_state.csv": "8341b35b35fdaf7f8991ee956a9a99cab54a2c2e0df418f0688e8c740823f39d",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/stdout.txt": "159129aef3aa6e95b7d2a6caa2d31800b7b1e6ae66f2ba9dd81bcc6fe810199a",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/config.json": "337c4998755b0f8eea5fca881781dca80b80e2d6fad8d9e7cf7228cd981306f5",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/gate_reaction.csv": "6b8fd2fade7fbc03c9fc2dff3c6e85c7b0369b2b12f58e45a1d8c63f9e44391d",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/replayed_state.csv": "bdce6adcac5bb13df2bed73d4532703b3b6217b3067a8548165127037ada6fdc",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/stdout.txt": "0455d1581d85ccba61b491c146e7a1f1fd4ec10bf6e009b0fa2e37bda0e2bec7",
+        "build-release/m72_native_gate_reaction/n23/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n24/vd_0p050000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/config.json": "9ca1f2bcd13ba8b1768b7b6d588fbe98e8e11052edb2ac7f7c6732b177af7021",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/gate_reaction.csv": "77e9810846d6b5dc17d48120cbf9d73e4cd37fb1121476f32acb7d9729ebb288",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/replayed_state.csv": "fb60b3b26810a30f6503bf9d7801e4a53899ca8519623481976c69bbb130c277",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/stdout.txt": "52132c7f6de10ce07430c57b357f73b09f9dac84125fd0c3c5959b43a10725fb",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "stage": "gate",
+      "gate_voltage_V": 0.85,
+      "source_state": "build-release/m65_ni/vela/n24/vd_0p050000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/config.json": "f006adf8735eb383cd06fc81344d65a38e2c949cfc0114c06ae6654cf751a8f5",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/curve.csv": "594d3514c7598e88e2b7ded607f67d12676823763945a47bfc87c210b06e71de",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/gate_reaction.csv": "167cfbf5e48adcdffbb99de2d729adbfa00dea8930f1023d92b5720fe96ab4ac",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/replayed_state.csv": "5d0c19e4f4e3bcbaf3ea32f083db903cf5c688acbe0f90e0d9f22a7f832d2f11",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/stdout.txt": "09b7d45a298334254c1c15304ffc3d69a2b8fd2083ec615af21c1370d99d18d5",
+        "build-release/m72_native_gate_reaction/n24/vd_0p050000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "stage": "drain",
+      "gate_voltage_V": 0.0,
+      "source_state": "build-release/m65_ni/vela/n24/vd_1p000000/10_drain_ramp/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/config.json": "ff547ebb09e43b8393af640c038278136d6258b3f23142d8daf2efc2ecabac06",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/curve.csv": "2f161ac9a8abbe9ddfa8099384d3aef1487bc172707825da3d247a69e9e20eac",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/gate_reaction.csv": "72d4d422c89524303869e890e399046405f00bd6695d145a7ebaabba17ededd3",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/replayed_state.csv": "a877004ae81b9c30161de447c3a08ba5ed8eb56881faeb042bdc85ee2ff8c6a8",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/stdout.txt": "37f29556da4488711a82ae1ba644e4b42d29a207f9394cd9d43eb2770e87e3b9",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/drain/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "stage": "gate",
+      "gate_voltage_V": 0.8,
+      "source_state": "build-release/m65_ni/vela/n24/vd_1p000000/20_gate_sweep/state.csv",
+      "run_dir": "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate",
+      "outputs": {
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/config.json": "10dc503d10595f5a69d9cd472d6b01aadb8757a09b439222ba2906ef9a646039",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/curve.csv": "1341bddefb42db088dc837bb60b509ebe6730e0c09c7d518c3e93eb68e689046",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/gate_reaction.csv": "3853ecd0b97d67c6fc91d4637838b8ce9a31b4d78cc5fb92e0335dceac276ca5",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/replayed_state.csv": "56063eca792486aee91f118ff303c95b36d6dc63eac69fc34fc0d3070af37c6c",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/stdout.txt": "69e69335aa31b55cf12036ff693d41d77ff49c409219f290f35d018d1ac3e1e4",
+        "build-release/m72_native_gate_reaction/n24/vd_1p000000/gate/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ]
+}

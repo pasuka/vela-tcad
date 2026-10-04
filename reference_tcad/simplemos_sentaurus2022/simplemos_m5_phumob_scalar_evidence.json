@@ -1,0 +1,100 @@
+{
+  "schema": "vela.simplemos.phumob_scalar_evidence.v1",
+  "milestone": "M5",
+  "recorded_on": "2026-08-26",
+  "branch": "codex/simplemos-sdevice-validation",
+  "source_contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m5_phumob_scalar_contract_v1.json",
+    "sha256": "4d685661f5c81894930a0ca69f5860c8d3c2f00d716f2fc9a29c8e2530ed950e"
+  },
+  "implementation": [
+    {
+      "path": "include/vela/physics/MobilityModel.h",
+      "sha256": "e4b425405a4c3c86b2e8bff192958f2ee70f193fac6d4355296bbdf590792938"
+    },
+    {
+      "path": "src/physics/MobilityModel.cpp",
+      "sha256": "3fcf4fa3081951cde3244a3e49aac243a8fb9cba20e0bbbd4cc999016e0ff893"
+    },
+    {
+      "path": "tests/test_phumob.cpp",
+      "sha256": "54d8fe524701ed41e784204ebceb41f8964dd747448cfd48cc66870ef68ffeff"
+    },
+    {
+      "path": "scripts/sentaurus_parameter_map.py",
+      "sha256": "4a637a820cc5a724c1e5e1cf9d82adc213a3f8978c7fc8e8609a0e0f75b2bc87"
+    },
+    {
+      "path": "tests/regression/test_sentaurus_parameter_map.py",
+      "sha256": "832e285fb060e7d2cd01333f37d9248b721a67022130e12249898845a1149b8d"
+    },
+    {
+      "path": "scripts/sentaurus_execution_ir.py",
+      "sha256": "36ff670729809146ca9e501e722cf70a3ebe8ddb8db6b7d98da91c1fbdfc5d55"
+    },
+    {
+      "path": "scripts/sentaurus_import.py",
+      "sha256": "d8f3d0dbff3cdae857da9b14524a768b6ce5a2fbcba2474c4a4be0025e0e2d1d"
+    }
+  ],
+  "verification": [
+    {
+      "name": "PhuMob Catch2 unit tests",
+      "command": "build-release/test_phumob.exe",
+      "result": "pass",
+      "test_cases": 8,
+      "assertions": 64
+    },
+    {
+      "name": "existing mobility regression",
+      "command": "build-release/test_mobility.exe",
+      "result": "pass",
+      "test_cases": 27,
+      "assertions": 130
+    },
+    {
+      "name": "unit-scaling regression",
+      "command": "build-release/test_scaling.exe",
+      "result": "pass",
+      "test_cases": 30,
+      "assertions": 108
+    },
+    {
+      "name": "parameter-map and import Python regression",
+      "command": "python -m unittest tests.regression.test_sentaurus_parameter_map tests.regression.test_sentaurus_import_tools",
+      "result": "pass",
+      "tests": 100
+    },
+    {
+      "name": "focused M2-M5 CTest selection",
+      "command": "ctest --test-dir build-release --output-on-failure -R \"PhuMob|sentaurus_import_tools|simplemos_m[234]\"",
+      "result": "pass",
+      "tests": 12
+    },
+    {
+      "name": "release build",
+      "command": "cmake --build build-release --parallel 4",
+      "result": "pass",
+      "targets": 86
+    },
+    {
+      "name": "full CTest regression",
+      "command": "ctest --test-dir build-release --output-on-failure --parallel 4",
+      "result": "pass",
+      "tests": 715,
+      "elapsed_seconds": 228.67
+    }
+  ],
+  "claims": {
+    "t2022_phumob_scalar_formula_implemented": true,
+    "t2022_silicon_default_parameters_implemented": true,
+    "arsenic_and_phosphorus_donor_selection_implemented": true,
+    "si_and_tcad_internal_unit_invariance_verified": true,
+    "invalid_inputs_rejected": true,
+    "dd_assembly_coupling_implemented": false,
+    "mobility_jacobian_implemented": false,
+    "production_sdevice_phumob_import_enabled": false,
+    "production_import_remains_fail_closed": true
+  },
+  "next_milestone": "M6: wire PhuMob into DD assembly and Jacobian, then enable production import only after solver-level validation"
+}

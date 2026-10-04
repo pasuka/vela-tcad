@@ -1,0 +1,16 @@
+{
+  "input_hashes": {
+    "build-release/CMakeFiles/vela_example_runner.dir/src/tools/vela_example_runner.cpp.obj": "a55b3b05399f68c7849328738e1eaa29fe6ae6ece2efea00f951a9d2adbf1171",
+    "build-release/libvela_core.a": "df22876fb5de826029960d0a5172614f0080b4e54de975350cc85f636f8f064e",
+    "build-release/pr_fix/stalls/compile.json": "2fdf90a51c7d0ad59b7b91927baf0e245a5b0e9b9a05d253d3b10ecf45361c50",
+    "build-release/pr_fix/stalls/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pr_fix/stalls/link.json": "409b2d6fd3643729120a5301ddccdb2324c36f063841ae9638a941d632ce8295",
+    "build-release/pr_fix/stalls/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pr_fix/stalls/newton.o": "f0ad8a434d8d8e590918b1f4613d7f0d65599e6373f07b0dc724410124990039",
+    "build-release/pr_fix/stalls/NewtonSolver.cpp": "694179ba39885663faa0515ba283d35828551ea58042e82d6f357e61404a9858",
+    "build-release/pr_fix/stalls/runner.exe": "3e05e3983682085238d87ebfcf876f223858656f827544b88ed6b6e5f04df93d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/validation_freeze.json": "1e8af258d925399a7695b6130811316a25f86281ca5cfcf42695828028ce0ad3",
+    "scripts/audit_simplemos_packed_stalls_20260910.py": "45451c756c544ef375939651744daa36b4b90ca68cd059ca04a0b592b3422463",
+    "src/solver/NewtonSolver.cpp": "fea0072549fe3b6a34560b1ce2eddb4adf364501b8f384a839c05f4f000c2bbf"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "status": "analysis_failed_before_gate_evaluation",
+  "exception": "decimal.DivisionByZero",
+  "reason": "Native mesh includes transport-inactive edges with zero exported mobility and zero flux; original analyzer divided by their mobility."
+}

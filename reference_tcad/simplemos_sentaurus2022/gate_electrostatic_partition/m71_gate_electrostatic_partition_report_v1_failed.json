@@ -1,0 +1,45 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_report.v1",
+  "status": "failed",
+  "classification": "execution_or_identity_failure",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m71_gate_electrostatic_partition_contract_v1.json",
+    "sha256": "a031425dacd2254d03cc5303db06c186426d622b512f246dcb0b3343e7759706"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_surface_pair_closure_fraction": 0.3697151894043339,
+    "minimum_surface_pair_closure_fraction": 0.20998415047801122,
+    "maximum_surface_pair_closure_fraction": 0.5459418621292966,
+    "median_current_pair_growth_dex": 0.03702897509661555,
+    "median_surface_response_pair_proxy_dex": 0.012407138021977238,
+    "surface_proxy_current_pearson": 0.47105832048220064,
+    "gate_charge_pair_current_pearson": -0.05747746234012951,
+    "maximum_gate_partition_identity_error_V": 5.551115123125783e-17,
+    "maximum_sentaurus_gate_voltage_error_V": 0.0,
+    "maximum_sentaurus_reconstructed_to_native_gate_charge_relative_error": 1.7089917031738966,
+    "median_sentaurus_reconstructed_to_native_gate_charge_relative_error": 0.7847801367898943,
+    "minimum_gate_boundary_edge_count": 22
+  },
+  "causal_scope": {
+    "closed": "Quantifies the gate-stage surface/oxide voltage partition and charge response on frozen matched-ni states.",
+    "not_closed": "Voltage partition is an identity and integrated charge is not a local finite-volume current closure; no production parameter is tuned."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "stage_count": true,
+    "pair_count": true,
+    "coordinate_identity": true,
+    "gate_partition_identity": true,
+    "sentaurus_gate_voltage_identity": true,
+    "gate_boundary_support": false,
+    "sentaurus_native_gate_charge_qualification": false,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": false
+  }
+}

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/equation/SparseAssemblyStructure.h"
 #include <map>
+#include <memory>
 
 namespace vela {
 
@@ -42,6 +44,9 @@ public:
     LatticeHeatAssembly assemble(const VectorXd& temperature_K,
                                 const VectorXd& cell_source_W_per_m3) const;
     const VectorXd& nodalAreas_m2() const { return nodalAreas_; }
+    void setStructureCache(std::shared_ptr<SparseAssemblyStructure> cache) { structure_=std::move(cache); }
+    std::vector<std::uint64_t> structureIdentity() const;
+    void appendStructure(std::vector<Eigen::Triplet<Real>>& entries,Index stride=1,Index offset=0) const;
 
 private:
     struct Element {
@@ -54,6 +59,7 @@ private:
     std::vector<Element> elements_;
     std::vector<Boundary> boundaries_;
     VectorXd nodalAreas_;
+    std::shared_ptr<SparseAssemblyStructure> structure_;
 };
 
 } // namespace vela

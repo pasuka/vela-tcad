@@ -1,0 +1,55 @@
+{
+  "schema": "vela.simplemos.sdevice.m17_sg_secant.v1",
+  "contract_id": "simplemos-sdevice-m17-sg-secant-v1",
+  "scope": "SDevice-only stable three-factor decomposition of the electron SG transport response",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": "diagnostic-only production-equation secant-factor probe",
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "factorization": {
+    "identity": "electron_flux = mobility * sg_secant_conductance * qf_log_imbalance",
+    "qf_log_imbalance": "log(left SG state term / right SG state term); with SimpleMOS variable-ni BGN and unclamped endpoint exponents this is (phin1-phin0)/Vt",
+    "sg_secant_conductance": "positive logarithmic-mean SG state weight times Vt and finite-volume edge geometry, excluding mobility",
+    "mobility": "complete Vela production edge mobility, including PhuMob, Enormal, HFS state and drive effects",
+    "allocation": "exact three-factor Shapley value over all 8 binary subsets",
+    "endpoint_policy": "independently evaluate production solved-equation electron-flux terms for the empty and full subsets",
+    "mixed_kernel_policy": "evaluate the logarithmic-mean secant factor in boost cpp_dec_float_100 arithmetic"
+  },
+  "adjoint_weighting": {
+    "source": "M14 production terminal-current adjoint",
+    "node_weight": "minus lambda_electron times the contact-eliminated electron continuity flux response",
+    "closure_reference": "M15 electron_transport adjoint_weighted_current_A_per_um"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "probe_variant_count": 8,
+    "maximum_absolute_closure_A_per_um": 1e-12,
+    "maximum_relative_closure": 1e-4,
+    "maximum_strong_state_relative_closure": 1e-8,
+    "endpoint_node_terms_match_production": true,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "Does the stable secant decomposition remove the Bernoulli/population cancellation exposed by M16?",
+    "Is the M16 SG-state-kernel response controlled mainly by positive edge conductance or by quasi-Fermi imbalance?",
+    "Which spatial region carries the non-cancelled conductance and quasi-Fermi contributions?",
+    "Does the same dominant factor persist across all eight strong-inversion states?"
+  ],
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response and are not native Sentaurus residual terms.",
+    "The secant conductance contains coupled electrostatic, variable-ni, carrier-population and quasi-Fermi common-mode state effects.",
+    "The quasi-Fermi factor is an edge log-imbalance, not the HFS mobility driving-field discretization.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ]
+}

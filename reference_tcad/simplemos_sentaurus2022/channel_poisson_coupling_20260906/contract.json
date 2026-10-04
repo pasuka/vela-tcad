@@ -1,0 +1,69 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "label": "plus_full",
+      "edge": 965,
+      "native_flux": 5578705518965584.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_0p050000_endpoint\\plus_full\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "label": "minus_full",
+      "edge": 965,
+      "native_flux": -5578705518965584.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_0p050000_endpoint\\minus_full\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "label": "plus_half",
+      "edge": 965,
+      "native_flux": 2789352759482792.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_0p050000_endpoint\\plus_half\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "label": "minus_half",
+      "edge": 965,
+      "native_flux": -2789352759482792.0,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_0p050000_endpoint\\minus_half\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "label": "plus_full",
+      "edge": 965,
+      "native_flux": 2880106695544674.5,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_1p000000_endpoint\\plus_full\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "label": "minus_full",
+      "edge": 965,
+      "native_flux": -2880106695544674.5,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_1p000000_endpoint\\minus_full\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "label": "plus_half",
+      "edge": 965,
+      "native_flux": 1440053347772337.2,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_1p000000_endpoint\\plus_half\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "label": "minus_half",
+      "edge": 965,
+      "native_flux": -1440053347772337.2,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_channel_poisson_coupling_20260906\\m65_n23_vd_1p000000_endpoint\\minus_half\\config.json"
+    }
+  ],
+  "definition": "At equal bias, decompose delta psi into K^-1 Poisson residual change, electron charge, hole charge and boundary response; use actual +/- strict channel-current states. K and charge volumes are the unchanged Vela operator.",
+  "gates": {
+    "poisson_response_relative": 0.001,
+    "full_half_field_relative": 0.001
+  },
+  "limitations": "Conditional charge-response bookkeeping, not an independent Sentaurus Poisson operator or a qualified physical correction.",
+  "new_nonlinear_solves": 0,
+  "new_native_runs": 0
+}

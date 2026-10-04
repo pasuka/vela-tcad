@@ -1,0 +1,5 @@
+route,node_count,hfs_phin_response_pearson_vs_m27,hfs_phin_response_p95_abs_difference_V,full_path_phin_p95_abs_shift_from_m27_V,no_hfs_path_phin_p95_abs_shift_from_m27_V
+m27_tiny_endpoint,942,1.0,0.0,0.0,0.0
+tiny_dozero,942,1.0,9.020562075079397e-17,2.296118430191378e-17,0.0
+original_initial_dozero,942,1.0,2.5159412666295467e-12,2.46285796119162e-12,1.3257818454182053e-12
+direct_dozero,942,1.0,7.466034301212276e-13,2.857064758388093e-12,2.270162459709269e-12

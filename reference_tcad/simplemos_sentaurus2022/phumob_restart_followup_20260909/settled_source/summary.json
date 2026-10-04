@@ -1,0 +1,8 @@
+{
+  "DC": 10,
+  "qualified_DC": 2,
+  "responses": 4,
+  "qualified_responses": 0,
+  "native_response_qualified": false,
+  "finite_volume_replacement": false
+}

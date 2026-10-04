@@ -311,6 +311,35 @@ class KnownOverstatementTest(unittest.TestCase):
             "solver.electron_quantum_potential.theta",
             pmap.lookup("QuantumPotentialParameters", "theta").target,
         )
+        self.assertEqual(
+            "solver.mobility.phumob.electron_arsenic.mu_max_m2_V_s",
+            pmap.lookup("PhuMob", "mumax_As").target,
+        )
+        self.assertEqual(
+            "solver.mobility.phumob.g_alpha_prime = -source",
+            pmap.lookup("PhuMob", "alpha1_g_k").target,
+        )
+
+    def test_phumob_parameters_are_exact_after_m6_solver_coupling(self):
+        active = pmap.classify(
+            "PhuMob", "mumax_As", active_models=["PhuMob"])
+        inactive = pmap.classify(
+            "PhuMob", "mumax_As", active_models=["SRH"])
+        self.assertEqual(pmap.STATUS_EXACT, active.status)
+        self.assertTrue(active.importable_by_default)
+        pmap.assert_importable([active])
+        self.assertEqual(pmap.STATUS_INACTIVE, inactive.status)
+
+    def test_enormal_parameters_are_exact_after_m7_spatial_closure(self):
+        for name in (
+                "B", "C", "N0", "N2", "lambda", "k", "delta", "A",
+                "alpha", "aother", "N1", "nu", "eta", "l_crit", "a_ac",
+                "a_sr"):
+            with self.subTest(parameter=name):
+                result = pmap.classify(
+                    "EnormalDependence", name, active_models=["Enormal"])
+                self.assertEqual(pmap.STATUS_EXACT, result.status)
+                self.assertTrue(result.importable_by_default)
 
     def test_aliases_activate_canonical_mapping_gates(self):
         result = pmap.classify(

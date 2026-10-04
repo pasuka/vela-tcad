@@ -1,0 +1,32 @@
+{
+  "jobs": [
+    {
+      "label": "failed_e1089",
+      "mode": "plain",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\dc\\native_reload",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\linesearch\\failed_e1089\\plain"
+    },
+    {
+      "label": "failed_e1089",
+      "mode": "trace",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\dc\\native_reload",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\linesearch\\failed_e1089\\trace"
+    },
+    {
+      "label": "qualified_control",
+      "mode": "plain",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\linesearch\\qualified_control\\plain"
+    },
+    {
+      "label": "qualified_control",
+      "mode": "trace",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\linesearch\\qualified_control\\trace"
+    }
+  ],
+  "scope": "One actual Newton iteration from final e1089 failed state plus same-bias qualified control; trace on/off identity. Preserve four refinements, step caps, production line search. Diagnostic iteration budget is not a new qualification attempt.",
+  "node": 1089,
+  "original_row_gate": 1e-06,
+  "production_changed": false
+}

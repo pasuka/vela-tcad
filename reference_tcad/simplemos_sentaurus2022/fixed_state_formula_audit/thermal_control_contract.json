@@ -1,0 +1,29 @@
+{
+  "status": "frozen_before_execution",
+  "source": "reference_tcad/simplemos_sentaurus2022/absolute_current_state_semantics/m80b_source_identity.csv",
+  "source_sha256": "a93ae28c541ad459da73670e848c226a1a839ddd70a4479553e71a858b485d85",
+  "script_sha256": "64549fb732cad7c3cac811ef9f71bf159857e73d96e709762c92f472ada97cc3",
+  "purpose": "Only replace Vt in the independent raw-density SG formula by the previously recorded source Vt; geometry and Vela mobility remain fixed. No solver/material change and no Id fit.",
+  "matrix": [
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9
+    },
+    {
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8
+    }
+  ]
+}

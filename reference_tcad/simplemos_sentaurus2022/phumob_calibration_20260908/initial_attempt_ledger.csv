@@ -1,0 +1,17 @@
+case,device,vd,key,model,index,vg,status,exit_code,qualified,undefined_edge_mobility
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_040,masetti_control,40,0.8,completed_failure,5,False,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_050,masetti_control,50,1.0,completed_failure,5,False,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_040,phumob,40,0.8,completed_failure,5,False,True
+m65_n19_vd_0p050000_endpoint,n19,0.05,m65_n19_vd_0p050000_endpoint_vg_050,phumob,50,1.0,completed_failure,5,False,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_040,masetti_control,40,0.8,completed_failure,5,False,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_050,masetti_control,50,1.0,completed_failure,5,False,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_040,phumob,40,0.8,completed_failure,5,False,True
+m65_n19_vd_1p000000_endpoint,n19,1.0,m65_n19_vd_1p000000_endpoint_vg_050,phumob,50,1.0,completed_failure,5,False,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_040,masetti_control,40,0.8,completed_failure,5,False,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_050,masetti_control,50,1.0,completed_failure,5,False,True
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_040,phumob,40,0.8,cancelled,,False,False
+m65_n23_vd_0p050000_endpoint,n23,0.05,m65_n23_vd_0p050000_endpoint_vg_050,phumob,50,1.0,cancelled,,False,False
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_040,masetti_control,40,0.8,completed_failure,5,False,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_050,masetti_control,50,1.0,completed_failure,5,False,True
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_040,phumob,40,0.8,cancelled,,False,False
+m65_n23_vd_1p000000_endpoint,n23,1.0,m65_n23_vd_1p000000_endpoint_vg_050,phumob,50,1.0,cancelled,,False,False

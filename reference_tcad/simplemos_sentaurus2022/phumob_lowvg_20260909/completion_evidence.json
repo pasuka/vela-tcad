@@ -1,0 +1,33 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_branch_status.md": "04d09c7c1c240861376a2c94b47458dff4ea6bfc89cc9b7d06efc14025004722",
+    "docs/validation/simplemos_phumob_lowvg_validation_2026-09-09.md": "bf0fafc0d86d6e0fbb382e115837dfceb3300382b21609fd0cf7cad485ce2bdb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_evidence.json": "b94a275ab23db0a6d2c6b6894f39325d595b0b82efb0919c59722e02b67311c6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_freeze.json": "e265cdaaf6b65055c62cb0c5a2ed0a283306bc2745f944a0b856cde3b9424b23",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate/dc_evidence.json": "7337aa5fdd2ce332c012d79a815a715eb60e34672b511d795563bd359bf7886c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate/validation_freeze.json": "994c6272cbbbd4ae36f04cc0c4a7fc94c20fae9fa687531d7946c2ba787e681b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/candidate_invariance_evidence.json": "5dade6edf6e1085dc0cbcc5a8f9a33086f6cff43f5bf0633b1c0918600d219af",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/completion_review.json": "5a6ec80bfa85099f9bb41e156ebdf5bb4abd09fe9b3f6e4b768f30744428cae2",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/dc_comparison_evidence.json": "18ce66262e835e8954cdbdd033321c80e98914509a058ca2614d84f94681a499",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_evidence.json": "f7e21fb60059db06ba8f6c5243b2ad3c81764f03182e36a97b7a9ce189b4d997",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_freeze.json": "3964cb445fcd40716c8c21657a6875091333178129398832145dc89b14120a40",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/input_freeze.json": "adb5091a27f36501a8ebd995ef3ea4f42e14f3a6997132bb2dc5e57b8a85f1b1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/legacy/dc_evidence.json": "b42e73481518e14506b9aad745fd8650522fa26ad457211a64539953b7d92ab5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/legacy/validation_freeze.json": "1accfde27804e040b99033393b08065908d1319d6aa847845f300c035a6f2deb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/post_evidence.json": "8032ea1bbe4b9c877b4051242861d7635375ee8c437fd67345ef009c2f5b9b27",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/post_freeze.json": "19661a2ff8c1096c004a6d1e0af3c4f214c3595ef56901967bbc803b2dc85dbd",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/qa_evidence.json": "5c67de36c64e77f9a0cfaf29040b9b126439b7566e5e64f8d471882332a2628e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/report_evidence.json": "89a567409623dbb2d1fb5b0ef74372628fb73fff64eadb211fd8ec8d3b8a19e6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/review_evidence.json": "6a1186dcc3a7c81c35ceb61336e8d500a693106986c4faa941205a8bc00676a4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_evidence.json": "c4e8f9a42b1436ac1909a4ee361ec38d3d4141dda40a755545b9092d588f7599",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_fields/srh_freeze.json": "3029cc8434cb1d84417b6f046cfabc5cab96476dc493c055190dafe096f40986",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/srh_freeze.json": "ba5998e5245c4f7002d6211de66a2b207730a3744d1ee70c9bf68dd2429aa177",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/export_evidence.json": "9352da1005d6a6d8995a1faa070abe3af6a36605ca259ebf5df0131051f7edc0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_evidence.json": "459bb08f9fd3b086ac063f89fd21767add447baf32b8e93abff109a8c3a91af5",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_freeze.json": "b8b9be46d12a7cefb71fcef2387bd528f2fc77fb31e06fdeaa835d06c0f3254e",
+    "scripts/analyze_simplemos_phumob_lowvg_20260909.py": "1bc9834439bc802248556eecc255f59dcfc4bedf2a94c42cd81f058ca872c320",
+    "scripts/audit_simplemos_phumob_lowvg_export_precision_20260909.py": "ff26d26480c56e8004b41cb75de1dc81f998174a288f02c5f8f7acd3653a98a8",
+    "scripts/review_simplemos_phumob_lowvg_20260909.py": "b8fae0f5deb76406abc01c4ced868e43692285f75619630cd31b1f5af66811c6",
+    "scripts/validate_simplemos_phumob_lowvg_20260909.py": "0c9aed3518e719e3a0015064a9f9027c77816abb04a5a57ec303acc9c143f196"
+  }
+}

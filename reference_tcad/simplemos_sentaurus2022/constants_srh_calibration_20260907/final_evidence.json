@@ -1,0 +1,18 @@
+{
+  "input_hashes": {
+    "build-release/m79_research/sdevice_ug_local_2022.txt": "a9f446d57a1ccfe2a2c16d9ccb263c74b9b3e295ad97e077a1d5997a46a852ae",
+    "docs/validation/simplemos_constants_srh_response_validation_2026-09-07.md": "1c0cc63219921d92deb7d0c2ed96e7446efde856226acdab08798319a2fcb1ac",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/actual_constants.csv": "aa6a00b90fe48acb7a82c0931d8c2d4ef9061607cdf72be9d47901f59ddafeb4",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/constant_compatibility_screening.csv": "e2137a30344bf4c0b5e56551b26f752dd5fe3423e9695db85a261ec2d42bd60d",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/dc.csv": "7e7e0cab7fec93b1bc1ca2459dd132171ae42266b1885711e8b716327dc76773",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/final_summary.json": "d3b68b6dc6ebf84ec7045924266af1b40486b9fe894a2c92acd105bd54e1ed9d",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/fixed_port_consistency.csv": "333a95b086a0bddd180714ed9d620e8c8fd9a4ff60fee579a27991508d764af5",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/local_fields.csv": "8404a0525aa924d74bffa934ea4796700c29817b5ea4e75fb379191652640e0c",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/node_volume_scope.csv": "25aeeed99edb26c4ca4407a1ff2e8777412f10a9eee05725a6fa738b63271338",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/predictions.csv": "4d106ea3417de0f7eaa263fcbf5ccd4fb3066d7966c2fb014f742c6b0075f01e",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/preflight.csv": "38f1d49d55ee7b9ed46ba633602f0a22139bb8396062d97418245d423ae1af50",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/response.csv": "e7e334692b68e5c89bbdab36175b4240fd75cf5230dcac327919c9218093f67b",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_calibration_20260907/validation_evidence.json": "b2c48f7171eded49b6832f911b5bb6924000658d2da960e154757125b4daed53",
+    "scripts/report_simplemos_constants_srh_calibration_20260907.py": "00ca07983e81a5bb2c4b2bfd66f9edababd7772934d797d643d3830676db8ae3"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "DC": 10,
+  "qualified_DC": 10,
+  "field_responses": 4,
+  "qualified_fields": 4,
+  "port_responses": 8,
+  "qualified_ports": 8,
+  "native_new_runs": 0,
+  "production_changed": false
+}

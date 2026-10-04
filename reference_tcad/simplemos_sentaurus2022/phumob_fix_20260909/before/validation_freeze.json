@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "build-release/phumob_fix_20260909/baseline/vela_example_runner.exe": "49bba31a3163653ee60ec76380c6d236f870b5165a8337669128ecb2755f651b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/baseline.json": "b5cdb461527fded00d561d71464a4274409562327c00fd0705455ad221dd9fd4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/input_freeze.json": "1f5144cd8dcdb2361b99c6139a14dbd32a4cfad50ddfebb842b3a0311fa23202"
+  }
+}

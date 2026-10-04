@@ -1,0 +1,13 @@
+{
+  "status": "attribution_requires_review",
+  "cases": 16,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "numerical_pass_count": 16,
+  "linear_pass_count": 16,
+  "candidate_cancellation_pass_count": 16,
+  "maximum_linear_remainder_fraction": 0.12598976858778443,
+  "m81_released": false,
+  "m82_released": false,
+  "scope": "Mapped-state reaction; not native Sentaurus residual. Pair/spatial stability must be reviewed before any release."
+}

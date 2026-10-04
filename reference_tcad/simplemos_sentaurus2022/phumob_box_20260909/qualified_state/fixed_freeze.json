@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "include/vela/equation/AssemblerUtils.h": "0c92dee5af5150bad821e8f6264706aeb4f67f4cf4a0a45a04acdf4959df137a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/input_freeze.json": "eb749e41693a1eb9fedd61c9494ddee0b0f8b9c54f7aa46c404954df6bca49a8",
+    "scripts/validate_simplemos_phumob_box_qualified_20260909.py": "d3d80aadec196429dccc034110e7cf0ccf83b6cca786c31601ba6f1ea7bc5b6b",
+    "src/equation/CoupledDDAssembler.cpp": "8620d655c44702626f7051e399f872a8f01cc10b6d7108b2ca4218f05f5b8799",
+    "src/physics/MobilityModel.cpp": "e5676e1cffafb833c430bab5656002fe9a05f24f17e6c6f19989bab2a933cebe"
+  }
+}

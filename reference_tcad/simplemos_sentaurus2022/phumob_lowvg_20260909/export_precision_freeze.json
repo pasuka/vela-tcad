@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_evidence.json": "b94a275ab23db0a6d2c6b6894f39325d595b0b82efb0919c59722e02b67311c6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_contract.json": "854b4dabbd84f186d45a85b7ebd1e21f3f55cb3ed1c246976fcb62b9de63fa6c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/export_evidence.json": "9352da1005d6a6d8995a1faa070abe3af6a36605ca259ebf5df0131051f7edc0",
+    "scripts/analyze_simplemos_phumob_native_cells_20260909.py": "b52730f63ed284abfa97c6e37f2e9f7dab6ab8da06e0c7e897f3575326b2c714",
+    "scripts/audit_simplemos_phumob_lowvg_export_precision_20260909.py": "ff26d26480c56e8004b41cb75de1dc81f998174a288f02c5f8f7acd3653a98a8"
+  }
+}

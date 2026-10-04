@@ -1,0 +1,10 @@
+{
+  "checks": 144,
+  "qualified": 144,
+  "max_error": 9.455892798391764e-15,
+  "singular_F0_cases": 3,
+  "supersedes": "v1 zero-field derivative was incorrectly set to zero at electron 250 K, where beta<1 and the right derivative is negative infinity. v1 preserved; no native or production use.",
+  "scope": "Standalone alpha=0 Canali formula and partials, original default Si parameters. No native ABI/build/identity qualification, no production changes, no HFS simulation.",
+  "sample_scope": "Observer keeps last cell-context call per vertex. Final-state identity and cell matching are required; missing or ambiguous samples are not filled.",
+  "all_qualified": true
+}

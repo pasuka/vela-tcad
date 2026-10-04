@@ -1,0 +1,15 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M77 post-main combined electron-hole-dopant Poisson charge volume",
+  "status": "accepted",
+  "classification": "combined_poisson_volume_post_main_not_material",
+  "report": "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_combined_poisson_charge_volume_post_main_report.json",
+  "document": "docs/validation/simplemos_m77_combined_poisson_charge_volume_post_main_2026-09-05.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_case_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_curve_response_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_charge_volume_decomposition_ledger.csv"
+  ],
+  "manifest": "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume_post_main/m77_execution_manifest.json"
+}

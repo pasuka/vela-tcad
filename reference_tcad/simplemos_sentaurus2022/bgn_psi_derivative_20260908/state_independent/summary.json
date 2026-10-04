@@ -1,0 +1,12 @@
+{
+  "points": 24,
+  "comparison_qualified": 24,
+  "attempts": 48,
+  "failed_attempts": 0,
+  "jvp_block_checks": 1008,
+  "jvp_gated_checks": 392,
+  "jvp_gated_failures": 0,
+  "jvp_gated_max_relative": 2.9162888124938513e-08,
+  "max_Id_change_from_pre_repair_relative": 6.706102340103826e-11,
+  "numerical_repair_gate_passed": true
+}

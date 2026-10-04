@@ -1,0 +1,257 @@
+{
+  "schema": "vela.simplemos.engineering-contract.v1",
+  "scope": {
+    "devices": [
+      "n17",
+      "n18",
+      "n19",
+      "n20",
+      "n21",
+      "n22",
+      "n23",
+      "n24"
+    ],
+    "vd_V": [
+      0.05,
+      1.0
+    ],
+    "vg_V": [
+      0.0,
+      0.05,
+      0.1,
+      0.15000000000000002,
+      0.2,
+      0.25,
+      0.30000000000000004,
+      0.35000000000000003,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6000000000000001,
+      0.65,
+      0.7000000000000001,
+      0.75,
+      0.8,
+      0.8500000000000001,
+      0.9,
+      0.9500000000000001,
+      1.0,
+      1.05,
+      1.1,
+      1.1500000000000001,
+      1.2000000000000002,
+      1.25,
+      1.3,
+      1.35,
+      1.4000000000000001,
+      1.4500000000000002,
+      1.5,
+      1.55,
+      1.6,
+      1.6500000000000001,
+      1.7000000000000002,
+      1.75,
+      1.8,
+      1.85,
+      1.9000000000000001,
+      1.9500000000000002,
+      2.0,
+      2.0500000000000003,
+      2.1,
+      2.15,
+      2.2,
+      2.25,
+      2.3000000000000003,
+      2.35,
+      2.4000000000000004,
+      2.45,
+      2.5
+    ],
+    "temperature_K": 300
+  },
+  "engineering_reference": {
+    "name": "M60",
+    "algorithm": "default",
+    "Digits": 8,
+    "ErrRef_e_cm3": 100,
+    "ErrRef_h_cm3": 100,
+    "RhsMin_default": 1e-05,
+    "precision": "binary64",
+    "current_error_percent": 2
+  },
+  "calibration_reference": {
+    "name": "EP128",
+    "Digits": 15,
+    "RhsMin": 1e-15,
+    "precision": "double-double",
+    "full_matrix": false
+  },
+  "numerical_gates": {
+    "carrier_row_ratio": 1e-06,
+    "kcl_over_Id": 1e-08,
+    "port_relative": 1e-08
+  },
+  "dual_gates": {
+    "potential_max_V": 1e-06,
+    "density_relative": 0.0001,
+    "Id_relative": 1e-06
+  },
+  "native_fields": {
+    "mode": "report_only",
+    "new_thresholds_frozen": false
+  },
+  "unsupported_scope": "No global defaults; no additional temperatures, quantum, avalanche, Fermi or arbitrary mesh qualification",
+  "frozen_input_hashes": {
+    "contract.json": "18438137eaf3768e5a2c8afea9ce418d61fc674c59cd6e727b2c4e0bf56145f0",
+    "materials.json": "2e6e1371438e818d6c6fcc9a30964aa5bb9007040719beb6fa9f9c88364d5ede",
+    "n17/doping.csv": "affd9d2c168730d41024d64376c58c892c23c9b580d91ea3dcb0c1b24a3c46f7",
+    "n17/geometry.json": "66d63d3d2c61d74c88f410eb5bfb25faf0e92d55caf9f16fd2c7e03f6ff0b209",
+    "n17/mesh.json": "1d7d33f91a8890db013e8d163e94c3c5e76687529a8adf3690952e2217eb4271",
+    "n17/n17_vd_0p05_reference.csv": "4ce4a5e9f75dabc567a5da6e71ec831a9518b687771203cd6ea1dbdac82c05d7",
+    "n17/n17_vd_1_reference.csv": "72d221291535de98e5bc31a740ccd45bc66b652ca2dc99490ac59f50ae98fd4b",
+    "n17/template.json": "4b076fa1fb33c6bd28192f22b4c162479749d939b3b326dfb183efbc85de0e38",
+    "n18/doping.csv": "6768bd231dfcfdccf9ae69972270aa6df0f97672dae155c625d57094bd9db560",
+    "n18/geometry.json": "66d63d3d2c61d74c88f410eb5bfb25faf0e92d55caf9f16fd2c7e03f6ff0b209",
+    "n18/mesh.json": "1d7d33f91a8890db013e8d163e94c3c5e76687529a8adf3690952e2217eb4271",
+    "n18/n18_vd_0p05_reference.csv": "b4f202c5c9bfb7beb549b7fb0c35fbd7a24509cc4ce66884f637f84b4fccb2e0",
+    "n18/n18_vd_1_reference.csv": "b8ec54eab312e712d596eed882fb328468c6e0945aa8e57ef968d640141bc7f3",
+    "n18/template.json": "e8e00d226741db2e3b08ec88d7b1378c905b0ec415e18d78288c52d7aa9a26f6",
+    "n19/doping.csv": "b6b41fa3f519c5ed4b645f1e9430cd1f86ec2093334e93054d9a881f4f4332c7",
+    "n19/geometry.json": "0d6992e04a9be84625418885a1ae15820c71880cf840568e4a8e399b0be8c5e8",
+    "n19/mesh.json": "be50eb40a52bb13e049eaf1b8ddd12f706e45175415974484aad734dca069ff4",
+    "n19/n19_vd_0p05_reference.csv": "6b6aff229df60361635478c84b2290d12b6fc67eb4494ff79d81f0e875ccb50f",
+    "n19/n19_vd_1_reference.csv": "f24e248f7fe9e19abfac0f5854bf6121897aa9a991cf71415cb75d9943c5b410",
+    "n19/template.json": "e9a9ac992b7ab70dee94c449c8b28dad17c43e6eb5dfd91a78a69ae2b0c7809f",
+    "n20/doping.csv": "0adc39c81cbf5c7ec597a5b9babcde8ce4377597b671b680c0a1977716ff1795",
+    "n20/geometry.json": "0d6992e04a9be84625418885a1ae15820c71880cf840568e4a8e399b0be8c5e8",
+    "n20/mesh.json": "be50eb40a52bb13e049eaf1b8ddd12f706e45175415974484aad734dca069ff4",
+    "n20/n20_vd_0p05_reference.csv": "2c60434ad358f698f78b91bfb1eae457fdbe6fe4c9bb54a11e47ba31664bcf83",
+    "n20/n20_vd_1_reference.csv": "24d96354b1f05ba80808d2a4f8d2769e55b43a196e306a4a77ed57c0a2c424ca",
+    "n20/template.json": "de23a23c95449a3922ef07419dec4ff9517ff21c7701e894e3501916aedc7421",
+    "n21/doping.csv": "5f6b43ddc6c5783fad3f2039b6a07c3d6fee2ae816cdacac22a14a9656c812b2",
+    "n21/geometry.json": "099f7101c486052d2538fdebd82763473bd16341cf4d8cf5f81ed662602a7c8f",
+    "n21/mesh.json": "da684c83b5da1aa6daf846b6a0a6c008e53e5dc29eba8eb0379227192e233cd1",
+    "n21/n21_vd_0p05_reference.csv": "a12aac8596f809fead27c2492806f498e534c37b860d0316e8cbe59e883e1de5",
+    "n21/n21_vd_1_reference.csv": "6419de2da8e2f4419ec62e22e0ac210eb29b83678f840baa683d138276c11d34",
+    "n21/template.json": "40425c78f94a1f047b0446f44ddb7d6f307677c7896e63bb4b8661f3c14548d8",
+    "n22/doping.csv": "6f29ac5a3772bba3d7b94345de2af53e398afc96ce5fbd88c1c724273641a51e",
+    "n22/geometry.json": "099f7101c486052d2538fdebd82763473bd16341cf4d8cf5f81ed662602a7c8f",
+    "n22/mesh.json": "da684c83b5da1aa6daf846b6a0a6c008e53e5dc29eba8eb0379227192e233cd1",
+    "n22/n22_vd_0p05_reference.csv": "ea0a663c84eb8ef9b34bfddda2e37c5f43e12e1e0df029114291fba627660eea",
+    "n22/n22_vd_1_reference.csv": "7f4308f03c5c9e1653af43b2f1ff749404cce125e3418dd15ce6db30ee19a8cf",
+    "n22/template.json": "b8600dfb1cf7e49037a1b9d4b0fdc6e86bbfa3be575119688f640d2df5efa84f",
+    "n23/doping.csv": "e1afbfb11018166065a4917149541c55be835aa0fe23219432c58857a78dcd6a",
+    "n23/geometry.json": "c8e6b598f68a0c2942c4dab959da1633861da7bc04e55b1aac5740f71579b68e",
+    "n23/mesh.json": "91a068dab450d03b6587762b257e66b7644e7f2704ca108da36f3a4b70e5c85f",
+    "n23/n23_vd_0p05_reference.csv": "76fd1d5f668f299ebd21a71126e8ad4f0d1a80f38140342360194a1efe181f04",
+    "n23/n23_vd_1_reference.csv": "bbe4d69cab6dec029be98846c2077a49f743dcdf49c8bfceb008f6db333657db",
+    "n23/template.json": "b0ce9f5418e55f09ac45b2f23f98a4ad495b87e4707a05ea0a08d3ad10f909af",
+    "n24/doping.csv": "17256d286585c5c2b35ab5323b9d914a645dabc871202c03474f4559d7cccba9",
+    "n24/geometry.json": "c8e6b598f68a0c2942c4dab959da1633861da7bc04e55b1aac5740f71579b68e",
+    "n24/mesh.json": "91a068dab450d03b6587762b257e66b7644e7f2704ca108da36f3a4b70e5c85f",
+    "n24/n24_vd_0p05_reference.csv": "b9e43436540f6d7fc4986c03e2cdf0354b9078ebdee879975c0cea117f44a8c4",
+    "n24/n24_vd_1_reference.csv": "52e959c17bb7b762230959770c4c59931b9a69be93b94daab22f83ed688b17b4",
+    "n24/template.json": "0e23883b6e1c979ba22ae0363e2afd281b1261f6f43504fa72bfeec918e1f7e7"
+  },
+  "profile": {
+    "solver": {
+      "method": "newton",
+      "max_iter": 200,
+      "reltol": 1e-07,
+      "abstol": 1e-12,
+      "damping_psi": 0.35,
+      "warm_start": true,
+      "quasi_fermi_update_limit_V": 0.025,
+      "srh_density_coupling": "sentaurus_default",
+      "quasi_fermi_reference": "contact_basin",
+      "continuity_row_scaling": {
+        "enabled": true,
+        "flux_fraction": 0.001,
+        "scale_floor": 1e-30,
+        "min_source_scale": 1e-18,
+        "min_weight": 1e-12,
+        "max_weight": 1000000000000.0
+      },
+      "mobility": {
+        "model": "phumob_field_lombardi",
+        "doping_concentration_basis": "total_impurity",
+        "edge_averaging": "element_box_phumob",
+        "surface": {
+          "discretization": "element_distance_gradient",
+          "acoustic_factor": 1.0,
+          "roughness_factor": 1.0
+        },
+        "high_field_driving_force": "quasi_fermi_gradient",
+        "high_field_gradient_discretization": "element_vertex_partial_layer",
+        "jacobian_field_derivatives": true
+      },
+      "recombination": [
+        "srh"
+      ],
+      "srh_doping_dependence": {
+        "enabled": true,
+        "concentration_basis": "total_impurity",
+        "temperature_dependence": false,
+        "reference_temperature_K": 300.0,
+        "electron_temperature_exponent": -1.5,
+        "hole_temperature_exponent": -1.5,
+        "electron": {
+          "tau_min_s": 0.0,
+          "tau_max_s": 1e-05,
+          "reference_doping_m3": 1e+16,
+          "gamma": 1.0
+        },
+        "hole": {
+          "tau_min_s": 0.0,
+          "tau_max_s": 3e-06,
+          "reference_doping_m3": 1e+16,
+          "gamma": 1.0
+        }
+      },
+      "bandgap_narrowing": {
+        "model": "old_slotboom",
+        "fermi_statistics_correction": false,
+        "equal_ni_flux_evaluation": "compensated_log_expm1"
+      },
+      "impact_ionization": {
+        "model": "none"
+      },
+      "carrier_row_convergence": {
+        "mode": "enforce",
+        "eps_row": 1e-06,
+        "scale_floor": 0.0,
+        "min_source_scale": 0.0,
+        "min_source_scale_fraction": 0.0,
+        "min_source_global_fraction": 0.0,
+        "min_carrier_density_m3": 1e-300,
+        "min_flux_scale_fraction": 0.0,
+        "min_flux_scale": 0.0,
+        "min_newton_max_iter": 200
+      },
+      "global_continuity_closure": {
+        "mode": "off",
+        "tolerance": 1e-06,
+        "source_floor": 1e-10
+      },
+      "diagnostics": true,
+      "linear_refinement_iterations": 4,
+      "region_resolved_interface_assembly": {
+        "poisson_charge_node_volume": "signed_transport",
+        "transport_edge_geometry": "element_box",
+        "srh_signed_transport_volume_fraction": 1.0
+      },
+      "poisson_residual_precision": "binary128",
+      "stable_merit_comparison": true,
+      "exact_dirichlet_updates": true,
+      "split_dd_state": true
+    },
+    "scaling": {
+      "mode": "unit_scaling"
+    },
+    "mesh_geometry": {
+      "poisson_permittivity_policy": "cell_material",
+      "cell_box_policy": "delaunay_transfer"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "vela.simplemos.sdevice.m44_qf_coordinate_consistency_report.v1",
+  "status": "complete",
+  "execution": {
+    "frozen_state_replay": true,
+    "state_count": 4,
+    "default_physics_model_changed": false,
+    "default_hfs_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "new_sentaurus_execution": false
+  },
+  "findings": {
+    "maximum_cut_vs_terminal_functional_gap_dex": 0.0,
+    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 3.552713678800501e-15,
+    "m43_baseline_gap_dex": 0.0013470765785434935,
+    "minimum_gap_reduction_factor": 379168348573.0,
+    "maximum_contact_edge_current_relative_difference": 5.522854134824882e-15,
+    "maximum_qf_relative_coordinate_difference_V": 0.0,
+    "maximum_mobility_drive_relative_difference": 0.0,
+    "maximum_mobility_relative_difference": 0.0,
+    "mobility_reconstruction_was_root_cause": false,
+    "reference_increment_packing_was_root_cause": true
+  },
+  "acceptance": {
+    "state_count": true,
+    "both_numerical_modes": true,
+    "cut_matches_terminal_functional": true,
+    "terminal_functional_matches_contact_extractor": true,
+    "contact_edges_match": true,
+    "qf_relative_coordinates_match": true,
+    "mobility_drives_match": true,
+    "mobilities_match": true,
+    "all_contact_cuts_nonempty": true,
+    "all_checks_pass": true
+  },
+  "artifacts": {
+    "matrix": "reference_tcad/simplemos_sentaurus2022/qf_coordinate_consistency/m44_qf_coordinate_consistency_matrix.csv",
+    "edge_matrix": "reference_tcad/simplemos_sentaurus2022/qf_coordinate_consistency/m44_qf_coordinate_edge_matrix.csv"
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_hfs_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "preserve_contact_node_reference_increment": true,
+    "subtract_references_before_adding_increment": true,
+    "new_sentaurus_execution": false
+  }
+}

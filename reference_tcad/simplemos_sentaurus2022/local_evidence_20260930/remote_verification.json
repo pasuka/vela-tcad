@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "hostname": "tcad",
+  "verified_at_utc": "2026-09-30T12:30:09.224422Z",
+  "archive_path": "/root/vela-validation-archive/simplemos/2026-09-30/88959a459ac9a93e62e6667787ddca92d8c26e6db1b47434a1dbf420e0031d79/simplemos_historical_evidence_20260930.zip",
+  "archive_sha256": "88959a459ac9a93e62e6667787ddca92d8c26e6db1b47434a1dbf420e0031d79",
+  "archive_bytes": 81863221,
+  "manifest_sha256": "e0e02a7a052db7607a3597596636451d8ef18a826f9fb04197abfdcc1591f165",
+  "members_verified": 1946,
+  "uncompressed_bytes": 366968472,
+  "method": "Full archive SHA256, exact member coverage, all member sizes and SHA256; no extraction or solver execution"
+}

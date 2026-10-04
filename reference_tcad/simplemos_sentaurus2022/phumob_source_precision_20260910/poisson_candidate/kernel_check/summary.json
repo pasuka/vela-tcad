@@ -1,0 +1,10 @@
+{
+  "checks": 47392,
+  "passed": true,
+  "max_scaled_error": {
+    "kernel": 9.364357560392515e-35,
+    "packed": 2.3050579279645125e-33
+  },
+  "gate": 1e-25,
+  "reference": "Independent 100-digit Decimal reconstruction at 16 frozen actual states, all Poisson nodes including unconstrained boundary rows, two modes."
+}
