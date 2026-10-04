@@ -89,11 +89,11 @@ def distribution_platform():
     if os.name == "nt":
         return "win64"
     info = platform.freedesktop_os_release()
-    if info.get("ID") != "ubuntu" or info.get("VERSION_ID") != "24.04":
-        raise ValueError("Ubuntu package must be built on Ubuntu 24.04 (or an isolated 24.04 root)")
+    if info.get("ID") != "ubuntu" or info.get("VERSION_ID") != "26.04":
+        raise ValueError("Ubuntu package must be built on Ubuntu 26.04")
     if platform.machine() != "x86_64":
         raise ValueError("Ubuntu package requires x86_64")
-    return "ubuntu24.04-x86_64"
+    return "ubuntu26.04-x86_64"
 
 def audit(stage):
     forbidden = {"reference_staging", "reference_tcad", ".git"}

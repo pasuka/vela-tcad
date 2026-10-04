@@ -20,15 +20,15 @@ their corresponding offline paths. The official Windows input is
 [CPython 3.12.10 embeddable amd64](https://www.python.org/downloads/release/python-31210/).
 The SHA-256 is checked before installation or extraction starts.
 
-For Ubuntu, build **inside Ubuntu 24.04 x86_64**, using a separate Ninja build
+For Ubuntu, build **inside Ubuntu 26.04 x86_64**, using a separate Ninja build
 directory and installed C++ dependencies (including Catch2 3 and HDF5).
 The packager rejects a different distribution/version instead of labeling its
-binaries as an Ubuntu 24.04 package.
+binaries as an Ubuntu 26.04 package.
 
 ```bash
-cmake -S . -B build-linux24 -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-linux24 --target vela vela_example_runner sentaurus_import --parallel 4
-python3 scripts/package_vela.py --build-dir build-linux24 --python-archive build-release/wp11/downloads/cpython-3.12.12-linux.tar.gz --python-sha256 6249bea270cdd4218a258edb3a1c5602dd9dc0f785b9d29963676276a3838e60 --python-license-dir build-release/wp11/licenses/python-runtime --output-dir build-release/wp11/packages
+cmake -S . -B build-linux26 -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-linux26 --target vela vela_example_runner sentaurus_import --parallel 4
+python3 scripts/package_vela.py --build-dir build-linux26 --python-archive build-release/wp11/downloads/cpython-3.12.12-linux.tar.gz --python-sha256 6249bea270cdd4218a258edb3a1c5602dd9dc0f785b9d29963676276a3838e60 --python-license-dir build-release/wp11/licenses/python-runtime --license-root build-release/wp11/licenses --output-dir build-release/wp11/packages
 ```
 
 The retained Linux input is
@@ -107,8 +107,8 @@ ctest --preset windows-ucrt64-release -R '^sdevice_(package_smoke|concurrency)$'
 ```
 
 ```bash
-export VELA_PACKAGE_ARCHIVE="$PWD/build-release/wp11/packages/vela-0.1.0-ubuntu24.04-x86_64.tar.gz"
-ctest --test-dir build-linux24 --output-on-failure -R '^sdevice_(package_smoke|concurrency)$' -V
+export VELA_PACKAGE_ARCHIVE="$PWD/build-release/wp11/packages/vela-0.1.0-ubuntu26.04-x86_64.tar.gz"
+ctest --test-dir build-linux26 --output-on-failure -R '^sdevice_(package_smoke|concurrency)$' -V
 ```
 
 The smoke unpacks into a fresh directory containing spaces and Chinese

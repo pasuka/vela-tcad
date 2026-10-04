@@ -6,8 +6,8 @@ evidence.
 
 ## Current References
 
-- [SDevice WP11 packaging and concurrency, 2026-10-04](validation/sdevice_wp11_packaging_concurrency_2026-10-04.md):
-  Windows and Ubuntu 24.04 relocatable packages, offline Python/license provenance,
+- [SDevice WP11 Ubuntu 26.04 migration, 2026-10-04](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md):
+  Windows and Ubuntu 26.04 relocatable packages, retired previous Linux artifacts, offline Python/license provenance,
   both-platform frontend regression and exact Linux concurrency/thread-cap verification.
 - [SDevice packaging guide](sdevice_packaging.md): offline inputs, runtime layout,
   manifests, licenses and extracted-package/concurrency checks.
