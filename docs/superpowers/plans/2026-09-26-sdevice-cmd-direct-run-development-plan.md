@@ -2,7 +2,7 @@
 
 日期：2026-09-26
 
-状态：方案 v2.5（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.6（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -10,6 +10,9 @@
 规则与 schema 校验说明，并配套交接文档
 [sdevice_cmd_frontend_handoff_2026-09-30.md](../../validation/sdevice_cmd_frontend_handoff_2026-09-30.md)）；
 开发工作树 `.worktrees/sdevice-cmd-frontend`（分支 `codex/sdevice-cmd-frontend`，领先 `main` 16+ 个提交，未推送）
+
+v2.6 平台变更（2026-10-04，用户决定）：Linux 仅使用 Ubuntu 26.04 x86_64，覆盖早期平台选择；
+同步第 13 节、决定 11、DoD 与 WP11，删除旧 Linux 环境/交付物并在新平台重新验收。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -68,7 +71,7 @@ SDevice `.cmd` 解析、物理模型白名单分类、执行 IR、deck 生成、
 | 8 | 结果须与 Sentaurus 在阈值内一致 | 第 8 节：阈值来自已验证证据，按案例冻结，不因通过测试而放宽 |
 | 9 | 手册位于本地目录（T-2022.03 全套 PDF） | 已核对命令行选项（附录 D）、文件命名（附录 C）、`Math`/`Electrode`/`File` 表（附录 G）、数据名（附录 F）、Quasistationary 与收敛准则（第 4/6 章）；结论写入第 4–6 节 |
 | 10 | 验收产物部分在仓库、部分在 Sentaurus 虚拟机，体积大不宜入库；需要核对环节与存放方案 | 第 12 节：清单+哈希入库、原始产物放外部存储、`reference_staging/` 本地暂存、核对脚本作为验收前置门 |
-| 11 | 平台：Windows 与 Ubuntu 24.04；Python ≥ 3.10；`vela` 可执行 + `bin/` 依赖与子程序；Linux 上多个 sdevice 脚本多进程并发（同目录或不同目录） | 第 13 节：部署布局、启动器、并发安全约束 |
+| 11 | 平台：Windows 与 Ubuntu 26.04；Python ≥ 3.10；`vela` 可执行 + `bin/` 依赖与子程序；Linux 上多个 sdevice 脚本多进程并发（同目录或不同目录） | 第 13 节：部署布局、启动器、并发安全约束 |
 | 12 | `.vtu` 字段名与 Sentaurus TDR 数据集名一致 | 第 6.4 节与附录 B：输出名 = 手册附录 F 数据名；`Plot{}` 中的常见别名只作输入识别 |
 | 13 | `Trap(s)` 改为 fail-closed；`CurrentPlot{Field((x y))}` 忽略并在 log 以 warning 注明 | 第 4.3/4.4 节 |
 | 14 | 退出码按 0/非 0，非 0 给出细分码 | 第 5.2 节表按此冻结（0、1–7） |
@@ -956,10 +959,11 @@ flowchart LR
 
 #### WP11 打包与并发验证
 
-- 状态：**已完成**（2026-10-04）。Windows/Ubuntu 24.04 包、离线冒烟与 Linux 完整并发矩阵通过，
-  证据见 [WP11 验收记录](../../validation/sdevice_wp11_packaging_concurrency_2026-10-04.md)。依赖 WP5 的 `build_vela_sdevice_pyz.py` 与 WP7 启动器。
+- 状态：**已完成**（2026-10-04）。Windows/Ubuntu 26.04 包、离线冒烟与 Linux 完整并发矩阵通过，
+  平台按用户最新决定改为仅使用 Ubuntu 26.04，旧 Linux 环境/交付物删除；
+  证据见 [WP11 平台迁移验收](../../validation/sdevice_wp11_ubuntu26_04_2026-10-04.md)。依赖 WP5 的 `build_vela_sdevice_pyz.py` 与 WP7 启动器。
 - 背景：第 13 节（用户第 2 轮决定）：交付物为 `vela(.exe)` + `bin/`（子程序、运行库、随包 CPython 3.12），目标平台 Windows 与
-  Ubuntu 24.04，Linux 多进程并发默认单线程；开工前仓库没有 `install()` 规则、打包脚本或第三方声明生成。
+  Ubuntu 26.04，Linux 多进程并发默认单线程；开工前仓库没有 `install()` 规则、打包脚本或第三方声明生成。
 - 目标：第 13 节目录树、随包 Python、干净机器冒烟、并发矩阵。
 - 独占文件：`scripts/package_vela.py`（新）、`CMakeLists.txt` 的 `install()` 规则块、
   `THIRD_PARTY_NOTICES` 生成脚本、`tests/regression/test_sdevice_concurrency.py`、`tests/regression/test_sdevice_package_smoke.py`。
@@ -974,7 +978,7 @@ flowchart LR
      写出 `models.par` 且能被同一 deck 使用；包清单中不含 `reference_staging/` 或任何 Synopsys 产物。
   4. 并发矩阵（13.3）：同目录不同 cmd 并行；同一 cmd 重复启动（第二个退出 7）；`--threads` 与 `NumberOfThreads` 组合；Linux 全跑，
      Windows 只跑锁冲突并明示跳过原因。
-- 验收：（1）Windows zip 与 Ubuntu 24.04 tar 在无系统 Python 的环境解包后 `vela device pn2d_iv_des` 退出 0；（2）13.3 并发矩阵通过；
+- 验收：（1）Windows zip 与 Ubuntu 26.04 tar 在无系统 Python 的环境解包后 `vela device pn2d_iv_des` 退出 0；（2）13.3 并发矩阵通过；
   （3）包内无 `reference_staging`/专有产物；（4）`vela device -P` 写出 `models.par` 且能被同一 deck 使用。
 
 #### WP12 文档与收尾
@@ -1066,7 +1070,7 @@ flowchart LR
 
 ### 10.3 阶段与 WP 的对应
 
-| 阶段 | WP | 状态（2026-10-02） | 可并行 |
+| 阶段 | WP | 状态（2026-10-04） | 可并行 |
 | --- | --- | --- | --- |
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
@@ -1150,7 +1154,7 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 
 下列全部成立才算阶段 1 完成；任一项不成立则不得对外宣称“无缝读取 sdevice cmd”：
 
-1. `vela device pn2d_{0v,iv,bv}_sdevice` 在 Windows 与 Ubuntu 24.04 的打包目录中（无系统 Python）
+1. `vela device pn2d_{0v,iv,bv}_sdevice` 在 Windows 与 Ubuntu 26.04 的打包目录中（无系统 Python）
    端到端退出 0，产出 `.log/.plt/.vtu/.pvd`，且曲线与场量比对通过各自契约阈值。
 2. 第 8 节表中的 bvmethods（ABA、外接电阻、电流目标）与 schottky 案例至少完成“解析+校验+生成
    deck”（`--check` 退出 0）；它们的数值验收按契约单独登记（已知差异可进账本）。
@@ -1299,7 +1303,7 @@ schema 文件 `schemas/vela.reference_artifact_manifest.v1.schema.json`。
 
 ## 13. 部署布局与并发约束
 
-### 13.1 目录树（Windows 与 Ubuntu 24.04 同构）
+### 13.1 目录树（Windows 与 Ubuntu 26.04 同构）
 
 ```text
 vela/                          # 解包根目录，可任意放置
@@ -1320,7 +1324,7 @@ vela/                          # 解包根目录，可任意放置
   PACKAGE_MANIFEST.json                  # 文件哈希、源码与 Python 输入身份
 ```
 
-- Linux：二进制以可继承的 RPATH `$ORIGIN/../lib` 链接；在 Ubuntu 24.04 上构建；
+- Linux：二进制以可继承的 RPATH `$ORIGIN/../lib` 链接；在 Ubuntu 26.04 上构建；
   不依赖系统 HDF5 包。Windows：UCRT64 运行库与 HDF5 DLL 随 `bin/`；启动器在调用子
   程序前把 `bin/` 前置到 `PATH`。
 - **Python 随 `bin/` 携带**（决定 16）：固定 CPython 3.12（维护到 2028），编排器只用标准库。
@@ -1330,7 +1334,7 @@ vela/                          # 解包根目录，可任意放置
     Python 的环境变量干扰（官方 embeddable 包默认忽略 `PYTHONPATH`/用户 site）。
   - Linux：`python-build-standalone`（astral-sh，原 indygreg）的
     `cpython-3.12.x-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz`（约 30–40 MB，
-    可重定位，面向旧 glibc 构建，Ubuntu 24.04 可用）放 `bin/python/`，启动时设
+    可重定位，面向旧 glibc 构建，Ubuntu 26.04 可用）放 `bin/python/`，启动时设
     `PYTHONNOUSERSITE=1`、清空 `PYTHONPATH`/`PYTHONHOME`。
   - 启动器查找顺序：`VELA_PYTHON`（开发者覆盖）→ `bin/python/`（正式部署）→ PATH 中
     `python3`/`python`（仅作应急，需 ≥ 3.10 并在 log 警告）。
@@ -1338,7 +1342,7 @@ vela/                          # 解包根目录，可任意放置
     Vela 发版升级。
 - 打包：CMake `install()` + `scripts/package_vela.py`（接受离线 Python 归档及许可文本、校验输入哈希、收集
   依赖与声明、使用构建生成的 zipapp、写 VERSION/清单。产出 `vela-<ver>-win64.zip` /
-  `vela-<ver>-ubuntu24.04-x86_64.tar.gz`）。
+  `vela-<ver>-ubuntu26.04-x86_64.tar.gz`）。
 
 ### 13.2 并发安全约束（Linux 多进程，同目录或不同目录）
 

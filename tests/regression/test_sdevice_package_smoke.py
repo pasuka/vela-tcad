@@ -12,16 +12,33 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
-from package_vela import safe_member, unpack_python, audit, package, tar_permissions
+from package_vela import safe_member, unpack_python, audit, package, tar_permissions, distribution_platform
 from build_vela_sdevice_pyz import build_archive
 from tests.regression.sdevice_package_support import synthetic_cmd, isolated_environment, run
 from vela_sdevice.plt import read_plt_document
 
 class OfflinePackageTests(unittest.TestCase):
+    def test_linux_target_requires_ubuntu_26_04_x86_64(self):
+        with patch("package_vela.os.name", "posix"), patch("package_vela.platform.machine", return_value="x86_64"):
+            for distro, version, accepted in (("ubuntu", "26.04", True), ("ubuntu", "24.04", False),
+                                             ("debian", "26.04", False)):
+                with self.subTest(distro=distro, version=version), patch(
+                    "package_vela.platform.freedesktop_os_release", return_value={"ID": distro, "VERSION_ID": version}
+                ):
+                    if accepted:
+                        self.assertEqual(distribution_platform(), "ubuntu26.04-x86_64")
+                        with patch("package_vela.platform.machine", return_value="aarch64"):
+                            with self.assertRaisesRegex(ValueError, "x86_64"):
+                                distribution_platform()
+                    else:
+                        with self.assertRaisesRegex(ValueError, "26.04"):
+                            distribution_platform()
+
     def test_cross_host_frontend_records_explicit_source_commit(self):
         with tempfile.TemporaryDirectory() as temp:
             revision = "0123456789abcdef" * 2 + "01234567"
@@ -72,7 +89,7 @@ class OfflinePackageTests(unittest.TestCase):
                         tar.addfile(info)
                 with self.assertRaises(ValueError):
                     unpack_python(archive, root / ("dest_" + format),
-                                  "win64" if format == "zip" else "ubuntu24.04-x86_64")
+                                  "win64" if format == "zip" else "ubuntu26.04-x86_64")
             self.assertFalse((root / "escape").exists())
 
     def test_reference_artifacts_are_rejected(self):
@@ -108,6 +125,7 @@ class ExtractedPackageSmoke(unittest.TestCase):
 
     def test_archive_allowlist_hashes_and_notices(self):
         info = json.loads((self.package / "PACKAGE_MANIFEST.json").read_text(encoding="utf-8"))
+        self.assertEqual(info["platform"], "win64" if os.name == "nt" else "ubuntu26.04-x86_64")
         self.assertIn("python_sha256", info)
         recorded = {entry["path"]: entry for entry in info["files"]}
         present = {p.relative_to(self.package).as_posix() for p in self.package.rglob("*") if p.is_file()}

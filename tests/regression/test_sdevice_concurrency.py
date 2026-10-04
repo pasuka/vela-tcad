@@ -56,7 +56,9 @@ class ConcurrentDeviceTests(unittest.TestCase):
             while any(p.poll() is None for p in processes):
                 self.assertLess(time.monotonic(), deadline, "Concurrent solver timed out")
                 if os.name != "nt":
-                    table = subprocess.check_output(["/bin/ps", "-eo", "ppid=,nlwp=,args="], text=True, env=self.env)
+                    # A long worktree path exceeds COLUMNS; truncated argv
+                    # would hide the runner basename and invalidate sampling.
+                    table = subprocess.check_output(["/bin/ps", "-ww", "-eo", "ppid=,nlwp=,args="], text=True, env=self.env)
                     parents = {p.pid for p in processes}
                     for line in table.splitlines():
                         fields = line.split(None, 2)
