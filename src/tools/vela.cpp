@@ -345,6 +345,8 @@ void prepareChildEnvironment(const Layout& layout, const Interpreter& interprete
 {
     setEnv(VELA_T("PYTHONNOUSERSITE"), VELA_T("1"));
     if (interpreter.bundled) {
+        // Keep a relocated/read-only package immutable across concurrent runs.
+        setEnv(VELA_T("PYTHONDONTWRITEBYTECODE"), VELA_T("1"));
         unsetEnv(VELA_T("PYTHONPATH"));
         unsetEnv(VELA_T("PYTHONHOME"));
     }

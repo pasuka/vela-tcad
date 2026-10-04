@@ -344,8 +344,11 @@ class DeviceRun:
                     pass
         finally:
             stop.set()
-            writer.join(timeout=5)
-            reader.join(timeout=5)
+            # A slow filesystem can keep update() busy beyond five seconds.
+            # Final publication must never overlap this publisher's mutation
+            # of PLT/PVD temporary files and its accepted-record bookkeeping.
+            writer.join()
+            reader.join()
             self.proc.stdout.close()
         while not lines.empty():
             line = lines.get_nowait(); captured.append(line); self.log("RUNNER", line)

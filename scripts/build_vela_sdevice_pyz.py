@@ -16,7 +16,9 @@ MODULES = ("sentaurus_parameter_ir.py", "sentaurus_parameter_map.py",
            "compare_sentaurus_tdr_tdx.py", "convert_tcad_export.py")
 
 
-def build_archive(target: Path) -> Path:
+def build_archive(target: Path, source_revision: str | None = None) -> Path:
+    if source_revision and not re.fullmatch(r"[0-9a-fA-F]{40}", source_revision):
+        raise ValueError("source_revision must be a verified full Git commit hash")
     target = Path(target).resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=target.parent, prefix="sdevice_pack_") as temp:
@@ -30,10 +32,12 @@ def build_archive(target: Path) -> Path:
             shutil.copytree(REPO / name, assets / name)
         version = re.search(r"project\([^\s)]+\s+VERSION\s+(\S+)",
                             (REPO / "CMakeLists.txt").read_text()).group(1)
-        revision = subprocess.run(["git", "-c", "core.fsmonitor=false", "rev-parse", "HEAD"],
-                                  cwd=REPO, capture_output=True, text=True)
+        if not source_revision:
+            revision = subprocess.run(["git", "-c", "core.fsmonitor=false", "rev-parse", "HEAD"],
+                                      cwd=REPO, capture_output=True, text=True)
+            source_revision = revision.stdout.strip() if revision.returncode == 0 else "unknown"
         (assets / "version.json").write_text(json.dumps({"version": version,
-            "commit": revision.stdout.strip() if revision.returncode == 0 else "unknown"}), encoding="utf-8")
+            "commit": source_revision}), encoding="utf-8")
         # zipapp's generated entry point discards main()'s return value.
         # Preserve numbered CLI exit codes for the native launcher.
         (root / "__main__.py").write_text(
@@ -45,8 +49,10 @@ def build_archive(target: Path) -> Path:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=REPO / "build/bin/vela_sdevice.pyz")
+    parser.add_argument("--source-revision", default=None,
+                        help="Verified full source commit when Git metadata is unavailable")
     args = parser.parse_args()
-    print(build_archive(args.out))
+    print(build_archive(args.out, args.source_revision))
     return 0
 
 

@@ -20,8 +20,9 @@ import run_pn2d_same_mesh_sdevice_vector_export as dfise_writers  # noqa: E402
 
 SCHEMA = sv.load_schema(REPO / "schemas" / "vela.mesh_qualification.v1.schema.json")
 TMP_ROOT = REPO / "build" if (REPO / "build").is_dir() else None
-RUNNER_CANDIDATES = [REPO / "build" / "vela_example_runner.exe", Path(r"D:\code-repo\vela-tcad\build\vela_example_runner.exe"),
-                     REPO / "build" / "vela_example_runner"]
+RUNNER_SUFFIX = ".exe" if os.name == "nt" else ""
+RUNNER_CANDIDATES = [REPO / name / ("vela_example_runner" + RUNNER_SUFFIX)
+                     for name in ("build", "build-release")]
 
 # 3x2 node strip on [0,2]x[0,1] um: four right triangles, cathode on x=0, anode on x=2.
 NODES = {0: (0.0, 0.0), 1: (1.0, 0.0), 2: (2.0, 0.0), 3: (0.0, 1.0), 4: (1.0, 1.0), 5: (2.0, 1.0)}
@@ -159,6 +160,9 @@ def read_doping(path: Path) -> dict:
 
 
 def runner() -> Path | None:
+    override = os.environ.get("VELA_EXAMPLE_RUNNER")
+    if override:
+        return Path(override) if Path(override).is_file() else None
     for candidate in RUNNER_CANDIDATES:
         if candidate.is_file():
             return candidate
@@ -305,7 +309,9 @@ class DfiseImportTest(unittest.TestCase):
             "runtime_log": {"enabled": False},
         }
         (out / "smoke.json").write_text(json.dumps(deck, indent=2), encoding="utf-8")
-        env = {**os.environ, "Path": r"D:\msys64\ucrt64\bin;D:\msys64\usr\bin;" + os.environ.get("Path", "")}
+        env = dict(os.environ)
+        if os.name == "nt":
+            env["Path"] = r"D:\msys64\ucrt64\bin;D:\msys64\usr\bin;" + os.environ.get("Path", "")
         proc = subprocess.run([str(exe), "--config", "smoke.json"], cwd=str(out), capture_output=True, text=True, env=env)
         self.assertEqual(0, proc.returncode, proc.stdout[-2000:] + proc.stderr[-2000:])
         self.assertTrue((out / "poisson.vtk").is_file())
