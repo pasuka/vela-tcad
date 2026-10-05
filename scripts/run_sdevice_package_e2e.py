@@ -43,6 +43,13 @@ def runtime_environment():
     return env
 
 
+def controller_command(python, script, arguments):
+    # -I ignores PYTHONDONTWRITEBYTECODE, including during interpreter startup.
+    # -B must be explicit so invalid shipped caches cannot be rewritten.
+    bootstrap = 'import runpy,sys; sys.path.insert(0,sys.argv.pop(1)); script=sys.argv.pop(1); sys.argv[0]=script; runpy.run_path(script,run_name="__main__")'
+    return [str(python), '-I', '-B', '-c', bootstrap, str(script.parent), str(script), *arguments]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package-dir', type=Path, required=True, help='Unpacked vela directory')
@@ -61,16 +68,14 @@ def main(argv=None):
     if not all(path.is_file() for path in (launcher, importer, python)):
         raise ValueError('package runtime or TDR importer missing')
     script = REPO / 'scripts/sdevice_acceptance.py'
-    bootstrap = 'import runpy,sys; sys.path.insert(0,sys.argv.pop(1)); script=sys.argv.pop(1); sys.argv[0]=script; runpy.run_path(script,run_name="__main__")'
     summary = {'package_commit': manifest['commit'], 'platform': manifest['platform'],
                'package_manifest_sha256': sha(root / 'PACKAGE_MANIFEST.json'),
-               'controller_sha256': sha(script), 'package_python': str(python),
+               'controller_sha256': sha(script), 'package_e2e_tool_sha256': sha(__file__), 'package_python': str(python),
                'package_launcher': str(launcher), 'host_python_on_path': False, 'fresh_candidates': True, 'cases': []}
     for case in args.case:
-        command = [str(python), '-I', '-c', bootstrap, str(REPO / 'scripts'), str(script),
-                   '--case', case, '--reference-dir', str(args.reference_dir.resolve()),
+        command = controller_command(python, script, ['--case', case, '--reference-dir', str(args.reference_dir.resolve()),
                    '--output-dir', str(output / case), '--launcher', str(launcher),
-                   '--tdr-importer', str(importer), '--timeout-seconds', str(args.timeout_seconds)]
+                   '--tdr-importer', str(importer), '--timeout-seconds', str(args.timeout_seconds)])
         with (output / (case + '_controller.log')).open('w', encoding='utf-8') as log:
             done = subprocess.run(command, env=runtime_environment(), stdout=log, stderr=subprocess.STDOUT)
         reports = list((output / case).glob('*/acceptance_report.json'))
