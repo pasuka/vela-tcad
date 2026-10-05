@@ -7,7 +7,8 @@ evidence.
 ## Current References
 
 - [WP13 built-in Si/SiO2 alignment, 2026-10-05](validation/builtin_material_alignment_2026-10-05.md):
-  no-BGN 300 K defaults, dependency audit and explained regression baselines.
+  no-BGN 300 K defaults, dependency audit and explained regression baselines;
+  Windows 1026-case regression and Ubuntu 26.04 16-case affected-scope verification.
 
 - [SDevice workflow](sentaurus_sdevice_workflow.md): current supported subset,
   CLI/gates/messages, output units and executable neutral mesh/sidecar examples.
