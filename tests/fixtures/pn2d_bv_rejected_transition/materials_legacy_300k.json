@@ -1,0 +1,17 @@
+{
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 14638914958.767616,
+      "mun": 1350.0,
+      "mup": 480.0,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.05,
+      "Nc_m3": 2.8e+19,
+      "Nv_m3": 1.04e+19,
+      "temperature_K": 300.0
+    }
+  ],
+  "_comment": "WP13 frozen baseline: explicit pre-alignment defaults (9f9d2f5d) plus tests/fixtures/pn2d_bv_rejected_transition/materials.json; unit_scaling, 300 K. Generated; do not edit."
+}

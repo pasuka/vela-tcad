@@ -5915,7 +5915,8 @@ TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure tr
         {"simulation_type", "dc_sweep"},
         {"mesh_file", (fixture / "mesh.json").string()},
         {"node_doping_file", (fixture / "doping.csv").string()},
-        {"materials_file", (fixture / "materials.json").string()},
+        // Preserve the sealed parent's inherited pre-WP13 material scalars.
+        {"materials_file", (fixture / "materials_legacy_300k.json").string()},
         {"output_csv", outputPath.string()},
         {"scaling", {{"mode", "unit_scaling"}}},
         {"contacts", {

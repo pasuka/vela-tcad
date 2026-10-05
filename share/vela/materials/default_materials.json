@@ -1,0 +1,39 @@
+{
+  "schema": "vela.templates_ldmos.materials.v1",
+  "benchmark": "builtin:300K",
+  "revision": 1,
+  "unit_system": {
+    "concentration": "cm^-3",
+    "mobility": "cm^2/(V*s)",
+    "energy": "eV",
+    "temperature": "K",
+    "thermal_conductivity": "W/(m*K)",
+    "specific_heat": "J/(kg*K)",
+    "mass_density": "kg/m^3"
+  },
+  "materials": [
+    {
+      "name": "Si",
+      "role": "transport_semiconductor",
+      "eps_r": 11.7,
+      "bandgap_eV": 1.1241592307692307,
+      "electron_affinity_eV": 4.05,
+      "conduction_band_density_of_states_cm3": 2.8566791451911786e+19,
+      "valence_band_density_of_states_cm3": 3.104657033455896e+19,
+      "intrinsic_carrier_density_cm3": 10750176656.471613,
+      "temperature_K": 300.0,
+      "electron_mobility_cm2_per_V_s": 1417.0,
+      "hole_mobility_cm2_per_V_s": 470.5,
+      "provenance": "Silicon/Si from models.par (sha256 7399cbd4e3df) at 300 K; origins user_material; Epsilon/Bandgap/eDOSMass Formula 1/hDOSMass Formula 1/ConstantMobility; ni = sqrt(Nc*Nv)*exp(-(Eg(T)+dEg0)/(2kT)); Nc,v = 2(2 pi m kB T/h^2)^1.5; Formula 1 masses; no bandgap narrowing folded; CODATA 2018 constants"
+    },
+    {
+      "name": "SiO2",
+      "role": "dielectric",
+      "eps_r": 3.9,
+      "bandgap_eV": 9.0,
+      "electron_affinity_eV": 0.9,
+      "temperature_K": 300.0,
+      "provenance": "Oxide/SiO2 from models.par (sha256 7399cbd4e3df) at 300 K; origins user_material; dielectric: Epsilon/Bandgap"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "_comment": "Ablation A stage B: continue the electron-mobility-aligned run from 0.82 V to 1 V. The 2e-9 stall floor accepts the reloaded state whose residual is 1.31e-9.",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
-  "materials_file": "materials_mu_n_sentaurus2018.json",
+  "materials_file": "materials_mu_n_sentaurus2018_legacy_300k.json",
   "output_csv": "outputs/ablations/mu_n/vela_schottky_iv_arclength.csv",
   "scaling": {
     "mode": "unit_scaling"

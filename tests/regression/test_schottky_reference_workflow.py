@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -39,11 +40,17 @@ class SchottkyReferenceWorkflowTest(unittest.TestCase):
     def test_materialized_second_stage_reuses_exact_0p82_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             first, second = MODULE.materialize(Path(directory))
+            for path in (first, second):
+                config = json.loads(path.read_text())
+                material = Path(config["materials_file"])
+                self.assertTrue(material.is_absolute())
+                self.assertTrue(material.is_file())
+                self.assertEqual("materials_legacy_builtin_300k.json", material.name)
             self.assertTrue(first.is_file())
             config = __import__("json").loads(second.read_text(encoding="utf-8"))
             self.assertTrue(config["sweep"]["continuation"]["arclength"]["enabled"])
             self.assertTrue(config["sweep"]["initial_state_file"].endswith(
-                "schottky_bias_0p820000.csv"))
+                "schottky_bias_0p820000.h5"))
             self.assertEqual(
                 "report", config["solver"]["global_continuity_closure"]["mode"])
 

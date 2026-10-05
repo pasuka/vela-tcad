@@ -1,5 +1,12 @@
 # Charon-derived Sentaurus 2018 Schottky reference
 
+WP13 (2026-10-05): the historical voltage/arclength decks explicitly load
+`vela/materials_legacy_builtin_300k.json`; the partial mobility ablations load
+their corresponding `_legacy_300k.json` snapshots. These retain pre-alignment
+effective parameters. Original partial material inputs and archived results
+are unchanged. Regenerate/check frozen files with
+`python scripts/generate_legacy_material_baselines.py --check`.
+
 This fixture translates Charon's two-dimensional `n_diode` Schottky-contact
 test into Sentaurus SDE/SDevice and then compares Vela on the exact imported
 Sentaurus mesh. The source benchmark is a 1 um by 1 um, uniformly doped

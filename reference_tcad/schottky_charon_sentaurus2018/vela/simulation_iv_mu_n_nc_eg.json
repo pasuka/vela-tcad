@@ -2,7 +2,7 @@
   "_comment": "Ablation B: cumulatively align electron mobility, 300 K bandgap, and conduction-band DOS to Sentaurus O-2018.06 defaults.",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
-  "materials_file": "materials_mu_n_nc_eg_sentaurus2018.json",
+  "materials_file": "materials_mu_n_nc_eg_sentaurus2018_legacy_300k.json",
   "output_csv": "outputs/ablations/mu_n_nc_eg/vela_schottky_iv.csv",
   "scaling": { "mode": "unit_scaling" },
   "node_doping_file": "doping.csv",

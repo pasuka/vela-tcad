@@ -1,4 +1,5 @@
 #include "vela/material/MaterialDatabase.h"
+#include "vela/core/PhysicalConstants.h"
 
 #include <fstream>
 #include <cmath>
@@ -253,18 +254,21 @@ std::vector<nlohmann::json> materialEntries(const nlohmann::json& root)
 
 MaterialDatabase::MaterialDatabase()
 {
-    // Silicon. All units are SI unless the field name explicitly says eV.
+    // No-BGN 300 K snapshot emitted from share/vela/materials/models.par.
+    // All units are SI unless the field name explicitly says eV.
     Material si;
     si.name  = "Si";
     si.eps_r = 11.7;
-    si.ni    = 1.0e16;   // [m^-3]
-    si.mun   = 0.135;    // [m^2/V/s]
-    si.mup   = 0.048;    // [m^2/V/s]
-    si.bandgap_eV = 1.12;
+    si.mun   = 0.1417;   // [m^2/V/s]
+    si.mup   = 0.04705;  // [m^2/V/s]
+    si.bandgap_eV = 1.1241592307692307;
     si.electron_affinity_eV = 4.05;
-    si.Nc_m3 = 2.8e25;
-    si.Nv_m3 = 1.04e25;
+    si.Nc_m3 = 2.8566791451911786e25;
+    si.Nv_m3 = 3.104657033455896e25;
     si.temperature_K = 300.0;
+    si.ni = std::sqrt(*si.Nc_m3 * *si.Nv_m3) *
+        std::exp(-*si.bandgap_eV * constants::q /
+                 (2.0 * constants::kb * *si.temperature_K));
     db_["Si"] = si;
 
     // Silicon dioxide (insulator - ni, mun, mup remain 0)
@@ -272,7 +276,7 @@ MaterialDatabase::MaterialDatabase()
     sio2.name  = "SiO2";
     sio2.eps_r = 3.9;
     sio2.bandgap_eV = 9.0;
-    sio2.electron_affinity_eV = 0.95;
+    sio2.electron_affinity_eV = 0.9;
     sio2.temperature_K = 300.0;
     db_["SiO2"] = sio2;
 }

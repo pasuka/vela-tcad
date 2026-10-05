@@ -2,7 +2,7 @@
 
 日期：2026-09-26
 
-状态：方案 v2.8（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.9（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -22,6 +22,10 @@ v2.8 补缺（2026-10-05）：日志覆盖、文档遗漏与打包许可收集�
 0V/IV/BV、check-only gates 及运行后包指纹均通过。当前状态和任务表见
 [原生包验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)。用户确认先完成当前收口，
 WP13/剩余 WP14 保留待办。
+
+v2.9 材料对齐（2026-10-05）：用户已要求执行 WP13，当前工作树内对齐内置 Si/SiO2 的无 BGN 300 K 标量，
+独立冻结历史校准路径继承的旧值。当前证据见
+[WP13 验证记录](../../validation/builtin_material_alignment_2026-10-05.md)；剩余 WP14 与 −20 V 场量限制继续独立保留。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -1008,9 +1012,11 @@ flowchart LR
 
 #### WP13 C++ 内置材料参数对齐与重新基线化（用户 2026-09-29 要求列入）
 
-- 状态：**待开工**（组 E；与 sdevice 路径文件不相交）。建议在自 `main` 的独立工作树/分支（如 `codex/builtin-material-alignment`）
-  交付：它改变所有**无材料文件** deck 的全局默认与基线，与 `vela device`（始终经材料文件）无耦合；合入后回到本分支更新 WP3 测试
-  `test_builtin_cpp_silicon_is_documented_as_legacy` 与 workflow §2.4 的“遗留默认”段落。
+- 状态：**完成 Windows 原卡片验收**（用户 2026-10-05 授权）。按当前 `AGENTS.md` 在现有工作树/分支交付；改变无材料文件 deck
+  及部分材料覆盖中省略字段的全局默认，同时同步 WP3 对齐测试与 workflow §2.4。
+  [验证记录](../../validation/builtin_material_alignment_2026-10-05.md)登记实际依赖、旧基线冻结与测试结果。
+  最终 Release 全量非外部参考 CTest 1026/1026，三个 PN2D 门通过，容差未放宽。
+  额外 Ubuntu 复验因 WSL 启动超时未完成；Schottky 0.82 V 重启失败在对齐前发行包也复现，独立保留待修复。
 - 背景：WP3 验收时发现 C++ 内置 Si 的 `ni=1e10 cm⁻³` 与其 `Nc/Nv/Eg` 不自洽（由 `sqrt(Nc Nv)exp(−Eg/2kT)` 推导得 6.68e9），
   `Nv`（1.04e19 vs 3.10e19）与迁移率（1350/480 vs 1417/470.5）也偏离 Sentaurus 默认参数集；用户 2026-09-29 决定默认 `models.par`
   以 Sentaurus par 数据为参考，并要求把内置值对齐与重新基线化列入计划。`vela device` 始终经材料文件、不依赖内置值，但仓库中 20 个
@@ -1036,19 +1042,19 @@ flowchart LR
   `share/vela/materials/default_materials.json`（生成物）、受影响测试的基线文件、`docs/config_schema.md` 材料节、
   `docs/validation/builtin_material_alignment_<date>.md`（新）。
 - 逐步：
-  1. **盘点依赖**：`grep -l MaterialDatabase tests/*.cpp`（当前 20 个文件，其中仅 3 个读材料文件）；`examples/`、`configs/`、
+  1. **盘点依赖**：`rg -l MaterialDatabase tests --glob '*.cpp'`（2026-10-05 变更前 25 个文件）；`examples/`、`configs/`、
      `tests/fixtures/` 中没有 `materials_file` 的 deck；`scripts/` 与 `tests/` 中写死 `1e10/1e16/2.8e19/2.8e25/1.04e19/1.04e25/0.135/0.048`
      的位置。列表写入验证文档，每项标注“物理性质测试 / 数值基线 / 校准 deck”。
   2. **改值**：只改 `MaterialDatabase::MaterialDatabase()` 的字面量（含 `ni` 按公式自洽）；用 WP3 发射器生成
      `share/vela/materials/default_materials.json` 入库，并把 `scripts/generate_default_models_par.py --check` 扩展为同时校验该 JSON；
      新 Catch2 用例读取该 JSON 逐字段比较内置值（1e-12）。
-  3. **全量测试与分类**：`cmake --build --preset windows-ucrt64-debug; ctest --preset windows-ucrt64-debug`，失败项按第 1 步分类处理：
+  3. **全量测试与分类**：本次按用户许可使用 `windows-ucrt64-release` 构建与 CTest，失败项按第 1 步分类处理：
      物理性质测试（守恒/单调/符号/解析解）应仍通过，若失败说明测试隐含旧值（如用 `ni=1e10` 算内建电势），改为从 `MaterialDatabase`
      读值；数值基线（CSV/JSON 快照、`expected_*`）用新值重新生成并在验证文档记录旧值/新值/相对变化/原因；针对旧内置值校准过的
      deck 改为显式 `materials_file` 固定旧值以保留校准证据（deck 旁注明），否则重新校准并记录。
   4. **门**：`ctest -R "pn2d_config_templates|pn2d_node_volume_policy_default_acceptance|pn2d_bv_m2_mixed_voronoi_self_consistent_control"`
-     通过（PN2D 模板经材料文件，预期不受影响；不通过即暴露隐藏的内置依赖）；`python scripts/run_regression.py --runner
-     build/vela_example_runner.exe` 全绿；MOS 相关测试（`SiO2.χ` 0.95→0.9 使氧化层势垒变 0.05 eV）逐一解释。
+     通过（PN2D 模板经材料文件，预期不受影响；不通过即暴露隐藏的内置依赖）；执行当前 CMake 注册的全量本地回归
+     （旧 `scripts/run_regression.py` 已不存在）；MOS 相关测试（`SiO2.χ` 0.95→0.9 使氧化层势垒变 0.05 eV）逐一解释。
   5. **文档**：`docs/config_schema.md` 材料默认值；workflow §2.4 删除“C++ 内置 Si 仍是遗留默认”改为“已对齐（提交 X）”；WP3 测试
      `test_builtin_cpp_silicon_is_documented_as_legacy` 改为断言对齐。
 - 验收：（1）对齐 Catch2 用例通过；（2）全量 CTest 通过，每个重新基线化的文件在验证文档中有一行记录；（3）三个 PN2D 门测试通过；
@@ -1092,7 +1098,7 @@ flowchart LR
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
 | 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成；原生包补缺完成 | 两平台原契约验收及包指纹通过，见本次原生包验收记录 |
-| 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
+| 独立 | WP13 内置材料对齐与重新基线化 | 完成 Windows 原卡片验收，1026/1026；三个 PN2D 门通过 | Ubuntu 额外复验、既有 Schottky 重启另列限制 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | PN2D/BJT 最小子集已完成；其余未执行 | 已有授权覆盖子集；其余原生重跑执行前另需授权 |
 
 ### 10.4 开发分支与工作树
@@ -1144,7 +1150,8 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 已完成，符号因子与 Time 已定案。日志覆盖、文档遗漏与两平台部署包原生 E2E 补缺完成，
 最终结果见[验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)，
 不再使用历史 WP14 → WP10 → WP11 → WP12 顺序作为任务队列。
-WP13 独立待办；剩余 WP14 和全反偏场量资格扩展另行推进。
+WP13 已完成 Windows 原卡片验收（全量 1026/1026、三个 PN2D 门通过，容差未放宽）；额外 Ubuntu 复验因环境超时未完成，
+Schottky 0.82 V 重启问题在新旧 runner 中一致复现，独立待修复。剩余 WP14 和全反偏场量资格扩展另行推进。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
 
@@ -1226,7 +1233,7 @@ WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平�
     `work_function_eV` 1:1，`WorkFunction` 经 `Φ_S,i = χ + E_g/2 + (kT/2)ln(N_c/N_v)` 换算（MOS 电容夹具偏差 2e-16 V）。剩余
     不确定性：Sentaurus 的 Φ_S,i 是否含 `(kT/2)ln(N_c/N_v)` 项（Si 约 −1.1 mV）只能由 WP14 的 `WorkFunction` 栅重跑分辨；在此之前
     阈值电压可能有 ≈ 1 mV 的系统偏移。
-12. **内置材料对齐（WP13）改变全局默认**：所有无 `materials_file` 的 deck、20 个引用 `MaterialDatabase` 的 Catch2 测试文件与基于旧内置值
+12. **内置材料对齐（WP13）改变全局默认**：所有无 `materials_file` 的 deck、当前盘点的 25 个引用 `MaterialDatabase` 的 Catch2 测试文件与基于旧内置值
     校准的示例都会漂移（`ni` +7.5%，`Nv` ×3，`SiO2.χ` −0.05 eV）。缓解：独立分支执行、逐文件登记重新基线化理由、校准 deck 改为显式
     `materials_file` 固定旧值以保留校准证据；`vela device` 路径不受影响。
 13. **`.vtu` `FieldData` 补充键**：WP6.1 已通过 `sweep.vtk_field_data` 提供 `CmdSHA256/Stage/t`，
@@ -1406,7 +1413,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 | A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
 | A-3 | 原生参考重跑范围 | 用户已授权并完成 PN2D 0V/IV/BV 与 BJT m0 的最小 v2 重跑；bvmethods/WorkFunction 栅等其余 WP14 未执行，授权不扩大到这些案例 |
 | A-4 | 多段 `.plt` Time 与电流符号 | WP10 已用 v2 BJT base/collector 与 PN2D IV 固定：每段 t 重置 0–1，`CURRENT_SIGN_FACTOR=+1.0`；原生文件哈希见 workflow §3.3 |
-| A-5 | C++ `MaterialDatabase` 内置 Si/SiO2 是否对齐 Sentaurus 默认参数集并重新基线化（用户 2026-09-29：列入后续计划） | 已列为 WP13 |
+| A-5 | C++ `MaterialDatabase` 内置 Si/SiO2 是否对齐 Sentaurus 默认参数集并重新基线化（用户 2026-09-29：列入后续计划） | WP13 完成 Windows 原卡片验收；额外环境/重启限制见验证记录 |
 
 执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径已盘点完毕；若希望
 使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在确认 A-1 时指定。

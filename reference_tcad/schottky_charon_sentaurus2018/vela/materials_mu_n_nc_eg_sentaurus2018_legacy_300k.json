@@ -1,0 +1,17 @@
+{
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 10000000000.0,
+      "mun": 1417.0,
+      "mup": 480.0,
+      "bandgap_eV": 1.1241592307692307,
+      "electron_affinity_eV": 4.05,
+      "Nc_m3": 2.8566652281655894e+19,
+      "Nv_m3": 1.04e+19,
+      "temperature_K": 300.0
+    }
+  ],
+  "_comment": "WP13 frozen baseline: explicit pre-alignment defaults (9f9d2f5d) plus reference_tcad/schottky_charon_sentaurus2018/vela/materials_mu_n_nc_eg_sentaurus2018.json; unit_scaling, 300 K. Generated; do not edit."
+}

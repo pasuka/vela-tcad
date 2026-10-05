@@ -1,0 +1,57 @@
+{
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 10000000000.0,
+      "mun": 1350.0,
+      "mup": 480.0,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.072740384615385,
+      "Nc_m3": 2.8e+19,
+      "Nv_m3": 1.04e+19,
+      "temperature_K": 300.0,
+      "electron_quantum_gamma": 3.6,
+      "electron_quantum_dos_mass_ratio": 1.0618016171622988,
+      "electron_quantum_coefficient_mass_ratio": 1.0906506732296395
+    },
+    {
+      "name": "SiO2",
+      "eps_r": 3.9,
+      "ni": 0.0,
+      "mun": 0.0,
+      "mup": 0.0,
+      "bandgap_eV": 9.0,
+      "electron_affinity_eV": 0.9,
+      "temperature_K": 300.0,
+      "electron_quantum_gamma": 1.0,
+      "electron_quantum_dos_mass_ratio": 0.42
+    },
+    {
+      "name": "PolySilicon",
+      "eps_r": 11.7,
+      "ni": 10000000000.0,
+      "mun": 1417.0,
+      "mup": 470.5,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.072740384615385,
+      "electron_quantum_gamma": 3.6,
+      "electron_quantum_dos_mass_ratio": 1.0618016171622988,
+      "electron_quantum_coefficient_mass_ratio": 1.0906506732296395,
+      "Nc_m3": 2.8e+19,
+      "Nv_m3": 1.04e+19,
+      "temperature_K": 300.0
+    },
+    {
+      "name": "Nitride",
+      "eps_r": 7.5,
+      "ni": 0.0,
+      "mun": 0.0,
+      "mup": 0.0,
+      "bandgap_eV": 5.0,
+      "electron_affinity_eV": 1.9,
+      "temperature_K": 300.0
+    }
+  ],
+  "_comment": "WP13 frozen baseline: explicit pre-alignment defaults (9f9d2f5d) plus reference_tcad/singledevice_sentaurus2018/vela/materials_sentaurus2018.json; unit_scaling, 300 K. Generated; do not edit."
+}

@@ -60,6 +60,7 @@ def materialize(output_root: Path) -> tuple[Path, Path]:
     for config in (stage_a, stage_b):
         config["mesh_file"] = _absolute(FIXTURE / "vela" / "mesh.json")
         config["node_doping_file"] = _absolute(FIXTURE / "vela" / "doping.csv")
+        config["materials_file"] = _absolute(FIXTURE / "vela" / config["materials_file"])
         config["solver"]["global_continuity_closure"] = {
             # Retain the global audit columns, but do not make their near-zero
             # source normalization a nonlinear acceptance gate.  Terminal KCL
