@@ -1,7 +1,8 @@
 # SDevice 日志修复、文档补漏与原生包 E2E（2026-10-05）
 
-当前状态：日志修复、文档补漏与两平台数值验收完成；Ubuntu 控制器字节码写入修复的
-完整性复验正在进行，暂不把该复验计为通过。
+当前状态：**本次收口完成**。日志修复、文档补漏与两平台部署包原生验收均已完成；
+Windows 与 Ubuntu 26.04 各四项验收通过，执行后的包文件指纹保持不变。
+原契约与 −20 V 空穴密度已知限制保持不变，WP13/剩余 WP14 按用户决定保留待办。
 
 ## 修复与任务状态
 
@@ -29,7 +30,7 @@ WP14 的 PN2D/BJT 最小子集已完成，其余 bvmethods/栅参考不在本次
 | WP11 | 完成 | 当前 Linux 为 Ubuntu 26.04；并发按既定平台范围验收 |
 | WP12 | 完成 | 当日初始 DoD 缺口由本报告跟踪补齐 |
 | 日志覆盖修复与文档补漏 | 完成 | 真实 runner 回归通过；本次同步当前证据入口 |
-| 两平台部署包原生 E2E | Windows 完成；Ubuntu 完整性复验中 | 四项数值结果与运行后包指纹均通过才收口 |
+| 两平台部署包原生 E2E | 完成 | 两平台各三个数值案例 + gates 通过，运行后包指纹通过 |
 | WP13 全局内置材料对齐 | 未开工，保留待办 | 会改变无材料文件 deck 的全局默认和基线 |
 | WP14 剩余 bvmethods/栅参考 | 未执行，保留待办 | 已完成 PN2D/BJT 子集；其余不在本轮范围 |
 | −20 V 空穴密度差异 | 已知限制，保留待办 | 扩大反偏场量资格需另行修复与严格复验 |
@@ -42,14 +43,17 @@ Ubuntu 26.04 包内 CPython 3.12.12；Linux 解包到原生 `/tmp` 文件系统�
 
 | 项目 | Windows | Ubuntu 26.04 |
 | --- | --- | --- |
-| 原生 PN2D 0V | pass | 数值首轮 pass；完整性复验中 |
-| 原生 PN2D IV | pass，206 点到 10 V | 数值首轮 pass，206 点到 10 V；完整性复验中 |
-| 原生 PN2D BV | pass，811 点到 −20 V | 数值首轮 pass，811 点到 −20 V；完整性复验中 |
-| gates | pass | 数值首轮 pass；完整性复验中 |
-| 包执行后指纹 | pass | 首轮失败，修复控制器后复验中 |
+| 原生 PN2D 0V | pass | pass |
+| 原生 PN2D IV | pass，206 点到 10 V | pass，206 点到 10 V |
+| 原生 PN2D BV | pass，811 点到 −20 V | pass，811 点到 −20 V |
+| gates（五项输入检查 + 一项拒绝注入，仅 `--check`） | pass | pass |
+| 包执行后指纹 | pass | 修复后 pass；首轮失败保留 |
 | 非参考回归 | 全量 CTest 1023/1023，356.14 s | SDevice CTest 13/13，562.61 s |
 
-原生参考固定为 T-2022.03-SP2 v2；每例均做 manifest 的六项核对、源 deck/参数/网格校验。
+三个 PN2D 数值案例的原生参考固定为 T-2022.03-SP2 v2；每例均做 manifest 的六项核对、
+源 deck/参数/网格校验。`gates` 使用 v1 的具名原生网格核对指纹，验证 Schottky、ABA、
+外接电阻及电流目标的输入检查，以及热/IALMob 拒绝；不宣称这些案例已取得原生数值资格，
+也不包含尚待 WP14 执行的栅参考重跑。
 配置为 300 K、1943 节点/3680 三角形、2×0.5 µm Si PN 结，坐标 µm、密度 cm^-3、
 电场 V/cm、电流 A/µm。两平台默认 Eigen SparseLU (COLAMD)、单线程，实际 HDF5/TDR/state 启用。
 BV 使用绑定的完整 `element_edge_sg_gss_laux` 原子配置，不修改 C++ 全局默认。
@@ -62,25 +66,31 @@ IV 到 10 V 是完整扫描目标，不宣称全正偏范围已取得曲线精�
 
 ## 首轮完整性失败与复验
 
-Ubuntu 首轮四份数值报告全部 pass，但控制器以 `-I` 启动 CPython，导致环境变量
+Ubuntu 首轮三个数值案例和 gates 报告全部 pass，但控制器以 `-I` 启动 CPython，导致环境变量
 `PYTHONDONTWRITEBYTECODE=1` 被忽略。启动时重写包内 encodings 的既有 `.pyc`，
 最终指纹检查拒绝该运行；首轮不能计为整体验收通过。
 
 `01fb6687` 修复为控制器显式 `-I -B`，在解释器启动阶段就禁止字节码写入。回归制造无效旧 cache，
 验证控制器执行新源码、正确传递参数且旧 cache 字节保持不变；Windows/Ubuntu 均通过。
 随后重新解包同一发行档，在新输出目录重新执行 Ubuntu 的四项验收，保留首轮失败目录。
+复验进程退出 0，最终摘要为 `status=pass`、`package_unchanged=true`；运行中另一次只读
+核对也确认 5055 个清单文件没有变化。BV 求解完成 811 个接受点，runner 的
+`elapsed_seconds=5452.182971`，随后曲线、平衡场及必过偏置场量均 pass。
+十个偏置场量样本中九个 pass，−20 V 诊断 fail；必过点仍仅 −13.2 V。
+Windows 完整四项记录来自修复控制器前的成功运行，其包指纹原本已通过；显式 `-B` 后
+另做 Windows 原生 0V 与包完整性复验通过，不重复计入完整四项结果。
 这是外部验收控制器修复，发行包内前端/求解器没有变化，不需要改变数值资格或重新标记包版本。
 
 ## DoD 与文档核对
 
-WP12 初始账本的第 1 项由本次两平台原生包验收补齐；当前 Ubuntu 完整性复验结束前，
-这一项仍不计为全部通过。第 2–5 项的门控、golden、无参考前端、Unicode/中止和并发证据
+WP12 初始账本的第 1 项已由本次两平台原生包验收补齐，按原契约通过。
+第 2–5 项的门控、golden、无参考前端、Unicode/中止和并发证据
 沿用初始账本，同时加入本轮 Windows 1023 项与 Ubuntu 13 项回归。第 6 项由本轮 Windows
 非参考全量回归及文档补漏支撑，三个 PN2D BV 模板门在该全量选集中。
 四个原生参考案例单独记录，不以 CTest skip 或合成包冒烟替代。
 
 本轮临时 `audit_followup.py` 核对 67 个登记编号、60 个代码字面编号、32 个解析器模板、
-43 个 C++ 字段条目，以及 181 个本地文件链接和 2 个 Markdown 锚点，均通过。
+43 个 C++ 字段条目，以及 182 个本地文件链接和 2 个 Markdown 锚点，均通过。
 这次文档修改补充证据入口、当前状态与 `-I -B` 控制器说明，没有新增需要重跑的执行示例。
 
 ## 证据目录
@@ -95,7 +105,32 @@ WP12 初始账本的第 1 项由本次两平台原生包验收补齐；当前 Ub
 - `windows-controller-regression.log`、`linux-controller-test.log`：控制器缓存回归。
 - `packages-final/*.sha256`、`*.manifest.json`：发行档哈希、源码身份及包内文件清单。
 
-Windows CTest 的四个参考项不在本轮 1023 个非参考项中重复运行；使用同一
+Windows CTest 的四个参考项（三个数值案例 + gates）不在本轮 1023 个非参考项中重复运行；使用同一
 `sdevice_acceptance.py` 从两平台解包入口执行这四个案例，单独记录数值报告。
 Ubuntu 没有本轮全仓 CTest 结果；13 项是前端及并发范围。Windows 并发仍按 WP11
 约定只执行锁冲突，其余 Linux 矩阵按平台跳过，不将它们伪记为 Windows 已通过。
+
+## 固定指纹
+
+发行档与原始摘要记录的 SHA-256 如下；摘要中的唯一报告路径可定位各原始文件。
+生成产物保留于上面的忽略目录，本报告只登记小型指纹证据。
+
+| 平台 | 发行档 SHA-256 | PACKAGE_MANIFEST SHA-256 |
+| --- | --- | --- |
+| Windows | `ce4d18b7b87d2418937126a91dc32f48b6dca51f84652a429b473bb09fbd1540` | `58c49a048c331eb29963252515ac9a6e9ac3ffaff045e7f7f2781371fdb7a256` |
+| Ubuntu 26.04 | `4c245c51e3198c7bc0d44594fc133c5fe1d29219c1384fee2d4a18b29661e944` | `0948ea52ec41f7dff948f661fbaba636b0b3d9ab45ae5cfed284c0ae9e743495` |
+
+| 平台 | 案例 | acceptance_report SHA-256 |
+| --- | --- | --- |
+| Windows | pn2d_0v | `f6999a2fc3846cd17b4459baa88c49d116c43d4d53fcb9ad5400904e07ba228b` |
+| Windows | pn2d_iv | `6f0320bb4ee9f1bf50f19031e4707406bd8e42a6deadf40461b6475fdd8a194e` |
+| Windows | pn2d_bv | `c57f36deeb3ef0d7f3bee9af8abcdcb01152374d4dd825f7f3dd68d4d62c0795` |
+| Windows | gates | `9715f1da5eb331f248092c78e911410c73f8a5f1287e8ce161c839a3c12381e0` |
+| Ubuntu 26.04 | pn2d_0v | `1448902ff3af08628e80c5c2c479c87a3fcd973a94ab3c1b6e2fb0beae80addd` |
+| Ubuntu 26.04 | pn2d_iv | `2767428c1be2b7f3db0aef0726b4f1850d74a9dac7eada158da9e8cc7037e97b` |
+| Ubuntu 26.04 | pn2d_bv | `00b0a3a11b618591dfb78ca18e581ce35f98a8fe9c07b71a013d34fb0321c026` |
+| Ubuntu 26.04 | gates | `4367ec65ec28d2d06c538e3627204a8428cbe9e29c74cc8518fea842bc55afb3` |
+
+验收契约 SHA-256：`88c81240e90182d9d8a07bd07825454eea19439de02dc381357b59db7fd67e3d`。
+比对控制器 `sdevice_acceptance.py` SHA-256：`30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26`。
+显式 `-B` 的入口 `run_sdevice_package_e2e.py` SHA-256：`4a1c864e1b0335dfac2dd6d4718bc6a1582366ca2c6fd3921f9227e51b0f715b`。

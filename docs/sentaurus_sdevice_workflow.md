@@ -270,9 +270,10 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 | sidecar | 数值/诊断白名单，数组/标量替换，对象递归合并 | 不允许改模型、电极、目标、材料或输出名；每个覆盖键 W207；第 2.7 节 |
 | Workbench/Tcl/多器件 | 预处理指令、`@...@`、Tcl、Device/System/Thermode 拒绝 | E101/E102/E103/E105；先用源工具生成预处理完成的单器件命令 |
 
-PN2D 的已绑定 Windows 原生数值资格见第 3.3 节。Windows/Ubuntu 26.04 分发包的合成网格
+PN2D 的已绑定原生数值资格见第 3.3 节。Windows/Ubuntu 26.04 分发包的合成网格
 与并发验证不替代原生 PN2D 在两个包中的数值验收；从解包入口运行的当前结果见
-[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)，范围保持第 3.3 节原契约。
+[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)：两平台 0V/IV/BV 与 check-only gates
+均通过，运行后包指纹不变，范围保持第 3.3 节原契约。
 
 ### 2.10 可执行中性示例与 sidecar
 
@@ -394,6 +395,8 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   `a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25`。
   符号核对采用已接受原始电流的 log-current 插值，只确定方向；数值幅值另行验收。
   当前结果见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)：原契约验收完成。
+  后续[两平台部署包验收](validation/sdevice_native_package_e2e_2026-10-05.md)从解包入口产生全新候选，
+  在相同契约下通过；它补齐交付证据，不扩大数值资格范围。
   IV 到达 10 V 并通过既定窗口，BV 到达 −20 V 且全窗口曲线/KCL 通过；BV 独立场量资格
   仅限绑定输入/配置的 −13.2 V。该点不是击穿电压；现有分段 log(I) 膝点拟合给出原生与
   Vela 均 −19.405 V，−19.5/−19.6/−19.7 V 场量诊断通过，−20 V 空穴密度诊断失败。

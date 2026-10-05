@@ -20,8 +20,9 @@ remain in Git history and the documentation index.
   are documented, and the -20 V hole-density difference remains unresolved.
 - Completed workflow/schema/import documentation, supported-subset and message
   audits, executable neutral mesh/sidecar examples and the six-item DoD ledger.
-  Packaged cross-platform native PN2D numerical acceptance remains unproven;
-  synthetic package smoke cannot replace it. Global built-in material alignment
+  Fresh native PN2D 0V/IV/BV acceptance and check-only gates pass through both
+  extracted packages under the pinned contract, with unchanged package file
+  fingerprints. Global built-in material alignment
   (WP13) and the remaining native reruns (WP14) are independent follow-ups.
 - Fixed stage sidecar `runtime_log.profile` being overwritten by the
   orchestrator. CLI verbose selects debug globally; otherwise each stage uses
