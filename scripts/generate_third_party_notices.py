@@ -42,7 +42,10 @@ def generate(stage, build, license_roots=()):
     if (stage / "bin/vela.exe").exists():
         roots = [Path(p) for p in license_roots]
         cache = (build / "CMakeCache.txt").read_text(encoding="utf-8")
-        compiler = re.search(r"^CMAKE_CXX_COMPILER:FILEPATH=(.+)$", cache, re.M).group(1)
+        match = re.search(r"^CMAKE_CXX_COMPILER:(?:FILEPATH|STRING)=(.+)$", cache, re.M)
+        if match is None:
+            raise ValueError("CMake cache has no configured C++ compiler path")
+        compiler = match.group(1)
         roots.append(Path(compiler).parent.parent / "share/licenses")
         required = set(BASE_LICENSES)
         for dll in (stage / "bin").glob("*.dll"):
