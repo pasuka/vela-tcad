@@ -320,12 +320,12 @@ vela device [选项] <name_des.cmd | name_des | name>
 | `-h` | 同义：列出选项并退出 |
 | `-v` | 同义：打印版本头（Vela 版本、提交、支持的 SDevice 语法版本） |
 | `-q` | 同义：安静模式（不向 stdout 回显进度，log 文件不变） |
-| `-n` | 同义：log 中不写 Newton 迭代信息（对应 `runtime_log.profile=minimal`） |
+| `-n` | Vela 中是 `--check` 的别名：输入校验和 deck 发射，不求解；不沿用 SDevice 的日志语义 |
 | `--exit-on-failure` | 同义：等于 `Math{ExitOnFailure}` |
 | `--threads <int>` / `--max_threads <int>` | 同义：线程数上限，优先于 `Math{NumberOfThreads}`（第 13 节） |
 | `--verbose` | 同义：`runtime_log.profile=debug` |
 | `-i` | 部分同义：写初始解（平衡态）的 plot 后退出；阶段 1 实现为“完成校验 + 首个平衡态求解 + 写 `.vtu`” |
-| `-P`/`-L` 系列（写参数文件并退出） | `-P`：把 `share/vela/materials/models.par`（Vela 默认硬参数的 `.par` 形式，只含 Vela 实现的模型段）复制到当前目录并退出；`-P <cmd>`/`-P:<Material>` 在 Vela 只有硬一种材料时与 `-P` 同义，其他材料拒绝；`-L` 系列拒绝（WP3 交付） |
+| `-P`/`-L` 系列（写参数文件并退出） | `-P`：把 `share/vela/materials/models.par` 复制到当前目录并退出；可同时给一个 cmd 位置参数，但不会读取它。`-P:<Material>` 与 `-L` 系列拒绝；默认库含 Silicon/Oxide/Nitride 段 |
 | `-d`, `-M`, `-S`, `-r`, `-ver`, `-rel`, `-versions`, `--tcl`, `--xml`, `--field-names`, `--parameter-names`, `--compiler-version` | 拒绝：“option not supported by vela device”，用法错误退出 |
 
 　Vela 自有选项（与 `sdevice` 不冲突）：`--check`（仅解析+校验+生成 deck，不求解）、
@@ -990,8 +990,8 @@ flowchart LR
 - 状态：**已完成**（2026-10-05）。工作流/配置/导入文档、消息目录与字段目录核对、
   中性示例及 sidecar、CHANGELOG、附录 A 与六条 DoD 账本已交付；
   [证据及限制](../../validation/sdevice_wp12_closeout_2026-10-05.md)。WP12 完成不代表阶段 1 六条 DoD 全部达成。
-  输出核对发现既有 `runtime_log.profile` sidecar 覆盖在编排执行时丢失，已登记限制；
-  可执行示例使用实际生效的 `solver.max_iter`，未在文档工作包中改运行实现。
+  输出核对发现的 `runtime_log.profile` 覆盖问题已在后续修复：CLI verbose 优先，
+  否则使用对应段 sidecar profile，未覆盖段为 default；有真实 runner 回归。
 - 背景：DoD 第 6 条要求 `docs/sentaurus_sdevice_workflow.md`、`config_schema.md`、`sentaurus_import.md` 与消息目录完稿；WP4/WP5
   会新增消息编号与 deck 键，WP10 会回填 C6，需要在收尾时统一核对并让文档中每条命令可执行。
 - 范围：`docs/sentaurus_sdevice_workflow.md` 完稿（§2.3 去掉“待 WP7”；§3.3 回填符号因子与 `time` 语义；消息目录补齐 WP4/WP5 新编号；
@@ -1051,8 +1051,10 @@ flowchart LR
 
 #### WP14 Sentaurus 参考重跑（A-3；需用户授权）
 
-- 状态：**待授权**。VM 归档现为 v1（2018/2022 历史产物，部分缺 `.log` 回显或 `Parameter=`）；本分支迄今未对 VM 做任何写操作。
-  执行前必须取得用户对“在 VM 上运行 sdevice 并写入归档目录”的明确同意。
+- 状态：**部分完成**。用户已授权并完成 PN2D 0V/IV/BV 与 BJT m0 的最小 v2 重跑，
+  原生参考和 manifest 已归档；符号因子与逐段 Time 已定案。其余 bvmethods/栅参考未重跑。
+  用户于 2026-10-05 允许为补齐原生 E2E 连接 VM、上传下载文件；该授权用于当前验收，
+  不把剩余模型/案例自动加入本次范围。若另行运行剩余 sdevice 案例，仍需明确执行授权。
 - 背景：A-3 由用户 2026-09-26 决定暂不重跑。盘点（`docs/validation/sdevice_reference_artifact_inventory_2026-09-26.md`）显示
   `pn2d_iv/bv` 从未在 T-2022 运行，bvmethods 归档 deck 与仓库 deck 的物理/判据不一致，`full_physics_ablation` 是含占位符的模板；
   WP4a 遗留的 Φ_S,i 定义问题、WP10 需要的符号因子与多段 `time` 证据都依赖新的可核对产物。sdevice 每次启动 license 约 3 分钟，
@@ -1065,7 +1067,7 @@ flowchart LR
   | --- | --- | --- |
   | pn2d | `pn2d_{0v,iv,bv}_sdevice.cmd` | 主验收曲线/场量；`pn2d_iv.plt` 决定符号因子 |
   | bvmethods | `aba_poisson`、`external_resistor`、`full_physics_ablation` | ABA/外接电阻/电流目标；`full_physics_ablation` 两段 `Quasistationary` 决定 `time` 语义 |
-  | gate_reference（新，合成） | 1-D 等效 MOS 电容（同 WP4a 夹具几何/掺杂）：`Barrier=0/0.55/−0.3` 与 `WorkFunction=4.6228` 四个变体 | 比较平带电压，分辨 Φ_S,i 是否含 `(kT/2)ln(N_c/N_v)`（Si 约 −1.1 mV，需 ≥ 5 位有效数字输出） |
+  | gate_reference（新，合成） | 1-D 等效 MOS 电容（同 WP4a 夹具几何/掺杂）：`Barrier=0/0.55/−0.3` 与当前 WP3 库零偏移 `WorkFunction=4.611003610676079` eV 四个变体 | 比较平带电压，核对 Φ_S,i 的态密度项；旧 4.6228 eV 若保留，须明确作为非零偏移诊断，不当作当前零偏移基准 |
 
 - 逐步：（1）VM `/home/tcad/vela_reference_artifacts/<case>/v2/` 下建 `source/ log/ plt/ tdr/`，上传 deck 与 `sdevice -P` 的
   `models.par`；（2）运行 `sdevice <deck>` 保留 `.log`（含回显）、`.plt`、`_des.tdr`、`_NNNN_des.tdr`；（3）
@@ -1132,9 +1134,10 @@ flowchart LR
 #### 10.5.3 剩余工作与推荐顺序
 
 WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 2026-10-02 独立提交 `323983e0`，WP5 编排器与 zipapp 也已完成。
-后续：WP14（**需用户授权**；产物供 WP10）→ WP10（一致性验收；定符号因子与
-`time` 语义）→ WP11（打包与并发）→ WP12（文档收尾，DoD 逐条举证）。WP13 独立于以上顺序，随时可在独立分支执行；合入
-`main` 后回到本分支同步 WP3 的“遗留默认”测试与文档。
+截至 2026-10-05，WP10/WP11/WP12 均已按具名范围完成，WP14 的 PN2D/BJT 最小子集
+已完成，符号因子与 Time 已定案。当前补齐日志覆盖、文档遗漏与两平台部署包原生 E2E，
+不再使用历史 WP14 → WP10 → WP11 → WP12 顺序作为任务队列。
+WP13 独立待办；剩余 WP14 和全反偏场量资格扩展另行推进。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
 

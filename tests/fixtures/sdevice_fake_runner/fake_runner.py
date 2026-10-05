@@ -37,7 +37,8 @@ def main():
     if count:
         with Path(count).open("a") as stream:
             stream.write(json.dumps({"stage": index, "deck": deck, "pid": os.getpid(),
-                "threads": os.environ.get("OMP_NUM_THREADS"), "hdf5_locking": os.environ.get("HDF5_USE_FILE_LOCKING")}) + "\n")
+                "threads": os.environ.get("OMP_NUM_THREADS"), "hdf5_locking": os.environ.get("HDF5_USE_FILE_LOCKING"),
+                "log_profile": args.log_profile}) + "\n")
     if mode == "reject":
         print("fixture: deck rejected", flush=True)
         return 2

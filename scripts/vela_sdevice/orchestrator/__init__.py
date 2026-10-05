@@ -277,7 +277,7 @@ class DeviceRun:
                     metadata[name + "_OuterVoltage_V"] = bias
                     metadata[name + "_InnerVoltage_V"] = bias
             deck["sweep"]["vtk_field_data"] = metadata
-            deck["runtime_log"] = {"append": True}
+            deck.setdefault("runtime_log", {})["append"] = True
         write_stage_plan(self.work, self.result)
         self.manifest["decisions"] = self.result.decisions
         self.manifest["sidecar_overrides"] = [{"stage": s["index"], "keys": s["sidecar_overrides"]}
@@ -295,7 +295,7 @@ class DeviceRun:
         for key in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "EIGEN_NUM_THREADS"):
             env[key] = str(self.result.stage_plan["threads"])
         env["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        profile = "debug" if self.options.verbose else "default"
+        profile = "debug" if self.options.verbose else self.result.decks[index].get("runtime_log", {}).get("profile", "default")
         # Keep runner arguments ASCII. Its narrow filesystem API cannot accept
         # Unicode Windows paths; Python publishes the user's log and filenames.
         runner_log = self.work / f"stage{index:02d}_runner.log"

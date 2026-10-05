@@ -172,6 +172,38 @@ class OrchestratorTests(unittest.TestCase):
         report = json.loads((self.work / "fail_report.json").read_text())
         self.assertIn("deck rejected", report["details"]["stderr"])
 
+    def test_stage_log_profile_and_verbose_precedence(self):
+        for profile, verbose in (("minimal", False), ("default", False), ("debug", False), ("minimal", True)):
+            with self.subTest(profile=profile, verbose=verbose):
+                self.count.unlink(missing_ok=True)
+                self.cmd.with_suffix(".vela.json").write_text(json.dumps({
+                    "schema": "vela.sdevice_sidecar.v1", "apply_to": [1],
+                    "runtime_log": {"profile": profile}}))
+                self.assert_exit(0, self.call(str(self.cmd), *(["--verbose"] if verbose else [])))
+                calls = self.calls()
+                self.assertEqual([c["log_profile"] for c in calls],
+                                 ["debug", "debug"] if verbose else ["default", profile])
+                self.assertTrue(all(c["deck"]["runtime_log"]["append"] for c in calls))
+                self.assertEqual(calls[1]["deck"]["runtime_log"]["profile"], profile)
+
+    def test_real_runner_stage_log_profile(self):
+        runner = os.environ.get("VELA_EXAMPLE_RUNNER")
+        if not runner or not Path(runner).is_file():
+            self.skipTest("VELA_EXAMPLE_RUNNER unavailable")
+        for profile, verbose in (("minimal", False), ("debug", False), ("minimal", True)):
+            with self.subTest(profile=profile, verbose=verbose):
+                self.cmd.with_suffix(".vela.json").write_text(json.dumps({
+                    "schema": "vela.sdevice_sidecar.v1", "apply_to": [1],
+                    "runtime_log": {"profile": profile}}))
+                self.assert_exit(0, self.call(str(self.cmd), *(["--verbose"] if verbose else []),
+                                            env={"VELA_EXAMPLE_RUNNER": runner}))
+                expected = ["debug", "debug"] if verbose else ["default", profile]
+                for index, actual in enumerate(expected):
+                    log = (self.work / f"stage{index:02d}_runner.log").read_text()
+                    self.assertIn("profile: " + actual, log)
+                manifest = json.loads((self.work / "run_manifest.json").read_text())
+                self.assertTrue(all(stage["goal_reached"] for stage in manifest["stages"]))
+
     def test_solver_failure_exit_5(self):
         self.assert_exit(5, self.call(mode="fail"))
         self.assertEqual(json.loads((self.work / "fail_report.json").read_text())["message_id"], "E501")

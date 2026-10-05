@@ -131,3 +131,31 @@ three Linux matrix tests as specified by WP11.
 The numerical case uses coordinates in um, uniform donors at 1e15 cm^-3, and
 terminal currents in A/um. It is a packaging/concurrency smoke, separate from
 the physical PN2D acceptance in [WP10](validation/sdevice_wp10_closeout_2026-10-03.md).
+
+## Native PN2D acceptance through extracted packages
+
+`scripts/run_sdevice_package_e2e.py` takes an unpacked `vela/` directory and
+the registered `reference_staging/` root. It verifies package file fingerprints,
+then runs fresh 0V/IV/BV candidates and the gates with the package's Python,
+launcher and TDR importer. System Python is absent from child PATH; inherited
+VELA/Python/fixture overrides are removed. The comparison controller comes from
+the source tree; the frontend and numerical runner come from the package.
+No `--candidate-dir` reuse is permitted by this entry point.
+
+After unpacking a newly built package, use these templates with its actual
+directory and a **new** output directory (paths below are caller-supplied):
+
+```powershell
+python scripts/run_sdevice_package_e2e.py --package-dir <unpacked>/vela --reference-dir reference_staging --output-dir <new-output>
+```
+
+```bash
+python3 scripts/run_sdevice_package_e2e.py --package-dir /tmp/<unpacked>/vela --reference-dir reference_staging --output-dir <new-output>
+```
+
+Linux extraction must use a native filesystem to preserve runtime symlinks.
+The tool writes `package_e2e_summary.json`, controller logs and per-case
+`acceptance_report.json`; it rechecks package fingerprints after execution.
+The default per-candidate timeout is 7200 seconds; timeout or an incomplete
+goal fails. Original WP10 thresholds and the −20 V hole-density diagnostic
+limitation remain unchanged. This is distinct from the synthetic smoke above.
