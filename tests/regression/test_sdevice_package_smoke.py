@@ -20,11 +20,30 @@ sys.path.insert(0, str(REPO / "scripts"))
 from package_vela import safe_member, unpack_python, audit, package, tar_permissions, distribution_platform
 from build_vela_sdevice_pyz import build_archive
 from tests.regression.sdevice_package_support import synthetic_cmd, isolated_environment, run
-from run_sdevice_package_e2e import verify_package, runtime_environment
+from run_sdevice_package_e2e import verify_package, runtime_environment, controller_command
 from generate_third_party_notices import generate, BASE_LICENSES
 from vela_sdevice.plt import read_plt_document
 
 class OfflinePackageTests(unittest.TestCase):
+    def test_isolated_controller_preserves_invalid_bytecode_cache(self):
+        import py_compile
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            module = root / 'cache_probe.py'
+            module.write_text('value = 1\n')
+            cache = Path(py_compile.compile(str(module), doraise=True))
+            original = cache.read_bytes()
+            module.write_text('value = 2\n')
+            os.utime(module, (1, 1))
+            script = root / 'controller.py'
+            script.write_text('import cache_probe,sys,json\n'
+                              'print(json.dumps([cache_probe.value,sys.dont_write_bytecode,sys.argv[1:]]))\n')
+            done = subprocess.run(controller_command(Path(sys.executable), script, ['probe']),
+                                  env=runtime_environment(), capture_output=True, text=True, timeout=30)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(json.loads(done.stdout), [2, True, ['probe']])
+            self.assertEqual(cache.read_bytes(), original)
+
     def test_windows_notices_accept_compiler_cache_types(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
