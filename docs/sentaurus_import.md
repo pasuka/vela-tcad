@@ -54,7 +54,7 @@ For the native frontend, `--allow-lossy` accepts only material-matrix parameters
 classified as `approximated`; it does not bypass unsupported physics, thermal
 or mixed-mode gates. Numerical qualification and its limits are recorded in
 [WP10](validation/sdevice_wp10_closeout_2026-10-03.md), with current delivery/DoD
-evidence in [WP12](validation/sdevice_wp12_closeout_2026-10-05.md).
+evidence in the [native package follow-up](validation/sdevice_native_package_e2e_2026-10-05.md).
 
 ## Build Requirements
 

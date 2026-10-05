@@ -12,7 +12,7 @@ passing a hand-written JSON deck to `vela_example_runner`.
 
 See the [current workflow and executable example](sentaurus_sdevice_workflow.md#210-可执行中性示例与-sidecar),
 [sidecar schema](../schemas/vela.sdevice_sidecar.v1.schema.json), and
-[WP12 evidence/limits](validation/sdevice_wp12_closeout_2026-10-05.md).
+[current package acceptance and limits](validation/sdevice_native_package_e2e_2026-10-05.md).
 The CLI and exit codes are in workflow section 2; deployment targets are
 Windows UCRT64 and Ubuntu 26.04 x86_64.
 

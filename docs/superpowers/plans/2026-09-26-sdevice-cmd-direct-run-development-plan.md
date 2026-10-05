@@ -2,7 +2,7 @@
 
 日期：2026-09-26
 
-状态：方案 v2.7（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.8（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -17,6 +17,11 @@ v2.6 平台变更（2026-10-04，用户决定）：Linux 仅使用 Ubuntu 26.04 
 v2.7 文档收口（2026-10-05）：WP12 完成，附录 A 回填实际决策、附录 B 以当前 C++ 字段目录为准；
 六条 DoD 的逐项证据和跨平台原生数值验收缺口见
 [WP12 收口记录](../../validation/sdevice_wp12_closeout_2026-10-05.md)。没有改变门限或扩大既有资格。
+
+v2.8 补缺（2026-10-05）：日志覆盖、文档遗漏与打包许可收集已修复；Windows 部署包原生
+四项验收及包指纹通过，Ubuntu 完整性复验中。当前状态和任务表见
+[原生包验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)。用户确认先完成当前收口，
+WP13/剩余 WP14 保留待办。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -989,7 +994,8 @@ flowchart LR
 
 - 状态：**已完成**（2026-10-05）。工作流/配置/导入文档、消息目录与字段目录核对、
   中性示例及 sidecar、CHANGELOG、附录 A 与六条 DoD 账本已交付；
-  [证据及限制](../../validation/sdevice_wp12_closeout_2026-10-05.md)。WP12 完成不代表阶段 1 六条 DoD 全部达成。
+  [初始证据及限制](../../validation/sdevice_wp12_closeout_2026-10-05.md)。后续 DoD 补缺见
+  [原生包验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)，不由工作包状态推导数值资格。
   输出核对发现的 `runtime_log.profile` 覆盖问题已在后续修复：CLI verbose 优先，
   否则使用对应段 sidecar profile，未覆盖段为 default；有真实 runner 回归。
 - 背景：DoD 第 6 条要求 `docs/sentaurus_sdevice_workflow.md`、`config_schema.md`、`sentaurus_import.md` 与消息目录完稿；WP4/WP5
@@ -1085,7 +1091,7 @@ flowchart LR
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
-| 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成 | DoD 跨平台原生数值证据仍有缺口，见 WP12 账本 |
+| 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成 | DoD 原生包证据补缺见本次原生包验收记录；Ubuntu 复验中 |
 | 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | PN2D/BJT 最小子集已完成；其余未执行 | 已有授权覆盖子集；其余原生重跑执行前另需授权 |
 
@@ -1135,7 +1141,8 @@ flowchart LR
 
 WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 2026-10-02 独立提交 `323983e0`，WP5 编排器与 zipapp 也已完成。
 截至 2026-10-05，WP10/WP11/WP12 均已按具名范围完成，WP14 的 PN2D/BJT 最小子集
-已完成，符号因子与 Time 已定案。当前补齐日志覆盖、文档遗漏与两平台部署包原生 E2E，
+已完成，符号因子与 Time 已定案。日志覆盖与文档遗漏已修复，两平台部署包原生 E2E 的
+当前补缺状态见[验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)，
 不再使用历史 WP14 → WP10 → WP11 → WP12 顺序作为任务队列。
 WP13 独立待办；剩余 WP14 和全反偏场量资格扩展另行推进。
 
@@ -1178,8 +1185,9 @@ WP13 独立待办；剩余 WP14 和全反偏场量资格扩展另行推进。
 6. 现有全部 CTest 不回退（含 PN2D BV 模板门）；`docs/sentaurus_sdevice_workflow.md`、
    `config_schema.md`、`sentaurus_import.md` 与消息目录完稿。
 
-WP12 已逐项登记提交/测试证据。Windows 原生数值验收、两平台合成包冒烟分别成立，
-仍缺两个部署包的原生 PN2D 全数值验收；因此保持上述 DoD，不能以文档完稿或 `--check` 替代第 1 条。
+WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平台合成包冒烟，当前证据见
+[原生包验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)；
+保持上述 DoD，不能以文档完稿或 `--check` 替代第 1 条。
 
 ## 11. 风险与未决问题
 
@@ -1404,7 +1412,8 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 
 截至 2026-10-05，没有阻止 WP12 文档收口的待确认事项。A-1/A-2/A-4 已落实；A-3/A-5 是
 具名独立后续。当前 Linux 目标为 Ubuntu 26.04，旧环境/包已删除（WP11）；
-门限、−20 V 已知限制与跨包数值证据缺口保留在 WP12 DoD 账本。
+门限与 −20 V 已知限制保持不变，跨包数值证据补缺由
+[当前记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)跟踪，WP12 账本保留初始快照。
 
 WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_qualification.v1,stage_plan.v1,reference_artifact_manifest.v1,sdevice_sidecar.v1}.schema.json`、
 `scripts/vela_sdevice/schema_validator.py`（纯标准库 draft-07 子集校验器，供随包 Python 使用）、
@@ -1429,7 +1438,8 @@ CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`referen
 | WP5 编排 | 完成 | `c9971ebd` | `sdevice_orchestrator`/`sdevice_vela_launcher`，gates/退出码/锁/中止/增量发布；当时 Release 1020/1020 |
 | WP10 数值验收/修复/收口 | 完成（具名范围） | `5c723a2e`、`0842e000`、`4734071b` | `sdevice_acceptance_tools`、四份原契约 pass 报告；IV 10 V、BV −20 V，BV 场量仅 −13.2 V 资格，−20 V hDensity 失败留存 |
 | WP11 包/并发 | 完成 | `1e3e39f2`、`16fb066b` | `sdevice_package_smoke`/`sdevice_concurrency`；Windows/Ubuntu 26.04，无系统 Python，零差异并发与线程上限 |
-| WP12 文档 | 完成 | 本次提交；基线 `16fb066b` | 文档命令实跑、消息/字段/链接审查、Release 回归、六条 DoD 证据/缺口；见 WP12 收口记录 |
+| WP12 文档 | 完成 | `64345940`；基线 `16fb066b` | 文档命令实跑、消息/字段/链接审查、Release 回归、六条 DoD 初始证据/缺口；见 WP12 收口记录 |
+| 日志/文档与原生包 E2E 补缺 | 进行中 | `bdddb838`、`8dc5498c`、`01fb6687` | 日志与许可修复、两平台缓存回归、Windows 原生四例通过；Ubuntu 复验中，见当前验收记录 |
 
 WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 确认为 2026-06 从
 `models.par` 推导（计划 2026-06-13 / 提交 e2d9a1c8）但算法未记录；它等于 Sentaurus 接触边反推 `ni_eff`（≈1.65562e10）

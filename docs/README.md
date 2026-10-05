@@ -8,9 +8,12 @@ evidence.
 
 - [SDevice workflow](sentaurus_sdevice_workflow.md): current supported subset,
   CLI/gates/messages, output units and executable neutral mesh/sidecar examples.
+- [SDevice log/documentation repairs and native package E2E, 2026-10-05](validation/sdevice_native_package_e2e_2026-10-05.md):
+  current task status, fresh Windows/Ubuntu 26.04 package acceptance and integrity checks;
+  preserves the original numerical contract and the -20 V hole-density limitation.
 - [SDevice WP12 documentation closeout, 2026-10-05](validation/sdevice_wp12_closeout_2026-10-05.md):
   command/link/message/field audits, Release regression and six-item DoD evidence;
-  packaged cross-platform native PN2D numerical acceptance remains unproven.
+  historical snapshot preceding the package E2E follow-up above.
 - [Changelog](../CHANGELOG.md): SDevice frontend delivery and qualified limits.
 
 - [SDevice WP11 Ubuntu 26.04 migration, 2026-10-04](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md):
