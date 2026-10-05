@@ -3,7 +3,8 @@
 状态：**完成 WP13 原卡片的 Windows 验收**。在 `codex/sdevice-cmd-frontend` 当前工作树上，
 以 `9f9d2f5d` 为变更前状态，对齐无 BGN 的 300 K 内置标量，并将历史校准路径依赖的旧默认显式冻结。
 Windows Release 最终全量非外部参考 CTest **1026/1026**；三个 PN2D 门全部通过；没有放宽数值容差。
-额外发现的 Schottky 历史重启问题经对齐前发行包复现，作为独立待修复项保留。Ubuntu 额外验证未完成，原因见下文。
+2026-10-06 恢复任务后，Ubuntu 26.04.1 的受影响范围 CTest **16/16** 通过。
+额外发现的 Schottky 历史重启问题经对齐前发行包复现，作为独立待修复项保留。
 
 ## 对齐值与边界
 
@@ -162,11 +163,25 @@ python -m unittest tests.regression.test_schottky_reference_workflow
 四个 `sdevice_e2e_*` 外部参考项未在此次本地全量中重跑；此前 `8dc5498c` 两平台原生包验收保留为历史包证据，
 不标成 WP13 新二进制验收。本次没有重新发布部署包，也没有扩大 PN2D 场量资格。
 
-额外 Ubuntu 26.04.1 验证尝试：配置成功（GCC15.2，HDF5::HDF5、SPQR、UMFPACK、METIS，SparseLU/COLAMD），
+2026-10-05 的 Ubuntu 26.04.1 验证尝试：配置成功（GCC15.2，HDF5::HDF5、SPQR、UMFPACK、METIS，SparseLU/COLAMD），
 编译了新材料实现与对照测试对象。首次全目标构建包含许多此前未构建的测试目标，改为受影响目标时停止了本任务的 ninja；
-随后 WSL 启动返回 `HCS_E_CONNECTION_TIMEOUT`，未完成链接与测试。**不声称 Linux WP13 已通过**；后续可在恢复的 Ubuntu
-环境复验受影响目标。环境失败日志和被停止的构建均保留，没有将其当作产品测试失败或通过。
+随后 WSL 启动返回 `HCS_E_CONNECTION_TIMEOUT`，当时未完成链接与测试。
+环境失败日志和被停止的构建均保留，没有将其当作产品测试失败或通过。
 WSL 失败的工具调用结果摘要保存在 `build-linux26/wp13/environment-failures.txt`，不冒充原始标准输出。
+
+2026-10-06 关机后恢复任务，WSL 正常启动并确认 Ubuntu **26.04.1 LTS**、GCC **15.2.0**、CMake **4.2.3**。
+复用独立 `build-linux26` Release，Python API 关闭；重新配置仍检测到 HDF5::HDF5、独立 HDF5/HighFive、
+SPQR、UMFPACK、METIS，默认 Eigen SparseLU/COLAMD。将旧构建来源标记更新为实现提交
+`d9ef1e00145381e73eac9f39b68b44cb69cecc97`，完成以下目标的构建：
+`test_builtin_material_alignment`、`test_mesh`、`test_poisson`、`test_impact_ionization`、
+`test_dc_sweep`、`vela_example_runner` 与 `vela_sdevice_pyz`。
+
+受影响范围 CTest **16/16** 通过（46.92 s，JUnit failures=0、skipped=0）：10 项 Catch2 覆盖新增三项材料测试、
+旧材料性质/加载器、VTK SG 源和 sealed PN2D BV 失败轨迹；6 项 Python 注册测试覆盖 reference_tcad、三个 PN2D 门、
+32 项材料库回归及6项栅接触测试。栅接触 fixture 使用本次 Linux runner，没有跳过。
+另外两个生成器 `--check` 与 Schottky 工作流单元测试 **3/3** 通过；zipapp `device -v` 返回上述实现提交。
+本轮没有执行 Ubuntu 全仓 CTest、外部参考四项 E2E 或重新发布部署包，16 项仅代表受影响范围。
+实际命令与完整日志保存在 `build-linux26/wp13/resume-checks.sh` 和以下 `resume-*` 证据中。
 
 生成证据位于忽略目录 `build-release/wp13/` 与 `build-linux26/wp13/`：
 
@@ -176,9 +191,13 @@ WSL 失败的工具调用结果摘要保存在 `build-linux26/wp13/environment-f
 - materials-python.log、materials-workflow-python.log、schottky-workflow-test.log：生成器与额外工作流测试；前者保留修改过程中的历史结果。
 - dependency-inventory.json/txt：77 个 deck、25 个测试与部分材料输入清单。
 - docs-and-probe.log、install-smoke.log：文档链接、JUnit 汇总、历史 Node7 材料完整化与安装资源检查。
+- build-linux26/wp13/resume-configure-final.log、resume-build.log：2026-10-06 Ubuntu 成功配置与受影响目标构建。
+- build-linux26/wp13/resume-ctest.log/xml：Ubuntu 16/16；resume-default-check.log、resume-legacy-check.log、resume-schottky-workflow.log、resume-pyz-version.log：额外检查。
 - schottky-rerun/、schottky-control/、schottky-control-comparison.json：以下独立问题的完整对照。
 
 最终全量日志 SHA-256：`97e997e28c265a41ed546fc5a1a696cffce8417661640f51ebf477eb11639e98`。
+Ubuntu 受影响范围日志 SHA-256：`0f10e743ebda63b6decbddf5f7414e0f103e54e458a44858f683efc0115e8347`；
+对应 JUnit SHA-256：`bb1634e2b7674eb4bfc3c5d0d3b696e9337bcd12485e1db919b41cb2f8f19367`。
 
 ## 独立待验证项：Schottky 0.82 V 重启
 

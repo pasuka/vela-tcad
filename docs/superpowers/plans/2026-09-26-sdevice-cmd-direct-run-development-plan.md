@@ -26,6 +26,8 @@ WP13/剩余 WP14 保留待办。
 v2.9 材料对齐（2026-10-05）：用户已要求执行 WP13，当前工作树内对齐内置 Si/SiO2 的无 BGN 300 K 标量，
 独立冻结历史校准路径继承的旧值。当前证据见
 [WP13 验证记录](../../validation/builtin_material_alignment_2026-10-05.md)；剩余 WP14 与 −20 V 场量限制继续独立保留。
+2026-10-06 补验：恢复后的 Ubuntu 26.04.1 受影响范围 CTest 16/16 通过；实现提交 `d9ef1e00`，
+既有 Schottky 重启问题仍作为独立待修复项。未重跑 Ubuntu 全仓或重新发布部署包。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -1016,17 +1018,18 @@ flowchart LR
   及部分材料覆盖中省略字段的全局默认，同时同步 WP3 对齐测试与 workflow §2.4。
   [验证记录](../../validation/builtin_material_alignment_2026-10-05.md)登记实际依赖、旧基线冻结与测试结果。
   最终 Release 全量非外部参考 CTest 1026/1026，三个 PN2D 门通过，容差未放宽。
-  额外 Ubuntu 复验因 WSL 启动超时未完成；Schottky 0.82 V 重启失败在对齐前发行包也复现，独立保留待修复。
+  2026-10-06 补齐 Ubuntu 26.04.1 受影响范围 CTest 16/16；此前 WSL 超时记录保留。
+  Schottky 0.82 V 重启失败在对齐前发行包也复现，独立保留待修复。
 - 背景：WP3 验收时发现 C++ 内置 Si 的 `ni=1e10 cm⁻³` 与其 `Nc/Nv/Eg` 不自洽（由 `sqrt(Nc Nv)exp(−Eg/2kT)` 推导得 6.68e9），
   `Nv`（1.04e19 vs 3.10e19）与迁移率（1350/480 vs 1417/470.5）也偏离 Sentaurus 默认参数集；用户 2026-09-29 决定默认 `models.par`
-  以 Sentaurus par 数据为参考，并要求把内置值对齐与重新基线化列入计划。`vela device` 始终经材料文件、不依赖内置值，但仓库中 20 个
+  以 Sentaurus par 数据为参考，并要求把内置值对齐与重新基线化列入计划。`vela device` 始终经材料文件、不依赖内置值，但仓库当时盘点为 20 个（本次为25个）
   Catch2 测试文件与无 `materials_file` 的 deck 依赖内置默认，因此这是一次影响全局基线的独立变更。
 - 目标：`src/material/MaterialDatabase.cpp` 内置 `Si`/`SiO2` 与 `share/vela/materials/models.par`（Sentaurus 默认 Silicon 参数集）在
   300 K 的发射结果一致，且 `ni` 与 `Nc/Nv/Eg` 自洽；受影响的测试基线在有解释的前提下重新基线化，不放宽容差。
 - 目标值（300 K；精确值以 `python -m vela_sdevice.materials --par share/vela/materials/models.par --temperature 300 ...` 输出为准，
   与 `tests/regression/test_sdevice_materials.py::DefaultLibraryTest` 断言一致，测试中用 1e-12 相对容差比较，不手抄）：
 
-  | 字段 | 现内置（`MaterialDatabase.cpp:255-277`） | 目标 | 依据 |
+  | 字段 | 对齐前内置（旧方案记录） | 目标 | 依据 |
   | --- | --- | --- | --- |
   | Si `eps_r` | 11.7 | 11.7 | 不变 |
   | Si `bandgap_eV` | 1.12 | 1.12415923… | Varshni `Eg0=1.16964, alpha=4.73e-4, beta=636` |
@@ -1038,7 +1041,7 @@ flowchart LR
   | SiO2 `eps_r`/`bandgap_eV` | 3.9 / 9.0 | 3.9 / 9.0 | 不变 |
   | SiO2 `electron_affinity_eV` | 0.95 | 0.9 | Sentaurus Oxide `Chi0` |
 
-- 独占文件：`src/material/MaterialDatabase.cpp`、新 Catch2 `tests/test_material_database_alignment.cpp`、
+- 独占文件：`src/material/MaterialDatabase.cpp`、新 Catch2 `tests/test_builtin_material_alignment.cpp`、
   `share/vela/materials/default_materials.json`（生成物）、受影响测试的基线文件、`docs/config_schema.md` 材料节、
   `docs/validation/builtin_material_alignment_<date>.md`（新）。
 - 逐步：
@@ -1098,7 +1101,7 @@ flowchart LR
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
 | 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成；原生包补缺完成 | 两平台原契约验收及包指纹通过，见本次原生包验收记录 |
-| 独立 | WP13 内置材料对齐与重新基线化 | 完成 Windows 原卡片验收，1026/1026；三个 PN2D 门通过 | Ubuntu 额外复验、既有 Schottky 重启另列限制 |
+| 独立 | WP13 内置材料对齐与重新基线化 | 完成 Windows 原卡片验收，1026/1026；Ubuntu 受影响范围16/16，三个 PN2D 门均通过 | 既有 Schottky 重启另列限制；未重跑 Ubuntu 全仓 |
 | 独立 | WP14 Sentaurus 参考重跑（A-3） | PN2D/BJT 最小子集已完成；其余未执行 | 已有授权覆盖子集；其余原生重跑执行前另需授权 |
 
 ### 10.4 开发分支与工作树
@@ -1150,7 +1153,7 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 已完成，符号因子与 Time 已定案。日志覆盖、文档遗漏与两平台部署包原生 E2E 补缺完成，
 最终结果见[验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)，
 不再使用历史 WP14 → WP10 → WP11 → WP12 顺序作为任务队列。
-WP13 已完成 Windows 原卡片验收（全量 1026/1026、三个 PN2D 门通过，容差未放宽）；额外 Ubuntu 复验因环境超时未完成，
+WP13 已完成 Windows 原卡片验收（全量 1026/1026、三个 PN2D 门通过，容差未放宽）；2026-10-06 补齐 Ubuntu 受影响范围16/16，
 Schottky 0.82 V 重启问题在新旧 runner 中一致复现，独立待修复。剩余 WP14 和全反偏场量资格扩展另行推进。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
