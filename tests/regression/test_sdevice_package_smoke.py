@@ -21,9 +21,34 @@ from package_vela import safe_member, unpack_python, audit, package, tar_permiss
 from build_vela_sdevice_pyz import build_archive
 from tests.regression.sdevice_package_support import synthetic_cmd, isolated_environment, run
 from run_sdevice_package_e2e import verify_package, runtime_environment
+from generate_third_party_notices import generate, BASE_LICENSES
 from vela_sdevice.plt import read_plt_document
 
 class OfflinePackageTests(unittest.TestCase):
+    def test_windows_notices_accept_compiler_cache_types(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            toolchain = root / 'toolchain'
+            for name in BASE_LICENSES:
+                license = toolchain / 'share/licenses' / name
+                license.mkdir(parents=True)
+                (license / 'LICENSE').write_text('fixture license text')
+            build = root / 'build'
+            build.mkdir()
+            for cache_type in ('FILEPATH', 'STRING'):
+                with self.subTest(cache_type=cache_type):
+                    stage = root / cache_type
+                    (stage / 'bin/python').mkdir(parents=True)
+                    (stage / 'bin/vela.exe').write_bytes(b'fixture')
+                    (stage / 'bin/python/LICENSE').write_text('fixture Python license')
+                    (build / 'CMakeCache.txt').write_text(
+                        f'CMAKE_CXX_COMPILER:{cache_type}={toolchain.as_posix()}/bin/c++.exe\n')
+                    self.assertTrue(set(BASE_LICENSES).issubset(generate(stage, build)))
+                    self.assertTrue((stage / 'THIRD_PARTY_NOTICES').is_file())
+            (build / 'CMakeCache.txt').write_text('unconfigured compiler')
+            with self.assertRaisesRegex(ValueError, 'compiler path'):
+                generate(root / 'STRING', build)
+
     def test_native_package_admission_rejects_corruption_and_escape(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
