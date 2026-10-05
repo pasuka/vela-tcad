@@ -19,6 +19,43 @@ The repository provides two complementary import paths:
 
 Use both when building reference fixture chains under `reference_tcad/`.
 
+## Direct command execution: vela device
+
+For a preprocessed single-device SDevice `.cmd`, use the native `vela device`
+entry point. It converts the grid, imports the explicitly declared parameter
+file, validates/ emits stage decks and orchestrates the solver without an SDE
+input. `--check` stops before solving. TDR input requires the detected HDF5
+importer; the DF-ISE `.grd`/`.dat` path is also supported.
+
+The [current workflow](sentaurus_sdevice_workflow.md) contains the supported
+subset, gates, exit codes, output units and an executable
+[neutral mesh/sidecar example](sentaurus_sdevice_workflow.md#210-可执行中性示例与-sidecar).
+Use its section 2.10 commands from the worktree root. Help can be read with:
+
+```powershell
+.\build-release\vela.exe device -h
+.\build-release\sentaurus_import.exe --help
+```
+
+```bash
+./build-linux26/vela device -h
+./build-linux26/sentaurus_import --help
+```
+
+The [runtime packages](sdevice_packaging.md) target Windows and Ubuntu 26.04,
+and include Python, libraries and notices. The C++ importer exports neutral
+reference fixtures; it does not execute an SDevice deck. The older Python
+`scripts/sentaurus_import.py device --sde ... --sdevice ...` is a separate
+conversion workflow with its own substitution policy described below.
+Its examples containing `path/to/...` and the `FILE` CLI synopsis are templates
+to replace with real inputs, not complete runnable examples.
+
+For the native frontend, `--allow-lossy` accepts only material-matrix parameters
+classified as `approximated`; it does not bypass unsupported physics, thermal
+or mixed-mode gates. Numerical qualification and its limits are recorded in
+[WP10](validation/sdevice_wp10_closeout_2026-10-03.md), with current delivery/DoD
+evidence in [WP12](validation/sdevice_wp12_closeout_2026-10-05.md).
+
 ## Build Requirements
 
 Sentaurus import support is controlled by `VELA_ENABLE_HDF5`:

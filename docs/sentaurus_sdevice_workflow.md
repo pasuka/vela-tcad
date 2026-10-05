@@ -1,11 +1,13 @@
 # `vela device`：SDevice 命令文件直跑工作流
 
-状态：**WP5 编排器与 WP6.1 FieldData 已交付**（2026-10-02）。本文是
+状态：**WP0–WP12 文档与交付收口**（2026-10-05，WP13/剩余 WP14 独立待办）。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
 计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；
 WP11 分发与并发验收已完成（2026-10-04），见[打包指南](sdevice_packaging.md)与
 [Ubuntu 26.04 验收记录](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md)。
+当前支持范围与可执行示例见第 2.9–2.10 节；六条 DoD 的证据和未满足部分见
+[WP12 收口记录](validation/sdevice_wp12_closeout_2026-10-05.md)。完成前端工作包不等于任意 SDevice deck 均可无缝运行。
 
 ## 1. 契约文件索引
 
@@ -81,11 +83,14 @@ zipapp 包含标准库之外的四个仓库模块（`sentaurus_parameter_ir`、`
 在 UCRT64 环境的仓库根运行：
 
 ```powershell
-cmake --build --preset windows-ucrt64-release
 .\build-release\vela.exe device -h
-.\build-release\vela.exe device --check .\case\device_des.cmd
-.\build-release\vela.exe device --threads 4 .\case\device_des.cmd
+.\build-release\vela.exe device -v
 ```
+
+构建与分发步骤见[打包指南](sdevice_packaging.md)，实际输入与 `--check` 示例见第 2.10 节。
+随包 Python 清空 `PYTHONPATH`/`PYTHONHOME`、禁用用户 site 与新 bytecode cache；Windows
+`python312._pth` 为标准库 zip、`.`、`..`。Linux 目标仅为 Ubuntu 26.04 x86_64。
+跨主机 worktree 构建用经过 Git 核实的 `VELA_SOURCE_REVISION`，不能以 `unknown` 发布。
 
 ### 2.4 材料发射器（C3，WP3）
 
@@ -188,7 +193,8 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
   C4 `shrink_factor` 保留 Decrement 除数；runner deck `shrink_factor=1/Decrement`。
   零电压跨度变为单点平衡并记录 W211。
 - Plot/CurrentPlot 的 Time 范围展开后取排序去重并集；`vtk_bias_points` 保证电压必经点，C4 记录写出选择和全局 plot 序号。
-  Current 目标使用 `voltage_to_current`；达到后，WP5 必须将实测接触电压传给 `rebase_stage`。
+  Current 目标要求先 `Set("<contact>" mode current)`，使用 `voltage_to_current`；达到后，
+  WP5 必须将实测接触电压传给 `rebase_stage`。
   纯 WP4 发射器在没有实测初始电流时仍对显式 Time 中间点报 E407；WP5 用 `defer_current_times=True`
   先生成可校验计划，在运行 Current 段前用 `bind_current_start` 绑定前段 CSV 的实测电流与电压。
   `--check` 不求解，Current Time 映射会留待实际执行时绑定。
@@ -247,6 +253,95 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 以支持 Windows 中文和空格路径。用户日志含版本/提交/哈希、cmd 回显、映射决策、每段结果与结束摘要。
 `.plt` 电流符号因子全局固定为 +1，多段 time 每段重置；WP10 的原生参考证据见第 3.3 节。
 
+### 2.9 当前支持子集与验收层级
+
+`--check` 通过只表示输入、网格、材料和 stage/deck gates 通过；不求解，也不承诺商业软件的数值等价。
+
+| 输入 | 当前行为 | 限制/证据 |
+| --- | --- | --- |
+| File/Grid/Parameter | `.tdr` 或二维三角形 DF-ISE `.grd` + 同名 `.dat`；必须声明参数文件 | TDR 需实际 HDF5 importer；坐标 um，掺杂 cm^-3；`sdevice_mesh_import` |
+| Electrode | 大小写敏感的接触名，Voltage、栅 Barrier/WorkFunction/Material、Schottky、Resist/Resistor | 不支持分布电阻或掺杂多晶硅栅；电阻只可在扫描接触；`sdevice_gate_contact_mapping`/`sdevice_deck_emit` |
+| Physics | 等温 DD、Boltzmann/Fermi、常数/Masetti 迁移率、高场、SRH/Auger、OldSlotboom、VanOverstraeten、已映射带间隧穿与固定电荷 | 有效作用域需可表达；`.par` 活跃参数逐项门控；IALMob/热输运及未映射系数模型拒绝；`sdevice_materials` |
+| Math | 线程、Iterations、Digits/ErrRef、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria | 收敛映射是记录在案的启发式；无等价项 W102，不静默激活额外物理 |
+| Solve | 初始/续接 Coupled、单接触 Quasistationary 电压或电流目标、Save/Load、Plot/CurrentPlot Time、NewCurrentPrefix | HDF5 状态链；Current Time 在实际运行时绑定；多 Goal/Transient/Continuation/ACCoupled/System 拒绝 |
+| ABA/外接电阻/电流目标/Schottky | 解析、校验、deck 发射已有覆盖；门控成功可生成计划 | `sdevice_deck_emit` + WP12 中性网格 `--check`；除具名验收外，原生数值资格未建立 |
+| Plot | 第 3.3 节数据名、`/Vector`、VTU/PVD、ASCII 或 inline base64 binary | 不能提供的已识别字段 W202；坐标采样/积分/极值 CurrentPlot 请求 W105/W106 |
+| sidecar | 数值/诊断白名单，数组/标量替换，对象递归合并 | 不允许改模型、电极、目标、材料或输出名；每个覆盖键 W207；第 2.7 节 |
+| Workbench/Tcl/多器件 | 预处理指令、`@...@`、Tcl、Device/System/Thermode 拒绝 | E101/E102/E103/E105；先用源工具生成预处理完成的单器件命令 |
+
+PN2D 的已绑定 Windows 原生数值资格见第 3.3 节。Windows/Ubuntu 26.04 分发包的合成网格
+与并发验证不替代原生 PN2D 在两个包中的全数值验收，详见 WP12 DoD 账本。
+
+### 2.10 可执行中性示例与 sidecar
+
+[示例输入](../examples/sdevice/device_des.cmd)为 1 um 方形、4 节点/2 个直角三角形，
+均匀施主 `1e15 cm^-3`、受主 0、300 K，扫描 anode 从 0 至 1 V，电流单位 A/um。
+它演示接入与输出，不是具有原生参考的 PN2D 结基准。源目录只存输入；复制到忽略的构建目录运行。
+
+Windows（在 worktree 根，已有 UCRT64 Release 构建）：
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+New-Item -ItemType Directory -Force build-release/wp12/example | Out-Null
+Copy-Item examples/sdevice/* build-release/wp12/example/
+Push-Location build-release/wp12/example
+..\..\vela.exe device -P
+Pop-Location
+.\build-release\vela.exe device --check build-release/wp12/example/device_des.cmd
+.\build-release\vela.exe device --threads 2 build-release/wp12/example/device_des.cmd
+```
+
+Ubuntu 26.04（在 worktree 根，已有 `build-linux26/`）：
+
+```bash
+mkdir -p build-linux26/wp12/example
+cp examples/sdevice/* build-linux26/wp12/example/
+(cd build-linux26/wp12/example && ../../vela device -P)
+./build-linux26/vela device -h
+./build-linux26/vela device -v
+./build-linux26/vela device --check build-linux26/wp12/example/device_des.cmd
+./build-linux26/vela device --threads 2 build-linux26/wp12/example/device_des.cmd
+```
+
+运行后查看 `run_des.log`、`current_des.plt`、`final_des.vtu`/`final_des.pvd` 与
+`device_des_vela/run_manifest.json`；必须同时检查退出码及每段 `goal_reached`。
+`-P` 写当前目录的 `models.par`，会覆盖同名文件，适合本例的新建运行目录。
+
+sidecar 名称按命令文件去掉 **最后的 `.cmd`** 后追加 `.vela.json`：
+`device_des.cmd` → [device_des.vela.json](../examples/sdevice/device_des.vela.json)，不会再去掉 `_des`。
+该例只将 stage 1 的最大迭代次数由 50 改为 60：
+
+```json
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "description": "Set the iteration limit for the sweep stage only.",
+  "apply_to": [1],
+  "solver": {"max_iter": 60}
+}
+```
+
+`apply_to` 省略或空数组表示所有 stage；序号来自 `stage_plan.json`。`solver` 可带数值控制，
+但模型/温度键不在白名单；`sweep` 只允许 diagnostics。非法覆盖返回 E409/退出 4。
+BV 原子配置需同时满足第 2.7 节条件，不能拿本例迭代次数 sidecar 当作 BV 资格配置。
+
+当前已知限制：C10 接受 `runtime_log.profile`，纯发射器也记录 W207，但编排器写计划时
+会覆盖该对象，实际 runner 日志由 CLI `--verbose` 选择 debug，否则为 default。
+因此不能依赖 sidecar 在各段选择日志 profile；本轮记录该接口缺口，没有修改运行实现。
+
+可单独检查解析器、schema、材料发射器和纯 deck 发射器（Windows）：
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path scripts).Path
+python -m vela_sdevice.cmd_parser build-release/wp12/example/device_des.cmd --output build-release/wp12/parser.json
+python scripts/vela_sdevice/schema_validator.py schemas/vela.sentaurus_execution_ir.v2.schema.json build-release/wp12/parser.json
+python scripts/vela_sdevice/schema_validator.py schemas/vela.sdevice_sidecar.v1.schema.json examples/sdevice/device_des.vela.json
+python -m vela_sdevice.materials --par build-release/wp12/example/models.par --ir build-release/wp12/parser.json --materials Si --out build-release/wp12/materials
+python -m vela_sdevice.deck_emit --ir build-release/wp12/parser.json --mesh-qualification build-release/wp12/example/device_des_vela/mesh_qualification.json --materials-report build-release/wp12/materials/materials_report.json --sidecar examples/sdevice/device_des.vela.json --out build-release/wp12/emitted
+Remove-Item Env:PYTHONPATH
+```
+
+本节列出的命令在 WP12 中已实际执行；前面 `<...>` 与库接口 code block 是调用签名，需代入实际文件。
+
 ## 3. 输出契约（C6）
 
 ### 3.1 文件命名
@@ -302,9 +397,12 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   Vela 均 −19.405 V，−19.5/−19.6/−19.7 V 场量诊断通过，−20 V 空穴密度诊断失败。
   附加诊断失败随 JSON 保留，不推导全反偏范围的空间资格。后续核对可复用已完成候选，
   cmd/par/grid/sidecar 必须通过指纹检查；配置漂移不能自动沿用 BV 场量资格。
-- `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；字段名/单位用手册附录 F 的 TDR 数据名
+- `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；binary 为 inline base64 加 UInt32 header，
+  不是 appended raw。字段名/单位用当前 `src/io/VtuWriter.cpp::tdrFieldCatalogue()` 的 TDR 数据名
   （计划附录 B），向量为同名 3 分量数组；`region_id` CellData；`FieldData` 含 `VelaVersion`、
-  `CmdSHA256`、`Stage`、`t`、各电极 `OuterVoltage/InnerVoltage/TotalCurrent`、`goal_reached`。
+  `CmdSHA256`、`Stage`、`t`、`GoalReached`/`goal_reached`、`Unit:<array>`、
+  扫描接触 `<name>_OuterVoltage_V`/`<name>_InnerVoltage_V`、各接触 `<name>_TotalCurrent_A_per_um`。
+  所有电极的内/外电压及三种电流完整记录在 CSV/PLT；不要假定 VTU 含所有电极的内/外电压。
   只写 `Plot{}` 请求的字段，隐式追加 `ElectrostaticPotential`、`eDensity`、`hDensity`、
   `DopingConcentration`（`PlotExplicit` 时不追加）；无法提供的字段 W202 跳过。
 
@@ -312,6 +410,9 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 
 编号稳定、文案英文、每条带源文件行号（无行号时 `line=null`）。平台按编号匹配。
 `{...}` 为替换位；`text` 字段保存原文 token。
+解析器模板与 `cmd_parser/catalogue.py` 逐字一致；发射/运行期消息的 detail 随失败上下文变化，
+例如附 runner stderr。以下登记覆盖当前代码中所有 E/W 编号；E201 是保留号，当前 argparse
+缺命令文件实际发 E202/退出 2，尚不发 E201。各编号的首位数字仍定义退出码类别。
 
 | 编号 | 级别 | 退出码 | 模板 | 触发 |
 | --- | --- | --- | --- | --- |
@@ -358,7 +459,7 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 | E115 | fatal | 1 | `Command file cannot be decoded as UTF-8/ASCII text or is empty` | |
 | E116 | fatal | 1 | `Coupled equation '{name}' is not supported` | `Contact Circuit Temperature eTemperature hTemperature hQuantumPotential` |
 | E117 | fatal | 1 | `Electrode Name=Regexp(...) is not supported` | |
-| E201 | fatal | 2 | `No command file given (reading from stdin is not supported)` | |
+| E201 | fatal | 2 | `No command file given (reading from stdin is not supported)` | 保留号；当前缺命令文件走 E202 |
 | E202 | fatal | 2 | `Option '{opt}' is not supported by vela device` | |
 | E301 | fatal | 3 | `File{Parameter} is not declared: vela device requires a parameter file (add Parameter="<name>.par" or export the defaults with 'vela device -P')` | 缺 `Parameter`/`Parameters` |
 | E302 | fatal | 3 | `Grid file '{name}' not found` | |
@@ -440,13 +541,13 @@ schema 之外、golden 夹具所依赖的确定性规则：
 
 主验收 deck（pn2d、schottky、genius_bjt）原文都没有 `Parameter=`，golden 因而带 `E301`；
 验收运行使用追加了 `Parameter="models.par"` 的副本（该文件即 `sdevice -P` 的默认参数导出），
-见盘点文档待决项 A-2。
+该处理已确认，WP10 的 PN2D/BJT 原生 v2 最小重跑也显式声明 Parameter；原始夹具与其 golden 保留历史缺失信息。
 
-## 7. 待决与后续
+## 7. 决策收口与独立后续
 
-实施状态、剩余工作包票据与交接说明见 [2026-09-30 交接文档](validation/sdevice_cmd_frontend_handoff_2026-09-30.md)。
-该交接是当日快照；WP4 的后续实现、基准修正与完成验证见
-[2026-10-02 WP4 验证记录](validation/sdevice_deck_emit_validation_2026-10-02.md)。
+当前完成状态见 [WP12 DoD 账本](validation/sdevice_wp12_closeout_2026-10-05.md)与
+[开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)。
+[2026-09-30 交接文档](validation/sdevice_cmd_frontend_handoff_2026-09-30.md)保留当日快照，不是当前任务队列。
 
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
