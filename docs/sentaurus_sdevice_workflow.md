@@ -324,9 +324,9 @@ sidecar 名称按命令文件去掉 **最后的 `.cmd`** 后追加 `.vela.json`�
 但模型/温度键不在白名单；`sweep` 只允许 diagnostics。非法覆盖返回 E409/退出 4。
 BV 原子配置需同时满足第 2.7 节条件，不能拿本例迭代次数 sidecar 当作 BV 资格配置。
 
-当前已知限制：C10 接受 `runtime_log.profile`，纯发射器也记录 W207，但编排器写计划时
-会覆盖该对象，实际 runner 日志由 CLI `--verbose` 选择 debug，否则为 default。
-因此不能依赖 sidecar 在各段选择日志 profile；本轮记录该接口缺口，没有修改运行实现。
+日志优先级为 CLI `--verbose`（所有段 debug）→ 对应段 sidecar `runtime_log.profile`
+→ default。编排器保留 profile 并固定 append 模式；`apply_to` 外的段不继承该覆盖。
+WP12 发现的日志覆盖缺口已修复，并以真实 runner 日志核对 minimal/debug 与 CLI 优先级。
 
 可单独检查解析器、schema、材料发射器和纯 deck 发射器（Windows）：
 

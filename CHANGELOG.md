@@ -23,9 +23,9 @@ remain in Git history and the documentation index.
   Packaged cross-platform native PN2D numerical acceptance remains unproven;
   synthetic package smoke cannot replace it. Global built-in material alignment
   (WP13) and the remaining native reruns (WP14) are independent follow-ups.
-- Recorded an existing sidecar limitation: `runtime_log.profile` is accepted
-  during emission but overwritten by the orchestrator; runner logging follows
-  CLI verbose. The executable example uses a verified iteration-limit override.
+- Fixed stage sidecar `runtime_log.profile` being overwritten by the
+  orchestrator. CLI verbose selects debug globally; otherwise each stage uses
+  its sidecar profile or default. Real runner log regression covers precedence.
 
 See [workflow](docs/sentaurus_sdevice_workflow.md),
 [packaging](docs/sdevice_packaging.md) and

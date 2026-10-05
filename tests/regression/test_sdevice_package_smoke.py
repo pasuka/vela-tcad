@@ -20,9 +20,38 @@ sys.path.insert(0, str(REPO / "scripts"))
 from package_vela import safe_member, unpack_python, audit, package, tar_permissions, distribution_platform
 from build_vela_sdevice_pyz import build_archive
 from tests.regression.sdevice_package_support import synthetic_cmd, isolated_environment, run
+from run_sdevice_package_e2e import verify_package, runtime_environment
 from vela_sdevice.plt import read_plt_document
 
 class OfflinePackageTests(unittest.TestCase):
+    def test_native_package_admission_rejects_corruption_and_escape(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary = root / 'runner'
+            binary.write_bytes(b'qualified runtime')
+            item = {'path': 'runner', 'size': binary.stat().st_size,
+                    'sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
+            manifest = root / 'PACKAGE_MANIFEST.json'
+            manifest.write_text(json.dumps({'files': [item]}))
+            verify_package(root)
+            binary.write_bytes(b'corrupted runtime')
+            with self.assertRaisesRegex(ValueError, 'fingerprint'):
+                verify_package(root)
+            item['path'] = '../outside'
+            manifest.write_text(json.dumps({'files': [item]}))
+            with self.assertRaisesRegex(ValueError, 'escapes'):
+                verify_package(root)
+
+    def test_native_package_environment_ignores_host_overrides(self):
+        with patch.dict(os.environ, {'VELA_PYTHON': 'host-python', 'VELA_EXAMPLE_RUNNER': 'host-runner',
+                                     'PYTHONPATH': 'host-modules', 'FAKE_RUNNER_MODE': 'fake'}):
+            env = runtime_environment()
+        for key in ('VELA_PYTHON', 'VELA_EXAMPLE_RUNNER', 'PYTHONPATH', 'FAKE_RUNNER_MODE'):
+            self.assertNotIn(key, env)
+        self.assertEqual(env['PYTHONDONTWRITEBYTECODE'], '1')
+        self.assertEqual(env['PATH'], str(Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'System32')
+                         if os.name == 'nt' else '/nonexistent')
+
     def test_linux_target_requires_ubuntu_26_04_x86_64(self):
         with patch("package_vela.os.name", "posix"), patch("package_vela.platform.machine", return_value="x86_64"):
             for distro, version, accepted in (("ubuntu", "26.04", True), ("ubuntu", "24.04", False),
