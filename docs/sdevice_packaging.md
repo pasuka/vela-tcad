@@ -141,6 +141,10 @@ launcher and TDR importer. System Python is absent from child PATH; inherited
 VELA/Python/fixture overrides are removed. The comparison controller comes from
 the source tree; the frontend and numerical runner come from the package.
 No `--candidate-dir` reuse is permitted by this entry point.
+The external controller starts the bundled interpreter with `-I -B`: isolation
+ignores Python environment variables, so `-B` must explicitly disable startup
+bytecode writes. The invalid-cache regression checks that source is executed
+without changing shipped cache bytes.
 
 After unpacking a newly built package, use these templates with its actual
 directory and a **new** output directory (paths below are caller-supplied):
@@ -159,3 +163,5 @@ The tool writes `package_e2e_summary.json`, controller logs and per-case
 The default per-candidate timeout is 7200 seconds; timeout or an incomplete
 goal fails. Original WP10 thresholds and the −20 V hole-density diagnostic
 limitation remain unchanged. This is distinct from the synthetic smoke above.
+Current results and retained failure evidence are in the
+[native package E2E record](validation/sdevice_native_package_e2e_2026-10-05.md).

@@ -26,7 +26,12 @@ remain in Git history and the documentation index.
 - Fixed stage sidecar `runtime_log.profile` being overwritten by the
   orchestrator. CLI verbose selects debug globally; otherwise each stage uses
   its sidecar profile or default. Real runner log regression covers precedence.
+- Fixed Windows license collection for CMake preset compiler cache entries and
+  disabled bytecode writes explicitly in the isolated native E2E controller.
+  The invalid-cache regression passes on both platforms; original failed
+  package integrity evidence is retained in the follow-up record.
 
 See [workflow](docs/sentaurus_sdevice_workflow.md),
 [packaging](docs/sdevice_packaging.md) and
-[WP12 evidence](docs/validation/sdevice_wp12_closeout_2026-10-05.md).
+[WP12 evidence](docs/validation/sdevice_wp12_closeout_2026-10-05.md) and the
+[native package follow-up](docs/validation/sdevice_native_package_e2e_2026-10-05.md).

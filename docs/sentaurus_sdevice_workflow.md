@@ -6,8 +6,9 @@
 计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；
 WP11 分发与并发验收已完成（2026-10-04），见[打包指南](sdevice_packaging.md)与
 [Ubuntu 26.04 验收记录](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md)。
-当前支持范围与可执行示例见第 2.9–2.10 节；六条 DoD 的证据和未满足部分见
-[WP12 收口记录](validation/sdevice_wp12_closeout_2026-10-05.md)。完成前端工作包不等于任意 SDevice deck 均可无缝运行。
+当前支持范围与可执行示例见第 2.9–2.10 节；六条 DoD 的初始账本见
+[WP12 收口记录](validation/sdevice_wp12_closeout_2026-10-05.md)，后续补缺状态见
+[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)。完成前端工作包不等于任意 SDevice deck 均可无缝运行。
 
 ## 1. 契约文件索引
 
@@ -270,7 +271,8 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 | Workbench/Tcl/多器件 | 预处理指令、`@...@`、Tcl、Device/System/Thermode 拒绝 | E101/E102/E103/E105；先用源工具生成预处理完成的单器件命令 |
 
 PN2D 的已绑定 Windows 原生数值资格见第 3.3 节。Windows/Ubuntu 26.04 分发包的合成网格
-与并发验证不替代原生 PN2D 在两个包中的全数值验收，详见 WP12 DoD 账本。
+与并发验证不替代原生 PN2D 在两个包中的数值验收；从解包入口运行的当前结果见
+[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)，范围保持第 3.3 节原契约。
 
 ### 2.10 可执行中性示例与 sidecar
 
@@ -546,6 +548,7 @@ schema 之外、golden 夹具所依赖的确定性规则：
 ## 7. 决策收口与独立后续
 
 当前完成状态见 [WP12 DoD 账本](validation/sdevice_wp12_closeout_2026-10-05.md)与
+[补缺任务表](validation/sdevice_native_package_e2e_2026-10-05.md)，详细工作包见
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)。
 [2026-09-30 交接文档](validation/sdevice_cmd_frontend_handoff_2026-09-30.md)保留当日快照，不是当前任务队列。
 
