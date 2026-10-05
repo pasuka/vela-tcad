@@ -2,7 +2,7 @@
 
 日期：2026-09-26
 
-状态：方案 v2.6（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.7（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -13,6 +13,10 @@
 
 v2.6 平台变更（2026-10-04，用户决定）：Linux 仅使用 Ubuntu 26.04 x86_64，覆盖早期平台选择；
 同步第 13 节、决定 11、DoD 与 WP11，删除旧 Linux 环境/交付物并在新平台重新验收。
+
+v2.7 文档收口（2026-10-05）：WP12 完成，附录 A 回填实际决策、附录 B 以当前 C++ 字段目录为准；
+六条 DoD 的逐项证据和跨平台原生数值验收缺口见
+[WP12 收口记录](../../validation/sdevice_wp12_closeout_2026-10-05.md)。没有改变门限或扩大既有资格。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -983,7 +987,11 @@ flowchart LR
 
 #### WP12 文档与收尾
 
-- 状态：**待开工**（组 D，最后执行）。
+- 状态：**已完成**（2026-10-05）。工作流/配置/导入文档、消息目录与字段目录核对、
+  中性示例及 sidecar、CHANGELOG、附录 A 与六条 DoD 账本已交付；
+  [证据及限制](../../validation/sdevice_wp12_closeout_2026-10-05.md)。WP12 完成不代表阶段 1 六条 DoD 全部达成。
+  输出核对发现既有 `runtime_log.profile` sidecar 覆盖在编排执行时丢失，已登记限制；
+  可执行示例使用实际生效的 `solver.max_iter`，未在文档工作包中改运行实现。
 - 背景：DoD 第 6 条要求 `docs/sentaurus_sdevice_workflow.md`、`config_schema.md`、`sentaurus_import.md` 与消息目录完稿；WP4/WP5
   会新增消息编号与 deck 键，WP10 会回填 C6，需要在收尾时统一核对并让文档中每条命令可执行。
 - 范围：`docs/sentaurus_sdevice_workflow.md` 完稿（§2.3 去掉“待 WP7”；§3.3 回填符号因子与 `time` 语义；消息目录补齐 WP4/WP5 新编号；
@@ -1070,14 +1078,14 @@ flowchart LR
 
 ### 10.3 阶段与 WP 的对应
 
-| 阶段 | WP | 状态（2026-10-04） | 可并行 |
+| 阶段 | WP | 状态（2026-10-05） | 可并行 |
 | --- | --- | --- | --- |
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
-| 阶段 4 验收与交付 | WP10、WP11、WP12 | WP10/WP11 已完成，WP12 待开工 | WP11 两平台分发通过；WP12 最后 |
+| 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成 | DoD 跨平台原生数值证据仍有缺口，见 WP12 账本 |
 | 独立 | WP13 内置材料对齐与重新基线化 | 待开工 | 与阶段 3/4 并行；建议独立分支 |
-| 独立 | WP14 Sentaurus 参考重跑（A-3） | 待用户授权 | 授权后即可执行；产物供 WP10 |
+| 独立 | WP14 Sentaurus 参考重跑（A-3） | PN2D/BJT 最小子集已完成；其余未执行 | 已有授权覆盖子集；其余原生重跑执行前另需授权 |
 
 ### 10.4 开发分支与工作树
 
@@ -1161,10 +1169,14 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 3. 4.7 节每一类 fail-closed 项至少一个注入用例，退出码与消息编号正确；2022 参考 deck（IALMob/
    Thermodynamic）被正确拒绝。
 4. 所有映射内的 `Math`/`Electrode`/`Physics`/`Solve` 关键字在 golden IR 测试中有覆盖；
-   `sdevice_frontend` CTest 在无 Sentaurus 产物的机器上全绿。
+   实际注册的 `sdevice_contracts`、`sdevice_cmd_parser`、`sdevice_deck_emit` 等前端 CTest
+   在无 Sentaurus 产物的机器上全绿（当前没有名为 `sdevice_frontend` 的单个测试）。
 5. 并发矩阵（13.3）通过；含中文/空格路径冒烟通过；中止信号下保留部分 `.plt` 并释放锁。
 6. 现有全部 CTest 不回退（含 PN2D BV 模板门）；`docs/sentaurus_sdevice_workflow.md`、
    `config_schema.md`、`sentaurus_import.md` 与消息目录完稿。
+
+WP12 已逐项登记提交/测试证据。Windows 原生数值验收、两平台合成包冒烟分别成立，
+仍缺两个部署包的原生 PN2D 全数值验收；因此保持上述 DoD，不能以文档完稿或 `--check` 替代第 1 条。
 
 ## 11. 风险与未决问题
 
@@ -1172,9 +1184,9 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
    Vela 约定，需平台方确认后冻结。
 2. **收敛准则不等价**：`Digits/ErrRef`（更新量，Eq. 31）与 Vela 残差准则无一一对应；
    映射只能保证“不更松”的启发式并在 log 记录，误差评价以第 8 节阈值为准。
-3. **已知物理差异**：PN2D BV 深雪崩区 0.70x、LDMOS 峰值 gm 24%、界面节点
-   Poisson 电荷体积策略等已在验证文档中登记；这些决定了部分案例的可达阈值，
-   不能靠前端映射消除。
+3. **已知物理差异**：早期 PN2D BV 0.70x 属历史配置结果，不能沿用到修复后的输入/原子配置。
+   当前曲线/KCL 与 −13.2 V 场量资格已通过，−20 V 空穴密度诊断仍失败；约 19.6 V 是用户指出的膝区，
+   −13.2 V 只是场量样本。LDMOS、界面体积等其他设备的差异账本仍独立有效，不推广资格。
 4. **`.par` 覆盖率**：现有矩阵对 PN2D `models.par` 报告 8 个阻断项
    （Auger H/N0、Bandgap 次级公式、mutunnel 等），只有当这些参数所属模型被
    激活时才致命；仍可能出现用户 `.par` 触发 fail-closed 的情况，需在 log 中
@@ -1205,9 +1217,9 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 12. **内置材料对齐（WP13）改变全局默认**：所有无 `materials_file` 的 deck、20 个引用 `MaterialDatabase` 的 Catch2 测试文件与基于旧内置值
     校准的示例都会漂移（`ni` +7.5%，`Nv` ×3，`SiO2.χ` −0.05 eV）。缓解：独立分支执行、逐文件登记重新基线化理由、校准 deck 改为显式
     `materials_file` 固定旧值以保留校准证据；`vela device` 路径不受影响。
-13. **`.vtu` `FieldData` 补充键**：C6 要求的 `CmdSHA256/Stage/t/goal_reached` 目前无 deck 透传键（WP6 只写 `VelaVersion/SweepContact/Bias_V/
-    PointIndex/Converged/<contact>_TotalCurrent_A_per_um`）；若不做 WP6.1，WP5 需以文本方式改写 XML，在 `--vtu-binary`（appended raw）
-    模式下不安全。建议做 WP6.1。
+13. **`.vtu` `FieldData` 补充键**：WP6.1 已通过 `sweep.vtk_field_data` 提供 `CmdSHA256/Stage/t`，
+    runner 增加逐段 `GoalReached/goal_reached` 与扫描接触电压；binary 是 inline base64，FieldData 仍为 ASCII。
+    WP5 直接消费其元数据，不需改写 appended raw XML；验收见 `vtu_writer`/`dc_sweep_output_contract` 与 WP5/WP10。
 
 ## 12. 验收产物管理与核对
 
@@ -1371,7 +1383,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 两次并行（预期一个退出码 7）；结果与串行基线逐字节（`.plt`）与数值（`.vtu`，
 容差 0，仅在默认单线程下要求；多线程 BLAS 时改用小容差）一致；`ps` 采样确认线程数不超过设定。
 
-## 附录 A：待确认事项
+## 附录 A：决策收口与独立后续
 
 截至 2026-09-26 决定 1–24 均已确认。WP0 盘点后登记以下待决项（详见
 [产物盘点](../../validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节）：
@@ -1380,12 +1392,16 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 | --- | --- | --- |
 | A-1 | VM 归档目录布局（盘点文档第 5 节）；首批 7 个案例已复制到 `/home/tcad/vela_reference_artifacts/<case>/v1/`，manifest 入库 | 已确认并执行（2026-09-26） |
 | A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
-| A-3 | `pn2d_iv`/`pn2d_bv`/bvmethods 的 Sentaurus 重跑时机（用户决定：暂不重跑） | 延后 → 已细化为 WP14 卡片（重跑清单含 `WorkFunction` 栅核对 deck），执行仍需用户授权 |
-| A-4 | 多段扫描 `.plt` 的 `time` 语义与电流符号因子的证据文件 | WP8 已实现每段 `t` 与 `CURRENT_SIGN_FACTOR=+1` 占位；证据由 WP14 产物提供，WP10 步骤 2–3 定案并回填 C6 |
+| A-3 | 原生参考重跑范围 | 用户已授权并完成 PN2D 0V/IV/BV 与 BJT m0 的最小 v2 重跑；bvmethods/WorkFunction 栅等其余 WP14 未执行，授权不扩大到这些案例 |
+| A-4 | 多段 `.plt` Time 与电流符号 | WP10 已用 v2 BJT base/collector 与 PN2D IV 固定：每段 t 重置 0–1，`CURRENT_SIGN_FACTOR=+1.0`；原生文件哈希见 workflow §3.3 |
 | A-5 | C++ `MaterialDatabase` 内置 Si/SiO2 是否对齐 Sentaurus 默认参数集并重新基线化（用户 2026-09-29：列入后续计划） | 已列为 WP13 |
 
 执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径已盘点完毕；若希望
 使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在确认 A-1 时指定。
+
+截至 2026-10-05，没有阻止 WP12 文档收口的待确认事项。A-1/A-2/A-4 已落实；A-3/A-5 是
+具名独立后续。当前 Linux 目标为 Ubuntu 26.04，旧环境/包已删除（WP11）；
+门限、−20 V 已知限制与跨包数值证据缺口保留在 WP12 DoD 账本。
 
 WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_qualification.v1,stage_plan.v1,reference_artifact_manifest.v1,sdevice_sidecar.v1}.schema.json`、
 `scripts/vela_sdevice/schema_validator.py`（纯标准库 draft-07 子集校验器，供随包 Python 使用）、
@@ -1405,7 +1421,12 @@ CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`referen
 | WP3 材料 | 完成 | `fcea7cad`、`be073edb`、`0e87e661` | PN2D `models.par`+IV 激活集 → C3 闭式值 1e-12 一致、通过 C3 schema；默认 `models.par` 为 Sentaurus 默认 Silicon 参数集（文献值）+ Oxide/Nitride，与 PN2D `sdevice -P` 转储的发射结果逐字段相等，支持的全部模型在 300/350 K 无损回退；HfO2 等未知材料 E403；`unsupported_*` E404、`approximated` 需 `--allow-lossy`；CTest `sdevice_materials`（30） |
 | WP6 C++ 增量 | 完成 | `0c9756ba` | `VtuWriter` XML `.vtu`（独立解析回读节点/单元/字段名/单位/FieldData，ASCII+binary）；TDR 字段目录与 `Name`/`Name/Vector` 选择；`vtk_bias_points` 落点 1e-12 V 且其它点不变；`breakdown.current_{abs,min,max}_A_per_um` 在单调电流序列上于正确点终止并标记 CSV；`csv_all_contacts`；Catch2 `vtu_writer`（5）、`dc_sweep_output_contract`（4）；全量 CTest 见集成检查 |
 | WP4a 栅接触能级 | 完成 | `e5cae3e9` | Vela `metal_gate` 与 Eq. 104 同参考能级：`work_function_eV = Barrier`；`WorkFunction` 经 `Φ_S,i = χ+E_g/2+(kT/2)ln(N_c/N_v)` 换算；MOS 电容夹具三个 Barrier 值平带偏差 2e-16 V；文档 `docs/validation/sdevice_gate_contact_reference_2026-09-29.md`；CTest `sdevice_gate_contact_mapping`（6） |
-| WP4 stage/deck 发射器 | 完成 | 本次提交 | 七个 accepted 夹具完整 golden、C4/公开 deck schema、步长/单位/电极/sidecar/rebase/Save/Load；真实 runner 平衡、电压、电流目标、Load 与 HDF5；22/22 单测、相关 CTest 11/11、其余 Debug CTest 1017/1017；C3/v2 最小修复与当前默认库栅基准已获用户授权 |
+| WP4 stage/deck 发射器 | 完成 | `5ae3ce13` | 七个 accepted 夹具完整 golden、C4/公开 deck schema、步长/单位/电极/sidecar/rebase/Save/Load；真实 runner 平衡、电压、电流目标、Load 与 HDF5；C3/v2 最小修复与当前默认库栅基准已获用户授权 |
+| WP6.1 FieldData | 完成 | `323983e0` | `vtu_writer`/`dc_sweep_output_contract`，ASCII/binary、逐段 goal 与 t；不提供扩展时保留旧输出 |
+| WP5 编排 | 完成 | `c9971ebd` | `sdevice_orchestrator`/`sdevice_vela_launcher`，gates/退出码/锁/中止/增量发布；当时 Release 1020/1020 |
+| WP10 数值验收/修复/收口 | 完成（具名范围） | `5c723a2e`、`0842e000`、`4734071b` | `sdevice_acceptance_tools`、四份原契约 pass 报告；IV 10 V、BV −20 V，BV 场量仅 −13.2 V 资格，−20 V hDensity 失败留存 |
+| WP11 包/并发 | 完成 | `1e3e39f2`、`16fb066b` | `sdevice_package_smoke`/`sdevice_concurrency`；Windows/Ubuntu 26.04，无系统 Python，零差异并发与线程上限 |
+| WP12 文档 | 完成 | 本次提交；基线 `16fb066b` | 文档命令实跑、消息/字段/链接审查、Release 回归、六条 DoD 证据/缺口；见 WP12 收口记录 |
 
 WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 确认为 2026-06 从
 `models.par` 推导（计划 2026-06-13 / 提交 e2d9a1c8）但算法未记录；它等于 Sentaurus 接触边反推 `ni_eff`（≈1.65562e10）
@@ -1420,40 +1441,57 @@ WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历�
 
 ## 附录 B：`.vtu` 输出字段（TDR 数据名）与 `Plot{}` 别名映射
 
-输出名与单位出自手册附录 F Table 195（标量）/196（向量）；“别名”列是仓库 deck 中
-实际出现、且已在 Sentaurus 上运行成功的 `Plot{}` 写法，仅用于输入识别。
+本表按当前 `src/io/VtuWriter.cpp::tdrFieldCatalogue()` 逐项核对；不再保留开工前的待接线猜测。
+输入别名由 `scripts/vela_sdevice/cmd_parser/sections.py` 归一化（如 Potential、eCurrent/Vector、SRH）。
+3 分量条目用 `/Vector` 请求向量，省略该后缀请求模；写出的数组名不含 `/Vector`。
 
-| TDR 数据名（输出） | 常见 `Plot{}` 别名 | Vela 现有数组 | 单位（手册） |
+| TDR 数据名 | Vela 来源数组/表达式 | 输出单位 | 原生分量数 |
 | --- | --- | --- | --- |
-| `ElectrostaticPotential` | `Potential` | `Potential` | V |
-| `eQuasiFermiPotential` / `hQuasiFermiPotential` | `eQuasiFermi` / `hQuasiFermi` | `ElectronQuasiFermi` / `HoleQuasiFermi` | V |
-| `eDensity` / `hDensity` | — | `Electrons` / `Holes` | cm⁻³ |
-| `DopingConcentration` | `Doping` | `NetDoping` | cm⁻³ |
-| `DonorConcentration` / `AcceptorConcentration` | — | 需从 doping 模型导出 | cm⁻³ |
-| `SpaceCharge` | — | `SpaceCharge` | cm⁻³ |
-| `ElectricField`（标量；`/Vector` 为向量） | — | `ElectricField` / `ElectricFieldVector` | V/cm |
-| `eCurrentDensity` / `hCurrentDensity` / `TotalCurrentDensity`（向量） | `eCurrent/Vector` / `hCurrent/Vector` / `TotalCurrent/Vector` | `J_n_total` / `J_p_total` / `TotalCurrentDensityVector` | A/cm² |
-| `ConductionCurrentDensity` | — | = `J_n_total + J_p_total` | A/cm² |
-| `eMobility` / `hMobility` | — | `ElectronMobilityCm2PerVs` / `HoleMobilityCm2PerVs` | cm²/(V·s) |
-| `eVelocity` / `hVelocity` | — | `ElectronVelocity` / `HoleVelocity` | cm/s（`v = J/(nq)`；需核对现有定义） |
-| `srhRecombination` | `SRH`, `SRHRecombination` | `SRHRecombinationCm3PerS` | cm⁻³·s⁻¹ |
-| `AugerRecombination` | `Auger` | `AugerRecombinationCm3PerS` | cm⁻³·s⁻¹ |
-| `TotalRecombination` | — | 需汇总 | cm⁻³·s⁻¹ |
-| `Band2BandGeneration` | `Band2Band` | `Band2BandGeneration` | cm⁻³·s⁻¹（需核对现有单位） |
-| `AvalancheGeneration` / `eAvalancheGeneration` / `hAvalancheGeneration` | — | `AvalancheGeneration`；按载流子拆分需新增 | cm⁻³·s⁻¹（需核对现有单位） |
-| `eAlphaAvalanche` / `hAlphaAvalanche` | — | `ElectronAlphaAvalanche` / `HoleAlphaAvalanche` | cm⁻¹ |
-| `eIonIntegral` / `hIonIntegral` / `MeanIonIntegral` | — | 同名 | 1 |
-| `BandGap` / `BandgapNarrowing` / `EffectiveBandGap` | `BandGapNarrowing` | `BandGap` / `BandgapNarrowing` / 需计算 | eV |
-| `ElectronAffinity` | `Affinity` | `ElectronAffinity` | eV |
-| `ConductionBandEnergy` / `ValenceBandEnergy` | `ConductionBand` / `ValenceBand` | 同名 | eV |
-| `EffectiveIntrinsicDensity` / `IntrinsicDensity` | — | `EffectiveIntrinsicDensity` / 需导出 | cm⁻³ |
-| `eEffectiveStateDensity` / `hEffectiveStateDensity` | — | Nc/Nv 节点数组（需接线） | cm⁻³ |
-| `eQuantumPotential` | — | 量子势数组（需接线） | eV（手册；注意与 Vela 的 V 表示换算） |
-| `eEparallel` / `hEparallel` | — | `ElectronEparallel` / `HoleEparallel` | V/cm |
-| `eEnormal` / `hEnormal` | `eENormal` / `hENormal` | `ElectronEnormal` / `HoleEnormal` | V/cm |
-| `eGradQuasiFermi` / `hGradQuasiFermi`（向量） | `.../Vector` | `ElectronGradQuasiFermiVector` / `HoleGradQuasiFermiVector` | V/cm |
-| `eTemperature` / `hTemperature` / `LatticeTemperature` | `Temperature` | 不提供（log warning 跳过） | K |
+| `ElectrostaticPotential` | `Potential` | `V` | 1 |
+| `eQuasiFermiPotential` | `ElectronQuasiFermi` | `V` | 1 |
+| `hQuasiFermiPotential` | `HoleQuasiFermi` | `V` | 1 |
+| `eDensity` | `Electrons` | `cm^-3` | 1 |
+| `hDensity` | `Holes` | `cm^-3` | 1 |
+| `DopingConcentration` | `NetDoping` | `cm^-3` | 1 |
+| `DonorConcentration` | `DopingModel::donors` | `cm^-3` | 1 |
+| `AcceptorConcentration` | `DopingModel::acceptors` | `cm^-3` | 1 |
+| `SpaceCharge` | `SpaceCharge` | `cm^-3` | 1 |
+| `ElectricField` | `ElectricFieldVector` | `V/cm` | 3 |
+| `eCurrentDensity` | `SentaurusElectronCurrentDensityVector` | `A/cm^2` | 3 |
+| `hCurrentDensity` | `SentaurusHoleCurrentDensityVector` | `A/cm^2` | 3 |
+| `TotalCurrentDensity` | `SentaurusTotalCurrentDensityVector` | `A/cm^2` | 3 |
+| `ConductionCurrentDensity` | `SentaurusTotalCurrentDensityVector` | `A/cm^2` | 3 |
+| `eMobility` | `ElectronMobilityCm2PerVs` | `cm^2/(V*s)` | 1 |
+| `hMobility` | `HoleMobilityCm2PerVs` | `cm^2/(V*s)` | 1 |
+| `eVelocity` | `ElectronMobilityCm2PerVs*ElectronImpactIonizationDrive` | `cm/s` | 1 |
+| `hVelocity` | `HoleMobilityCm2PerVs*HoleImpactIonizationDrive` | `cm/s` | 1 |
+| `srhRecombination` | `SRHRecombinationCm3PerS` | `cm^-3*s^-1` | 1 |
+| `AugerRecombination` | `AugerRecombinationCm3PerS` | `cm^-3*s^-1` | 1 |
+| `Band2BandGeneration` | `Band2BandGeneration` | `cm^-3*s^-1` | 1 |
+| `AvalancheGeneration` | `AvalancheGeneration` | `cm^-3*s^-1` | 1 |
+| `TotalRecombination` | `SRHRecombination+AugerRecombination-Band2BandGeneration-AvalancheGeneration` | `cm^-3*s^-1` | 1 |
+| `eAlphaAvalanche` | `ElectronAlphaAvalanche` | `cm^-1` | 1 |
+| `hAlphaAvalanche` | `HoleAlphaAvalanche` | `cm^-1` | 1 |
+| `eIonIntegral` | `ElectronIonIntegral` | `1` | 1 |
+| `hIonIntegral` | `HoleIonIntegral` | `1` | 1 |
+| `MeanIonIntegral` | `MeanIonIntegral` | `1` | 1 |
+| `BandGap` | `BandGap` | `eV` | 1 |
+| `BandgapNarrowing` | `BandgapNarrowing` | `eV` | 1 |
+| `EffectiveBandGap` | `BandGap-BandgapNarrowing` | `eV` | 1 |
+| `ElectronAffinity` | `ElectronAffinity` | `eV` | 1 |
+| `ConductionBandEnergy` | `ConductionBandEnergy` | `eV` | 1 |
+| `ValenceBandEnergy` | `ValenceBandEnergy` | `eV` | 1 |
+| `EffectiveIntrinsicDensity` | `EffectiveIntrinsicDensity` | `cm^-3` | 1 |
+| `eEffectiveStateDensity` | `densityOfStatesNc` | `cm^-3` | 1 |
+| `hEffectiveStateDensity` | `densityOfStatesNv` | `cm^-3` | 1 |
+| `eEparallel` | `ElectronEparallel` | `V/cm` | 1 |
+| `hEparallel` | `HoleEparallel` | `V/cm` | 1 |
+| `eEnormal` | `ElectronEnormal` | `V/cm` | 1 |
+| `hEnormal` | `HoleEnormal` | `V/cm` | 1 |
+| `eGradQuasiFermi` | `ElectronGradQuasiFermiVector` | `V/cm` | 3 |
+| `hGradQuasiFermi` | `HoleGradQuasiFermiVector` | `V/cm` | 3 |
 
-说明：Vela 现有数组名与单位见 `src/solver/GummelSolver.cpp:944-1752`；表中“需核对”项在
-WP6 实现时以代码为准逐项确认，不得凭表填单位。向量数据在 `.vtu` 中以同名 3 分量
-`DataArray` 写出（与 ParaView 惯例一致），不再保留 `Vector` 后缀。
+已识别但没有目录/可用数组的请求（如拆分 e/hAvalancheGeneration、IntrinsicDensity、
+eQuantumPotential、载流子温度）记录 W202 并跳过；不承诺字段存在。
+目录是字段名/单位接口，不是所有求解状态都会提供所有数组。测试名 `vtu_writer` 与
+`dc_sweep_output_contract`；实际字段选择、单位和二进制格式见当前 workflow §3.3。

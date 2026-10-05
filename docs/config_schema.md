@@ -1,5 +1,44 @@
 # Config Schema Reference
 
+## SDevice command entry point and generated v2 decks
+
+`vela device` reads a preprocessed single-device SDevice command file, imports
+its grid and declared `File{Parameter}`, validates them, then emits one
+`format_version: 2` JSON deck per stage. The source `.cmd` owns electrodes,
+physics, goals and filenames; the optional `.vela.json` sidecar owns only the
+documented numerical/diagnostic overrides. `--check` performs those gates and
+writes `stage_plan.json` without starting the solver. It is separate from
+passing a hand-written JSON deck to `vela_example_runner`.
+
+See the [current workflow and executable example](sentaurus_sdevice_workflow.md#210-可执行中性示例与-sidecar),
+[sidecar schema](../schemas/vela.sdevice_sidecar.v1.schema.json), and
+[WP12 evidence/limits](validation/sdevice_wp12_closeout_2026-10-05.md).
+The CLI and exit codes are in workflow section 2; deployment targets are
+Windows UCRT64 and Ubuntu 26.04 x86_64.
+
+Other examples using `inputs/...`, `runs/...` or generic filenames below are
+configuration patterns whose paths must be supplied by the caller. The linked
+workflow section 2.10 provides the concrete, executed source-tree example.
+
+Generated decks use the public v2 unit conventions; conversion to internal SI
+belongs to the C++ loader. A `materials_file` is independently schema-tagged
+`vela.templates_ldmos.materials.v1`: its native `_cm3`/`_cm2_V_s` keys are not
+rewritten as deck keys. The frontend always supplies that file. This does not
+change the legacy C++ built-in material defaults used by other JSON decks.
+
+For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested
+`vtk_fields`, exact `vtk_bias_points`, `vtk_field_data` metadata and
+`csv_all_contacts`. Current-target/BreakCriteria termination uses the documented
+`breakdown.current_{abs,min,max}_A_per_um` plus `current_contact`. These options
+are described under Sweep below. CLI `--threads` takes precedence over
+`Math{NumberOfThreads}`; absence of both means one solver thread.
+
+`vtk_field_data` goal status describes the individual stage, and exit 0 may
+include an incomplete later stage when `ExitOnFailure` is absent. Verify the
+run manifest as well as the exit code. Accepted CSV/PLT and VTU/PVD publication
+does not imply reference-qualified fields at every bias; the PN2D BV scope is
+documented in workflow section 3.3.
+
 Explicit element-box transport and the restricted PhuMob candidate:
 
 - `mesh_geometry.cell_box_policy`: `legacy_positive` (default) or
@@ -2109,7 +2148,7 @@ Output and current fields:
   `eEffectiveStateDensity`/`hEffectiveStateDensity` cm^-3, `eEparallel`/
   `hEparallel`/`eEnormal`/`hEnormal` V/cm, `eGradQuasiFermi`/`hGradQuasiFermi`
   V/cm). The authoritative list is `tdrFieldCatalogue()` in
-  `include/vela/io/VtuWriter.h`.
+  `src/io/VtuWriter.cpp` (`VtuWriter.h` declares the catalogue API).
 - vtk_fields: optional array of TDR names for `vtk_format: "vtu"`. `Name`
   requests the scalar form (the magnitude for vector quantities),
   `Name/Vector` the three-component array; a vector request supersedes a

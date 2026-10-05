@@ -6,6 +6,13 @@ evidence.
 
 ## Current References
 
+- [SDevice workflow](sentaurus_sdevice_workflow.md): current supported subset,
+  CLI/gates/messages, output units and executable neutral mesh/sidecar examples.
+- [SDevice WP12 documentation closeout, 2026-10-05](validation/sdevice_wp12_closeout_2026-10-05.md):
+  command/link/message/field audits, Release regression and six-item DoD evidence;
+  packaged cross-platform native PN2D numerical acceptance remains unproven.
+- [Changelog](../CHANGELOG.md): SDevice frontend delivery and qualified limits.
+
 - [SDevice WP11 Ubuntu 26.04 migration, 2026-10-04](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md):
   Windows and Ubuntu 26.04 relocatable packages, retired previous Linux artifacts, offline Python/license provenance,
   both-platform frontend regression and exact Linux concurrency/thread-cap verification.
@@ -261,9 +268,10 @@ evidence.
   optional shared backend with symbolic/numeric reuse and failure checks;
   fixed-system replay and first-eight-point controls, qualification tracked separately from R11.
 
-- [LDMOS group review, September 12–17, 2026](reports/ldmos_review_2026-09-12_17/report.md):
-  meeting report with device/model parameters, equations, solver flow and pseudocode,
-  11 source-backed figures, R11 curve/local-field results and paired performance evidence.
+- LDMOS group review, September 12–17, 2026: the generated report at
+  `reports/ldmos_review_2026-09-12_17/report.md` is not present in this checkout.
+  See the [versioned September 16–17 work summary](validation/templates_ldmos_work_summary_2026-09-16_17.md)
+  for the corresponding scope and validation history.
 
 - [Architecture](architecture.md): source tree map, solver paths, and supported
   implementation boundaries.
