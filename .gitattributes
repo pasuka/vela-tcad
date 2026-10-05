@@ -84,3 +84,7 @@ docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md -text
 # SimpleMOS live script hashes are frozen in LF form in early evidence.
 scripts/*simplemos*.py text eol=lf
 tests/regression/*simplemos*.py text eol=lf
+
+# The generated material snapshot records the parameter library's byte hash.
+share/vela/materials/models.par text eol=lf
+share/vela/materials/default_materials.json text eol=lf

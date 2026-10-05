@@ -23,8 +23,11 @@ workflow section 2.10 provides the concrete, executed source-tree example.
 Generated decks use the public v2 unit conventions; conversion to internal SI
 belongs to the C++ loader. A `materials_file` is independently schema-tagged
 `vela.templates_ldmos.materials.v1`: its native `_cm3`/`_cm2_V_s` keys are not
-rewritten as deck keys. The frontend always supplies that file. This does not
-change the legacy C++ built-in material defaults used by other JSON decks.
+rewritten as deck keys. The frontend always supplies that file. The C++ Si/SiO2
+built-ins match the library's no-BGN 300 K scalar snapshot as of WP13; see
+[material alignment and baseline audit](validation/builtin_material_alignment_2026-10-05.md).
+Decks without `materials_file`, and omitted fields in partial overrides, use
+these defaults. Explicit material fields still take precedence.
 
 For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested
 `vtk_fields`, exact `vtk_bias_points`, `vtk_field_data` metadata and
@@ -284,6 +287,23 @@ reuse and is an experimental option, not the production default.
 | regions | array | Optional | Region-level fixed charge definitions; see below. |
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
 | contacts | array | Yes | Contact bias and type definitions; see below. |
+
+### Built-in materials
+
+Without `materials_file`, Si/SiO2 use the generated no-BGN **300 K** snapshot
+[`default_materials.json`](../share/vela/materials/default_materials.json).
+Si has `ni=10750176656.471613 cm^-3`, `Nc=2.8566791451911786e19 cm^-3`,
+`Nv=3.104657033455896e19 cm^-3`, `Eg=1.1241592307692307 eV`, `chi=4.05 eV`,
+`mun=1417` and `mup=470.5 cm^2/(V*s)`, with `eps_r=11.7`.
+SiO2 has `eps_r=3.9`, `Eg=9 eV`, `chi=0.9 eV` and zero carrier density/mobility.
+Legacy SI storage converts concentration by `1e6` and mobility by `1e-4`.
+
+Material overrides inherit omitted fields from these built-ins. Pin every
+required scalar explicitly to reproduce an older calibration; see the
+[WP13 audit and frozen baselines](validation/builtin_material_alignment_2026-10-05.md).
+The existing C++ temperature law holds the gap fixed, scales `Nc/Nv` by
+`(T/300)^1.5` and mobility by `(T/300)^-2.2`; equivalence to `.par` emission is
+qualified at 300 K only. Alignment does not activate additional models.
 
 ### Explicit electrothermal DC entry
 

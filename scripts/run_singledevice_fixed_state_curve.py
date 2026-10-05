@@ -35,13 +35,17 @@ def main() -> int:
     args.work_dir.mkdir(parents=True, exist_ok=True)
     (args.work_dir / "exports").mkdir(exist_ok=True)
     (args.work_dir / "inventories").mkdir(exist_ok=True)
-    for name in ("mesh.json", "doping.csv", "materials_sentaurus2018.json"):
+    for name in ("mesh.json", "doping.csv"):
         shutil.copy2(args.vela_dir / name, args.work_dir / name)
 
     summary_rows: list[dict[str, str | float]] = []
     for branch in ("lin", "sat"):
         base = json.loads(
             (args.vela_dir / f"simulation_idvg_{branch}.json").read_text(encoding="utf-8-sig"))
+        material = Path(base["materials_file"])
+        material_source = material if material.is_absolute() else args.vela_dir / material
+        shutil.copy2(material_source, args.work_dir / material.name)
+        base["materials_file"] = material.name
         for index in range(21):
             stem = f"{branch}_{index:04d}"
             tdr = args.states_dir / f"{branch}_state_{index:04d}_des.tdr"

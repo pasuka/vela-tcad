@@ -6,6 +6,9 @@ evidence.
 
 ## Current References
 
+- [WP13 built-in Si/SiO2 alignment, 2026-10-05](validation/builtin_material_alignment_2026-10-05.md):
+  no-BGN 300 K defaults, dependency audit and explained regression baselines.
+
 - [SDevice workflow](sentaurus_sdevice_workflow.md): current supported subset,
   CLI/gates/messages, output units and executable neutral mesh/sidecar examples.
 - [SDevice log/documentation repairs and native package E2E, 2026-10-05](validation/sdevice_native_package_e2e_2026-10-05.md):

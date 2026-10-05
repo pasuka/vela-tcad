@@ -46,15 +46,19 @@ Q = 1.602176634e-19
 T = 300.0
 VT = KB / Q * T
 
-#: Vela built-in silicon (src/material/MaterialDatabase.cpp), cm^-3 / eV.
-SI_NI_CM3 = 1.0e10
-SI_CHI_EV = 4.05
-SI_EG_EV = 1.12
-SI_NC_CM3 = 2.8e19
-SI_NV_CM3 = 1.04e19
+#: C++ built-ins are checked against this emitted no-BGN 300 K snapshot.
+_SI = next(entry for entry in json.loads(
+    (REPO / "share/vela/materials/default_materials.json").read_text(encoding="utf-8")
+)["materials"] if entry["name"] == "Si")
+SI_NI_CM3 = _SI["intrinsic_carrier_density_cm3"]
+SI_CHI_EV = _SI["electron_affinity_eV"]
+SI_EG_EV = _SI["bandgap_eV"]
+SI_NC_CM3 = _SI["conduction_band_density_of_states_cm3"]
+SI_NV_CM3 = _SI["valence_band_density_of_states_cm3"]
 
 RUNNER_CANDIDATES = [REPO / "build" / "vela_example_runner.exe", REPO / "build" / "vela_example_runner",
-                     Path(r"D:\code-repo\vela-tcad\build\vela_example_runner.exe")]
+                     REPO / "build-release" / "vela_example_runner.exe",
+                     REPO / "build-release" / "vela_example_runner"]
 
 
 def find_runner(explicit: str | None = None) -> Path | None:

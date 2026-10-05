@@ -5,6 +5,11 @@ remain in Git history and the documentation index.
 
 ## Unreleased — SDevice frontend closeout (2026-10-05)
 
+- Aligned built-in Si/SiO2 scalars to the emitted no-BGN 300 K material library,
+  including self-consistent intrinsic density. Added a generated snapshot,
+  dual-unit C++ checks and explicit legacy materials for calibrated reference
+  workflows; original partial inputs and numerical tolerances are preserved.
+
 - Added `vela device` for the documented preprocessed single-device SDevice
   subset: input gates, mesh/material conversion, v2 stage decks, HDF5 state
   chaining, `--check`, default parameter export and numbered failures.
@@ -22,8 +27,8 @@ remain in Git history and the documentation index.
   audits, executable neutral mesh/sidecar examples and the six-item DoD ledger.
   Fresh native PN2D 0V/IV/BV acceptance and check-only gates pass through both
   extracted packages under the pinned contract, with unchanged package file
-  fingerprints. Global built-in material alignment
-  (WP13) and the remaining native reruns (WP14) are independent follow-ups.
+  fingerprints. WP13 built-in alignment is recorded separately; the remaining
+  native reruns (WP14) are independent follow-ups.
 - Fixed stage sidecar `runtime_log.profile` being overwritten by the
   orchestrator. CLI verbose selects debug globally; otherwise each stage uses
   its sidecar profile or default. Real runner log regression covers precedence.

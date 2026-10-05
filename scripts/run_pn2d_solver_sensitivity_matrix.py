@@ -55,7 +55,7 @@ CASES: list[dict[str, Any]] = [
                 / "reference_tcad"
                 / "pn2d_sentaurus2018"
                 / "source"
-                / "pn2d_sentaurus2018_iv_materials.json"
+                / "pn2d_sentaurus2018_iv_materials_legacy_300k.json"
             ),
         },
         "solver": {

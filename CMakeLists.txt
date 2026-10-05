@@ -642,7 +642,7 @@ else()
 endif()
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
     DESTINATION bin COMPONENT SDeviceRuntime)
-install(FILES share/vela/materials/models.par
+install(FILES share/vela/materials/models.par share/vela/materials/default_materials.json
     DESTINATION share/vela/materials COMPONENT SDeviceRuntime)
 install(DIRECTORY schemas/ configs/schema/
     DESTINATION share/vela/schemas COMPONENT SDeviceRuntime FILES_MATCHING PATTERN "*.json")
@@ -713,6 +713,12 @@ target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_mesh tests/test_mesh.cpp)
 target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_builtin_material_alignment tests/test_builtin_material_alignment.cpp)
+target_link_libraries(test_builtin_material_alignment PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_builtin_material_alignment PRIVATE
+    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/default_materials.json"
+    VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
@@ -898,6 +904,7 @@ endfunction()
 
 vela_catch_discover_tests(test_scaling)
 vela_catch_discover_tests(test_mesh)
+vela_catch_discover_tests(test_builtin_material_alignment)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)

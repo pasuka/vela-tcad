@@ -119,8 +119,10 @@ C3 的单位由自身 schema 与 `unit_system` 定义；装载到 `format_versio
   Vela 不能表示的 Sentaurus 默认值改为 Vela 自身定律（`ConstantMobility.Exponent=2.2,2.2`，无 `mutunnel`，`Auger.H=0`，
   `HighFieldDependence.betaexp=vsatexp=0`）。用户 `.par` 未给出的节/参数逐参数回退到该库并记 `origin=vela_default`；
   网格材料在两者中都没有 → E403；激活模型所需的节在两者中都缺失 → E404 `(missing_section)`。
-  C++ `MaterialDatabase` 内置 Si（nᵢ 1e10、N_c 2.8e19、N_v 1.04e19 cm⁻³、E_g 1.12 eV）仍是无材料文件 JSON deck 的
-  遗留默认，与该库不同；`vela device` 始终经由材料文件，不使用内置值。
+  WP13 已将 C++ `MaterialDatabase` 内置 Si/SiO2 对齐到该库无 BGN 的 300 K 标量快照
+  `share/vela/materials/default_materials.json`；无材料文件 deck 和部分材料覆盖中省略的字段使用这些默认值。
+  `vela device` 始终经由材料文件。对齐不激活 BGN、量子或其他模型，也不修改现有温度律：C++ 内置
+  `Material::atTemperature` 保持固定带隙、态密度 ∝ T³ᐟ²、迁移率 ∝ T⁻²·²，不能据此声称其他温度与 `.par` 发射器等价。
 - 半导体标量：`Eg(T)` 为 Varshni；`Nc/Nv` 用 Formula 1 质量律与 `2(2π m kB T/h²)^{3/2}`（CODATA 2018，与
   `include/vela/core/PhysicalConstants.h` 一致）；`ni = sqrt(Nc Nv) exp(−(Eg(T)+dEg0)/2kT)`，`dEg0(OldSlotboom)`
   只在 OldSlotboom 激活时折入 `ni`，不进入 `bandgap_eV`；`mun/mup` 取 `ConstantMobility.mumax`。
@@ -131,8 +133,8 @@ C3 的单位由自身 schema 与 `unit_system` 定义；装载到 `format_versio
   （无隧穿模型）、`ConstantMobility.Exponent`（两载流子均为 2.2，或 T=300 K）、
   `HighFieldDependence.betaexp/vsatexp`（T=300 K）；`Auger.A/B/C` 在冻结温度上精确合成为常数。
 - 已知偏差：历史参考 `pn2d_sentaurus2018_iv_materials.json` 的 `ni=1.4638914958767616e10` 无法由任何记录在案的
-  公式复现（最接近 −2.7e-4），发射器以闭式公式为准并在测试中以 5e-4 核对；C++ 内置 Si 的 `ni=1e10` 与其
-  `Nc/Nv/Eg` 不自洽（推导值 6.68e9），默认库往返因此只对 `ni` 以外的字段闭合。
+  公式复现（最接近 −2.7e-4），发射器以闭式公式为准并在测试中以 5e-4 核对。WP13 内置 Si 的 `ni`
+  由 `Nc/Nv/Eg` 推导；Catch2 在 SI 与 TCAD 内部单位下以 1e-12 相对容差核对全部标量与快照。
 
 单测 `tests/regression/test_sdevice_materials.py`（CTest 名 `sdevice_materials`）。
 
@@ -559,8 +561,8 @@ schema 之外、golden 夹具所依赖的确定性规则：
   旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
   用户已授权并完成 PN2D 0V/IV/BV 和 BJT m0 的最小 v2 重跑。WP10 已固化 A-4 与 C6，
   当前状态见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)；其余 WP14 案例未执行。
-- A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：开发方案 WP13（用户 2026-09-29 要求列入）；
-  完成前第 2.4 节的“遗留默认”说明保持有效。
+- A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：
+  见 [WP13 材料对齐记录](validation/builtin_material_alignment_2026-10-05.md)。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
   阶段 1 维持拒绝。
 - C5 新增键已由 WP6 回填第 2.6 节；C6 的 `time` 语义与符号因子由 WP10 回填第 3.3 节（C3 见第 2.4 节）。

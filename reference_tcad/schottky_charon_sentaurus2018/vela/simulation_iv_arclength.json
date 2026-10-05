@@ -1,5 +1,5 @@
 {
-  "_comment": "Stage B: resume the accepted 0.82 V state and use pseudo-arclength continuation through the forward-bias fold to 1 V.",
+  "_comment": "Stage B: resume the accepted 0.82 V state and use pseudo-arclength continuation through the forward-bias fold to 1 V. WP13: explicit pre-alignment material scalars preserve this calibrated baseline.",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
   "output_csv": "outputs/vela_schottky_iv_arclength.csv",
@@ -77,5 +77,6 @@
   "validation": {
     "check_contact_quasi_fermi_bias": false
   },
-  "state_format": "hdf5"
+  "state_format": "hdf5",
+  "materials_file": "materials_legacy_builtin_300k.json"
 }

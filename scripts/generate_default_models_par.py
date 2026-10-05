@@ -25,9 +25,9 @@ law instead, so ``vela device -P`` never advertises a parameter that would be
 rejected: ``ConstantMobility.Exponent`` is 2.2 for both carriers
 (``Material::atTemperature``), ``mutunnel`` is omitted, ``Auger.H`` is 0 (no
 carrier-density enhancement) and ``HighFieldDependence.betaexp``/``vsatexp``
-are 0 (constant beta0/vsat0).  The C++ ``MaterialDatabase`` built-ins
-(ni = 1e10 cm^-3, Nc = 2.8e19, Nv = 1.04e19, Eg = 1.12 eV) remain the legacy
-defaults of JSON decks without a materials file; they are not reproduced here.
+are 0 (constant beta0/vsat0). The C++ ``MaterialDatabase`` Si/SiO2 built-ins
+match the generated no-BGN 300 K snapshot in ``default_materials.json``.
+Temperature laws and model activation remain separate from this alignment.
 
 Usage::
 
@@ -43,6 +43,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 OUTPUT = REPO / "share" / "vela" / "materials" / "models.par"
+MATERIALS_OUTPUT = OUTPUT.with_name("default_materials.json")
 
 #: (section header, comment, [(parameter, value or (electron, hole), unit)]).
 #: Values are rendered verbatim so they round-trip bit-for-bit through the
@@ -228,23 +229,45 @@ def render() -> str:
     return "\n".join(lines)
 
 
+def render_materials(par_path: Path) -> str:
+    """Freeze the emitter's Si/SiO2 scalars at 300 K without active BGN."""
+    import json
+    from vela_sdevice.materials import emit_materials
+    document = emit_materials(par_path, active_models=[], temperature_K=300.0,
+                              mesh_materials=["Si", "SiO2"], benchmark="builtin:300K").materials
+    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--materials-output", type=Path,
+                        help="300 K JSON snapshot (defaults beside --output)")
     parser.add_argument("--check", action="store_true", help="exit 1 when the file is stale instead of writing")
     args = parser.parse_args(argv)
+    materials_output = args.materials_output or args.output.with_name("default_materials.json")
     text = render()
     if args.check:
         current = args.output.read_text(encoding="utf-8").replace("\r\n", "\n") if args.output.exists() else None
         if current != text:
             print(f"{args.output} is stale; regenerate with scripts/generate_default_models_par.py", file=sys.stderr)
             return 1
+        materials_text = render_materials(args.output)
+        current_materials = materials_output.read_text(encoding="utf-8") if materials_output.exists() else None
+        if current_materials != materials_text:
+            print(f"{materials_output} is stale; regenerate with scripts/generate_default_models_par.py", file=sys.stderr)
+            return 1
         print(f"{args.output} is up to date")
+        print(f"{materials_output} is up to date")
         return 0
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
     print(f"wrote {args.output}")
+    materials_output.parent.mkdir(parents=True, exist_ok=True)
+    with materials_output.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(render_materials(args.output))
+    print(f"wrote {materials_output}")
     return 0
 
 

@@ -778,11 +778,12 @@ TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
 
     MaterialDatabase matdb;
     REQUIRE(matdb.getMaterial("Si").eps_r == Catch::Approx(11.7));
+    const Real originalMobility = matdb.getMaterial("Si").mun;
     matdb.loadJson(materialsPath.string());
 
     const Material& si = matdb.getMaterial("Si");
     REQUIRE(si.eps_r == Catch::Approx(12.5));
-    REQUIRE(si.mun == Catch::Approx(0.135));
+    REQUIRE(si.mun == Catch::Approx(originalMobility));
     REQUIRE(si.bandgap_eV.has_value());
     REQUIRE(*si.bandgap_eV == Catch::Approx(1.11));
     REQUIRE(si.Nc_m3.has_value());

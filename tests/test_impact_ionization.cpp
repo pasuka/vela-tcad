@@ -1836,7 +1836,7 @@ TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
     sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
     sol.n.resize(static_cast<int>(mesh.numNodes()));
     sol.p.resize(static_cast<int>(mesh.numNodes()));
-    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), matdb.getMaterial("Si").ni);
     for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
         sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
         sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);

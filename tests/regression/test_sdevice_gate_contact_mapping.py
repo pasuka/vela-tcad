@@ -27,21 +27,25 @@ def _tmpdir() -> tempfile.TemporaryDirectory:
 
 class MappingFormulaTest(unittest.TestCase):
     def test_intrinsic_work_function_uses_vela_silicon(self) -> None:
-        expected = 4.05 + 0.56 + 0.5 * gate.VT * math.log(2.8e19 / 1.04e19)
+        expected = 4.05 + 0.5 * 1.1241592307692307 + 0.5 * gate.VT * math.log(
+            2.8566791451911786e19 / 3.104657033455896e19)
         self.assertAlmostEqual(expected, gate.intrinsic_work_function_eV(), delta=1e-15)
-        self.assertAlmostEqual(4.6228018935, gate.intrinsic_work_function_eV(), delta=1e-9)
+        self.assertAlmostEqual(4.611003610676079, gate.intrinsic_work_function_eV(), delta=1e-9)
+        self.assertAlmostEqual(4.6228018935, gate.intrinsic_work_function_eV(
+            eg_eV=1.12, nc_cm3=2.8e19, nv_cm3=1.04e19), delta=1e-9)
 
     def test_barrier_maps_one_to_one_and_workfunction_through_phi_s_i(self) -> None:
         self.assertAlmostEqual(0.55, gate.phi_ms_from_workfunction(0.55 + gate.intrinsic_work_function_eV()),
                                delta=1e-15)
-        self.assertAlmostEqual(5.1 - 4.6228018935, gate.phi_ms_from_workfunction(5.1), delta=1e-9)
+        self.assertAlmostEqual(5.1 - 4.611003610676079, gate.phi_ms_from_workfunction(5.1), delta=1e-9)
         # A metal whose work function equals the electron affinity sits Eg/2 (+ DOS term) above E_i.
-        self.assertAlmostEqual(-(0.56 + 0.5 * gate.VT * math.log(2.8e19 / 1.04e19)),
+        self.assertAlmostEqual(-(0.5 * 1.1241592307692307 + 0.5 * gate.VT * math.log(
+            2.8566791451911786e19 / 3.104657033455896e19)),
                                gate.phi_ms_from_workfunction(4.05), delta=1e-15)
 
     def test_flatband_prediction_matches_textbook_limit(self) -> None:
         # p-type: V_FB = Phi_MS - phi_Fp with phi_Fp = Vt ln(NA/ni) (asinh -> ln for NA >> ni).
-        phi_fp = gate.VT * math.log(1.0e17 / 1.0e10)
+        phi_fp = gate.VT * math.log(1.0e17 / gate.SI_NI_CM3)
         self.assertAlmostEqual(0.55 - phi_fp, gate.predicted_flatband_V(0.55, 0.0, 1.0e17), delta=1e-9)
         self.assertAlmostEqual(0.55 + phi_fp, gate.predicted_flatband_V(0.55, 1.0e17, 0.0), delta=1e-9)
         self.assertEqual(0.55, gate.predicted_flatband_V(0.55, 0.0, 0.0))

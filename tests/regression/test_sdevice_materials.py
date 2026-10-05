@@ -28,6 +28,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
 
 import generate_default_models_par as gen  # noqa: E402
+import generate_legacy_material_baselines as legacy_gen  # noqa: E402
 import sentaurus_parameter_map as pmap  # noqa: E402
 from vela_sdevice import schema_validator as sv  # noqa: E402
 from vela_sdevice import materials as mat  # noqa: E402
@@ -258,12 +259,28 @@ class DefaultLibraryTest(unittest.TestCase):
         self.assertRegex(text, r"\bH\s*=\s*0 ,\s*0")
         self.assertNotRegex(text, r"^\s*mutunnel\s*=", msg="mutunnel must not be a library parameter")
 
-    def test_builtin_cpp_silicon_is_documented_as_legacy(self) -> None:
-        """The C++ MaterialDatabase Si (ni 1e10, Nc 2.8e19, Nv 1.04e19, Eg 1.12) is not the library source."""
-        si = _material(self.result, "Si")
-        self.assertNotAlmostEqual(1.0e10, si["intrinsic_carrier_density_cm3"], delta=1e8)
-        self.assertNotEqual(1.12, si["bandgap_eV"])
-        self.assertIn("MaterialDatabase", gen.__doc__)
+    def test_builtin_snapshot_matches_emitter(self) -> None:
+        """Catch2 consumes this fixture to check actual C++ defaults in both unit systems."""
+        snapshot = json.loads(gen.MATERIALS_OUTPUT.read_text(encoding="utf-8"))
+        emitted = mat.emit_materials(mat.default_models_par_path(), active_models=[], temperature_K=300.0,
+                                     mesh_materials=["Si", "SiO2"], benchmark="builtin:300K")
+        self.assertEqual(emitted.materials, snapshot)
+        self.assertEqual([], sv.collect_errors(SCHEMA, snapshot))
+        self.assertNotIn("electron_quantum_gamma", snapshot["materials"][0])
+
+    def test_frozen_legacy_material_baselines_are_current(self) -> None:
+        self.assertEqual(0, legacy_gen.main(["--check"]))
+
+    def test_generator_check_rejects_stale_material_snapshot(self) -> None:
+        with _tmpdir() as tmp:
+            par = Path(tmp) / "models.par"
+            self.assertEqual(0, gen.main(["--output", str(par)]))
+            self.assertEqual(0, gen.main(["--output", str(par), "--check"]))
+            snapshot = par.with_name("default_materials.json")
+            document = json.loads(snapshot.read_text(encoding="utf-8"))
+            document["materials"][0]["intrinsic_carrier_density_cm3"] *= 1.01
+            snapshot.write_text(json.dumps(document), encoding="utf-8")
+            self.assertEqual(1, gen.main(["--output", str(par), "--check"]))
 
     def test_partial_user_file_falls_back_per_parameter(self) -> None:
         result = mat.emit_materials(BV_PAR, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "SiO2"])

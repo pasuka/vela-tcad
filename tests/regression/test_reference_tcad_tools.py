@@ -725,7 +725,7 @@ Ionization
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
         config = json.loads(path.read_text())
 
-        expected = "pn2d_sentaurus2018_iv_materials.json"
+        expected = "pn2d_sentaurus2018_iv_materials_legacy_300k.json"
         for sim in config["simulations"]:
             with self.subTest(sim=sim["name"]):
                 self.assertEqual(sim.get("vela_materials_file"), expected)
@@ -849,7 +849,7 @@ Ionization
         config = json.loads(path.read_text())
         iv = next(sim for sim in config["simulations"] if sim["name"] == "iv")
 
-        self.assertEqual(iv["vela_materials_file"], "pn2d_sentaurus2018_iv_materials.json")
+        self.assertEqual(iv["vela_materials_file"], "pn2d_sentaurus2018_iv_materials_legacy_300k.json")
         self.assertEqual(iv["comparison"]["interpolation"], "log_current")
         self.assertAlmostEqual(iv["vela_solver"]["taun"], 1.0e-5)
         self.assertAlmostEqual(iv["vela_solver"]["taup"], 3.0e-6)
@@ -858,6 +858,12 @@ Ionization
         materials = json.loads(materials_path.read_text())
         si = next(item for item in materials["materials"] if item["name"] == "Si")
         self.assertAlmostEqual(si["ni"], 1.4638914958767616e10)
+        # The historical fit retains the scalars it inherited before WP13.
+        self.assertEqual(1350.0, si["mun"])
+        self.assertEqual(480.0, si["mup"])
+        self.assertEqual(1.12, si["bandgap_eV"])
+        self.assertEqual(2.8e19, si["Nc_m3"])
+        self.assertEqual(1.04e19, si["Nv_m3"])
 
     def test_pn2d_sentaurus2018_bv_uses_full_sentaurus_physics(self) -> None:
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
@@ -878,7 +884,7 @@ Ionization
             solver["contact_boundary_minority_electron_relaxation"],
             False,
         )
-        self.assertEqual(bv["vela_materials_file"], "pn2d_sentaurus2018_iv_materials.json")
+        self.assertEqual(bv["vela_materials_file"], "pn2d_sentaurus2018_iv_materials_legacy_300k.json")
         self.assertEqual(solver["bandgap_narrowing"], "old_slotboom")
         self.assertEqual(solver["recombination"], ["srh"])
         self.assertEqual(solver["impact_ionization"]["model"], "van_overstraeten")
@@ -6205,7 +6211,7 @@ LOOKUP_TABLE default
                     / "reference_tcad"
                     / "pn2d_sentaurus2018"
                     / "source"
-                    / "pn2d_sentaurus2018_iv_materials.json"
+                    / "pn2d_sentaurus2018_iv_materials_legacy_300k.json"
                 ),
             )
 

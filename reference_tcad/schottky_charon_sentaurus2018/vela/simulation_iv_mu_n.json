@@ -2,7 +2,7 @@
   "_comment": "Ablation A: only align the constant electron mobility to the Sentaurus O-2018.06 silicon default, 1417 cm^2/(V s).",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
-  "materials_file": "materials_mu_n_sentaurus2018.json",
+  "materials_file": "materials_mu_n_sentaurus2018_legacy_300k.json",
   "output_csv": "outputs/ablations/mu_n/vela_schottky_iv.csv",
   "scaling": { "mode": "unit_scaling" },
   "node_doping_file": "doping.csv",

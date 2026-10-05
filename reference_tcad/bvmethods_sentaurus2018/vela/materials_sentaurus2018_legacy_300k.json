@@ -1,0 +1,24 @@
+{
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 14638914958.767616,
+      "mun": 1350.0,
+      "mup": 480.0,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.05,
+      "Nc_m3": 2.8e+19,
+      "Nv_m3": 1.04e+19,
+      "temperature_K": 300.0
+    },
+    {
+      "name": "Nitride",
+      "eps_r": 7.5,
+      "bandgap_eV": 5.0,
+      "electron_affinity_eV": 1.9,
+      "temperature_K": 300.0
+    }
+  ],
+  "_comment": "WP13 frozen baseline: explicit pre-alignment defaults (9f9d2f5d) plus reference_tcad/bvmethods_sentaurus2018/vela/materials_sentaurus2018.json; unit_scaling, 300 K. Generated; do not edit."
+}
