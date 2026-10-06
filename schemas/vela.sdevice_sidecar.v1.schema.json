@@ -8,6 +8,10 @@
   "additionalProperties": false,
   "properties": {
     "schema": {"const": "vela.sdevice_sidecar.v1"},
+    "high_field_gradient_discretization": {
+      "enum": ["edge_projection", "transport_cell_vector"],
+      "description": "Numerical recovery of an active high-field mobility GradQuasiFermi drive. Sets only solver.mobility.high_field_gradient_discretization; models and coefficients remain owned by cmd/par."
+    },
     "avalanche_current_support_profile": {
       "enum": ["element_edge_sg_gss_laux", "legacy_cell_reconstructed"],
       "description": "Explicit atomic PN2D BV current/source/node-volume discretization bundle; does not change avalanche coefficients or model. Requires current-density GradQF avalanche. The element-edge profile requires a qualified non-obtuse mesh."

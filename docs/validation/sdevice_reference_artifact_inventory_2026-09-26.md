@@ -1,6 +1,7 @@
 # SDevice cmd 直跑：参考产物盘点与归档提案（2026-09-26）
 
-状态：**只读盘点与首批归档已完成（A-1/A-2 已确认）；重跑未执行（A-3 延后）**。
+状态：**2026-09-26 首批归档快照**。当日 A-3 延后；后续用户已授权并执行重跑，
+当前补验见[2026-10-06 记录](sdevice_followup_2026-10-06.md)及第 8 节，不将当日待决项作为当前任务队列。
 本文是 [开发计划](../superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 12 节（产物管理）与 WP0 卡片“VM 目录 + 首份 manifest”的执行前输入。
 
@@ -118,4 +119,25 @@ Plot 名）不一致；templates_ldmos 仓库无 deck 可比。
 
 本次盘点的原始命令输出保存在本机 `build/vm_inventory{2,3,4,5}.txt`（已忽略目录，不入库）。
 关键哈希已写入第 3 节表格；deck 的完整 SHA-256 以 `tests/fixtures/sdevice/<case>/*.ir.json`
-的 `source.sha256`（LF 归一化后）为准。
+ 的 `source.sha256`（LF 归一化后）为准。
+
+## 8. 后续具名归档（2026-10-06）
+
+VM 根目录仍为 `/home/tcad/vela_reference_artifacts/`，原始文件保持在 VM 与忽略镜像中。
+本轮均使用 T-2022.03-SP2 (0.7745337)，上传的公开 source 与输出来源、哈希和工具版本逐项登记。
+
+| 案例/版本 | 文件数 | 状态与来源 | 仓库登记 |
+| --- | --- | --- | --- |
+| gate_reference v2 | 195 | 三个 Barrier 扫描成功；旧物理本征 WorkFunction 的扫描窗口未包围原生平带点，保留该失败证据 | `reference_tcad/gate_reference/artifact_manifest_v2.json`、`source_v2/` |
+| gate_reference v3 | 241 | 三个 Barrier 与两个 WorkFunction，共五个控制、41 个场量样本/控制；实际 C4→Vela 平带与原生差 <1 mV，C7 六项通过 | 当前 manifest 与 `artifact_manifest_v3.json`、`source/` |
+| bvmethods_sentaurus2018 v2 | 36 | 外接电阻 MinStep 失败、D 严格 Current Goal 精度超预算，保留未资格产物 | `artifact_manifest_v2.json`、`wp14_sources/v2/` |
+| bvmethods_sentaurus2018 v3 | 36 | D 精度修复达标；6 V 与精确 1e-4 A/um 通过，外接电阻原失败保留，整个版本不合格 | `artifact_manifest_v3.json`、`wp14_sources/v3/` |
+| bvmethods_sentaurus2018 v4 | 54 | 同模型固定电阻的瞬态获取、独立稳态、阈值以下静态续扫通过；C7 六项无 partial，默认来源复验通过 | 当前 manifest、`artifact_manifest_v4.json`、`wp14_sources/v4/`；v1 另存、v2/v3 保留 |
+| bvmethods_numerical_controls v1 | 96 | 12 组失败/初始化/人工停止控制，明确未资格，保留原生日志和全部控制输入 | VM 独立诊断归档；派生哈希与状态见本轮 JSON 摘要 |
+
+每一 VM 批量 SHA-256 清单与下载镜像的成员集合及字节哈希均一致；C7 在这一镜像实际读取网格、
+场量和电流，未声称逐文件在线 SSH 核验。公开 manifest 指向真实 SSH 归档。
+gate v3 的三个中间 snmesh 命令未在来源中保留，producer 提示明确记录这一缺口；
+SDE `_bnd.tdr` 仅有边界文件哈希与来源资格，不具有 Tri3 体网格结构资格。
+BVmethods D 的精度修复已原生成功；外接电阻 v4 恢复路径完成独立数据和六项核验，
+资格不包括原始从零 QS 轨迹，Transient 不扩展 Vela 前端支持范围。详细数值与原失败证据见本轮验证记录。

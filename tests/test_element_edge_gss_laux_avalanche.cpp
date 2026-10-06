@@ -1,5 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/core/PhysicalConstants.h"
@@ -788,6 +789,9 @@ TEST_CASE("Local forward AD source derivatives converge independently",
     impactConfig.contactElectricFieldFallbackScope = "contact_boundary_face";
     MobilityModelConfig mobilityConfig = mobilityModelConfig("masetti_field");
     mobilityConfig.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobilityConfig.highFieldGradientDiscretization = GENERATE(
+        std::string("edge_projection"), std::string("transport_cell_vector"));
+    CAPTURE(mobilityConfig.highFieldGradientDiscretization);
     const auto mobility = makeMobilityModel(mobilityConfig);
 
     constexpr Real Vt = 0.025852;
@@ -845,9 +849,28 @@ TEST_CASE("Local forward AD source derivatives converge independently",
             intrinsicDensity, Vt, fieldFactor).combined;
 
     const auto baseSource = evaluateReal(basePsi, basePhin, basePhip);
+    VectorXd recordPsi(3), recordPhin(3), recordPhip(3), recordN(3), recordP(3);
+    for (std::size_t local = 0; local < 3; ++local) {
+        recordPsi(local) = basePsi[local];
+        recordPhin(local) = basePhin[local];
+        recordPhip(local) = basePhip[local];
+        recordN(local) = intrinsicDensity[local] * std::exp((basePsi[local] - basePhin[local]) / Vt);
+        recordP(local) = intrinsicDensity[local] * std::exp((basePhip[local] - basePsi[local]) / Vt);
+    }
+    const auto impact = makeImpactIonizationModel(impactConfig);
+    const auto record = detail::elementEdgeGssLauxAvalancheSourceRecordForCell(
+        impactConfig, *impact, mobilityConfig, *mobility, cellEdges.at(0), mesh,
+        doping, cellMaterials, 0, recordPsi, recordPhin, recordPhip, recordN,
+        recordP, std::vector<Real>(intrinsicDensity.begin(), intrinsicDensity.end()), Vt, fieldFactor);
     for (std::size_t localRow = 0; localRow < 3; ++localRow) {
         REQUIRE(adSource[localRow].value ==
                 Catch::Approx(baseSource[localRow]).epsilon(1.0e-13));
+        // Independently reconstruct generation from the selected mobility
+        // drive and GSS/Laux current, rather than comparing two AD calls.
+        const Real generation = record.electronAlpha * record.electronCurrentVector.norm() +
+                                record.holeAlpha * record.holeCurrentVector.norm();
+        REQUIRE(baseSource[localRow] == Catch::Approx(
+            generation * record.vertexMeasures[localRow]).epsilon(1.0e-12));
     }
 
     const auto errorAt = [&](Real relativeStep) {

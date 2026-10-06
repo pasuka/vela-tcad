@@ -445,6 +445,23 @@ class FileWritersTest(unittest.TestCase):
 
 
 class VerifiedCurrentSignTests(unittest.TestCase):
+    def test_native_aba_globals_are_preserved_without_current_sign_scaling(self):
+        native = '''DF-ISE text
+Info { datasets = [ "time" "drain TotalCurrent" "MaxField" "PhiElectron" "PhiHole" ] }
+Data { 1.0 -1e-6 2.5e5 1.1288 1.18604 }
+'''
+        electrodes, rows = plt.read_plt_document(native, sign_factor=-1.0)
+        self.assertEqual(electrodes, ["drain"])
+        self.assertEqual(rows[0]["drain"]["total_current_A_per_um"], 1e-6)
+        self.assertEqual([rows[0][name] for name in ("MaxField", "PhiElectron", "PhiHole")],
+                         [2.5e5, 1.1288, 1.18604])
+        with self.assertRaises(ValueError):
+            plt.read_plt_document(native.replace('"PhiHole"', '"PhiElectron"'))
+        with self.assertRaises(ValueError):
+            plt.read_plt_document(native.replace('"PhiHole"', '"UnknownGlobal"'))
+        with self.assertRaises(ValueError):
+            plt.read_plt_document(native.replace('1.18604', '1e999'))
+
     def test_first_three_verified_native_anode_points_freeze_global_sign(self):
         # T-2022.03-SP2 v2 pn2d_iv.plt SHA-256:
         # a5f712e3ba0bfeea221e0de681ce380b3ad4ab14eb42c63b1324eac431709b25

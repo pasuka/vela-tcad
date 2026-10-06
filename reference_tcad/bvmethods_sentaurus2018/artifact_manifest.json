@@ -1,900 +1,2051 @@
 {
   "schema": "vela.reference_artifact_manifest.v1",
   "case": "bvmethods_sentaurus2018",
-  "version": "v1",
-  "created_utc": "2026-09-26T14:23:18Z",
+  "version": "v4",
+  "created_utc": "2026-10-06T04:00:28Z",
   "store": {
     "kind": "ssh",
     "host": "sentaurus",
     "root": "/home/tcad/vela_reference_artifacts"
   },
   "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
-  "deck_matches_repository": false,
-  "origin": {
-    "vm_run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-    "note": "Workbench project run (nodes n3..n8 = aba_poisson, aba_coupled, external_resistor, voltage_to_current, continuation, transient). The preprocessed decks differ from the curated repository decks in physics and break criteria (aba_poisson BreakAtIonIntegral(1 1.1) vs (3 1.); external_resistor Band2Band(Model=NonLocalPath)/Avalanche(GradQuasiFermi)/AbsVal=1.3e-3 vs E2/Eparallel/1.443e-3) and the SDE deck is an axis-transposed rewrite; fixture/partial reference only."
-  },
+  "deck_matches_repository": true,
   "artifacts": [
     {
-      "path": "source/pp3_des.cmd",
+      "path": "source/a_constant_no_enormal_sdevice.cmd",
       "category": "A",
-      "sha256": "fe66a28f8a88edfe67ef2f5bd919a415dc0cd5700d7c007e83ac0044c342f1ae",
-      "bytes": 1226,
+      "sha256": "95699872d235e1eb164cf3625cac0b00c0a628e52fe9ccd045884327d8c159e1",
+      "bytes": 1781,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp3_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp4_des.cmd",
+      "path": "source/aba_poisson_sdevice.cmd",
       "category": "A",
-      "sha256": "2d1d39a8b0ee05274fcaca6045d242490579647b0406972fdf160e4d6cc3ff68",
-      "bytes": 1514,
+      "sha256": "72ccc3e0d7fd0699d91fc02493600762a8574e44109195752da6cd6e4008c22e",
+      "bytes": 1213,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp4_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp5_des.cmd",
+      "path": "source/b_doping_no_enormal_sdevice.cmd",
       "category": "A",
-      "sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5",
-      "bytes": 1510,
+      "sha256": "f3d9cff6ece8611082b9b3ff687af1b25b4bbc9565d030e4fe6e87b47e9471cc",
+      "bytes": 1767,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp5_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp6_des.cmd",
+      "path": "source/c_constant_enormal_sdevice.cmd",
       "category": "A",
-      "sha256": "12f38a1dc72cab6f88a6f6fc0a4354eaa3474817a6febee2289750fb21371c7a",
-      "bytes": 1687,
+      "sha256": "95c5e157865b69ea59849be4dc6d0ee5f64460012873053f617631de8a029fc2",
+      "bytes": 1779,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp6_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp7_des.cmd",
+      "path": "source/d_doping_enormal_sdevice.cmd",
       "category": "A",
-      "sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774",
-      "bytes": 2173,
+      "sha256": "617625b0953da72c4ecc6cd717cac6419a2a6e57ac784a192abce89afdf58738",
+      "bytes": 1778,
       "producer": {
         "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/d_precision",
+        "finished_utc": "2026-10-06T01:14:52Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp7_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp8_des.cmd",
+      "path": "source/external_dc_saved_sdevice.cmd",
       "category": "A",
-      "sha256": "b525b2ed80e9a79927ea757c2fc0ac00f748a8050f2b39f63c36a2a4f4c821cd",
-      "bytes": 1643,
+      "sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+      "bytes": 1412,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "finished_utc": "2026-10-06T03:53:42Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp8_des.cmd"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp3_des.par",
+      "path": "source/external_recovery_saved_sdevice.cmd",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+      "bytes": 1916,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "finished_utc": "2026-10-06T03:53:42Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp3_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp4_des.par",
+      "path": "source/external_transient_saved_sdevice.cmd",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+      "bytes": 1659,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "finished_utc": "2026-10-06T03:36:02Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp4_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp5_des.par",
+      "path": "source/full_physics_constant_srh.par",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "050f3443456d4f7972fbeed958b9892173d23e3814c9e08d491690ffbe191fcc",
+      "bytes": 389,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp5_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp6_des.par",
+      "path": "source/models.par",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+      "bytes": 559,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp6_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp7_des.par",
+      "path": "source/native_default_dump.par",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+      "bytes": 107158,
       "producer": {
         "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp7_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp8_des.par",
+      "path": "source/wp14_inputs.json",
       "category": "A",
-      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-      "bytes": 489,
+      "sha256": "8d004a93c003103cf8bbf95257fd6e708b77f849813f09de03466d8d49ed06a0",
+      "bytes": 2172,
       "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T03:58:37Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp8_des.par"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "source/pp1_dvs.cmd",
-      "category": "A",
-      "sha256": "7a62c33f491884b851c1cd5890d3431286c563e9ced907e056ed51d86059018d",
-      "bytes": 5490,
-      "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/pp1_dvs.cmd"
-      }
-    },
-    {
-      "path": "source/n1_half_msh.cmd",
-      "category": "A",
-      "sha256": "67c933957f358df2ea58d56a91e3df10963918f0118266c1c8278e48c0737f84",
-      "bytes": 2287,
-      "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_half_msh.cmd"
-      }
-    },
-    {
-      "path": "source/BV_des.cmd",
-      "category": "A",
-      "sha256": "a0a3254ee87318c8bf5ef5938ccf1d85cabfe0742607d299e58617ab9135c027",
-      "bytes": 4933,
-      "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/BV_des.cmd"
-      }
-    },
-    {
-      "path": "source/sde_dvs.cmd",
-      "category": "A",
-      "sha256": "a25d8dceb3b9bb7ed1fa18ba04b904e0dd28d568bc7c7540c521e63cba32ed66",
-      "bytes": 5504,
-      "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/sde_dvs.cmd"
-      }
-    },
-    {
-      "path": "source/sdevice.par",
-      "category": "A",
-      "sha256": "5f3c2d83292c2ae020af09c5e7e73c91be92838b94a3bab56c985c3e02b0414b",
-      "bytes": 488,
-      "producer": {
-        "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/sdevice.par"
-      }
-    },
-    {
-      "path": "mesh/n1_msh.tdr",
+      "path": "mesh/bvmethods_nmos_msh.tdr",
       "category": "C",
       "sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
       "bytes": 173535,
       "producer": {
         "tool": "other",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "n1_half_msh.cmd",
-        "finished_utc": "2026-08-18T04:03:02Z",
-        "cmd_sha256": "67c933957f358df2ea58d56a91e3df10963918f0118266c1c8278e48c0737f84"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "finished_utc": "2026-10-06T00:05:51Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_msh.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "ArsenicActiveConcentration",
+          "BoronActiveConcentration",
+          "DopingConcentration"
+        ]
       }
     },
     {
-      "path": "mesh/n1_half_msh.tdr",
-      "category": "C",
-      "sha256": "7f5ad95b0b797cec8655267323edeb11d1b4f2d1b5fb53871c4df932ddfdb751",
-      "bytes": 116678,
+      "path": "plt/a_constant_no_enormal_des.plt",
+      "category": "B",
+      "sha256": "92d2f68f0aa0843f049328c0d28889c21d60b0106a92d3979a67f0063c3578bc",
+      "bytes": 68107,
       "producer": {
-        "tool": "snmesh",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "n1_half_msh.cmd",
-        "finished_utc": "2026-08-18T03:59:50Z",
-        "cmd_sha256": "67c933957f358df2ea58d56a91e3df10963918f0118266c1c8278e48c0737f84"
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "a_constant_no_enormal_sdevice.cmd",
+        "cmd_sha256": "95699872d235e1eb164cf3625cac0b00c0a628e52fe9ccd045884327d8c159e1",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_half_msh.tdr"
-      }
-    },
-    {
-      "path": "mesh/n1_half_bnd.tdr",
-      "category": "C",
-      "sha256": "4817bd02fd42fd35434b3ef6f6ef3c5a67daf24620e692ae231c314a5d0ce548",
-      "bytes": 23856,
-      "producer": {
-        "tool": "sde",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp1_dvs.cmd",
-        "finished_utc": "2026-08-18T03:56:38Z",
-        "cmd_sha256": "7a62c33f491884b851c1cd5890d3431286c563e9ced907e056ed51d86059018d"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_half_bnd.tdr"
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge",
+          "IntegrSemiconductor ImpactIonization"
+        ],
+        "rows": 82,
+        "first_bias_V": 0.0,
+        "last_bias_V": 6.3160610161613,
+        "first_current_A_per_um": 2.72437511381177e-22,
+        "last_current_A_per_um": 9.99999999999999e-05,
+        "goal_reached": true
       }
     },
     {
-      "path": "mesh/n1_half_msh.log",
-      "category": "C",
-      "sha256": "5039c727a09187b1520f325b8e9f23f851571e13a064cf8294de57947ab350f7",
-      "bytes": 2995,
-      "producer": {
-        "tool": "snmesh",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "n1_half_msh.cmd",
-        "finished_utc": "2026-08-18T03:59:50Z",
-        "cmd_sha256": "67c933957f358df2ea58d56a91e3df10963918f0118266c1c8278e48c0737f84"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_half_msh.log"
-      }
-    },
-    {
-      "path": "mesh/n1_dvs.log",
-      "category": "C",
-      "sha256": "deaf765e70be93c8244e584dcd4f9a8cff3437c0e317e3ba8145d112c705ca83",
-      "bytes": 4385,
-      "producer": {
-        "tool": "sde",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp1_dvs.cmd",
-        "finished_utc": "2026-08-18T04:03:02Z",
-        "cmd_sha256": "7a62c33f491884b851c1cd5890d3431286c563e9ced907e056ed51d86059018d"
-      },
-      "verify": {
-        "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n1_dvs.log"
-      }
-    },
-    {
-      "path": "plt/n3_des.plt",
+      "path": "plt/aba_poisson_des.plt",
       "category": "B",
       "sha256": "27464a50e2dfb3755d89444ad2b35d26f0bb199e63b01c98d36af088f0690084",
       "bytes": 19450,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp3_des.cmd",
-        "parameter_file": "pp3_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:06:20Z",
-        "cmd_sha256": "fe66a28f8a88edfe67ef2f5bd919a415dc0cd5700d7c007e83ac0044c342f1ae"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "aba_poisson_sdevice.cmd",
+        "cmd_sha256": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n3_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge",
+          "MaxField",
+          "PhiElectron",
+          "PhiHole"
+        ],
+        "rows": 21,
+        "first_bias_V": 0.0,
+        "last_bias_V": 9.23345270404012,
+        "goal_reached": false
       }
     },
     {
-      "path": "plt/n4_des.plt",
+      "path": "plt/b_doping_no_enormal_des.plt",
       "category": "B",
-      "sha256": "075e5e13589309191f945d5120a473fc31d958701a0e16f3258a063cf52fdebf",
-      "bytes": 22742,
+      "sha256": "44a2fad9dd9c897fb95af62f52be909332b4047778998168b3a1d1253d0c0809",
+      "bytes": 67293,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp4_des.cmd",
-        "parameter_file": "pp4_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:13:32Z",
-        "cmd_sha256": "2d1d39a8b0ee05274fcaca6045d242490579647b0406972fdf160e4d6cc3ff68"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "b_doping_no_enormal_sdevice.cmd",
+        "cmd_sha256": "f3d9cff6ece8611082b9b3ff687af1b25b4bbc9565d030e4fe6e87b47e9471cc",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n4_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge",
+          "IntegrSemiconductor ImpactIonization"
+        ],
+        "rows": 81,
+        "first_bias_V": 0.0,
+        "last_bias_V": 6.31792231543566,
+        "first_current_A_per_um": 2.72437511381178e-22,
+        "last_current_A_per_um": 0.0001,
+        "goal_reached": true
       }
     },
     {
-      "path": "plt/n5_des.plt",
+      "path": "plt/c_constant_enormal_des.plt",
       "category": "B",
-      "sha256": "e460bf77b262caf58ab793d8098d00f64cdf96bd802126a36c610c59cfd2b8f7",
-      "bytes": 53509,
+      "sha256": "53ae7131b922d6615fcc080822107e1e1c30bb6dc2c0e886b321544d0e921d17",
+      "bytes": 68107,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp5_des.cmd",
-        "parameter_file": "pp5_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:22:21Z",
-        "cmd_sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "c_constant_enormal_sdevice.cmd",
+        "cmd_sha256": "95c5e157865b69ea59849be4dc6d0ee5f64460012873053f617631de8a029fc2",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n5_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge",
+          "IntegrSemiconductor ImpactIonization"
+        ],
+        "rows": 82,
+        "first_bias_V": 0.0,
+        "last_bias_V": 6.3186864722274,
+        "first_current_A_per_um": 3.53939915952949e-22,
+        "last_current_A_per_um": 9.99999999999999e-05,
+        "goal_reached": true
       }
     },
     {
-      "path": "plt/n6_des.plt",
+      "path": "plt/d_doping_enormal_des.plt",
       "category": "B",
-      "sha256": "ae5fc16be97bd97d88fab76c70fdaedcd1ae3f53780c9082893cef37455b2897",
-      "bytes": 85940,
+      "sha256": "627d5ecdf99769d4a6162d3b9a0a4ba4debedcc118b2fbd90c8e34288a2365d5",
+      "bytes": 66479,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp6_des.cmd",
-        "parameter_file": "pp6_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:31:41Z",
-        "cmd_sha256": "12f38a1dc72cab6f88a6f6fc0a4354eaa3474817a6febee2289750fb21371c7a"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/d_precision",
+        "cmd": "d_doping_enormal_sdevice.cmd",
+        "cmd_sha256": "deb6d90bd5a20ab55b02eb45afda6e13a520ed4839860d6f379bed4c0e27d666",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T01:19:47Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n6_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge",
+          "IntegrSemiconductor ImpactIonization"
+        ],
+        "rows": 80,
+        "first_bias_V": 0.0,
+        "last_bias_V": 6.32055959265366,
+        "first_current_A_per_um": 3.53939915952951e-22,
+        "last_current_A_per_um": 0.0001,
+        "goal_reached": true
       }
     },
     {
-      "path": "plt/n7_des.plt",
+      "path": "plt/external_dc_saved_des.plt",
       "category": "B",
-      "sha256": "724811e03485f01e48eee557214832995ff8db31521ea6b23a89fd08fd7678fb",
-      "bytes": 37689,
+      "sha256": "6189a4821a5cfaba740ab89c3f9fd0b69ab8669d00360f1ef891ea6a4fa1fb8a",
+      "bytes": 2094,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp7_des.cmd",
-        "parameter_file": "pp7_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:40:12Z",
-        "cmd_sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:56:59Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n7_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge"
+        ],
+        "rows": 1,
+        "first_bias_V": 0.0,
+        "last_bias_V": 0.0
       }
     },
     {
-      "path": "plt/n8_des.plt",
+      "path": "plt/external_recovery_saved_des.plt",
       "category": "B",
-      "sha256": "a19c798b910f6f58275b0fd9dd2a8523d1d429921d4a4dcd2285f9ca613e019f",
-      "bytes": 89329,
+      "sha256": "580620c57cfd5669fe80332cb5504464e9d9455248670bb27225698e87ee6ff5",
+      "bytes": 32152,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp8_des.cmd",
-        "parameter_file": "pp8_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:51:53Z",
-        "cmd_sha256": "b525b2ed80e9a79927ea757c2fc0ac00f748a8050f2b39f63c36a2a4f4c821cd"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:57:38Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n8_des.plt"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge"
+        ],
+        "rows": 39,
+        "first_bias_V": 14513.0674587468,
+        "last_bias_V": 14487.1800149001,
+        "goal_reached": false
       }
     },
     {
-      "path": "tdr/n3_des.tdr",
+      "path": "plt/external_transient_saved_des.plt",
+      "category": "B",
+      "sha256": "6ed74655656df6af630ef607c429e74458437481aadc4eabedce41340fdacf9a",
+      "bytes": 118371,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:52:59Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "gate OuterVoltage",
+          "gate InnerVoltage",
+          "gate QuasiFermiPotential",
+          "gate DisplacementCurrent",
+          "gate eCurrent",
+          "gate hCurrent",
+          "gate TotalCurrent",
+          "gate Charge",
+          "substrate OuterVoltage",
+          "substrate InnerVoltage",
+          "substrate QuasiFermiPotential",
+          "substrate DisplacementCurrent",
+          "substrate eCurrent",
+          "substrate hCurrent",
+          "substrate TotalCurrent",
+          "substrate Charge",
+          "drain OuterVoltage",
+          "drain InnerVoltage",
+          "drain QuasiFermiPotential",
+          "drain DisplacementCurrent",
+          "drain eCurrent",
+          "drain hCurrent",
+          "drain TotalCurrent",
+          "drain Charge",
+          "source OuterVoltage",
+          "source InnerVoltage",
+          "source QuasiFermiPotential",
+          "source DisplacementCurrent",
+          "source eCurrent",
+          "source hCurrent",
+          "source TotalCurrent",
+          "source Charge"
+        ],
+        "rows": 148,
+        "first_bias_V": 0.0,
+        "last_bias_V": 14513.0674587468
+      }
+    },
+    {
+      "path": "tdr/a_constant_no_enormal_des.tdr",
       "category": "D",
-      "sha256": "31442f78e61825e599e04ede1c2014bd77c0579efd33b42f9225394cd21016f5",
-      "bytes": 674841,
+      "sha256": "edc1e6273bf580a725bcebb296a11a44bb606c0192c784d83e2ecc27eecad34b",
+      "bytes": 868649,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp3_des.cmd",
-        "parameter_file": "pp3_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:06:20Z",
-        "cmd_sha256": "fe66a28f8a88edfe67ef2f5bd919a415dc0cd5700d7c007e83ac0044c342f1ae"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "a_constant_no_enormal_sdevice.cmd",
+        "cmd_sha256": "95699872d235e1eb164cf3625cac0b00c0a628e52fe9ccd045884327d8c159e1",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n3_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eMobility",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hMobility",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n4_des.tdr",
+      "path": "tdr/aba_poisson_des.tdr",
       "category": "D",
-      "sha256": "1a70c58a44d18435edec95b36c2d696c6992f12eb24958fb7d4f71cb645c3a02",
-      "bytes": 797335,
+      "sha256": "9a6223c509752f23db99a7903b768eba3d29a62bee2dfe19b9e5154a1cb52858",
+      "bytes": 672513,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp4_des.cmd",
-        "parameter_file": "pp4_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:13:32Z",
-        "cmd_sha256": "2d1d39a8b0ee05274fcaca6045d242490579647b0406972fdf160e4d6cc3ff68"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "aba_poisson_sdevice.cmd",
+        "cmd_sha256": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n4_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n5_des.tdr",
+      "path": "tdr/b_doping_no_enormal_des.tdr",
       "category": "D",
-      "sha256": "1f9cb03997706cc94a511faddcb4ae86f689aa975c0377c786bbf26024e8c44b",
-      "bytes": 847577,
+      "sha256": "d6f6e9504a07385953800d4d4cea79df493b684db08b9464f0726f08b9c3e7fb",
+      "bytes": 868460,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp5_des.cmd",
-        "parameter_file": "pp5_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:22:21Z",
-        "cmd_sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "b_doping_no_enormal_sdevice.cmd",
+        "cmd_sha256": "f3d9cff6ece8611082b9b3ff687af1b25b4bbc9565d030e4fe6e87b47e9471cc",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n5_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eMobility",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hMobility",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n6_des.tdr",
+      "path": "tdr/c_constant_enormal_des.tdr",
       "category": "D",
-      "sha256": "d08aea75fae85491da9027704f66c96634734f2a1b9af045f3d1b5cf60f0b9ee",
-      "bytes": 846081,
+      "sha256": "712a4563739849fa98fdcf4e72ef6b79477f56f16fc0327f77f0d681bfd5e1c6",
+      "bytes": 868914,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp6_des.cmd",
-        "parameter_file": "pp6_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:31:42Z",
-        "cmd_sha256": "12f38a1dc72cab6f88a6f6fc0a4354eaa3474817a6febee2289750fb21371c7a"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "c_constant_enormal_sdevice.cmd",
+        "cmd_sha256": "95c5e157865b69ea59849be4dc6d0ee5f64460012873053f617631de8a029fc2",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n6_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eMobility",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hMobility",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n7_des.tdr",
+      "path": "tdr/d_doping_enormal_des.tdr",
       "category": "D",
-      "sha256": "75d21eed0111f4101b61472955692e03890e9b158c2e362c4330e0ce6d53fb05",
-      "bytes": 692124,
+      "sha256": "49841fc53a7100ddb208b617d787dfeb37a5a5097de4a666334c715e797d8c52",
+      "bytes": 868459,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp7_des.cmd",
-        "parameter_file": "pp7_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:40:12Z",
-        "cmd_sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/d_precision",
+        "cmd": "d_doping_enormal_sdevice.cmd",
+        "cmd_sha256": "deb6d90bd5a20ab55b02eb45afda6e13a520ed4839860d6f379bed4c0e27d666",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T01:19:47Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n7_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eMobility",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hMobility",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n8_des.tdr",
+      "path": "tdr/external_dc_saved_des.tdr",
       "category": "D",
-      "sha256": "3c5fa2c9c810c4b29c7147fe954f2e5d533a08258de3635bf27c76dbeae110cd",
-      "bytes": 693024,
+      "sha256": "beee2e45a0b4fd90684398726e5f6df44e571e97fbf4805dcf7f0eb75cd5237f",
+      "bytes": 853227,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp8_des.cmd",
-        "parameter_file": "pp8_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:51:53Z",
-        "cmd_sha256": "b525b2ed80e9a79927ea757c2fc0ac00f748a8050f2b39f63c36a2a4f4c821cd"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:56:59Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n8_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
       }
     },
     {
-      "path": "tdr/n7_des_20_des.tdr",
+      "path": "tdr/external_dc_saved_steady_circuit_des.sav",
       "category": "D",
-      "sha256": "88ec6c7a8590cbdbc77592bd2cfd7077fbf1b607c150339040d73e99e940abb7",
-      "bytes": 444495,
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "bytes": 306,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp7_des.cmd",
-        "parameter_file": "pp7_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:39:00Z",
-        "cmd_sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "finished_utc": "2026-10-06T03:56:59Z",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n7_des_20_des.tdr"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       }
     },
     {
-      "path": "log/n3_des.log",
-      "category": "E",
-      "sha256": "639050981e745c694d808a59ef1b8abb629bcbaa1f082cb33aba1d31a163eaab",
-      "bytes": 56817,
+      "path": "tdr/external_dc_saved_steady_des.sav",
+      "category": "D",
+      "sha256": "68448649762a579dd96b3196bffabf7a8849bae2013c6e845a07d4ff0ff66d1f",
+      "bytes": 435413,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp3_des.cmd",
-        "parameter_file": "pp3_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:06:20Z",
-        "cmd_sha256": "fe66a28f8a88edfe67ef2f5bd919a415dc0cd5700d7c007e83ac0044c342f1ae"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "finished_utc": "2026-10-06T03:56:59Z",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n3_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "tdr/external_dc_saved_steady_des.tdr",
+      "category": "D",
+      "sha256": "20fdce17cfeb62815f4ebc0e1f3dd49c13af791f6fb3c612e4270b3fac9bb936",
+      "bytes": 853227,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:56:59Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
+      }
+    },
+    {
+      "path": "tdr/external_recovery_saved_below_stop_circuit_des.sav",
+      "category": "D",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "bytes": 306,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "finished_utc": "2026-10-06T03:57:10Z",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "tdr/external_recovery_saved_below_stop_des.sav",
+      "category": "D",
+      "sha256": "7ed7be1ce9787bb68feda7558b83cd459240d908b7ba976cf2c492fac5bad47f",
+      "bytes": 435429,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "finished_utc": "2026-10-06T03:57:10Z",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "tdr/external_recovery_saved_des.tdr",
+      "category": "D",
+      "sha256": "af62bc6ceb297b84198c163c4bd2c5c06474814b45c4f13efcf32d2b66bec3ec",
+      "bytes": 853260,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:57:38Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
+      }
+    },
+    {
+      "path": "tdr/external_recovery_saved_final_circuit_des.sav",
+      "category": "D",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "bytes": 306,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "finished_utc": "2026-10-06T03:57:38Z",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "tdr/external_recovery_saved_final_des.tdr",
+      "category": "D",
+      "sha256": "4b9629575876ceb11cc4baf39ae49d0f4f76249efd2ad5aa9146156b265639fc",
+      "bytes": 853260,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:57:38Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
+      }
+    },
+    {
+      "path": "tdr/external_transient_saved_des.tdr",
+      "category": "D",
+      "sha256": "edeb421d4315b860e04d0e0004febea3863353d20157f2b79fd20b3e5ed5f620",
+      "bytes": 855589,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:52:59Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "nodes": 2600,
+        "elements": 5020,
+        "contacts": [
+          {
+            "name": "gate",
+            "node_count": 47
+          },
+          {
+            "name": "substrate",
+            "node_count": 9
+          },
+          {
+            "name": "drain",
+            "node_count": 11
+          },
+          {
+            "name": "source",
+            "node_count": 11
+          }
+        ],
+        "materials": [
+          "Oxide",
+          "Silicon",
+          "Nitride"
+        ],
+        "datasets": [
+          "Band2BandGeneration",
+          "ContactCharge",
+          "ContactCurrentFlux",
+          "ContactExternalVoltage",
+          "DopingConcentration",
+          "ElectricField",
+          "ElectrostaticPotential",
+          "Extrapolation_ElectrostaticPotential",
+          "Extrapolation_QuasiFermiPotential",
+          "Extrapolation_eDensity",
+          "Extrapolation_hDensity",
+          "ImpactIonization",
+          "LatticeTemperature",
+          "MeanIonIntegral",
+          "QuasiFermiPotential",
+          "SpaceCharge",
+          "TotalCurrentDensity",
+          "eAlphaAvalanche",
+          "eCurrentDensity",
+          "eDensity",
+          "eImpactIonization",
+          "eIonIntegral",
+          "eQuasiFermiPotential",
+          "hAlphaAvalanche",
+          "hCurrentDensity",
+          "hDensity",
+          "hImpactIonization",
+          "hIonIntegral",
+          "hQuasiFermiPotential",
+          "srhRecombination"
+        ]
+      }
+    },
+    {
+      "path": "tdr/external_transient_seed_circuit_des.sav",
+      "category": "D",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "bytes": 306,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "finished_utc": "2026-10-06T03:52:58Z",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "tdr/external_transient_seed_des.sav",
+      "category": "D",
+      "sha256": "9b7b24b0e02891f3d076adabfece4fa589e96430c4e66bee13309cc51a82a0ab",
+      "bytes": 435428,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "finished_utc": "2026-10-06T03:52:58Z",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      }
+    },
+    {
+      "path": "log/a_constant_no_enormal_des.log",
+      "category": "E",
+      "sha256": "6a32b8b7d53bc98911123ba5939352420b95fdda27ded18fa9a984f9d0522df3",
+      "bytes": 151957,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "a_constant_no_enormal_sdevice.cmd",
+        "cmd_sha256": "95699872d235e1eb164cf3625cac0b00c0a628e52fe9ccd045884327d8c159e1",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n4_des.log",
+      "path": "log/aba_poisson_des.log",
       "category": "E",
-      "sha256": "32f62a4478d8657b124254708909061f2e72db5543cae9e958d46a17f8b89bb1",
-      "bytes": 68285,
+      "sha256": "4c72b02aad1a9bba92aa0356832dc382cc7a9bd84368aaff7ec55d65c5f4b2e1",
+      "bytes": 56904,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp4_des.cmd",
-        "parameter_file": "pp4_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:13:32Z",
-        "cmd_sha256": "2d1d39a8b0ee05274fcaca6045d242490579647b0406972fdf160e4d6cc3ff68"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "aba_poisson_sdevice.cmd",
+        "cmd_sha256": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n4_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n5_des.log",
+      "path": "log/b_doping_no_enormal_des.log",
       "category": "E",
-      "sha256": "e68b8bab267133680c76bf79160b71fb0999e066c38603976124b79646fa251d",
-      "bytes": 141991,
+      "sha256": "8630f1f614a80322b2140c7453a0fe7e2b28057166090489666230372ed69f68",
+      "bytes": 148651,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp5_des.cmd",
-        "parameter_file": "pp5_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:22:21Z",
-        "cmd_sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "b_doping_no_enormal_sdevice.cmd",
+        "cmd_sha256": "f3d9cff6ece8611082b9b3ff687af1b25b4bbc9565d030e4fe6e87b47e9471cc",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n5_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n6_des.log",
+      "path": "log/c_constant_enormal_des.log",
       "category": "E",
-      "sha256": "b558cbda3dd4e7b28c844e1f366a913e253789baad248e44b5f2f92d0a6da2ae",
-      "bytes": 180803,
+      "sha256": "1ca9b5f0dcfc2b73e596ac308683ac4c6b852ce7c7da3d424aac87b4a4752c92",
+      "bytes": 151974,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp6_des.cmd",
-        "parameter_file": "pp6_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:31:41Z",
-        "cmd_sha256": "12f38a1dc72cab6f88a6f6fc0a4354eaa3474817a6febee2289750fb21371c7a"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "c_constant_enormal_sdevice.cmd",
+        "cmd_sha256": "95c5e157865b69ea59849be4dc6d0ee5f64460012873053f617631de8a029fc2",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:34:36Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n6_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n7_des.log",
+      "path": "log/d_doping_enormal_des.log",
       "category": "E",
-      "sha256": "2b434c5d2d390892038a2d566b7e37692ee0b39bccb94be5a570a3d1c9bead9c",
-      "bytes": 118995,
+      "sha256": "c9009a429994017386c3660b85a77e012775f480f4f433b712bfa06a30e723e9",
+      "bytes": 161028,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp7_des.cmd",
-        "parameter_file": "pp7_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:40:12Z",
-        "cmd_sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/d_precision",
+        "cmd": "d_doping_enormal_sdevice.cmd",
+        "cmd_sha256": "deb6d90bd5a20ab55b02eb45afda6e13a520ed4839860d6f379bed4c0e27d666",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T01:19:47Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n7_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n8_des.log",
+      "path": "log/external_dc_saved_des.log",
       "category": "E",
-      "sha256": "0b65a1ecc7f4ca64c999a631f528146adbf9c6f1aad8f781968cf51c79e4c132",
-      "bytes": 229381,
+      "sha256": "63038b813c16d507aabaf12bd0129d84ccc8ec09bdce6605bd158a06c73f49f3",
+      "bytes": 29742,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp8_des.cmd",
-        "parameter_file": "pp8_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:51:53Z",
-        "cmd_sha256": "b525b2ed80e9a79927ea757c2fc0ac00f748a8050f2b39f63c36a2a4f4c821cd"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:56:59Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n8_des.log"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n3_des.out",
+      "path": "log/external_recovery_saved_des.log",
       "category": "E",
-      "sha256": "0c03cd16188016004ccc1b66fab968a5399dbac00682a49e5e81a54448dd2b7b",
-      "bytes": 58113,
+      "sha256": "cd5c7a0dcd988f895fe1cfc26606eaeeb6a9cd59113cf3cc120d2434cd08c377",
+      "bytes": 82177,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp3_des.cmd",
-        "parameter_file": "pp3_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:06:20Z",
-        "cmd_sha256": "fe66a28f8a88edfe67ef2f5bd919a415dc0cd5700d7c007e83ac0044c342f1ae"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:57:38Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n3_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n4_des.out",
+      "path": "log/external_transient_saved_des.log",
       "category": "E",
-      "sha256": "ebb9a4ee57a07e3a2d09fe341a3ac9d561ac275b0ae5a35bf9144c8d4ec30636",
-      "bytes": 69736,
+      "sha256": "d6b8eb47909a00c21a6bd13a9573620b846929dde01592c30c3c00870d802d2a",
+      "bytes": 476546,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp4_des.cmd",
-        "parameter_file": "pp4_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:13:32Z",
-        "cmd_sha256": "2d1d39a8b0ee05274fcaca6045d242490579647b0406972fdf160e4d6cc3ff68"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:52:59Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n4_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n5_des.out",
+      "path": "log/run_a_constant_no_enormal.out",
       "category": "E",
-      "sha256": "751d21a9197c7f132a04cac5828d90a89523dadb1de8278b4436a806bcb15a52",
-      "bytes": 142182,
+      "sha256": "a0158ad867dd3a2e0e0abaf9dd056ad1281bb2b06217c0a7a9fee7d47e91d390",
+      "bytes": 152167,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp5_des.cmd",
-        "parameter_file": "pp5_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:22:21Z",
-        "cmd_sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "a_constant_no_enormal_sdevice.cmd",
+        "cmd_sha256": "95699872d235e1eb164cf3625cac0b00c0a628e52fe9ccd045884327d8c159e1",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:21:26Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n5_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n6_des.out",
+      "path": "log/run_aba_poisson.out",
       "category": "E",
-      "sha256": "7b02b518179b6f7df75fa276e646f4816c737512afeb11f387bb88bddc2de2bc",
-      "bytes": 180994,
+      "sha256": "f19363087cee0eb62757b994076d1a48ee3043e9f3725c5c8b09fc12641377ab",
+      "bytes": 58209,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp6_des.cmd",
-        "parameter_file": "pp6_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:31:41Z",
-        "cmd_sha256": "12f38a1dc72cab6f88a6f6fc0a4354eaa3474817a6febee2289750fb21371c7a"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "aba_poisson_sdevice.cmd",
+        "cmd_sha256": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:09:09Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n6_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n7_des.out",
+      "path": "log/run_b_doping_no_enormal.out",
       "category": "E",
-      "sha256": "7bbf5f5cc07fcde8e7d81f27263ccd4bb19bfabdb34e3c3306580c52bd4280f7",
-      "bytes": 119223,
+      "sha256": "4eaca01222ee405931f1eb46f5977037fa3ee542c2394620f7731fe764aa0dbe",
+      "bytes": 148859,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp7_des.cmd",
-        "parameter_file": "pp7_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:40:12Z",
-        "cmd_sha256": "e9a1ffbacfc7bdc4ee3b1e8cf843686ae479cc81ca1d68bbe2f3a169b2260774"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "b_doping_no_enormal_sdevice.cmd",
+        "cmd_sha256": "f3d9cff6ece8611082b9b3ff687af1b25b4bbc9565d030e4fe6e87b47e9471cc",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T00:25:38Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n7_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     },
     {
-      "path": "log/n8_des.out",
+      "path": "log/run_c_constant_enormal.out",
       "category": "E",
-      "sha256": "4d74bb8707f18388166e41d1d6c1aa6700e5354f8605102d11424946af408d25",
-      "bytes": 229572,
+      "sha256": "f9c666ffe5693bf523c1a42b4440c547217094f12110b3caa0930ad1daac9ff3",
+      "bytes": 152181,
       "producer": {
         "tool": "sdevice",
-        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818",
-        "cmd": "pp8_des.cmd",
-        "parameter_file": "pp8_des.par",
-        "parameter_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
-        "finished_utc": "2026-08-18T04:51:53Z",
-        "cmd_sha256": "b525b2ed80e9a79927ea757c2fc0ac00f748a8050f2b39f63c36a2a4f4c821cd"
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+        "cmd": "c_constant_enormal_sdevice.cmd",
+        "cmd_sha256": "95c5e157865b69ea59849be4dc6d0ee5f64460012873053f617631de8a029fc2",
+        "parameter_file": "full_physics_constant_srh.par",
+        "parameter_sha256": "779e954beb42403f44be003c220fd633ef7343ecd8de7961ad10840c7491c663",
+        "finished_utc": "2026-10-06T00:30:10Z"
       },
       "verify": {
         "status": "registered",
-        "checked_utc": "2026-09-26T14:23:18Z",
-        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/bvmethods_t2022_refresh_20260818/n8_des.out"
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_d_doping_enormal.out",
+      "category": "E",
+      "sha256": "369893844d08f2e14055ea5e351c76a03b75cb6380027b96449b82743ff5d03f",
+      "bytes": 161233,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/d_precision",
+        "cmd": "d_doping_enormal_sdevice.cmd",
+        "cmd_sha256": "deb6d90bd5a20ab55b02eb45afda6e13a520ed4839860d6f379bed4c0e27d666",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T01:19:47Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_external_dc_saved.out",
+      "category": "E",
+      "sha256": "8a061cb96949c0128a488080d13a0e90190fdc989c9d045d0ae23b2378a96d64",
+      "bytes": 30052,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_dc_saved",
+        "cmd": "external_dc_saved_sdevice.cmd",
+        "cmd_sha256": "43a955a087af2f97492fa6b7adfd1da4d6dcfba44fae817f62d168ea96749af9",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:56:59Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_external_recovery_saved.out",
+      "category": "E",
+      "sha256": "a3dac402afffd4be0bc66901b64a20343b3583f22ac51c06aab15d185417efc0",
+      "bytes": 82508,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_recovery_saved",
+        "cmd": "external_recovery_saved_sdevice.cmd",
+        "cmd_sha256": "e5c06743b66496626dc8482f6d3671257d03c5ec46011d65ede2194335c7189c",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:57:38Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_external_transient_saved.out",
+      "category": "E",
+      "sha256": "fa127aaf3f1db829de6a7dfab7ef72d428369f15c4fc976d6f7d5b78c385ded7",
+      "bytes": 476810,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/external_transient_saved_v2",
+        "cmd": "external_transient_saved_sdevice.cmd",
+        "cmd_sha256": "e16a12237fef8f1dcb4b6061eef60f9d52f095621186de9e3e07a7d25ca85c55",
+        "parameter_file": "models.par",
+        "parameter_sha256": "8f347051a6a8a9c40ffebc6e54abe85adc2343735b53c4f1eb34406409b5ad0c",
+        "finished_utc": "2026-10-06T03:52:59Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-06T04:00:28Z",
+        "note": "sha256 computed on the store copy at registration (local:build-release/followup_20261006/vm_mirror)"
       },
       "summary": {
         "exit_status": "Good Bye"
       }
     }
-  ]
+  ],
+  "origin": {
+    "vm_run_directory": "/root/sentaurus_runs/wp14_remaining_20261006/bvmethods",
+    "note": "Batch VM sha256 inventory matched every local mirror member; C7 online verification uses this byte-verified mirror. Public source directory: reference_tcad/bvmethods_sentaurus2018/wp14_sources/v4. Reused branches retain their original run directory."
+  }
 }

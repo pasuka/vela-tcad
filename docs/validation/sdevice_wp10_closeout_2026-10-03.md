@@ -154,3 +154,7 @@ ctest --preset windows-ucrt64-release -R '^sdevice_acceptance_tools$' --output-o
 
 不指定 `--candidate-dir` 会从平衡态重新运行，完整 BV 单线程扫描较慢，默认壁钟上限
 7200 s。原生产物、候选场量/状态和精度复核输出仍在忽略目录中，不提交原件。
+
+2026-10-06 后续：−20 V 空穴密度的向量 GradQF/局部 AD 修复及完整扫线核验在
+[独立记录](sdevice_followup_2026-10-06.md)中跟踪。本报告保留原收口范围、失败证据和当时结论；
+当前绑定资格以验收契约为准。

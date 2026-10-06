@@ -173,7 +173,10 @@ def _reference_phi(report: dict) -> float:
     if chi is None:
         raise DeckEmitError("E407", detail="WP3 report is missing Silicon Bandgap.Chi0")
     nc_nv = (derivation["electron_dos_mass_ratio"] / derivation["hole_dos_mass_ratio"]) ** 1.5
-    return float(chi) + derivation["Eg_T_eV"] / 2 + derivation["kT_eV"] / 2 * math.log(nc_nv)
+    # T-2022.03 native gate controls use the zero-temperature reference gap,
+    # while the DOS ratio is evaluated at the simulation temperature. This
+    # contact reference is separate from the physical C3 gap and intrinsic ni.
+    return float(chi) + derivation["Eg_0_eV"] / 2 + derivation["kT_eV"] / 2 * math.log(nc_nv)
 
 
 def _physics(ir: dict, report: dict, decisions: list) -> dict:
@@ -649,8 +652,17 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
         deck["sweep"] = sweep
         if sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
-            _merge(deck, {k: v for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile")},
+            _merge(deck, {k: v for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization")},
                    "", entry["sidecar_overrides"], decisions, index)
+            if gradient := sidecar.get("high_field_gradient_discretization"):
+                mobility = deck["solver"]["mobility"]
+                if "_field" not in mobility["model"] or mobility.get("high_field_driving_force") != "quasi_fermi_gradient":
+                    raise DeckEmitError("E409", file="sidecar", detail="gradient recovery requires active high-field GradQF mobility")
+                mobility["high_field_gradient_discretization"] = gradient
+                key = "solver.mobility.high_field_gradient_discretization"
+                entry["sidecar_overrides"].append(key)
+                _decision(decisions, "high_field_gradient_discretization", gradient,
+                          key, gradient, "Explicit numerical gradient recovery; mobility law and coefficients unchanged", "W207", index)
             if profile := sidecar.get("avalanche_current_support_profile"):
                 avalanche = deck["solver"]["impact_ionization"]
                 if avalanche["model"] == "none" or avalanche.get("driving_force") != "quasi_fermi_gradient":
