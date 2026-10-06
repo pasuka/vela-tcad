@@ -1,6 +1,8 @@
 # `vela device`：SDevice 命令文件直跑工作流
 
-状态：**WP0–WP12 文档与交付收口**（2026-10-05，WP13/剩余 WP14 独立待办）。本文是
+状态：**WP0–WP14 按具名范围完成，遗留修复验证通过**（2026-10-06）。WP14 外接电阻资格为 v4 恢复路径，
+原始从零 QS 数值限制保留。逐项状态见
+[本轮记录](validation/sdevice_followup_2026-10-06.md)。本文是
 [开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
 第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
 计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；
@@ -145,13 +147,16 @@ C3 的单位由自身 schema 与 `unit_system` 定义；装载到 `format_versio
 [栅接触核对](validation/sdevice_gate_contact_reference_2026-09-29.md)）：
 
 - `Electrode{ Barrier=Φ_MS }`（缺省 0）→ `contacts[]: {type:"metal_gate", work_function_eV: Φ_MS}`；
-- `Electrode{ WorkFunction=Φ_M }` → `work_function_eV = Φ_M − (χ + E_g/2 + (kT/2)·ln(N_c/N_v))`，参数取 C3 中参考半导体（Si）的值；
+- `Electrode{ WorkFunction=Φ_M }` → `work_function_eV = Φ_M − (χ + E_g(0)/2 + (kT/2)·ln(N_c(T)/N_v(T)))`，参数取 C3 中参考半导体（Si）的值；
 - `Electrode{ Material="X" }` → `Φ_M` 取 WP3 报告 `electrodes[].work_function_eV`（`.par` `Bandgap{WorkFunction}`），再按上条换算；
 - `Material="Silicon"(N=...)` 多晶硅栅与氧化层固定电荷不在本规则内（WP4 处理）。
 
-当前 WP3 默认库在 300 K 给出 `Φ_S,i=4.611003610676079 eV`；2026-10-02 用户同意将 WP4
-零偏移验收输入改为该值。遗留内置 Si 的 `4.6228018936 eV` 用作输入时应得到
-`work_function_eV=0.011798282923921377 eV`，测试同时覆盖这两个结果；公式和材料参数未改。
+WP14 的 T-2022.03-SP2 原生控制确认：栅 WorkFunction 参考使用零温带隙与运行温度 DOS，
+当前参考为 `4.633743995291464 eV`，五组原生/Vela 平带差异约 0.26 μV，低于原 1 mV 门限。
+物理本征功函数仍是使用 300 K 带隙的 `4.611003610676079 eV`；2026-10-02 认可的该输入
+保留为非零偏移控制，转换结果为 `−0.02274038461538463 eV`。旧 `4.6228018936 eV` 输入
+也保留为诊断。材料带隙/ni 和 Schottky 的绝对功函数没有改变。
+原生证据与适用版本见[本轮核验](validation/sdevice_followup_2026-10-06.md)。
 
 ### 2.6 求解器新增键（C5，WP6）
 
@@ -227,6 +232,9 @@ python -m vela_sdevice.deck_emit --ir execution_ir.json --mesh-qualification mes
   前者依赖非钝角资格；后者完整恢复 barycentric/no-guard 配置。源导数按 Math 使用 local AD 或 frozen，
   接触元素保留原生 electric-field fallback。
   PN2D BV 参考案例随附显式 sidecar；验收报告记录其哈希，复用旧输出也核验它。
+- sidecar 的 `high_field_gradient_discretization=edge_projection|transport_cell_vector` 只指定
+  已激活 GradQF 高场迁移率的数值恢复方式；不激活模型或覆盖系数，按阶段应用并记录 W207。
+  PN2D BV 显式选择后者，局部 AD 与诊断路径采用相同梯度。原子雪崩五项配置和 PN2D IV 不变。
 - C4 和公开 deck schema 均校验；额外遍历拒绝非有限值与 v1 键。错误使用 `DeckEmitError(message_id, **fields)`。
 
 CTest `sdevice_deck_emit` 对七个 accepted 夹具比较完整 golden，并验证真实 runner 的平衡、电压扫描、电流目标与 HDF5 串接。
@@ -399,9 +407,11 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   当前结果见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)：原契约验收完成。
   后续[两平台部署包验收](validation/sdevice_native_package_e2e_2026-10-05.md)从解包入口产生全新候选，
   在相同契约下通过；它补齐交付证据，不扩大数值资格范围。
-  IV 到达 10 V 并通过既定窗口，BV 到达 −20 V 且全窗口曲线/KCL 通过；BV 独立场量资格
-  仅限绑定输入/配置的 −13.2 V。该点不是击穿电压；现有分段 log(I) 膝点拟合给出原生与
-  Vela 均 −19.405 V，−19.5/−19.6/−19.7 V 场量诊断通过，−20 V 空穴密度诊断失败。
+  IV 到达 10 V 并通过既定窗口。2026-10-06 BV 向量 GradQF 局部 AD 修复后完整扫线到 −20 V，
+  曲线/KCL 与十个具名偏置场量锚点严格通过，契约要求十点全部满足，绑定同一网格、输入与新数值策略。
+  −13.2 V 是原场量锚点，不是击穿电压；分段 log(I) 膝点拟合原生与 Vela 均 −19.405 V。
+  旧 −20 V 空穴失败证据保留；不声明连续空间、其他网格或其他平台部署包的新资格。
+  完整结果与指纹见[本轮记录](validation/sdevice_followup_2026-10-06.md)。
   附加诊断失败随 JSON 保留，不推导全反偏范围的空间资格。后续核对可复用已完成候选，
   cmd/par/grid/sidecar 必须通过指纹检查；配置漂移不能自动沿用 BV 场量资格。
 - `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；binary 为 inline base64 加 UInt32 header，
@@ -560,7 +570,11 @@ schema 之外、golden 夹具所依赖的确定性规则：
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   旧盘点见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；
   用户已授权并完成 PN2D 0V/IV/BV 和 BJT m0 的最小 v2 重跑。WP10 已固化 A-4 与 C6，
-  当前状态见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)；其余 WP14 案例未执行。
+  历史具名验收见 [WP10 收口报告](validation/sdevice_wp10_closeout_2026-10-03.md)。
+  2026-10-06 用户已授权剩余 WP14；栅五组原生控制与 C7 完成，BVmethods 各分支已执行，
+  D 精度修复成功；外接电阻 v4 的瞬态获取、独立稳态及阈值以下的静态续扫通过，
+  原模型/电阻/停止值不变，C7 六项通过，当前 manifest 更新为 v4，v1/v2/v3 保留。
+  原始从零 QS 轨迹仍失败；原生 Transient 获取不扩展前端语法，见[本轮记录](validation/sdevice_followup_2026-10-06.md)。
 - A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：
   见 [WP13 材料对齐记录](validation/builtin_material_alignment_2026-10-05.md)。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，

@@ -35,11 +35,11 @@ class MappingFormulaTest(unittest.TestCase):
             eg_eV=1.12, nc_cm3=2.8e19, nv_cm3=1.04e19), delta=1e-9)
 
     def test_barrier_maps_one_to_one_and_workfunction_through_phi_s_i(self) -> None:
-        self.assertAlmostEqual(0.55, gate.phi_ms_from_workfunction(0.55 + gate.intrinsic_work_function_eV()),
+        self.assertAlmostEqual(0.55, gate.phi_ms_from_workfunction(0.55 + gate.sentaurus_gate_reference_eV()),
                                delta=1e-15)
-        self.assertAlmostEqual(5.1 - 4.611003610676079, gate.phi_ms_from_workfunction(5.1), delta=1e-9)
+        self.assertAlmostEqual(5.1 - 4.633743995291464, gate.phi_ms_from_workfunction(5.1), delta=1e-9)
         # A metal whose work function equals the electron affinity sits Eg/2 (+ DOS term) above E_i.
-        self.assertAlmostEqual(-(0.5 * 1.1241592307692307 + 0.5 * gate.VT * math.log(
+        self.assertAlmostEqual(-(0.5 * 1.16964 + 0.5 * gate.VT * math.log(
             2.8566791451911786e19 / 3.104657033455896e19)),
                                gate.phi_ms_from_workfunction(4.05), delta=1e-15)
 
@@ -65,7 +65,7 @@ class MappingFormulaTest(unittest.TestCase):
 
 
 class FlatbandFixtureTest(unittest.TestCase):
-    def test_flatband_matches_eq104_within_1mV_for_three_barriers(self) -> None:
+    def test_flatband_matches_eq104_within_1mV_for_barrier_and_workfunction_controls(self) -> None:
         runner = gate.find_runner()
         if runner is None:
             self.skipTest("vela_example_runner not built; gate-contact flat-band fixture skipped")
@@ -74,7 +74,8 @@ class FlatbandFixtureTest(unittest.TestCase):
             workdir = Path(tmp)
             (workdir / "mesh.json").write_text(json.dumps(fixture["mesh"]), encoding="utf-8")
             deviations = {}
-            for phi_ms in (0.0, 0.55, -0.3):
+            for phi_ms in (0.0, 0.55, -0.3, gate.phi_ms_from_workfunction(4.611003610676079),
+                           gate.phi_ms_from_workfunction(4.633743995291464)):
                 result = gate.check_barrier(runner, workdir, phi_ms, fixture["probes"], 1.0e17, 0.0, refine=1)
                 deviations[phi_ms] = result["deviation_V"]
                 self.assertLessEqual(abs(result["deviation_V"]), 1.0e-3,

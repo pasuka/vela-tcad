@@ -1560,6 +1560,24 @@ set_tests_properties(sdevice_materials PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_materials)
 
+add_test(NAME wp14_remaining_sources
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_remaining_sources)
+set_tests_properties(wp14_remaining_sources PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_remaining_sources)
+
+add_test(NAME wp14_external_recovery
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_external_recovery)
+set_tests_properties(wp14_external_recovery PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_external_recovery)
+
+add_test(NAME schottky_reference_workflow
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_schottky_reference_workflow)
+set_tests_properties(schottky_reference_workflow PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(schottky_reference_workflow)
+
 add_test(NAME sdevice_deck_emit
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_deck_emit)
 set_tests_properties(sdevice_deck_emit PROPERTIES

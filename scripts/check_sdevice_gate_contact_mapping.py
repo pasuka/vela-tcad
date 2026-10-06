@@ -7,9 +7,10 @@ Both engines reference psi = 0 to the intrinsic semiconductor (ohmic contacts us
 psi = V + Vt*asinh(N/2ni) in both), so the exact mapping is
 
     work_function_eV = Phi_MS            for ``Barrier = Phi_MS``
-    work_function_eV = Phi_M - Phi_S,i   for ``WorkFunction = Phi_M`` with
-        Phi_S,i = chi + Eg/2 + (kT/2) ln(Nc/Nv)   (intrinsic-level work function of the
-                                                    reference semiconductor, Vela material values)
+    work_function_eV = Phi_M - Phi_S,ref for ``WorkFunction = Phi_M`` with
+        Phi_S,ref = chi + Eg(0)/2 + (kT/2) ln(Nc(T)/Nv(T))
+    Native WP14 T-2022.03 controls establish the Eg(0) contact convention.
+    The physical intrinsic work function uses Eg(T), and remains separate.
 
 and the flat-band voltage of an oxide-on-uniform-semiconductor capacitor with an
 ohmic back contact at 0 V is
@@ -80,7 +81,17 @@ def intrinsic_work_function_eV(chi_eV: float = SI_CHI_EV, eg_eV: float = SI_EG_E
 
 
 def phi_ms_from_workfunction(workfunction_eV: float, **material) -> float:
-    return workfunction_eV - intrinsic_work_function_eV(**material)
+    return workfunction_eV - sentaurus_gate_reference_eV(**material)
+
+
+def sentaurus_gate_reference_eV(chi_eV: float = SI_CHI_EV, eg_zero_eV: float = 1.16964,
+                              nc_cm3: float = SI_NC_CM3, nv_cm3: float = SI_NV_CM3) -> float:
+    """T-2022.03 gate WorkFunction reference: Eg(0) and DOS at 300 K.
+
+    Native WP14 Barrier/WorkFunction controls establish this normalization;
+    it does not replace the 300 K bandgap in the material or ni calculation.
+    """
+    return chi_eV + 0.5 * eg_zero_eV + 0.5 * VT * math.log(nc_cm3 / nv_cm3)
 
 
 def bulk_potential_V(donors_cm3: float, acceptors_cm3: float, ni_cm3: float = SI_NI_CM3) -> float:
@@ -277,9 +288,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                      "nv_cm3": SI_NV_CM3},
         "doping": {"acceptors_cm3": args.acceptors_cm3, "donors_cm3": args.donors_cm3},
         "intrinsic_work_function_eV": intrinsic_work_function_eV(),
+        "sentaurus_gate_reference_eV": sentaurus_gate_reference_eV(),
         "mapping": {
             "Barrier": "work_function_eV = Barrier (Phi_MS)",
-            "WorkFunction": "work_function_eV = WorkFunction - (chi + Eg/2 + kT/2 ln(Nc/Nv))",
+            "WorkFunction": "work_function_eV = WorkFunction - (chi + Eg(0)/2 + kT/2 ln(Nc(T)/Nv(T)))",
             "flatband": "V_FB = Phi_MS + Vt asinh(N_net/(2 ni))",
         },
         "workfunction_examples": [

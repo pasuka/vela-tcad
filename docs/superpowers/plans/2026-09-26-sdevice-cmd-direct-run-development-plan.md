@@ -2,7 +2,7 @@
 
 日期：2026-09-26
 
-状态：方案 v2.9（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.10（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -28,6 +28,12 @@ v2.9 材料对齐（2026-10-05）：用户已要求执行 WP13，当前工作树
 [WP13 验证记录](../../validation/builtin_material_alignment_2026-10-05.md)；剩余 WP14 与 −20 V 场量限制继续独立保留。
 2026-10-06 补验：恢复后的 Ubuntu 26.04.1 受影响范围 CTest 16/16 通过；实现提交 `d9ef1e00`，
 既有 Schottky 重启问题仍作为独立待修复项。未重跑 Ubuntu 全仓或重新发布部署包。
+
+v2.10 遗留任务（2026-10-06，用户明确要求继续三个遗留项）：Schottky 0.82 V 重启已修复并通过完整工作流；
+剩余 WP14 已获授权，五组栅原生控制及 C7 完成，BVmethods 六分支已运行，D 精度修复成功、
+外接电阻 v4 恢复路径通过独立稳态及 C7 六项，原始从零 QS 限制保留；
+PN2D 向量 GradQF 的局部 AD 修复已通过完整扫线与十个严格场量点，契约已绑定新策略。
+当前逐项状态以[本轮记录](../../validation/sdevice_followup_2026-10-06.md)为准，不将旧交接快照作为任务队列。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -183,7 +189,7 @@ SDevice `.cmd` 解析、物理模型白名单分类、执行 IR、deck 生成、
 | `Name=<string>`, `Voltage=<float>` (V) | `contacts[].{name,bias}` | ✅ | 电极名必须与网格 contact 名一致（已有检查）；`Name=Regexp(...)` ⛔ |
 | `Barrier=<float>` (**V**) | `contacts[].type="metal_gate"` + 势垒字段 | ❌ | 手册 Eq. 104：绝缘体上接触 `φ = φ_F − Φ_MS`，`Barrier` 即 Φ_MS（相对本征参考半导体）；缺省 Φ_MS = 0。WP4a 需用一个 MOS 电容夹具验证 Vela `metal_gate` 的参考能级与 Eq. 104 一致（带平电压对照），而不是只拷数值 |
 | `Workfunction=<float>` (eV) | `contacts[].work_function_eV` | ❌ | 同上，Φ_MS 由金属功函数与本征半导体参考能级之差给出 |
-| `Resist=<float>` (Ω·µm^(3−d)，2-D 即 Ω·µm)；训练 deck 中的 `Resistor=` 作别名接受 | `sweep.external_circuit{mode:"series_resistor", resistance_ohm_um}` | ❌ | Vela 侧已支持；`Voltage` 变为外电压；仓库证据 `bvmethods_sentaurus2018/source/external_resistor_sdevice.cmd:12` 用 `Resistor=1e7` 且已在 Sentaurus 上运行成功 |
+| `Resist=<float>` (Ω·µm^(3−d)，2-D 即 Ω·µm)；训练 deck 中的 `Resistor=` 作别名接受 | `sweep.external_circuit{mode:"series_resistor", resistance_ohm_um}` | ❌ | Vela 侧已支持；`Voltage` 变为外电压；原源声明 `Resistor=1e7`。原始从零 QS 的 v2/v3 失败保留，v4 同模型固定电阻恢复路径原生/稳态通过，见本轮记录 |
 | `Schottky` + `eRecVelocity`/`hRecVelocity` (cm/s，默认 2.573e6 / 1.93e6) | `contacts[].type="schottky"`, `emission_model:"thermionic_robin"`, 速度字段 | ❌ | 仅 Newton 路径支持（`docs/config_schema.md` contacts）；缺省速度按手册默认写入 |
 | `Material=<string>`（金属，如 `"Gold"`） | `work_function_eV` ← `.par` 中 `Material="Gold"{Bandgap{WorkFunction}}` | ❌ | 手册“Contacts on Insulators”：功函数取自参数文件；`.par` 无该材料时致命 |
 | `Material=<string>(N=|P=)`（多晶硅栅仿真） | — | ⛔ | 阶段 1 不支持接触侧半导体模型 |
@@ -688,9 +694,9 @@ flowchart LR
 
 #### WP4a 栅接触参考能级核对（独立小课题）
 
-- 状态：**完成**（`e5cae3e9`；CTest `sdevice_gate_contact_mapping` 6 例；平带偏差 2e-16 V；公式已写入
-  `docs/sentaurus_sdevice_workflow.md` §2.5，`scripts/check_sdevice_gate_contact_mapping.py::intrinsic_work_function_eV` 可被 WP4 复用）。
-  遗留：Sentaurus 对 Φ_S,i 是否含 `(kT/2)ln(N_c/N_v)` 项需 WP14 的 `WorkFunction` 栅重跑核对。
+- 状态：**完成并经 WP14 原生补验**（原实现 `e5cae3e9`；2026-10-06 五控制通过）。
+  C4 栅换算复用 `sentaurus_gate_reference_eV` 的 Eg(0)+运行温度 DOS 规则；
+  `intrinsic_work_function_eV` 保留为物理本征功函数，不作为原生栅零偏移输入。见 workflow §2.5 与本轮记录。
 - 目标：确定 `Barrier`/`Workfunction` → Vela `metal_gate` 字段的精确公式。
 - 范围：1-D 等效 MOS 电容 Vela 夹具，扫描 `Barrier` 与 `Workfunction`，提取带平电压，
   与手册 Eq. 104（Φ_MS 相对本征参考半导体）比较；产出映射式与说明。
@@ -763,8 +769,8 @@ flowchart LR
      `physics.temperature_K` → `solver.temperature_K`；`physics.fixed_charges[]` → `regions[].fixed_charge_cm3` /
      `interfaces[].fixed_charge_cm2`（v2 名，cm 单位，写换算测试）。
   7. **电极映射**（workflow §2.5）：`attributes.barrier_V` → `contacts[]{type:"metal_gate", work_function_eV: barrier_V}`；
-     `attributes.workfunction_eV` → `work_function_eV = Φ_M − Φ_S,i`，`Φ_S,i = χ + E_g/2 + (kT/2)ln(N_c/N_v)` 取 C3 中 `Si` 条目
-     （与 `scripts/check_sdevice_gate_contact_mapping.py::intrinsic_work_function_eV` 同式计算；当前 WP3 默认库 300 K 下 = 4.611003610676079 eV，遗留内置 Si 才是 4.6228018936 eV）；
+     `attributes.workfunction_eV` → `work_function_eV = Φ_M − Φ_ref`，`Φ_ref = χ+Eg(0)/2+(kT/2)ln(Nc(T)/Nv(T))` 取 C3 中 `Si` 推导条目
+     （T-2022.03-SP2 原生验证；`sentaurus_gate_reference_eV`，当前库 300 K 为 4.633743995291464 eV；物理本征功函数 4.611003610676079 eV 仍使用 Eg(T)）；
      `attributes.material` → 从 `materials_report.electrodes[]` 取 `work_function_eV` 再换算，缺失 → E4xx；`attributes.resist_ohm_um` →
      `sweep.external_circuit{mode:"series_resistor", resistance_ohm_um}` 并写 C4 `series_resistance_ohm_um`；`attributes.schottky` +
      `e/h_rec_velocity_cm_s` → `contacts[]{type:"schottky", emission_model:"thermionic_robin", ...}`（键名以 `docs/config_schema.md`
@@ -789,8 +795,9 @@ flowchart LR
   golden 相等，过 C4 schema 与公开 deck schema，并在 runner 冒烟中被接受；（2）`t` 换算性质：`MaxStep=0.025, |V1−V0|=10` → `max_step_V=0.25`；`intervals=400` →
   `len(vtk_bias_points)=401` 且端点误差为 0；（3）两段扫描（`genius_bjt` 夹具）：第二段 `electrode_voltages_start_V` 等于第一段
   goal；`rebase_stage(result, 1, {"collector": 3.2})` 后第二段从 3.2 V 起且 deck 同步；（4）sidecar 非白名单键 → 错误编号；白名单键深合并
-  正确；（5）decks 不含旧格式键；（6）电极映射：`Barrier=0.55` → `work_function_eV=0.55`；`WorkFunction=4.611003610676079` →
-  `work_function_eV≈0`（1e-9）；`Material="Gold"` 取自报告；（7）`status=unsupported` 的 IR 不生成 deck 且透传编号；
+  正确；（5）decks 不含旧格式键；（6）电极映射：`Barrier=0.55` → `work_function_eV=0.55`；`WorkFunction=4.633743995291464` →
+  `work_function_eV≈0`（1e-9），旧输入 `4.611003610676079` 保留为约 −0.022740384615385 eV 偏移控制；
+  `Material="Gold"` 取自报告；（7）`status=unsupported` 的 IR 不生成 deck 且透传编号；
   （8）`ctest --test-dir build -R sdevice` 全绿。
 - 不做：运行 runner（冒烟除外）；读 cmd 文本。2026-10-02 用户明确授权例外：最小修复 C3 在 v2 deck 下加载时误改原生单位键的问题，并增加 C++ 回归测试。
 
@@ -939,13 +946,18 @@ flowchart LR
 
 #### WP10 一致性验收
 
-- 状态：**按原契约收口完成**（2026-10-03）。PN2D 0V、IV 既定窗口/0.2 V 场量、
+- 状态：**完成，BV 空间资格已扩展到十个已验证锚点**（2026-10-06）。完整扫线到达 −20 V，
+  十点严格场量、曲线/KCL、平衡态及绑定输入/数值配置的正式验收全部通过。
+  −20 V 空穴密度旧失败保留为历史对照，修复没有放宽门限，也未改物理模型。
+  WP14 五组栅控制和 BVmethods 的 ABA/A/B/C/D 已完成原生补验，外接电阻 v4 恢复版已通过独立稳态与 C7。
+  当前证据见 [遗留修复与原生补验](../../validation/sdevice_followup_2026-10-06.md)。
+  以下为 2026-10-03 的原契约收口范围：PN2D 0V、IV 既定窗口/0.2 V 场量、
   BV 全窗口曲线/KCL 和绑定输入/数值配置的 −13.2 V 独立场量资格通过；IV/BV 到达 10/−20 V。
   −13.2 V 是场量比较点而非击穿电压。原生/Vela 现有拟合膝点均 −19.405 V；
   −19.5/−19.6/−19.7 V 附加场量诊断通过，−20 V 空穴密度诊断失败保留在账册。
   用户明确选择原契约范围，不建立全反偏空间资格；独立门限固定后未放宽。
-  用户已授权并完成 WP14 所需 PN2D 0V/IV/BV 与 BJT m0 的最小子集；其余 WP14 案例未重跑。
-  当前证据见 [WP10 收口报告](../../validation/sdevice_wp10_closeout_2026-10-03.md)，
+  当时已授权并完成 WP14 所需 PN2D 0V/IV/BV 与 BJT m0 的最小子集；其余 WP14 案例当时未重跑。
+  历史证据见 [WP10 收口报告](../../validation/sdevice_wp10_closeout_2026-10-03.md)，
   [首次 WP10 记录](../../validation/sdevice_acceptance_2026-10-03.md)保留为历史对照。
 - 背景：决定 8/20：一致性阈值只能来自已验证证据，电流符号因子由首个通过第 12.4 节核对的参考 `.plt` 全局确定并固化为常量；
   WP8 目前以 `CURRENT_SIGN_FACTOR=+1` 占位，多段扫描 `time` 语义（A-4）未定。VM v1 归档中 `pn2d_iv/bv` 从未在 T-2022 运行，
@@ -1019,7 +1031,7 @@ flowchart LR
   [验证记录](../../validation/builtin_material_alignment_2026-10-05.md)登记实际依赖、旧基线冻结与测试结果。
   最终 Release 全量非外部参考 CTest 1026/1026，三个 PN2D 门通过，容差未放宽。
   2026-10-06 补齐 Ubuntu 26.04.1 受影响范围 CTest 16/16；此前 WSL 超时记录保留。
-  Schottky 0.82 V 重启失败在对齐前发行包也复现，独立保留待修复。
+  当时 Schottky 0.82 V 重启失败在对齐前发行包也复现；2026-10-06 已独立修复并通过完整流程，历史对照保留。
 - 背景：WP3 验收时发现 C++ 内置 Si 的 `ni=1e10 cm⁻³` 与其 `Nc/Nv/Eg` 不自洽（由 `sqrt(Nc Nv)exp(−Eg/2kT)` 推导得 6.68e9），
   `Nv`（1.04e19 vs 3.10e19）与迁移率（1350/480 vs 1417/470.5）也偏离 Sentaurus 默认参数集；用户 2026-09-29 决定默认 `models.par`
   以 Sentaurus par 数据为参考，并要求把内置值对齐与重新基线化列入计划。`vela device` 始终经材料文件、不依赖内置值，但仓库当时盘点为 20 个（本次为25个）
@@ -1066,10 +1078,12 @@ flowchart LR
 
 #### WP14 Sentaurus 参考重跑（A-3；需用户授权）
 
-- 状态：**部分完成**。用户已授权并完成 PN2D 0V/IV/BV 与 BJT m0 的最小 v2 重跑，
-  原生参考和 manifest 已归档；符号因子与逐段 Time 已定案。其余 bvmethods/栅参考未重跑。
-  用户于 2026-10-05 允许为补齐原生 E2E 连接 VM、上传下载文件；该授权用于当前验收，
-  不把剩余模型/案例自动加入本次范围。若另行运行剩余 sdevice 案例，仍需明确执行授权。
+- 状态：**具名参考补验完成（2026-10-06）**。PN2D/BJT 最小 v2 子集此前已归档；
+  gate_reference v3 五组控制完成，已实测 DOS 与 Eg(0) 参考；BVmethods ABA、A/B/C 原生成功，
+  D 收紧数值精度后达到严格 Current Goal；外接电阻 v4 恢复路径保持原模型、固定电阻、原停止值，
+  瞬态获取、独立稳态和阈值以下的静态续扫均通过，C7 六项及默认来源目录复验通过，当前登记为 v4。
+  原始从零 QS 仍有 MinStep 限制，v2/v3 及坏 Load 控制保留；不声称修复该原始轨迹或增加前端 Transient 支持。
+  原生默认转储独立归档，BVmethods 保留仓库声明的 SRH 覆盖，不以默认转储替换物理参数。
 - 背景：A-3 由用户 2026-09-26 决定暂不重跑。盘点（`docs/validation/sdevice_reference_artifact_inventory_2026-09-26.md`）显示
   `pn2d_iv/bv` 从未在 T-2022 运行，bvmethods 归档 deck 与仓库 deck 的物理/判据不一致，`full_physics_ablation` 是含占位符的模板；
   WP4a 遗留的 Φ_S,i 定义问题、WP10 需要的符号因子与多段 `time` 证据都依赖新的可核对产物。sdevice 每次启动 license 约 3 分钟，
@@ -1082,10 +1096,11 @@ flowchart LR
   | --- | --- | --- |
   | pn2d | `pn2d_{0v,iv,bv}_sdevice.cmd` | 主验收曲线/场量；`pn2d_iv.plt` 决定符号因子 |
   | bvmethods | `aba_poisson`、`external_resistor`、`full_physics_ablation` | ABA/外接电阻/电流目标；`full_physics_ablation` 两段 `Quasistationary` 决定 `time` 语义 |
-  | gate_reference（新，合成） | 1-D 等效 MOS 电容（同 WP4a 夹具几何/掺杂）：`Barrier=0/0.55/−0.3` 与当前 WP3 库零偏移 `WorkFunction=4.611003610676079` eV 四个变体 | 比较平带电压，核对 Φ_S,i 的态密度项；旧 4.6228 eV 若保留，须明确作为非零偏移诊断，不当作当前零偏移基准 |
+  | gate_reference（新，合成） | 同 WP4a 几何/掺杂：三个 Barrier 控制、已认可的 `WorkFunction=4.611003610676079` eV 偏移控制及原生零偏移 `4.633743995291464` eV，五个变体 | T-2022.03-SP2 原生证明参考为 `χ+Eg(0)/2+(kT/2)ln(Nc(T)/Nv(T))`；不修改物理本征功函数与材料参数 |
 
-- 逐步：（1）VM `/home/tcad/vela_reference_artifacts/<case>/v2/` 下建 `source/ log/ plt/ tdr/`，上传 deck 与 `sdevice -P` 的
-  `models.par`；（2）运行 `sdevice <deck>` 保留 `.log`（含回显）、`.plt`、`_des.tdr`、`_NNNN_des.tdr`；（3）
+- 逐步：（1）VM 新版本目录下建 `source/ log/ plt/ tdr/`，上传具名 deck 与已声明参数文件；
+  BVmethods 的仓库 SRH 覆盖必须保留，`sdevice -P` 默认转储另存为来源证据；
+  gate_reference 使用当前 WP3 库生成参数；（2）运行 `sdevice <deck>` 保留 `.log`（含回显）、`.plt`、`_des.tdr`、`_NNNN_des.tdr`；（3）
   `python scripts/reference_artifacts.py register --case <case> --version v2 ...` 生成 manifest（哈希、`sdevice -v` 版本、时间），
   `verify` 六项通过，本地只 `fetch` 到 `reference_staging/`；（4）在
   `docs/validation/sdevice_reference_artifact_inventory_2026-09-26.md` 追加 v2 条目，更新附录 A 的 A-3/A-4。
@@ -1095,14 +1110,14 @@ flowchart LR
 
 ### 10.3 阶段与 WP 的对应
 
-| 阶段 | WP | 状态（2026-10-05） | 可并行 |
+| 阶段 | WP | 状态（2026-10-06） | 可并行 |
 | --- | --- | --- | --- |
 | 阶段 1 契约 | WP0 | 完成 | — |
 | 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部完成 | 文件不相交 |
 | 阶段 3 组装 | WP4 → WP6.1 → WP5 | 全部完成 | Release 全量 CTest 1020/1020；真实 runner 与 Windows 中文/空格路径通过 |
 | 阶段 4 验收与交付 | WP10、WP11、WP12 | 三项工作包已完成；原生包补缺完成 | 两平台原契约验收及包指纹通过，见本次原生包验收记录 |
-| 独立 | WP13 内置材料对齐与重新基线化 | 完成 Windows 原卡片验收，1026/1026；Ubuntu 受影响范围16/16，三个 PN2D 门均通过 | 既有 Schottky 重启另列限制；未重跑 Ubuntu 全仓 |
-| 独立 | WP14 Sentaurus 参考重跑（A-3） | PN2D/BJT 最小子集已完成；其余未执行 | 已有授权覆盖子集；其余原生重跑执行前另需授权 |
+| 独立 | WP13 内置材料对齐与重新基线化 | 完成 Windows 原卡片验收，1026/1026；Ubuntu 受影响范围16/16，三个 PN2D 门均通过 | Schottky 后续修复已通过完整流程；未重跑 Ubuntu 全仓 |
+| 独立 | WP14 Sentaurus 参考重跑（A-3） | 完成具名参考范围；栅 v3、BVmethods v4 C7 六项通过 | 原模型、原门限；外接电阻采用恢复路径，原始从零 QS 限制保留 |
 
 ### 10.4 开发分支与工作树
 
@@ -1154,7 +1169,8 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 最终结果见[验收记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)，
 不再使用历史 WP14 → WP10 → WP11 → WP12 顺序作为任务队列。
 WP13 已完成 Windows 原卡片验收（全量 1026/1026、三个 PN2D 门通过，容差未放宽）；2026-10-06 补齐 Ubuntu 受影响范围16/16，
-Schottky 0.82 V 重启问题在新旧 runner 中一致复现，独立待修复。剩余 WP14 和全反偏场量资格扩展另行推进。
+Schottky 0.82 V 重启已修复并通过完整流程；PN2D 完整扫线及十个严格场量点通过；
+WP14 外接电阻 v4 恢复路径已通过独立稳态和 C7 六项，原始从零 QS 限制保留，见本轮记录。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
 
@@ -1207,7 +1223,7 @@ WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平�
 2. **收敛准则不等价**：`Digits/ErrRef`（更新量，Eq. 31）与 Vela 残差准则无一一对应；
    映射只能保证“不更松”的启发式并在 log 记录，误差评价以第 8 节阈值为准。
 3. **已知物理差异**：早期 PN2D BV 0.70x 属历史配置结果，不能沿用到修复后的输入/原子配置。
-   当前曲线/KCL 与 −13.2 V 场量资格已通过，−20 V 空穴密度诊断仍失败；约 19.6 V 是用户指出的膝区，
+   2026-10-06 完整扫线与十个具名场量点（含 −20 V）已通过原门限，旧空穴密度失败账本保留为已修复历史证据；约 19.6 V 是用户指出的膝区，
    −13.2 V 只是场量样本。LDMOS、界面体积等其他设备的差异账本仍独立有效，不推广资格。
 4. **`.par` 覆盖率**：现有矩阵对 PN2D `models.par` 报告 8 个阻断项
    （Auger H/N0、Bandgap 次级公式、mutunnel 等），只有当这些参数所属模型被
@@ -1232,10 +1248,10 @@ WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平�
    （与 `NumberOfThreads` 默认 1 一致）。
 10. **Python 版本偏差**：本机开发环境是 Python 3.14，随包是 3.12，平台下限 3.10；脚本不得使用
     3.13+ 特有语法/库，CI 矩阵覆盖 3.10–3.14，打包冒烟用随包解释器。
-11. **`metal_gate` 参考能级**（已核对，WP4a 2026-09-29）：Vela `metal_gate` 与手册 Eq. 104 共用本征参考能级，`Barrier` →
-    `work_function_eV` 1:1，`WorkFunction` 经 `Φ_S,i = χ + E_g/2 + (kT/2)ln(N_c/N_v)` 换算（MOS 电容夹具偏差 2e-16 V）。剩余
-    不确定性：Sentaurus 的 Φ_S,i 是否含 `(kT/2)ln(N_c/N_v)` 项（Si 约 −1.1 mV）只能由 WP14 的 `WorkFunction` 栅重跑分辨；在此之前
-    阈值电压可能有 ≈ 1 mV 的系统偏移。
+11. **`metal_gate` 参考能级**（WP14 原生核对，2026-10-06）：`Barrier` → `work_function_eV` 1:1；
+    T-2022.03-SP2 的 WorkFunction 栅转换为 `χ+Eg(0)/2+(kT/2)ln(Nc(T)/Nv(T))`。
+    原生五控制与 C4→Vela 平带对照均在 1 mV 内；只修改栅输入转换，材料本征功函数仍使用运行温度带隙。
+    适用范围限于该版本与本次材料集，不推断其他版本。
 12. **内置材料对齐（WP13）改变全局默认**：所有无 `materials_file` 的 deck、当前盘点的 25 个引用 `MaterialDatabase` 的 Catch2 测试文件与基于旧内置值
     校准的示例都会漂移（`ni` +7.5%，`Nv` ×3，`SiO2.χ` −0.05 eV）。缓解：独立分支执行、逐文件登记重新基线化理由、校准 deck 改为显式
     `materials_file` 固定旧值以保留校准证据；`vela device` 路径不受影响。
@@ -1414,7 +1430,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 | --- | --- | --- |
 | A-1 | VM 归档目录布局（盘点文档第 5 节）；首批 7 个案例已复制到 `/home/tcad/vela_reference_artifacts/<case>/v1/`，manifest 入库 | 已确认并执行（2026-09-26） |
 | A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
-| A-3 | 原生参考重跑范围 | 用户已授权并完成 PN2D 0V/IV/BV 与 BJT m0 的最小 v2 重跑；bvmethods/WorkFunction 栅等其余 WP14 未执行，授权不扩大到这些案例 |
+| A-3 | 原生参考重跑范围 | 用户于 2026-10-06 明确要求执行剩余 WP14；栅 v3、BVmethods v4 具名恢复路径已完成六项核验，原始从零 QS 限制与失败控制保留；见本轮记录 |
 | A-4 | 多段 `.plt` Time 与电流符号 | WP10 已用 v2 BJT base/collector 与 PN2D IV 固定：每段 t 重置 0–1，`CURRENT_SIGN_FACTOR=+1.0`；原生文件哈希见 workflow §3.3 |
 | A-5 | C++ `MaterialDatabase` 内置 Si/SiO2 是否对齐 Sentaurus 默认参数集并重新基线化（用户 2026-09-29：列入后续计划） | WP13 完成 Windows 原卡片验收；额外环境/重启限制见验证记录 |
 
@@ -1423,7 +1439,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 
 截至 2026-10-05，没有阻止 WP12 文档收口的待确认事项。A-1/A-2/A-4 已落实；A-3/A-5 是
 具名独立后续。当前 Linux 目标为 Ubuntu 26.04，旧环境/包已删除（WP11）；
-门限与 −20 V 已知限制保持不变，跨包数值证据补缺由
+门限保持不变，−20 V 差异在本轮具名策略下已修复；跨包数值证据补缺由
 [当前记录](../../validation/sdevice_native_package_e2e_2026-10-05.md)跟踪，WP12 账本保留初始快照。
 
 WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_qualification.v1,stage_plan.v1,reference_artifact_manifest.v1,sdevice_sidecar.v1}.schema.json`、
@@ -1443,13 +1459,14 @@ CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`referen
 | WP7 启动器 | 完成 | `0074228d` | `vela device` 参数逐个透传（空格/引号/中文）、退出码 0–8 透传、无解释器 E202；CTest `sdevice_vela_launcher`（11） |
 | WP3 材料 | 完成 | `fcea7cad`、`be073edb`、`0e87e661` | PN2D `models.par`+IV 激活集 → C3 闭式值 1e-12 一致、通过 C3 schema；默认 `models.par` 为 Sentaurus 默认 Silicon 参数集（文献值）+ Oxide/Nitride，与 PN2D `sdevice -P` 转储的发射结果逐字段相等，支持的全部模型在 300/350 K 无损回退；HfO2 等未知材料 E403；`unsupported_*` E404、`approximated` 需 `--allow-lossy`；CTest `sdevice_materials`（30） |
 | WP6 C++ 增量 | 完成 | `0c9756ba` | `VtuWriter` XML `.vtu`（独立解析回读节点/单元/字段名/单位/FieldData，ASCII+binary）；TDR 字段目录与 `Name`/`Name/Vector` 选择；`vtk_bias_points` 落点 1e-12 V 且其它点不变；`breakdown.current_{abs,min,max}_A_per_um` 在单调电流序列上于正确点终止并标记 CSV；`csv_all_contacts`；Catch2 `vtu_writer`（5）、`dc_sweep_output_contract`（4）；全量 CTest 见集成检查 |
-| WP4a 栅接触能级 | 完成 | `e5cae3e9` | Vela `metal_gate` 与 Eq. 104 同参考能级：`work_function_eV = Barrier`；`WorkFunction` 经 `Φ_S,i = χ+E_g/2+(kT/2)ln(N_c/N_v)` 换算；MOS 电容夹具三个 Barrier 值平带偏差 2e-16 V；文档 `docs/validation/sdevice_gate_contact_reference_2026-09-29.md`；CTest `sdevice_gate_contact_mapping`（6） |
+| WP4a 栅接触能级 | 完成，WP14 原生补验通过 | 原实现 `e5cae3e9`；本轮工作树 | `Barrier` 1:1；WorkFunction 栅用 Eg(0)+运行温度 DOS，原生五控制与 Vela 平带误差 <1 mV；见本轮记录，原文档保留当时结果 |
 | WP4 stage/deck 发射器 | 完成 | `5ae3ce13` | 七个 accepted 夹具完整 golden、C4/公开 deck schema、步长/单位/电极/sidecar/rebase/Save/Load；真实 runner 平衡、电压、电流目标、Load 与 HDF5；C3/v2 最小修复与当前默认库栅基准已获用户授权 |
 | WP6.1 FieldData | 完成 | `323983e0` | `vtu_writer`/`dc_sweep_output_contract`，ASCII/binary、逐段 goal 与 t；不提供扩展时保留旧输出 |
 | WP5 编排 | 完成 | `c9971ebd` | `sdevice_orchestrator`/`sdevice_vela_launcher`，gates/退出码/锁/中止/增量发布；当时 Release 1020/1020 |
-| WP10 数值验收/修复/收口 | 完成（具名范围） | `5c723a2e`、`0842e000`、`4734071b` | `sdevice_acceptance_tools`、四份原契约 pass 报告；IV 10 V、BV −20 V，BV 场量仅 −13.2 V 资格，−20 V hDensity 失败留存 |
+| WP10 数值验收/修复/收口 | 完成，具名资格已补齐 | 原收口 `5c723a2e`、`0842e000`、`4734071b`；本轮工作树 | IV 10 V；BV 完整扫线 −20 V 与十点严格场量资格通过，门限不变，旧 hDensity 失败证据留存；见本轮记录 |
 | WP11 包/并发 | 完成 | `1e3e39f2`、`16fb066b` | `sdevice_package_smoke`/`sdevice_concurrency`；Windows/Ubuntu 26.04，无系统 Python，零差异并发与线程上限 |
 | WP12 文档 | 完成 | `64345940`；基线 `16fb066b` | 文档命令实跑、消息/字段/链接审查、Release 回归、六条 DoD 初始证据/缺口；见 WP12 收口记录 |
+| WP14 原生参考补验 | 完成具名参考范围 | 本轮工作树 | 栅 v3 五控制；BVmethods v4 的 ABA/A/B/C/D 与外接电阻恢复版均通过原生及 C7；原始从零 QS 限制保留 |
 | 日志/文档与原生包 E2E 补缺 | 完成 | `bdddb838`、`8dc5498c`、`01fb6687`、`7fae735c`；本次结果提交 | 日志/许可/缓存修复，两平台原生三个数值案例 + gates 与包指纹通过，见当前验收记录 |
 
 WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 确认为 2026-06 从

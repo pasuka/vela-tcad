@@ -695,17 +695,21 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
             Scalar(fieldFactor / edgeLength);
         const bool qfMobility =
             mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
+        const bool vectorQfMobility = qfMobility &&
+            mobilityConfig.highFieldGradientDiscretization == "transport_cell_vector";
         const Scalar electronMobility = localAdEndpointAveragedMobility(
             mobilityConfig, mobility, mesh, doping, cellMaterials, cellId,
             node0, node1, localEdge, (localEdge + 1) % 3,
             CarrierType::Electron,
-            qfMobility ? electronEdgeField : electricEdgeField,
+            qfMobility ? (vectorQfMobility ? electronQfField : electronEdgeField)
+                       : electricEdgeField,
             n, p);
         const Scalar holeMobility = localAdEndpointAveragedMobility(
             mobilityConfig, mobility, mesh, doping, cellMaterials, cellId,
             node0, node1, localEdge, (localEdge + 1) % 3,
             CarrierType::Hole,
-            qfMobility ? holeEdgeField : electricEdgeField,
+            qfMobility ? (vectorQfMobility ? holeQfField : holeEdgeField)
+                       : electricEdgeField,
             n, p);
         electronFlux[local] =
             localAdValue(electronMobility) > 0.0

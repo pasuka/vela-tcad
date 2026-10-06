@@ -1,0 +1,59 @@
+{
+  "schema": "vela.wp14.gate_reference_sources.v1",
+  "geometry_um": {
+    "width": 0.05,
+    "silicon_thickness": 1.0,
+    "oxide_thickness": 0.01
+  },
+  "donors_cm3": 1e+17,
+  "temperature_K": 300.0,
+  "reference_intrinsic_work_function_eV": 4.611003610676079,
+  "sentaurus_gate_reference_eV": 4.633743995291463,
+  "variants": {
+    "barrier_zero": {
+      "attribute": "Barrier=0",
+      "expected_flatband_V": 0.4148149467720489,
+      "scan_biases_V": [
+        0.39481494677204887,
+        0.4348149467720489
+      ],
+      "samples": 41
+    },
+    "barrier_positive": {
+      "attribute": "Barrier=0.55",
+      "expected_flatband_V": 0.9648149467720489,
+      "scan_biases_V": [
+        0.9448149467720489,
+        0.984814946772049
+      ],
+      "samples": 41
+    },
+    "barrier_negative": {
+      "attribute": "Barrier=-0.3",
+      "expected_flatband_V": 0.1148149467720489,
+      "scan_biases_V": [
+        0.0948149467720489,
+        0.1348149467720489
+      ],
+      "samples": 41
+    },
+    "workfunction": {
+      "attribute": "WorkFunction=4.6110036106760788",
+      "expected_flatband_V": 0.39207456215666425,
+      "scan_biases_V": [
+        0.37207456215666423,
+        0.41207456215666427
+      ],
+      "samples": 41
+    },
+    "workfunction_zero": {
+      "attribute": "WorkFunction=4.6337439952914634",
+      "expected_flatband_V": 0.4148149467720489,
+      "scan_biases_V": [
+        0.39481494677204887,
+        0.4348149467720489
+      ],
+      "samples": 41
+    }
+  }
+}

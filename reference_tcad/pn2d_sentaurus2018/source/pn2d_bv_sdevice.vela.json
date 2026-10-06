@@ -1,5 +1,6 @@
 {
   "schema": "vela.sdevice_sidecar.v1",
   "description": "Explicit PN2D BV atomic current/source/volume bundle qualified by docs/validation/pn2d_bv_validation.md; requires non-obtuse mesh. Native cmd/par models and coefficients remain unchanged.",
-  "avalanche_current_support_profile": "element_edge_sg_gss_laux"
+  "avalanche_current_support_profile": "element_edge_sg_gss_laux",
+  "high_field_gradient_discretization": "transport_cell_vector"
 }

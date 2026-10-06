@@ -11,7 +11,7 @@
     "curve": "reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json: IV 0.2..0.3 V, 0.4 dex",
     "conservation": "configs/sentaurus_e2e_contract.json: 0.02 relative, 1e-20 A/um floor",
     "spatial": "reference_tcad/pn2d_sentaurus2018/variants/acceptance.json and variants/REPORT.md: static 300 K silicon, without avalanche; only equilibrium inherited here",
-    "biased_avalanche_spatial": "docs/validation/sdevice_wp10_closeout_2026-10-03.md"
+    "biased_avalanche_spatial": "docs/validation/sdevice_followup_2026-10-06.md"
   },
   "curve": {
     "max_orders_of_magnitude": 0.4,
@@ -42,7 +42,7 @@
     {
       "case": "pn2d_bv",
       "quantity": "biased spatial fields",
-      "policy": "Only the explicitly pinned PN2D v2 -13.2 V qualification may pass; other avalanche biased states are diagnostic. Static spatial qualification is never inherited."
+      "policy": "Only the explicitly pinned ten PN2D v2 bias anchors, mesh and numerical policy may qualify. Static spatial qualification is never inherited; no continuous or other-mesh spatial claim."
     },
     {
       "case": "bvmethods",
@@ -63,7 +63,8 @@
         0.01
       ],
       "source": "docs/validation/sdevice_wp10_closeout_2026-10-03.md",
-      "policy": "Outside the original required -13.2 V field anchor; diagnostic failure retained, not qualified. Tighter Newton row/closure controls do not remove the difference. No full reverse-bias spatial qualification."
+      "policy": "Historical failed edge-projection comparison retained. Resolved for the explicitly pinned ten-anchor cell-vector policy by complete frontend sweep and unchanged strict limits; not a continuous reverse-bias or other-mesh qualification.",
+      "resolved_by": "docs/validation/sdevice_followup_2026-10-06.md"
     }
   ],
   "cases": {
@@ -129,9 +130,9 @@
   },
   "biased_spatial_qualification": {
     "pn2d_bv": {
-      "id": "wp10-pn2d-bv-v2-spatial-minus13p2V-300K",
-      "scope": "Same-mesh PN2D v2 at -13.2 V only, 300 K, explicit atomic SG/GSS-Laux self-consistent avalanche; other anchors are diagnostics",
-      "evidence": "docs/validation/sdevice_wp10_closeout_2026-10-03.md",
+      "id": "pn2d-bv-v2-ten-spatial-anchors-300K-cell-vector-20261006",
+      "scope": "Same-mesh PN2D v2 at ten explicitly pinned bias anchors from -0.05 to -20 V, 300 K; explicit atomic SG/GSS-Laux self-consistent avalanche and transport-cell-vector high-field GradQF mobility. No continuous spatial or other-mesh qualification.",
+      "evidence": "docs/validation/sdevice_followup_2026-10-06.md",
       "threshold_rationale": "Independent engineering budget: potential RMS 0.5 mV (1.93% of thermal voltage at 300 K), p95 1 mV; carrier log RMS 0.005 dex (~1.16%), p95 0.01 dex (~2.33%); area-weighted vector E global/junction 2%. Fixed before additional anchor field comparisons, without inheriting static avalanche-off qualification.",
       "previously_observed_biases_V": [
         -13.2
@@ -140,11 +141,11 @@
         "cmd_sha256": "e562e5407e60350f64b5fd6c820b4d1f2e7594fb6718cff1abca63fcbe0d6286",
         "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
         "grid_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287",
-        "sidecar_sha256": "fcf449b2071751426f63a36f40b981ccf41c87953bdb53dfbef817599d26a017"
+        "sidecar_sha256": "c4dede17cf459d843c180d70ba0ed2e8be80f27bc74fa4abb4fc67b69b2bece4"
       },
       "reference_version": "T-2022.03-SP2 (0.7745337)",
       "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
-      "stage_policy_sha256": "90b87da7fa7f57750050a8b3beb914e805fce52d112f24e2ab0350616e6287e9",
+      "stage_policy_sha256": "ce3960d33c899cf222f7f59aa2d16c1cbfc53f7c0533042a58ed7d647ecbfad3",
       "mesh": {
         "nodes": 1943,
         "cells": 3680,
@@ -216,9 +217,18 @@
         }
       ],
       "required_biases_V": [
-        -13.2
+        -0.05,
+        -1.0,
+        -5.0,
+        -10.0,
+        -13.2,
+        -15.0,
+        -19.5,
+        -19.6,
+        -19.7,
+        -20.0
       ],
-      "scope_decision": "User explicitly chose original WP10 -13.2 V acceptance and retention of the -20 V hole-density limitation after the seven-anchor audit; engineering limits unchanged."
+      "scope_decision": "User requested repair of the retained -20 V hole-density difference. Original independent engineering limits retained; complete frontend sweep and all ten anchors pass with corrected vector-mobility local AD. Original -13.2 V anchor remains required."
     }
   }
 }

@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SDevice 遗留修复与 WP14 原生补验，2026-10-06](validation/sdevice_followup_2026-10-06.md)：
+  Schottky 完整重启、PN2D 十点严格场量通过；原生五组栅控制确认 Eg(0)/DOS 映射；
+  WP14 BVmethods v4 恢复版原生/稳态及 C7 六项通过，原始从零 QS 限制保留。
+
 - [WP13 built-in Si/SiO2 alignment, 2026-10-05](validation/builtin_material_alignment_2026-10-05.md):
   no-BGN 300 K defaults, dependency audit and explained regression baselines;
   Windows 1026-case regression and Ubuntu 26.04 16-case affected-scope verification.

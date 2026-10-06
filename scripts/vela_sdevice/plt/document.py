@@ -39,6 +39,8 @@ FUNCTION_KEYS = {
     "TotalCurrent": "total_current_A_per_um",
 }
 CURRENT_FUNCTIONS = frozenset({"eCurrent", "hCurrent", "TotalCurrent"})
+# Native ABA CurrentPlot scalars have no electrode prefix or current units.
+GLOBAL_DATASETS = frozenset({"MaxField", "PhiElectron", "PhiHole"})
 ROW_KEYS = tuple(FUNCTION_KEYS[function] for function in ELECTRODE_FUNCTIONS)
 
 _VALUES_PER_LINE = 5
@@ -91,11 +93,15 @@ def read_plt_document(text: str,
     datasets = re.findall(r'"([^"]*)"', datasets_match.group(1))
     if not datasets or datasets[0] != TIME_DATASET:
         raise ValueError(f"DF-ISE xyplot datasets must start with \"{TIME_DATASET}\", got {datasets[:1]}")
+    if len(set(datasets)) != len(datasets):
+        raise ValueError("duplicate DF-ISE dataset names")
     data_match = _DATA_RE.search(text)
     if data_match is None:
         raise ValueError("DF-ISE xyplot text does not contain a Data block")
     body = re.sub(r"Values\s*=\s*\[", " ", data_match.group(1)).replace("]", " ")
     numbers = [float(token) for token in _NUMBER_RE.findall(body)]
+    if any(not math.isfinite(value) for value in numbers):
+        raise ValueError("non-finite DF-ISE Data value")
     if len(numbers) % len(datasets) != 0:
         raise ValueError(
             f"DF-ISE Data block has {len(numbers)} values, not a multiple of {len(datasets)} datasets")
@@ -103,6 +109,9 @@ def read_plt_document(text: str,
     electrodes: list[str] = []
     columns: list[tuple[str, str]] = []
     for dataset in datasets[1:]:
+        if dataset in GLOBAL_DATASETS:
+            columns.append(("", dataset))
+            continue
         electrode, separator, function = dataset.rpartition(" ")
         if not separator or not electrode or not function:
             raise ValueError(f"unrecognised DF-ISE dataset name {dataset!r}")
@@ -118,6 +127,9 @@ def read_plt_document(text: str,
         for electrode in electrodes:
             row[electrode] = {}
         for (electrode, function), value in zip(columns, chunk[1:]):
+            if not electrode:
+                row[function] = value
+                continue
             if function in CURRENT_FUNCTIONS:
                 value = value / factor
                 if value == 0.0:

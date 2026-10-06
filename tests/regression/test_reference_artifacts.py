@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -520,6 +521,15 @@ class HelperTest(unittest.TestCase):
         self.assertEqual("Good Bye", ra.log_exit_status(LOG_TEXT))
         self.assertEqual("no Good Bye marker", ra.log_exit_status("Sentaurus Device ... error: stopped"))
 
+    def test_transient_step_floor_is_failure_despite_good_bye(self) -> None:
+        native = "Finished, because...\nStep-size is too small.\n" + LOG_TEXT
+        self.assertEqual("failed: Step-size is too small", ra.log_exit_status(native))
+
+    def test_missing_load_instance_is_failure_despite_good_bye(self) -> None:
+        native = "instance '' not loaded:\nNeither 'seed_des_des.tdr' nor compressed versions found !\n" + LOG_TEXT
+        self.assertEqual("failed: Load instance not loaded", ra.log_exit_status(native))
+        self.assertEqual("Good Bye", ra.log_exit_status("no Load file\n" + LOG_TEXT))
+
     def test_plt_summary(self) -> None:
         summary = ra.summarise_plt(plt_text(1.0), ra.Goal("", "anode", 1.0))
         self.assertEqual(5, summary["rows"])
@@ -586,6 +596,68 @@ class HelperTest(unittest.TestCase):
             with self.assertRaises(ra.TransportError):
                 backend.sha256(f"{CASE}/{VERSION}/plt/absent.plt")
             self.assertFalse(ra.LocalDirBackend(Path(tmp) / "absent").is_reachable())
+
+
+class BoundaryInputInspectionTest(unittest.TestCase):
+    def test_specific_native_prefix_and_explicit_console_input_resolve_shared_sources(self):
+        def deck(name):
+            return ra.Deck(name + '_sdevice.cmd', (
+                'File{Plot="' + name + '_des.tdr" Current="' + name + '.plt" Grid="gate_msh.tdr" Parameter="models.par"}'
+                ' Electrode{{Name="gate" Voltage=0}} Solve{}').encode())
+        short, long = deck('workfunction'), deck('workfunction_zero')
+        for candidates in ([short, long], [long, short]):
+            self.assertIs(long, ra._pick_deck(candidates, 'workfunction_zero_scan_0020_des.tdr'))
+            self.assertIs(short, ra._pick_deck(candidates, 'workfunction_scan_0020_des.tdr'))
+            self.assertIs(long, ra._pick_deck(candidates, 'run.out',
+                'Input source: workfunction_zero_sdevice.cmd\nGrid="gate_msh.tdr" Parameter="models.par"'))
+        same = ra.Deck('another.cmd', long.data)
+        self.assertIsNone(ra._pick_deck([long, same], 'workfunction_zero_scan_0020_des.tdr'))
+
+    def test_current_goal_and_early_break_require_correct_native_evidence(self):
+        deck = ra.Deck("controls.cmd", b'''File { Current="controls.plt" }
+        Electrode { {Name="drain" Voltage=0} }
+        Math { BreakCriteria { Current(Contact="drain" AbsVal=1.443e-3) } }
+        Solve { Quasistationary(Goal {Name="drain" Voltage=6}) {} Set("drain" mode current)
+          Quasistationary(Goal {Name="drain" Current=1e-4}) {} }''')
+        self.assertEqual("current", deck.goal_for_output("controls.plt").quantity)
+        self.assertTrue(ra.current_goal_reached(1e-4, 1e-4))
+        self.assertFalse(ra.current_goal_reached(1e-10, 1e-4))
+        rows = [{"drain": {"total_current_A_per_um": 1.5e-3}}]
+        good = "Sentaurus Device ... Good Bye"
+        self.assertIn("AbsVal", ra.declared_break_evidence(deck, rows, [good]))
+        self.assertIsNone(ra.declared_break_evidence(deck, rows, []))
+        self.assertIsNone(ra.declared_break_evidence(deck, [{"drain": {"total_current_A_per_um": 1.409e-3}}], [good]))
+        failed = good + "\nFinished, because... Step-size less than MinStep"
+        self.assertTrue(ra.log_exit_status(failed).startswith("failed:"))
+        self.assertIsNone(ra.declared_break_evidence(deck, rows, [failed]))
+        transient_failed = good + "\nFinished, because... Step-size is too small."
+        self.assertIsNone(ra.declared_break_evidence(deck, rows, [transient_failed]))
+        aba = ra.Deck("aba.cmd", b'''File {Current="aba.plt"} Electrode {{Name="drain" Voltage=0}}
+          Math { BreakAtIonIntegral(1 1.1) } Solve {Quasistationary(Goal{Name="drain" Voltage=100}){}}''')
+        completed = good + "\nElectron: 1.12\nHole: 1.18\nFinished quasi-stat., because ionization integrals meet specifications."
+        rows[0].update(PhiElectron=1.12, PhiHole=1.18)
+        self.assertIn("ionization-integral", ra.declared_break_evidence(aba, rows, [completed]))
+        self.assertIsNone(ra.declared_break_evidence(aba, rows, [good]))
+        self.assertIsNone(ra.declared_break_evidence(aba, rows, [completed.replace("1.12", "0.8")]))
+        ranked = ra.Deck("aba.cmd", aba.data.replace(b"(1 1.1)", b"(3 1.1)"))
+        self.assertIn("rank 3", ra.declared_break_evidence(ranked, rows, [completed]))
+        self.assertIsNone(ra.declared_break_evidence(ranked, rows, [good]))
+        rows[0]["PhiHole"] = 0.8
+        self.assertIsNone(ra.declared_break_evidence(aba, rows, [completed]))
+
+    def test_only_attributed_sde_boundary_input_is_distinct_from_volume_mesh(self):
+        artifacts = [dict(path=path, category="C", bytes=100, producer={"tool": tool})
+                     for path, tool in (("mesh/gate_bnd.tdr", "sde"),
+                                        ("mesh/gate_msh.tdr", "sde"),
+                                        ("mesh/unattributed_bnd.tdr", "sdevice"))]
+        access = Mock()
+        access.local_path.side_effect = lambda path: Path(path)
+        check = ra.Check(4, "completeness")
+        with patch.object(ra, "inspect_tdr", return_value=(False, "corrupt volume mesh", {})) as inspect:
+            ra._check_completeness(check, {"artifacts": artifacts}, access, ["importer"])
+        self.assertEqual(2, inspect.call_count)
+        self.assertEqual(["info", "fail", "fail"], [item["status"] for item in check.items])
+        self.assertEqual("fail", check.status)
 
 
 if __name__ == "__main__":

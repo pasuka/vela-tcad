@@ -32,6 +32,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import posixpath
 import re
@@ -183,6 +184,10 @@ def parse_version_banner(text: str) -> Optional[str]:
 
 
 def log_exit_status(text: str) -> str:
+    if re.search(r"(?mi)^\s*instance\b[^\r\n]*\bnot loaded:", text):
+        return "failed: Load instance not loaded"
+    if failure := re.search(r"Step-size (?:less than MinStep|is too small)", text, re.IGNORECASE):
+        return "failed: " + failure.group(0)
     return "Good Bye" if _GOOD_BYE_RE.search(text) else "no Good Bye marker"
 
 
@@ -408,6 +413,8 @@ class Goal:
     prefix: str
     name: str
     voltage: float
+    # Retain the positional target field for existing voltage callers.
+    quantity: str = "voltage"
 
 
 def _find_blocks(code: str, keyword: str) -> list[str]:
@@ -502,8 +509,11 @@ class Deck:
                 elif match.group(2) is not None:
                     name = re.search(r'\bName\s*=\s*"([^"]+)"', match.group(2))
                     voltage = re.search(rf"\bVoltage\s*=\s*({_NUMBER})", match.group(2))
+                    current = re.search(rf"\bCurrent\s*=\s*({_NUMBER})", match.group(2))
                     if name and voltage:
                         self.goals.append(Goal(prefix, name.group(1), float(voltage.group(1))))
+                    elif name and current:
+                        self.goals.append(Goal(prefix, name.group(1), float(current.group(1)), "current"))
                 elif match.group(3) is not None and match.group(3) not in self.plot_prefixes:
                     self.plot_prefixes.append(match.group(3))
 
@@ -600,12 +610,54 @@ def summarise_plt(text: str, goal: Optional[Goal] = None) -> dict:
     summary["first_bias_V"] = first
     summary["last_bias_V"] = last
     if goal is not None and goal.name in electrodes:
-        summary["goal_reached"] = goal_reached(last, goal.voltage)
+        if goal.quantity == "current":
+            summary["first_current_A_per_um"] = rows[0][goal.name]["total_current_A_per_um"]
+            summary["last_current_A_per_um"] = rows[-1][goal.name]["total_current_A_per_um"]
+            summary["goal_reached"] = current_goal_reached(summary["last_current_A_per_um"], goal.voltage)
+        else:
+            summary["goal_reached"] = goal_reached(last, goal.voltage)
     return summary
 
 
 def goal_reached(last_bias: float, goal_voltage: float) -> bool:
     return abs(last_bias - goal_voltage) <= GOAL_TOLERANCE_ABS + GOAL_TOLERANCE_REL * abs(goal_voltage)
+
+
+def current_goal_reached(current: float, target: float) -> bool:
+    return abs(current - target) <= 1e-20 + GOAL_TOLERANCE_REL * abs(target)
+
+
+def declared_break_evidence(deck: Deck, rows: list, logs: list[str]) -> Optional[str]:
+    """Accept a declared early stop only with its final native evidence."""
+    successful = [text for text in logs if log_exit_status(text) == "Good Bye"]
+    if not successful or not rows:
+        return None
+    for body in _find_blocks(deck.code, "BreakCriteria"):
+        for criterion in re.findall(r"\bCurrent\s*\(([^)]*)\)", body):
+            contact = re.search(r'\bContact\s*=\s*"([^"]+)"', criterion)
+            limit = re.search(rf"\bAbsVal\s*=\s*({_NUMBER})", criterion)
+            if contact and limit and contact.group(1) in rows[-1]:
+                current = abs(rows[-1][contact.group(1)]["total_current_A_per_um"])
+                threshold = float(limit.group(1))
+                if threshold > 0 and current >= threshold:
+                    return f"declared Current AbsVal {threshold:g} A/um reached: {current:g} A/um"
+    integral = re.search(rf"\bBreakAtIonIntegral\s*\(\s*([1-9]\d*)\s+({_NUMBER})\s*\)", deck.code)
+    if integral:
+        rank = int(integral.group(1))
+        threshold = float(integral.group(2))
+        if threshold <= 0:
+            return None
+        final_integrals = [rows[-1].get(name) for name in ("PhiElectron", "PhiHole")]
+        if any(value is None or not math.isfinite(value) or value < threshold for value in final_integrals):
+            return None
+        for text in successful:
+            values = re.findall(rf"Electron:\s*({_NUMBER})\s+Hole:\s*({_NUMBER})", text)
+            if ("Finished quasi-stat., because ionization integrals meet specifications." in text
+                    and values and min(map(float, values[-1])) >= threshold):
+                return (f"native confirms declared ionization-integral stop (rank {rank}, threshold {threshold:g}); "
+                        f"final PLT maximum integrals {final_integrals}, native Electron/Hole {values[-1]}; "
+                        "PLT does not independently enumerate ranked paths")
+    return None
 
 
 def summarise_grd(path: Path) -> dict:
@@ -729,13 +781,22 @@ class RegisterOptions:
 
 
 def _pick_deck(decks: Sequence[Deck], filename: str, content: str = "") -> Optional[Deck]:
+    # Native console logs name the actual input explicitly. Shared mesh/par
+    # echoes otherwise tie across every materialized branch.
+    sources = re.findall(r"(?m)^\s*Input source:\s*(\S+)\s*$", content)
+    if sources:
+        named = [deck for deck in decks if deck.name in {s.replace('\\', '/').rsplit('/', 1)[-1] for s in sources}]
+        return named[0] if len(named) == 1 else None
     best: list[Deck] = []
-    best_score = 0
+    best_score = (0, 0)
     for deck in decks:
         score = deck.match_score(filename, content)
-        if score > best_score:
-            best, best_score = [deck], score
-        elif score == best_score and score > 0:
+        specificity = max([0] + [len(stem) for stem in deck.output_stems() + deck.current_prefixes
+            if stem and (filename.startswith(stem + '_') or filename.startswith(stem + '.'))]) if score == 3 else 0
+        ranked_score = (score, specificity)
+        if ranked_score > best_score:
+            best, best_score = [deck], ranked_score
+        elif ranked_score == best_score and score > 0:
             best.append(deck)
     if len(best) == 1:
         return best[0]
@@ -1272,11 +1333,33 @@ def _check_structure(check: Check, manifest: dict, access: ArtifactAccess) -> No
         else:
             first = rows[0][goal.name].get("outer_voltage_V", 0.0)
             last = rows[-1][goal.name].get("outer_voltage_V", 0.0)
-            if goal_reached(last, goal.voltage):
+            if goal.quantity == "current":
+                current = rows[-1][goal.name]["total_current_A_per_um"]
+                if current_goal_reached(current, goal.voltage):
+                    check.add(path, "pass", f"{goal.name} current {current:g} A/um reaches Goal {goal.voltage:g} A/um")
+                else:
+                    check.add(path, "partial", f"partial reference: {goal.name} current {current:g} A/um, Goal {goal.voltage:g} A/um not reached")
+                for earlier in deck.goals:
+                    if earlier.prefix == goal.prefix and earlier.quantity == "voltage":
+                        reached = any(earlier.name in row and goal_reached(row[earlier.name]["outer_voltage_V"], earlier.voltage) for row in rows)
+                        check.add(path, "pass" if reached else "partial",
+                                  f"preceding {earlier.name} Voltage Goal {earlier.voltage:g} V {'reached' if reached else 'not reached'} in the shared current file")
+            elif goal_reached(last, goal.voltage):
                 check.add(path, "pass", f"{goal.name} bias {first:g} V -> {last:g} V reaches Goal {goal.voltage:g} V")
             else:
-                check.add(path, "partial", f"partial reference: {goal.name} bias {first:g} V -> {last:g} V, "
-                                           f"Goal {goal.voltage:g} V not reached")
+                logs = []
+                for log_artifact in manifest["artifacts"]:
+                    producer = log_artifact["producer"]
+                    if log_artifact["category"] == "E" and producer.get("tool") == "sdevice" and producer.get("cmd") == deck.name:
+                        data = access.read(log_artifact["path"])
+                        if data is not None:
+                            logs.append(decode_text(data))
+                reason = declared_break_evidence(deck, rows, logs)
+                if reason:
+                    check.add(path, "pass", f"{goal.name} bias {first:g} V -> {last:g} V; {reason}")
+                else:
+                    check.add(path, "partial", f"partial reference: {goal.name} bias {first:g} V -> {last:g} V, "
+                                               f"Goal {goal.voltage:g} V not reached and no declared stop is proven")
         contacts = grd_contacts.get(variant, "absent")
         if contacts == "absent":
             check.add(path, "info", "mesh contact names not inspected (TDR mesh is HDF5)")
@@ -1329,7 +1412,9 @@ def _check_completeness(check: Check, manifest: dict, access: ArtifactAccess,
             except (OSError, ValueError) as exc:
                 check.add(path, "fail", f"unreadable DF-ISE file: {exc}")
         elif suffix == ".tdr":
-            if importer is None:
+            if tool == "sde" and artifact["category"] == "C" and name.lower().endswith("_bnd.tdr"):
+                check.add(path, "info", "not inspected (SDE boundary input): volume-mesh importer requires Tri3 cells; hash/source checks still apply")
+            elif importer is None:
                 check.add(path, "info", "not inspected (HDF5): sentaurus_import importer not available")
             elif artifact["bytes"] > MAX_TDR_INSPECT_BYTES:
                 check.add(path, "info", f"not inspected (HDF5): {artifact['bytes']} bytes exceeds the inspection limit")
@@ -1349,7 +1434,9 @@ def _check_completeness(check: Check, manifest: dict, access: ArtifactAccess,
                 continue
             status = log_exit_status(decode_text(data))
             recorded = (artifact.get("summary") or {}).get("exit_status")
-            if status != "Good Bye":
+            if status.startswith("failed:"):
+                check.add(path, "fail", status)
+            elif status != "Good Bye":
                 check.add(path, "warn", "log has no Good Bye marker")
             elif recorded and recorded != status:
                 check.add(path, "warn", f"log ends with Good Bye but the manifest records {recorded!r}")

@@ -101,6 +101,22 @@ class DeckEmitterTests(unittest.TestCase):
                     if jsonschema is not None:
                         jsonschema.Draft202012Validator(schema).validate(deck)
 
+    def test_high_field_gradient_sidecar_changes_only_numerical_recovery(self):
+        ir = accepted("pn2d_sentaurus2018/pn2d_bv_sdevice.cmd")
+        baseline = emit(ir)
+        sidecar = {"schema": "vela.sdevice_sidecar.v1", "apply_to": [1],
+                   "high_field_gradient_discretization": "transport_cell_vector"}
+        result = emit(ir, sidecar=sidecar)
+        self.assertEqual(result.decks[0], baseline.decks[0])
+        expected = deepcopy(baseline.decks[1])
+        expected["solver"]["mobility"]["high_field_gradient_discretization"] = "transport_cell_vector"
+        self.assertEqual(result.decks[1], expected)
+        self.assertIn("solver.mobility.high_field_gradient_discretization",
+                      result.stage_plan["stages"][1]["sidecar_overrides"])
+        self.assert_error("E409", emit, self.ir, sidecar={**sidecar, "high_field_gradient_discretization": "invalid"})
+        inactive = accepted("pn2d_sentaurus2018/pn2d_0v_sdevice.cmd")
+        self.assert_error("E409", emit, inactive, sidecar={**sidecar, "apply_to": []})
+
     def test_time_voltage_conversion_and_reverse_sweep(self):
         ir = deepcopy(self.ir)
         ir["stages"][-1]["outputs"]["plot_files"][0]["time"]["intervals"] = 400
@@ -211,13 +227,16 @@ class DeckEmitterTests(unittest.TestCase):
         ir = deepcopy(self.ir)
         ir["electrodes"][0]["attributes"] = {"barrier_V": .55}
         self.assertEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"], .55)
-        # Independent 300 K reference from the current WP3 default Si library.
-        reference_eV = 4.611003610676079
+        # Native WP14 controls: Eg(0) contact reference, DOS at 300 K.
+        reference_eV = 4.633743995291464
         ir["electrodes"][0]["attributes"] = {"workfunction_eV": reference_eV}
         self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"], 0, delta=1e-9)
+        ir["electrodes"][0]["attributes"] = {"workfunction_eV": 4.611003610676079}
+        self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"],
+                               -0.02274038461538463, delta=1e-9)
         ir["electrodes"][0]["attributes"] = {"workfunction_eV": 4.6228018936}
         self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"],
-                               0.011798282923921377, delta=1e-9)
+                               4.6228018936 - reference_eV, delta=1e-9)
         report = material_result(ir).report
         report["electrodes"].append({"material": "Gold", "work_function_eV": 5.1})
         ir["electrodes"][0]["attributes"] = {"material": "Gold"}

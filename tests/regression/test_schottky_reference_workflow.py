@@ -73,6 +73,35 @@ class SchottkyReferenceWorkflowTest(unittest.TestCase):
         self.assertIn("sde -e -l", commands[0])
         self.assertIn("sdevice schottky_n_des.cmd", commands[1])
 
+    def test_restart_preserves_exact_accepted_parameter_and_solver_gates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first, second = MODULE.materialize(Path(directory))
+            before = json.loads(second.read_text())
+            state = Path(before["sweep"]["initial_state_file"])
+            state.parent.mkdir(parents=True, exist_ok=True)
+            state.touch()
+            curve = first.parent / "sweep.csv"
+            curve.write_text("bias_V,converged\n0.8200000000000004,1\n")
+            evidence = MODULE.bind_restart_bias(curve, second)
+            after = json.loads(second.read_text())
+            self.assertEqual(0.8200000000000004, after["sweep"]["start"])
+            self.assertEqual(before["solver"], after["solver"])
+            self.assertEqual(before["sweep"]["initial_state_file"], after["sweep"]["initial_state_file"])
+            self.assertEqual(0.82, evidence["declared_bias_V"])
+            self.assertEqual(evidence, json.loads((second.parent / "restart_bias_binding.json").read_text()))
+
+    def test_restart_rejects_failed_or_wrong_endpoint_without_rewriting_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            first, second = MODULE.materialize(Path(directory))
+            original = second.read_bytes()
+            curve = first.parent / "sweep.csv"
+            for bias, accepted in (("0.82", "0"), ("0.80", "1"), ("nan", "1")):
+                with self.subTest(bias=bias, accepted=accepted):
+                    curve.write_text(f"bias_V,converged\n{bias},{accepted}\n")
+                    with self.assertRaises(ValueError):
+                        MODULE.bind_restart_bias(curve, second)
+                    self.assertEqual(original, second.read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()

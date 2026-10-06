@@ -91,6 +91,8 @@
             "rows": {"type": "integer", "minimum": 0},
             "first_bias_V": {"type": "number"},
             "last_bias_V": {"type": "number"},
+            "first_current_A_per_um": {"type": "number", "description": "Signed initial terminal current for a Current Goal."},
+            "last_current_A_per_um": {"type": "number", "description": "Signed final terminal current for a Current Goal."},
             "goal_reached": {"type": "boolean"},
             "bias_V": {"type": "object", "additionalProperties": {"type": "number"}, "description": "_des.tdr: electrode voltages of the plotted state when known."},
             "exit_status": {"type": "string", "description": "_des.log: final line class (Good Bye / error text)."}

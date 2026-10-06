@@ -61,6 +61,18 @@ class AvalancheQualificationTests(unittest.TestCase):
         return a.bv_spatial_qualification(self.contract,'pn2d_bv',self.provenance,
             self.q['reference_version'],self.q['reference_manifest_sha256'],self.decks,self.mesh)
 
+    def test_ten_qualified_anchors_remain_binding_under_original_engineering_budget(self):
+        expected = [-.05, -1., -5., -10., -13.2, -15., -19.5, -19.6, -19.7, -20.]
+        self.assertEqual(expected, self.q['required_biases_V'])
+        self.assertEqual(expected, [anchor['bias_V'] for anchor in self.q['anchors']])
+        limits = self.q['spatial']
+        self.assertEqual((.0005, .001), (limits['potential_rmse_V'], limits['potential_p95_V']))
+        self.assertEqual((.005, .01), (limits['carrier_log_rmse_dex'], limits['carrier_log_p95_dex']))
+        self.assertEqual((.02, .02), (limits['field_relative_l2'], limits['junction_field_relative_l2']))
+        self.assertEqual((1e5, 100), (limits['carrier_active_reference_min_cm3'], limits['carrier_active_min_nodes']))
+        sidecar = REPO/'reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.vela.json'
+        self.assertEqual(a.sha(sidecar), self.q['input_sha256']['sidecar_sha256'])
+
     def test_exact_scope_admitted_but_static_limits_cannot_qualify_avalanche(self):
         self.assertEqual(self.admit()[0]['id'],self.q['id'])
         del self.contract['biased_spatial_qualification']
@@ -123,7 +135,8 @@ class AvalancheQualificationTests(unittest.TestCase):
             mesh, vtu = field_fixture(work,-13.2)
             native = base/'tdr'/'anchor.tdr'; native.write_bytes(b'pinned native field')
             qualification = dict(self.q,spatial=dict(self.q['spatial'],carrier_active_min_nodes=3),
-                anchors=[{'bias_V':-13.2,'native_tdr':'anchor.tdr','native_tdr_sha256':a.sha(native)}])
+                anchors=[{'bias_V':-13.2,'native_tdr':'anchor.tdr','native_tdr_sha256':a.sha(native)}],
+                required_biases_V=[-13.2])
             def export(args, **kwargs):
                 target = Path(args[-1]); target.mkdir(parents=True)
                 shutil.copy2(work/'nodes.csv',target/'nodes.csv')
