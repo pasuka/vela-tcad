@@ -444,7 +444,14 @@ class ArtifactManifestTest(unittest.TestCase):
                         name = artifact["path"].split("/")[-1]
                         repo_file = repo_source / name
                         self.assertTrue(repo_file.is_file(), f"{artifact['path']} claims a repository origin")
-                        self.assertEqual(normalised_sha256(repo_file), artifact["sha256"], artifact["path"])
+                        # C7 records archived bytes, whereas cmd_sha256 records LF
+                        # text. Preserve exact archives first; allow checkout EOL
+                        # expansion only when the archived byte count agrees.
+                        content = repo_file.read_bytes()
+                        if len(content) != artifact["bytes"]:
+                            content = content.decode("utf-8-sig").replace("\r\n", "\n").encode("utf-8")
+                        self.assertEqual(len(content), artifact["bytes"], artifact["path"])
+                        self.assertEqual(hashlib.sha256(content).hexdigest(), artifact["sha256"], artifact["path"])
                     if producer["tool"] in {"sdevice", "sde", "snmesh", "sprocess"}:
                         self.assertIn("cmd", producer, artifact["path"])
                         variant = artifact["path"].split("/")[1] if artifact["path"].count("/") == 2 else None

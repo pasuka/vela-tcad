@@ -51,6 +51,12 @@ working directory.
 - Sentaurus `Transient` remains archived as a reference only and is explicitly
   outside the non-transient closure scope.
 
+The v4 C7 inventory records SHA-256 and sizes of the exact archived source
+bytes, including CRLF where present. Git preserves `source/` bytes accordingly;
+these hashes differ from LF-normalised `producer.cmd_sha256`. The v4
+`source/wp14_inputs.json` receipt is included with the authored inputs so its
+repository provenance can be verified. Raw simulation results remain external.
+
 The validated Sentaurus threshold voltages are `6.379791636 V` for the
 external-resistor method and `6.383184201 V` for voltage-to-current control at
 the example drain-current criterion. No mobility or avalanche coefficient
