@@ -7,7 +7,8 @@ evidence.
 ## Current References
 
 - [SDevice package acceptance and commit closeout, 2026-10-07](validation/sdevice_package_closeout_2026-10-07.md):
-  current two-platform package acceptance and source/evidence commit tracking.
+  current passing Windows/Ubuntu 26.04 packages, full regression, ten strict BV
+  anchors per platform, relative RUNPATH, concurrency and source/evidence commits.
 
 - [BVmethods 从零纯 QS 诊断，2026-10-06](validation/bvmethods_zero_qs_diagnosis_2026-10-06.md)：
   原路径 13 组及辅助栅 2 组原生对照、13 kV 下的两个不同稳态解及独立整条轨迹校验；
@@ -24,8 +25,8 @@ evidence.
 - [SDevice workflow](sentaurus_sdevice_workflow.md): current supported subset,
   CLI/gates/messages, output units and executable neutral mesh/sidecar examples.
 - [SDevice log/documentation repairs and native package E2E, 2026-10-05](validation/sdevice_native_package_e2e_2026-10-05.md):
-  current task status, passing fresh Windows/Ubuntu 26.04 package acceptance and integrity checks;
-  preserves the original numerical contract and the -20 V hole-density limitation.
+  historical package acceptance and integrity checks under the then-current contract;
+  its -20 V hole-density limitation was resolved and revalidated in the 2026-10-07 closeout above.
 - [SDevice WP12 documentation closeout, 2026-10-05](validation/sdevice_wp12_closeout_2026-10-05.md):
   command/link/message/field audits, Release regression and six-item DoD evidence;
   historical snapshot preceding the package E2E follow-up above.
