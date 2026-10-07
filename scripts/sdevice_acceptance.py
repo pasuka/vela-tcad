@@ -500,6 +500,20 @@ def time_semantics(base):
     return {'semantics':'reset_per_quasistationary_stage','evidence':evidence}
 
 
+def check_only_manifest(staging, archive, version):
+    """Bind check-only grids to their archive version, never the latest alias."""
+    repository = REPO / 'reference_tcad' / archive
+    for path in (staging / archive / version / 'artifact_manifest.json',
+                 repository / f'artifact_manifest_{version}.json',
+                 repository / 'artifact_manifest.json'):
+        if path.is_file():
+            manifest = read_json(path)
+            if manifest['case'] != archive or manifest['version'] != version:
+                raise ValueError('check-only manifest archive identity mismatch: ' + str(path))
+            return manifest, path
+    raise ValueError('registered check-only manifest missing: ' + archive + '/' + version)
+
+
 def run_gates(staging,output,launcher):
     results=[];env=dict(os.environ,VELA_PYTHON=sys.executable)
     for archive,commands,grid in (
@@ -508,7 +522,7 @@ def run_gates(staging,output,launcher):
         base=staging/archive/'v1'
         meshes=list(base.rglob(grid))
         if len(meshes)!=1:raise ValueError('check-only mesh missing or ambiguous: '+grid)
-        manifest=read_json(REPO/'reference_tcad'/archive/'artifact_manifest.json')
+        manifest, manifest_path = check_only_manifest(staging, archive, 'v1')
         listed=[a for a in manifest['artifacts'] if a['path']==meshes[0].relative_to(base).as_posix()]
         if len(listed)!=1 or sha(meshes[0])!=listed[0]['sha256']:raise ValueError('check-only grid hash mismatch')
         for name in commands:
@@ -527,7 +541,9 @@ def run_gates(staging,output,launcher):
             shutil.copy2(parameter,directory/'models.par')
             cmd=directory/name;cmd.write_text(text,encoding='utf-8')
             completed=subprocess.run([str(launcher),'device',str(cmd),'--check','--allow-lossy'],capture_output=True,text=True,encoding='utf-8',env=env)
-            results.append({'cmd':name,'expected_exit_code':0,'exit_code':completed.returncode,'diagnostics':completed.stdout+completed.stderr,'pass':completed.returncode==0})
+            results.append({'cmd':name,'expected_exit_code':0,'exit_code':completed.returncode,'diagnostics':completed.stdout+completed.stderr,'pass':completed.returncode==0,
+                            'reference_archive':archive,'reference_version':manifest['version'],
+                            'reference_manifest_sha256':sha(manifest_path),'grid_sha256':sha(meshes[0])})
     fixture=REPO/'tests/fixtures/sdevice/transportmodels_sentaurus2022/pp6_des.cmd'
     rejected=output/'transport_rejection';rejected.mkdir()
     cmd=rejected/fixture.name;shutil.copy2(fixture,cmd)
