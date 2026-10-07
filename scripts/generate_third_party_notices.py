@@ -20,7 +20,7 @@ BASE_LICENSES = ("boost", "eigen", "json", "spdlog", "highfive", "hdf5", "zlib",
 DEBIAN_BASE = ("libboost-dev", "libeigen3-dev", "nlohmann-json3-dev", "libspdlog-dev",
                "libhdf5-dev", "zlib1g", "libaec0")
 
-def generate(stage, build, license_roots=()):
+def generate(stage, build, license_roots=(), *, extra_linux_libraries=()):
     stage, build = Path(stage), Path(build)
     target = stage / "share/vela/licenses"
     target.mkdir(parents=True, exist_ok=True)
@@ -65,7 +65,7 @@ def generate(stage, build, license_roots=()):
     else:
         # Ask dpkg about the actual ldd closure, including dependencies with
         # SONAME symlinks (the installed package contains copies of those files).
-        libraries = set()
+        libraries = {str(path) for path in extra_linux_libraries}
         for name in ("vela_example_runner", "sentaurus_import"):
             result = subprocess.run(["ldd", str(build / name)], check=True, capture_output=True, text=True)
             libraries.update(re.findall(r"=> (/.+?) \(0x[0-9a-fA-F]+\)", result.stdout))

@@ -575,6 +575,9 @@ schema 之外、golden 夹具所依赖的确定性规则：
   D 精度修复成功；外接电阻 v4 的瞬态获取、独立稳态及阈值以下的静态续扫通过，
   原模型/电阻/停止值不变，C7 六项通过，当前 manifest 更新为 v4，v1/v2/v3 保留。
   原始从零 QS 轨迹仍失败；原生 Transient 获取不扩展前端语法，见[本轮记录](validation/sdevice_followup_2026-10-06.md)。
+  后续[纯 QS 诊断](validation/bvmethods_zero_qs_diagnosis_2026-10-06.md)确认同一 13 kV 负载下存在两个不同稳态解；
+  放大外步长及电流控制对照仍未完成原路径；已授权的辅助栅候选及同路径大栅步长对照均失败，
+  最高栅压约 0.096695 V，未到 0.2 V，已单独归档并核验。
 - A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：
   见 [WP13 材料对齐记录](validation/builtin_material_alignment_2026-10-05.md)。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，

@@ -619,10 +619,13 @@ if(TARGET sentaurus_import)
 endif()
 if(UNIX AND NOT APPLE)
     set_target_properties(${_vela_distribution_targets} PROPERTIES
+        BUILD_RPATH_USE_ORIGIN TRUE
+        INSTALL_RPATH_USE_LINK_PATH FALSE
         INSTALL_RPATH "$ORIGIN/../lib")
-    # DT_RPATH is inherited by the bundled libraries' transitive dependencies.
+    # Each packaged ELF gets its own relative DT_RUNPATH. The packager also
+    # normalizes copied third-party/Python libraries, whose tags CMake cannot set.
     foreach(_vela_target IN LISTS _vela_distribution_targets)
-        target_link_options(${_vela_target} PRIVATE -Wl,--disable-new-dtags)
+        target_link_options(${_vela_target} PRIVATE -Wl,--enable-new-dtags)
     endforeach()
 endif()
 install(TARGETS ${_vela_distribution_targets}
@@ -1571,6 +1574,18 @@ add_test(NAME wp14_external_recovery
 set_tests_properties(wp14_external_recovery PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(wp14_external_recovery)
+
+add_test(NAME wp14_zero_qs
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_zero_qs)
+set_tests_properties(wp14_zero_qs PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_zero_qs)
+
+add_test(NAME wp14_gate_qs
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_gate_qs)
+set_tests_properties(wp14_gate_qs PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_gate_qs)
 
 add_test(NAME schottky_reference_workflow
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_schottky_reference_workflow)

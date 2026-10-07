@@ -25,6 +25,9 @@ class ConcurrentDeviceTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.env = isolated_environment()
         self.env["VELA_PYTHON"] = sys.executable
+        # The explicit interpreter override also covers a relocated bundled
+        # Python. Protect its shipped caches in launcher and protocol children.
+        self.env["PYTHONDONTWRITEBYTECODE"] = "1"
         self.env.update(COLUMNS="80", LINES="24")
 
     def assert_ok(self, done):
@@ -56,16 +59,22 @@ class ConcurrentDeviceTests(unittest.TestCase):
             while any(p.poll() is None for p in processes):
                 self.assertLess(time.monotonic(), deadline, "Concurrent solver timed out")
                 if os.name != "nt":
-                    # A long worktree path exceeds COLUMNS; truncated argv
-                    # would hide the runner basename and invalidate sampling.
-                    table = subprocess.check_output(["/bin/ps", "-ww", "-eo", "ppid=,nlwp=,args="], text=True, env=self.env)
+                    # Read the executable by PID: whitespace/Unicode in a
+                    # relocated package path cannot be parsed from ps argv.
+                    table = subprocess.check_output(["/bin/ps", "-eo", "pid=,ppid=,nlwp="], text=True, env=self.env)
                     parents = {p.pid for p in processes}
                     for line in table.splitlines():
-                        fields = line.split(None, 2)
+                        fields = line.split()
                         if len(fields) != 3:
                             continue
-                        parent, threads, args = fields
-                        if int(parent) in parents and Path(args.split()[0]).name == "vela_example_runner":
+                        pid, parent, threads = fields
+                        if int(parent) not in parents:
+                            continue
+                        try:
+                            executable = Path(f"/proc/{pid}/exe").resolve(strict=True).name
+                        except OSError:
+                            continue  # Child exited between ps and /proc reads.
+                        if executable == "vela_example_runner":
                             samples.append(int(threads))
                             self.assertLessEqual(int(threads), limits[int(parent)], line)
                 time.sleep(.01)

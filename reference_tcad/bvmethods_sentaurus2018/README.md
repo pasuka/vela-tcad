@@ -18,9 +18,16 @@ and are not checked in.
 | `source/transient_sdevice.cmd` | 8 | transient voltage ramp with resistor |
 | `source/models.par` | 3--8 | shared SRH lifetime parameters |
 
-The SDevice files retain the original contact names, physical models, target
-values, step controls and current direction. File/output names were made
-descriptive so the decks can coexist outside Sentaurus Workbench.
+The SDevice files preserve the training method mapping and contact names;
+file/output names allow the decks to coexist outside Sentaurus Workbench.
+They are a repository adaptation, not a verbatim copy of every archived node.
+For example, archived `v1/source/pp5_des.cmd` declares
+`Band2Band(Model=NonLocalPath)`, `Avalanche(GradQuasiFermi)` and a
+`1.3e-3 A/um` stop, while the current external-resistor source declares
+`Band2Band(E2)`, `Avalanche(Eparallel)` and `1.443e-3 A/um`.
+The historical final current sample must not be confused with its declared
+stop. See the [zero-QS diagnosis](../../docs/validation/bvmethods_zero_qs_diagnosis_2026-10-06.md)
+for the current native contract and retained failure evidence.
 
 Run the structure deck first. It builds `bvmethods_nmos_half_msh.tdr`, mirrors
 it about `x=0`, renames the mirrored drain contact to source, and writes
