@@ -90,6 +90,7 @@ share/vela/materials/models.par text eol=lf
 share/vela/materials/default_materials.json text eol=lf
 
 # Native follow-up manifests and evidence retain their recorded byte hashes.
+reference_tcad/bvmethods_sentaurus2018/zero_qs_controls/**/*.cmd text eol=lf
 reference_tcad/bvmethods_sentaurus2018/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reference_tcad/gate_reference/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 docs/validation/sdevice_followup_2026-10-06.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

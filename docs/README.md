@@ -6,6 +6,13 @@ evidence.
 
 ## Current References
 
+- [SDevice package acceptance and commit closeout, 2026-10-07](validation/sdevice_package_closeout_2026-10-07.md):
+  current two-platform package acceptance and source/evidence commit tracking.
+
+- [BVmethods 从零纯 QS 诊断，2026-10-06](validation/bvmethods_zero_qs_diagnosis_2026-10-06.md)：
+  原路径 13 组及辅助栅 2 组原生对照、13 kV 下的两个不同稳态解及独立整条轨迹校验；
+  原固定栅压路径和辅助栅候选均未通过，149/36 文件归档逐项核验，当前 v4 资格保持原范围。
+
 - [SDevice 遗留修复与 WP14 原生补验，2026-10-06](validation/sdevice_followup_2026-10-06.md)：
   Schottky 完整重启、PN2D 十点严格场量通过；原生五组栅控制确认 Eg(0)/DOS 映射；
   WP14 BVmethods v4 恢复版原生/稳态及 C7 六项通过，原始从零 QS 限制保留。
@@ -29,6 +36,9 @@ evidence.
   both-platform frontend regression and exact Linux concurrency/thread-cap verification.
 - [SDevice packaging guide](sdevice_packaging.md): offline inputs, runtime layout,
   manifests, licenses and extracted-package/concurrency checks.
+- [Linux relative RUNPATH validation, 2026-10-06](validation/sdevice_linux_runpath_2026-10-06.md):
+  all 66 dynamic ELF objects use relative RUNPATH; relocated package dependency,
+  bundled-Python concurrency and fingerprint checks pass.
 
 - [SDevice WP10 closeout, 2026-10-03](validation/sdevice_wp10_closeout_2026-10-03.md):
   independent, pinned BV spatial qualification at −13.2 V under the original contract;

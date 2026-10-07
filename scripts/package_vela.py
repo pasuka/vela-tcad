@@ -16,6 +16,8 @@ import zipfile
 
 from generate_third_party_notices import generate
 
+LINUX_SYSTEM_LIBRARIES = re.compile(r"^(ld-linux.*|lib(c|m|pthread|dl|rt|resolv|util)\.so.*)$")
+
 def sha256(path):
     with Path(path).open("rb") as stream:
         digest = hashlib.sha256()
@@ -95,6 +97,117 @@ def distribution_platform():
         raise ValueError("Ubuntu package requires x86_64")
     return "ubuntu26.04-x86_64"
 
+def linux_dynamic_elf_files(stage):
+    """Read each real dynamic ELF once; symlink aliases retain their targets."""
+    stage = stage.resolve()
+    readelf = shutil.which("readelf")
+    if not readelf:
+        raise ValueError("Linux packaging requires readelf (binutils)")
+    for path in sorted(stage.rglob("*")):
+        if path.is_symlink():
+            if not path.resolve().is_relative_to(stage):
+                raise ValueError(f"Escaping runtime symlink: {path.relative_to(stage)}")
+            continue
+        if not path.is_file():
+            continue
+        with path.open("rb") as stream:
+            if stream.read(4) != b"\x7fELF":
+                continue
+        table = subprocess.check_output([readelf, "-dW", str(path)], text=True)
+        if "(STRTAB)" in table:
+            yield path, table
+
+
+def collect_linux_runtime_dependencies(stage):
+    """Complete Python's non-glibc closure, beyond CMake's C++ install set."""
+    stage = stage.resolve()
+    env = dict(os.environ)
+    for key in ("LD_LIBRARY_PATH", "LD_PRELOAD", "LD_AUDIT"):
+        env.pop(key, None)
+    # Assembly-time lookup only; shipped objects receive their own RUNPATH.
+    env["LD_LIBRARY_PATH"] = str(stage / "bin/python/lib") + ":" + str(stage / "lib")
+    copied = []
+    for path, _ in linux_dynamic_elf_files(stage):
+        table = subprocess.check_output(["ldd", str(path)], text=True, env=env)
+        if "not found" in table:
+            raise ValueError(f"Unresolved ELF dependency: {path.relative_to(stage)}: {table}")
+        for library in re.findall(r"=> (/.+?) \(0x[0-9a-fA-F]+\)", table):
+            source = Path(library)
+            if source.resolve().is_relative_to(stage) or LINUX_SYSTEM_LIBRARIES.fullmatch(source.name):
+                continue
+            destination = stage / "lib" / source.name
+            if destination.exists():
+                if sha256(destination) != sha256(source):
+                    raise ValueError(f"Conflicting runtime library: {source.name}")
+                continue
+            shutil.copy2(source, destination)
+            copied.append(source)
+    return copied
+
+
+def normalize_linux_runpaths(stage, patchelf="patchelf"):
+    """Give every dynamic ELF its own package-relative DT_RUNPATH.
+
+    RUNPATH only resolves an object's direct dependencies, so copied libraries
+    must be patched too. Python's private lib directory stays ahead of the
+    solver libraries to preserve the standalone interpreter's runtime closure.
+    """
+    tool = shutil.which(str(patchelf))
+    if not tool:
+        raise ValueError("Linux packaging requires patchelf; supply --patchelf <path>")
+    stage = stage.resolve()
+    records = []
+    for path, table in linux_dynamic_elf_files(stage):
+        needed = re.findall(r"\(NEEDED\).*?\[([^]]+)\]", table)
+        needed_directories = []
+        rewrites = []
+        for name in needed:
+            if "/" not in name:
+                continue
+            # Standalone CPython's libpython3.so uses an ORIGIN-qualified
+            # libpython3.12 dependency. Convert only verified package-local
+            # targets to their SONAME; never guess an absolute host library.
+            prefix = next((p for p in ("$ORIGIN/", "${ORIGIN}/") if name.startswith(p)), None)
+            if prefix is None:
+                raise ValueError(f"Path in ELF DT_NEEDED: {path.relative_to(stage)}: {name}")
+            target = (path.parent / name[len(prefix):]).resolve()
+            if not target.is_relative_to(stage) or not target.is_file():
+                raise ValueError(f"Escaping or missing ELF DT_NEEDED: {path.relative_to(stage)}: {name}")
+            soname = subprocess.check_output([tool, "--print-soname", str(target)], text=True).strip()
+            if not soname or "/" in soname or (target.parent / soname).resolve() != target:
+                raise ValueError(f"Unresolvable package SONAME: {path.relative_to(stage)}: {name}")
+            subprocess.run([tool, "--replace-needed", name, soname, str(path)], check=True)
+            needed_directories.append(target.parent)
+            rewrites.append({"from": name, "to": soname})
+        relative = path.relative_to(stage)
+        directories = [stage / "lib"]
+        if relative.parts[:2] == ("bin", "python"):
+            directories = [path.parent, stage / "bin/python/lib", stage / "lib"]
+        directories.extend(needed_directories)
+        entries = []
+        for directory in directories:
+            suffix = os.path.relpath(directory, path.parent).replace(os.sep, "/")
+            entry = "$ORIGIN" if suffix == "." else "$ORIGIN/" + suffix
+            if entry not in entries:
+                entries.append(entry)
+        runpath = ":".join(entries)
+        # Without --force-rpath, patchelf converts existing DT_RPATH to DT_RUNPATH.
+        subprocess.run([tool, "--set-rpath", runpath, str(path)], check=True)
+        record = {"path": relative.as_posix(), "runpath": runpath}
+        if rewrites:
+            record["needed_rewrites"] = rewrites
+        records.append(record)
+    actual = {path.relative_to(stage).as_posix(): table
+              for path, table in linux_dynamic_elf_files(stage)}
+    for record in records:
+        table = actual[record["path"]]
+        values = re.findall(r"\(RUNPATH\).*?\[([^]]*)\]", table)
+        needed = re.findall(r"\(NEEDED\).*?\[([^]]+)\]", table)
+        if "(RPATH)" in table or values != [record["runpath"]] or any("/" in name for name in needed):
+            raise ValueError(f"ELF RUNPATH verification failed: {record['path']}")
+    return records
+
+
 def audit(stage):
     forbidden = {"reference_staging", "reference_tcad", ".git"}
     names = []
@@ -136,7 +249,12 @@ def package(args):
         if not (args.python_license_dir / "LICENSE.openssl-3.txt").is_file():
             raise ValueError("Python license directory must include LICENSE.openssl-3.txt")
         shutil.copytree(args.python_license_dir, stage / "bin/python/licenses")
-        licenses = generate(stage, build, args.license_root)
+        extra_linux_libraries = (collect_linux_runtime_dependencies(stage)
+                                 if system != "win64" else [])
+        elf_runpaths = (normalize_linux_runpaths(stage, args.patchelf)
+                        if system != "win64" else None)
+        licenses = generate(stage, build, args.license_root,
+                            extra_linux_libraries=extra_linux_libraries)
         with zipfile.ZipFile(stage / "bin/vela_sdevice.pyz") as zipped:
             version = json.loads(zipped.read("vela_sdevice/_assets/version.json"))
         if not re.fullmatch(r"[0-9a-fA-F]{40}", version.get("commit", "")):
@@ -144,6 +262,8 @@ def package(args):
         (stage / "VERSION").write_text(json.dumps(version, indent=2) + "\n", encoding="utf-8")
         manifest = {**version, "platform": system, "python_archive": python_archive.name,
                     "python_sha256": actual, "licenses": licenses, "files": audit(stage)}
+        if elf_runpaths is not None:
+            manifest["elf_runpaths"] = elf_runpaths
         (stage / "PACKAGE_MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         basename = f"vela-{version['version']}-{system}"
         archive = output / (basename + (".zip" if system == "win64" else ".tar.gz"))
@@ -173,6 +293,8 @@ def main():
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--cmake", default="cmake")
     parser.add_argument("--config", default="Release")
+    parser.add_argument("--patchelf", default="patchelf",
+                        help="Linux ELF RUNPATH editor (default: patchelf on PATH)")
     parser.add_argument("--license-root", type=Path, action="append", default=[])
     args = parser.parse_args()
     try:

@@ -1,0 +1,290 @@
+{
+  "schema": "vela.wp14.auxiliary_gate_qs_diagnosis.v1",
+  "status": "candidate_failed",
+  "original_fixed_gate_zero_qs_status": "unresolved",
+  "archive": {
+    "remote": "/home/tcad/vela_reference_artifacts/bvmethods_zero_qs_controls/v2",
+    "files_verified_including_inventory": 36,
+    "member_set_sizes_and_hashes_verified": true,
+    "tar_sha256": "8059f2d3957ae937ef294b621c2ffb3fba8167f93ede8c08d055d0f2fc640f7b",
+    "inventory_sha256": "bfd581366d2c9573e4fde648dac34eb8b6513cc4dbe59cc25fe375bb14c153dc"
+  },
+  "controls": {
+    "gate_qs_seed": {
+      "native_process_exit_code": 0,
+      "minstep_failures_reported": 2,
+      "good_bye_reported": true,
+      "independent_auxiliary_path_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false,
+          "source_and_substrate_fixed_zero_all_states": true,
+          "gate_zero_during_acquisition_and_final": true,
+          "acquisition_reached_13000V_below_stop": true,
+          "gate_phase_drain_held_13000V": true,
+          "gate_sweep_0_to_0_2_to_0": false,
+          "phase_states_continuous": true,
+          "final_starts_at_13000V_below_stop": true
+        },
+        "status": "fail",
+        "states_checked": 203,
+        "last": {
+          "outer_voltage_V": 14099.8112218879,
+          "inner_voltage_V": 7.16025526464873,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139543453,
+          "h_current_A_per_um": -1.62987722139548e-08,
+          "total_current_A_per_um": 0.00140926509666232,
+          "Charge": 7.68401339513668e-15
+        },
+        "max_load_line_residual_V": 1.4642864698544145e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.730417607138782e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "phase_state_counts": [
+          71,
+          87,
+          45
+        ],
+        "gate_peak_V": 0.0966954759163124,
+        "before_gate": {
+          "outer_voltage_V": 13000.0,
+          "inner_voltage_V": 7.1342022476712,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129930289494791,
+          "h_current_A_per_um": -1.63151726798905e-08,
+          "total_current_A_per_um": 0.00129928657977523,
+          "Charge": 7.69149214583993e-15
+        },
+        "after_gate": {
+          "outer_voltage_V": 13000.0,
+          "inner_voltage_V": 7.13420224767119,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129930289494791,
+          "h_current_A_per_um": -1.63151726796837e-08,
+          "total_current_A_per_um": 0.00129928657977523,
+          "Charge": 7.69149214583993e-15
+        },
+        "schema": "vela.wp14.auxiliary_gate_qs_validation.v1",
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "authorized_goal_sequence": true,
+          "qs_only_no_loaded_seed": true,
+          "declared_phase_outputs": true,
+          "same_parameters": true,
+          "same_mesh": true
+        },
+        "qualified_scope": "native zero-origin auxiliary gate 0->0.2->0V QS acquisition and final voltage QS; original fixed-gate path, stability, and Vela/field agreement excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "5a7d5468a468ff82538906fb147dff854373ae4e49812fb924ee2188dd608283",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+          "external_resistor_des.log": "c467aceb5f08664d3757ad480141848f333caff38774f33c2faa1049cd43cb02",
+          "external_resistor_des.plt": "1f44c7149c315bb03eb710c1dd7a815e40a6ac116183afc3785738aa36810a29",
+          "gate_seed_external_resistor_des.plt": "cf9121308fa5bae143628cb0e3d6562a37268c62367113053bae5bc7b086d9c0",
+          "final_external_resistor_des.plt": "5f1e1a709e756585b94af3de0a6c121ae87937a76bca2474a0df17f7aa17ad22"
+        }
+      },
+      "before_gate": {
+        "status": "pass",
+        "checks": {
+          "declared_stop": true,
+          "fixed_resistor_load_line": true,
+          "terminal_kcl": true,
+          "negligible_displacement": true,
+          "current_components": true,
+          "finite_positive_voltage": true
+        },
+        "outer_voltage_V": 13000.0,
+        "inner_voltage_V": 7.1342022476712,
+        "total_current_A_per_um": 0.00129928657977523,
+        "conduction_current_A_per_um": 0.0012992865797752302,
+        "displacement_current_A_per_um": 0.0,
+        "load_line_residual_V": 2.9103830456733704e-11,
+        "kcl_relative": 1.263749963873647e-15,
+        "source_current_A_per_um": -3.12302891714165e-06,
+        "substrate_current_A_per_um": -0.00129616355085809
+      },
+      "after_gate": {
+        "status": "pass",
+        "checks": {
+          "declared_stop": true,
+          "fixed_resistor_load_line": true,
+          "terminal_kcl": true,
+          "negligible_displacement": true,
+          "current_components": true,
+          "finite_positive_voltage": true
+        },
+        "outer_voltage_V": 13000.0,
+        "inner_voltage_V": 7.13420224767119,
+        "total_current_A_per_um": 0.00129928657977523,
+        "conduction_current_A_per_um": 0.0012992865797752304,
+        "displacement_current_A_per_um": 0.0,
+        "load_line_residual_V": 2.9103830456733704e-11,
+        "kcl_relative": 5.834698053479051e-16,
+        "source_current_A_per_um": -3.12302891713925e-06,
+        "substrate_current_A_per_um": -0.00129616355085809
+      }
+    },
+    "gate_qs_jump": {
+      "native_process_exit_code": 0,
+      "minstep_failures_reported": 2,
+      "good_bye_reported": true,
+      "independent_auxiliary_path_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false,
+          "source_and_substrate_fixed_zero_all_states": true,
+          "gate_zero_during_acquisition_and_final": true,
+          "acquisition_reached_13000V_below_stop": true,
+          "gate_phase_drain_held_13000V": true,
+          "gate_sweep_0_to_0_2_to_0": false,
+          "phase_states_continuous": true,
+          "final_starts_at_13000V_below_stop": true
+        },
+        "status": "fail",
+        "states_checked": 191,
+        "last": {
+          "outer_voltage_V": 14099.8112218879,
+          "inner_voltage_V": 7.16025526464873,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139543453,
+          "h_current_A_per_um": -1.62987722139549e-08,
+          "total_current_A_per_um": 0.00140926509666232,
+          "Charge": 7.68401339513668e-15
+        },
+        "max_load_line_residual_V": 1.4642864698544145e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.411002600643275e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "phase_state_counts": [
+          71,
+          75,
+          45
+        ],
+        "gate_peak_V": 0.0966954759244808,
+        "before_gate": {
+          "outer_voltage_V": 13000.0,
+          "inner_voltage_V": 7.1342022476712,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129930289494791,
+          "h_current_A_per_um": -1.63151726798905e-08,
+          "total_current_A_per_um": 0.00129928657977523,
+          "Charge": 7.69149214583993e-15
+        },
+        "after_gate": {
+          "outer_voltage_V": 13000.0,
+          "inner_voltage_V": 7.1342022476712,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129930289494791,
+          "h_current_A_per_um": -1.63151726798895e-08,
+          "total_current_A_per_um": 0.00129928657977523,
+          "Charge": 7.69149214583993e-15
+        },
+        "schema": "vela.wp14.auxiliary_gate_qs_validation.v1",
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "authorized_goal_sequence": true,
+          "qs_only_no_loaded_seed": true,
+          "declared_phase_outputs": true,
+          "same_parameters": true,
+          "same_mesh": true
+        },
+        "qualified_scope": "native zero-origin auxiliary gate 0->0.2->0V QS acquisition and final voltage QS; original fixed-gate path, stability, and Vela/field agreement excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "53e98eef85df96943e70a58e178304f175bbe66b2de1ea9efe3ae4951b11b455",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+          "external_resistor_des.log": "d3a4119d1507faa791300cfdb22e57a7fb89e93bd126155897233f2abac29685",
+          "external_resistor_des.plt": "1f44c7149c315bb03eb710c1dd7a815e40a6ac116183afc3785738aa36810a29",
+          "gate_seed_external_resistor_des.plt": "92c949b40d5acd5762970da58da9d42aa276b1c0ff454a715a2975e98c4a1e44",
+          "final_external_resistor_des.plt": "4c2c9e848c6a2f5987b390697317f5ee8fe30a40e88113c964c59cd1c698fdd3"
+        }
+      },
+      "before_gate": {
+        "status": "pass",
+        "checks": {
+          "declared_stop": true,
+          "fixed_resistor_load_line": true,
+          "terminal_kcl": true,
+          "negligible_displacement": true,
+          "current_components": true,
+          "finite_positive_voltage": true
+        },
+        "outer_voltage_V": 13000.0,
+        "inner_voltage_V": 7.1342022476712,
+        "total_current_A_per_um": 0.00129928657977523,
+        "conduction_current_A_per_um": 0.0012992865797752302,
+        "displacement_current_A_per_um": 0.0,
+        "load_line_residual_V": 2.9103830456733704e-11,
+        "kcl_relative": 1.263749963873647e-15,
+        "source_current_A_per_um": -3.12302891714165e-06,
+        "substrate_current_A_per_um": -0.00129616355085809
+      },
+      "after_gate": {
+        "status": "pass",
+        "checks": {
+          "declared_stop": true,
+          "fixed_resistor_load_line": true,
+          "terminal_kcl": true,
+          "negligible_displacement": true,
+          "current_components": true,
+          "finite_positive_voltage": true
+        },
+        "outer_voltage_V": 13000.0,
+        "inner_voltage_V": 7.1342022476712,
+        "total_current_A_per_um": 0.00129928657977523,
+        "conduction_current_A_per_um": 0.0012992865797752302,
+        "displacement_current_A_per_um": 0.0,
+        "load_line_residual_V": 2.9103830456733704e-11,
+        "kcl_relative": 1.2715730227163005e-15,
+        "source_current_A_per_um": -3.12302891714166e-06,
+        "substrate_current_A_per_um": -0.00129616355085809
+      }
+    }
+  },
+  "tests": {
+    "registered_windows_release_ctest_passed": 5,
+    "latest_auxiliary_gate_unittest_cases": 8,
+    "latest_auxiliary_gate_registered_ctest_passed": 1,
+    "full_suite_run": false,
+    "final_validator_unittest_cases_passed": 21
+  },
+  "default_reference_manifest_updated": false,
+  "qualification_excludes": [
+    "original fixed-gate QS repair",
+    "dynamic stability",
+    "Vela/native field agreement",
+    "SLOT LDMOS qualification"
+  ]
+}

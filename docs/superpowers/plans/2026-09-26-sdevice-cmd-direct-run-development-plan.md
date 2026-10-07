@@ -35,6 +35,15 @@ v2.10 遗留任务（2026-10-06，用户明确要求继续三个遗留项）：S
 PN2D 向量 GradQF 的局部 AD 修复已通过完整扫线与十个严格场量点，契约已绑定新策略。
 当前逐项状态以[本轮记录](../../validation/sdevice_followup_2026-10-06.md)为准，不将旧交接快照作为任务队列。
 
+v2.11 发行包验收与提交收口（2026-10-07，用户授权）：Linux 全部动态 ELF 改为基于各对象
+`$ORIGIN` 的相对 RUNPATH，第三方/Python 依赖和许可闭合已验证，见
+[RUNPATH 记录](../../validation/sdevice_linux_runpath_2026-10-06.md)。本次冻结源码提交后重新构建
+Windows/Ubuntu 26.04 两包，分别执行全新 PN2D 0V/IV/BV、十点严格场量、输入 gates、
+包指纹及受控并行的完整非外部参考回归。验收进度及最终提交见
+[发行包收口记录](../../validation/sdevice_package_closeout_2026-10-07.md)。
+原固定栅压从零纯 QS 的 13 组及辅助栅两组原生对照均未修复原路径；
+其失败证据与校验工具一并提交，本次不继续数值研究或扩大 v4 资格。
+
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
 手册依据：`D:\工作\学习资料\TCAD软件手册\Sentaurus帮助文档\data\sdevice_ug.pdf`
@@ -997,7 +1006,9 @@ flowchart LR
 - 逐步：
   1. `install()`：`vela`、`vela_example_runner`、`sentaurus_import` → `bin/`；`share/vela/materials/models.par` → `share/vela/materials/`；
      `build/bin/vela_sdevice.pyz` → `bin/`；运行库用 `RUNTIME_DEPENDENCY_SET`（Windows 以 `ntldd`/`objdump -p` 实测列表校对：
-     MSYS2 UCRT64 的 libstdc++/libgcc/winpthread、HDF5、spdlog 等）；Linux 设 `RPATH=$ORIGIN/../lib`。
+     MSYS2 UCRT64 的 libstdc++/libgcc/winpthread、HDF5、spdlog 等）；Linux 使用 `DT_RUNPATH`：
+     `bin/` 程序为 `$ORIGIN/../lib`，根启动器为 `$ORIGIN/lib`，`lib/` 下库为 `$ORIGIN`。
+     打包器逐个处理第三方/Python ELF，补齐非 glibc 依赖及许可，并验证所有路径相对各对象目录。
   2. 随包 Python：Windows 用 CPython 3.12 embeddable zip 解到 `bin/python/`（`python312._pth` 含标准库 zip、`.` 与 `..`；
      `.` 供原生标准库扩展加载，不启用 `import site`），
      Linux 用 python-build-standalone 3.12 解到 `bin/python/`；`package_vela.py --python-archive <file>` 取离线包，不联网。
@@ -1171,6 +1182,9 @@ WP4 已完成（含用户授权的 C3/v2 最小 C++ 修复）；WP6.1 已于 202
 WP13 已完成 Windows 原卡片验收（全量 1026/1026、三个 PN2D 门通过，容差未放宽）；2026-10-06 补齐 Ubuntu 受影响范围16/16，
 Schottky 0.82 V 重启已修复并通过完整流程；PN2D 完整扫线及十个严格场量点通过；
 WP14 外接电阻 v4 恢复路径已通过独立稳态和 C7 六项，原始从零 QS 限制保留，见本轮记录。
+2026-10-07 当前收口：补齐最新源码两平台部署包的原生验收和完整非外部参考回归，
+提交纯 QS 诊断与相对 RUNPATH 改动，并登记最终包指纹。纯 QS 两组辅助栅候选均失败，
+不作为待执行候选重复列入；后续数值调查仍独立保留。进度见发行包收口记录。
 
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
 

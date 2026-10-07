@@ -17,7 +17,9 @@ import zipfile
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
-from package_vela import safe_member, unpack_python, audit, package, tar_permissions, distribution_platform
+from package_vela import (safe_member, unpack_python, audit, package, tar_permissions,
+                          distribution_platform, linux_dynamic_elf_files,
+                          normalize_linux_runpaths)
 from build_vela_sdevice_pyz import build_archive
 from tests.regression.sdevice_package_support import synthetic_cmd, isolated_environment, run
 from run_sdevice_package_e2e import verify_package, runtime_environment, controller_command
@@ -25,6 +27,62 @@ from generate_third_party_notices import generate, BASE_LICENSES
 from vela_sdevice.plt import read_plt_document
 
 class OfflinePackageTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "ELF dependency-chain probe requires Linux")
+    def test_runpath_resolves_indirect_libraries_after_relocation(self):
+        compiler = shutil.which("cc")
+        self.assertIsNotNone(compiler, "Linux packaging verification requires a C compiler")
+        self.assertIsNotNone(shutil.which("patchelf"), "Linux packaging verification requires patchelf")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            stage = root / "original" / "vela"
+            library = stage / "lib"
+            binary = stage / "bin"
+            library.mkdir(parents=True)
+            binary.mkdir()
+            sources = {"leaf": "int leaf(void) { return 42; }\n",
+                       "middle": "extern int leaf(void); int middle(void) { return leaf(); }\n",
+                       "main": "#include <stdio.h>\nextern int middle(void);\n"
+                               "int main(void) { printf(\"%d\\n\", middle()); return 0; }\n"}
+            for name, source in sources.items():
+                (root / (name + ".c")).write_text(source)
+            commands = [
+                [compiler, "-shared", "-fPIC", str(root / "leaf.c"), "-Wl,-soname,libleaf.so",
+                 "-o", str(library / "libleaf.so")],
+                [compiler, "-shared", "-fPIC", str(root / "middle.c"), "-Wl,-soname,libmiddle.so",
+                 "-L" + str(library), "-lleaf", "-o", str(library / "libmiddle.so")],
+                [compiler, str(root / "main.c"), "-L" + str(library), "-lmiddle",
+                 "-Wl,-rpath-link," + str(library), "-Wl,--enable-new-dtags",
+                 "-Wl,-rpath,$ORIGIN/../lib", "-o", str(binary / "probe")],
+            ]
+            for command in commands:
+                subprocess.run(command, check=True, capture_output=True, text=True)
+            # An executable RUNPATH alone cannot find middle -> leaf.
+            env = {"PATH": "/nonexistent"}
+            before = subprocess.run([str(binary / "probe")], env=env, capture_output=True, text=True)
+            self.assertNotEqual(before.returncode, 0)
+            self.assertIn("libleaf.so", before.stderr)
+            # Exercise the package-local ORIGIN-qualified DT_NEEDED form used
+            # by standalone Python as well as ordinary SONAME dependencies.
+            subprocess.run(["patchelf", "--replace-needed", "libleaf.so", "$ORIGIN/libleaf.so",
+                            str(library / "libmiddle.so")], check=True)
+            records = normalize_linux_runpaths(stage)
+            self.assertEqual({entry["path"] for entry in records},
+                             {"bin/probe", "lib/libmiddle.so", "lib/libleaf.so"})
+            relocated = root / "space \u4e2d\u6587" / "vela"
+            relocated.parent.mkdir()
+            stage.rename(relocated)
+            after = subprocess.run([str(relocated / "bin/probe")], env=env,
+                                   capture_output=True, text=True)
+            self.assertEqual(after.returncode, 0, after.stderr)
+            self.assertEqual(after.stdout, "42\n")
+            for path, dynamic in linux_dynamic_elf_files(relocated):
+                self.assertFalse(any("/" in item for item in
+                                     re.findall(r"\(NEEDED\).*?\[([^]]+)\]", dynamic)), str(path))
+            subprocess.run(["patchelf", "--replace-needed", "libleaf.so", "/host/libleaf.so",
+                            str(relocated / "lib/libmiddle.so")], check=True)
+            with self.assertRaisesRegex(ValueError, "Path in ELF DT_NEEDED"):
+                normalize_linux_runpaths(relocated)
+
     def test_isolated_controller_preserves_invalid_bytecode_cache(self):
         import py_compile
         with tempfile.TemporaryDirectory() as temp:
@@ -221,20 +279,35 @@ class ExtractedPackageSmoke(unittest.TestCase):
 
     @unittest.skipIf(os.name == "nt", "ELF/ldd check is Linux only; Windows DLL closure is checked by isolated PATH smoke")
     def test_linux_elf_dependencies_resolve_inside_package(self):
-        allowed_system = re.compile(r"^(ld-linux.*|lib(c|m|pthread|dl|rt|resolv)\.so.*)$")
+        # libutil is supplied by libc6 on Ubuntu 26.04; libcrypt is a separate
+        # libcrypt1 component and must remain inside the relocated package.
+        allowed_system = re.compile(r"^(ld-linux.*|lib(c|m|pthread|dl|rt|resolv|util)\.so.*)$")
         env = dict(self.env)
         env.pop("LD_LIBRARY_PATH", None)
-        for name in ("vela_example_runner", "sentaurus_import"):
-            table = subprocess.check_output(["/usr/bin/ldd", str(self.package / "bin" / name)],
+        info = json.loads((self.package / "PACKAGE_MANIFEST.json").read_text())
+        recorded = {item["path"]: item["runpath"] for item in info["elf_runpaths"]}
+        objects = list(linux_dynamic_elf_files(self.package))
+        self.assertEqual(set(recorded), {path.relative_to(self.package).as_posix() for path, _ in objects})
+        self.assertIn("bin/vela_example_runner", recorded)
+        self.assertIn("bin/sentaurus_import", recorded)
+        for path, dynamic in objects:
+            name = path.relative_to(self.package).as_posix()
+            self.assertNotIn("(RPATH)", dynamic, name)
+            values = re.findall(r"\(RUNPATH\).*?\[([^]]*)\]", dynamic)
+            self.assertEqual(values, [recorded[name]], name)
+            for entry in recorded[name].split(":"):
+                self.assertTrue(entry == "$ORIGIN" or entry.startswith("$ORIGIN/"), (name, entry))
+                directory = (path.parent / entry.removeprefix("$ORIGIN").lstrip("/")).resolve()
+                self.assertTrue(directory.is_relative_to(self.package), (name, entry))
+            table = subprocess.check_output(["/usr/bin/ldd", str(path)],
                                              env=env, text=True)
-            self.assertNotIn("not found", table)
+            self.assertNotIn("not found", table, name)
             resolved = re.findall(r"=> (/.+?) \(0x[0-9a-fA-F]+\)", table)
-            self.assertTrue(resolved)
             for library in resolved:
                 if not allowed_system.fullmatch(Path(library).name):
-                    self.assertTrue(Path(library).resolve().is_relative_to(self.package), library)
-        info = json.loads((self.package / "PACKAGE_MANIFEST.json").read_text())
+                    self.assertTrue(Path(library).resolve().is_relative_to(self.package), (name, library))
         self.assertIn("libstdc++6", info["licenses"])
+        self.assertIn("libcrypt1", info["licenses"])
 
     def test_no_system_python_unicode_iv_and_parameter_export(self):
         self.assertIsNone(shutil.which("python", path=self.env["PATH"]))

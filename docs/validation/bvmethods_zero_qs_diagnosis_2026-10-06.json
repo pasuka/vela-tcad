@@ -1,0 +1,751 @@
+{
+  "schema": "vela.wp14.zero_qs_diagnosis.v1",
+  "status": "original_fixed_gate_zero_voltage_qs_unresolved",
+  "archive": {
+    "remote": "/home/tcad/vela_reference_artifacts/bvmethods_zero_qs_controls/v1",
+    "tar_sha256": "c0952f7c0d5e654538ef79c72b9c6a56349405e3920a92eea0d93d34d9d47497",
+    "inventory_sha256": "36e177e70b21b519b08ae02f8ec6976f53cfb82eb08a2a98b6ea963a7ce4328c",
+    "files_verified_including_inventory": 149,
+    "member_set_and_hashes_verified": true
+  },
+  "configuration": {
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "declared_stop_A_per_um": 0.001443,
+    "final_voltage_goal_V": 100000,
+    "mesh_nodes": 2600,
+    "mesh_elements": 5020,
+    "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "native_version": "T-2022.03-SP2"
+  },
+  "original_training_archive": {
+    "schema": "vela.native.zero_qs_controls.archive.v1",
+    "created_utc": "2026-10-06T07:34:19.928453Z",
+    "status": "diagnostic_only_original_zero_qs_not_qualified",
+    "native_version": "T-2022.03-SP2",
+    "original_v1_pp5_cmd_sha256": "30f025ed061f0c113cc4e1caa7c00f56003a6ac9ad01a4199e014b08602108a5",
+    "original_v1_pp5_par_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3"
+  },
+  "same_13000V_two_steady_roots": {
+    "forward_zero_origin": {
+      "status": "pass",
+      "checks": {
+        "declared_stop": true,
+        "fixed_resistor_load_line": true,
+        "terminal_kcl": true,
+        "negligible_displacement": true,
+        "current_components": true,
+        "finite_positive_voltage": true
+      },
+      "outer_voltage_V": 13000.0,
+      "inner_voltage_V": 7.1342022476712,
+      "total_current_A_per_um": 0.00129928657977523,
+      "conduction_current_A_per_um": 0.0012992865797752302,
+      "displacement_current_A_per_um": 0.0,
+      "load_line_residual_V": 2.9103830456733704e-11,
+      "kcl_relative": 1.263749963873647e-15,
+      "source_current_A_per_um": -3.12302891714165e-06,
+      "substrate_current_A_per_um": -0.00129616355085809
+    },
+    "reverse_v4_seed": {
+      "status": "pass",
+      "checks": {
+        "declared_stop": true,
+        "fixed_resistor_load_line": true,
+        "terminal_kcl": true,
+        "negligible_displacement": true,
+        "current_components": true,
+        "finite_positive_voltage": true
+      },
+      "outer_voltage_V": 13000.0,
+      "inner_voltage_V": 6.63774406432838,
+      "total_current_A_per_um": 0.00129933622559357,
+      "conduction_current_A_per_um": 0.0012993362255935687,
+      "displacement_current_A_per_um": 0.0,
+      "load_line_residual_V": 2.7284841053187847e-11,
+      "kcl_relative": 5.382058834953882e-15,
+      "source_current_A_per_um": -0.000273914332499853,
+      "substrate_current_A_per_um": -0.00102542189309371
+    },
+    "inner_voltage_difference_V": 0.49645818334282055
+  },
+  "reverse_diagnostic_states_checked": 11,
+  "controls": {
+    "avaldens_gradqf": {
+      "source_sha256": "488bd760d32f699a798b1b5e6dbc16f42488900f3f94dda6817397a35a235751",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 2,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 61,
+        "last": {
+          "outer_voltage_V": 1579.59882805894,
+          "inner_voltage_V": 6.25829701894584,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.000157334594770476,
+          "h_current_A_per_um": -5.41666476917867e-10,
+          "total_current_A_per_um": 0.000157334053104,
+          "Charge": 7.54596185232227e-15
+        },
+        "max_load_line_residual_V": 1.5674419991118516e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.973597064262844e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": false,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "488bd760d32f699a798b1b5e6dbc16f42488900f3f94dda6817397a35a235751",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "ffd71a041544f8f13ad3550ae23f0aa24285010638ba4130bd3b5aa2657c5bd1",
+          "external_resistor_des.log": "2e191e42f974f61a77e273862d72cc56f2114a4212293a19fc024cf6f06816c1"
+        }
+      }
+    },
+    "current_trace": {
+      "source_sha256": "b3f6858801b0ec053ad107e0b38857bd8f5d8ca487f4027dc7e676ffc708da73",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": false,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 52,
+        "last": {
+          "outer_voltage_V": 14099.8112254664,
+          "inner_voltage_V": 7.16025094946055,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139604703,
+          "h_current_A_per_um": -1.62985953409899e-08,
+          "total_current_A_per_um": 0.00140926509745169,
+          "Charge": 7.68401271836885e-15
+        },
+        "max_load_line_residual_V": 9.458744898438454e-11,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 5.801681812467446e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": false,
+          "original_final_voltage_goal": false,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "b3f6858801b0ec053ad107e0b38857bd8f5d8ca487f4027dc7e676ffc708da73",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "b91267e18c7be7308bb45edbe276899b6df4f2fc7e73ee81431da4c8005bf29c",
+          "external_resistor_des.log": "6b906cbb6481529bd50f7d3ed77fd57de1c7c21507f6362857550ed0f7e94641"
+        }
+      }
+    },
+    "frozen_reseed": {
+      "source_sha256": "a12f0a57ba2072426572d73aaed53263bf49f124a38024ff458e138d71fafd3b",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": false,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 2,
+        "last": {
+          "outer_voltage_V": 13000.0027656555,
+          "inner_voltage_V": 7.13422035575487,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129930553211988,
+          "h_current_A_per_um": -1.86775898872828e-08,
+          "total_current_A_per_um": 0.00129928685452999,
+          "Charge": 7.69150324344888e-15
+        },
+        "max_load_line_residual_V": 1.546140993013978e-10,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 1.9195826575898905e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": false,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "a12f0a57ba2072426572d73aaed53263bf49f124a38024ff458e138d71fafd3b",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "09f514e6c7dcdee1543a2a4931e05990d438159dd4bf0a0f411e150c2f788649",
+          "external_resistor_des.log": "5b8344677004844d8c3865c9b036f524eec4008253a9a989cbe2f6c1daf09952"
+        }
+      }
+    },
+    "gummel_jump": {
+      "source_sha256": "a2bf8a9f6e36a8c780354dc4d381723530884e1c356fbe8ab7639ec3bcb955db",
+      "minstep_failure": false,
+      "current_stop_reported": false,
+      "good_bye_reported": false,
+      "manual_stop": false,
+      "native_process_exit_code": 1,
+      "original_zero_qs_validation": {
+        "status": "fail",
+        "input_error": "[Errno 2] No such file or directory: 'D:\\\\code-repo\\\\vela-tcad\\\\.worktrees\\\\sdevice-cmd-frontend\\\\build-release\\\\qs_zero_20261006\\\\v1\\\\gummel_jump\\\\external_resistor_des.plt'"
+      }
+    },
+    "gummel_sequence": {
+      "source_sha256": "f2b8d58adf636125c61d811fa5f53e3331d386e8c45302e188cd5f4cdcab44c2",
+      "minstep_failure": false,
+      "current_stop_reported": true,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": false,
+          "terminal_kcl_all_states": false,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": false,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "fail",
+        "states_checked": 64,
+        "last": {
+          "outer_voltage_V": 14500.0,
+          "inner_voltage_V": 2.94140224153248,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 8.50139216863994e+146,
+          "h_current_A_per_um": -8.50139216863993e+146,
+          "total_current_A_per_um": 8.68899318027735e+129,
+          "Charge": 7.65533166943032e-12
+        },
+        "max_load_line_residual_V": 8.68899318027735e+136,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 0.0012825245637478,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "f2b8d58adf636125c61d811fa5f53e3331d386e8c45302e188cd5f4cdcab44c2",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "0472b634599eefa1d6be23696e0d4c050eff3bc254c6dae20bbdb7ce1af3531e",
+          "external_resistor_des.log": "a5cac1c61e3a8b71d0ddc9e47abcbb9f4af22e7a7a1ed3f1cd206ca9e7dfe575"
+        }
+      }
+    },
+    "gummel_single": {
+      "source_sha256": "79e4086d255722f2fbc11c6a136877ea78a8babf3ceda5911eb35b3c9a3b4feb",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 81,
+        "last": {
+          "outer_voltage_V": 14099.8112192305,
+          "inner_voltage_V": 7.16025630090224,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139510764,
+          "h_current_A_per_um": -1.62988146870778e-08,
+          "total_current_A_per_um": 0.00140926509629295,
+          "Charge": 7.68401355767457e-15
+        },
+        "max_load_line_residual_V": 7.631044129929876e-10,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.338965870065311e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "79e4086d255722f2fbc11c6a136877ea78a8babf3ceda5911eb35b3c9a3b4feb",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "abd0166d8fc124340139f5571f0e3e2512f1ba299acadb941e4c82b0a0c4219a",
+          "external_resistor_des.log": "92da2ffe61e9e83f1cf9c6ed7a522e6fcfa2ad686e909609f2d7e9ae9fa3eca1"
+        }
+      }
+    },
+    "hole_predictor": {
+      "source_sha256": "8e187172d0f0a93aa26e47616abbeb12fb241c983c78f9a646bdb58c1ff67507",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 2,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 75,
+        "last": {
+          "outer_voltage_V": 14099.8112126481,
+          "inner_voltage_V": 7.16025817497958,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139433883,
+          "h_current_A_per_um": -1.62988915226508e-08,
+          "total_current_A_per_um": 0.00140926509544731,
+          "Charge": 7.68401385164435e-15
+        },
+        "max_load_line_residual_V": 9.302567952063079e-10,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.449954831884168e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "8e187172d0f0a93aa26e47616abbeb12fb241c983c78f9a646bdb58c1ff67507",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "870e44aa1fada9af329991cc3885b4286f14d3bf2ed1917058b267d2a06a1cd5",
+          "external_resistor_des.log": "b8d64258b978bb2a1487556bbb6d6fb968323675794d27dc52eb47b26a08a5b3"
+        }
+      }
+    },
+    "monolithic_jump": {
+      "source_sha256": "d2cfa9cd42672e22201f248d7bfb36e1f0489ed408ce8b0c2231bb19e2741b0b",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": null,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 85,
+        "last": {
+          "outer_voltage_V": 14099.8112144585,
+          "inner_voltage_V": 7.16025771894147,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139454679,
+          "h_current_A_per_um": -1.62988728291077e-08,
+          "total_current_A_per_um": 0.00140926509567396,
+          "Charge": 7.68401378010761e-15
+        },
+        "max_load_line_residual_V": 4.729372449219227e-11,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.967001156877015e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "d2cfa9cd42672e22201f248d7bfb36e1f0489ed408ce8b0c2231bb19e2741b0b",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "e79d752b782377bea600c574cd88a42901443f85424748d9faf34e9ca029a8d3",
+          "external_resistor_des.log": "c382d4407c5b4ccbd4994328eb5a52ee333486857d444ad0b9b6776d378a15ff"
+        }
+      }
+    },
+    "quadratic": {
+      "source_sha256": "14ced1c62ba3d7aa59a5c3fbf794d3401c40d6a77e56306b5366186ffa76bfb0",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": null,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 75,
+        "last": {
+          "outer_voltage_V": 14099.8112218454,
+          "inner_voltage_V": 7.16025528259638,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139542923,
+          "h_current_A_per_um": -1.62987729574285e-08,
+          "total_current_A_per_um": 0.00140926509665628,
+          "Charge": 7.68401339795176e-15
+        },
+        "max_load_line_residual_V": 6.366462912410498e-11,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 5.636021770903219e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "14ced1c62ba3d7aa59a5c3fbf794d3401c40d6a77e56306b5366186ffa76bfb0",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "4a47c9bc0a15d776ec8229340dadae37828286c71706ab2f3a2f56519e88a7d5",
+          "external_resistor_des.log": "ee008880fd32acc8e9155695ef9d940daf1c5a776353a558e5c406b1722220e4"
+        }
+      }
+    },
+    "reverse_branch": {
+      "source_sha256": "f7efb72dd56b91f9d1ca4c4936f7938cd00db5745ced4983e44609f9e815a0ca",
+      "minstep_failure": false,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": null,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": false,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": false,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": true
+        },
+        "status": "fail",
+        "states_checked": 11,
+        "last": {
+          "outer_voltage_V": 13000.0,
+          "inner_voltage_V": 6.63774406432838,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00129933666709148,
+          "h_current_A_per_um": -4.4149791144807e-10,
+          "total_current_A_per_um": 0.00129933622559357,
+          "Charge": 7.52472463019736e-15
+        },
+        "max_load_line_residual_V": 4.9112713895738125e-11,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.699346927658636e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": false,
+          "voltage_qs_only": false,
+          "original_final_voltage_goal": false,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "f7efb72dd56b91f9d1ca4c4936f7938cd00db5745ced4983e44609f9e815a0ca",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "c090d087f0bc03e5d8964d323c700e52983f47ba3268057ea28c04e64364e689",
+          "external_resistor_des.log": "4515d855793859ee527e8964c6798f23fdd4faf56dfaaeb08db26e92c95a578b"
+        }
+      }
+    },
+    "segmented_jump": {
+      "source_sha256": "353019f5ad6a0917c49dc5a39272b1eb5885dd67d91872e60ea704bb27073ced",
+      "minstep_failure": false,
+      "current_stop_reported": false,
+      "good_bye_reported": false,
+      "manual_stop": true,
+      "native_process_exit_code": null,
+      "original_zero_qs_validation": {
+        "status": "fail",
+        "input_error": "DF-ISE xyplot text does not contain a Data block"
+      }
+    },
+    "wide_blocked": {
+      "source_sha256": "3000cc3f6d6cc0c2abd2d75d000f371b10be48eee543fd64ea615e9749fbd7b0",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 99,
+        "last": {
+          "outer_voltage_V": 14099.8112241213,
+          "inner_voltage_V": 7.16025405561982,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139572916,
+          "h_current_A_per_um": -1.62987226154239e-08,
+          "total_current_A_per_um": 0.00140926509700655,
+          "Charge": 7.68401320550749e-15
+        },
+        "max_load_line_residual_V": 6.260143660397066e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.988770246383997e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "3000cc3f6d6cc0c2abd2d75d000f371b10be48eee543fd64ea615e9749fbd7b0",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "deb70fb047ac31366c0e3efb1950d618556b3c51e7d976d0b67502afd6c30732",
+          "external_resistor_des.log": "728c3cac54cea31a1aa64454deca2da66fd488701199e913b266ac75a0f09db9"
+        }
+      }
+    },
+    "wide_jump": {
+      "source_sha256": "dc2aa23ba01ebde6de4213a16238f05e95e03157051e35d8e66f6be4188fb9ce",
+      "minstep_failure": true,
+      "current_stop_reported": false,
+      "good_bye_reported": true,
+      "manual_stop": false,
+      "native_process_exit_code": 0,
+      "original_zero_qs_validation": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 104,
+        "last": {
+          "outer_voltage_V": 14099.8112190806,
+          "inner_voltage_V": 7.16025635090942,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139508972,
+          "h_current_A_per_um": -1.62988167497017e-08,
+          "total_current_A_per_um": 0.00140926509627297,
+          "Charge": 7.68401356551849e-15
+        },
+        "max_load_line_residual_V": 8.913048077374697e-11,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.75561358733107e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+        "source_checks": {
+          "same_physics": true,
+          "same_electrodes_and_fixed_resistor": true,
+          "original_stop": true,
+          "voltage_qs_only": true,
+          "original_final_voltage_goal": true,
+          "original_avalanche_current_approximation": true,
+          "same_parameters": true
+        },
+        "schema": "vela.wp14.zero_qs_validation.v1",
+        "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+        "sha256": {
+          "external_resistor_sdevice.cmd": "dc2aa23ba01ebde6de4213a16238f05e95e03157051e35d8e66f6be4188fb9ce",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+          "external_resistor_des.plt": "f6f030879c54bc0fbac3b4389e32e08be43dd91bd077d726d72d339d7b0b6c5b",
+          "external_resistor_des.log": "be49ddc21c7b44e81fc38b44c0f4cfe133f106f8c0430d7033ad431f74407fc9"
+        }
+      }
+    }
+  },
+  "tests": {
+    "windows_release_registered_ctest": {
+      "passed": 4,
+      "selected": [
+        "sdevice_reference_artifacts",
+        "wp14_remaining_sources",
+        "wp14_external_recovery",
+        "wp14_zero_qs"
+      ],
+      "new_zero_qs_unittest_cases": 9,
+      "log": "build-release/qs_zero_20261006/ctest-final.log"
+    },
+    "full_suite_run": false,
+    "cpp_solver_changed": false,
+    "final_validator_unittest_cases_passed": 13,
+    "new_diagnostic_links_checked": 4
+  },
+  "excluded_claims": [
+    "original fixed-gate zero QS repair",
+    "dynamic stability",
+    "Vela/frontend field agreement",
+    "SLOT LDMOS qualification"
+  ],
+  "auxiliary_gate_control": {
+    "status": "executed_and_failed",
+    "controls": 2,
+    "accepted_states_physically_checked": 394,
+    "report": "bvmethods_auxiliary_gate_qs_2026-10-06.json",
+    "archive": {
+      "remote": "/home/tcad/vela_reference_artifacts/bvmethods_zero_qs_controls/v2",
+      "files_verified_including_inventory": 36,
+      "member_set_sizes_and_hashes_verified": true,
+      "tar_sha256": "8059f2d3957ae937ef294b621c2ffb3fba8167f93ede8c08d055d0f2fc640f7b",
+      "inventory_sha256": "bfd581366d2c9573e4fde648dac34eb8b6513cc4dbe59cc25fe375bb14c153dc"
+    }
+  }
+}

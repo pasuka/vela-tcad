@@ -22,6 +22,9 @@ The SHA-256 is checked before installation or extraction starts.
 
 For Ubuntu, build **inside Ubuntu 26.04 x86_64**, using a separate Ninja build
 directory and installed C++ dependencies (including Catch2 3 and HDF5).
+Linux packaging additionally requires `readelf` (binutils) and `patchelf`;
+pass `--patchelf /path/to/patchelf` when the editor is not on PATH. These are
+build-time tools and are not needed on the user's machine.
 The packager rejects a different distribution/version instead of labeling its
 binaries as an Ubuntu 26.04 package.
 
@@ -66,10 +69,30 @@ vela/
   PACKAGE_MANIFEST.json
 ```
 
-Both launcher entry points work after relocation. Linux executables use inherited
-`$ORIGIN/../lib` RPATH for transitive library resolution. glibc and the ELF loader
+Both launcher entry points work after relocation. Linux uses **DT_RUNPATH**,
+with paths relative to each ELF object's `$ORIGIN` (its own directory, independent
+of the caller's working directory):
+
+| ELF location | Runtime library search path |
+| --- | --- |
+| `bin/vela`, `bin/vela_example_runner`, `bin/sentaurus_import` | `$ORIGIN/../lib` |
+| Root `vela` launcher | `$ORIGIN/lib` |
+| Bundled libraries in `lib/` | `$ORIGIN` |
+| Bundled Python executables and extension libraries | Their own directory, the private Python `lib/`, then the Vela `lib/`, all expressed using `$ORIGIN` |
+
+RUNPATH resolves direct dependencies only. The packager therefore normalizes
+**every dynamic ELF**, including copied third-party and Python libraries, before
+recording file hashes. Existing RPATH and absolute search paths are replaced;
+package-local `$ORIGIN`-qualified DT_NEEDED entries are resolved and converted
+to the target library's SONAME. Absolute, escaping or missing dependency paths
+are rejected. The manifest's `elf_runpaths` lists the verified values and any
+DT_NEEDED rewrites. Packaging stops if the required tools or tag verification
+fail. glibc and the ELF loader
 remain platform dependencies; HDF5 and the other non-glibc runtime libraries are
-included. Windows dependencies are collected with CMake's runtime dependency set
+included. The assembly step also collects the standalone Python runtime's
+non-glibc dependencies (including `_crypt`'s `libcrypt.so.1`) and their license
+texts. `libutil.so.1` remains a libc6-provided platform dependency.
+Windows dependencies are collected with CMake's runtime dependency set
 and checked against the actual import tables.
 
 Windows Python's isolated `python312._pth` contains `python312.zip`, `.`, and
@@ -117,7 +140,10 @@ exports `models.par` with `-P`, and uses that file in the original PN2D IV comma
 fixture copied onto the synthetic four-node/two-triangle mesh. It verifies the
 10 V goal and PLT/VTU/PVD publication, starts the TDR importer, and checks every
 manifest hash and bundled license text. Linux additionally verifies that `ldd`
-resolves every non-glibc dependency inside the relocated package.
+resolves every non-glibc dependency of every dynamic ELF inside the relocated
+package, and that all paths are package-relative RUNPATH with no RPATH remaining.
+An independent executable -> shared library -> shared library probe demonstrates
+that indirect dependencies work after relocation without `LD_LIBRARY_PATH`.
 
 The Linux concurrency matrix runs four distinct commands in one directory and
 one command in each of four directories, comparing PLT bytes and all ASCII VTU
