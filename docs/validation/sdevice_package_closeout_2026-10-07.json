@@ -1,0 +1,2048 @@
+{
+  "schema": "vela.sdevice.package_closeout.v1",
+  "date": "2026-10-07",
+  "runtime_commit": "0a89942ef8c487b5dd8487884ec51ade48ba8cdc",
+  "validation_repair_commit": "f96edf5f202fe16342d412307f49125959d05992",
+  "gate_controller_repair_commit": "fd0396d793dc26602b3c07d7a540703eaa743d4e",
+  "contract_sha256": "99c687d07a395afee506609796390eaa046c9d8f69a74d7b263b0f3a87a1fb9d",
+  "source_archive_sha256": "0c6002d68fdc28dacda2fef562c9d1e81a79823a9bd5c9d07354ac516d4f0f15",
+  "validation_source_archive_sha256": "2d01f6bcc93dbc2e3ec8a418fc6a47991f9810fe816834908154a05c14cc8b83",
+  "unchanged_physics_and_limits": true,
+  "units": {
+    "length": "um",
+    "density": "cm^-3",
+    "current": "A/um",
+    "field": "V/cm"
+  },
+  "pure_zero_qs": "unqualified; existing failures retained; outside this closeout",
+  "platforms": {
+    "windows": {
+      "archive": "build-release/closeout_20261007/packages/vela-0.1.0-win64.zip",
+      "archive_sha256": "11519380da7b2ded07f3275250505fbb824a78aff892b2b675695691e0df5bb6",
+      "manifest_sha256": "9e448ec18226d319f921884666d0299b89b6084ff9bc7a72c78e11260352290f",
+      "package_commit": "0a89942ef8c487b5dd8487884ec51ade48ba8cdc",
+      "elf_runpaths": null,
+      "native_e2e_summary_sha256": "6c1a46edbb5ddf7845266d3724fd6ebe885e0b9b48a0570f638c4e6f86844d04",
+      "controller_sha256": "30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26",
+      "package_e2e_tool_sha256": "4a1c864e1b0335dfac2dd6d4718bc6a1582366ca2c6fd3921f9227e51b0f715b",
+      "execution_batches": [
+        {
+          "path": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-e2e\\package_e2e_summary.json",
+          "sha256": "2b35ec9ea547df30fec2f1bf1a1f467b73924afccb48c38868fce70d300db845",
+          "status": "fail",
+          "controller_sha256": "30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26",
+          "cases": [
+            {
+              "case": "pn2d_0v",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-e2e\\pn2d_0v\\pn2d_0v_ngqk5zii\\acceptance_report.json",
+              "sha256": "af5f16645c0fe7db72b0d9d892449ee49868bd78301e8c38f5c8bdaa69ff859e"
+            },
+            {
+              "case": "pn2d_iv",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-e2e\\pn2d_iv\\pn2d_iv_pwzqyucf\\acceptance_report.json",
+              "sha256": "93d463f14442225c4a8e335122ada98bece1fe84829b0ea4a7beb78b6ee335cb"
+            },
+            {
+              "case": "pn2d_bv",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-e2e\\pn2d_bv\\pn2d_bv_v8f3tjfc\\acceptance_report.json",
+              "sha256": "961c06e403ccd18e6dac6167249f8323661f56e4e26a5d877f64bc8f499f0427"
+            },
+            {
+              "case": "gates",
+              "exit_code": 1,
+              "status": "fail",
+              "report": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-e2e\\gates\\gates_hs0imxae\\acceptance_report.json",
+              "sha256": "16a0fca4fafb65f75724839f94216a379a2d8973a40713742d4dbbe033492e23"
+            }
+          ]
+        },
+        {
+          "path": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-gates-retry\\package_e2e_summary.json",
+          "sha256": "16d609d01252ccfa8b6e26876e84bfeea62fcd23a52ebede56e92a7c0b5224ca",
+          "status": "pass",
+          "controller_sha256": "fa4977e97e6c27cf783148632e60e956c65d532c46acfc2ef8bfac563533a058",
+          "cases": [
+            {
+              "case": "gates",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-gates-retry\\gates\\gates_ekecitl4\\acceptance_report.json",
+              "sha256": "a3810510974e76f4a510a9a72d2f169985761e1ec150d219918b3c8ae0b2f755"
+            }
+          ]
+        }
+      ],
+      "controller_hash_scope": "initial controller hash; each case also records its executed controller hash",
+      "fresh_candidates": true,
+      "package_unchanged": true,
+      "cases": [
+        {
+          "case": "pn2d_0v",
+          "report_sha256": "af5f16645c0fe7db72b0d9d892449ee49868bd78301e8c38f5c8bdaa69ff859e",
+          "controller_sha256": "30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "status": "pass",
+            "max_absolute_current_A_per_um": 6.88782185087155e-25,
+            "max_kcl_relative": 1.4814572809906694e-14
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "ceaae26b729b3564c5230a58ad6ee3902785727c1d96fa0c80460f5dbd3430ac"
+          },
+          "biased_fields": {
+            "status": "not_required"
+          }
+        },
+        {
+          "case": "pn2d_iv",
+          "report_sha256": "93d463f14442225c4a8e335122ada98bece1fe84829b0ea4a7beb78b6ee335cb",
+          "controller_sha256": "30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "available": true,
+            "reference_column": "I",
+            "candidate_column": "I",
+            "points_compared": 3,
+            "reference_bias_range": [
+              0.2,
+              0.3
+            ],
+            "candidate_scale": 1.0,
+            "candidate_bias_scale": 1.0,
+            "candidate_bias_offset": 0.0,
+            "interpolation": "log_current",
+            "reference_trend": "increasing",
+            "candidate_trend": "increasing",
+            "trend_match": true,
+            "orders_of_magnitude": 0.000204180641173872,
+            "max_relative_error": 0.00047003280060093695,
+            "status": "pass",
+            "max_kcl_relative": 0.00021664910943669237,
+            "same_sign": true,
+            "derived_max_relative_error": 1.5118864315095801
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "ceaae26b729b3564c5230a58ad6ee3902785727c1d96fa0c80460f5dbd3430ac",
+            "stage01.csv": "bcd94f248e745c9c165823a9b978d99dec9d3cd21fe026431374f043d6cc75ff"
+          },
+          "biased_fields": {
+            "status": "pass",
+            "fields": {
+              "ElectrostaticPotential": {
+                "nodes": 1943,
+                "rms": 6.246377771034662e-06,
+                "absolute_p95": 6.972237350436061e-06,
+                "maximum_diagnostic": 2.757823024357453e-05,
+                "pass": true
+              },
+              "eDensity": {
+                "nodes": 1926,
+                "rms": 0.00015066649756694003,
+                "absolute_p95": 0.00022338345619224485,
+                "maximum_diagnostic": 0.0005804212648693624,
+                "pass": true
+              },
+              "hDensity": {
+                "nodes": 1926,
+                "rms": 0.00015204308341940063,
+                "absolute_p95": 0.00022338712623633732,
+                "maximum_diagnostic": 0.0005804212648696038,
+                "pass": true
+              },
+              "ElectricField": {
+                "nodes": 1943,
+                "rms": 17.561867035474652,
+                "absolute_p95": 13.778292744106599,
+                "maximum_diagnostic": 160.33433877980133,
+                "global_relative_l2": 0.0010380529947802478,
+                "junction_relative_l2": 0.0009948758635736732,
+                "comparison": "vector",
+                "pass": true
+              }
+            },
+            "failed_fields": [],
+            "nodes": 1943,
+            "bias_V": 0.2,
+            "reference_tdr_sha256": "528d8fab1201d929ac9a6923b8261dfc6e0965680a6cae3b31eb7725303ec619",
+            "candidate_vtu_sha256": "364d86a917044b81f188c7260baa4b3c7a3899d681501c49c301383c20afd00c",
+            "acceptance_required": true,
+            "anchors": [
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.246377771034662e-06,
+                    "absolute_p95": 6.972237350436061e-06,
+                    "maximum_diagnostic": 2.757823024357453e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 1926,
+                    "rms": 0.00015066649756694003,
+                    "absolute_p95": 0.00022338345619224485,
+                    "maximum_diagnostic": 0.0005804212648693624,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 1926,
+                    "rms": 0.00015204308341940063,
+                    "absolute_p95": 0.00022338712623633732,
+                    "maximum_diagnostic": 0.0005804212648696038,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 17.561867035474652,
+                    "absolute_p95": 13.778292744106599,
+                    "maximum_diagnostic": 160.33433877980133,
+                    "global_relative_l2": 0.0010380529947802478,
+                    "junction_relative_l2": 0.0009948758635736732,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": 0.2,
+                "reference_tdr_sha256": "528d8fab1201d929ac9a6923b8261dfc6e0965680a6cae3b31eb7725303ec619",
+                "candidate_vtu_sha256": "364d86a917044b81f188c7260baa4b3c7a3899d681501c49c301383c20afd00c",
+                "acceptance_required": true
+              }
+            ],
+            "diagnostic_status": "not_required"
+          }
+        },
+        {
+          "case": "pn2d_bv",
+          "report_sha256": "961c06e403ccd18e6dac6167249f8323661f56e4e26a5d877f64bc8f499f0427",
+          "controller_sha256": "30f8909a770617296c669489a0a20edff66f48dd184d96b1032f89131276eb26",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "available": true,
+            "reference_column": "I",
+            "candidate_column": "I",
+            "points_compared": 409,
+            "reference_bias_range": [
+              -20.0,
+              -0.05
+            ],
+            "candidate_scale": 1.0,
+            "candidate_bias_scale": 1.0,
+            "candidate_bias_offset": 0.0,
+            "interpolation": "log_current",
+            "reference_trend": "increasing",
+            "candidate_trend": "increasing",
+            "trend_match": true,
+            "orders_of_magnitude": 0.0014515860513783447,
+            "max_relative_error": 0.0033368208010270046,
+            "status": "pass",
+            "max_kcl_relative": 0.0033762086317110362,
+            "same_sign": true,
+            "derived_max_relative_error": 1.5118864315095801
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "breakdown_knee": {
+            "status": "pass",
+            "definition": "analyze_pn2d_avalanche_on_bv_parity.continuous_breakpoint: continuous two-segment log10(|I|) fit, 0.001 V knot grid; fitted knee metric, not a current-threshold or ionization-integral breakdown",
+            "threshold_source": "docs/validation/contracts/pn2d_node_volume_policy_atomic_default_acceptance_v2.json:avalanche_on_gate.maximum_V_break_absolute_error_V",
+            "biases_V": [
+              -18.0,
+              -18.5,
+              -19.0,
+              -19.25,
+              -19.5,
+              -19.7,
+              -19.8,
+              -19.85,
+              -19.9,
+              -19.95,
+              -20.0
+            ],
+            "reference_fitted_knee_V": -19.405,
+            "candidate_fitted_knee_V": -19.405,
+            "absolute_error_V": 0.0,
+            "maximum_absolute_error_V": 0.1,
+            "slope_crossing_V": {
+              "reference": null,
+              "candidate": null
+            },
+            "slope_outcome": "shared_no_crossing"
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "f4cf60544a1a3c0a521d7a07f181409e9789744c1348e3c4199b7313529ab540",
+            "stage01.csv": "f8f4dd6ec0b1605396f24fe79e9d2941d8297078f0f05df3a6b0718100084e59"
+          },
+          "biased_fields": {
+            "status": "pass",
+            "fields": {
+              "ElectrostaticPotential": {
+                "nodes": 1943,
+                "rms": 7.2865453189307485e-06,
+                "absolute_p95": 1.0665542712118281e-05,
+                "maximum_diagnostic": 1.0918248570579436e-05,
+                "pass": true
+              },
+              "eDensity": {
+                "nodes": 442,
+                "rms": 5.3415126357416815e-05,
+                "absolute_p95": 0.0001505095171971639,
+                "maximum_diagnostic": 0.0002181803185354909,
+                "pass": true
+              },
+              "hDensity": {
+                "nodes": 442,
+                "rms": 5.3414946944902104e-05,
+                "absolute_p95": 0.0001505095172083998,
+                "maximum_diagnostic": 0.00021817917919517043,
+                "pass": true
+              },
+              "ElectricField": {
+                "nodes": 1943,
+                "rms": 543.6723540946368,
+                "absolute_p95": 670.8969452319434,
+                "maximum_diagnostic": 4070.9085559218656,
+                "global_relative_l2": 0.005026224670802084,
+                "junction_relative_l2": 0.00015612594766567682,
+                "comparison": "vector",
+                "pass": true
+              }
+            },
+            "failed_fields": [],
+            "nodes": 1943,
+            "bias_V": -13.2,
+            "reference_tdr_sha256": "3a859a827980c6199c65d246d2c379b3c119f9e628b0464ab9106e4efbdc9b32",
+            "candidate_vtu_sha256": "6458fd2898083eb84fbd97622b73eb3d10c7c10cfb91e7133c1970ea6fb51d29",
+            "acceptance_required": true,
+            "anchors": [
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.0057732347908055e-06,
+                    "absolute_p95": 6.972236631375139e-06,
+                    "maximum_diagnostic": 6.9722366314306505e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 1120,
+                    "rms": 6.325455342347597e-05,
+                    "absolute_p95": 0.0001410107822099181,
+                    "maximum_diagnostic": 0.00015205171981804845,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 1120,
+                    "rms": 6.325416731057803e-05,
+                    "absolute_p95": 0.00014101029330502,
+                    "maximum_diagnostic": 0.00015204678032441565,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 20.3261661615936,
+                    "absolute_p95": 25.7808795431273,
+                    "maximum_diagnostic": 160.3757609371096,
+                    "global_relative_l2": 0.0009494326061953938,
+                    "junction_relative_l2": 0.0008487608752708471,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -0.05,
+                "reference_tdr_sha256": "dfcf66bb86868457f8ce7079066e2d43020f8387b9be10728c954af262073c06",
+                "candidate_vtu_sha256": "52709360c68c9d3c5f74978043ecf58da7604c8c098b2e9e31b275a1c69dfcb0",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 5.469358105844546e-06,
+                    "absolute_p95": 6.972236631264117e-06,
+                    "maximum_diagnostic": 6.972236631375139e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 922,
+                    "rms": 5.3041091457931156e-05,
+                    "absolute_p95": 0.00011017461631826008,
+                    "maximum_diagnostic": 0.00011297448787844792,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 922,
+                    "rms": 5.304108042813284e-05,
+                    "absolute_p95": 0.00011017462582602591,
+                    "maximum_diagnostic": 0.00011298868850753683,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 82.71537300002136,
+                    "absolute_p95": 160.26265958555376,
+                    "maximum_diagnostic": 498.9941932497354,
+                    "global_relative_l2": 0.002879866422183369,
+                    "junction_relative_l2": 0.000584500561027013,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -1.0,
+                "reference_tdr_sha256": "e5692c524b481197ae7ba35897cd872cfa3c418a8d4bbf19130d4d79686369a4",
+                "candidate_vtu_sha256": "db70b43be8cd4e56a17208ad83052469ab43b85d161f34cb4bdc052ae5b82eeb",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 5.0541448341033484e-06,
+                    "absolute_p95": 6.972236631264117e-06,
+                    "maximum_diagnostic": 6.972236631264117e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 559,
+                    "rms": 5.9428801309254005e-05,
+                    "absolute_p95": 0.00015518659601814893,
+                    "maximum_diagnostic": 0.0001554306638002875,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 559,
+                    "rms": 5.942430092034229e-05,
+                    "absolute_p95": 0.00015510859709074582,
+                    "maximum_diagnostic": 0.0001554545556636317,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.3450218997425,
+                    "absolute_p95": 677.0015726421989,
+                    "maximum_diagnostic": 4090.7863346706436,
+                    "global_relative_l2": 0.008982686850710303,
+                    "junction_relative_l2": 0.0002688889941429387,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -5.0,
+                "reference_tdr_sha256": "c71e497917bb394e2c19d2f7fe3cd9826052f933434fbfbebf53c177196869e2",
+                "candidate_vtu_sha256": "7f4244a5998a723eb8b352b933850ecd087f23c5e51d60602a614027a3690215",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.246318669095901e-06,
+                    "absolute_p95": 7.757206977365704e-06,
+                    "maximum_diagnostic": 7.816104957925063e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 459,
+                    "rms": 4.331366437639914e-05,
+                    "absolute_p95": 0.0001230019838338585,
+                    "maximum_diagnostic": 0.0001836566148562589,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 459,
+                    "rms": 4.331365742250489e-05,
+                    "absolute_p95": 0.00012300198382589572,
+                    "maximum_diagnostic": 0.00018365657060355887,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.0747578396725,
+                    "absolute_p95": 672.1143810851208,
+                    "maximum_diagnostic": 4074.255508884904,
+                    "global_relative_l2": 0.005948850954061675,
+                    "junction_relative_l2": 0.00018232590108671935,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -10.0,
+                "reference_tdr_sha256": "975b6c4ee96251cb5fdfdad3ff92b571b8ad6716ed700587225d2904ae4814e6",
+                "candidate_vtu_sha256": "7f3046e1d83c29ef151629aee8fe01da55ba72bb3b052bed9a5e2a595d16ef86",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 7.2865453189307485e-06,
+                    "absolute_p95": 1.0665542712118281e-05,
+                    "maximum_diagnostic": 1.0918248570579436e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 442,
+                    "rms": 5.3415126357416815e-05,
+                    "absolute_p95": 0.0001505095171971639,
+                    "maximum_diagnostic": 0.0002181803185354909,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 442,
+                    "rms": 5.3414946944902104e-05,
+                    "absolute_p95": 0.0001505095172083998,
+                    "maximum_diagnostic": 0.00021817917919517043,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.6723540946368,
+                    "absolute_p95": 670.8969452319434,
+                    "maximum_diagnostic": 4070.9085559218656,
+                    "global_relative_l2": 0.005026224670802084,
+                    "junction_relative_l2": 0.00015612594766567682,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -13.2,
+                "reference_tdr_sha256": "3a859a827980c6199c65d246d2c379b3c119f9e628b0464ab9106e4efbdc9b32",
+                "candidate_vtu_sha256": "6458fd2898083eb84fbd97622b73eb3d10c7c10cfb91e7133c1970ea6fb51d29",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 8.016653013548767e-06,
+                    "absolute_p95": 1.2309460686310558e-05,
+                    "maximum_diagnostic": 1.2883213419634387e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 425,
+                    "rms": 5.048204052634448e-05,
+                    "absolute_p95": 0.0001316790429606258,
+                    "maximum_diagnostic": 0.00021255023942071008,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 425,
+                    "rms": 5.04820396020063e-05,
+                    "absolute_p95": 0.00013167904294276103,
+                    "maximum_diagnostic": 0.0002125502339440255,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.9566163083256,
+                    "absolute_p95": 670.3917458703509,
+                    "maximum_diagnostic": 4069.643603797711,
+                    "global_relative_l2": 0.004648131085148172,
+                    "junction_relative_l2": 0.00014542997636039879,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -15.0,
+                "reference_tdr_sha256": "9a157d8645e6509b08823dd2090c0997b51a9ac16ec085034d9eb22a76a5d4bd",
+                "candidate_vtu_sha256": "3c25ecfaf69e80c20e36d9464a92c8a13003f782430fc677edba0bc6e8716a71",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.645061782214759e-06,
+                    "absolute_p95": 1.6284172712488498e-05,
+                    "maximum_diagnostic": 1.7263319919358366e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.613947762089522e-05,
+                    "absolute_p95": 0.0001761416385431105,
+                    "maximum_diagnostic": 0.0002629789735290486,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 408,
+                    "rms": 6.614027509202681e-05,
+                    "absolute_p95": 0.00017614163863340817,
+                    "maximum_diagnostic": 0.0002629838039405816,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.926740044322,
+                    "absolute_p95": 669.501398508437,
+                    "maximum_diagnostic": 4067.4936252495972,
+                    "global_relative_l2": 0.0039623072246789985,
+                    "junction_relative_l2": 0.00012577927233510826,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.5,
+                "reference_tdr_sha256": "4bab3e3bdc12eeaf09cccb826b0f58cb2971c9c5ef0909caa1be499b9f570e94",
+                "candidate_vtu_sha256": "f579445468e0a4a8e792bbca10b7856dddd5f7aa3da9a0bff5f46fa64e9f18ee",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.685702719436546e-06,
+                    "absolute_p95": 1.6363094136551126e-05,
+                    "maximum_diagnostic": 1.7361971703433454e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.715526644076518e-05,
+                    "absolute_p95": 0.00017943646581315015,
+                    "maximum_diagnostic": 0.0002659281855834066,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 408,
+                    "rms": 6.715595086076308e-05,
+                    "absolute_p95": 0.00017943646590721094,
+                    "maximum_diagnostic": 0.0002659323635591201,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.9502567249973,
+                    "absolute_p95": 669.4845403946762,
+                    "maximum_diagnostic": 4067.455442968814,
+                    "global_relative_l2": 0.00395010904121798,
+                    "junction_relative_l2": 0.00012542379424141092,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.6,
+                "reference_tdr_sha256": "458a9e30fff65249550eee24905eda09ba3dbc88015091e83c98963864137755",
+                "candidate_vtu_sha256": "d7bf2f3ef9b0a9d717659a40b3f0836882e0be173e3d3ee04141cedef3f044d2",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.728508079733041e-06,
+                    "absolute_p95": 1.6445712587298544e-05,
+                    "maximum_diagnostic": 1.746524476997635e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.82241494991508e-05,
+                    "absolute_p95": 0.00018288623842204336,
+                    "maximum_diagnostic": 0.000269010876822683,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 459,
+                    "rms": 0.0001003383416619748,
+                    "absolute_p95": 0.0002317383889859494,
+                    "maximum_diagnostic": 0.0002690036554696389,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.9727212508527,
+                    "absolute_p95": 669.4674888175796,
+                    "maximum_diagnostic": 4067.417288934579,
+                    "global_relative_l2": 0.003937999179788981,
+                    "junction_relative_l2": 0.00012507122791964256,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.7,
+                "reference_tdr_sha256": "22f278492a60714030b22c6031c36ba6408f9c52d7a3ddd641a033930636c8fd",
+                "candidate_vtu_sha256": "c9e23a6b4a373cbc791f07a5b89584cfb0e29d31b242dfd024e27b152f9a7dd6",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.869574303781318e-06,
+                    "absolute_p95": 1.6714463923150902e-05,
+                    "maximum_diagnostic": 1.780118371419448e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 459,
+                    "rms": 0.00011796148768399143,
+                    "absolute_p95": 0.0002900917937627326,
+                    "maximum_diagnostic": 0.00029088619347232005,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 905,
+                    "rms": 0.00021195474023387933,
+                    "absolute_p95": 0.00030289940359277744,
+                    "maximum_diagnostic": 0.0003284198446189948,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 545.0330196761172,
+                    "absolute_p95": 669.4152736725518,
+                    "maximum_diagnostic": 4067.3030871853116,
+                    "global_relative_l2": 0.0039021535605160648,
+                    "junction_relative_l2": 0.00012403105886533405,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -20.0,
+                "reference_tdr_sha256": "45882f74722ee7f54d45c594138fbd63fe3af360691deb438fa0abdaac22a751",
+                "candidate_vtu_sha256": "a21e9c36d5c5619d492af3d3b85f12672531ceb1553a3289a254840225868576",
+                "acceptance_required": true
+              }
+            ],
+            "diagnostic_status": "not_required",
+            "qualification": {
+              "id": "pn2d-bv-v2-ten-spatial-anchors-300K-cell-vector-20261006",
+              "scope": "Same-mesh PN2D v2 at ten explicitly pinned bias anchors from -0.05 to -20 V, 300 K; explicit atomic SG/GSS-Laux self-consistent avalanche and transport-cell-vector high-field GradQF mobility. No continuous spatial or other-mesh qualification.",
+              "evidence": "docs/validation/sdevice_followup_2026-10-06.md",
+              "limits": {
+                "potential_rmse_V": 0.0005,
+                "potential_p95_V": 0.001,
+                "carrier_active_reference_min_cm3": 100000.0,
+                "carrier_active_min_nodes": 100,
+                "carrier_log_rmse_dex": 0.005,
+                "carrier_log_p95_dex": 0.01,
+                "field_relative_l2": 0.02,
+                "junction_field_relative_l2": 0.02,
+                "coordinate_tolerance_um": 1e-10,
+                "junction_x_um": 1.0,
+                "junction_half_width_um": 0.1
+              },
+              "required_biases_V": [
+                -0.05,
+                -1.0,
+                -5.0,
+                -10.0,
+                -13.2,
+                -15.0,
+                -19.5,
+                -19.6,
+                -19.7,
+                -20.0
+              ]
+            }
+          }
+        },
+        {
+          "case": "gates",
+          "report_sha256": "a3810510974e76f4a510a9a72d2f169985761e1ec150d219918b3c8ae0b2f755",
+          "controller_sha256": "fa4977e97e6c27cf783148632e60e956c65d532c46acfc2ef8bfac563533a058",
+          "status": "pass",
+          "gates": [
+            {
+              "cmd": "schottky_n_des.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "schottky_charon_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "41d80836c82a09bed290f0f815d1c50c4d0a0531bd9ecb26104685791ef33fa0",
+              "grid_sha256": "a4bb8a4c93dcee13d62add4f930697e0c4fa12adb7401563073327f8ba44dcf3"
+            },
+            {
+              "cmd": "aba_poisson_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "aba_coupled_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "external_resistor_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "voltage_to_current_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\windows-gates-retry\\gates\\gates_ekecitl4\\transport_rejection\\pp6_des.cmd",
+              "expected_exit_code": 1,
+              "exit_code": 1,
+              "diagnostics": "E105: Command file failed input gates\n",
+              "fatal_ids": [
+                "E105",
+                "E109"
+              ],
+              "pass": true
+            }
+          ]
+        }
+      ]
+    },
+    "ubuntu26.04": {
+      "archive": "build-release/closeout_20261007/packages/vela-0.1.0-ubuntu26.04-x86_64.tar.gz",
+      "archive_sha256": "a12d882a57b876b1535dbce56462a5f8b2d62bfba1a93feea34b5dcdedbd6afc",
+      "manifest_sha256": "8f8e78cdcb4aa1693aea3d73bc578b664c8db8b20fd42cbb7e1cf2cd118f1c3c",
+      "package_commit": "0a89942ef8c487b5dd8487884ec51ade48ba8cdc",
+      "elf_runpaths": [
+        {
+          "path": "bin/python/bin/python3.12",
+          "runpath": "$ORIGIN:$ORIGIN/../lib:$ORIGIN/../../../lib"
+        },
+        {
+          "path": "bin/python/lib/itcl4.3.5/libtcl9itcl4.3.5.so",
+          "runpath": "$ORIGIN:$ORIGIN/..:$ORIGIN/../../../../lib"
+        },
+        {
+          "path": "bin/python/lib/libpython3.12.so.1.0",
+          "runpath": "$ORIGIN:$ORIGIN/../../../lib"
+        },
+        {
+          "path": "bin/python/lib/libpython3.so",
+          "runpath": "$ORIGIN:$ORIGIN/../../../lib",
+          "needed_rewrites": [
+            {
+              "from": "$ORIGIN/../lib/libpython3.12.so.1.0",
+              "to": "libpython3.12.so.1.0"
+            }
+          ]
+        },
+        {
+          "path": "bin/python/lib/libtcl9.0.so",
+          "runpath": "$ORIGIN:$ORIGIN/../../../lib"
+        },
+        {
+          "path": "bin/python/lib/libtcl9tk9.0.so",
+          "runpath": "$ORIGIN:$ORIGIN/../../../lib"
+        },
+        {
+          "path": "bin/python/lib/python3.12/lib-dynload/_crypt.cpython-312-x86_64-linux-gnu.so",
+          "runpath": "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../../../../lib"
+        },
+        {
+          "path": "bin/python/lib/python3.12/lib-dynload/_ctypes_test.cpython-312-x86_64-linux-gnu.so",
+          "runpath": "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../../../../lib"
+        },
+        {
+          "path": "bin/python/lib/python3.12/lib-dynload/_dbm.cpython-312-x86_64-linux-gnu.so",
+          "runpath": "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../../../../lib"
+        },
+        {
+          "path": "bin/python/lib/python3.12/lib-dynload/_tkinter.cpython-312-x86_64-linux-gnu.so",
+          "runpath": "$ORIGIN:$ORIGIN/../..:$ORIGIN/../../../../../lib"
+        },
+        {
+          "path": "bin/python/lib/thread3.0.4/libtcl9thread3.0.4.so",
+          "runpath": "$ORIGIN:$ORIGIN/..:$ORIGIN/../../../../lib"
+        },
+        {
+          "path": "bin/sentaurus_import",
+          "runpath": "$ORIGIN/../lib"
+        },
+        {
+          "path": "bin/vela",
+          "runpath": "$ORIGIN/../lib"
+        },
+        {
+          "path": "bin/vela_example_runner",
+          "runpath": "$ORIGIN/../lib"
+        },
+        {
+          "path": "lib/libamd.so.3.3.4",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libblas.so.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libbrotlicommon.so.1.2.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libbrotlidec.so.1.2.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcamd.so.3.3.5",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libccolamd.so.3.3.5",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcholmod.so.5.3.4",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcolamd.so.3.3.5",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcom_err.so.2.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcrypt.so.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcrypto.so.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libcurl.so.4.8.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libffi.so.8.2.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libfmt.so.10.1.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgcc_s.so.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgfortran.so.5.0.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgmp.so.10.5.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgnutls.so.30.41.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgomp.so.1.0.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libgssapi_krb5.so.2.2",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libhdf5_serial.so.310.5.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libhogweed.so.6.11",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libidn2.so.0.4.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libk5crypto.so.3.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libkeyutils.so.1.10",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libkrb5.so.3.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libkrb5support.so.0.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/liblapack.so.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/liblber.so.2.0.200",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libldap.so.2.0.200",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libmetis.so.5.1.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libmvec.so.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libnettle.so.8.11",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libnghttp2.so.14.29.2",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libopenblasp-r0.3.32.so",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libp11-kit.so.0.4.8",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libpsl.so.5.3.4",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/librtmp.so.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libsasl2.so.2.0.25",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libspdlog.so.1.15.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libspqr.so.4.3.6",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libssh2.so.1.0.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libssl.so.3",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libstdc++.so.6.0.35",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libsuitesparseconfig.so.7.12.2",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libsz.so.2.0.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libtasn1.so.6.6.5",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libumfpack.so.6.3.7",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libunistring.so.5.2.0",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libz.so.1.3.1",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "lib/libzstd.so.1.5.7",
+          "runpath": "$ORIGIN"
+        },
+        {
+          "path": "vela",
+          "runpath": "$ORIGIN/lib"
+        }
+      ],
+      "native_e2e_summary_sha256": "3e9a982b751c8d4ba212335d6215409de1a93937d9fb1e35bc78ce7071627f24",
+      "controller_sha256": "ca4c6e05672610180db82fb1b281a103f92e6bb6472fe01e8c1908a308d739aa",
+      "package_e2e_tool_sha256": "4f80b6d56820fad1d5d94bb02ef3fdecb07af8543d9ac2292a90d8794446f955",
+      "execution_batches": [
+        {
+          "path": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\linux-initial-e2e-summary.json",
+          "sha256": "1d78c755e9dc27b9e50c4b8d1fbdb75d861e620a8eecafda8fe04ddbff1e79c9",
+          "status": "fail",
+          "controller_sha256": "ca4c6e05672610180db82fb1b281a103f92e6bb6472fe01e8c1908a308d739aa",
+          "cases": [
+            {
+              "case": "pn2d_0v",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-e2e/pn2d_0v/pn2d_0v_5qu6yokl/acceptance_report.json",
+              "sha256": "deb97566d92afbf4fc426fe96793fd1971789fe3d905fcda8e4549f9bffbfaba"
+            },
+            {
+              "case": "pn2d_iv",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-e2e/pn2d_iv/pn2d_iv_8u_hg6rm/acceptance_report.json",
+              "sha256": "9fec7c05e5cd2414da57377d811d11275f5876eafb894039933270deb834db0b"
+            },
+            {
+              "case": "pn2d_bv",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-e2e/pn2d_bv/pn2d_bv_rw1j5eio/acceptance_report.json",
+              "sha256": "dd7dfa7488b5870ed2fa3df50f2b3274dc0cf7d3e0c7db8f344abd3e20c7ada6"
+            },
+            {
+              "case": "gates",
+              "exit_code": 1,
+              "status": "fail",
+              "report": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-e2e/gates/gates_uaqzalcx/acceptance_report.json",
+              "sha256": "1d32237ff775ff267729e489b04411f4f11483d74beba00a99ea7fe61b0c5dcf"
+            }
+          ]
+        },
+        {
+          "path": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\closeout_20261007\\linux-gates-e2e-summary.json",
+          "sha256": "6b8a60c7f7ebc100ebdcac502d15225949ed9ddc23d54bb4792063f007a8db90",
+          "status": "pass",
+          "controller_sha256": "e39ce39ecff10b6e7113e86ee84ee282062746a0fa00759f65f8f5661d1f6183",
+          "cases": [
+            {
+              "case": "gates",
+              "exit_code": 0,
+              "status": "pass",
+              "report": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-gates-retry/gates/gates_p66b9f3h/acceptance_report.json",
+              "sha256": "6fb07c066dd041dd938f56dc069e1749ab59e691cd36017f20970d52413f9bf2"
+            }
+          ]
+        }
+      ],
+      "controller_hash_scope": "initial controller hash; each case also records its executed controller hash",
+      "fresh_candidates": true,
+      "package_unchanged": true,
+      "cases": [
+        {
+          "case": "pn2d_0v",
+          "report_sha256": "deb97566d92afbf4fc426fe96793fd1971789fe3d905fcda8e4549f9bffbfaba",
+          "controller_sha256": "ca4c6e05672610180db82fb1b281a103f92e6bb6472fe01e8c1908a308d739aa",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "status": "pass",
+            "max_absolute_current_A_per_um": 6.88782185087155e-25,
+            "max_kcl_relative": 7.825631556701569e-14
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "d90331cdbc4e6019ac065723e8ec6fa399785a0012256c4f10eeeac65db3550d"
+          },
+          "biased_fields": {
+            "status": "not_required"
+          }
+        },
+        {
+          "case": "pn2d_iv",
+          "report_sha256": "9fec7c05e5cd2414da57377d811d11275f5876eafb894039933270deb834db0b",
+          "controller_sha256": "ca4c6e05672610180db82fb1b281a103f92e6bb6472fe01e8c1908a308d739aa",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "available": true,
+            "reference_column": "I",
+            "candidate_column": "I",
+            "points_compared": 3,
+            "reference_bias_range": [
+              0.2,
+              0.3
+            ],
+            "candidate_scale": 1.0,
+            "candidate_bias_scale": 1.0,
+            "candidate_bias_offset": 0.0,
+            "interpolation": "log_current",
+            "reference_trend": "increasing",
+            "candidate_trend": "increasing",
+            "trend_match": true,
+            "orders_of_magnitude": 0.00020418064117353434,
+            "max_relative_error": 0.00047003280060020863,
+            "status": "pass",
+            "max_kcl_relative": 0.00021664910943633244,
+            "same_sign": true,
+            "derived_max_relative_error": 1.5118864315095801
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "d90331cdbc4e6019ac065723e8ec6fa399785a0012256c4f10eeeac65db3550d",
+            "stage01.csv": "1cabed785f1fc97c5b1e8fc1bfbd899473cf4f44784a6cf933ab934e33217562"
+          },
+          "biased_fields": {
+            "status": "pass",
+            "fields": {
+              "ElectrostaticPotential": {
+                "nodes": 1943,
+                "rms": 6.246377771035285e-06,
+                "absolute_p95": 6.972237350436061e-06,
+                "maximum_diagnostic": 2.757823024357453e-05,
+                "pass": true
+              },
+              "eDensity": {
+                "nodes": 1926,
+                "rms": 0.00015066649756691192,
+                "absolute_p95": 0.00022338345619224485,
+                "maximum_diagnostic": 0.0005804212648693624,
+                "pass": true
+              },
+              "hDensity": {
+                "nodes": 1926,
+                "rms": 0.00015204308341942765,
+                "absolute_p95": 0.00022338712623633732,
+                "maximum_diagnostic": 0.0005804212648696037,
+                "pass": true
+              },
+              "ElectricField": {
+                "nodes": 1943,
+                "rms": 17.561867035474947,
+                "absolute_p95": 13.778292744107153,
+                "maximum_diagnostic": 160.33433877979405,
+                "global_relative_l2": 0.0010380529947802545,
+                "junction_relative_l2": 0.0009948758635736773,
+                "comparison": "vector",
+                "pass": true
+              }
+            },
+            "failed_fields": [],
+            "nodes": 1943,
+            "bias_V": 0.2,
+            "reference_tdr_sha256": "528d8fab1201d929ac9a6923b8261dfc6e0965680a6cae3b31eb7725303ec619",
+            "candidate_vtu_sha256": "83ec720637382d47518c75df297a1de38ef3cc67bddd9cf0e383e1dd64c3eef7",
+            "acceptance_required": true,
+            "anchors": [
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.246377771035285e-06,
+                    "absolute_p95": 6.972237350436061e-06,
+                    "maximum_diagnostic": 2.757823024357453e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 1926,
+                    "rms": 0.00015066649756691192,
+                    "absolute_p95": 0.00022338345619224485,
+                    "maximum_diagnostic": 0.0005804212648693624,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 1926,
+                    "rms": 0.00015204308341942765,
+                    "absolute_p95": 0.00022338712623633732,
+                    "maximum_diagnostic": 0.0005804212648696037,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 17.561867035474947,
+                    "absolute_p95": 13.778292744107153,
+                    "maximum_diagnostic": 160.33433877979405,
+                    "global_relative_l2": 0.0010380529947802545,
+                    "junction_relative_l2": 0.0009948758635736773,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": 0.2,
+                "reference_tdr_sha256": "528d8fab1201d929ac9a6923b8261dfc6e0965680a6cae3b31eb7725303ec619",
+                "candidate_vtu_sha256": "83ec720637382d47518c75df297a1de38ef3cc67bddd9cf0e383e1dd64c3eef7",
+                "acceptance_required": true
+              }
+            ],
+            "diagnostic_status": "not_required"
+          }
+        },
+        {
+          "case": "pn2d_bv",
+          "report_sha256": "dd7dfa7488b5870ed2fa3df50f2b3274dc0cf7d3e0c7db8f344abd3e20c7ada6",
+          "controller_sha256": "ca4c6e05672610180db82fb1b281a103f92e6bb6472fe01e8c1908a308d739aa",
+          "status": "pass",
+          "goals_reached": true,
+          "curve": {
+            "available": true,
+            "reference_column": "I",
+            "candidate_column": "I",
+            "points_compared": 409,
+            "reference_bias_range": [
+              -20.0,
+              -0.05
+            ],
+            "candidate_scale": 1.0,
+            "candidate_bias_scale": 1.0,
+            "candidate_bias_offset": 0.0,
+            "interpolation": "log_current",
+            "reference_trend": "increasing",
+            "candidate_trend": "increasing",
+            "trend_match": true,
+            "orders_of_magnitude": 0.0014515860513783447,
+            "max_relative_error": 0.0033368208010270046,
+            "status": "pass",
+            "max_kcl_relative": 0.0033762095088589795,
+            "same_sign": true,
+            "derived_max_relative_error": 1.5118864315095801
+          },
+          "mesh": {
+            "nodes": 1943,
+            "cells": 3680
+          },
+          "breakdown_knee": {
+            "status": "pass",
+            "definition": "analyze_pn2d_avalanche_on_bv_parity.continuous_breakpoint: continuous two-segment log10(|I|) fit, 0.001 V knot grid; fitted knee metric, not a current-threshold or ionization-integral breakdown",
+            "threshold_source": "docs/validation/contracts/pn2d_node_volume_policy_atomic_default_acceptance_v2.json:avalanche_on_gate.maximum_V_break_absolute_error_V",
+            "biases_V": [
+              -18.0,
+              -18.5,
+              -19.0,
+              -19.25,
+              -19.5,
+              -19.7,
+              -19.8,
+              -19.85,
+              -19.9,
+              -19.95,
+              -20.0
+            ],
+            "reference_fitted_knee_V": -19.405,
+            "candidate_fitted_knee_V": -19.405,
+            "absolute_error_V": 0.0,
+            "maximum_absolute_error_V": 0.1,
+            "slope_crossing_V": {
+              "reference": null,
+              "candidate": null
+            },
+            "slope_outcome": "shared_no_crossing"
+          },
+          "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+          "candidate_csv_sha256": {
+            "stage00.csv": "177d89643aa5709e3db5b05a4c35689e553f461eec0c88f8eed5288b5325dbd5",
+            "stage01.csv": "9d73bdc0553a8a868d3e10f504de4fb997aa73207d1e2ae2cbd1d9f4d8c4c6f7"
+          },
+          "biased_fields": {
+            "status": "pass",
+            "fields": {
+              "ElectrostaticPotential": {
+                "nodes": 1943,
+                "rms": 7.2865453189728985e-06,
+                "absolute_p95": 1.0665542710341924e-05,
+                "maximum_diagnostic": 1.0918248570579436e-05,
+                "pass": true
+              },
+              "eDensity": {
+                "nodes": 442,
+                "rms": 5.3415126357606144e-05,
+                "absolute_p95": 0.0001505095171977885,
+                "maximum_diagnostic": 0.0002181803185373723,
+                "pass": true
+              },
+              "hDensity": {
+                "nodes": 442,
+                "rms": 5.3414946944902077e-05,
+                "absolute_p95": 0.00015050951720839978,
+                "maximum_diagnostic": 0.00021817917919517043,
+                "pass": true
+              },
+              "ElectricField": {
+                "nodes": 1943,
+                "rms": 543.672354094598,
+                "absolute_p95": 670.8969452317106,
+                "maximum_diagnostic": 4070.90855592172,
+                "global_relative_l2": 0.005026224670801851,
+                "junction_relative_l2": 0.00015612594766567557,
+                "comparison": "vector",
+                "pass": true
+              }
+            },
+            "failed_fields": [],
+            "nodes": 1943,
+            "bias_V": -13.2,
+            "reference_tdr_sha256": "3a859a827980c6199c65d246d2c379b3c119f9e628b0464ab9106e4efbdc9b32",
+            "candidate_vtu_sha256": "35ce656dfb9c2df5efcb633f713377035b35c265d545ec01928440d80eb276c3",
+            "acceptance_required": true,
+            "anchors": [
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.005773234793e-06,
+                    "absolute_p95": 6.972236631375139e-06,
+                    "maximum_diagnostic": 6.9722366314306505e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 1120,
+                    "rms": 6.325455342351291e-05,
+                    "absolute_p95": 0.0001410107822099181,
+                    "maximum_diagnostic": 0.00015205171981804845,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 1120,
+                    "rms": 6.32541673105258e-05,
+                    "absolute_p95": 0.00014101029330502,
+                    "maximum_diagnostic": 0.00015204678032441563,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 20.326166161594475,
+                    "absolute_p95": 25.780879543156516,
+                    "maximum_diagnostic": 160.3757609371096,
+                    "global_relative_l2": 0.000949432606195426,
+                    "junction_relative_l2": 0.0008487608752708511,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -0.05,
+                "reference_tdr_sha256": "dfcf66bb86868457f8ce7079066e2d43020f8387b9be10728c954af262073c06",
+                "candidate_vtu_sha256": "a59621c92262a41a954fd15312ff31bce5ca24e391c206728f765c504d881faa",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 5.469358105842388e-06,
+                    "absolute_p95": 6.972236631264117e-06,
+                    "maximum_diagnostic": 6.972236631375139e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 922,
+                    "rms": 5.3041091457924034e-05,
+                    "absolute_p95": 0.00011017461631894734,
+                    "maximum_diagnostic": 0.00011297448787844793,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 922,
+                    "rms": 5.304108042821563e-05,
+                    "absolute_p95": 0.0001101746258260259,
+                    "maximum_diagnostic": 0.00011298868850522184,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 82.71537300002149,
+                    "absolute_p95": 160.26265958556175,
+                    "maximum_diagnostic": 498.9941932497354,
+                    "global_relative_l2": 0.0028798664221833755,
+                    "junction_relative_l2": 0.0005845005610270242,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -1.0,
+                "reference_tdr_sha256": "e5692c524b481197ae7ba35897cd872cfa3c418a8d4bbf19130d4d79686369a4",
+                "candidate_vtu_sha256": "953b016dc39c90e1b86a808d6cf3eaed720d01191f1a50c34bfeca0310d5c068",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 5.0541448341221e-06,
+                    "absolute_p95": 6.972236631264117e-06,
+                    "maximum_diagnostic": 6.972236631264117e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 559,
+                    "rms": 5.942880130944931e-05,
+                    "absolute_p95": 0.00015518659601949464,
+                    "maximum_diagnostic": 0.0001554306638002875,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 559,
+                    "rms": 5.9424300920520285e-05,
+                    "absolute_p95": 0.00015510859709074582,
+                    "maximum_diagnostic": 0.0001554545556636799,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.345021899743,
+                    "absolute_p95": 677.0015726421989,
+                    "maximum_diagnostic": 4090.786334670687,
+                    "global_relative_l2": 0.008982686850710306,
+                    "junction_relative_l2": 0.00026888899414289616,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -5.0,
+                "reference_tdr_sha256": "c71e497917bb394e2c19d2f7fe3cd9826052f933434fbfbebf53c177196869e2",
+                "candidate_vtu_sha256": "77d51afaf746bbcc7d2077c8d0d5e4e73ec60b6badd9b32a61713c12a97ac86b",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 6.246318669090316e-06,
+                    "absolute_p95": 7.757206977365704e-06,
+                    "maximum_diagnostic": 7.816104957925063e-06,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 459,
+                    "rms": 4.3313664376483356e-05,
+                    "absolute_p95": 0.0001230019838338585,
+                    "maximum_diagnostic": 0.00018365661485669304,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 459,
+                    "rms": 4.331365742268051e-05,
+                    "absolute_p95": 0.00012300198382589572,
+                    "maximum_diagnostic": 0.00018365657060355887,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.0747578396721,
+                    "absolute_p95": 672.1143810851208,
+                    "maximum_diagnostic": 4074.255508884904,
+                    "global_relative_l2": 0.0059488509540616755,
+                    "junction_relative_l2": 0.00018232590108671097,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -10.0,
+                "reference_tdr_sha256": "975b6c4ee96251cb5fdfdad3ff92b571b8ad6716ed700587225d2904ae4814e6",
+                "candidate_vtu_sha256": "14dacda26e4cc3885937f2b24c0d9138979df1f6151c23ba7f19c515bd48ede5",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 7.2865453189728985e-06,
+                    "absolute_p95": 1.0665542710341924e-05,
+                    "maximum_diagnostic": 1.0918248570579436e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 442,
+                    "rms": 5.3415126357606144e-05,
+                    "absolute_p95": 0.0001505095171977885,
+                    "maximum_diagnostic": 0.0002181803185373723,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 442,
+                    "rms": 5.3414946944902077e-05,
+                    "absolute_p95": 0.00015050951720839978,
+                    "maximum_diagnostic": 0.00021817917919517043,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.672354094598,
+                    "absolute_p95": 670.8969452317106,
+                    "maximum_diagnostic": 4070.90855592172,
+                    "global_relative_l2": 0.005026224670801851,
+                    "junction_relative_l2": 0.00015612594766567557,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -13.2,
+                "reference_tdr_sha256": "3a859a827980c6199c65d246d2c379b3c119f9e628b0464ab9106e4efbdc9b32",
+                "candidate_vtu_sha256": "35ce656dfb9c2df5efcb633f713377035b35c265d545ec01928440d80eb276c3",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 8.016653013540881e-06,
+                    "absolute_p95": 1.2309460686310558e-05,
+                    "maximum_diagnostic": 1.2883213419412343e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 425,
+                    "rms": 5.0482040526011856e-05,
+                    "absolute_p95": 0.0001316790429606258,
+                    "maximum_diagnostic": 0.00021255023941815337,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 425,
+                    "rms": 5.0482039602006206e-05,
+                    "absolute_p95": 0.00013167904294276103,
+                    "maximum_diagnostic": 0.00021255023394402552,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 543.9566163083209,
+                    "absolute_p95": 670.3917458703509,
+                    "maximum_diagnostic": 4069.6436037975946,
+                    "global_relative_l2": 0.004648131085148142,
+                    "junction_relative_l2": 0.00014542997636038114,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -15.0,
+                "reference_tdr_sha256": "9a157d8645e6509b08823dd2090c0997b51a9ac16ec085034d9eb22a76a5d4bd",
+                "candidate_vtu_sha256": "cac68764f11006bc2228b60da39a45ed685571b857e9ba51d1632426c1517d46",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.645061782138875e-06,
+                    "absolute_p95": 1.6284172712488498e-05,
+                    "maximum_diagnostic": 1.7263319919358366e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.613947762072686e-05,
+                    "absolute_p95": 0.00017614163854267638,
+                    "maximum_diagnostic": 0.00026297897352861436,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 408,
+                    "rms": 6.614027509353222e-05,
+                    "absolute_p95": 0.00017614163863340817,
+                    "maximum_diagnostic": 0.0002629838039405816,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.9267400443196,
+                    "absolute_p95": 669.501398508437,
+                    "maximum_diagnostic": 4067.493625249539,
+                    "global_relative_l2": 0.003962307224678991,
+                    "junction_relative_l2": 0.0001257792723350914,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.5,
+                "reference_tdr_sha256": "4bab3e3bdc12eeaf09cccb826b0f58cb2971c9c5ef0909caa1be499b9f570e94",
+                "candidate_vtu_sha256": "c101bf4f440affc4cb08cbc3992586c03986273e0b291974b3f83643c03363e7",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.685702719437252e-06,
+                    "absolute_p95": 1.6363094136551126e-05,
+                    "maximum_diagnostic": 1.7361971703433454e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.71552664406762e-05,
+                    "absolute_p95": 0.00017943646581315015,
+                    "maximum_diagnostic": 0.0002659281855834066,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 408,
+                    "rms": 6.715595086169811e-05,
+                    "absolute_p95": 0.00017943646590721092,
+                    "maximum_diagnostic": 0.0002659323635591202,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.9502567249851,
+                    "absolute_p95": 669.4845403946762,
+                    "maximum_diagnostic": 4067.455442968814,
+                    "global_relative_l2": 0.003950109041217905,
+                    "junction_relative_l2": 0.00012542379424140287,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.6,
+                "reference_tdr_sha256": "458a9e30fff65249550eee24905eda09ba3dbc88015091e83c98963864137755",
+                "candidate_vtu_sha256": "1fd750e21c82c4745a65cf05000bc5ca29eae29d798c68d3f01ac510a832a72e",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.728508079810033e-06,
+                    "absolute_p95": 1.6445712587298544e-05,
+                    "maximum_diagnostic": 1.746524476997635e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 408,
+                    "rms": 6.822414949922675e-05,
+                    "absolute_p95": 0.00018288623842252572,
+                    "maximum_diagnostic": 0.000269010876822683,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 459,
+                    "rms": 0.00010033834166223892,
+                    "absolute_p95": 0.0002317383889859494,
+                    "maximum_diagnostic": 0.0002690036554696389,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 544.9727212508474,
+                    "absolute_p95": 669.4674888174632,
+                    "maximum_diagnostic": 4067.4172889344045,
+                    "global_relative_l2": 0.003937999179788959,
+                    "junction_relative_l2": 0.00012507122791965476,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -19.7,
+                "reference_tdr_sha256": "22f278492a60714030b22c6031c36ba6408f9c52d7a3ddd641a033930636c8fd",
+                "candidate_vtu_sha256": "a01506f7349e143da3b347f452805c9482042692aa58fe72da00c82be259190d",
+                "acceptance_required": true
+              },
+              {
+                "status": "pass",
+                "fields": {
+                  "ElectrostaticPotential": {
+                    "nodes": 1943,
+                    "rms": 9.869574303704175e-06,
+                    "absolute_p95": 1.6714463923150902e-05,
+                    "maximum_diagnostic": 1.78011837133063e-05,
+                    "pass": true
+                  },
+                  "eDensity": {
+                    "nodes": 459,
+                    "rms": 0.00011796148768247973,
+                    "absolute_p95": 0.0002900917937627326,
+                    "maximum_diagnostic": 0.00029088619346460026,
+                    "pass": true
+                  },
+                  "hDensity": {
+                    "nodes": 905,
+                    "rms": 0.00021195474023110377,
+                    "absolute_p95": 0.00030289940357459684,
+                    "maximum_diagnostic": 0.0003284198446189948,
+                    "pass": true
+                  },
+                  "ElectricField": {
+                    "nodes": 1943,
+                    "rms": 545.0330196761249,
+                    "absolute_p95": 669.4152736725518,
+                    "maximum_diagnostic": 4067.30308718537,
+                    "global_relative_l2": 0.0039021535605161164,
+                    "junction_relative_l2": 0.00012403105886536376,
+                    "comparison": "vector",
+                    "pass": true
+                  }
+                },
+                "failed_fields": [],
+                "nodes": 1943,
+                "bias_V": -20.0,
+                "reference_tdr_sha256": "45882f74722ee7f54d45c594138fbd63fe3af360691deb438fa0abdaac22a751",
+                "candidate_vtu_sha256": "e7f6a091c28f1e5025485a62e205f8d57237dc11e07c5fa3cac913078953b803",
+                "acceptance_required": true
+              }
+            ],
+            "diagnostic_status": "not_required",
+            "qualification": {
+              "id": "pn2d-bv-v2-ten-spatial-anchors-300K-cell-vector-20261006",
+              "scope": "Same-mesh PN2D v2 at ten explicitly pinned bias anchors from -0.05 to -20 V, 300 K; explicit atomic SG/GSS-Laux self-consistent avalanche and transport-cell-vector high-field GradQF mobility. No continuous spatial or other-mesh qualification.",
+              "evidence": "docs/validation/sdevice_followup_2026-10-06.md",
+              "limits": {
+                "potential_rmse_V": 0.0005,
+                "potential_p95_V": 0.001,
+                "carrier_active_reference_min_cm3": 100000.0,
+                "carrier_active_min_nodes": 100,
+                "carrier_log_rmse_dex": 0.005,
+                "carrier_log_p95_dex": 0.01,
+                "field_relative_l2": 0.02,
+                "junction_field_relative_l2": 0.02,
+                "coordinate_tolerance_um": 1e-10,
+                "junction_x_um": 1.0,
+                "junction_half_width_um": 0.1
+              },
+              "required_biases_V": [
+                -0.05,
+                -1.0,
+                -5.0,
+                -10.0,
+                -13.2,
+                -15.0,
+                -19.5,
+                -19.6,
+                -19.7,
+                -20.0
+              ]
+            }
+          }
+        },
+        {
+          "case": "gates",
+          "report_sha256": "6fb07c066dd041dd938f56dc069e1749ab59e691cd36017f20970d52413f9bf2",
+          "controller_sha256": "e39ce39ecff10b6e7113e86ee84ee282062746a0fa00759f65f8f5661d1f6183",
+          "status": "pass",
+          "gates": [
+            {
+              "cmd": "schottky_n_des.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "schottky_charon_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "7ae83db8e6e95137ba090ab2dae3dfddb670854188ab29d170e814f921bee676",
+              "grid_sha256": "a4bb8a4c93dcee13d62add4f930697e0c4fa12adb7401563073327f8ba44dcf3"
+            },
+            {
+              "cmd": "aba_poisson_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "aba_coupled_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "external_resistor_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "voltage_to_current_sdevice.cmd",
+              "expected_exit_code": 0,
+              "exit_code": 0,
+              "diagnostics": "",
+              "pass": true,
+              "reference_archive": "bvmethods_sentaurus2018",
+              "reference_version": "v1",
+              "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+              "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+            },
+            {
+              "cmd": "/home/pasuka/vela-closeout-20261007-0a89942e/linux-gates-retry/gates/gates_p66b9f3h/transport_rejection/pp6_des.cmd",
+              "expected_exit_code": 1,
+              "exit_code": 1,
+              "diagnostics": "E105: Command file failed input gates\n",
+              "fatal_ids": [
+                "E105",
+                "E109"
+              ],
+              "pass": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unchanged_numeric_controller_ast_sha256": {
+    "run_case": "c75ea7049426a18fba449c0d7a851b043f511864211337355303ae6f0006712c",
+    "field_metrics": "d2dde2705b28b8da7974836c1e4a2076e27640cfbd19fe824fcf565d90cbba46",
+    "biased_field_metrics": "55e3249d0a1238d4b462323173c0271a95f1d980499b4b3cc8011c9c670627df",
+    "bv_spatial_qualification": "f2d31c8ededac062ed284e5bb0b4ccfe3c9dfe096a0d8ca7ed9ba3e68e0ed114",
+    "stage_policy_sha256": "1e4373505aed0f09b77afbfe8218cb997858a8bd9679a4f8d3dc7ba6dfad20b0",
+    "breakdown_knee_metrics": "073c36964e3626973fe4c75a8c597d86e9f79ce3b2f2cba72c6773ec8e2f20b9",
+    "prepare_reference": "df5f321fbf05ffa9870d9e2ef39927c5509b807ef7dab401ad2765aaca9de734"
+  },
+  "status": "pass",
+  "verification": {
+    "windows": {
+      "ctest_items": 1031,
+      "initial_passed": 1029,
+      "repaired_or_retried_passed": 2,
+      "package_smoke": {
+        "passed": 13,
+        "skipped_linux_only": 2
+      },
+      "packaged_concurrency": {
+        "passed": 1,
+        "skipped_linux_only": 3
+      }
+    },
+    "ubuntu26.04": {
+      "ctest_items": 1031,
+      "initial_passed": 1030,
+      "environment_retry_passed": 1,
+      "package_smoke": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "packaged_concurrency": {
+        "passed": 4,
+        "skipped": 0
+      },
+      "gate_controller_regression_cases": 47
+    },
+    "logs_sha256": {
+      "windows-ctest.log": "52aebaa2f993552baf1fb2eea28a51ac32889ccfe25708fb3579f1cb749e750d",
+      "windows-orchestrator-retry.log": "9066e3554560c5d44693bb0bb9f223e4b8c1e9b86cb50d9d1484d3a038922d6b",
+      "windows-contracts-ctest.log": "e0b1aee0822b6ffba5ea013434668ffcb2821f476d64fd01cee7d0c8f4c63229",
+      "windows-provenance-check-retry.log": "f6f01920732dd5382e5afa51ff7ec03233997e2d422815d44f3378d992ef1abe",
+      "windows-smoke.log": "bc6af9d8c803d623e4e7c9d7a96149a5f3470818947f9f51f8416b89a1678dc2",
+      "windows-concurrency.log": "18e68667e483a2aae3062b3da749018310c957fa18e98902a3921ddcb7b2d8bf",
+      "windows-gates-tools-retry.log": "9b07380e7c4a26dcf5ed5428231366f861ece7ebe1c1f998647b375ea66c5bb2",
+      "linux-logs/ctest.log": "878984098b35a874d1900319aae2ee792e547266a2621fd5f39c45e4106eb019",
+      "linux-logs/ctest-smoke-retry.log": "6b129c2599d62855949d04967f70bd29a12f5c35b276552d5ce8da7f63224179",
+      "linux-logs/smoke.log": "2db23a0d1ea98773d5ccf622fcc2e55b66faa9a7033037103ae8a7857b9c3f82",
+      "linux-logs/concurrency.log": "281574a27b8620f4b2797ce1384071d3d1311872b7c0a20a390b545e7af1aa98",
+      "linux-logs/gates-tools-retry-corrected.log": "15ecce3cbf574f7d15160cb43043784f4f398671c6649b6356a0b7914c80c51a"
+    }
+  }
+}
