@@ -98,6 +98,14 @@ not a routine prerequisite for repository tasks.
 
 ## Verification
 
+For user-requested work on a remote compute VM, read
+[the office VM workflow](docs/office_vm_workflow.md) and use the `vela-vm` SSH
+alias with `scripts/Invoke-VelaVm.ps1`. Keep Vela/Micromamba and Sentaurus
+environments separate. This VM is distinct from the local `sentaurus` alias.
+Record remote source paths and job IDs, and check exit codes and outputs.
+Keep host addresses, ports, usernames, installation paths and job records in
+user-local configuration/logs outside version control; public docs use placeholders.
+
 Choose checks based on the changed behavior and complete required checks:
 
 | Change | Expected verification |
