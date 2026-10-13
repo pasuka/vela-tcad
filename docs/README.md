@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [Remote compute VM](office_vm_workflow.md): private SSH configuration,
+  Micromamba GCC 16 builds, isolated Sentaurus environment, file transfer and
+  detached job submission/status through `scripts/Invoke-VelaVm.ps1`.
+
 - [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
   complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,
   persistent VM storage, restore tool and source-to-main commit mapping.
