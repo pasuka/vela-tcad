@@ -255,8 +255,10 @@ TEST_CASE("Numerical precision options are explicit and reject unsupported combi
     REQUIRE_NOTHROW(vela::newtonConfigFromJson(block,{}));
     invalid=block;invalid["global_continuity_closure"]={{"mode","enforce"}};
     REQUIRE_THROWS_AS(vela::newtonConfigFromJson(invalid,{}),std::invalid_argument);
-    invalid=valid;invalid["carrier_regularization_scale"]=1e-3;
-    REQUIRE_THROWS_AS(vela::newtonConfigFromJson(invalid,{}),std::invalid_argument);
+    // Regularization now excludes contact identity rows; exact updates remain
+    // supported. The contact correction invariant is tested in NewtonSolver.
+    auto regularized=valid;regularized["carrier_regularization_scale"]=1e-3;
+    REQUIRE_NOTHROW(vela::newtonConfigFromJson(regularized,{}));
 }
 
 TEST_CASE("Stable block merit preserves weights and resolves exact cancellation") {

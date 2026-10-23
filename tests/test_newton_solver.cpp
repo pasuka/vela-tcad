@@ -1,3 +1,6 @@
+#include "vela/equation/experimental/ResidualReplay.h"
+#include "vela/equation/experimental/AssemblyAudit.h"
+#include "vela/core/experimental/CacheAudit.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -6,6 +9,8 @@
 #include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/solver/experimental/NewtonAudit.h"
+#include "vela/solver/experimental/ExactValueBits.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/core/UnitScalingSystem.h"
@@ -18,11 +23,14 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/experimental/NewtonCapture.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/LinearRefinement.h"
 #include "vela/solver/detail/ContinuityTermCache.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -31,6 +39,42 @@
 #include <vector>
 
 using namespace vela;
+
+TEST_CASE("Refinement recovers a weak carrier direction through its configured solve",
+          "[newton][linear-refinement]")
+{
+    SparseMatrixd J(2, 2);
+    J.insert(0, 0) = 1.0;
+    J.insert(0, 1) = 0.5;
+    J.insert(1, 0) = 1e-30;
+    J.insert(1, 1) = 2e-30;
+    const VectorXd expected = (VectorXd(2) << 2.0, -3.0).finished();
+    const VectorXd F = -(J * expected);
+    const VectorXd weights = (VectorXd(2) << 1.0, 1e18).finished();
+    const VectorXd initial = VectorXd::Zero(2);
+    int calls = 0;
+    LinearSolver solver;
+    const auto conditionedSolve = [&](const SparseMatrixd& matrix, const VectorXd& rhs) {
+        ++calls;
+        SparseMatrixd normalized = matrix;
+        VectorXd normalizedRhs = rhs;
+        for (int row = 0; row < 2; ++row) {
+            const double scale = 1.0 / matrix.coeff(row, row);
+            normalizedRhs(row) *= scale;
+            for (int col = 0; col < 2; ++col) normalized.coeffRef(row, col) *= scale;
+        }
+        return solver.solve(normalized, normalizedRhs);
+    };
+    const auto step = linear_refinement::refineWithSolve(J, F, weights, initial,
+        conditionedSolve, 2, [](int, const VectorXd&, const linear_refinement::Defect&) {});
+    REQUIRE(calls == 2);
+    CHECK((step - expected).norm() < 1e-13);
+    const auto defect = linear_refinement::highPrecisionDefect(J, F, step);
+    CHECK(defect.componentwiseBackwardErrors(1) < 1e-14);
+    CHECK(defect.backwardMax < 1e-14);
+    CHECK(linear_refinement::highPrecisionDefect(J, F, initial)
+              .componentwiseBackwardErrors(1) == 1.0);
+}
 
 static DeviceMesh makePNMesh();
 static DopingModel makePNDoping(const DeviceMesh& mesh);
@@ -570,6 +614,50 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
+TEST_CASE("Surface and HFS transport Jacobian follows live residual in every carrier block",
+          "[newton][mobility][surface][composition_order][jacobian]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    const MaterialDatabase materials;
+    const DopingModel doping = makePNDoping(mesh);
+    const int n = static_cast<int>(mesh.numNodes());
+    for (const std::string family : {"masetti_field_surface", "masetti_field_lombardi"}) {
+        for (const std::string drive : {"electric_field", "quasi_fermi_gradient"}) {
+            CAPTURE(family, drive);
+            auto mobility = mobilityModelConfig(family);
+            mobility.highFieldDrivingForce = drive;
+            mobility.surface.thetaElectron = 1.0e-5;
+            mobility.surface.thetaHole = 2.0e-5;
+            // Keep saturation active on this micron-scale test mesh.
+            mobility.electronField.saturationVelocity = 2.0e3;
+            mobility.holeField.saturationVelocity = 2.0e3;
+            CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+                mobility, recombinationModelConfig({"none"}));
+            CoupledDDState state;
+            state.psi = (VectorXd(n) << -.08, .04, .11, -.03, .025).finished();
+            state.phin = (VectorXd(n) << -.01, .02, .05, -.02, .012).finished();
+            state.phip = (VectorXd(n) << .02, -.03, .01, .04, -.015).finished();
+            const VectorXd x = assembler.pack(state);
+            const CoupledDDBoundaryConditions boundaries;
+            const Eigen::MatrixXd analytic = assembler.assembleJacobian(x, boundaries);
+            const Eigen::MatrixXd fd = assembler.finiteDifferenceJacobian(x, boundaries, 1.0e-7);
+            // Do not let a large Poisson block hide carrier/field errors.
+            for (int block = 1; block <= 2; ++block) {
+                CAPTURE(block);
+                const auto expected = fd.middleRows(block * n, n);
+                CHECK((analytic.middleRows(block * n, n) - expected).norm() /
+                      expected.norm() < 5.0e-5);
+            }
+            mobility.jacobianFieldDerivatives = false;
+            CoupledDDAssembler frozen(mesh, materials, doping, constants::Vt_300,
+                mobility, recombinationModelConfig({"none"}));
+            const Eigen::MatrixXd frozenJacobian = frozen.assembleJacobian(x, boundaries);
+            CHECK((analytic.bottomRows(2 * n) - frozenJacobian.bottomRows(2 * n)).norm() >
+                  1.0e-5 * analytic.bottomRows(2 * n).norm());
+        }
+    }
+}
+
 TEST_CASE("Newton warm restart keeps increments below reference rounding",
           "[newton][warm_start][qf-reference][precision]")
 {
@@ -688,6 +776,80 @@ static NewtonConfig newtonConfig()
 
 static void requireFiniteNewtonSolution(const NewtonResult& result, Index nodeCount);
 
+TEST_CASE("Passive Newton capture preserves the solve and bounds retained iterations",
+          "[newton][update_error_capture]")
+{
+    auto mesh = makePNMesh();
+    MaterialDatabase materials;
+    auto doping = makePNDoping(mesh);
+    auto cfg = newtonConfig();
+    cfg.diagnostics = true;
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    auto initial = NewtonSolver(mesh, materials, doping, zeroBias(), cfg).solve().solution;
+    // Force a real Newton update: the cold equilibrium initializer can already
+    // satisfy the floor without entering the iteration loop.
+    initial.psi(4) += 0.01;
+    initial.packedState.resize(0);
+    cfg.warmStart = true;
+    const auto run = [&] { return NewtonSolver(mesh, materials, doping, zeroBias(), cfg).solve(initial); };
+    const auto baseline = run();
+    const auto sameVector = [](const VectorXd& a, const VectorXd& b) {
+        return a.size() == b.size() &&
+            (a.size() == 0 || std::memcmp(a.data(), b.data(), a.size()*sizeof(Real)) == 0);
+    };
+    for (std::size_t limit : {std::size_t{0}, std::size_t{1}, std::size_t{32}}) {
+        experimental::NewtonCapture capture;
+        capture.limit = limit;
+        NewtonResult result;
+        {
+            experimental::NewtonCaptureScope scope(&capture);
+            result = run();
+        }
+        REQUIRE(capture.initialized);
+        REQUIRE_FALSE(capture.failed);
+        REQUIRE_FALSE(capture.unsupported);
+        CHECK(capture.iterations.size() <= limit);
+        CHECK(result.converged == baseline.converged);
+        CHECK(result.iters == baseline.iters);
+        CHECK(result.finalResidualNorm == baseline.finalResidualNorm);
+        CHECK(result.convergenceReason == baseline.convergenceReason);
+        CHECK(sameVector(result.solution.psi, baseline.solution.psi));
+        CHECK(sameVector(result.solution.phin, baseline.solution.phin));
+        CHECK(sameVector(result.solution.phip, baseline.solution.phip));
+        CHECK(sameVector(result.solution.n, baseline.solution.n));
+        CHECK(sameVector(result.solution.p, baseline.solution.p));
+        REQUIRE(result.trace.size() == baseline.trace.size());
+        for (std::size_t i=0; i<result.trace.size(); ++i) {
+            const auto& a = result.trace[i]; const auto& b = baseline.trace[i];
+            CHECK(a.residualNorm == b.residualNorm);
+            CHECK(a.stepNorm == b.stepNorm);
+            CHECK(a.dampingFactor == b.dampingFactor);
+            CHECK(a.event == b.event);
+            REQUIRE(a.lineSearchHistory.size() == b.lineSearchHistory.size());
+            for (std::size_t j=0; j<a.lineSearchHistory.size(); ++j) {
+                CHECK(a.lineSearchHistory[j].residualNorm == b.lineSearchHistory[j].residualNorm);
+                CHECK(a.lineSearchHistory[j].rejectionReason == b.lineSearchHistory[j].rejectionReason);
+                CHECK(a.lineSearchHistory[j].accepted == b.lineSearchHistory[j].accepted);
+            }
+        }
+        if (limit == 32) {
+            REQUIRE_FALSE(capture.iterations.empty());
+            CHECK(capture.iterations.front().hasLinearDirection);
+            CHECK(capture.iterations.front().hasSearch);
+            CHECK(capture.iterations.front().jacobian.rows() == 3*mesh.numNodes());
+            for (const auto& event : capture.iterations) {
+                REQUIRE(event.population.present);
+                REQUIRE_FALSE(event.population.failed);
+                CHECK(sameVector(event.x, event.population.x));
+                CHECK(event.population.electrons.size() == mesh.numNodes());
+                CHECK(event.population.holes.size() == mesh.numNodes());
+                CHECK(event.population.electrons.allFinite());
+                CHECK(event.population.holes.allFinite());
+            }
+        }
+    }
+}
+
 TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -699,6 +861,56 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.converged);
     REQUIRE(result.iters >= 0);
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
+}
+
+TEST_CASE("Independent witness and report capture preserve every NewtonResult field", "[newton][update_error_capture]") {
+    using namespace vela::experimental;
+    auto mesh=makePNMesh();MaterialDatabase matdb;auto doping=makePNDoping(mesh);
+    auto cfg=newtonConfig();cfg.diagnostics=true;
+    cfg.inputScaling=UnitScalingConfig{UnitScalingMode::UnitScaling};
+    auto initial=NewtonSolver(mesh,matdb,doping,zeroBias(),cfg).solve().solution;
+    initial.psi(4)+=.01;initial.packedState.resize(0);cfg.warmStart=true;
+    auto run=[&](){return NewtonSolver(mesh,matdb,doping,zeroBias(),cfg).solve(initial);};
+    const auto baseline=exactValueBits(run());
+    REQUIRE(exactValueBits(run())==baseline);
+    std::string expectedAudit;
+    for(int mode=0;mode<8;++mode) for(int repeat=0;repeat<2;++repeat) {
+        INFO("mode="<<mode<<" repeat="<<repeat);
+        NewtonAudit audit;NewtonCapture capture;
+        const bool auditOn=mode==1||mode==3||mode==4||mode==6;
+        const bool reportOn=mode==2||mode==3||mode==5||mode==7;
+        if(mode==4)audit.limit=0;if(mode==5)capture.limit=0;
+        NewtonResult result;
+        {
+            NewtonAuditScope a(auditOn?&audit:nullptr);
+            NewtonCaptureScope c(reportOn?&capture:nullptr);
+            if(mode==6)NewtonAuditScope::record([](auto&){throw 42;});
+            if(mode==7)NewtonCaptureScope::record([](auto&){throw 42;});
+            result=run();
+        }
+        REQUIRE(exactValueBits(result)==baseline);
+        if(mode==1||mode==3) {
+            REQUIRE(audit.started);REQUIRE_FALSE(audit.unsupported);
+            REQUIRE_FALSE(audit.failed);REQUIRE_FALSE(audit.truncated);
+            REQUIRE_FALSE(audit.iterations.empty());
+            const auto encoded=exactValueBits(audit.iterations);
+            if(expectedAudit.empty())expectedAudit=encoded;
+            REQUIRE(encoded==expectedAudit);
+        }
+        if(mode==3) {
+            REQUIRE(audit.iterations.size()==capture.iterations.size());
+            for(std::size_t i=0;i<audit.iterations.size();++i) {
+                const auto& a=audit.iterations[i];const auto& c=capture.iterations[i];
+                REQUIRE(exactValueBits(a.jacobian)==exactValueBits(c.jacobian));
+                REQUIRE(exactValueBits(a.residual)==exactValueBits(c.residual));
+                REQUIRE(exactValueBits(a.searched)==exactValueBits(c.searched));
+            }
+        }
+        if(mode==4){REQUIRE(audit.truncated);REQUIRE(audit.iterations.empty());}
+        if(mode==5){REQUIRE(capture.truncated);REQUIRE(capture.iterations.empty());}
+        if(mode==6){REQUIRE(audit.failed);REQUIRE(audit.iterations.empty());}
+        if(mode==7){REQUIRE(capture.failed);REQUIRE(capture.iterations.empty());}
+    }
 }
 
 TEST_CASE("NewtonSolver: sequential linear context does not retain nonlinear state",
@@ -771,6 +983,42 @@ TEST_CASE("NewtonSolver: accepts a qualified initial numerical-floor restart",
         runNewton(mesh, matdb, doping, zeroBias(), unsafeRestart, guardedCfg);
     REQUIRE(guarded.convergenceReason != "initial_stall_residual_floor");
     REQUIRE(guarded.convergenceReason != "max_iter_stall_residual_floor");
+}
+
+TEST_CASE("Packed coupled acceptance evaluates actual carrier and global closure gates",
+          "[newton][coupled_acceptance][carrier_row_convergence]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    const DopingModel doping = makePNDoping(mesh);
+    const auto equilibrium = runNewton(mesh, materials, doping, zeroBias(), newtonConfig());
+    REQUIRE(equilibrium.converged);
+    DDSolution perturbed = equilibrium.solution;
+    perturbed.phin(4) += 1e-3;
+    if (perturbed.hasReferencedElectronQuasiFermi()) perturbed.phinIncrement(4) += 1e-3;
+    NewtonConfig cfg = newtonConfig();
+    cfg.carrierRowConvergence.mode = "enforce";
+    cfg.carrierRowConvergence.minSourceScaleFraction = 0;
+    cfg.carrierRowConvergence.minCarrierDensity_m3 = 1;
+    cfg.globalContinuityClosure.mode = "enforce";
+    cfg.globalContinuityClosure.sourceFloor = 1e-30;
+    NewtonSolver solver(mesh, materials, doping, zeroBias(), cfg);
+    const auto evaluator = solver.makeArclengthConvergenceEvaluator("anode");
+    const auto x = solver.packArclengthState(perturbed);
+    const auto actual = evaluator(x, 0);
+    const auto terms = solver.evaluateCarrierTermDiagnostics(perturbed, true);
+    const auto expected = evaluateCarrierRowConvergence(terms.rows, cfg.carrierRowConvergence);
+    REQUIRE(actual.carrierRows.enforced);
+    REQUIRE_FALSE(actual.carrierRows.satisfied);
+    REQUIRE(actual.carrierRows.maxRatio == Catch::Approx(expected.maxRatio).epsilon(1e-10));
+    REQUIRE(actual.carrierRows.violations.size() == expected.violations.size());
+    REQUIRE(actual.globalContinuity.enforced);
+    REQUIRE_FALSE(actual.globalContinuity.satisfied);
+    REQUIRE(actual.globalContinuity.electron.ratio > cfg.globalContinuityClosure.tolerance);
+    REQUIRE(actual.blockNorms.phin == Catch::Approx(terms.residual.blockNorms.phin).epsilon(1e-10));
+    const auto biased = evaluator(x, .05);
+    REQUIRE(biased.blockNorms.psi > actual.blockNorms.psi);
+    REQUIRE((x - solver.packArclengthState(perturbed)).norm() == 0);
 }
 
 TEST_CASE("NewtonSolver: enforced block absolute convergence prevents scalar tolerance masking",
@@ -1064,6 +1312,139 @@ TEST_CASE("NewtonSolver: terminal-current adjoint closes the transpose system",
          current.value(x - h * direction, 0.0)) / (2.0 * h);
     REQUIRE(finiteDifference ==
             Catch::Approx(direct).epsilon(2.0e-5).margin(1.0e-20));
+}
+
+TEST_CASE("NewtonSolver: resistor device and named port derivatives share packed state",
+          "[newton][resistor_contract]")
+{
+    DeviceMesh mesh=makePNMesh();
+    MaterialDatabase db;
+    const auto doping=makePNDoping(mesh);
+    auto cfg=newtonConfig();
+    cfg.inputScaling=UnitScalingConfig{UnitScalingMode::UnitScaling};
+    // This direct double-difference control isolates transport/charge/port
+    // coupling. SRH cross-carrier changes can disappear when added to the full
+    // residual; the following complete-increment test retains SRH and checks
+    // all blocks at the same 1e-5 tolerance using audited source increments.
+    cfg.recombination={"none"};
+    NewtonSolver solver(mesh,db,doping,zeroBias(),cfg);
+    const auto equilibrium=solver.solve();
+    REQUIRE(equilibrium.converged);
+    auto system=solver.makeArclengthSystem("anode");
+    auto port=solver.makeArclengthContactCurrentFunctional("anode",1e-6);
+    VectorXd x=solver.packArclengthState(equilibrium.solution);
+    // At equilibrium dJ/dpsi is an exact zero-current control and its
+    // finite-difference residue cannot qualify a relative derivative test.
+    // Use a resolvable frozen transport state for the cross-block check.
+    const int n=mesh.numNodes();
+    x(n+4)+=.001;
+    x(2*n+4)-=.002;
+    const VectorXd baseline=system.residual(x,0);
+    const SparseMatrixd j=system.jacobian(x,0);
+    const auto fv=system.parameterDerivative(x,0);
+    const auto i=port.linearize(x,0);
+    REQUIRE_THROWS(solver.makeArclengthContactCurrentFunctional("missing",1e-6));
+    // A retained boundary row allows independent x and v perturbations;
+    // the derivative must include its nonzero contact mismatch response.
+    for(int block=0;block<4;++block) {
+        VectorXd direction=VectorXd::Zero(x.size());
+        const Real dv=block==3 ? 1e-3 : 0;
+        if(block<3) for(int k=0;k<n;++k) direction(block*n+k)=.01*(k+1)/n;
+        const VectorXd analytic=j*direction+fv*dv;
+        const Real analyticCurrent=i.stateDerivative.dot(direction)+i.parameterDerivative*dv;
+        for(Real h:{1e-3,3e-4,1e-4}) {
+            const VectorXd plus=x+h*direction,minus=x-h*direction;
+            const VectorXd fd=(system.residual(plus,h*dv)-system.residual(minus,-h*dv))/(2*h);
+            for(int b=0;b<3;++b) {
+                CAPTURE(block,b,h);
+                const Real scale=analytic.segment(b*n,n).norm();
+                CAPTURE(scale);
+                if(scale>0) CHECK((fd.segment(b*n,n)-analytic.segment(b*n,n)).norm()/scale<=1e-5);
+                else CHECK(fd.segment(b*n,n).norm()==0);
+            }
+            const Real fdCurrent=(port.value(plus,h*dv)-port.value(minus,-h*dv))/(2*h);
+            if(analyticCurrent!=0) CHECK(std::abs(fdCurrent-analyticCurrent)/std::abs(analyticCurrent)<=1e-5);
+            else CHECK(fdCurrent==0);
+        }
+    }
+    // Rejected evaluations must not change the next evaluation of the parent.
+    REQUIRE((system.residual(x,0).array()==baseline.array()).all());
+    REQUIRE((system.jacobian(x,0)-j).norm()==0);
+    REQUIRE(port.value(x,0)==i.value);
+}
+
+TEST_CASE("NewtonSolver: captured complete residual increments retain sub-ULP source response",
+          "[newton][residual_increment]")
+{
+    DeviceMesh mesh=makePNMesh();
+    MaterialDatabase db;
+    const auto doping=makePNDoping(mesh);
+    auto cfg=newtonConfig();
+    cfg.inputScaling=UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver solver(mesh,db,doping,zeroBias(),cfg);
+    const auto equilibrium=solver.solve();
+    REQUIRE(equilibrium.converged);
+    auto system=solver.makeArclengthSystem("anode");
+    auto port=solver.makeArclengthContactCurrentFunctional("anode",1e-6);
+    VectorXd x=solver.packArclengthState(equilibrium.solution);
+    // At equilibrium dJ/dpsi is an exact zero-current control and its
+    // finite-difference residue cannot qualify a relative derivative test.
+    // Use a resolvable frozen transport state for the cross-block check.
+    const int n=mesh.numNodes();
+    x(n+4)+=.001;
+    x(2*n+4)-=.002;
+    const VectorXd baseline=system.residual(x,0);
+    const SparseMatrixd j=system.jacobian(x,0);
+    const auto fv=system.parameterDerivative(x,0);
+    const auto i=port.linearize(x,0);
+    REQUIRE_THROWS(solver.makeArclengthContactCurrentFunctional("missing",1e-6));
+    // A retained boundary row allows independent x and v perturbations;
+    // the derivative must include its nonzero contact mismatch response.
+    for(int block=0;block<4;++block) {
+        VectorXd direction=VectorXd::Zero(x.size());
+        const Real dv=block==3 ? 1e-3 : 0;
+        if(block<3) for(int k=0;k<n;++k) direction(block*n+k)=.01*(k+1)/n;
+        const VectorXd analytic=j*direction+fv*dv;
+        const Real analyticCurrent=i.stateDerivative.dot(direction)+i.parameterDerivative*dv;
+        for(Real h:{1e-3,3e-4,1e-4}) {
+            const VectorXd plus=x+h*direction,minus=x-h*direction;
+            experimental::ResidualAudit ap,am;
+            VectorXd fp,fm;
+            { experimental::ResidualAuditScope capture(&ap);fp=system.residual(plus,h*dv); }
+            { experimental::ResidualAuditScope capture(&am);fm=system.residual(minus,-h*dv); }
+            const VectorXd offPlus=system.residual(plus,h*dv);
+            const VectorXd offMinus=system.residual(minus,-h*dv);
+            REQUIRE(std::memcmp(fp.data(),offPlus.data(),fp.size()*sizeof(Real))==0);
+            REQUIRE(std::memcmp(fm.data(),offMinus.data(),fm.size()*sizeof(Real))==0);
+            const auto rp=experimental::replayResidual<double>(ap);
+            const auto rm=experimental::replayResidual<double>(am);
+            for(int row=0;row<fp.size();++row) {
+                REQUIRE(std::memcmp(&rp[row],&fp(row),sizeof(Real))==0);
+                REQUIRE(std::memcmp(&rm[row],&fm(row),sizeof(Real))==0);
+            }
+            const VectorXd fd=experimental::residualAuditIncrement(am,ap)/(2*h);
+            for(int b=0;b<3;++b) {
+                CAPTURE(block,b,h);
+                const Real scale=analytic.segment(b*n,n).norm();
+                CAPTURE(scale);
+                if(scale>0) CHECK((fd.segment(b*n,n)-analytic.segment(b*n,n)).norm()/scale<=1e-5);
+                else CHECK(fd.segment(b*n,n).norm()==0);
+            }
+            const Real fdCurrent=(port.value(plus,h*dv)-port.value(minus,-h*dv))/(2*h);
+            if(analyticCurrent!=0) CHECK(std::abs(fdCurrent-analyticCurrent)/std::abs(analyticCurrent)<=1e-5);
+            else CHECK(fdCurrent==0);
+        }
+    }
+    experimental::ResidualAudit truncated;truncated.limit=1;
+    VectorXd truncatedResult;
+    {experimental::ResidualAuditScope capture(&truncated);truncatedResult=system.residual(x,0);}
+    REQUIRE(truncated.truncated);
+    REQUIRE((truncatedResult.array()==baseline.array()).all());
+    REQUIRE_THROWS(experimental::replayResidual<double>(truncated));
+    // Rejected evaluations must not change the next evaluation of the parent.
+    REQUIRE((system.residual(x,0).array()==baseline.array()).all());
+    REQUIRE((system.jacobian(x,0)-j).norm()==0);
+    REQUIRE(port.value(x,0)==i.value);
 }
 
 TEST_CASE("NewtonSolver: electron transport factor endpoints equal production terms",
@@ -3255,6 +3636,24 @@ TEST_CASE("NewtonSolver: evaluateStep reports one physical Newton correction", "
     REQUIRE(step.trialSolution.phip(2) ==
             Catch::Approx(state.phip(2) + step.deltaPhip(2)));
     REQUIRE(step.trialResidual.blockNorms.combined < step.residual.blockNorms.combined);
+
+    // Exercise the same optional linear controls used by production Newton.
+    cfg.continuityRowScaling.enabled = true;
+    cfg.linearEquilibration.mode = "l2_row_column";
+    cfg.linearRefinementIterations = 3;
+    cfg.exactDirichletUpdates = true;
+    NewtonSolver conditioned(mesh, matdb, doping, biases, cfg);
+    const auto audited = conditioned.evaluateStep(state, 1e-6);
+    REQUIRE(audited.rawLinearDefect.size() == 3 * N);
+    REQUIRE(audited.rawLinearBackwardErrors.maxCoeff() < 1e-12);
+    const auto change = audited.directionalAnalyticChange;
+    const auto difference = audited.directionalFiniteDifferenceChange;
+    CHECK((change - difference).norm() / std::max(change.norm(), difference.norm()) < 1e-5);
+    CHECK(audited.rawDeltaPsi.allFinite());
+    CHECK(audited.cappedLinearBackwardErrors.allFinite());
+    CHECK_THROWS_AS(conditioned.evaluateStep(state, -1), std::invalid_argument);
+    CHECK_THROWS_AS(conditioned.evaluateStep(state, std::numeric_limits<Real>::infinity()),
+                    std::invalid_argument);
 }
 
 TEST_CASE("NewtonSolver: feedback substitutions share one Jacobian and preserve boundary rows",
@@ -6253,6 +6652,17 @@ TEST_CASE("Charge-only signed volume leaves SRH and continuity Jacobian unchange
 
 TEST_CASE("Production numerical policies reject ambiguous configuration", "[newton][production_geometry]")
 {
+    const auto defaults = newtonConfigFromJson(nlohmann::json::object());
+    CHECK(defaults.legacyTransportJacobianStep == 1e-6);
+    CHECK(defaults.legacyAvalancheJacobianStep == 1e-7);
+    const auto small = newtonConfigFromJson({{"legacy_edge_jacobian_steps", {
+        {"transport",1e-9},{"avalanche",1e-11}}}});
+    CHECK(small.legacyTransportJacobianStep == 1e-9);
+    CHECK(small.legacyAvalancheJacobianStep == 1e-11);
+    CHECK_THROWS_AS(newtonConfigFromJson({{"legacy_edge_jacobian_steps", {
+        {"transport",0}}}}),std::invalid_argument);
+    CHECK_THROWS_AS(newtonConfigFromJson({{"legacy_edge_jacobian_steps", {
+        {"avalanche",-1e-11}}}}),std::invalid_argument);
     REQUIRE(newtonConfigFromJson(nlohmann::json::object()).linearRefinementIterations==0);
     REQUIRE(newtonConfigFromJson({{"linear_refinement_iterations",4}}).linearRefinementIterations==4);
     REQUIRE_THROWS_AS(newtonConfigFromJson({{"linear_refinement_iterations",-1}}),std::invalid_argument);
@@ -6260,6 +6670,85 @@ TEST_CASE("Production numerical policies reject ambiguous configuration", "[newt
         {"poisson_charge_node_volume","signed_transport"},{"poisson_electron_transport_node_volume",true}}}}),std::invalid_argument);
     REQUIRE_THROWS_AS(newtonConfigFromJson({{"region_resolved_interface_assembly",{
         {"transport_edge_coupling_ratios",{-1.}}}}}),std::invalid_argument);
+}
+
+TEST_CASE("NewtonSolver: free-carrier regularization preserves exact contact corrections",
+          "[newton][regularization][exact_dirichlet]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -.05}, {"cathode", 0.0}};
+    NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"exact_dirichlet_updates", true}, {"carrier_regularization_scale", 10.0},
+        {"max_update", 0.0}, {"warm_start", true}});
+    DDSolution state;
+    const int n = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(n, -.02, .02);
+    state.phin = VectorXd::Constant(n, -.01);
+    state.phip = VectorXd::Constant(n, .01);
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const auto evaluated = solver.evaluateStep(state);
+    int contactRows = 0;
+    for (int i = 0; i < n; ++i) {
+        if (!evaluated.freeElectronRows(i)) {
+            REQUIRE(evaluated.rawDeltaPhin(i) / evaluated.residual.potentialScale +
+                    evaluated.residual.raw(n + i) == Catch::Approx(0.0).margin(1e-14));
+            ++contactRows;
+        }
+        if (!evaluated.freeHoleRows(i)) {
+            REQUIRE(evaluated.rawDeltaPhip(i) / evaluated.residual.potentialScale +
+                    evaluated.residual.raw(2 * n + i) == Catch::Approx(0.0).margin(1e-14));
+            ++contactRows;
+        }
+    }
+    REQUIRE(contactRows > 0);
+    // The carrier-only diagnostic must honor the same boundary invariant.
+    const auto carrierOnly = solver.evaluateRegularizedCarrierStep(state, 10.0);
+    for (int i = 0; i < n; ++i) {
+        if (!evaluated.freeElectronRows(i))
+            REQUIRE(carrierOnly.deltaPhin(i) == Catch::Approx(evaluated.rawDeltaPhin(i)).margin(1e-12));
+        if (!evaluated.freeHoleRows(i))
+            REQUIRE(carrierOnly.deltaPhip(i) == Catch::Approx(evaluated.rawDeltaPhip(i)).margin(1e-12));
+    }
+}
+
+TEST_CASE("Legacy edge column scales preserve Fermi residual and conservative transport",
+          "[newton][legacy-column-steps]")
+{
+    const auto mesh = makePNMesh();
+    MaterialDatabase materials;
+    const auto doping = makePNDoping(mesh);
+    CarrierStatisticsConfig statistics{"fermi_dirac"};
+    CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+        mobilityModelConfig("constant"), recombinationModelConfig({"none"}),
+        {}, {}, {}, {}, {}, {}, statistics);
+    const int N = static_cast<int>(mesh.numNodes());
+    VectorXd x(3*N);
+    x.head(N) = VectorXd::LinSpaced(N,-.02,.02);
+    x.segment(N,N) = VectorXd::LinSpaced(N,-.003,.001);
+    x.tail(N) = VectorXd::LinSpaced(N,.001,.003);
+    const CoupledDDBoundaryConditions bcs;
+    const auto baseline = assembler.residual(x,bcs);
+    const auto legacy = assembler.assembleJacobian(x,bcs);
+    assembler.setLegacyEdgeJacobianSteps(1e-6,1e-7);
+    CHECK((assembler.assembleJacobian(x,bcs)-legacy).norm()==0.0);
+    assembler.setLegacyEdgeJacobianSteps(1e-9,1e-11);
+    CHECK((assembler.residual(x,bcs)-baseline).norm()==0.0);
+    const auto J = assembler.assembleJacobian(x,bcs);
+    VectorXd direction = VectorXd::Zero(3*N);
+    direction.segment(N,N) = VectorXd::LinSpaced(N,-1e-7,1e-7);
+    const VectorXd analytic = J*direction;
+    const VectorXd difference = .5*(assembler.residual((x+direction).eval(),bcs)-
+                                      assembler.residual((x-direction).eval(),bcs));
+    CHECK((analytic.segment(N,N)-difference.segment(N,N)).norm()/
+        difference.segment(N,N).norm() < 1e-5);
+    CHECK(std::abs(analytic.segment(N,N).sum()) <
+        1e-13*analytic.segment(N,N).cwiseAbs().sum());
+    CHECK_THROWS_AS(assembler.setLegacyEdgeJacobianSteps(0,1e-7),std::invalid_argument);
+    CHECK_THROWS_AS(assembler.setLegacyEdgeJacobianSteps(1e-6,
+        std::numeric_limits<Real>::infinity()),std::invalid_argument);
 }
 
 TEST_CASE("Six-column state packs like an exactly equivalent referenced state", "[newton][production_geometry][precision]")
@@ -6466,4 +6955,33 @@ TEST_CASE("Jacobian structure cache invalidates incompatible geometry temperatur
     const auto counters=profiler.toJson().at("counters");
     REQUIRE(counters.at("jacobian.structure_cache_misses").get<int>()==1);
     REQUIRE_FALSE(counters.contains("jacobian.structure_cache_hits"));
+}
+
+TEST_CASE("Actual scatter audit reconstructs J and preserves Newton state", "[newton][assembly_cache_audit]") {
+    using namespace vela::experimental;
+    const auto mesh=makePNMesh();MaterialDatabase materials;const auto doping=makePNDoping(mesh);
+    auto cfg=newtonConfig();cfg.diagnostics=true;
+    cfg.inputScaling=UnitScalingConfig{UnitScalingMode::UnitScaling};
+    auto initial=NewtonSolver(mesh,materials,doping,zeroBias(),cfg).solve().solution;
+    initial.psi(4)+=.01;initial.packedState.resize(0);cfg.warmStart=true;
+    auto run=[&](){return NewtonSolver(mesh,materials,doping,zeroBias(),cfg).solve(initial);};
+    const auto baseline=exactValueBits(run());REQUIRE(exactValueBits(run())==baseline);
+    std::string expectedContributions,expectedCaches;
+    for(int trial=0;trial<3;++trial){
+        AssemblyAudit audit;CacheAudit cache;
+        if(trial==2){audit.limit=0;cache.limit=0;}
+        NewtonResult result;
+        {AssemblyAuditScope a(&audit);CacheAuditScope c(&cache);result=run();}
+        REQUIRE(exactValueBits(result)==baseline);
+        REQUIRE_FALSE(audit.failed);REQUIRE_FALSE(cache.failed);
+        if(trial==2){REQUIRE(audit.truncated);REQUIRE(cache.truncated);continue;}
+        REQUIRE(audit.finished);REQUIRE_FALSE(audit.truncated);
+        REQUIRE_FALSE(audit.contributions.empty());REQUIRE_FALSE(cache.events.empty());
+        SparseMatrixd rebuilt=audit.initial;
+        for(const auto& item:audit.contributions)rebuilt.coeffRef(item.row,item.col)+=item.value;
+        REQUIRE(exactValueBits(rebuilt)==exactValueBits(audit.final));
+        const auto contributions=exactValueBits(audit.contributions),caches=exactValueBits(cache.events);
+        if(trial==0){expectedContributions=contributions;expectedCaches=caches;}
+        REQUIRE(contributions==expectedContributions);REQUIRE(caches==expectedCaches);
+    }
 }

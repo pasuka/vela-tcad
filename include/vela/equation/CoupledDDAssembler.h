@@ -23,6 +23,12 @@
 
 namespace vela {
 
+namespace experimental {
+struct TunnelingSourceAssembly;
+struct TunnelingBandState;
+struct NonlocalPairSources;
+}
+
 class SplitDDRuntime;
 
 struct CoupledDDState {
@@ -107,6 +113,7 @@ struct CoupledDDPoissonTermDiagnostic {
     Real holeQuasiFermiMappingError = 0.0;
     bool hasSuppliedCarrierState = false;
     Real dielectricFlux = 0.0;
+    Real dielectricFluxAbsSum = 0.0; ///< Sum of absolute individual edge terms, before cancellation.
     Real electronCharge = 0.0;
     Real holeCharge = 0.0;
     Real dopingCharge = 0.0;
@@ -288,6 +295,9 @@ public:
         structureCache_ = std::move(cache);
     }
     void setFermiNodeCache(bool enabled) { fermiNodeCacheEnabled_ = enabled; }
+    // Relative column perturbations for the legacy edge transport/source Jacobian.
+    // These do not alter element-box derivatives or the physical residual.
+    void setLegacyEdgeJacobianSteps(Real transport, Real avalanche);
     CoupledDDAssembler(const DeviceMesh& mesh,
                        const MaterialDatabase& matdb,
                        const DopingModel& doping,
@@ -364,6 +374,22 @@ public:
     VectorXd residual(const VectorXd& x,
                       const CoupledDDBoundaryConditions& bcs) const;
 
+    // Frozen N4 diagnostic through the actual residual loop, before gauges,
+    // scaling and contact replacement. Not public config/solver dispatch;
+    // caller must independently establish the supplied band's constitutive
+    // identity. Populations/QFs are checked here; no Jacobian is implied.
+    VectorXd experimentalNonlocalResidual(const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const experimental::TunnelingSourceAssembly&,
+        const experimental::TunnelingBandState&) const;
+    // Same frozen physical population, preserving QF reference/increment.
+    // Explicit substitution audit only; does not qualify the constitutive map.
+    VectorXd experimentalNonlocalFrozenResidual(const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const experimental::TunnelingSourceAssembly&,
+        const experimental::TunnelingBandState&,
+        const CoupledDDFeedbackStateSubstitution&) const;
+
     /// Return the physical, unconstrained Poisson residual at every node in
     /// C/m of out-of-plane depth.  At an electrostatic Dirichlet node this is
     /// the algebraic reaction charge which is removed when the production
@@ -384,6 +410,11 @@ public:
         const CoupledDDBoundaryConditions& bcs,
         const VectorXd& suppliedElectronDensity,
         const VectorXd& suppliedHoleDensity) const;
+    /// Frozen-density audit of the same Poisson row as feedbackSubstitutionResidual.
+    /// Both densities must be explicitly replaced; QF/mobility replacements are unsupported.
+    std::vector<CoupledDDPoissonTermDiagnostic> feedbackSubstitutionPoissonTermDiagnostics(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        const CoupledDDFeedbackStateSubstitution& substitution) const;
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,
@@ -466,14 +497,21 @@ public:
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
 
 private:
+    void validateExperimentalNonlocalState(const VectorXd&,
+        const experimental::TunnelingSourceAssembly&,
+        const experimental::TunnelingBandState&,
+        const CoupledDDFeedbackStateSubstitution*) const;
     bool splitDDEnabled_ = false;
+    Real legacyTransportJacobianStep_ = 1e-6;
+    Real legacyAvalancheJacobianStep_ = 1e-7;
     mutable std::shared_ptr<SplitDDRuntime> splitRuntime_;
     std::shared_ptr<SplitDDRuntime> buildSplitRuntime() const;
 
     VectorXd residualImpl(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
-        const CoupledDDFeedbackStateSubstitution* substitution) const;
+        const CoupledDDFeedbackStateSubstitution* substitution,
+        const experimental::NonlocalPairSources* nonlocal = nullptr) const;
     std::vector<CoupledDDCarrierTermDiagnostic>
     carrierContinuityTermDiagnosticsImpl(
         const VectorXd& x,
@@ -561,6 +599,10 @@ private:
     Real electronDensityDerivativeEtaAt(Index node,
                                         Real psiRelative_V,
                                         Real phinIncrement_V) const;
+    std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnosticsImpl(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        const VectorXd& suppliedElectronDensity, const VectorXd& suppliedHoleDensity,
+        const CoupledDDFeedbackStateSubstitution* substitution) const;
     bool usesSentaurusDefaultSrhDensityCoupling() const;
     Real electronSrhDensityAt(Index node,
                               Real psiRelative_V,

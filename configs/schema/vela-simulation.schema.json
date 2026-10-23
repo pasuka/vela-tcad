@@ -102,7 +102,10 @@
               "type": "number"
             },
             "mode": {
-              "enum": ["off", "enforce"]
+              "enum": [
+                "off",
+                "enforce"
+              ]
             },
             "psi_residual_ceiling": {
               "minimum": 0,
@@ -177,14 +180,39 @@
         "srh_doping_dependence": {
           "additionalProperties": false,
           "properties": {
-            "enabled": {"type": "boolean"},
-            "concentration_basis": {
-              "enum": ["total_impurity", "net_doping"]
+            "enabled": {
+              "type": "boolean"
             },
-            "electron": {"$ref": "#/$defs/srhLifetime"},
-            "hole": {"$ref": "#/$defs/srhLifetime"}
+            "concentration_basis": {
+              "enum": [
+                "total_impurity",
+                "net_doping"
+              ]
+            },
+            "electron": {
+              "$ref": "#/$defs/srhLifetime"
+            },
+            "hole": {
+              "$ref": "#/$defs/srhLifetime"
+            }
           },
           "type": "object"
+        },
+        "legacy_edge_jacobian_steps": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "transport": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1e-06
+            },
+            "avalanche": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1e-07
+            }
+          }
         }
       },
       "required": [
@@ -226,7 +254,10 @@
               "additionalProperties": false,
               "properties": {
                 "contacts": {
-                  "items": {"minLength": 1, "type": "string"},
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
                   "type": "array"
                 },
                 "csv_file": {
@@ -266,28 +297,77 @@
         "external_circuit": {
           "additionalProperties": false,
           "properties": {
-            "current_direction": {"enum": [-1.0, 1.0]},
-            "enabled": {"type": "boolean"},
-            "initial_inner_voltage_V": {"type": "number"},
-            "max_bracket_steps": {"minimum": 1, "type": "integer"},
-            "max_inner_voltage_step_V": {"exclusiveMinimum": 0.0, "type": "number"},
-            "max_iterations": {"minimum": 1, "type": "integer"},
-            "mode": {"const": "series_resistor"},
-            "residual_tolerance_V": {"exclusiveMinimum": 0.0, "type": "number"},
-            "resistance_ohm_um": {"exclusiveMinimum": 0.0, "type": "number"},
-            "voltage_tolerance_V": {"exclusiveMinimum": 0.0, "type": "number"}
+            "current_direction": {
+              "enum": [
+                -1.0,
+                1.0
+              ]
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "initial_inner_voltage_V": {
+              "type": "number"
+            },
+            "max_bracket_steps": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_inner_voltage_step_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "max_iterations": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "mode": {
+              "const": "series_resistor"
+            },
+            "residual_tolerance_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "resistance_ohm_um": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "voltage_tolerance_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            }
           },
-          "required": ["mode", "resistance_ohm_um"],
+          "required": [
+            "mode",
+            "resistance_ohm_um"
+          ],
           "type": "object"
         },
         "boundary_control": {
           "additionalProperties": false,
           "properties": {
-            "checkpoint_directory": {"minLength": 1, "type": "string"},
-            "evaluation_csv": {"minLength": 1, "type": "string"},
-            "predictor_max_step_factor": {"minimum": 1.0, "type": "number"},
-            "preferred_max_evaluations": {"minimum": 1, "type": "integer"},
-            "resume": {"type": "boolean"}
+            "adaptive_outer_continuation": {
+              "type": "boolean"
+            },
+            "checkpoint_directory": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "evaluation_csv": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "predictor_max_step_factor": {
+              "minimum": 1.0,
+              "type": "number"
+            },
+            "preferred_max_evaluations": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "resume": {
+              "type": "boolean"
+            }
           },
           "type": "object"
         },
@@ -297,7 +377,12 @@
         },
         "vtk_field_data": {
           "type": "object",
-          "additionalProperties": {"type": ["string", "number"]},
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
           "description": "Opt-in VTU metadata. Keys must be ASCII identifiers and cannot replace runner-owned fields."
         },
         "initial_step": {
@@ -338,21 +423,51 @@
         "voltage_to_current": {
           "additionalProperties": false,
           "properties": {
-            "current_direction": {"enum": [-1.0, 1.0]},
+            "current_direction": {
+              "enum": [
+                -1.0,
+                1.0
+              ]
+            },
             "current_points_A_per_um": {
-              "items": {"minimum": 0.0, "type": "number"},
+              "items": {
+                "minimum": 0.0,
+                "type": "number"
+              },
               "minItems": 1,
               "type": "array"
             },
-            "current_tolerance_A_per_um": {"exclusiveMinimum": 0.0, "type": "number"},
-            "enabled": {"type": "boolean"},
-            "max_bracket_steps": {"minimum": 1, "type": "integer"},
-            "max_inner_voltage_step_V": {"exclusiveMinimum": 0.0, "type": "number"},
-            "max_iterations": {"minimum": 1, "type": "integer"},
-            "switch_voltage_V": {"type": "number"},
-            "voltage_tolerance_V": {"exclusiveMinimum": 0.0, "type": "number"}
+            "current_tolerance_A_per_um": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "max_bracket_steps": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_inner_voltage_step_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "max_iterations": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "switch_voltage_V": {
+              "type": "number"
+            },
+            "voltage_tolerance_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            }
           },
-          "required": ["switch_voltage_V", "current_points_A_per_um"],
+          "required": [
+            "switch_voltage_V",
+            "current_points_A_per_um"
+          ],
           "type": "object"
         },
         "write_state_every_point_prefix": {
@@ -374,6 +489,11 @@
         "shrink_factor"
       ],
       "type": "object"
+    },
+    "current_contact": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explicit terminal for newton_solve_from_state current_total_A_per_um; separate from sweep.current_contact."
     }
   },
   "required": [
@@ -392,11 +512,26 @@
     "srhLifetime": {
       "additionalProperties": false,
       "properties": {
-        "tau_min_s": {"minimum": 0.0, "type": "number"},
-        "tau_max_s": {"exclusiveMinimum": 0.0, "type": "number"},
-        "reference_doping_m3": {"exclusiveMinimum": 0.0, "type": "number"},
-        "reference_doping_cm3": {"exclusiveMinimum": 0.0, "type": "number"},
-        "gamma": {"exclusiveMinimum": 0.0, "type": "number"}
+        "tau_min_s": {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "tau_max_s": {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        "reference_doping_m3": {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        "reference_doping_cm3": {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        "gamma": {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        }
       },
       "type": "object"
     }

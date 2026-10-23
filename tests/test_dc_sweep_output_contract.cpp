@@ -3,6 +3,7 @@
 
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/io/CSVWriter.h"
 
 #include <chrono>
 #include <cmath>
@@ -18,6 +19,25 @@
 #include <vector>
 
 using namespace vela;
+
+TEST_CASE("CSVWriter preserves JSON diagnostics and following columns",
+          "[csv_writer][output_contract]")
+{
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto path = std::filesystem::temp_directory_path() /
+        ("vela_csv_json_" + std::to_string(stamp) + ".csv");
+    {
+        CSVWriter writer(path.string());
+        writer.writeHeader({"diagnostics", "voltage"});
+        writer.writeRow({R"({"ok":true,"reason":"carrier,row"})", "1e-5"});
+    }
+    std::ifstream input(path);
+    std::ostringstream content;
+    content << input.rdbuf();
+    input.close();
+    std::filesystem::remove(path);
+    REQUIRE(content.str() == "diagnostics,voltage\n\"{\"\"ok\"\":true,\"\"reason\"\":\"\"carrier,row\"\"}\",1e-5\n");
+}
 
 namespace {
 

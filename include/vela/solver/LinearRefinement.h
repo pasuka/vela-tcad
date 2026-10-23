@@ -13,6 +13,7 @@ using MP = boost::multiprecision::cpp_dec_float_100;
 struct Defect {
     vela::VectorXd values;
     double backwardMax = 0;
+    vela::VectorXd componentwiseBackwardErrors;
 };
 
 inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
@@ -27,21 +28,23 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
             const MP term=MP(it.value())*MP(step(it.col()));
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
-    Defect answer{vela::VectorXd(F.size()),0};
+    Defect answer{vela::VectorXd(F.size()),0,vela::VectorXd::Zero(F.size())};
     for (int i=0;i<F.size();++i) {
         answer.values(i)=static_cast<double>(r[i]);
-        if (denominator[i]!=0)
-            answer.backwardMax=std::max(answer.backwardMax,static_cast<double>(abs(r[i])/denominator[i]));
+        if (denominator[i]!=0) {
+            answer.componentwiseBackwardErrors(i)=static_cast<double>(abs(r[i])/denominator[i]);
+            answer.backwardMax=std::max(answer.backwardMax,answer.componentwiseBackwardErrors(i));
+        }
     }
     if (!answer.values.allFinite() || !std::isfinite(answer.backwardMax))
         throw std::runtime_error("Nonfinite linear refinement defect");
     return answer;
 }
 
-template<class Observer>
-vela::VectorXd refine(const vela::SparseMatrixd& J, const vela::VectorXd& F,
+template<class Solve, class Observer>
+vela::VectorXd refineWithSolve(const vela::SparseMatrixd& J, const vela::VectorXd& F,
                       const vela::VectorXd& rowWeights, vela::VectorXd step,
-                      vela::LinearSolver& solver, int corrections, Observer observe) {
+                      Solve solve, int corrections, Observer observe) {
     if (corrections<0 || J.rows()!=F.size() || J.cols()!=step.size() || rowWeights.size()!=F.size())
         throw std::invalid_argument("Invalid linear refinement dimensions/count");
     if (!rowWeights.allFinite() || (rowWeights.array() <= 0).any())
@@ -54,10 +57,20 @@ vela::VectorXd refine(const vela::SparseMatrixd& J, const vela::VectorXd& F,
         const Defect defect=highPrecisionDefect(J,F,step);
         observe(k,step,defect);
         if (k<corrections) {
-            step+=solver.solve(scaled,-defect.values.cwiseProduct(rowWeights));
+            step+=solve(scaled,(-defect.values.cwiseProduct(rowWeights)).eval());
             if (!step.allFinite()) throw std::runtime_error("Nonfinite linear refinement update");
         }
     }
     return step;
+}
+
+template<class Observer>
+vela::VectorXd refine(const vela::SparseMatrixd& J, const vela::VectorXd& F,
+                      const vela::VectorXd& rowWeights, vela::VectorXd step,
+                      vela::LinearSolver& solver, int corrections, Observer observe) {
+    return refineWithSolve(J,F,rowWeights,std::move(step),
+        [&solver](const vela::SparseMatrixd& matrix, const vela::VectorXd& rhs) {
+            return solver.solve(matrix,rhs);
+        },corrections,observe);
 }
 } // namespace vela::linear_refinement
