@@ -1,0 +1,2501 @@
+{
+  "date": "2026-10-20",
+  "scope": "fixed_internal_bias_no_btbt_diagnostic_only",
+  "machine": "T470p",
+  "solver": "Release UMFPACK",
+  "nodes": 2600,
+  "coordinates": 7800,
+  "temperature_K": 300,
+  "drain_V": 0.00524437249039996,
+  "production_changes": false,
+  "acceptance_changes": false,
+  "physical_threshold_changes": false,
+  "full_ctest_run": false,
+  "runs": 8,
+  "distinct_observations": 7,
+  "remote_checks": 236,
+  "independent_checks": 702,
+  "download_manifest_files": 286,
+  "archive_sha256": "6a4cb3c7077af3a61293d7f6f83bd2b33a023335888bdd0d45f0ffbc00374a67",
+  "baseline_result_and_events_exact": true,
+  "repeated_diagnostics_exact": true,
+  "protection_reconstruction_bitwise_exact": true,
+  "source_sha256": {
+    "src/solver/NewtonSolver.cpp": "a1991963fdfb2ef53d06ee745d5e2caaf783509c0b53bfa4f61bd4da1f46d544",
+    "include/vela/solver/NewtonSolver.h": "fcf0af3abcfd4c8d5cff57f9b3d23d7101771aa0d44af16917b622fc13804b8b",
+    "src/numerics/LineSearch.cpp": "5a5f2444832ef2a83d91b1a8f712e3dd30bc21abc227e2fdf79a0cc862540bc9",
+    "build-release/libvela_core.a": "2803fd77e2c981760085a48670c88397eefe6f2eaf53f25cf3f186b0e1fd127b",
+    "build-release/build.ninja": "c2cc69ddef8b98915da8f53071afa97a030a7a235ee9f6df55d0929933af2cf4"
+  },
+  "results": [
+    {
+      "state": "rows0",
+      "accepted_iterations": 3,
+      "converged": false,
+      "reason": ""
+    },
+    {
+      "state": "rows21",
+      "accepted_iterations": 20,
+      "converged": false,
+      "reason": ""
+    },
+    {
+      "state": "rows285",
+      "accepted_iterations": 0,
+      "converged": false,
+      "reason": ""
+    },
+    {
+      "state": "rows5",
+      "accepted_iterations": 20,
+      "converged": false,
+      "reason": ""
+    }
+  ],
+  "observations": [
+    {
+      "state": "rows0",
+      "iteration": 1,
+      "base": {
+        "electron": 1.9469216670708622e-13,
+        "electron_closure": -0.00069655879997423,
+        "hole": 1.1152716657028513e-14,
+        "hole_closure": -2.7001254349786477e-07,
+        "merit": 0.0006965588523077684,
+        "pde": 5.192816817839221e-11,
+        "psi": 5.192780200374862e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 15,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-4.8290332670356735",
+          "after": "-3.8681727071833607",
+          "delta": "0.96086055985231278",
+          "linear_metric_slope_change": "-4.1468957505692427e-11"
+        },
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-86.882952523507427",
+          "after": "-3.8681727071833607",
+          "delta": "83.014779816324065",
+          "linear_metric_slope_change": "3.3837451266483122e-11"
+        },
+        {
+          "block": "2",
+          "node": "355",
+          "before": "-112.84120136008653",
+          "after": "-3.8681727071833607",
+          "delta": "108.97302865290317",
+          "linear_metric_slope_change": "2.4692650773168015e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-82.165958337255475",
+          "after": "-3.8681727071833607",
+          "delta": "78.297785630072113",
+          "linear_metric_slope_change": "1.4328755201014481e-11"
+        },
+        {
+          "block": "2",
+          "node": "353",
+          "before": "-5.85931950175274",
+          "after": "-3.8681727071833607",
+          "delta": "1.9911467945693793",
+          "linear_metric_slope_change": "-1.3723341519916333e-11"
+        },
+        {
+          "block": "2",
+          "node": "153",
+          "before": "-59.039632904306316",
+          "after": "-3.8681727071833607",
+          "delta": "55.171460197122954",
+          "linear_metric_slope_change": "1.2239117422298858e-11"
+        },
+        {
+          "block": "2",
+          "node": "350",
+          "before": "-60.751865494564484",
+          "after": "-3.8681727071833607",
+          "delta": "56.883692787381122",
+          "linear_metric_slope_change": "1.0709891629158772e-11"
+        },
+        {
+          "block": "2",
+          "node": "421",
+          "before": "-95.67703326864978",
+          "after": "-3.8681727071833607",
+          "delta": "91.808860561466417",
+          "linear_metric_slope_change": "1.0136443370136848e-11"
+        },
+        {
+          "block": "2",
+          "node": "401",
+          "before": "-75.01489201137494",
+          "after": "-3.8681727071833607",
+          "delta": "71.146719304191578",
+          "linear_metric_slope_change": "8.0419818221623002e-12"
+        },
+        {
+          "block": "2",
+          "node": "420",
+          "before": "-99.381452580686243",
+          "after": "-3.8681727071833607",
+          "delta": "95.513279873502881",
+          "linear_metric_slope_change": "5.083366189039935e-12"
+        },
+        {
+          "block": "2",
+          "node": "352",
+          "before": "-81.016580641189947",
+          "after": "-3.8681727071833607",
+          "delta": "77.148407934006585",
+          "linear_metric_slope_change": "5.0669928473649209e-12"
+        },
+        {
+          "block": "2",
+          "node": "419",
+          "before": "-99.595355746536512",
+          "after": "-3.8681727071833607",
+          "delta": "95.72718303935315",
+          "linear_metric_slope_change": "4.4247179553663429e-12"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 3,
+          "fixed_violations": 3,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 3,
+          "fixed_violations": 3,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 6,
+          "fixed_violations": 4,
+          "exited": 0,
+          "entered": 4
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 18,
+          "fixed_violations": 16,
+          "exited": 0,
+          "entered": 4
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.851942347283159e-07,
+          "optimal_linear_alpha": 0.9999999999999998,
+          "requested_prediction": {
+            "electron": 2.4182709311082557e-29,
+            "electron_closure": -2.7066142519762273e-19,
+            "hole": 2.97536664345904e-30,
+            "hole_closure": 1.162577410517268e-19,
+            "merit": 2.9457336852549784e-19,
+            "pde": 8.040349547228144e-27,
+            "psi": 8.04031262982824e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 9.31620919890907e-20,
+              "written_merit": 0.002282757411660465,
+              "actual_merit": 0.002613975862233969,
+              "actual_pde": 4.315399145281735e-11,
+              "actual_electron_closure": -0.002613975861872015,
+              "actual_hole_closure": 4.3500299447143325e-08,
+              "nonlinear_remainder_merit": 0.00033121845306808916,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 8.746169227569047e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034827942615388454,
+              "written_merit": 0.0006964210481248472,
+              "actual_merit": 0.0006964025950063426,
+              "actual_pde": 4.0971944938090733e-11,
+              "actual_electron_closure": -0.0006964025855878897,
+              "actual_hole_closure": -1.1453413640085059e-07,
+              "nonlinear_remainder_merit": 2.755888198551492e-08,
+              "population_positive_finite": true,
+              "violations": 5,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003482793385338293
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006856751202404623,
+              "written_merit": 0.0006965545678552242,
+              "actual_merit": 0.0006965567558905035,
+              "actual_pde": 5.1928168142854245e-11,
+              "actual_electron_closure": -0.0006965567051907709,
+              "actual_hole_closure": -2.657639504153747e-07,
+              "nonlinear_remainder_merit": 2.1882475935904866e-09,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006856751203329468
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006963887939942159,
+              "written_merit": 0.0006965587623516099,
+              "actual_merit": 0.0006965588166125194,
+              "actual_pde": 5.19281681778075e-11,
+              "actual_electron_closure": -0.0006965587643045309,
+              "actual_hole_closure": -2.6994661637573006e-07,
+              "nonlinear_remainder_merit": 5.4260915850317636e-11,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006963887939956619
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.851136824481804e-07,
+          "optimal_linear_alpha": 1.0001660207204823,
+          "requested_prediction": {
+            "electron": 1.7553655538398194e-18,
+            "electron_closure": -1.155983775185248e-07,
+            "hole": 5.200781822602457e-16,
+            "hole_closure": -1.1559837751817078e-07,
+            "merit": 1.6348079327477254e-07,
+            "pde": 5.201053571985719e-16,
+            "psi": 5.018527204775758e-18
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.6348079327469678e-07,
+              "written_merit": 0.0022828730129647746,
+              "actual_merit": 0.0026140802881237583,
+              "actual_pde": 4.315399145979302e-11,
+              "actual_electron_closure": -0.002614080287413779,
+              "actual_hole_closure": -6.092524231714499e-08,
+              "nonlinear_remainder_merit": 0.0003312072818883064,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 1.6342094144973086e-07
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034833725253500966,
+              "written_merit": 0.0006964788609146941,
+              "actual_merit": 0.000696456539175089,
+              "actual_pde": 4.0971944949630666e-11,
+              "actual_electron_closure": -0.0006964565187996256,
+              "actual_hole_closure": -1.6846734813615627e-07,
+              "nonlinear_remainder_merit": 3.302004617836739e-08,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034833716491496113
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006856769271675134,
+              "written_merit": 0.000696556374771307,
+              "actual_merit": 0.0006965585545938085,
+              "actual_pde": 5.192816814385955e-11,
+              "actual_electron_closure": -0.0006965585032058741,
+              "actual_hole_closure": -2.6756196551856403e-07,
+              "nonlinear_remainder_merit": 2.1801659027103643e-09,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006856769272599975
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006963888222274148,
+              "written_merit": 0.0006965587905848062,
+              "actual_merit": 0.000696558844843631,
+              "actual_pde": 5.192816817782391e-11,
+              "actual_electron_closure": -0.0006965587925247075,
+              "actual_hole_closure": -2.699748365525932e-07,
+              "nonlinear_remainder_merit": 5.4258832860533465e-11,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006963888222288608
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.851136824481806e-07,
+          "optimal_linear_alpha": 1.000166020720482,
+          "requested_prediction": {
+            "electron": 1.7553645906581046e-18,
+            "electron_closure": -1.1559837751857144e-07,
+            "hole": 5.200781822602457e-16,
+            "hole_closure": -1.1559837751817046e-07,
+            "merit": 1.6348079327480528e-07,
+            "pde": 5.200811445995398e-16,
+            "psi": 5.329995829712234e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.634807932747469e-07,
+              "written_merit": 0.0022828730129647746,
+              "actual_merit": 0.0026140802881237583,
+              "actual_pde": 4.315399145979302e-11,
+              "actual_electron_closure": -0.002614080287413779,
+              "actual_hole_closure": -6.092524231714499e-08,
+              "nonlinear_remainder_merit": 0.0003312072818883064,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 1.6342094144973086e-07
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034833725253500977,
+              "written_merit": 0.0006964788609146941,
+              "actual_merit": 0.000696456539175089,
+              "actual_pde": 4.0971944949630666e-11,
+              "actual_electron_closure": -0.0006964565187996256,
+              "actual_hole_closure": -1.6846734813615627e-07,
+              "nonlinear_remainder_merit": 3.302004617836739e-08,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034833716491496113
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006856769271675132,
+              "written_merit": 0.000696556374771307,
+              "actual_merit": 0.0006965585545938085,
+              "actual_pde": 5.192816814385955e-11,
+              "actual_electron_closure": -0.0006965585032058741,
+              "actual_hole_closure": -2.6756196551856403e-07,
+              "nonlinear_remainder_merit": 2.1801659027103643e-09,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006856769272599975
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006963888222274148,
+              "written_merit": 0.0006965587905848062,
+              "actual_merit": 0.000696558844843631,
+              "actual_pde": 5.192816817782391e-11,
+              "actual_electron_closure": -0.0006965587925247075,
+              "actual_hole_closure": -2.699748365525932e-07,
+              "nonlinear_remainder_merit": 5.4258832860533465e-11,
+              "population_positive_finite": true,
+              "violations": 3,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006963888222288608
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows0",
+      "iteration": 4,
+      "base": {
+        "electron": 1.9469216581408036e-13,
+        "electron_closure": -0.0006963893781775565,
+        "hole": 3.1561416866313416e-15,
+        "hole_closure": -1.064601738496506e-07,
+        "merit": 0.0006963893863150802,
+        "pde": 4.148969647147099e-11,
+        "psi": 4.1489239548274836e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 15,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-84.231824385499976",
+          "after": "-3.8681727071833607",
+          "delta": "80.363651678316614",
+          "linear_metric_slope_change": "3.1689129789335791e-11"
+        },
+        {
+          "block": "2",
+          "node": "353",
+          "before": "-9.4813885750278537",
+          "after": "-3.8681727071833607",
+          "delta": "5.6132158678444934",
+          "linear_metric_slope_change": "-1.747586052105551e-11"
+        },
+        {
+          "block": "2",
+          "node": "355",
+          "before": "-63.87502864407881",
+          "after": "-3.8681727071833607",
+          "delta": "60.006855936895448",
+          "linear_metric_slope_change": "1.7030302849259919e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-86.3595846968514",
+          "after": "-3.8681727071833607",
+          "delta": "82.491411989668038",
+          "linear_metric_slope_change": "1.4022175582416876e-11"
+        },
+        {
+          "block": "2",
+          "node": "350",
+          "before": "-69.949597242586535",
+          "after": "-3.8681727071833607",
+          "delta": "66.081424535403173",
+          "linear_metric_slope_change": "1.2308289201184709e-11"
+        },
+        {
+          "block": "2",
+          "node": "153",
+          "before": "-62.19666865635773",
+          "after": "-3.8681727071833607",
+          "delta": "58.328495949174368",
+          "linear_metric_slope_change": "1.1991016429343592e-11"
+        },
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-8.7752795874453806",
+          "after": "-3.8681727071833607",
+          "delta": "4.9071068802620204",
+          "linear_metric_slope_change": "-1.1983519570136968e-11"
+        },
+        {
+          "block": "2",
+          "node": "421",
+          "before": "-97.346567141868178",
+          "after": "-3.8681727071833607",
+          "delta": "93.478394434684816",
+          "linear_metric_slope_change": "9.9016461177172859e-12"
+        },
+        {
+          "block": "2",
+          "node": "401",
+          "before": "-71.238180517069111",
+          "after": "-3.8681727071833607",
+          "delta": "67.370007809885749",
+          "linear_metric_slope_change": "7.46819819122188e-12"
+        },
+        {
+          "block": "2",
+          "node": "420",
+          "before": "-99.718583988984406",
+          "after": "-3.8681727071833607",
+          "delta": "95.850411281801044",
+          "linear_metric_slope_change": "4.9846271735049921e-12"
+        },
+        {
+          "block": "2",
+          "node": "352",
+          "before": "-76.588497403414635",
+          "after": "-3.8681727071833607",
+          "delta": "72.720324696231273",
+          "linear_metric_slope_change": "4.8614995318659807e-12"
+        },
+        {
+          "block": "2",
+          "node": "419",
+          "before": "-99.967827317292219",
+          "after": "-3.8681727071833607",
+          "delta": "96.099654610108857",
+          "linear_metric_slope_change": "4.3387168819025231e-12"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 6,
+          "fixed_violations": 6,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 6,
+          "fixed_violations": 6,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 8,
+          "fixed_violations": 8,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 10,
+          "fixed_violations": 10,
+          "exited": 0,
+          "entered": 0
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.849581773722942e-07,
+          "optimal_linear_alpha": 0.9999999999999998,
+          "requested_prediction": {
+            "electron": 3.6127951332202654e-29,
+            "electron_closure": -3.7317193794927713e-19,
+            "hole": 6.4773612964710265e-31,
+            "hole_closure": 1.5437390589415643e-20,
+            "merit": 3.734911087308898e-19,
+            "pde": 5.730286410240244e-27,
+            "psi": 5.7301724838746755e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 2.0449616232998813e-19,
+              "written_merit": 0.0022827561570427733,
+              "actual_merit": 0.0026139706728333795,
+              "actual_pde": 5.1479351187743316e-11,
+              "actual_electron_closure": -0.0026139706723734275,
+              "actual_hole_closure": 4.903672282742887e-08,
+              "nonlinear_remainder_merit": 0.00033121451896062976,
+              "population_positive_finite": true,
+              "violations": 10,
+              "linear_merit_after_removing_electron_writeback_loss": 5.945832394902879e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0003481946931575396,
+              "written_merit": 0.0006963357519427073,
+              "actual_merit": 0.0006963150483690201,
+              "actual_pde": 4.097199705266418e-11,
+              "actual_electron_closure": -0.0006963150476750826,
+              "actual_hole_closure": -3.1086917825459914e-08,
+              "nonlinear_remainder_merit": 3.031341142331425e-08,
+              "population_positive_finite": true,
+              "violations": 8,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034819462017637273
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006855083021539095,
+              "written_merit": 0.0006963876889784326,
+              "actual_merit": 0.0006963882671617417,
+              "actual_pde": 4.1489696467408735e-11,
+              "actual_electron_closure": -0.0006963882592825816,
+              "actual_hole_closure": -1.0475641976962431e-07,
+              "nonlinear_remainder_merit": 5.795931055884029e-10,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006855082998732482
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006962193693750616,
+              "written_merit": 0.0006963893531482545,
+              "actual_merit": 0.0006963893531391436,
+              "actual_pde": 4.148969647141239e-11,
+              "actual_electron_closure": -0.0006963893450055939,
+              "actual_hole_closure": -1.064341723115105e-07,
+              "nonlinear_remainder_merit": 1.3745682001343051e-14,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006962193693394253
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.848619400710067e-07,
+          "optimal_linear_alpha": 1.0001984445461007,
+          "requested_prediction": {
+            "electron": 1.7465684511339727e-18,
+            "electron_closure": -1.3817354819482349e-07,
+            "hole": 7.676489995101917e-16,
+            "hole_closure": -1.381735481944309e-07,
+            "merit": 1.9540690581805428e-07,
+            "pde": 7.676511147630624e-16,
+            "psi": 4.438993351081077e-19
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.9540690581793726e-07,
+              "written_merit": 0.002282894334772486,
+              "actual_merit": 0.0026141211120758252,
+              "actual_pde": 5.147935119183372e-11,
+              "actual_electron_closure": -0.0026141211101091666,
+              "actual_hole_closure": -1.0140101291197386e-07,
+              "nonlinear_remainder_merit": 0.00033122678155942965,
+              "population_positive_finite": true,
+              "violations": 10,
+              "linear_merit_after_removing_electron_writeback_loss": 1.9536774918571877e-07
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034826379734287887,
+              "written_merit": 0.0006964048474241616,
+              "actual_merit": 0.0006963948584944029,
+              "actual_pde": 4.0971997060378935e-11,
+              "actual_electron_closure": -0.0006963948496658255,
+              "actual_hole_closure": -1.1088890856838902e-07,
+              "nonlinear_remainder_merit": 1.517692709315391e-08,
+              "population_positive_finite": true,
+              "violations": 8,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003482637243617154
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006855104614490228,
+              "written_merit": 0.0006963898482683382,
+              "actual_merit": 0.0006963904526830991,
+              "actual_pde": 4.1489696468072973e-11,
+              "actual_electron_closure": -0.0006963904444718223,
+              "actual_hole_closure": -1.0694160901025016e-07,
+              "nonlinear_remainder_merit": 6.045810539307191e-10,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006855104591683626
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006962194031139953,
+              "written_merit": 0.0006963893868871875,
+              "actual_merit": 0.0006963893868846613,
+              "actual_pde": 4.148969647142313e-11,
+              "actual_electron_closure": -0.0006963893787459545,
+              "actual_hole_closure": -1.0646791267221387e-07,
+              "nonlinear_remainder_merit": 4.487385312253736e-15,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006962194030783592
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.848619400710063e-07,
+          "optimal_linear_alpha": 1.0001984445461016,
+          "requested_prediction": {
+            "electron": 1.7465684200216576e-18,
+            "electron_closure": -1.3817354819481136e-07,
+            "hole": 7.676489995101917e-16,
+            "hole_closure": -1.381735481944309e-07,
+            "merit": 1.9540690581804568e-07,
+            "pde": 7.676509864191176e-16,
+            "psi": 4.753275598036301e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.9540690581792765e-07,
+              "written_merit": 0.002282894334772486,
+              "actual_merit": 0.0026141211120758252,
+              "actual_pde": 5.147935119183372e-11,
+              "actual_electron_closure": -0.0026141211101091666,
+              "actual_hole_closure": -1.0140101291197386e-07,
+              "nonlinear_remainder_merit": 0.00033122678155942965,
+              "population_positive_finite": true,
+              "violations": 10,
+              "linear_merit_after_removing_electron_writeback_loss": 1.9536774918571877e-07
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034826379734287876,
+              "written_merit": 0.0006964048474241616,
+              "actual_merit": 0.0006963948584944029,
+              "actual_pde": 4.0971997060378935e-11,
+              "actual_electron_closure": -0.0006963948496658255,
+              "actual_hole_closure": -1.1088890856838902e-07,
+              "nonlinear_remainder_merit": 1.517692709315391e-08,
+              "population_positive_finite": true,
+              "violations": 8,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003482637243617154
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006855104614490237,
+              "written_merit": 0.0006963898482683382,
+              "actual_merit": 0.0006963904526830991,
+              "actual_pde": 4.1489696468072973e-11,
+              "actual_electron_closure": -0.0006963904444718223,
+              "actual_hole_closure": -1.0694160901025016e-07,
+              "nonlinear_remainder_merit": 6.045810539307191e-10,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006855104591683626
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006962194031139953,
+              "written_merit": 0.0006963893868871875,
+              "actual_merit": 0.0006963893868846613,
+              "actual_pde": 4.148969647142313e-11,
+              "actual_electron_closure": -0.0006963893787459545,
+              "actual_hole_closure": -1.0646791267221387e-07,
+              "nonlinear_remainder_merit": 4.487385312253736e-15,
+              "population_positive_finite": true,
+              "violations": 6,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006962194030783592
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows21",
+      "iteration": 1,
+      "base": {
+        "electron": 1.9469216659869429e-13,
+        "electron_closure": -0.0006978035352597936,
+        "hole": 5.267334010141843e-16,
+        "hole_closure": -1.5222110243889772e-06,
+        "merit": 0.0006978051955578086,
+        "pde": 5.192816888125548e-11,
+        "psi": 5.1927803901599836e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 23,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "357",
+          "before": "-61.350606328799472",
+          "after": "-3.8681727071833607",
+          "delta": "57.48243362161611",
+          "linear_metric_slope_change": "2.3721570673700761e-10"
+        },
+        {
+          "block": "2",
+          "node": "610",
+          "before": "-57.963782496048495",
+          "after": "-3.8681727071833607",
+          "delta": "54.095609788865133",
+          "linear_metric_slope_change": "1.4906159175875995e-10"
+        },
+        {
+          "block": "2",
+          "node": "601",
+          "before": "-57.827231281796898",
+          "after": "-3.8681727071833607",
+          "delta": "53.959058574613536",
+          "linear_metric_slope_change": "1.19368456341471e-10"
+        },
+        {
+          "block": "2",
+          "node": "427",
+          "before": "-96.452021441505039",
+          "after": "-3.8681727071833607",
+          "delta": "92.583848734321677",
+          "linear_metric_slope_change": "1.1844701164104357e-10"
+        },
+        {
+          "block": "2",
+          "node": "598",
+          "before": "-97.717541841146414",
+          "after": "-3.8681727071833607",
+          "delta": "93.849369133963052",
+          "linear_metric_slope_change": "1.1726203673700539e-10"
+        },
+        {
+          "block": "2",
+          "node": "337",
+          "before": "-77.212045541397686",
+          "after": "-3.8681727071833607",
+          "delta": "73.343872834214324",
+          "linear_metric_slope_change": "7.428056087225481e-11"
+        },
+        {
+          "block": "2",
+          "node": "356",
+          "before": "-65.364873824245805",
+          "after": "-3.8681727071833607",
+          "delta": "61.496701117062443",
+          "linear_metric_slope_change": "3.9770477634894207e-11"
+        },
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-79.615204227901074",
+          "after": "-3.8681727071833607",
+          "delta": "75.747031520717712",
+          "linear_metric_slope_change": "3.9330218602144128e-11"
+        },
+        {
+          "block": "2",
+          "node": "424",
+          "before": "-95.670693818552749",
+          "after": "-3.8681727071833607",
+          "delta": "91.802521111369387",
+          "linear_metric_slope_change": "3.9129193767037426e-11"
+        },
+        {
+          "block": "2",
+          "node": "334",
+          "before": "-55.891636496635115",
+          "after": "-3.8681727071833607",
+          "delta": "52.023463789451753",
+          "linear_metric_slope_change": "2.5398085408523771e-11"
+        },
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-79.554505718439799",
+          "after": "-3.8681727071833607",
+          "delta": "75.686333011256437",
+          "linear_metric_slope_change": "1.4949625535189053e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-82.082624169317455",
+          "after": "-3.8681727071833607",
+          "delta": "78.214451462134093",
+          "linear_metric_slope_change": "1.4380791763641345e-11"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 21,
+          "fixed_violations": 21,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 21,
+          "fixed_violations": 21,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 20,
+          "fixed_violations": 21,
+          "exited": 2,
+          "entered": 0
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 18,
+          "fixed_violations": 21,
+          "exited": 6,
+          "entered": 0
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.869320909474723e-07,
+          "optimal_linear_alpha": 0.9999999999999984,
+          "requested_prediction": {
+            "electron": 3.597719232930537e-29,
+            "electron_closure": 4.2714953041009436e-19,
+            "hole": 9.141515469543038e-32,
+            "hole_closure": 6.101596209696347e-21,
+            "merit": 4.2719310716100086e-19,
+            "pde": 5.695883868058365e-27,
+            "psi": 5.695770243933905e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 2.699485633161998e-19,
+              "written_merit": 0.0022827538144767363,
+              "actual_merit": 0.0026146585125561748,
+              "actual_pde": 4.315283893578902e-11,
+              "actual_electron_closure": -0.0026146584331578847,
+              "actual_hole_closure": -6.44359233240075e-07,
+              "nonlinear_remainder_merit": 0.00033190524415968717,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 8.74606034144633e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034890259777890467,
+              "written_merit": 0.0006970432434108746,
+              "actual_merit": 0.0006972407223625797,
+              "actual_pde": 4.097193599257702e-11,
+              "actual_electron_closure": -0.0006972400604760561,
+              "actual_hole_closure": -9.607226633538981e-07,
+              "nonlinear_remainder_merit": 2.8062021351787956e-07,
+              "population_positive_finite": true,
+              "violations": 17,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003489025101594122
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.000686901989377219,
+              "written_merit": 0.0006977813668124801,
+              "actual_merit": 0.0006977807933338927,
+              "actual_pde": 5.1928168878658335e-11,
+              "actual_electron_closure": -0.00069777918392257,
+              "actual_hole_closure": -1.4986760911207517e-06,
+              "nonlinear_remainder_merit": 6.259404955546299e-10,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00068690198946971
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976348329612353,
+              "written_merit": 0.0006978048052774699,
+              "actual_merit": 0.0006978048053390592,
+              "actual_pde": 5.1928168881254176e-11,
+              "actual_electron_closure": -0.0006978031458505775,
+              "actual_hole_closure": -1.5218394519259248e-06,
+              "nonlinear_remainder_merit": 8.66698011207361e-14,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976348329626781
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.858773911191591e-07,
+          "optimal_linear_alpha": 1.0021660307155686,
+          "requested_prediction": {
+            "electron": 9.12249295260979e-18,
+            "electron_closure": -1.508166736198729e-06,
+            "hole": 4.951842413779523e-16,
+            "hole_closure": -1.5081667361991521e-06,
+            "merit": 2.1328698526525074e-06,
+            "pde": 4.952682634560068e-16,
+            "psi": 5.695770243933905e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 2.132869852653003e-06,
+              "written_merit": 0.002284262479090735,
+              "actual_merit": 0.0026155256630656506,
+              "actual_pde": 4.315283893784335e-11,
+              "actual_electron_closure": -0.0026155252265219766,
+              "actual_hole_closure": -1.511152597331783e-06,
+              "nonlinear_remainder_merit": 0.0003312632453224993,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 2.1328099897507014e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.000349659133921133,
+              "written_merit": 0.0006977985562817824,
+              "actual_merit": 0.0006977969287384854,
+              "actual_pde": 4.097193599426156e-11,
+              "actual_electron_closure": -0.0006977952820633643,
+              "actual_hole_closure": -1.5159442506618376e-06,
+              "nonlinear_remainder_merit": 1.79617592912262e-09,
+              "population_positive_finite": true,
+              "violations": 20,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034965904630225456
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006869256062343968,
+              "written_merit": 0.0006978049828636612,
+              "actual_merit": 0.0006978041599833331,
+              "actual_pde": 5.1928168878734926e-11,
+              "actual_electron_closure": -0.000697802500159891,
+              "actual_hole_closure": -1.5219923284412287e-06,
+              "nonlinear_remainder_merit": 8.22884251412647e-10,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006869256063268879
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976352019684373,
+              "written_merit": 0.0006978051742844763,
+              "actual_merit": 0.000697805174284666,
+              "actual_pde": 5.1928168881255404e-11,
+              "actual_electron_closure": -0.0006978035139940805,
+              "actual_hole_closure": -1.5222075954289006e-06,
+              "nonlinear_remainder_merit": 2.4433881435068815e-16,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976352019698805
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.858773911191591e-07,
+          "optimal_linear_alpha": 1.0021660307155686,
+          "requested_prediction": {
+            "electron": 9.12249295260979e-18,
+            "electron_closure": -1.508166736198729e-06,
+            "hole": 4.951842413779523e-16,
+            "hole_closure": -1.5081667361991521e-06,
+            "merit": 2.1328698526525074e-06,
+            "pde": 4.952682634560068e-16,
+            "psi": 6.653292110732278e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 2.132869852653003e-06,
+              "written_merit": 0.002284262479090735,
+              "actual_merit": 0.0026155256630656506,
+              "actual_pde": 4.315283893784335e-11,
+              "actual_electron_closure": -0.0026155252265219766,
+              "actual_hole_closure": -1.511152597331783e-06,
+              "nonlinear_remainder_merit": 0.0003312632453224993,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 2.1328099897507014e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.000349659133921133,
+              "written_merit": 0.0006977985562817824,
+              "actual_merit": 0.0006977969287384854,
+              "actual_pde": 4.097193599426156e-11,
+              "actual_electron_closure": -0.0006977952820633643,
+              "actual_hole_closure": -1.5159442506618376e-06,
+              "nonlinear_remainder_merit": 1.79617592912262e-09,
+              "population_positive_finite": true,
+              "violations": 20,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034965904630225456
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006869256062343968,
+              "written_merit": 0.0006978049828636612,
+              "actual_merit": 0.0006978041599833331,
+              "actual_pde": 5.1928168878734926e-11,
+              "actual_electron_closure": -0.000697802500159891,
+              "actual_hole_closure": -1.5219923284412287e-06,
+              "nonlinear_remainder_merit": 8.22884251412647e-10,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006869256063268879
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976352019684373,
+              "written_merit": 0.0006978051742844763,
+              "actual_merit": 0.000697805174284666,
+              "actual_pde": 5.1928168881255404e-11,
+              "actual_electron_closure": -0.0006978035139940805,
+              "actual_hole_closure": -1.5222075954289006e-06,
+              "nonlinear_remainder_merit": 2.4433881435068815e-16,
+              "population_positive_finite": true,
+              "violations": 21,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976352019698805
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows21",
+      "iteration": 20,
+      "base": {
+        "electron": 1.9469216620688114e-13,
+        "electron_closure": -0.0006976073798949591,
+        "hole": 3.3778018997553427e-16,
+        "hole_closure": -1.324330026205315e-06,
+        "merit": 0.0006976086369404622,
+        "pde": 4.097196249655611e-11,
+        "psi": 4.0971499919645635e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 23,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "357",
+          "before": "-98.183023105947512",
+          "after": "-3.8681727071833607",
+          "delta": "94.31485039876415",
+          "linear_metric_slope_change": "1.7621447070352545e-10"
+        },
+        {
+          "block": "2",
+          "node": "610",
+          "before": "-95.260590981220986",
+          "after": "-3.8681727071833607",
+          "delta": "91.392418274037624",
+          "linear_metric_slope_change": "1.5550635058419229e-10"
+        },
+        {
+          "block": "2",
+          "node": "601",
+          "before": "-95.181546581300012",
+          "after": "-3.8681727071833607",
+          "delta": "91.31337387411665",
+          "linear_metric_slope_change": "1.2512057630243517e-10"
+        },
+        {
+          "block": "2",
+          "node": "598",
+          "before": "-135.26504096653142",
+          "after": "-3.8681727071833607",
+          "delta": "131.39686825934805",
+          "linear_metric_slope_change": "1.0324836600676829e-10"
+        },
+        {
+          "block": "2",
+          "node": "427",
+          "before": "-133.6216312514384",
+          "after": "-3.8681727071833607",
+          "delta": "129.75345854425504",
+          "linear_metric_slope_change": "9.9109441324922827e-11"
+        },
+        {
+          "block": "2",
+          "node": "337",
+          "before": "-114.07290350757894",
+          "after": "-3.8681727071833607",
+          "delta": "110.20473080039558",
+          "linear_metric_slope_change": "5.6908764794323381e-11"
+        },
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-116.88198845093848",
+          "after": "-3.8681727071833607",
+          "delta": "113.01381574375512",
+          "linear_metric_slope_change": "3.1892551523797116e-11"
+        },
+        {
+          "block": "2",
+          "node": "424",
+          "before": "-132.65521178962243",
+          "after": "-3.8681727071833607",
+          "delta": "128.78703908243907",
+          "linear_metric_slope_change": "3.155574365789926e-11"
+        },
+        {
+          "block": "2",
+          "node": "356",
+          "before": "-102.22791890472706",
+          "after": "-3.8681727071833607",
+          "delta": "98.3597461975437",
+          "linear_metric_slope_change": "2.880873165680627e-11"
+        },
+        {
+          "block": "2",
+          "node": "334",
+          "before": "-92.899536519719135",
+          "after": "-3.8681727071833607",
+          "delta": "89.031363812535773",
+          "linear_metric_slope_change": "1.9957093152176537e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-123.06322156234029",
+          "after": "-3.8681727071833607",
+          "delta": "119.19504885515693",
+          "linear_metric_slope_change": "1.1848211445176887e-11"
+        },
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-116.64523922970128",
+          "after": "-3.8681727071833607",
+          "delta": "112.77706652251791",
+          "linear_metric_slope_change": "1.1781073905614575e-11"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 16,
+          "fixed_violations": 16,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 16,
+          "fixed_violations": 16,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 16,
+          "fixed_violations": 16,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 16,
+          "fixed_violations": 16,
+          "exited": 0,
+          "entered": 0
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.866578103339295e-07,
+          "optimal_linear_alpha": 1.0000000000000007,
+          "requested_prediction": {
+            "electron": 4.08002474514015e-29,
+            "electron_closure": -1.4294408589204779e-18,
+            "hole": 7.385435600311501e-32,
+            "hole_closure": 1.3309862396161644e-21,
+            "merit": 1.4294414785767494e-18,
+            "pde": 7.449096990620762e-27,
+            "psi": 7.448985253712666e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 3.286349895796895e-19,
+              "written_merit": 0.0022827540362210185,
+              "actual_merit": 0.002614617964938025,
+              "actual_pde": 5.189253928943094e-11,
+              "actual_electron_closure": -0.0026146178957450025,
+              "actual_hole_closure": -6.015202683882243e-07,
+              "nonlinear_remainder_merit": 0.00033186440466670885,
+              "population_positive_finite": true,
+              "violations": 8,
+              "linear_merit_after_removing_electron_writeback_loss": 6.24624674640404e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0003488043184702331,
+              "written_merit": 0.0006969446972802084,
+              "actual_merit": 0.0006971381591023607,
+              "actual_pde": 4.1489728902935676e-11,
+              "actual_electron_closure": -0.0006971376346340132,
+              "actual_hole_closure": -8.551336268106564e-07,
+              "nonlinear_remainder_merit": 2.7309922889019185e-07,
+              "population_positive_finite": true,
+              "violations": 13,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003488042438817159
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006867085019882709,
+              "written_merit": 0.000697587884382408,
+              "actual_merit": 0.0006975880630311652,
+              "actual_pde": 4.0971962496513576e-11,
+              "actual_electron_closure": -0.0006975868444424362,
+              "actual_hole_closure": -1.3038958607272484e-06,
+              "nonlinear_remainder_merit": 3.1394392947706235e-10,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006867084996573794
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006974383223318345,
+              "written_merit": 0.000697608307437766,
+              "actual_merit": 0.0006976083075017333,
+              "actual_pde": 4.0971962496555427e-11,
+              "actual_electron_closure": -0.0006976070510692319,
+              "actual_hole_closure": -1.3240067678213363e-06,
+              "nonlinear_remainder_merit": 9.066119616122744e-14,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006974383222954151
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.857492933460555e-07,
+          "optimal_linear_alpha": 1.001866863152579,
+          "requested_prediction": {
+            "electron": 7.852585261397462e-18,
+            "electron_closure": -1.2998651727756765e-06,
+            "hole": 3.252386678746863e-16,
+            "hole_closure": -1.299865172774245e-06,
+            "merit": 1.8382869565947958e-06,
+            "pde": 3.253334507489016e-16,
+            "psi": 7.448985253712666e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.8382869565940201e-06,
+              "written_merit": 0.002284054271273271,
+              "actual_merit": 0.0026153179137382316,
+              "actual_pde": 5.189253929017693e-11,
+              "actual_electron_closure": -0.00261531759003773,
+              "actual_hole_closure": -1.3012145611157808e-06,
+              "nonlinear_remainder_merit": 0.00033126368864668703,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 1.838245521988596e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034945608579928103,
+              "written_merit": 0.0006975955492600503,
+              "actual_merit": 0.0006975961750646889,
+              "actual_pde": 4.148972890364902e-11,
+              "actual_electron_closure": -0.0006975949404687094,
+              "actual_hole_closure": -1.312439461506604e-06,
+              "nonlinear_remainder_merit": 7.128963387811129e-10,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034945601121115554
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006867288512011564,
+              "written_merit": 0.0006976082329904541,
+              "actual_merit": 0.000697608153003854,
+              "actual_pde": 4.097196249655449e-11,
+              "actual_electron_closure": -0.0006976068966824177,
+              "actual_hole_closure": -1.3239481007085885e-06,
+              "nonlinear_remainder_merit": 7.998809881867071e-11,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006867288488702642
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006974386402836826,
+              "written_merit": 0.0006976086253894679,
+              "actual_merit": 0.0006976086253895438,
+              "actual_pde": 4.097196249655608e-11,
+              "actual_electron_closure": -0.0006976073683553574,
+              "actual_hole_closure": -1.3243240539468533e-06,
+              "nonlinear_remainder_merit": 6.027194427815835e-16,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006974386402472627
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.857492933460555e-07,
+          "optimal_linear_alpha": 1.001866863152579,
+          "requested_prediction": {
+            "electron": 7.852585261397462e-18,
+            "electron_closure": -1.2998651727756765e-06,
+            "hole": 3.252386678746863e-16,
+            "hole_closure": -1.299865172774245e-06,
+            "merit": 1.8382869565947958e-06,
+            "pde": 3.253334507489016e-16,
+            "psi": 5.265022031972678e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.8382869565940201e-06,
+              "written_merit": 0.002284054271273271,
+              "actual_merit": 0.0026153179137382316,
+              "actual_pde": 5.189253929017693e-11,
+              "actual_electron_closure": -0.00261531759003773,
+              "actual_hole_closure": -1.3012145611157808e-06,
+              "nonlinear_remainder_merit": 0.00033126368864668703,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 1.838245521988596e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034945608579928103,
+              "written_merit": 0.0006975955492600503,
+              "actual_merit": 0.0006975961750646889,
+              "actual_pde": 4.148972890364902e-11,
+              "actual_electron_closure": -0.0006975949404687094,
+              "actual_hole_closure": -1.312439461506604e-06,
+              "nonlinear_remainder_merit": 7.128963387811129e-10,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034945601121115554
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006867288512011564,
+              "written_merit": 0.0006976082329904541,
+              "actual_merit": 0.000697608153003854,
+              "actual_pde": 4.097196249655449e-11,
+              "actual_electron_closure": -0.0006976068966824177,
+              "actual_hole_closure": -1.3239481007085885e-06,
+              "nonlinear_remainder_merit": 7.998809881867071e-11,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006867288488702642
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006974386402836826,
+              "written_merit": 0.0006976086253894679,
+              "actual_merit": 0.0006976086253895438,
+              "actual_pde": 4.097196249655608e-11,
+              "actual_electron_closure": -0.0006976073683553574,
+              "actual_hole_closure": -1.3243240539468533e-06,
+              "nonlinear_remainder_merit": 6.027194427815835e-16,
+              "population_positive_finite": true,
+              "violations": 16,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006974386402472627
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows285",
+      "iteration": 1,
+      "base": {
+        "electron": 2.1594341594977645e-13,
+        "electron_closure": -0.003654676678472763,
+        "hole": 1.609681236459101e-11,
+        "hole_closure": -0.001183834115354062,
+        "merit": 0.0038416304919719757,
+        "pde": 4.760946964215924e-11,
+        "psi": 4.480521844325659e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 134,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "831",
+          "before": "-42.151849843523522",
+          "after": "-3.8681727071833607",
+          "delta": "38.28367713634016",
+          "linear_metric_slope_change": "4.6527714754366782e-06"
+        },
+        {
+          "block": "2",
+          "node": "714",
+          "before": "-44.672989727968371",
+          "after": "-3.8681727071833607",
+          "delta": "40.804817020785009",
+          "linear_metric_slope_change": "4.4899970885956376e-06"
+        },
+        {
+          "block": "2",
+          "node": "700",
+          "before": "-44.666881575923533",
+          "after": "-3.8681727071833607",
+          "delta": "40.798708868740171",
+          "linear_metric_slope_change": "2.9272050466108162e-06"
+        },
+        {
+          "block": "2",
+          "node": "655",
+          "before": "-44.435250182784422",
+          "after": "-3.8681727071833607",
+          "delta": "40.56707747560106",
+          "linear_metric_slope_change": "2.0830388563993436e-06"
+        },
+        {
+          "block": "2",
+          "node": "897",
+          "before": "-41.110375082452265",
+          "after": "-3.8681727071833607",
+          "delta": "37.242202375268903",
+          "linear_metric_slope_change": "1.7519368265807235e-06"
+        },
+        {
+          "block": "2",
+          "node": "657",
+          "before": "-44.075284567343822",
+          "after": "-3.8681727071833607",
+          "delta": "40.20711186016046",
+          "linear_metric_slope_change": "1.3365712440850037e-06"
+        },
+        {
+          "block": "2",
+          "node": "718",
+          "before": "-42.594797333021063",
+          "after": "-3.8681727071833607",
+          "delta": "38.726624625837701",
+          "linear_metric_slope_change": "-1.3361163620049245e-06"
+        },
+        {
+          "block": "2",
+          "node": "837",
+          "before": "-42.621607289997911",
+          "after": "-3.8681727071833607",
+          "delta": "38.753434582814549",
+          "linear_metric_slope_change": "1.3099714847315261e-06"
+        },
+        {
+          "block": "2",
+          "node": "990",
+          "before": "-43.971142458830855",
+          "after": "-3.8681727071833607",
+          "delta": "40.102969751647493",
+          "linear_metric_slope_change": "1.2197012319043331e-06"
+        },
+        {
+          "block": "2",
+          "node": "985",
+          "before": "-43.391713000574349",
+          "after": "-3.8681727071833607",
+          "delta": "39.523540293390987",
+          "linear_metric_slope_change": "9.5492242985313296e-07"
+        },
+        {
+          "block": "2",
+          "node": "462",
+          "before": "-41.051726688204639",
+          "after": "-3.8681727071833607",
+          "delta": "37.183553981021277",
+          "linear_metric_slope_change": "5.0228043766215998e-07"
+        },
+        {
+          "block": "2",
+          "node": "920",
+          "before": "-42.285170779571501",
+          "after": "-3.8681727071833607",
+          "delta": "38.416998072388139",
+          "linear_metric_slope_change": "4.4241134734510326e-07"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 285,
+          "fixed_violations": 285,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 285,
+          "fixed_violations": 285,
+          "exited": 2,
+          "entered": 2
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 275,
+          "fixed_violations": 284,
+          "exited": 22,
+          "entered": 4
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 262,
+          "fixed_violations": 274,
+          "exited": 30,
+          "entered": 4
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -1.47581248368487e-05,
+          "optimal_linear_alpha": 1.0000000000000095,
+          "requested_prediction": {
+            "electron": 9.384173166813577e-28,
+            "electron_closure": 4.767377367385892e-18,
+            "hole": 5.152449856299953e-27,
+            "hole_closure": -7.98453790673265e-17,
+            "merit": 7.998757681895435e-17,
+            "pde": 4.897853738914547e-26,
+            "psi": 4.8697728470617474e-26
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 3.341431811063207e-17,
+              "written_merit": 0.000978352328000578,
+              "actual_merit": null,
+              "actual_pde": null,
+              "actual_electron_closure": null,
+              "actual_hole_closure": null,
+              "nonlinear_remainder_merit": null,
+              "population_positive_finite": false,
+              "violations": null,
+              "linear_merit_after_removing_electron_writeback_loss": 7.129235516175527e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0019208152459860026,
+              "written_merit": 0.0031282450289889093,
+              "actual_merit": null,
+              "actual_pde": null,
+              "actual_electron_closure": null,
+              "actual_hole_closure": null,
+              "nonlinear_remainder_merit": null,
+              "population_positive_finite": false,
+              "violations": null,
+              "linear_merit_after_removing_electron_writeback_loss": 0.001920815172765067
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0037816050155348906,
+              "written_merit": 0.00381861872744694,
+              "actual_merit": null,
+              "actual_pde": null,
+              "actual_electron_closure": null,
+              "actual_hole_closure": null,
+              "nonlinear_remainder_merit": null,
+              "population_positive_finite": false,
+              "violations": null,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0037816050131230625
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.003840692593902614,
+              "written_merit": 0.003841270639309021,
+              "actual_merit": null,
+              "actual_pde": null,
+              "actual_electron_closure": null,
+              "actual_hole_closure": null,
+              "nonlinear_remainder_merit": null,
+              "population_positive_finite": false,
+              "violations": null,
+              "linear_merit_after_removing_electron_writeback_loss": 0.003840692593864926
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": 9.020232718409754e-06,
+          "optimal_linear_alpha": -0.578638409420386,
+          "requested_prediction": {
+            "electron": 9.61106946892433e-14,
+            "electron_closure": -0.00491027394069161,
+            "hole": 1.4614052443877513e-11,
+            "hole_closure": -0.004927120973833171,
+            "merit": 0.006956098853770111,
+            "pde": 1.4614368480985993e-11,
+            "psi": 9.543890501200527e-19
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 0.006956098853770109,
+              "written_merit": 0.007678049258966546,
+              "actual_merit": 0.0072971211994817455,
+              "actual_pde": 5.186868554572963e-11,
+              "actual_electron_closure": -0.005472738553210643,
+              "actual_hole_closure": -0.0048267080425614915,
+              "nonlinear_remainder_merit": 0.00042783799346829843,
+              "population_positive_finite": true,
+              "violations": 262,
+              "linear_merit_after_removing_electron_writeback_loss": 0.006956098805947018
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.005260754489870884,
+              "written_merit": 0.006315239366167487,
+              "actual_merit": 0.0062750725042357005,
+              "actual_pde": 4.696843791153797e-11,
+              "actual_electron_closure": -0.005497298280964467,
+              "actual_hole_closure": -0.0030259290380840096,
+              "nonlinear_remainder_merit": 4.18051622461319e-05,
+              "population_positive_finite": true,
+              "violations": 275,
+              "linear_merit_after_removing_electron_writeback_loss": 0.005260754427216922
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.003878635449405425,
+              "written_merit": 0.0039154939095113256,
+              "actual_merit": 0.003915455244554574,
+              "actual_pde": 4.774947554075056e-11,
+              "actual_electron_closure": -0.0037131524152406994,
+              "actual_hole_closure": -0.001242291798774377,
+              "nonlinear_remainder_merit": 4.350205387841489e-08,
+              "population_positive_finite": true,
+              "violations": 285,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0038786354470038034
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0038422038176696986,
+              "written_merit": 0.003842781825302887,
+              "actual_merit": 0.0038427809134562968,
+              "actual_pde": 4.7609347231697576e-11,
+              "actual_electron_closure": -0.0036555898750374287,
+              "actual_hole_closure": -0.0011847479961358215,
+              "nonlinear_remainder_merit": 9.561028661518669e-10,
+              "population_positive_finite": true,
+              "violations": 285,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0038422038176320274
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": 9.020232718409735e-06,
+          "optimal_linear_alpha": -0.5786384094203852,
+          "requested_prediction": {
+            "electron": 9.611069468924312e-14,
+            "electron_closure": -0.004910273940691616,
+            "hole": 1.4614052443877513e-11,
+            "hole_closure": -0.004927120973833171,
+            "merit": 0.006956098853770115,
+            "pde": 1.461436848098596e-11,
+            "psi": 2.5397243363209403e-26
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 0.006956098853770117,
+              "written_merit": 0.007678049258966546,
+              "actual_merit": 0.0072971211994817455,
+              "actual_pde": 5.186868554572963e-11,
+              "actual_electron_closure": -0.005472738553210643,
+              "actual_hole_closure": -0.0048267080425614915,
+              "nonlinear_remainder_merit": 0.00042783799346829843,
+              "population_positive_finite": true,
+              "violations": 262,
+              "linear_merit_after_removing_electron_writeback_loss": 0.006956098805947018
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.005260754489870883,
+              "written_merit": 0.006315239366167487,
+              "actual_merit": 0.0062750725042357005,
+              "actual_pde": 4.696843791153797e-11,
+              "actual_electron_closure": -0.005497298280964467,
+              "actual_hole_closure": -0.0030259290380840096,
+              "nonlinear_remainder_merit": 4.18051622461319e-05,
+              "population_positive_finite": true,
+              "violations": 275,
+              "linear_merit_after_removing_electron_writeback_loss": 0.005260754427216922
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.003878635449405425,
+              "written_merit": 0.0039154939095113256,
+              "actual_merit": 0.003915455244554574,
+              "actual_pde": 4.774947554075056e-11,
+              "actual_electron_closure": -0.0037131524152406994,
+              "actual_hole_closure": -0.001242291798774377,
+              "nonlinear_remainder_merit": 4.350205387841489e-08,
+              "population_positive_finite": true,
+              "violations": 285,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0038786354470038034
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0038422038176696986,
+              "written_merit": 0.003842781825302887,
+              "actual_merit": 0.0038427809134562968,
+              "actual_pde": 4.7609347231697576e-11,
+              "actual_electron_closure": -0.0036555898750374287,
+              "actual_hole_closure": -0.0011847479961358215,
+              "nonlinear_remainder_merit": 9.561028661518669e-10,
+              "population_positive_finite": true,
+              "violations": 285,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0038422038176320274
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows5",
+      "iteration": 1,
+      "base": {
+        "electron": 1.946921668668159e-13,
+        "electron_closure": -0.0006977880627388653,
+        "hole": 1.0415709294915395e-14,
+        "hole_closure": -1.4968712747334285e-06,
+        "merit": 0.0006977896682557535,
+        "pde": 5.192816246252255e-11,
+        "psi": 5.1927796440897596e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 20,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "610",
+          "before": "-57.984794341274288",
+          "after": "-3.8681727071833607",
+          "delta": "54.116621634090926",
+          "linear_metric_slope_change": "1.4905343690895635e-10"
+        },
+        {
+          "block": "2",
+          "node": "601",
+          "before": "-57.872026990091157",
+          "after": "-3.8681727071833607",
+          "delta": "54.003854282907795",
+          "linear_metric_slope_change": "1.1936446250958931e-10"
+        },
+        {
+          "block": "2",
+          "node": "598",
+          "before": "-97.837318732805315",
+          "after": "-3.8681727071833607",
+          "delta": "93.969146025621953",
+          "linear_metric_slope_change": "1.1726217893755674e-10"
+        },
+        {
+          "block": "2",
+          "node": "337",
+          "before": "-75.358685997073493",
+          "after": "-3.8681727071833607",
+          "delta": "71.490513289890131",
+          "linear_metric_slope_change": "7.6010947802997343e-11"
+        },
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-4.8792192420226899",
+          "after": "-3.8681727071833607",
+          "delta": "1.0110465348393292",
+          "linear_metric_slope_change": "-4.3951770006904614e-11"
+        },
+        {
+          "block": "2",
+          "node": "334",
+          "before": "-56.316492134161386",
+          "after": "-3.8681727071833607",
+          "delta": "52.448319426978024",
+          "linear_metric_slope_change": "2.5410683396512742e-11"
+        },
+        {
+          "block": "2",
+          "node": "355",
+          "before": "-107.41238251399075",
+          "after": "-3.8681727071833607",
+          "delta": "103.54420980680739",
+          "linear_metric_slope_change": "2.392016160784298e-11"
+        },
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-80.126751903391408",
+          "after": "-3.8681727071833607",
+          "delta": "76.258579196208046",
+          "linear_metric_slope_change": "1.4954781766396584e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-82.166888110986847",
+          "after": "-3.8681727071833607",
+          "delta": "78.298715403803484",
+          "linear_metric_slope_change": "1.4380452360044371e-11"
+        },
+        {
+          "block": "2",
+          "node": "153",
+          "before": "-58.591438814474301",
+          "after": "-3.8681727071833607",
+          "delta": "54.723266107290939",
+          "linear_metric_slope_change": "1.2273841248151535e-11"
+        },
+        {
+          "block": "2",
+          "node": "421",
+          "before": "-95.560910352326886",
+          "after": "-3.8681727071833607",
+          "delta": "91.692737645143524",
+          "linear_metric_slope_change": "1.0172004366201881e-11"
+        },
+        {
+          "block": "2",
+          "node": "401",
+          "before": "-74.482606232841519",
+          "after": "-3.8681727071833607",
+          "delta": "70.614433525658157",
+          "linear_metric_slope_change": "8.0415045652273641e-12"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 14,
+          "fixed_violations": 14,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 14,
+          "fixed_violations": 14,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 14,
+          "fixed_violations": 14,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 28,
+          "fixed_violations": 27,
+          "exited": 0,
+          "entered": 2
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.869104211244743e-07,
+          "optimal_linear_alpha": 1.0,
+          "requested_prediction": {
+            "electron": 3.2592142498185796e-29,
+            "electron_closure": -7.741981651732655e-19,
+            "hole": 3.624887222528522e-30,
+            "hole_closure": 9.040082886309572e-21,
+            "merit": 7.74250942560771e-19,
+            "pde": 7.356318495357144e-27,
+            "psi": 7.356245402212572e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 3.241212584969662e-19,
+              "written_merit": 0.002282754581163292,
+              "actual_merit": 1734773870357.3333,
+              "actual_pde": 4607.386623423528,
+              "actual_electron_closure": -1226670367554.9062,
+              "actual_hole_closure": -1226670367554.8997,
+              "nonlinear_remainder_merit": 1734773870357.3313,
+              "population_positive_finite": true,
+              "violations": 36,
+              "linear_merit_after_removing_electron_writeback_loss": 8.746285270848e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0003488948341278776,
+              "written_merit": 0.0006970356245200195,
+              "actual_merit": 243528075626.7993,
+              "actual_pde": 570.1746226783004,
+              "actual_electron_closure": -172200353685.02036,
+              "actual_hole_closure": -172200353685.01996,
+              "nonlinear_remainder_merit": 243528075626.79895,
+              "population_positive_finite": true,
+              "violations": 24,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003488947465077773
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006868867046892584,
+              "written_merit": 0.000697766115108915,
+              "actual_merit": 0.0006977640456386518,
+              "actual_pde": 5.1928162427723883e-11,
+              "actual_electron_closure": -0.0006977624897512064,
+              "actual_hole_closure": -1.4735271336593474e-06,
+              "nonlinear_remainder_merit": 2.0700465693079763e-09,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006868867047817323
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976193094500276,
+              "written_merit": 0.0006977893177958682,
+              "actual_merit": 0.0006977884551048258,
+              "actual_pde": 5.192816246201257e-11,
+              "actual_electron_closure": -0.000697786850368972,
+              "actual_hole_closure": -1.4965058391595428e-06,
+              "nonlinear_remainder_merit": 8.626930514093753e-10,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976193094514722
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.863614275214486e-07,
+          "optimal_linear_alpha": 1.001127512344761,
+          "requested_prediction": {
+            "electron": 6.103625579390408e-18,
+            "electron_closure": -7.850785514208089e-07,
+            "hole": 6.309691852746037e-16,
+            "hole_closure": -7.8507855142005e-07,
+            "merit": 1.1102687349469945e-06,
+            "pde": 6.310236531849498e-16,
+            "psi": 5.611048704944898e-18
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.1102687349466767e-06,
+              "written_merit": 0.002283539794669301,
+              "actual_merit": 0.002614737203245557,
+              "actual_pde": 4.315412624105609e-11,
+              "actual_electron_closure": -0.002614737103420783,
+              "actual_hole_closure": -7.225171887673188e-07,
+              "nonlinear_remainder_merit": 0.0003311974496148208,
+              "population_positive_finite": true,
+              "violations": 28,
+              "linear_merit_after_removing_electron_writeback_loss": 1.110208872077839e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0003492884341869881,
+              "written_merit": 0.0006974286952856736,
+              "actual_merit": 0.0006973985975936088,
+              "actual_pde": 4.097110450862562e-11,
+              "actual_electron_closure": -0.000697397706247567,
+              "actual_hole_closure": -1.1150094900467156e-06,
+              "nonlinear_remainder_merit": 3.971840651714119e-08,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034928834656715383
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006868989979368377,
+              "written_merit": 0.0006977784079453867,
+              "actual_merit": 0.0006977762541169421,
+              "actual_pde": 5.192816242864604e-11,
+              "actual_electron_closure": -0.0006977746724235848,
+              "actual_hole_closure": -1.4857098060379695e-06,
+              "nonlinear_remainder_merit": 2.154114779127238e-09,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006868989980293115
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976195015303431,
+              "written_merit": 0.0006977895098760842,
+              "actual_merit": 0.0006977886471644041,
+              "actual_pde": 5.192816246202766e-11,
+              "actual_electron_closure": -0.0006977870420179466,
+              "actual_hole_closure": -1.4966974881342511e-06,
+              "nonlinear_remainder_merit": 8.62713644939521e-10,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976195015317881
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.863614275214488e-07,
+          "optimal_linear_alpha": 1.0011275123447603,
+          "requested_prediction": {
+            "electron": 6.103624104768742e-18,
+            "electron_closure": -7.850785514207465e-07,
+            "hole": 6.309691852746037e-16,
+            "hole_closure": -7.85078551420049e-07,
+            "merit": 1.1102687349469499e-06,
+            "pde": 6.309987060155588e-16,
+            "psi": 7.96788815710001e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.1102687349466602e-06,
+              "written_merit": 0.002283539794669301,
+              "actual_merit": 0.002614737203245557,
+              "actual_pde": 4.315412624105609e-11,
+              "actual_electron_closure": -0.002614737103420783,
+              "actual_hole_closure": -7.225171887673188e-07,
+              "nonlinear_remainder_merit": 0.0003311974496148208,
+              "population_positive_finite": true,
+              "violations": 28,
+              "linear_merit_after_removing_electron_writeback_loss": 1.110208872077839e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034928843418698775,
+              "written_merit": 0.0006974286952856736,
+              "actual_merit": 0.0006973985975936088,
+              "actual_pde": 4.097110450862562e-11,
+              "actual_electron_closure": -0.000697397706247567,
+              "actual_hole_closure": -1.1150094900467156e-06,
+              "nonlinear_remainder_merit": 3.971840651714119e-08,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034928834656715383
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006868989979368376,
+              "written_merit": 0.0006977784079453867,
+              "actual_merit": 0.0006977762541169421,
+              "actual_pde": 5.192816242864604e-11,
+              "actual_electron_closure": -0.0006977746724235848,
+              "actual_hole_closure": -1.4857098060379695e-06,
+              "nonlinear_remainder_merit": 2.154114779127238e-09,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006868989980293115
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006976195015303431,
+              "written_merit": 0.0006977895098760842,
+              "actual_merit": 0.0006977886471644041,
+              "actual_pde": 5.192816246202766e-11,
+              "actual_electron_closure": -0.0006977870420179466,
+              "actual_hole_closure": -1.4966974881342511e-06,
+              "nonlinear_remainder_merit": 8.62713644939521e-10,
+              "population_positive_finite": true,
+              "violations": 14,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006976195015317881
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "state": "rows5",
+      "iteration": 20,
+      "base": {
+        "electron": 1.9469216620338814e-13,
+        "electron_closure": -0.0006971439080304217,
+        "hole": 1.8163063043821172e-15,
+        "hole_closure": -8.630821126012393e-07,
+        "merit": 0.00069714444228916,
+        "pde": 4.0971105673014464e-11,
+        "psi": 4.097064304756234e-11
+      },
+      "clipped_electron": 0,
+      "clipped_hole": 20,
+      "top_clipping_slope_changes": [
+        {
+          "block": "2",
+          "node": "610",
+          "before": "-63.959195291386891",
+          "after": "-3.8681727071833607",
+          "delta": "60.091022584203529",
+          "linear_metric_slope_change": "1.5522393777303624e-10"
+        },
+        {
+          "block": "2",
+          "node": "601",
+          "before": "-63.832804856411073",
+          "after": "-3.8681727071833607",
+          "delta": "59.964632149227711",
+          "linear_metric_slope_change": "1.244947493066289e-10"
+        },
+        {
+          "block": "2",
+          "node": "598",
+          "before": "-103.75369578384216",
+          "after": "-3.8681727071833607",
+          "delta": "99.885523076658799",
+          "linear_metric_slope_change": "1.1501598369960024e-10"
+        },
+        {
+          "block": "2",
+          "node": "337",
+          "before": "-75.909336065359639",
+          "after": "-3.8681727071833607",
+          "delta": "72.041163358176277",
+          "linear_metric_slope_change": "6.9698129306886103e-11"
+        },
+        {
+          "block": "2",
+          "node": "354",
+          "before": "-10.920604341360965",
+          "after": "-3.8681727071833607",
+          "delta": "7.052431634177605",
+          "linear_metric_slope_change": "2.855008138180496e-11"
+        },
+        {
+          "block": "2",
+          "node": "334",
+          "before": "-61.889370278122549",
+          "after": "-3.8681727071833607",
+          "delta": "58.021197570939187",
+          "linear_metric_slope_change": "2.4490291241194342e-11"
+        },
+        {
+          "block": "2",
+          "node": "355",
+          "before": "-66.878028651718154",
+          "after": "-3.8681727071833607",
+          "delta": "63.009855944534792",
+          "linear_metric_slope_change": "1.6839554165694989e-11"
+        },
+        {
+          "block": "2",
+          "node": "333",
+          "before": "-85.581858128699139",
+          "after": "-3.8681727071833607",
+          "delta": "81.713685421515777",
+          "linear_metric_slope_change": "1.4336284448899324e-11"
+        },
+        {
+          "block": "2",
+          "node": "780",
+          "before": "-88.58010318693853",
+          "after": "-3.8681727071833607",
+          "delta": "84.711930479755168",
+          "linear_metric_slope_change": "1.3898998714300708e-11"
+        },
+        {
+          "block": "2",
+          "node": "153",
+          "before": "-64.079256953618483",
+          "after": "-3.8681727071833607",
+          "delta": "60.211084246435121",
+          "linear_metric_slope_change": "1.1892950061610863e-11"
+        },
+        {
+          "block": "2",
+          "node": "421",
+          "before": "-99.133898206844663",
+          "after": "-3.8681727071833607",
+          "delta": "95.265725499661301",
+          "linear_metric_slope_change": "9.8121914076790856e-12"
+        },
+        {
+          "block": "2",
+          "node": "401",
+          "before": "-72.600505207555628",
+          "after": "-3.8681727071833607",
+          "delta": "68.732332500372266",
+          "linear_metric_slope_change": "7.3393962688061785e-12"
+        }
+      ],
+      "fixed_qualification": [
+        {
+          "alpha": 0.000244140625,
+          "current_violations": 18,
+          "fixed_violations": 18,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.015625,
+          "current_violations": 18,
+          "fixed_violations": 18,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 0.5,
+          "current_violations": 18,
+          "fixed_violations": 18,
+          "exited": 0,
+          "entered": 0
+        },
+        {
+          "alpha": 1.0,
+          "current_violations": 17,
+          "fixed_violations": 17,
+          "exited": 0,
+          "entered": 0
+        }
+      ],
+      "stages": [
+        {
+          "name": "raw",
+          "slope": -4.860103734146631e-07,
+          "optimal_linear_alpha": 1.0000000000000013,
+          "requested_prediction": {
+            "electron": 3.3045032313407227e-29,
+            "electron_closure": -1.1210007651664172e-18,
+            "hole": 4.364408840483609e-31,
+            "hole_closure": -1.9281328539887638e-20,
+            "merit": 1.1211665733217148e-18,
+            "pde": 6.1836384595574795e-27,
+            "psi": 6.183550148084607e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.3558286208472138e-19,
+              "written_merit": 0.00228275356683741,
+              "actual_merit": null,
+              "actual_pde": null,
+              "actual_electron_closure": null,
+              "actual_hole_closure": null,
+              "nonlinear_remainder_merit": null,
+              "population_positive_finite": false,
+              "violations": null,
+              "linear_merit_after_removing_electron_writeback_loss": 6.246274109825116e-11
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.0003485722211445815,
+              "written_merit": 0.0006967127115296984,
+              "actual_merit": 0.0006967935732547242,
+              "actual_pde": 4.14888509888718e-11,
+              "actual_electron_closure": -0.0006967933849342154,
+              "actual_hole_closure": -5.122899601371089e-07,
+              "nonlinear_remainder_merit": 1.1423732159664978e-07,
+              "population_positive_finite": true,
+              "violations": 17,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0003485721465557937
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006862515603783914,
+              "written_merit": 0.0006971309408414167,
+              "actual_merit": 0.0006971317338732755,
+              "actual_pde": 4.097110567177381e-11,
+              "actual_electron_closure": -0.0006971312160711169,
+              "actual_hole_closure": -8.496777998074187e-07,
+              "nonlinear_remainder_merit": 7.970948964017047e-10,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006862515580474906
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006969742410093036,
+              "written_merit": 0.0006971442091201716,
+              "actual_merit": 0.0006971442091428093,
+              "actual_pde": 4.0971105672994805e-11,
+              "actual_electron_closure": -0.0006971436751447058,
+              "actual_hole_closure": -8.628714181322959e-07,
+              "nonlinear_remainder_merit": 2.949118202183023e-14,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006969742409728817
+            }
+          ]
+        },
+        {
+          "name": "clipped",
+          "slope": -4.853975329713772e-07,
+          "optimal_linear_alpha": 1.0012609655160916,
+          "requested_prediction": {
+            "electron": 6.255060111822937e-18,
+            "electron_closure": -8.779861118030174e-07,
+            "hole": 7.810571962325242e-16,
+            "hole_closure": -8.779861118019145e-07,
+            "merit": 1.241659866886268e-06,
+            "pde": 7.810822473829255e-16,
+            "psi": 8.725335133786931e-20
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.2416598668855645e-06,
+              "written_merit": 0.0022836317217285376,
+              "actual_merit": 0.002614884781225935,
+              "actual_pde": 5.189326996021285e-11,
+              "actual_electron_closure": -0.0026148846376864467,
+              "actual_hole_closure": -8.664170035727958e-07,
+              "nonlinear_remainder_merit": 0.00033125308493926395,
+              "population_positive_finite": true,
+              "violations": 17,
+              "linear_merit_after_removing_electron_writeback_loss": 1.2416184323078245e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034901203275118837,
+              "written_merit": 0.0006971521144565394,
+              "actual_merit": 0.0006971483606658239,
+              "actual_pde": 4.1488850994564667e-11,
+              "actual_electron_closure": -0.0006971478218882279,
+              "actual_hole_closure": -8.667269141495301e-07,
+              "nonlinear_remainder_merit": 5.343281322686407e-09,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034901195816257514
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006862652960215372,
+              "written_merit": 0.0006971446762177099,
+              "actual_merit": 0.0006971453828787427,
+              "actual_pde": 4.0971105672209494e-11,
+              "actual_electron_closure": -0.0006971448483384749,
+              "actual_hole_closure": -8.633100671651677e-07,
+              "nonlinear_remainder_merit": 7.066847978739328e-10,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006862652936906369
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006969744556266232,
+              "written_merit": 0.000697144423737427,
+              "actual_merit": 0.0006971444237390206,
+              "actual_pde": 4.0971105673001836e-11,
+              "actual_electron_closure": -0.0006971438894757659,
+              "actual_hole_closure": -8.63085749192624e-07,
+              "nonlinear_remainder_merit": 2.6287713316575455e-15,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006969744555902013
+            }
+          ]
+        },
+        {
+          "name": "protected",
+          "slope": -4.853975329713772e-07,
+          "optimal_linear_alpha": 1.0012609655160911,
+          "requested_prediction": {
+            "electron": 6.255060095899672e-18,
+            "electron_closure": -8.779861118030054e-07,
+            "hole": 7.810571962325242e-16,
+            "hole_closure": -8.779861118019145e-07,
+            "merit": 1.2416598668862595e-06,
+            "pde": 7.810822425093372e-16,
+            "psi": 7.597325975354035e-27
+          },
+          "trials": [
+            {
+              "alpha": 1.0,
+              "requested_merit": 1.2416598668855994e-06,
+              "written_merit": 0.0022836317217285376,
+              "actual_merit": 0.002614884781225935,
+              "actual_pde": 5.189326996021285e-11,
+              "actual_electron_closure": -0.0026148846376864467,
+              "actual_hole_closure": -8.664170035727958e-07,
+              "nonlinear_remainder_merit": 0.00033125308493926395,
+              "population_positive_finite": true,
+              "violations": 17,
+              "linear_merit_after_removing_electron_writeback_loss": 1.2416184323078245e-06
+            },
+            {
+              "alpha": 0.5,
+              "requested_merit": 0.00034901203275118826,
+              "written_merit": 0.0006971521144565394,
+              "actual_merit": 0.0006971483606658239,
+              "actual_pde": 4.1488850994564667e-11,
+              "actual_electron_closure": -0.0006971478218882279,
+              "actual_hole_closure": -8.667269141495301e-07,
+              "nonlinear_remainder_merit": 5.343281322686407e-09,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.00034901195816257514
+            },
+            {
+              "alpha": 0.015625,
+              "requested_merit": 0.0006862652960215372,
+              "written_merit": 0.0006971446762177099,
+              "actual_merit": 0.0006971453828787427,
+              "actual_pde": 4.0971105672209494e-11,
+              "actual_electron_closure": -0.0006971448483384749,
+              "actual_hole_closure": -8.633100671651677e-07,
+              "nonlinear_remainder_merit": 7.066847978739328e-10,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006862652936906369
+            },
+            {
+              "alpha": 0.000244140625,
+              "requested_merit": 0.0006969744556266232,
+              "written_merit": 0.000697144423737427,
+              "actual_merit": 0.0006971444237390206,
+              "actual_pde": 4.0971105673001836e-11,
+              "actual_electron_closure": -0.0006971438894757659,
+              "actual_hole_closure": -8.63085749192624e-07,
+              "nonlinear_remainder_merit": 2.6287713316575455e-15,
+              "population_positive_finite": true,
+              "violations": 18,
+              "linear_merit_after_removing_electron_writeback_loss": 0.0006969744555902013
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

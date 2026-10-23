@@ -1,0 +1,1294 @@
+{
+  "schema": "vela.validation.bvmethods.autonomous_sg_band_chain.v1",
+  "date": "2026-10-17",
+  "configuration": "Installed-library original BVmethods, 300 K, default statistics, ordinary precision, frozen original mesh",
+  "counts": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "semiconductor_nodes": 2152,
+    "semiconductor_triangles": 4156,
+    "free_rows_per_carrier": 2121,
+    "actual_residual_runs": 25,
+    "native_passive_runs": 2
+  },
+  "native_identity": {
+    "first": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    },
+    "after_BV": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    }
+  },
+  "first_native_band_delta_reconstruction": {
+    "exact_instances": 24,
+    "instances": 24,
+    "primary_potential_roundtrip_max_difference": 0.0
+  },
+  "autonomous_components": {
+    "first_DOS_and_Gamma_exact_in_active_support": true,
+    "first_Bernoulli_fixed_argument_exact_factors": 24,
+    "first_Bernoulli_unique_edges": 12,
+    "first_material_band_delta_exact_electron_instances": 12,
+    "first_material_band_delta_exact_hole_instances": 4,
+    "material_parameters_fitted": false,
+    "material_source_sha256": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+  },
+  "math_platform_control": {
+    "nodes": 14,
+    "platform_exact_rows": 14,
+    "windows_equivalent_to_existing_Cpp_BGN": true,
+    "native_checks": {
+      "windows": {
+        "BGN_exact": 4,
+        "affinity_exact": 12
+      },
+      "linux": {
+        "BGN_exact": 4,
+        "affinity_exact": 12
+      }
+    }
+  },
+  "raw_primary_statistics_control": {
+    "samples": 28,
+    "Gamma_exact": 28,
+    "export_normalization_mismatches": 1,
+    "SI_roundtrip_normalization_mismatches": 3
+  },
+  "states": {
+    "zero": {
+      "baseline": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.15697575927683086,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.15697575927683086,
+            "max_free_row_error_over_actual_absolute_terms": 1025.6494447189884,
+            "failed_free_rows_at_1e_8": 2121,
+            "max_actual_ledger_error": 2.2116013107991117e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.13203080905622525,
+                "error_over_unchanged_baseline_absolute_terms": 0.13203080905622525
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.08213196103998097,
+                "error_over_unchanged_baseline_absolute_terms": 0.08213196103998097
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.8692403699307144,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.8692403699307144,
+            "max_free_row_error_over_actual_absolute_terms": 29.105301108251034,
+            "failed_free_rows_at_1e_8": 2121,
+            "max_actual_ledger_error": 2.2034945705531735e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.09145541267327545,
+                "error_over_unchanged_baseline_absolute_terms": 0.09145541267327545
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.7745845202187375,
+                "error_over_unchanged_baseline_absolute_terms": 0.7745845202187375
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_split": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.5985956268285538,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0414024917712297,
+            "max_free_row_error_over_actual_absolute_terms": 68.48347717408313,
+            "failed_free_rows_at_1e_8": 2121,
+            "max_actual_ledger_error": 2.1894782898656049e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.7587790610707864,
+                "error_over_unchanged_baseline_absolute_terms": 0.48972051460082594
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.428271300500491,
+                "error_over_unchanged_baseline_absolute_terms": 0.5426840008750328
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.7828382523638415,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.7804293448371946,
+            "max_free_row_error_over_actual_absolute_terms": 25.772195879948093,
+            "failed_free_rows_at_1e_8": 2119,
+            "max_actual_ledger_error": 2.1945307301679388e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.062246111933137074,
+                "error_over_unchanged_baseline_absolute_terms": 0.05170995901691411
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8766285539979424,
+                "error_over_unchanged_baseline_absolute_terms": 0.45109446746130416
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_nodes": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.5697761396380762,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.9867177557315616,
+            "max_free_row_error_over_actual_absolute_terms": 1055.2615566946995,
+            "failed_free_rows_at_1e_8": 2121,
+            "max_actual_ledger_error": 3.503798219319674e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.9675715514681839,
+                "error_over_unchanged_baseline_absolute_terms": 0.558140732862303
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 70.9744892548955,
+                "error_over_unchanged_baseline_absolute_terms": 0.9223243073051258
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.7993434008433604,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.8063702144134018,
+            "max_free_row_error_over_actual_absolute_terms": 78.40861152018044,
+            "failed_free_rows_at_1e_8": 2117,
+            "max_actual_ledger_error": 2.216648822713923e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.08653654386966442,
+                "error_over_unchanged_baseline_absolute_terms": 0.07263196806259213
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.9306668705530727,
+                "error_over_unchanged_baseline_absolute_terms": 0.42951563797676295
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_reference": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.5942588719635492,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0404229764349735,
+            "max_free_row_error_over_actual_absolute_terms": 819.671616011097,
+            "failed_free_rows_at_1e_8": 2121,
+            "max_actual_ledger_error": 2.2008336820035786e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.3084688889436198,
+                "error_over_unchanged_baseline_absolute_terms": 0.643745301635501
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.0543336699911763,
+                "error_over_unchanged_baseline_absolute_terms": 0.4716846607907061
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.7831523508459471,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.776248155767562,
+            "max_free_row_error_over_actual_absolute_terms": 19.974766154995205,
+            "failed_free_rows_at_1e_8": 2117,
+            "max_actual_ledger_error": 2.2123455046446455e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.07907837746757027,
+                "error_over_unchanged_baseline_absolute_terms": 0.06515888774887546
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.172401862617937,
+                "error_over_unchanged_baseline_absolute_terms": 0.38364501302527837
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_material": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09703009616919568,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10731245567663748,
+            "max_free_row_error_over_actual_absolute_terms": 4.827885678693597,
+            "failed_free_rows_at_1e_8": 1888,
+            "max_actual_ledger_error": 2.2175267340276677e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4015370707851518,
+                "error_over_unchanged_baseline_absolute_terms": 1.304895414159706
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.8240697050657158,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.5772621407388931,
+            "max_free_row_error_over_actual_absolute_terms": 65.0246002088373,
+            "failed_free_rows_at_1e_8": 2111,
+            "max_actual_ledger_error": 2.2203968309015127e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.008315451011748224,
+                "error_over_unchanged_baseline_absolute_terms": 0.007650167559319557
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.0643130257647326,
+                "error_over_unchanged_baseline_absolute_terms": 1.0800438267929746
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      }
+    },
+    "first": {
+      "baseline": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.6889192940551362e-07,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.6889192940551362e-07,
+            "max_free_row_error_over_actual_absolute_terms": 0.04048932856735224,
+            "failed_free_rows_at_1e_8": 872,
+            "max_actual_ledger_error": 1.525161142671015e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.6229507704542907e-06,
+                "error_over_unchanged_baseline_absolute_terms": 3.6229507704542907e-06
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8289405250765857e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.8289405250765857e-12
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.018757349418174647,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.018757349418174647,
+            "max_free_row_error_over_actual_absolute_terms": 1.2203199196682015,
+            "failed_free_rows_at_1e_8": 1172,
+            "max_actual_ledger_error": 2.1897510560669525e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.3710385995338e-09,
+                "error_over_unchanged_baseline_absolute_terms": 1.3710385995338e-09
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.21793359158063208,
+                "error_over_unchanged_baseline_absolute_terms": 0.21793359158063208
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_split": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.1182737412428495e-06,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.1182737779071232e-06,
+            "max_free_row_error_over_actual_absolute_terms": 0.7780387802092074,
+            "failed_free_rows_at_1e_8": 1196,
+            "max_actual_ledger_error": 1.6247386710934516e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.1870920843845615e-06,
+                "error_over_unchanged_baseline_absolute_terms": 6.186989018944653e-06
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.778058782913014e-12,
+                "error_over_unchanged_baseline_absolute_terms": 4.778058782895371e-12
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.01677130593960137,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.016791445523429975,
+            "max_free_row_error_over_actual_absolute_terms": 1.6019356608603266,
+            "failed_free_rows_at_1e_8": 1172,
+            "max_actual_ledger_error": 2.1090761345511866e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.660225291985082e-10,
+                "error_over_unchanged_baseline_absolute_terms": 5.660225280833666e-10
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.12044862805991047,
+                "error_over_unchanged_baseline_absolute_terms": 0.13108858889599015
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_nodes": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.0820025062572974e-06,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.082002537264777e-06,
+            "max_free_row_error_over_actual_absolute_terms": 1.3460819172942653,
+            "failed_free_rows_at_1e_8": 1193,
+            "max_actual_ledger_error": 1.5316638474911124e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.784327788346499e-06,
+                "error_over_unchanged_baseline_absolute_terms": 8.784171602743921e-06
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3986195555908082e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.398619555586191e-12
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.017268157188850233,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.01729233864074426,
+            "max_free_row_error_over_actual_absolute_terms": 1.445407716410614,
+            "failed_free_rows_at_1e_8": 1149,
+            "max_actual_ledger_error": 2.181429171416894e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.229668103130344e-10,
+                "error_over_unchanged_baseline_absolute_terms": 7.229668088245937e-10
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.12940605320759505,
+                "error_over_unchanged_baseline_absolute_terms": 0.1392371898469571
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_reference": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.1406085462642665e-06,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.1406085781755123e-06,
+            "max_free_row_error_over_actual_absolute_terms": 0.7782342672701553,
+            "failed_free_rows_at_1e_8": 1197,
+            "max_actual_ledger_error": 1.5229227977344343e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.0082022835294427e-05,
+                "error_over_unchanged_baseline_absolute_terms": 1.008184164326466e-05
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.627425147840372e-12,
+                "error_over_unchanged_baseline_absolute_terms": 4.627425147823011e-12
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.016622199802090894,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.01664123832118582,
+            "max_free_row_error_over_actual_absolute_terms": 1.774396324379784,
+            "failed_free_rows_at_1e_8": 1142,
+            "max_actual_ledger_error": 2.1935812754800105e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.338841930430825e-10,
+                "error_over_unchanged_baseline_absolute_terms": 8.338841913345954e-10
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.11457831257958248,
+                "error_over_unchanged_baseline_absolute_terms": 0.12436719129497446
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_material": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.777275072754594e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.777275251784702e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.06464580535488339,
+            "failed_free_rows_at_1e_8": 429,
+            "max_actual_ledger_error": 1.573574232852308e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3101666101637313e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.310166610144388e-11
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.01238545154869907,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.012410959081253977,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 941,
+            "max_actual_ledger_error": 2.1886377206894937e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 9.611150541090441e-11,
+                "error_over_unchanged_baseline_absolute_terms": 9.61115053323625e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.2553954709404202,
+                "error_over_unchanged_baseline_absolute_terms": 0.3528242210279019
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "load_coupled_Newton_verified": false
+      }
+    },
+    "before_BV": {
+      "baseline": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.7207652523242797e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.7207652523242797e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.0010038274564870022,
+            "failed_free_rows_at_1e_8": 184,
+            "max_actual_ledger_error": 1.044764027111444e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.2201357413280988e-08,
+                "error_over_unchanged_baseline_absolute_terms": 1.2201357413280988e-08
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.181683508696529e-15,
+                "error_over_unchanged_baseline_absolute_terms": 2.181683508696529e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.9268561117668717e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.9268561117668717e-13,
+            "max_free_row_error_over_actual_absolute_terms": 7.794521332019655e-10,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 1.0263964604769693e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1473400277195706e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.1473400277195706e-12
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.484102808115039e-12,
+                "error_over_unchanged_baseline_absolute_terms": 2.484102808115039e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_split": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.8645263142986476e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.8645263142929096e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.0034248408855190615,
+            "failed_free_rows_at_1e_8": 304,
+            "max_actual_ledger_error": 8.615165499604952e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.860762782991686e-07,
+                "error_over_unchanged_baseline_absolute_terms": 5.860756833303976e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.566603174351859e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.566603174351864e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.7319497546122906e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.7319497546123004e-13,
+            "max_free_row_error_over_actual_absolute_terms": 7.309621333836246e-10,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 7.684886852989925e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.380740881183496e-13,
+                "error_over_unchanged_baseline_absolute_terms": 4.3807408811779704e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 9.097372765652852e-13,
+                "error_over_unchanged_baseline_absolute_terms": 9.097372765660586e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_nodes": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.74660239284965e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.746602392845812e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.003398390212764868,
+            "failed_free_rows_at_1e_8": 305,
+            "max_actual_ledger_error": 8.615165499604952e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.407241694674044e-07,
+                "error_over_unchanged_baseline_absolute_terms": 5.407235844187994e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4076753739539634e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.4076753739539618e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.7624604707283488e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.7624604707283606e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.0771333664012524e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.47053086040089e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.264811263661506e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.26481126365521e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3153329840614394e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.3153329840626634e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_reference": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.093294323667001e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.093294323654931e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.0038345216393566614,
+            "failed_free_rows_at_1e_8": 298,
+            "max_actual_ledger_error": 1.0846076794910866e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.197572508609726e-07,
+                "error_over_unchanged_baseline_absolute_terms": 6.19756573046226e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.0613526419604338e-14,
+                "error_over_unchanged_baseline_absolute_terms": 2.061352641960445e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.7127433865211764e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.7127433865211862e-13,
+            "max_free_row_error_over_actual_absolute_terms": 7.304329866525498e-10,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.212130973483849e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.620997800413529e-13,
+                "error_over_unchanged_baseline_absolute_terms": 4.620997800407455e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.1748753442820703e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.1748753442832686e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_material": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 8.689876815424173e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 8.689876815389965e-13,
+            "max_free_row_error_over_actual_absolute_terms": 0.00027017350528965454,
+            "failed_free_rows_at_1e_8": 72,
+            "max_actual_ledger_error": 9.45729477696677e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.437849467765331e-11,
+                "error_over_unchanged_baseline_absolute_terms": 3.437849446412335e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.2917756363456104e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.291775636345886e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.3738293514831216e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.373829351483128e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.381854336325885e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.311351105176308e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.4841083597693044e-14,
+                "error_over_unchanged_baseline_absolute_terms": 4.4841083597666204e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.306943025518846e-12,
+                "error_over_unchanged_baseline_absolute_terms": 3.3069430255313805e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      }
+    },
+    "after_BV": {
+      "baseline": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.739887371852089e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.739887371852089e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.0019172627227603454,
+            "failed_free_rows_at_1e_8": 175,
+            "max_actual_ledger_error": 9.362529089351067e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.034202036036585e-07,
+                "error_over_unchanged_baseline_absolute_terms": 1.034202036036585e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.185867417627417e-15,
+                "error_over_unchanged_baseline_absolute_terms": 3.185867417627417e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.414238568986835e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.414238568986835e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3808263865108694e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.700073498669607e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.876622771201874e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.876622771201874e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.7586965070580042e-12,
+                "error_over_unchanged_baseline_absolute_terms": 1.7586965070580042e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_split": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.948127601478817e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.948127601485482e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.004354990430627641,
+            "failed_free_rows_at_1e_8": 300,
+            "max_actual_ledger_error": 1.0054575388419446e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.836016796275712e-07,
+                "error_over_unchanged_baseline_absolute_terms": 5.836011881453796e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.9009455564682593e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.900945556468275e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.2828057113235414e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.282805711323546e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.38072091755856e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.91742020677968e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 2.315498952028736e-13,
+                "error_over_unchanged_baseline_absolute_terms": 2.315498952026829e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 7.713075726411515e-13,
+                "error_over_unchanged_baseline_absolute_terms": 7.713075726418111e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_nodes": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.76663613749467e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.766636137501731e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.0035972700783977562,
+            "failed_free_rows_at_1e_8": 300,
+            "max_actual_ledger_error": 1.1882511109012062e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.789432505429242e-07,
+                "error_over_unchanged_baseline_absolute_terms": 6.789426428120618e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.993526642812538e-14,
+                "error_over_unchanged_baseline_absolute_terms": 2.993526642812572e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.3118918477240733e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.3118918477240786e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3808281602448874e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.323750142720741e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.9522186146719419e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.9522186146704288e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 9.809594146580532e-13,
+                "error_over_unchanged_baseline_absolute_terms": 9.809594146587745e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_reference": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.3234117036861193e-11,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.323411703687396e-11,
+            "max_free_row_error_over_actual_absolute_terms": 0.003997744966762632,
+            "failed_free_rows_at_1e_8": 298,
+            "max_actual_ledger_error": 8.974207847677077e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.532910027017206e-07,
+                "error_over_unchanged_baseline_absolute_terms": 7.532903201263562e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.149601941636275e-14,
+                "error_over_unchanged_baseline_absolute_terms": 2.1496019416362875e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.2744590066652585e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.2744590066652628e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3807563922385157e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.744102099478999e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.1171175476836584e-13,
+                "error_over_unchanged_baseline_absolute_terms": 3.1171175476810335e-13
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 8.858496555853221e-13,
+                "error_over_unchanged_baseline_absolute_terms": 8.858496555860242e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_material": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.1429129204348957e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.142912920435477e-12,
+            "max_free_row_error_over_actual_absolute_terms": 5.1332032907591165e-05,
+            "failed_free_rows_at_1e_8": 70,
+            "max_actual_ledger_error": 9.241849964055831e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.7553425467599072e-07,
+                "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.427345200668892e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.427345200669178e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.0256166948868048e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0256166948868074e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806793712506825e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.309675223362087e-14,
+                "error_over_unchanged_baseline_absolute_terms": 3.309675223360814e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.4853954450606033e-12,
+                "error_over_unchanged_baseline_absolute_terms": 2.485395445067779e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      }
+    },
+    "last": {
+      "baseline": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.377686775568723e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.377686775568723e-12,
+            "max_free_row_error_over_actual_absolute_terms": 4.507621168571365e-06,
+            "failed_free_rows_at_1e_8": 54,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.3675394617424314e-09,
+                "error_over_unchanged_baseline_absolute_terms": 1.3675394617424314e-09
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 6.427187231429686e-14,
+                "error_over_unchanged_baseline_absolute_terms": 6.427187231429686e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.2785844224191182e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.2785844224191182e-14,
+            "max_free_row_error_over_actual_absolute_terms": 4.9756527928558275e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 7.415369284701409e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.4397544624304348e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.4397544624304348e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4258346081212502e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.4258346081212502e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_split": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.1880244212770014e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.188024421276175e-12,
+            "max_free_row_error_over_actual_absolute_terms": 2.9718206871336256e-05,
+            "failed_free_rows_at_1e_8": 92,
+            "max_actual_ledger_error": 1.1877781233313632e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 5.959285231883124e-09,
+                "error_over_unchanged_baseline_absolute_terms": 5.959285144847729e-09
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.122744243246963e-13,
+                "error_over_unchanged_baseline_absolute_terms": 2.1227442432466155e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.217101812458884e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.2171018124588846e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.698661140225215e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.076682324536019e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.527961989444626e-15,
+                "error_over_unchanged_baseline_absolute_terms": 8.52796198944443e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 6.714037045292044e-14,
+                "error_over_unchanged_baseline_absolute_terms": 6.714037045292468e-14
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_nodes": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.1070106511853416e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.1070106511852407e-12,
+            "max_free_row_error_over_actual_absolute_terms": 2.9280879116019643e-05,
+            "failed_free_rows_at_1e_8": 92,
+            "max_actual_ledger_error": 7.94557339150771e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.997498886856401e-09,
+                "error_over_unchanged_baseline_absolute_terms": 6.997498779460462e-09
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.1250903412035918e-13,
+                "error_over_unchanged_baseline_absolute_terms": 2.1250903412032553e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.2803250242478022e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.280325024247803e-14,
+            "max_free_row_error_over_actual_absolute_terms": 5.577309980793606e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 6.984223963131651e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.296143723631224e-15,
+                "error_over_unchanged_baseline_absolute_terms": 7.296143723631063e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 6.101917454386519e-14,
+                "error_over_unchanged_baseline_absolute_terms": 6.101917454386832e-14
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_reference": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.7984254765868511e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.7984254765864824e-12,
+            "max_free_row_error_over_actual_absolute_terms": 3.2488366262797954e-05,
+            "failed_free_rows_at_1e_8": 92,
+            "max_actual_ledger_error": 1.1877781233313632e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.177781020493431e-09,
+                "error_over_unchanged_baseline_absolute_terms": 8.177780894931846e-09
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.9561712883254534e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.9561712883251643e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.2196463209037372e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.219646320903738e-14,
+            "max_free_row_error_over_actual_absolute_terms": 4.298243595668525e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 7.440835377888043e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.030725504006399e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.030725504006374e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 6.298670180034702e-14,
+                "error_over_unchanged_baseline_absolute_terms": 6.298670180035072e-14
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      },
+      "auto_material": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 8.78700556994679e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 8.787005569945042e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2621625509377787e-06,
+            "failed_free_rows_at_1e_8": 25,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.847174749416597e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.847174749412863e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.25650564175157e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.256505641751572e-15,
+            "max_free_row_error_over_actual_absolute_terms": 6.6862230398327344e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.698792122202999e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.264463059597814e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.264463059597721e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.816941796080834e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.8169417960812209e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "load_coupled_Newton_verified": false
+      }
+    }
+  },
+  "after_BV_offline_crossed_control": {
+    "scope": "offline_crossed_transport_reconstruction_not_actual_substitution",
+    "weak": {
+      "electron_2156": {
+        "own": {
+          "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+        },
+        "native_potential": {
+          "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+        },
+        "native_gamma": {
+          "error_over_unchanged_baseline_absolute_terms": 5.335479853575574e-09
+        },
+        "native_population": {
+          "error_over_unchanged_baseline_absolute_terms": 1.7019879438688073e-07
+        },
+        "native_band": {
+          "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+        },
+        "native_all": {
+          "error_over_unchanged_baseline_absolute_terms": 1.8239418897952568e-17
+        }
+      },
+      "hole_2515": {
+        "own": {
+          "error_over_unchanged_baseline_absolute_terms": 2.4853954450677786e-12
+        },
+        "native_potential": {
+          "error_over_unchanged_baseline_absolute_terms": 2.4853954450677786e-12
+        },
+        "native_gamma": {
+          "error_over_unchanged_baseline_absolute_terms": 2.4853954450677786e-12
+        },
+        "native_population": {
+          "error_over_unchanged_baseline_absolute_terms": 2.4853954450677786e-12
+        },
+        "native_band": {
+          "error_over_unchanged_baseline_absolute_terms": 4.1159396456572164e-16
+        },
+        "native_all": {
+          "error_over_unchanged_baseline_absolute_terms": 4.1159396456572164e-16
+        }
+      }
+    }
+  },
+  "checks": {
+    "catch2_cases": 8,
+    "catch2_assertions": 433,
+    "evidence_tests": 22,
+    "nonzero_direction_checks_at_three_steps": 42,
+    "edge_reversal_variants": 8,
+    "completed_actual_residual_runs_exit_zero": true,
+    "accepted_native_capture_runs_exit_zero": true
+  },
+  "acceptance": {
+    "unchanged_weak_row_gate": 1e-08,
+    "autonomous_five_state_weak_rows_passed": false,
+    "production_promoted": false,
+    "full_actual_RHS_qualified": false,
+    "augmented_load_qualified": false,
+    "N4_complete": false,
+    "N5_started": false
+  },
+  "remaining": [
+    "Preserve explicit normalized primary populations through frozen SI/physical state interfaces, then recompute the same autonomous Gamma in actual assembly",
+    "Align autonomous BGN normalization and ordered affinity/gap contributions for first hole row",
+    "Recheck all free rows in all five states without changing denominators or tolerances",
+    "Augmented load coupling and N5 directional Jacobian checks after full residual qualification"
+  ]
+}

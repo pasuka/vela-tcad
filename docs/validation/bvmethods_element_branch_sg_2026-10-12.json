@@ -1,0 +1,973 @@
+{
+  "date": "2026-10-12",
+  "scope": "single-element native branch identification and unique representative SG/source reconstruction",
+  "qualification": {
+    "empirical_native_branch_300K": true,
+    "unique_fixed_state_sg_reconstruction": true,
+    "production_physics": false,
+    "full_rhs": false,
+    "jacobian": false,
+    "pure_zero_qs": false
+  },
+  "config": {
+    "native_version": "T-2022.03-SP2",
+    "extended_precision_bits": 80,
+    "density_integral_full_mesh": 240,
+    "temperature_K": 300,
+    "full_mesh": {
+      "nodes": 2600,
+      "triangles": 5020,
+      "si_region": 3,
+      "si_elements": 4156,
+      "si_nodes": 2152,
+      "obtuse": 26
+    },
+    "single_element": {
+      "nodes": 3,
+      "si_triangles": 1,
+      "base_contact_edge": [
+        0,
+        1
+      ],
+      "side_um": 0.01,
+      "donors_cm3": 1000000000000000.0,
+      "statistics": "Boltzmann, no BGN; diagnostic probe only",
+      "hfs_mobility_cm2_V_s": 1,
+      "contact_voltage_V": 0
+    },
+    "full_physics": "Fermi+OldSlotboom, Masetti+Enormal+GradQuasiFermi HFS, SRH(DopingDep), E2 BTBT, VO Eparallel",
+    "resistance_ohm_um": 10000000.0,
+    "charge_C": 1.602192e-19,
+    "thermal_voltage_V": 0.02585199526648486,
+    "units": {
+      "coordinates": "um",
+      "native_density": "cm^-3",
+      "h5_density": "m^-3",
+      "field": "V/cm",
+      "alpha": "cm^-1",
+      "source": "cm^-3 s^-1",
+      "two_dimensional_current": "A/um"
+    },
+    "vela_linear_backend": null,
+    "native_initialization_linear_solver": "blocked decomposition; per init stdout",
+    "native_initialization_nonlinear": "Bank/Rose"
+  },
+  "empirical_rule": {
+    "force": "nonnegative Eparallel",
+    "weight_low_below": ".95*E0",
+    "weight_high_above": "1.05*E0",
+    "interior": "u=(F/E0-.95)/.1; w=(1-cos(pi_star*u))/2",
+    "pi_star": 3.141592654,
+    "pi_status": "empirical finite-precision fingerprint, not inspected vendor source",
+    "alpha": "(1-w)*alpha_low+w*alpha_high",
+    "temperature_scope_K": 300,
+    "validated_thresholds_V_cm": [
+      360000,
+      380000,
+      395000,
+      400000,
+      405000,
+      420000,
+      440000
+    ]
+  },
+  "scan": {
+    "qualification": false,
+    "scope": "one triangle 300K E0=4e5; empirical branch interpolation only",
+    "verified_files": 976,
+    "runs": [
+      {
+        "arm": "unit",
+        "exit": 0
+      },
+      {
+        "arm": "step",
+        "exit": 0
+      },
+      {
+        "arm": "swap",
+        "exit": 0
+      },
+      {
+        "arm": "physical",
+        "exit": 0
+      },
+      {
+        "arm": "physical_low",
+        "exit": 0
+      },
+      {
+        "arm": "physical_high",
+        "exit": 0
+      },
+      {
+        "arm": "pmi_physical",
+        "exit": 0
+      }
+    ],
+    "points": 56,
+    "primary_bitwise_identity": true,
+    "max_population_relative_spread": 3.1249999996388643e-15,
+    "max_force_absolute_error": 1.1641532182693481e-10,
+    "max_weight_absolute_error": 2.55351295663786e-15,
+    "max_weight_error_full_precision_pi": 1.184297104828147e-10,
+    "max_complement_absolute_error": 4.440892098500626e-16,
+    "max_original_physical_relative_error": 9.812462462367826e-16
+  },
+  "threshold_holdouts": {
+    "qualification": false,
+    "scope": "independent prior seven E0 archives; fixed primary state with native current and local mobility inputs",
+    "cases": [
+      {
+        "threshold": 360000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.69677685316842e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 360000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 3.1516750577417316e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 380000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.696777724701177e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 380000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 2.836007391249797e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 395000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.69677685316842e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 395000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 2.6446511694523715e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 400000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.696776383881495e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 400000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 2.7394870394328456e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 405000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.696776652045456e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 405000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 3.080332666263082e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 420000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.696776652045456e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 420000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 3.0383743805738426e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 440000.0,
+        "carrier": "e",
+        "primary_identity": true,
+        "relative_L2": 5.696776652045456e-16,
+        "nodes": 2152,
+        "elements": 4156
+      },
+      {
+        "threshold": 440000.0,
+        "carrier": "h",
+        "primary_identity": true,
+        "relative_L2": 3.0305767400967384e-16,
+        "nodes": 2152,
+        "elements": 4156
+      }
+    ],
+    "max_relative_L2": 5.696777724701177e-16
+  },
+  "unique_sg": {
+    "qualification": false,
+    "current_is_independently_reconstructed": true,
+    "mobility_is_native_callback_input": true,
+    "cases": [
+      {
+        "state": "code",
+        "carrier": "e",
+        "elements": 4156,
+        "nodes": 2152,
+        "active_callbacks": 1855,
+        "native_active_vector": {
+          "relative_L2": 1.3211135658063407e-15,
+          "max_abs": 1.9208528101444244e-09
+        },
+        "native_active_force": {
+          "relative_L2": 7.528727579167513e-15,
+          "max_abs": 3.37904566549696e-08
+        },
+        "major_vector": {
+          "relative_L2": 1.3211135658063397e-15,
+          "max_abs": 1.9208528101444244e-09
+        },
+        "major_callbacks": 1150,
+        "hard_source": {
+          "relative_L2": 2.0418724515087216e-14,
+          "max_abs": 44942537785344.0
+        },
+        "native_inactive_predicted_nonzero": 0,
+        "fresh_builtin_primary_identity": {
+          "ElectrostaticPotential": true,
+          "eDensity": true,
+          "hDensity": true,
+          "eQuasiFermiPotential": true,
+          "hQuasiFermiPotential": true
+        },
+        "builtin_source": {
+          "builtin_source": {
+            "relative_L2": 2.0489089665045017e-14,
+            "max_abs": 45286135169024.0
+          },
+          "observed_current_builtin_source": {
+            "relative_L2": 3.3746733538463337e-16,
+            "max_abs": 412316860416.0
+          }
+        }
+      },
+      {
+        "state": "code",
+        "carrier": "h",
+        "elements": 4156,
+        "nodes": 2152,
+        "active_callbacks": 1952,
+        "native_active_vector": {
+          "relative_L2": 8.085310938478078e-16,
+          "max_abs": 4.547473508864641e-13
+        },
+        "native_active_force": {
+          "relative_L2": 9.390330402242906e-15,
+          "max_abs": 4.819594323635101e-08
+        },
+        "major_vector": {
+          "relative_L2": 8.085310938478071e-16,
+          "max_abs": 4.547473508864641e-13
+        },
+        "major_callbacks": 570,
+        "hard_source": {
+          "relative_L2": 1.939915552905566e-14,
+          "max_abs": 738197504.0
+        },
+        "native_inactive_predicted_nonzero": 0,
+        "fresh_builtin_primary_identity": {
+          "ElectrostaticPotential": true,
+          "eDensity": true,
+          "hDensity": true,
+          "eQuasiFermiPotential": true,
+          "hQuasiFermiPotential": true
+        },
+        "builtin_source": {
+          "builtin_source": {
+            "relative_L2": 1.9867772946517744e-14,
+            "max_abs": 767557632.0
+          },
+          "observed_current_builtin_source": {
+            "relative_L2": 7.976099651694123e-16,
+            "max_abs": 33554432.0
+          }
+        }
+      },
+      {
+        "state": "nearzero",
+        "carrier": "e",
+        "elements": 4156,
+        "nodes": 2152,
+        "active_callbacks": 1967,
+        "native_active_vector": {
+          "relative_L2": 5.217101222410275e-08,
+          "max_abs": 3.028668806091643e-11
+        },
+        "native_active_force": {
+          "relative_L2": 0.054653063198735086,
+          "max_abs": 324978.5709747005
+        },
+        "major_vector": {
+          "relative_L2": 5.2171012224034386e-08,
+          "max_abs": 3.028668806091643e-11
+        },
+        "major_callbacks": 1210,
+        "hard_source": {
+          "relative_L2": 7.053262377307326e-08,
+          "max_abs": 1109643376.25
+        },
+        "native_inactive_predicted_nonzero": 0,
+        "fresh_builtin_primary_identity": {
+          "ElectrostaticPotential": true,
+          "eDensity": true,
+          "hDensity": true,
+          "eQuasiFermiPotential": true,
+          "hQuasiFermiPotential": true
+        },
+        "builtin_source": {
+          "builtin_source": {
+            "relative_L2": 7.053262377208094e-08,
+            "max_abs": 1109643376.25
+          },
+          "observed_current_builtin_source": {
+            "relative_L2": 5.731677258225593e-16,
+            "max_abs": 5.0
+          }
+        }
+      },
+      {
+        "state": "nearzero",
+        "carrier": "h",
+        "elements": 4156,
+        "nodes": 2152,
+        "active_callbacks": 2915,
+        "native_active_vector": {
+          "relative_L2": 3.918542307542948e-05,
+          "max_abs": 6.27725029085015e-14
+        },
+        "native_active_force": {
+          "relative_L2": 6.785910882490762e-05,
+          "max_abs": 482.850980679912
+        },
+        "major_vector": {
+          "relative_L2": 3.918542307542948e-05,
+          "max_abs": 6.27725029085015e-14
+        },
+        "major_callbacks": 2523,
+        "hard_source": {
+          "relative_L2": 1.025384781848084e-08,
+          "max_abs": 11327713.89074707
+        },
+        "native_inactive_predicted_nonzero": 0,
+        "fresh_builtin_primary_identity": {
+          "ElectrostaticPotential": true,
+          "eDensity": true,
+          "hDensity": true,
+          "eQuasiFermiPotential": true,
+          "hQuasiFermiPotential": true
+        },
+        "builtin_source": {
+          "builtin_source": {
+            "relative_L2": 1.025007724332771e-08,
+            "max_abs": 11327713.891113281
+          },
+          "observed_current_builtin_source": {
+            "relative_L2": 2.5996563156324977e-16,
+            "max_abs": 0.1875
+          }
+        }
+      }
+    ]
+  },
+  "validation": {
+    "local_tests": 47,
+    "platform": [
+      {
+        "node": "t470p",
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "exit": 0,
+        "tests": 6,
+        "branch": {
+          "qualification": false,
+          "scalar_observations": 110,
+          "max_weight_absolute_error": 2.55351295663786e-15,
+          "max_physical_alpha_relative_error": 9.812462462367826e-16,
+          "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+          "numpy": "2.5.4"
+        },
+        "sg": {
+          "qualification": false,
+          "current_is_independently_reconstructed": true,
+          "mobility_is_native_callback_input": true,
+          "cases": [
+            {
+              "state": "code",
+              "carrier": "e",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1855,
+              "native_active_vector": {
+                "relative_L2": 1.3211135658063407e-15,
+                "max_abs": 1.9208528101444244e-09
+              },
+              "native_active_force": {
+                "relative_L2": 7.528727579167513e-15,
+                "max_abs": 3.37904566549696e-08
+              },
+              "major_vector": {
+                "relative_L2": 1.3211135658063397e-15,
+                "max_abs": 1.9208528101444244e-09
+              },
+              "major_callbacks": 1150,
+              "hard_source": {
+                "relative_L2": 2.0418724515087216e-14,
+                "max_abs": 44942537785344.0
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 2.0489089665045017e-14,
+                  "max_abs": 45286135169024.0
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 3.3746733538463337e-16,
+                  "max_abs": 412316860416.0
+                }
+              }
+            },
+            {
+              "state": "code",
+              "carrier": "h",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1952,
+              "native_active_vector": {
+                "relative_L2": 8.085310938478078e-16,
+                "max_abs": 4.547473508864641e-13
+              },
+              "native_active_force": {
+                "relative_L2": 9.390330402242906e-15,
+                "max_abs": 4.819594323635101e-08
+              },
+              "major_vector": {
+                "relative_L2": 8.085310938478071e-16,
+                "max_abs": 4.547473508864641e-13
+              },
+              "major_callbacks": 570,
+              "hard_source": {
+                "relative_L2": 1.939915552905566e-14,
+                "max_abs": 738197504.0
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 1.9867772946517744e-14,
+                  "max_abs": 767557632.0
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 7.976099651694123e-16,
+                  "max_abs": 33554432.0
+                }
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "e",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1967,
+              "native_active_vector": {
+                "relative_L2": 5.217101222410275e-08,
+                "max_abs": 3.028668806091643e-11
+              },
+              "native_active_force": {
+                "relative_L2": 0.054653063198735086,
+                "max_abs": 324978.5709747005
+              },
+              "major_vector": {
+                "relative_L2": 5.2171012224034386e-08,
+                "max_abs": 3.028668806091643e-11
+              },
+              "major_callbacks": 1210,
+              "hard_source": {
+                "relative_L2": 7.053262377307326e-08,
+                "max_abs": 1109643376.25
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 7.053262377208094e-08,
+                  "max_abs": 1109643376.25
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 5.731677258225593e-16,
+                  "max_abs": 5.0
+                }
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "h",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 2915,
+              "native_active_vector": {
+                "relative_L2": 3.918542307542948e-05,
+                "max_abs": 6.27725029085015e-14
+              },
+              "native_active_force": {
+                "relative_L2": 6.785910882490762e-05,
+                "max_abs": 482.850980679912
+              },
+              "major_vector": {
+                "relative_L2": 3.918542307542948e-05,
+                "max_abs": 6.27725029085015e-14
+              },
+              "major_callbacks": 2523,
+              "hard_source": {
+                "relative_L2": 1.025384781848084e-08,
+                "max_abs": 11327713.89074707
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 1.025007724332771e-08,
+                  "max_abs": 11327713.891113281
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 2.5996563156324977e-16,
+                  "max_abs": 0.1875
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "node": "c560",
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "exit": 0,
+        "tests": 6,
+        "branch": {
+          "qualification": false,
+          "scalar_observations": 110,
+          "max_weight_absolute_error": 2.55351295663786e-15,
+          "max_physical_alpha_relative_error": 9.812462462367826e-16,
+          "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+          "numpy": "2.3.5"
+        },
+        "sg": {
+          "qualification": false,
+          "current_is_independently_reconstructed": true,
+          "mobility_is_native_callback_input": true,
+          "cases": [
+            {
+              "state": "code",
+              "carrier": "e",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1855,
+              "native_active_vector": {
+                "relative_L2": 1.3282702629543807e-15,
+                "max_abs": 1.949956640601158e-09
+              },
+              "native_active_force": {
+                "relative_L2": 7.526311106924049e-15,
+                "max_abs": 3.37904566549696e-08
+              },
+              "major_vector": {
+                "relative_L2": 1.32827026295438e-15,
+                "max_abs": 1.949956640601158e-09
+              },
+              "major_callbacks": 1150,
+              "hard_source": {
+                "relative_L2": 2.041763317098412e-14,
+                "max_abs": 44942537785344.0
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 2.0485652396560194e-14,
+                  "max_abs": 45286135169024.0
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 3.342647172342035e-16,
+                  "max_abs": 412316860416.0
+                }
+              }
+            },
+            {
+              "state": "code",
+              "carrier": "h",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1952,
+              "native_active_vector": {
+                "relative_L2": 8.034519444985067e-16,
+                "max_abs": 4.547473508864641e-13
+              },
+              "native_active_force": {
+                "relative_L2": 9.390499410407604e-15,
+                "max_abs": 4.819594323635101e-08
+              },
+              "major_vector": {
+                "relative_L2": 8.0345194449850605e-16,
+                "max_abs": 4.547473508864641e-13
+              },
+              "major_callbacks": 570,
+              "hard_source": {
+                "relative_L2": 1.8777573750596208e-14,
+                "max_abs": 696254464.0
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 1.923650823800896e-14,
+                  "max_abs": 725614592.0
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 7.9881492374349e-16,
+                  "max_abs": 33554432.0
+                }
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "e",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 1967,
+              "native_active_vector": {
+                "relative_L2": 5.217101222853375e-08,
+                "max_abs": 3.028668806091643e-11
+              },
+              "native_active_force": {
+                "relative_L2": 0.05465306319873509,
+                "max_abs": 324978.5709747005
+              },
+              "major_vector": {
+                "relative_L2": 5.217101222846539e-08,
+                "max_abs": 3.028668806091643e-11
+              },
+              "major_callbacks": 1210,
+              "hard_source": {
+                "relative_L2": 7.053262355614691e-08,
+                "max_abs": 1109643372.5
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 7.053262355515504e-08,
+                  "max_abs": 1109643372.5
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 5.723558711818435e-16,
+                  "max_abs": 5.0
+                }
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "h",
+              "elements": 4156,
+              "nodes": 2152,
+              "active_callbacks": 2915,
+              "native_active_vector": {
+                "relative_L2": 3.918542307542927e-05,
+                "max_abs": 6.27725029085015e-14
+              },
+              "native_active_force": {
+                "relative_L2": 6.785910882490926e-05,
+                "max_abs": 482.8509806799266
+              },
+              "major_vector": {
+                "relative_L2": 3.918542307542926e-05,
+                "max_abs": 6.27725029085015e-14
+              },
+              "major_callbacks": 2523,
+              "hard_source": {
+                "relative_L2": 1.02538478182289e-08,
+                "max_abs": 11327713.89074707
+              },
+              "native_inactive_predicted_nonzero": 0,
+              "fresh_builtin_primary_identity": {
+                "ElectrostaticPotential": true,
+                "eDensity": true,
+                "hDensity": true,
+                "eQuasiFermiPotential": true,
+                "hQuasiFermiPotential": true
+              },
+              "builtin_source": {
+                "builtin_source": {
+                  "relative_L2": 1.0250077243077401e-08,
+                  "max_abs": 11327713.891113281
+                },
+                "observed_current_builtin_source": {
+                  "relative_L2": 2.531438115450631e-16,
+                  "max_abs": 0.1875
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "platform_metric_comparison": [
+      {
+        "platform": "t470p",
+        "state": "code",
+        "carrier": "e",
+        "mode": "builtin_source",
+        "local": 2.0489089665045017e-14,
+        "remote": 2.0489089665045017e-14,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "code",
+        "carrier": "e",
+        "mode": "observed_current_builtin_source",
+        "local": 3.3746733538463337e-16,
+        "remote": 3.3746733538463337e-16,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "code",
+        "carrier": "h",
+        "mode": "builtin_source",
+        "local": 1.9867772946517744e-14,
+        "remote": 1.9867772946517744e-14,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "code",
+        "carrier": "h",
+        "mode": "observed_current_builtin_source",
+        "local": 7.976099651694123e-16,
+        "remote": 7.976099651694123e-16,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "nearzero",
+        "carrier": "e",
+        "mode": "builtin_source",
+        "local": 7.053262377208094e-08,
+        "remote": 7.053262377208094e-08,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "nearzero",
+        "carrier": "e",
+        "mode": "observed_current_builtin_source",
+        "local": 5.731677258225593e-16,
+        "remote": 5.731677258225593e-16,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "nearzero",
+        "carrier": "h",
+        "mode": "builtin_source",
+        "local": 1.025007724332771e-08,
+        "remote": 1.025007724332771e-08,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "t470p",
+        "state": "nearzero",
+        "carrier": "h",
+        "mode": "observed_current_builtin_source",
+        "local": 2.5996563156324977e-16,
+        "remote": 2.5996563156324977e-16,
+        "absolute_difference": 0.0
+      },
+      {
+        "platform": "c560",
+        "state": "code",
+        "carrier": "e",
+        "mode": "builtin_source",
+        "local": 2.0489089665045017e-14,
+        "remote": 2.0485652396560194e-14,
+        "absolute_difference": 3.437268484823432e-18
+      },
+      {
+        "platform": "c560",
+        "state": "code",
+        "carrier": "e",
+        "mode": "observed_current_builtin_source",
+        "local": 3.3746733538463337e-16,
+        "remote": 3.342647172342035e-16,
+        "absolute_difference": 3.2026181504298727e-18
+      },
+      {
+        "platform": "c560",
+        "state": "code",
+        "carrier": "h",
+        "mode": "builtin_source",
+        "local": 1.9867772946517744e-14,
+        "remote": 1.923650823800896e-14,
+        "absolute_difference": 6.312647085087853e-16
+      },
+      {
+        "platform": "c560",
+        "state": "code",
+        "carrier": "h",
+        "mode": "observed_current_builtin_source",
+        "local": 7.976099651694123e-16,
+        "remote": 7.9881492374349e-16,
+        "absolute_difference": 1.2049585740777017e-18
+      },
+      {
+        "platform": "c560",
+        "state": "nearzero",
+        "carrier": "e",
+        "mode": "builtin_source",
+        "local": 7.053262377208094e-08,
+        "remote": 7.053262355515504e-08,
+        "absolute_difference": 2.1692590541543477e-16
+      },
+      {
+        "platform": "c560",
+        "state": "nearzero",
+        "carrier": "e",
+        "mode": "observed_current_builtin_source",
+        "local": 5.731677258225593e-16,
+        "remote": 5.723558711818435e-16,
+        "absolute_difference": 8.118546407158336e-19
+      },
+      {
+        "platform": "c560",
+        "state": "nearzero",
+        "carrier": "h",
+        "mode": "builtin_source",
+        "local": 1.025007724332771e-08,
+        "remote": 1.0250077243077401e-08,
+        "absolute_difference": 2.503081620809964e-19
+      },
+      {
+        "platform": "c560",
+        "state": "nearzero",
+        "carrier": "h",
+        "mode": "observed_current_builtin_source",
+        "local": 2.5996563156324977e-16,
+        "remote": 2.531438115450631e-16,
+        "absolute_difference": 6.821820018186693e-18
+      }
+    ],
+    "init": 0,
+    "init_verified_files": 19,
+    "global_import": {
+      "verified_files": 79,
+      "runs": 2,
+      "exit_codes": [
+        0,
+        0
+      ]
+    },
+    "sdevice_invocations": 10,
+    "all_sdevice_exit_zero": true,
+    "single_element_load_plot_pairs": 392,
+    "full_mesh_load_plot_pairs": 2,
+    "pde_solve": "only one three-node initialization; no full-mesh Newton or QS solve"
+  },
+  "evidence": {
+    "local_directory": "<WORKTREE>\\build-release\\bvmethods_element_branch_sg_20261012",
+    "vm_init": "/root/sentaurus_runs/bvmethods_element_branch_sg_init_20261012_v1",
+    "vm_scan": "/root/sentaurus_runs/bvmethods_element_branch_scan_20261012_v1",
+    "vm_global": "/root/sentaurus_runs/bvmethods_element_branch_global_20261012_v1",
+    "archive_vm": "/root/sentaurus_runs/bvmethods_element_branch_sg_archive_20261012_v1",
+    "archive_receipts": [
+      "archive_receipt.json",
+      "archive_remote_receipt.json"
+    ],
+    "source_manifest": "manifest.json"
+  },
+  "limitations": [
+    "Empirical native branch agreement is limited to the stated version, 300K coefficients and checked E0 cases",
+    "Current reconstructed independently from exported primary fields; local mobility and box support remain native diagnostic inputs",
+    "Near-zero weak-current and force tail discrepancies remain, no weak-row removal or tolerance relaxation",
+    "Production C++ and numerical defaults unchanged; no full RHS/Jacobian or zero-QS qualification"
+  ]
+}

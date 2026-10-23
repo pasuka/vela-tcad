@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-16",
+  "scope": "installed-library original BVmethods; private frozen actual assembly",
+  "configuration": {
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "Si_nodes": 2152,
+    "Si_cells": 4156,
+    "coordinates": "m in source interface; um in TCAD core",
+    "population": "cm^-3 in core; m^-3 in source interface",
+    "current": "A/um",
+    "backend": "fixed-state residual; no device linear solve"
+  },
+  "qualification": {
+    "N4_complete": false,
+    "N5_started": false,
+    "complete_actual_rhs": false,
+    "fully_autonomous_source_representatives": false,
+    "coupled_resistor_Newton": false
+  },
+  "production_changes": [
+    "consistent frozen SRH electron population",
+    "explicit frozen-density Poisson observer",
+    "absolute dielectric edge support",
+    "Poisson observer matches actual scaling/subtraction order"
+  ],
+  "private_contracts": {
+    "population": "explicit original-default approximation; existing accurate FD retained as independent control",
+    "OldSlotboom": "separate original-default majority-energy inverse at 300 K; not switched with population integration",
+    "SRH_box": "autonomous transferred Si cell boxes",
+    "transport": "effective-band Gamma with reference/increment",
+    "mobility": "nodal Masetti, distance-gradient Enhanced Lombardi, local partial-layer HFS, box averaging",
+    "source_order": "historical bound HFS callback identity; coordinate/triangle equality checked; 150 tied-angle rules unresolved",
+    "load": "same-state unconstrained actual continuity reaction; one independent physical scalar equation"
+  },
+  "verification": {
+    "cpp": {
+      "cases": 114,
+      "assertions": 4011
+    },
+    "ctest": {
+      "exit": 0,
+      "tests": 7,
+      "failures": 0
+    },
+    "diagnostic_checks": 16,
+    "fixed_state_processes": 71,
+    "original_archive_hashes_checked": 276,
+    "new_native_solver_runs": 0,
+    "T470p_used": false,
+    "release_package_updated": false
+  },
+  "states": {
+    "zero": {
+      "population_max_abs_log_ratio": {
+        "electron": 4.984901380567077e-14,
+        "hole": 4.26325641456051e-14
+      },
+      "strict_native_state_guard_accepted": true,
+      "SRH_projection_relative_L1": 0.6710109273076806,
+      "avalanche_projection_relative_L1": 1.0,
+      "full_carrier_rhs_difference_over_Vela_absolute_terms": {
+        "electron": 0.1569757592768328,
+        "hole": 0.8692403699326685
+      },
+      "max_carrier_ledger_relative_error": 2.2116013107991117e-16,
+      "max_Poisson_ledger_relative_error": 2.7725268852473937e-16,
+      "max_native_Poisson_rhs_difference_over_Vela_absolute_terms": 1.3299198097341035e-13,
+      "load_RHS1_difference_V": -1.6781398262545582e-08,
+      "autonomous_max_angle_source_relative_L1": 1.0,
+      "rejected_projected_GradQF_source_relative_L1": 1.0,
+      "weak_errors_over_Vela_absolute_terms": {
+        "electron": {
+          "2156": 0.13203080905622525,
+          "2515": 0.08213196103998097
+        },
+        "hole": {
+          "2156": 0.09145541267327545,
+          "2515": 0.7745845202187375
+        }
+      }
+    },
+    "first": {
+      "population_max_abs_log_ratio": {
+        "electron": 4.984901380567077e-14,
+        "hole": 4.285460875053012e-14
+      },
+      "strict_native_state_guard_accepted": true,
+      "SRH_projection_relative_L1": 5.72185441032365e-14,
+      "avalanche_projection_relative_L1": 1.0,
+      "full_carrier_rhs_difference_over_Vela_absolute_terms": {
+        "electron": 1.6889193320333936e-07,
+        "hole": 0.018757364967096228
+      },
+      "max_carrier_ledger_relative_error": 2.1897510560669525e-16,
+      "max_Poisson_ledger_relative_error": 3.0389608791352595e-16,
+      "max_native_Poisson_rhs_difference_over_Vela_absolute_terms": 9.916097329634643e-14,
+      "load_RHS1_difference_V": -1.42705933977546e-08,
+      "autonomous_max_angle_source_relative_L1": 1.0,
+      "rejected_projected_GradQF_source_relative_L1": 1.0,
+      "weak_errors_over_Vela_absolute_terms": {
+        "electron": {
+          "2156": 3.6229507704542907e-06,
+          "2515": 1.8289405250765857e-12
+        },
+        "hole": {
+          "2156": 1.3710385995338e-09,
+          "2515": 0.21793359158063208
+        }
+      }
+    },
+    "before_BV": {
+      "population_max_abs_log_ratio": {
+        "electron": 7.382983113757564e-14,
+        "hole": 8.859579736508357e-14
+      },
+      "strict_native_state_guard_accepted": false,
+      "SRH_projection_relative_L1": 1.634188236167038e-14,
+      "avalanche_projection_relative_L1": 1.4530514226643194e-07,
+      "full_carrier_rhs_difference_over_Vela_absolute_terms": {
+        "electron": 3.847820650767571e-09,
+        "hole": 2.6156721301403338e-09
+      },
+      "max_carrier_ledger_relative_error": 1.044764027111444e-16,
+      "max_Poisson_ledger_relative_error": 2.6465851960941417e-16,
+      "max_native_Poisson_rhs_difference_over_Vela_absolute_terms": 1.0453312185372582e-13,
+      "load_RHS1_difference_V": 3.770932493798615e-08,
+      "autonomous_max_angle_source_relative_L1": 0.0011196097082744566,
+      "rejected_projected_GradQF_source_relative_L1": 0.0022487124524918534,
+      "weak_errors_over_Vela_absolute_terms": {
+        "electron": {
+          "2156": 1.2201357413280988e-08,
+          "2515": 2.181683508696529e-15
+        },
+        "hole": {
+          "2156": 1.1473400277195706e-12,
+          "2515": 2.484102808115039e-12
+        }
+      }
+    },
+    "after_BV": {
+      "population_max_abs_log_ratio": {
+        "electron": 7.438494264988825e-14,
+        "hole": 9.614531393253394e-14
+      },
+      "strict_native_state_guard_accepted": false,
+      "SRH_projection_relative_L1": 1.7234342754014657e-14,
+      "avalanche_projection_relative_L1": 1.6285016088892897e-07,
+      "full_carrier_rhs_difference_over_Vela_absolute_terms": {
+        "electron": 4.338744059969389e-09,
+        "hole": 2.9574501935415417e-09
+      },
+      "max_carrier_ledger_relative_error": 9.362529089351067e-17,
+      "max_Poisson_ledger_relative_error": 2.727998178196806e-16,
+      "max_native_Poisson_rhs_difference_over_Vela_absolute_terms": 1.0791755543330701e-13,
+      "load_RHS1_difference_V": -7.647868673168702e-08,
+      "autonomous_max_angle_source_relative_L1": 0.0011133763743167169,
+      "rejected_projected_GradQF_source_relative_L1": 0.0021878992546645916,
+      "weak_errors_over_Vela_absolute_terms": {
+        "electron": {
+          "2156": 1.034202036036585e-07,
+          "2515": 3.185867417627417e-15
+        },
+        "hole": {
+          "2156": 5.876622771201874e-13,
+          "2515": 1.7586965070580042e-12
+        }
+      }
+    },
+    "last": {
+      "population_max_abs_log_ratio": {
+        "electron": 7.305267502033796e-14,
+        "hole": 8.903988657493359e-14
+      },
+      "strict_native_state_guard_accepted": false,
+      "SRH_projection_relative_L1": 1.7617598048379402e-14,
+      "avalanche_projection_relative_L1": 3.598093606155401e-07,
+      "full_carrier_rhs_difference_over_Vela_absolute_terms": {
+        "electron": 9.956061172235098e-09,
+        "hole": 6.6273706182400805e-09
+      },
+      "max_carrier_ledger_relative_error": 1.0363436637039745e-16,
+      "max_Poisson_ledger_relative_error": 2.487195107640469e-16,
+      "max_native_Poisson_rhs_difference_over_Vela_absolute_terms": 1.0383896375149483e-13,
+      "load_RHS1_difference_V": 4.002162642569176e-08,
+      "autonomous_max_angle_source_relative_L1": 0.000954184626013739,
+      "rejected_projected_GradQF_source_relative_L1": 0.001841362177639516,
+      "weak_errors_over_Vela_absolute_terms": {
+        "electron": {
+          "2156": 6.707462971434423e-10,
+          "2515": 6.427187231429686e-14
+        },
+        "hole": {
+          "2156": 0.013691055832719057,
+          "2515": 1.4258346081212502e-13
+        }
+      }
+    }
+  },
+  "remaining": [
+    "native default-statistics/internal-drive precision and strict population identity",
+    "local minority-hole avalanche source at node 2156 in last state",
+    "autonomous tied maximum-angle representative rule and original callback rebinding",
+    "native absolute weak-row support qualification",
+    "augmented actual load row and corresponding derivatives"
+  ]
+}

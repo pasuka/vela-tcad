@@ -1,0 +1,1490 @@
+{
+  "date": "2026-10-15",
+  "status": "Q2_Q3_observed_seed_valley_reconstruction_completed; autonomous_eta_gamma_vm_libm_values_closed; UCRT_and_actual_assembly_open",
+  "configuration": {
+    "mesh_nodes": 2600,
+    "Tri3_cells": 5020,
+    "silicon_nodes": 2152,
+    "silicon_cells": 4156,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "source_terms_enabled": false,
+    "native_version": "T-2022.03-SP2",
+    "native_precision": "binary80",
+    "native_threads_per_process": 1,
+    "native_backend": "existing blocked decomposition",
+    "maximum_parallel_control_processes": 1,
+    "statistics": "Fermi + OldSlotboom, DensityIntegral(240)",
+    "units": {
+      "length": "um",
+      "population_DOS": "cm^-3",
+      "potential": "V",
+      "band_energy": "eV",
+      "argument": "native normalized dimensionless"
+    },
+    "multi_valley": "e/hMultiValley(RelativeToDOSMass DensityIntegral)",
+    "native_density_integral_order": 240,
+    "offline_candidate_orders": [
+      240
+    ],
+    "native_processes_this_batch": 2,
+    "native_new_runs_this_batch": 2,
+    "offline_original_states": 5
+  },
+  "identity": {
+    "names": true,
+    "variables": true,
+    "matrix": true,
+    "rhs1": true,
+    "solution": true,
+    "rhs2": true
+  },
+  "native_summary": {
+    "rhs_calls": 2,
+    "function_calls": {
+      "fermi_inverse": 14,
+      "density_compute": 77,
+      "diraci": 14,
+      "material_direct_derivative": 28,
+      "SD_inverse": 14,
+      "material_inverse": 14
+    },
+    "exit_code": 2,
+    "samples": 14,
+    "events": 555
+  },
+  "platforms": {
+    "ucrt": {
+      "integral_nodes_exact": 240,
+      "integral_weights_exact": 240,
+      "valley_weights_exact": 5,
+      "endpoint_samples": 70,
+      "iteration_samples": 140,
+      "exact": {
+        "raw_seed": 43,
+        "material_initial": 43,
+        "final_eta": 51,
+        "material_forward_value": 85,
+        "material_forward_derivative": 94,
+        "iteration_eta": 81,
+        "accepted_eta": 89,
+        "criterion": 65,
+        "acceptance": 140,
+        "iteration_count": 70
+      },
+      "points": [
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "-2.1684043449710088680149056017398834228515625E-19"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "-2.1684043449710088680149056017398834228515625E-19"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "8.67361737988403547205962240695953369140625E-19",
+          "initial_difference": "8.67361737988403547205962240695953369140625E-19",
+          "final_eta_difference": "-8.67361737988403547205962240695953369140625E-19"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "-2.1684043449710088680149056017398834228515625E-19"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        }
+      ],
+      "SG": {
+        "gamma_consumptions_exact": 162,
+        "arguments_exact": 52,
+        "bernoulli_values_and_derivatives_exact": 250,
+        "reverse_arguments_exact": 120,
+        "weak_rows": {
+          "e_1e-12_minus": {
+            "electron": {
+              "candidate": "949.0229565875014871207795809810958779237713422993749645684147253632545471191406250",
+              "native": "949.022956797495503411581170333162930509798317635361541988459066487848758697509765625",
+              "relative_to_native": "-2.212739057434735482829867954646218366032466449140244706126344340985698395702322190371881453E-10"
+            },
+            "hole": {
+              "candidate": "0.0010960173207996686905423509990609823812660571229482542321420623920857906341552734375",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "-0.0000158435084369107448847290771437042629356812086261714958244249616250919324295244129749491090093968"
+            }
+          },
+          "e_1e-12_plus": {
+            "electron": {
+              "candidate": "-948.41972640037363192942511438357092921859134437845284537615953013300895690917968750",
+              "native": "-948.41974691724876630330775921284534472682423156264519548130920156836509704589843750",
+              "relative_to_native": "-2.16326950182786681747318389724701028089486569201111767506637334027884697371240261728085720853E-8"
+            },
+            "hole": {
+              "candidate": "0.0010960173207996686905423509990609823812660571229482542321420623920857906341552734375",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "-0.0000158435084369107448847290771437042629356812086261714958244249616250919324295244129749491090093968"
+            }
+          },
+          "h_1e-12_minus": {
+            "electron": {
+              "candidate": "0.301619429821706628907022776499058762931550214947407084764563478529453277587890625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0.000070240113142601492413536596173554494879767719504878748859772949962517261680414806057670390287496"
+            },
+            "hole": {
+              "candidate": "-3.112436418029326896405425364191077706557436895196122605966593255288898944854736328125",
+              "native": "-3.112436418029326896405425364191077706557436895196122605966593255288898944854736328125",
+              "relative_to_native": "0"
+            }
+          },
+          "h_1e-12_plus": {
+            "electron": {
+              "candidate": "0.301619429821706628907022776499058762931550214947407084764563478529453277587890625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0.000070240113142601492413536596173554494879767719504878748859772949962517261680414806057670390287496"
+            },
+            "hole": {
+              "candidate": "3.11462841794085664945631356726318379488723138426298220338139799423515796661376953125",
+              "native": "3.11462841794085664945631356726318379488723138426298220338139799423515796661376953125",
+              "relative_to_native": "0"
+            }
+          },
+          "qf_baseline": {
+            "electron": {
+              "candidate": "0.301619429821706628907022776499058762931550214947407084764563478529453277587890625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0.000070240113142601492413536596173554494879767719504878748859772949962517261680414806057670390287496"
+            },
+            "hole": {
+              "candidate": "0.0010960173207996686905423509990609823812660571229482542321420623920857906341552734375",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "-0.0000158435084369107448847290771437042629356812086261714958244249616250919324295244129749491090093968"
+            }
+          }
+        },
+        "nonzero_weak_response_relative_error": {
+          "electron": "-1.09235810441529402419625233401256017717461831686745464801078797409680147710336710765577027042E-8",
+          "hole": "0"
+        }
+      }
+    },
+    "vm_libm": {
+      "integral_nodes_exact": 240,
+      "integral_weights_exact": 240,
+      "valley_weights_exact": 5,
+      "endpoint_samples": 70,
+      "iteration_samples": 140,
+      "exact": {
+        "raw_seed": 70,
+        "material_initial": 70,
+        "final_eta": 70,
+        "material_forward_value": 140,
+        "material_forward_derivative": 140,
+        "iteration_eta": 140,
+        "accepted_eta": 140,
+        "criterion": 140,
+        "acceptance": 140,
+        "iteration_count": 70
+      },
+      "points": [
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_minus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "e_1e-12_plus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_minus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "h_1e-12_plus",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1552,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1553,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 1554,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2154,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2156,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2157,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "electron",
+          "node": 2173,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2512,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2513,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2514,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2515,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2517,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2523,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        },
+        {
+          "state": "qf_baseline",
+          "carrier": "hole",
+          "node": 2524,
+          "raw_seed_difference": "0",
+          "initial_difference": "0",
+          "final_eta_difference": "0"
+        }
+      ],
+      "SG": {
+        "gamma_consumptions_exact": 240,
+        "arguments_exact": 120,
+        "bernoulli_values_and_derivatives_exact": 480,
+        "reverse_arguments_exact": 120,
+        "weak_rows": {
+          "e_1e-12_minus": {
+            "electron": {
+              "candidate": "949.022956797495503411581170333162930509798317635361541988459066487848758697509765625",
+              "native": "949.022956797495503411581170333162930509798317635361541988459066487848758697509765625",
+              "relative_to_native": "0"
+            },
+            "hole": {
+              "candidate": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "0"
+            }
+          },
+          "e_1e-12_plus": {
+            "electron": {
+              "candidate": "-948.41974691724876630330775921284534472682423156264519548130920156836509704589843750",
+              "native": "-948.41974691724876630330775921284534472682423156264519548130920156836509704589843750",
+              "relative_to_native": "0"
+            },
+            "hole": {
+              "candidate": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "0"
+            }
+          },
+          "h_1e-12_minus": {
+            "electron": {
+              "candidate": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0"
+            },
+            "hole": {
+              "candidate": "-3.112436418029326896405425364191077706557436895196122605966593255288898944854736328125",
+              "native": "-3.112436418029326896405425364191077706557436895196122605966593255288898944854736328125",
+              "relative_to_native": "0"
+            }
+          },
+          "h_1e-12_plus": {
+            "electron": {
+              "candidate": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0"
+            },
+            "hole": {
+              "candidate": "3.11462841794085664945631356726318379488723138426298220338139799423515796661376953125",
+              "native": "3.11462841794085664945631356726318379488723138426298220338139799423515796661376953125",
+              "relative_to_native": "0"
+            }
+          },
+          "qf_baseline": {
+            "electron": {
+              "candidate": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "native": "0.301598245526817215161378067617593208061578524681323187905945815145969390869140625",
+              "relative_to_native": "0"
+            },
+            "hole": {
+              "candidate": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "native": "0.0010960346858344608556406004620689205976348697124667097568817553110420703887939453125",
+              "relative_to_native": "0"
+            }
+          }
+        },
+        "nonzero_weak_response_relative_error": {
+          "electron": "0",
+          "hole": "0"
+        }
+      }
+    }
+  },
+  "fixed_state_inputs": {
+    "native_seed_used": false,
+    "native_valley_weights_used": false,
+    "native_quadrature_used": false,
+    "native_final_eta_used": false,
+    "population_DOS_band_contact_and_geometry_fixed": true
+  },
+  "qualification": {
+    "portable_UCRT_bitwise_statistics": false,
+    "private_actual_assembly": false,
+    "complete_RHS": false,
+    "zero_QS": false,
+    "observed_70_endpoint_eta_gamma_values_vm_libm": true,
+    "inverse_statistics_derivative_cache": false
+  },
+  "material_audit": {
+    "native_v2_identity": {
+      "names": true,
+      "variables": true,
+      "matrix": true,
+      "rhs1": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "material_objects": [
+      {
+        "carrier": "electron",
+        "valleys": 3,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 3
+      },
+      {
+        "carrier": "electron",
+        "valleys": 3,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 3
+      },
+      {
+        "carrier": "electron",
+        "valleys": 3,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 3
+      },
+      {
+        "carrier": "electron",
+        "valleys": 3,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 3
+      },
+      {
+        "carrier": "hole",
+        "valleys": 2,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 2
+      },
+      {
+        "carrier": "hole",
+        "valleys": 2,
+        "principal_masses_confirmed": true,
+        "zero_offsets_confirmed": true,
+        "parabolic_integral_confirmed": true,
+        "generated_weights_exact": 2
+      }
+    ],
+    "weights_exact": 16,
+    "native_v2_summary": {
+      "rhs_calls": 2,
+      "function_calls": {
+        "fermi_inverse": 14,
+        "density_compute": 77,
+        "diraci": 14,
+        "material_direct_derivative": 28,
+        "SD_inverse": 14,
+        "material_inverse": 14
+      },
+      "exit_code": 2,
+      "samples": 14,
+      "events": 525
+    }
+  },
+  "verification": {
+    "local_tests": 30,
+    "t470p_tests": 30,
+    "native_downloads": [
+      {
+        "all_verified": true,
+        "files": 29,
+        "archive_sha256": "f8580368e45e31716684f37834b40c10927329d8bd1a9c77c92af0f6a4ed901e"
+      },
+      {
+        "all_verified": true,
+        "files": 29,
+        "archive_sha256": "5fb9eaaa8ec1c072c713ea56b2e5de1e64e66fbecbedaffe613e38cb3f2a0014"
+      }
+    ],
+    "t470p_download": {
+      "analysis_equal": true,
+      "ucrt_output_identical": true,
+      "downloaded_outputs_verified": 2,
+      "executed_sources_verified": 15
+    },
+    "t470p_archive": {
+      "archive_verified": true,
+      "archive_sha256": "faf8787931070102809f09a7c9e19c4f5fc337ec6f2ee72e0cf1d270e861c790",
+      "remote_executable_sha256": "aafca891dfcdcf871f794d20b3a19f4db85661547631fdf777db03551535ec8b"
+    },
+    "parameter_content_files_verified": 4
+  },
+  "production_changed": false,
+  "solver_build_run": false,
+  "full_ctest_run": false,
+  "source_hashes": {
+    "scripts/bvmethods_seed_valley_audit.py": "33e9ad20805876afb3a56eb1999566495eb616d7cdb6cf5bd6f653251284c4a4",
+    "tests/regression/test_bvmethods_seed_valley_audit.py": "407ff8524b0650e2cc2617275ff4f6badfe26c9b75d1d49c9738152a730cb02b"
+  },
+  "next_step": "Define cross-platform transcendental/rounding controls, audit the inverse-statistics derivative cache evaluation state, and integrate the autonomous statistics into private actual residual and matched-direction derivative diagnostics."
+}

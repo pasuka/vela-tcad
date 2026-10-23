@@ -1,0 +1,126 @@
+{
+  "evidence_checks": {
+    "passed": 178,
+    "total": 178,
+    "archive_sha256_verified": true,
+    "manifest_files": 117
+  },
+  "contract_tests": {
+    "cases": 3,
+    "assertions": 44,
+    "local_pass": true,
+    "vm_pass": true
+  },
+  "executions": 6,
+  "candidate_states": 5,
+  "direction_samples": 114,
+  "candidate_direction_samples": 95,
+  "rhs_gate": 1e-08,
+  "jv_gate": 1e-05,
+  "newton_started": false,
+  "states": [
+    {
+      "state": 1,
+      "outer_V": 0.01,
+      "inner_V": 0.00524437249039996,
+      "electron_qf_h1e9_block_errors": [
+        3.6740222018083268e-06,
+        6.014828222498365e-15,
+        4.9406492687275926e-08
+      ],
+      "electron_to_hole_three_steps_max": 1.0040911298884579e-07,
+      "global_three_steps_max": 9.162403101730569e-07,
+      "global_load_jv_max_relative": 4.9693839643511657e-11,
+      "row_failures": {
+        "1": 199,
+        "2": 280
+      },
+      "zero_base_observations": 464,
+      "sign_crossing_observations": 23828
+    },
+    {
+      "state": 2,
+      "outer_V": 0.0235533333333333,
+      "inner_V": 0.013294789026557,
+      "electron_qf_h1e9_block_errors": [
+        4.55939197477309e-06,
+        1.9814831712028047e-14,
+        6.250059213519684e-08
+      ],
+      "electron_to_hole_three_steps_max": 5.801559620963849e-07,
+      "global_three_steps_max": 8.934950819415742e-07,
+      "global_load_jv_max_relative": 4.969543261996056e-11,
+      "row_failures": {
+        "1": 163,
+        "2": 290
+      },
+      "zero_base_observations": 480,
+      "sign_crossing_observations": 21624
+    },
+    {
+      "state": 3,
+      "outer_V": 0.0419226177777778,
+      "inner_V": 0.0261074637970595,
+      "electron_qf_h1e9_block_errors": [
+        1.7790481088103796e-06,
+        2.5339675501680205e-14,
+        6.697382306796016e-08
+      ],
+      "electron_to_hole_three_steps_max": 5.906811131487354e-07,
+      "global_three_steps_max": 8.592071864316695e-07,
+      "global_load_jv_max_relative": 4.96988623789991e-11,
+      "row_failures": {
+        "1": 154,
+        "2": 322
+      },
+      "zero_base_observations": 448,
+      "sign_crossing_observations": 20564
+    },
+    {
+      "state": 4,
+      "outer_V": 0.0668191212948148,
+      "inner_V": 0.0467947246698361,
+      "electron_qf_h1e9_block_errors": [
+        4.548500664246656e-06,
+        3.635745975419873e-14,
+        5.6056540460210824e-08
+      ],
+      "electron_to_hole_three_steps_max": 2.1053409782288867e-06,
+      "global_three_steps_max": 8.135944364389385e-07,
+      "global_load_jv_max_relative": 4.969539005575977e-11,
+      "row_failures": {
+        "1": 157,
+        "2": 367
+      },
+      "zero_base_observations": 448,
+      "sign_crossing_observations": 20028
+    },
+    {
+      "state": 5,
+      "outer_V": 0.100562182394906,
+      "inner_V": 0.0786636612716569,
+      "electron_qf_h1e9_block_errors": [
+        2.6687737199413922e-06,
+        4.203099362686363e-14,
+        7.339719881389859e-08
+      ],
+      "electron_to_hole_three_steps_max": 2.1098514318646394e-06,
+      "global_three_steps_max": 7.461713229257966e-07,
+      "global_load_jv_max_relative": 4.969869602841487e-11,
+      "row_failures": {
+        "1": 165,
+        "2": 402
+      },
+      "zero_base_observations": 464,
+      "sign_crossing_observations": 19576
+    }
+  ],
+  "first_state_off_electron_to_hole_h1e9": 0.9880048243515729,
+  "limitations": [
+    "fine electron QF to Poisson directions exceed gate",
+    "hole QF to Poisson and electron blocks require independently resolvable response",
+    "remote carrier coarse-step response exceeds gate and decreases on refinement",
+    "zero-current and other branch events retain separate status",
+    "frozen-state carrier row violations and native QF identity gap remain"
+  ]
+}

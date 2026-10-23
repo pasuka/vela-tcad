@@ -1,0 +1,924 @@
+{
+  "date": "2026-10-16",
+  "stage": "N4 in progress; N5 not started",
+  "reference": {
+    "version": "T-2022.03-SP2",
+    "binary_sha256": "c786dbd60dd26ca7e3671518256585fd0ae5bd615eaa7c642cbd80743417f71a",
+    "mesh_nodes": 2600,
+    "mesh_triangles": 5020,
+    "silicon_triangles": 4156,
+    "temperature_K": 300,
+    "precision": "binary64",
+    "derivative": 0,
+    "source_integral_unit": "m^-1 s^-1",
+    "event_current_unit": "A/um"
+  },
+  "scope": {
+    "physical_models_and_materials_unchanged": true,
+    "production_CPP_unchanged": true,
+    "frontend_nonlocalpath": "E106 unchanged",
+    "existing_N3_P1_energy_representation_unchanged": true,
+    "selected_origins": 24,
+    "evaluated_bound_paths": 18,
+    "native_scalar_evaluations": 608,
+    "native_coefficient_vectors": 1216,
+    "native_exp_calls": 3040,
+    "accepted_leaf_evaluations": 313,
+    "autonomous_physical_nodes_to_local_coefficients": true,
+    "bound_path_topology_support_arclength_and_geometry_factor_retained": true,
+    "global_source_qualified": false,
+    "full_rhs_qualified": false,
+    "new_from_zero_scan": false
+  },
+  "identity_by_state": {
+    "zero": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "before_arrays_identical": true,
+      "before_arrays_checked": 82,
+      "selected_cells": [
+        559,
+        979,
+        1642,
+        2695,
+        3700,
+        3722
+      ],
+      "root_cells": [
+        1642,
+        3700,
+        3722
+      ],
+      "scalar_evaluations": 3,
+      "max_partition_relative_L1": 1.9286819719868932e-16
+    },
+    "first": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "before_arrays_identical": true,
+      "before_arrays_checked": 82,
+      "selected_cells": [
+        559,
+        979,
+        1619,
+        1621,
+        2161,
+        2695
+      ],
+      "root_cells": [
+        1619,
+        1621,
+        2161
+      ],
+      "scalar_evaluations": 9,
+      "max_partition_relative_L1": 1.6364622806938656e-16
+    },
+    "before_BV": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "before_arrays_identical": true,
+      "before_arrays_checked": 82,
+      "selected_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "root_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "scalar_evaluations": 188,
+      "max_partition_relative_L1": 2.0389649434195403e-16
+    },
+    "after_BV": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "before_arrays_identical": true,
+      "before_arrays_checked": 82,
+      "selected_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "root_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "scalar_evaluations": 188,
+      "max_partition_relative_L1": 1.9933979176002805e-16
+    },
+    "last": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "before_arrays_identical": true,
+      "before_arrays_checked": 82,
+      "selected_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "root_cells": [
+        559,
+        977,
+        979,
+        2695
+      ],
+      "scalar_evaluations": 220,
+      "max_partition_relative_L1": 1.996542237661952e-16
+    }
+  },
+  "factor_comparison": {
+    "zero": {
+      "evaluations": 3,
+      "maximum_scalar_relative_error_with_observed_profiles": 0.3637460680346727,
+      "maximum_exponent_absolute_errors": {
+        "action": 2.842170943040401e-14,
+        "valence_window": 4.440892098500626e-15,
+        "conduction_window": 4.973799150320701e-14,
+        "hole_occupation": 0.0,
+        "electron_occupation": null
+      },
+      "native_exponent_observations": {
+        "action": 3,
+        "valence_window": 3,
+        "conduction_window": 3,
+        "hole_occupation": 3,
+        "electron_occupation": 0
+      }
+    },
+    "first": {
+      "evaluations": 9,
+      "maximum_scalar_relative_error_with_observed_profiles": 8.260059303211165e-14,
+      "maximum_exponent_absolute_errors": {
+        "action": 7.105427357601002e-14,
+        "valence_window": 6.661338147750939e-15,
+        "conduction_window": 2.7000623958883807e-13,
+        "hole_occupation": 4.440892098500626e-16,
+        "electron_occupation": null
+      },
+      "native_exponent_observations": {
+        "action": 9,
+        "valence_window": 9,
+        "conduction_window": 9,
+        "hole_occupation": 9,
+        "electron_occupation": 0
+      }
+    },
+    "before_BV": {
+      "evaluations": 188,
+      "maximum_scalar_relative_error_with_observed_profiles": 6.439293542825908e-15,
+      "maximum_exponent_absolute_errors": {
+        "action": 3.552713678800501e-15,
+        "valence_window": 4.263256414560601e-14,
+        "conduction_window": 8.526512829121202e-14,
+        "hole_occupation": 3.019806626980426e-14,
+        "electron_occupation": 4.085620730620576e-14
+      },
+      "native_exponent_observations": {
+        "action": 188,
+        "valence_window": 188,
+        "conduction_window": 188,
+        "hole_occupation": 188,
+        "electron_occupation": 188
+      }
+    },
+    "after_BV": {
+      "evaluations": 188,
+      "maximum_scalar_relative_error_with_observed_profiles": 5.995204332975845e-15,
+      "maximum_exponent_absolute_errors": {
+        "action": 6.217248937900877e-15,
+        "valence_window": 3.552713678800501e-14,
+        "conduction_window": 6.394884621840902e-14,
+        "hole_occupation": 4.707345624410664e-14,
+        "electron_occupation": 3.730349362740526e-14
+      },
+      "native_exponent_observations": {
+        "action": 188,
+        "valence_window": 188,
+        "conduction_window": 188,
+        "hole_occupation": 188,
+        "electron_occupation": 188
+      }
+    },
+    "last": {
+      "evaluations": 220,
+      "maximum_scalar_relative_error_with_observed_profiles": 6.8833827526759706e-15,
+      "maximum_exponent_absolute_errors": {
+        "action": 5.329070518200751e-15,
+        "valence_window": 4.973799150320701e-14,
+        "conduction_window": 4.973799150320701e-14,
+        "hole_occupation": 3.907985046680551e-14,
+        "electron_occupation": 5.240252676230739e-14
+      },
+      "native_exponent_observations": {
+        "action": 220,
+        "valence_window": 220,
+        "conduction_window": 220,
+        "hole_occupation": 220,
+        "electron_occupation": 220
+      }
+    }
+  },
+  "autonomous_selected_sources": {
+    "zero": {
+      "cells": [
+        {
+          "cell": 1642,
+          "leaf_evaluations": 1,
+          "maximum_coefficient_input_relative_error": 1.2212453270876722e-15,
+          "maximum_band_qf_input_absolute_error_kT": 1.4210854715202004e-14,
+          "path_arclength_relative_error": 1.2382019867119002e-13,
+          "hole": {
+            "native_signed_integral_per_m_s": 9.426917193753198e-42,
+            "candidate_signed_integral_per_m_s": 1.2855921256668626e-41,
+            "relative_L1": 0.3637460680345934,
+            "reference_absolute_current_A_per_um": 1.510373131249382e-66,
+            "candidate_absolute_current_A_per_um": 2.0597654190064418e-66,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 9.426917193753198e-42,
+            "candidate_signed_integral_per_m_s": 1.2855921256668624e-41,
+            "relative_L1": 0.36374606803459303,
+            "reference_absolute_current_A_per_um": 1.510373131249382e-66,
+            "candidate_absolute_current_A_per_um": 2.0597654190064415e-66,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 3700,
+          "leaf_evaluations": 1,
+          "maximum_coefficient_input_relative_error": 1.2212453270876722e-15,
+          "maximum_band_qf_input_absolute_error_kT": 1.4210854715202004e-14,
+          "path_arclength_relative_error": 9.171866568234322e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 9.426917193753228e-42,
+            "candidate_signed_integral_per_m_s": 1.2855921256668657e-41,
+            "relative_L1": 0.36374606803459225,
+            "reference_absolute_current_A_per_um": 1.510373131249387e-66,
+            "candidate_absolute_current_A_per_um": 2.0597654190064468e-66,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 9.426917193753226e-42,
+            "candidate_signed_integral_per_m_s": 1.2855921256668657e-41,
+            "relative_L1": 0.36374606803459253,
+            "reference_absolute_current_A_per_um": 1.5103731312493868e-66,
+            "candidate_absolute_current_A_per_um": 2.0597654190064468e-66,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 3722,
+          "leaf_evaluations": 1,
+          "maximum_coefficient_input_relative_error": 1.4432899320127035e-15,
+          "maximum_band_qf_input_absolute_error_kT": 2.1316282072803006e-14,
+          "path_arclength_relative_error": 7.611342124804777e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 8.27825938959661e-44,
+            "candidate_signed_integral_per_m_s": 7.520008155327079e-44,
+            "relative_L1": 0.09159549110317011,
+            "reference_absolute_current_A_per_um": 1.326336096793657e-68,
+            "candidate_absolute_current_A_per_um": 1.2048496906399805e-68,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 8.278259389596609e-44,
+            "candidate_signed_integral_per_m_s": 7.520008155327078e-44,
+            "relative_L1": 0.0915954911031701,
+            "reference_absolute_current_A_per_um": 1.3263360967936569e-68,
+            "candidate_absolute_current_A_per_um": 1.2048496906399802e-68,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        }
+      ],
+      "actual_path_inputs_retained": true,
+      "autonomous_nodes_material_to_coefficients": true,
+      "full_source_qualified": false,
+      "full_rhs_qualified": false
+    },
+    "first": {
+      "cells": [
+        {
+          "cell": 1619,
+          "leaf_evaluations": 2,
+          "maximum_coefficient_input_relative_error": 1.2212453270876722e-15,
+          "maximum_band_qf_input_absolute_error_kT": 2.1316282072803006e-14,
+          "path_arclength_relative_error": 5.502797193566667e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 2.9031487520762377e-30,
+            "candidate_signed_integral_per_m_s": 2.9031487520765628e-30,
+            "relative_L1": 1.1210295996947672e-13,
+            "reference_absolute_current_A_per_um": 4.651401705386531e-55,
+            "candidate_absolute_current_A_per_um": 4.651401705387052e-55,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 2.9031487520762342e-30,
+            "candidate_signed_integral_per_m_s": 2.9031487520765628e-30,
+            "relative_L1": 1.131286598184979e-13,
+            "reference_absolute_current_A_per_um": 4.6514017053865254e-55,
+            "candidate_absolute_current_A_per_um": 4.651401705387052e-55,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 1621,
+          "leaf_evaluations": 2,
+          "maximum_coefficient_input_relative_error": 1.2212453270876722e-15,
+          "maximum_band_qf_input_absolute_error_kT": 2.1316282072803006e-14,
+          "path_arclength_relative_error": 3.1077010202129363e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 8.469802867947986e-38,
+            "candidate_signed_integral_per_m_s": 8.469805711560973e-38,
+            "relative_L1": 3.48188705843296e-07,
+            "reference_absolute_current_A_per_um": 1.357025039660332e-62,
+            "candidate_absolute_current_A_per_um": 1.3570254952617296e-62,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 8.469805711601918e-38,
+            "candidate_signed_integral_per_m_s": 8.469805711560973e-38,
+            "relative_L1": 4.841409320318795e-12,
+            "reference_absolute_current_A_per_um": 1.35702549526829e-62,
+            "candidate_absolute_current_A_per_um": 1.3570254952617296e-62,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 2161,
+          "leaf_evaluations": 2,
+          "maximum_coefficient_input_relative_error": 1.4432899320127035e-15,
+          "maximum_band_qf_input_absolute_error_kT": 2.1316282072803006e-14,
+          "path_arclength_relative_error": 1.0367474663895139e-12,
+          "hole": {
+            "native_signed_integral_per_m_s": 2.170098305135266e-31,
+            "candidate_signed_integral_per_m_s": 2.170098305134582e-31,
+            "relative_L1": 3.1522868528874777e-13,
+            "reference_absolute_current_A_per_um": 3.476914143701282e-56,
+            "candidate_absolute_current_A_per_um": 3.476914143700186e-56,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 2.1700983051347896e-31,
+            "candidate_signed_integral_per_m_s": 2.1700983051345816e-31,
+            "relative_L1": 9.648750952417909e-14,
+            "reference_absolute_current_A_per_um": 3.476914143700519e-56,
+            "candidate_absolute_current_A_per_um": 3.4769141437001855e-56,
+            "tiny_source": true,
+            "selected_source_gate_passed": true
+          }
+        }
+      ],
+      "actual_path_inputs_retained": true,
+      "autonomous_nodes_material_to_coefficients": true,
+      "full_source_qualified": false,
+      "full_rhs_qualified": false
+    },
+    "before_BV": {
+      "cells": [
+        {
+          "cell": 559,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.5543122344752192e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 4.7025668486321344e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 1745248090869059.2,
+            "candidate_signed_integral_per_m_s": 1745248090869061.0,
+            "relative_L1": 1.504084154988453e-15,
+            "reference_absolute_current_A_per_um": 2.79622252920568e-10,
+            "candidate_absolute_current_A_per_um": 2.7962225292056826e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 1745248090869059.2,
+            "candidate_signed_integral_per_m_s": 1745248090869060.8,
+            "relative_L1": 6.3453550288575365e-15,
+            "reference_absolute_current_A_per_um": 2.79622252920568e-10,
+            "candidate_absolute_current_A_per_um": 2.796222529205682e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 977,
+          "leaf_evaluations": 16,
+          "maximum_coefficient_input_relative_error": 1.6653345369377348e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 8.336688502166794e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 1844717297022665.8,
+            "candidate_signed_integral_per_m_s": 1844717297022670.8,
+            "relative_L1": 2.7443229421498714e-15,
+            "reference_absolute_current_A_per_um": 2.955591295551339e-10,
+            "candidate_absolute_current_A_per_um": 2.9555912955513463e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 1844717297022667.8,
+            "candidate_signed_integral_per_m_s": 1844717297022671.0,
+            "relative_L1": 3.1847698340998473e-15,
+            "reference_absolute_current_A_per_um": 2.955591295551342e-10,
+            "candidate_absolute_current_A_per_um": 2.9555912955513473e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 979,
+          "leaf_evaluations": 16,
+          "maximum_coefficient_input_relative_error": 1.9984014443252818e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 2.945110529033484e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 3738601005391267.0,
+            "candidate_signed_integral_per_m_s": 3738601005391247.5,
+            "relative_L1": 5.282724733535197e-15,
+            "reference_absolute_current_A_per_um": 5.989956622029844e-10,
+            "candidate_absolute_current_A_per_um": 5.989956622029813e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 3738601005391267.0,
+            "candidate_signed_integral_per_m_s": 3738601005391246.0,
+            "relative_L1": 9.074458922221754e-15,
+            "reference_absolute_current_A_per_um": 5.989956622029844e-10,
+            "candidate_absolute_current_A_per_um": 5.989956622029811e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 2695,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 2.220446049250313e-15,
+          "maximum_band_qf_input_absolute_error_kT": 7.105427357601002e-14,
+          "path_arclength_relative_error": 1.381684581044271e-13,
+          "hole": {
+            "native_signed_integral_per_m_s": 2098422098999818.2,
+            "candidate_signed_integral_per_m_s": 2098422098999810.2,
+            "relative_L1": 3.812388367341862e-15,
+            "reference_absolute_current_A_per_um": 3.3620750996407166e-10,
+            "candidate_absolute_current_A_per_um": 3.362075099640704e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 2098422098999820.0,
+            "candidate_signed_integral_per_m_s": 2098422098999810.8,
+            "relative_L1": 4.497426902098599e-15,
+            "reference_absolute_current_A_per_um": 3.362075099640719e-10,
+            "candidate_absolute_current_A_per_um": 3.3620750996407047e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        }
+      ],
+      "actual_path_inputs_retained": true,
+      "autonomous_nodes_material_to_coefficients": true,
+      "full_source_qualified": false,
+      "full_rhs_qualified": false
+    },
+    "after_BV": {
+      "cells": [
+        {
+          "cell": 559,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.2212453270876722e-15,
+          "maximum_band_qf_input_absolute_error_kT": 1.1368683772161603e-13,
+          "path_arclength_relative_error": 6.235830153826716e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 1767578134788351.5,
+            "candidate_signed_integral_per_m_s": 1767578134788366.5,
+            "relative_L1": 1.0678452979539757e-14,
+            "reference_absolute_current_A_per_um": 2.831999546932818e-10,
+            "candidate_absolute_current_A_per_um": 2.8319995469328424e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 1767578134788351.5,
+            "candidate_signed_integral_per_m_s": 1767578134788366.5,
+            "relative_L1": 8.382320395570013e-15,
+            "reference_absolute_current_A_per_um": 2.831999546932818e-10,
+            "candidate_absolute_current_A_per_um": 2.8319995469328424e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 977,
+          "leaf_evaluations": 16,
+          "maximum_coefficient_input_relative_error": 2.220446049250313e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 8.074047171858761e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 1871218907376995.5,
+            "candidate_signed_integral_per_m_s": 1871218907377001.0,
+            "relative_L1": 3.0060619726662093e-15,
+            "reference_absolute_current_A_per_um": 2.998051963648163e-10,
+            "candidate_absolute_current_A_per_um": 2.9980519636481717e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 1871218907376998.2,
+            "candidate_signed_integral_per_m_s": 1871218907377001.2,
+            "relative_L1": 1.6032330520886426e-15,
+            "reference_absolute_current_A_per_um": 2.9980519636481675e-10,
+            "candidate_absolute_current_A_per_um": 2.998051963648172e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 979,
+          "leaf_evaluations": 16,
+          "maximum_coefficient_input_relative_error": 1.4432899320127035e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 2.60440131201274e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 3790366410305147.0,
+            "candidate_signed_integral_per_m_s": 3790366410305179.0,
+            "relative_L1": 8.442455566564556e-15,
+            "reference_absolute_current_A_per_um": 6.072894739659624e-10,
+            "candidate_absolute_current_A_per_um": 6.072894739659675e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 3790366410305148.5,
+            "candidate_signed_integral_per_m_s": 3790366410305179.0,
+            "relative_L1": 1.1942282117352299e-14,
+            "reference_absolute_current_A_per_um": 6.072894739659626e-10,
+            "candidate_absolute_current_A_per_um": 6.072894739659675e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 2695,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.6653345369377348e-15,
+          "maximum_band_qf_input_absolute_error_kT": 8.526512829121202e-14,
+          "path_arclength_relative_error": 2.495459705604465e-13,
+          "hole": {
+            "native_signed_integral_per_m_s": 2125125661012472.0,
+            "candidate_signed_integral_per_m_s": 2125125661012469.5,
+            "relative_L1": 5.646724906744032e-15,
+            "reference_absolute_current_A_per_um": 3.4048593330688946e-10,
+            "candidate_absolute_current_A_per_um": 3.40485933306889e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 2125125661012474.5,
+            "candidate_signed_integral_per_m_s": 2125125661012470.0,
+            "relative_L1": 5.676134932299984e-15,
+            "reference_absolute_current_A_per_um": 3.4048593330688983e-10,
+            "candidate_absolute_current_A_per_um": 3.4048593330688915e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        }
+      ],
+      "actual_path_inputs_retained": true,
+      "autonomous_nodes_material_to_coefficients": true,
+      "full_source_qualified": false,
+      "full_rhs_qualified": false
+    },
+    "last": {
+      "cells": [
+        {
+          "cell": 559,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.4432899320127035e-15,
+          "maximum_band_qf_input_absolute_error_kT": 1.1368683772161603e-13,
+          "path_arclength_relative_error": 2.837741779827381e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 3021172864231869.5,
+            "candidate_signed_integral_per_m_s": 3021172864231937.5,
+            "relative_L1": 2.2507815029408765e-14,
+            "reference_absolute_current_A_per_um": 4.840498993689387e-10,
+            "candidate_absolute_current_A_per_um": 4.840498993689497e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 3021172864231869.0,
+            "candidate_signed_integral_per_m_s": 3021172864231937.5,
+            "relative_L1": 2.2668141836833326e-14,
+            "reference_absolute_current_A_per_um": 4.840498993689386e-10,
+            "candidate_absolute_current_A_per_um": 4.840498993689497e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 977,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.6653345369377348e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 4.168310507387151e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 3440940790162205.5,
+            "candidate_signed_integral_per_m_s": 3440940790162216.5,
+            "relative_L1": 3.342109237357116e-15,
+            "reference_absolute_current_A_per_um": 5.513047806471565e-10,
+            "candidate_absolute_current_A_per_um": 5.513047806471581e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 3440940790162210.5,
+            "candidate_signed_integral_per_m_s": 3440940790162216.5,
+            "relative_L1": 1.7346273487369787e-15,
+            "reference_absolute_current_A_per_um": 5.513047806471572e-10,
+            "candidate_absolute_current_A_per_um": 5.513047806471581e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 979,
+          "leaf_evaluations": 16,
+          "maximum_coefficient_input_relative_error": 1.3322676295501878e-15,
+          "maximum_band_qf_input_absolute_error_kT": 8.526512829121202e-14,
+          "path_arclength_relative_error": 4.6234441867697535e-14,
+          "hole": {
+            "native_signed_integral_per_m_s": 6929222419727954.0,
+            "candidate_signed_integral_per_m_s": 6929222419728036.0,
+            "relative_L1": 1.183393965916588e-14,
+            "reference_absolute_current_A_per_um": 1.110194472710877e-09,
+            "candidate_absolute_current_A_per_um": 1.11019447271089e-09,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 6929222419727954.0,
+            "candidate_signed_integral_per_m_s": 6929222419728036.0,
+            "relative_L1": 1.1842959430247562e-14,
+            "reference_absolute_current_A_per_um": 1.110194472710877e-09,
+            "candidate_absolute_current_A_per_um": 1.11019447271089e-09,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        },
+        {
+          "cell": 2695,
+          "leaf_evaluations": 32,
+          "maximum_coefficient_input_relative_error": 1.1102230246251565e-15,
+          "maximum_band_qf_input_absolute_error_kT": 5.684341886080802e-14,
+          "path_arclength_relative_error": 3.392608631786501e-13,
+          "hole": {
+            "native_signed_integral_per_m_s": 3630634351841343.0,
+            "candidate_signed_integral_per_m_s": 3630634351841346.5,
+            "relative_L1": 1.4115990494610844e-15,
+            "reference_absolute_current_A_per_um": 5.816973313445384e-10,
+            "candidate_absolute_current_A_per_um": 5.81697331344539e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          },
+          "electron": {
+            "native_signed_integral_per_m_s": 3630634351841346.0,
+            "candidate_signed_integral_per_m_s": 3630634351841346.5,
+            "relative_L1": 6.23169336469405e-15,
+            "reference_absolute_current_A_per_um": 5.816973313445389e-10,
+            "candidate_absolute_current_A_per_um": 5.81697331344539e-10,
+            "tiny_source": false,
+            "selected_source_gate_passed": true
+          }
+        }
+      ],
+      "actual_path_inputs_retained": true,
+      "autonomous_nodes_material_to_coefficients": true,
+      "full_source_qualified": false,
+      "full_rhs_qualified": false
+    }
+  },
+  "source_summary": {
+    "zero": {
+      "selected_paths": 3,
+      "leaf_samples": 3,
+      "source_maximum_L1": 0.3637460680345934,
+      "current_reference_max_A_per_um": 1.510373131249387e-66,
+      "current_candidate_max_A_per_um": 2.0597654190064468e-66
+    },
+    "first": {
+      "selected_paths": 3,
+      "leaf_samples": 6,
+      "source_maximum_L1": 3.48188705843296e-07,
+      "current_reference_max_A_per_um": 4.651401705386531e-55,
+      "current_candidate_max_A_per_um": 4.651401705387052e-55
+    },
+    "before_BV": {
+      "selected_paths": 4,
+      "leaf_samples": 96,
+      "source_maximum_L1": 9.074458922221754e-15,
+      "current_reference_max_A_per_um": 5.989956622029844e-10,
+      "current_candidate_max_A_per_um": 5.989956622029813e-10
+    },
+    "after_BV": {
+      "selected_paths": 4,
+      "leaf_samples": 96,
+      "source_maximum_L1": 1.1942282117352299e-14,
+      "current_reference_max_A_per_um": 6.072894739659626e-10,
+      "current_candidate_max_A_per_um": 6.072894739659675e-10
+    },
+    "last": {
+      "selected_paths": 4,
+      "leaf_samples": 112,
+      "source_maximum_L1": 2.2668141836833326e-14,
+      "current_reference_max_A_per_um": 1.110194472710877e-09,
+      "current_candidate_max_A_per_um": 1.11019447271089e-09
+    }
+  },
+  "native_archives": [
+    {
+      "attempt": "native",
+      "archive_sha256": "38dc3fb2c163580f55d04389dd32bb40caaa77c0ca93d4b05245e2a99082fc14",
+      "files_verified": 8,
+      "phase": "failed",
+      "runs": []
+    },
+    {
+      "attempt": "native_v2",
+      "archive_sha256": "caa26c56a327999d16e1eb34dc2ac024214c887e1a2138b82977cb5215f3b273",
+      "files_verified": 186,
+      "phase": "complete",
+      "runs": [
+        {
+          "case": "last",
+          "mode": "plain",
+          "exit": 0,
+          "seconds": 33.757384300231934
+        },
+        {
+          "case": "last",
+          "mode": "trace",
+          "exit": 0,
+          "seconds": 119.5681962966919
+        },
+        {
+          "case": "zero",
+          "mode": "plain",
+          "exit": 0,
+          "seconds": 33.187333822250366
+        },
+        {
+          "case": "zero",
+          "mode": "trace",
+          "exit": 0,
+          "seconds": 60.8436074256897
+        },
+        {
+          "case": "first",
+          "mode": "plain",
+          "exit": 0,
+          "seconds": 33.467371702194214
+        },
+        {
+          "case": "first",
+          "mode": "trace",
+          "exit": 0,
+          "seconds": 74.73741936683655
+        },
+        {
+          "case": "before_BV",
+          "mode": "plain",
+          "exit": 0,
+          "seconds": 33.610032081604004
+        },
+        {
+          "case": "before_BV",
+          "mode": "trace",
+          "exit": 0,
+          "seconds": 118.89775538444519
+        },
+        {
+          "case": "after_BV",
+          "mode": "plain",
+          "exit": 0,
+          "seconds": 33.364607095718384
+        },
+        {
+          "case": "after_BV",
+          "mode": "trace",
+          "exit": 0,
+          "seconds": 125.38541316986084
+        }
+      ]
+    }
+  ],
+  "read_only_inspection": {
+    "user_explicitly_authorized": true,
+    "completed": true,
+    "raw_output_ignored_only": true,
+    "sha256": {
+      "action_inspect.log": "00aac141792ea2a9cdf093a53810e115178dadb75f2c67219a1ff59f0c4451b4",
+      "kernelA_inspect.log": "255ad5aad9ed3d6769f474b40cecd5b3ea3089df1f4e75dac50538b8a8d22b98"
+    }
+  },
+  "verification": {
+    "local_selected_release_ctest": 10,
+    "local_unit_tests": 30,
+    "local_replay": {
+      "exit": 0,
+      "tests": 30,
+      "manifest_verified": 5,
+      "selected_paths_recomputed": 18,
+      "leaf_kernel_evaluations_recomputed": 313,
+      "path_counts_by_state": {
+        "zero": 3,
+        "first": 3,
+        "before_BV": 4,
+        "after_BV": 4,
+        "last": 4
+      },
+      "maximum_local_remote_relative_change": 0,
+      "full_rhs_qualified": false
+    },
+    "t470p": {
+      "exit": 0,
+      "tests": 30,
+      "manifest_verified": 5,
+      "selected_paths_recomputed": 18,
+      "leaf_kernel_evaluations_recomputed": 313,
+      "path_counts_by_state": {
+        "zero": 3,
+        "first": 3,
+        "before_BV": 4,
+        "after_BV": 4,
+        "last": 4
+      },
+      "maximum_local_remote_relative_change": 4.440892098500626e-16,
+      "full_rhs_qualified": false
+    },
+    "replay_input_sha256": {
+      "scripts/audit_nonlocalpath_collection.py": "0e1a6f735ab86ae082597fcd9da56a9299f10d9bd28c8f39c250f4f9ced06bf8",
+      "test_nonlocalpath_collection_audit.py": "e40b01f16cfaa9b3a6bf16d75f7f814d2ee672362e9a9498fc5c1a0e1f818444",
+      "portable_kernel.py": "d65a68440fdd64ddb072633869d3513053c927f7a27f83277a021d05e2a0215f",
+      "replay_payload.json": "a79161206b5f9db831524e528757d1b27a306b9e623321d14c4ceda190b05860",
+      "replay_worker.py": "977e4d45ea5859bb88754ef25d700292acae749c63667bdda483540c9a65a006"
+    }
+  },
+  "remaining": [
+    "full autonomous centroid-source geometry and assembly across all five states",
+    "contact/corner completeness and signed source ledger",
+    "error-triggered refinement and unresolved geometry controls",
+    "near-equilibrium internal occupation rounding chain",
+    "complete actual RHS gate before N5"
+  ]
+}

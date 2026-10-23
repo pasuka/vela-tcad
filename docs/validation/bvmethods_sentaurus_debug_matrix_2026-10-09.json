@@ -1,0 +1,2223 @@
+{
+  "native_iterations": [
+    {
+      "index": 0,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.347624801227978e-16,
+          "J_SOL_plus_RHS1_relative": 0.24075559178585848,
+          "rhs1_l1": 31452.195137636998,
+          "rhs2_l1": 3806.652331740439,
+          "max_abs_solution": 24.2547719644587
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3050413795842,
+          "nonzero_columns": 5,
+          "diagonal": 117.592995470348,
+          "absolute_row_sum": 123.64674705062613,
+          "rhs": -0.150392415325503,
+          "solution": -0.00134607602933406,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 1,
+      "loop": 1,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 1.0704982952451382e-15,
+          "J_SOL_plus_RHS1_relative": 0.0703494890025402,
+          "rhs1_l1": 3806.652331740439,
+          "rhs2_l1": 507.6456659887292,
+          "max_abs_solution": 15.0406940234587
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3036953035549,
+          "nonzero_columns": 5,
+          "diagonal": 117.541785235338,
+          "absolute_row_sum": 123.59553681561613,
+          "rhs": -3.44658130654873e-05,
+          "solution": -2.3430149096031e-07,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 2,
+      "loop": 2,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.400561346699633e-16,
+          "J_SOL_plus_RHS1_relative": 0.03994183296705113,
+          "rhs1_l1": 507.6456659887292,
+          "rhs2_l1": 75.68612420401749,
+          "max_abs_solution": 5.64268290166501
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3036950692534,
+          "nonzero_columns": 5,
+          "diagonal": 117.541776321069,
+          "absolute_row_sum": 123.59552790134713,
+          "rhs": -9.20707954321642e-13,
+          "solution": 2.44505739887622e-07,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 3,
+      "loop": 3,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 8.549955424233367e-16,
+          "J_SOL_plus_RHS1_relative": 0.033667518978689394,
+          "rhs1_l1": 75.68612420401749,
+          "rhs2_l1": 5.525159775011995,
+          "max_abs_solution": 1.54313839911074
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3036953137591,
+          "nonzero_columns": 5,
+          "diagonal": 117.54178562357,
+          "absolute_row_sum": 123.59553720384812,
+          "rhs": -9.78828129660769e-13,
+          "solution": 3.38937828446329e-09,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "loop": 4,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 8.407286398741091e-16,
+          "J_SOL_plus_RHS1_relative": 0.027230251570507836,
+          "rhs1_l1": 5.525159775011995,
+          "rhs2_l1": 0.11769520318190399,
+          "max_abs_solution": 0.20693271931341
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3036953171485,
+          "nonzero_columns": 5,
+          "diagonal": 117.541785752523,
+          "absolute_row_sum": 123.59553733280113,
+          "rhs": 7.46347428304261e-14,
+          "solution": 1.36503232888204e-09,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 5,
+      "loop": 5,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.274637004855936e-16,
+          "J_SOL_plus_RHS1_relative": 0.024543770298052957,
+          "rhs1_l1": 0.11769520318190399,
+          "rhs2_l1": 0.00014408887630806304,
+          "max_abs_solution": 0.00605006554114246
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3036953185135,
+          "nonzero_columns": 5,
+          "diagonal": 117.541785804457,
+          "absolute_row_sum": 123.59553738473514,
+          "rhs": 1.77191594730175e-13,
+          "solution": 1.25185725143969e-11,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 6,
+      "loop": 6,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.37992522692712e-16,
+          "J_SOL_plus_RHS1_relative": 0.027335346582723057,
+          "rhs1_l1": 0.00014408887630806304,
+          "rhs2_l1": 5.039375199629539e-10,
+          "max_abs_solution": 7.32654456452562e-06
+        }
+      },
+      "dimension": 2600,
+      "stored_entries": 17838,
+      "nonzero_entries": 13294,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.303695318526,
+          "nonzero_columns": 5,
+          "diagonal": 117.541785804934,
+          "absolute_row_sum": 123.59553738521213,
+          "rhs": -1.79523063081888e-13,
+          "solution": 1.65233047765705e-16,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 7,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 1.039570723591315e-15,
+          "J_SOL_plus_RHS1_relative": 0.0539605710349531,
+          "rhs1_l1": 5.039375199629539e-10,
+          "rhs2_l1": 3.4523858808791985e-11,
+          "max_abs_solution": 1.43475426461056e-11
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.4881887258849269,
+          "J_SOL_plus_RHS1_relative": 0.530249988189004,
+          "rhs1_l1": 0.05800083728159643,
+          "rhs2_l1": 0.024043671110930788,
+          "max_abs_solution": 2.47734742229089e-15
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 2.464945186008601e-15,
+          "J_SOL_plus_RHS1_relative": 0.10121174912321623,
+          "rhs1_l1": 0.026131062684711718,
+          "rhs2_l1": 0.05369194391794708,
+          "max_abs_solution": 2.16679855790206e-05
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 6.091828442657231e-16,
+          "J_SOL_plus_RHS1_relative": 0.020603686927360886,
+          "rhs1_l1": 0.0032069969259042176,
+          "rhs2_l1": 0.0004376511455664772,
+          "max_abs_solution": 0.000504474233302649
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 90556,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.303695318526,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": 1.36557432028894e-14,
+          "solution": -2.57628558284256e-15,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051865.0325,
+          "nonzero_columns": 19,
+          "diagonal": 18.1526651831894,
+          "absolute_row_sum": 89738538484.34148,
+          "rhs": -4.08841697506803e-06,
+          "solution": 3.93864588101779e-07,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              821,
+              850
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.15434768103104e-08,
+          "nonzero_columns": 19,
+          "diagonal": 8.64484305564339,
+          "absolute_row_sum": 16.88235186329941,
+          "rhs": 4.17926591296874e-20,
+          "solution": 1.14717296481541e-15,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              786,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 8,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 7.822115579177144e-16,
+          "J_SOL_plus_RHS1_relative": 0.7597210075112986,
+          "rhs1_l1": 3.4523858808791985e-11,
+          "rhs2_l1": 3.461859965367195e-11,
+          "max_abs_solution": 3.99118942624812e-15
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.5316193736587228,
+          "J_SOL_plus_RHS1_relative": 0.91312934237832,
+          "rhs1_l1": 0.024043671110930788,
+          "rhs2_l1": 0.01215702851144562,
+          "max_abs_solution": 3.81986297667822e-16
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 1.4173138514946944e-15,
+          "J_SOL_plus_RHS1_relative": 0.7210223582146986,
+          "rhs1_l1": 0.05369194391794708,
+          "rhs2_l1": 0.05356900705530278,
+          "max_abs_solution": 3.42740240341136e-06
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 9.982279891102414e-16,
+          "J_SOL_plus_RHS1_relative": 0.6527718462676988,
+          "rhs1_l1": 0.0004376511455664772,
+          "rhs2_l1": 0.0004575974165152158,
+          "max_abs_solution": 2.16565561401409e-08
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 89850,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.303695318526,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": 2.25375273998907e-14,
+          "solution": 2.08217226422134e-16,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051865.0325,
+          "nonzero_columns": 19,
+          "diagonal": 18.1526651831896,
+          "absolute_row_sum": 89738538484.34283,
+          "rhs": -1.58437115112923e-05,
+          "solution": 3.9654472828976e-07,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.15434779574834e-08,
+          "nonzero_columns": 15,
+          "diagonal": 8.64484305564339,
+          "absolute_row_sum": 16.880432507447605,
+          "rhs": -3.37010426511126e-20,
+          "solution": 6.01563941492465e-15,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 9,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 1.0698997404683532e-15,
+          "J_SOL_plus_RHS1_relative": 2.919641670195847e-11,
+          "rhs1_l1": 3.461859965367195e-11,
+          "rhs2_l1": 4.191648823037357e-11,
+          "max_abs_solution": 0.000191820770352667
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.1745175896677677,
+          "J_SOL_plus_RHS1_relative": 0.17451761591726478,
+          "rhs1_l1": 46.04148412012556,
+          "rhs2_l1": 0.022166132929680303,
+          "max_abs_solution": 0.000191820770342564
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 8.18807165996362e-16,
+          "J_SOL_plus_RHS1_relative": 1.8873987185143875e-11,
+          "rhs1_l1": 0.07959872476109092,
+          "rhs2_l1": 38.27704016513115,
+          "max_abs_solution": 19058.0893585943
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 9.226417347515712e-16,
+          "J_SOL_plus_RHS1_relative": 9.092001143994039e-10,
+          "rhs1_l1": 0.0004575974165152158,
+          "rhs2_l1": 2.230054747292065,
+          "max_abs_solution": 388.034730018826
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 88789,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.303695318526,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": 1.36557432028894e-14,
+          "solution": 0.000191820701821903,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051865.0325,
+          "nonzero_columns": 19,
+          "diagonal": 18.1526651831899,
+          "absolute_row_sum": 89738538484.34422,
+          "rhs": 3.16312050208847e-05,
+          "solution": -0.0154983449092461,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.15434839731228e-08,
+          "nonzero_columns": 17,
+          "diagonal": 8.6448430556434,
+          "absolute_row_sum": 16.881915204113927,
+          "rhs": 2.86417236253926e-19,
+          "solution": 1.24286322910499e-10,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              789,
+              790,
+              821
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 10,
+      "loop": 1,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 7.574754500731156e-16,
+          "J_SOL_plus_RHS1_relative": 1.0567914885084703e-08,
+          "rhs1_l1": 4.191648823037357e-11,
+          "rhs2_l1": 3.559611295696882e-11,
+          "max_abs_solution": 6.41781643305827e-07
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.1745176047155044,
+          "J_SOL_plus_RHS1_relative": 0.1745176009383024,
+          "rhs1_l1": 0.022166132929680303,
+          "rhs2_l1": 0.0185243974671492,
+          "max_abs_solution": 6.41781263313297e-07
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 5.755796403858965e-16,
+          "J_SOL_plus_RHS1_relative": 2.7128073865900885e-06,
+          "rhs1_l1": 38.27704016513115,
+          "rhs2_l1": 0.04449483172918627,
+          "max_abs_solution": 63.528786861954
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 7.74377985632511e-16,
+          "J_SOL_plus_RHS1_relative": 0.0013181748524214278,
+          "rhs1_l1": 2.230054747292065,
+          "rhs2_l1": 0.0005996661072644814,
+          "max_abs_solution": 1.29806992356528
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 66235,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3038871392279,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": -9.15933995315754e-15,
+          "solution": 6.4178144999635e-07,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051865.017,
+          "nonzero_columns": 11,
+          "diagonal": 18.152665182522,
+          "absolute_row_sum": 89738538480.80496,
+          "rhs": -1.75772607074864e-05,
+          "solution": -4.78954823730504e-05,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.16677702960333e-08,
+          "nonzero_columns": 11,
+          "diagonal": 8.63999791528858,
+          "absolute_row_sum": 16.871138175726546,
+          "rhs": 2.06544097281468e-13,
+          "solution": 5.21856046501823e-11,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 11,
+      "loop": 2,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.569489062934943e-16,
+          "J_SOL_plus_RHS1_relative": 2.205260552911935e-06,
+          "rhs1_l1": 3.559611295696882e-11,
+          "rhs2_l1": 3.561656085497187e-11,
+          "max_abs_solution": 2.61127354534352e-09
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.17451734170903768,
+          "J_SOL_plus_RHS1_relative": 0.1745179916276328,
+          "rhs1_l1": 0.0185243974671492,
+          "rhs2_l1": 0.01930972886488547,
+          "max_abs_solution": 2.61127210604124e-09
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 7.072953325495065e-16,
+          "J_SOL_plus_RHS1_relative": 7.750212307212731e-07,
+          "rhs1_l1": 0.04449483172918627,
+          "rhs2_l1": 0.04869560161527549,
+          "max_abs_solution": 0.259449727084446
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 7.469505689593903e-16,
+          "J_SOL_plus_RHS1_relative": 8.688977610162958e-05,
+          "rhs1_l1": 0.0005996661072644814,
+          "rhs2_l1": 0.000515677366157196,
+          "max_abs_solution": 0.00528285437084489
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 91458,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3038877810093,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": -2.00395255944841e-14,
+          "solution": 2.61127077035534e-09,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051865.01695,
+          "nonzero_columns": 17,
+          "diagonal": 18.1526651825145,
+          "absolute_row_sum": 89738538480.76703,
+          "rhs": 8.52203185321594e-05,
+          "solution": -3.7569900086051e-07,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              790,
+              821,
+              850
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.17199559006835e-08,
+          "nonzero_columns": 21,
+          "diagonal": 8.64232971836925,
+          "absolute_row_sum": 16.922352487481106,
+          "rhs": 7.10420513081135e-15,
+          "solution": -1.98651262970548e-10,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 12,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 9.093255293378175e-16,
+          "J_SOL_plus_RHS1_relative": 0.0006287418110820889,
+          "rhs1_l1": 1.1789313672003976e-07,
+          "rhs2_l1": 3.824026111788148e-11,
+          "max_abs_solution": 3.06960085139661e-08
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.17451719810747782,
+          "J_SOL_plus_RHS1_relative": 0.1745182188581119,
+          "rhs1_l1": 0.3494869306946798,
+          "rhs2_l1": 0.02352030678549695,
+          "max_abs_solution": 3.06959963634729e-08
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 7.489946606456863e-16,
+          "J_SOL_plus_RHS1_relative": 1.292921818860662e-05,
+          "rhs1_l1": 8.726060748487871,
+          "rhs2_l1": 0.04637058450953108,
+          "max_abs_solution": 3.60133108541889
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 5.784561783376485e-16,
+          "J_SOL_plus_RHS1_relative": 0.0002043617237969529,
+          "rhs1_l1": 0.01775890959167582,
+          "rhs2_l1": 0.0005339664984217,
+          "max_abs_solution": 0.0696691443965192
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 90439,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.3041486379787,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": -2.59792187762287e-14,
+          "solution": 3.06960018321814e-08,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051864.99588,
+          "nonzero_columns": 21,
+          "diagonal": 18.1526651816068,
+          "absolute_row_sum": 89738538475.95744,
+          "rhs": -0.000396603848455253,
+          "solution": -4.02461467799303e-06,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.14912806866549e-08,
+          "nonzero_columns": 21,
+          "diagonal": 8.64427176242166,
+          "absolute_row_sum": 16.925713797216982,
+          "rhs": -3.80075582144051e-14,
+          "solution": 2.23180966116514e-11,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        }
+      }
+    },
+    {
+      "index": 13,
+      "loop": 0,
+      "blocks": {
+        "ElectrostaticPotential": {
+          "rows": 2600,
+          "J_SOL_minus_RHS1_relative": 7.495951300797098e-16,
+          "J_SOL_plus_RHS1_relative": 0.0006529656489779629,
+          "rhs1_l1": 2.887803840937561e-09,
+          "rhs2_l1": 3.833763411882678e-11,
+          "max_abs_solution": 7.24217166500767e-10
+        },
+        "QuasiFermiPotential": {
+          "rows": 11,
+          "J_SOL_minus_RHS1_relative": 0.17452733587058641,
+          "J_SOL_plus_RHS1_relative": 0.17450153472926364,
+          "rhs1_l1": 0.2332637829211932,
+          "rhs2_l1": 0.03672761537238651,
+          "max_abs_solution": 7.24198647233395e-10
+        },
+        "eDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 4.737985388092313e-16,
+          "J_SOL_plus_RHS1_relative": 1.873237698836673e-05,
+          "rhs1_l1": 0.298279074619762,
+          "rhs2_l1": 0.04567723968432197,
+          "max_abs_solution": 0.0852736106321338
+        },
+        "hDensity": {
+          "rows": 2121,
+          "J_SOL_minus_RHS1_relative": 7.345255431361029e-16,
+          "J_SOL_plus_RHS1_relative": 0.0005786776797927053,
+          "rhs1_l1": 0.0011890135402503733,
+          "rhs2_l1": 0.000496880787666606,
+          "max_abs_solution": 0.00164793628555901
+        }
+      },
+      "dimension": 6853,
+      "stored_entries": 109903,
+      "nonzero_entries": 90610,
+      "node790": {
+        "ElectrostaticPotential": {
+          "variable": 20.304159191338,
+          "nonzero_columns": 7,
+          "diagonal": 6.05375158027812,
+          "absolute_row_sum": 12.107503250765204,
+          "rhs": 6.32827124036339e-15,
+          "solution": 7.24205724033569e-10,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              790
+            ],
+            "3": [
+              790
+            ]
+          }
+        },
+        "eDensity": {
+          "variable": 4317051864.99503,
+          "nonzero_columns": 17,
+          "diagonal": 18.1526651815701,
+          "absolute_row_sum": 89738538475.76291,
+          "rhs": -0.000220076893739235,
+          "solution": -5.21942771342198e-07,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              790
+            ]
+          }
+        },
+        "hDensity": {
+          "variable": 2.15132880295214e-08,
+          "nonzero_columns": 21,
+          "diagonal": 8.64469521334174,
+          "absolute_row_sum": 16.926393508876725,
+          "rhs": 3.58235610001133e-15,
+          "solution": 2.69751230892721e-11,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "3": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "vela": {
+    "zero": {
+      "dimension": 7800,
+      "stored_entries": 112668,
+      "nonzero_entries": 62624,
+      "node790": {
+        "psi": {
+          "nonzero_columns": 7,
+          "diagonal": 119.60716058223355,
+          "absolute_row_sum": 239.2143211644671,
+          "rhs": 3.8608384044838746e-14,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "1": [
+              790
+            ],
+            "2": [
+              790
+            ]
+          },
+          "physical_state": {
+            "row": "790",
+            "block": "psi",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "20.702542866791774",
+            "psi_V": "0.53520213377097348",
+            "phin_V": "0",
+            "phip_V": "0",
+            "electrons_m3": "6.4077198054579509e+25",
+            "holes_m3": "144205694.81767258",
+            "residual": "-3.8608384044838746e-14",
+            "rhs": "3.8608384044838746e-14",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phin": {
+          "nonzero_columns": 10,
+          "diagonal": -352.72676697364193,
+          "absolute_row_sum": 705.4535339499598,
+          "rhs": 9.123683485998218e-145,
+          "solution": null,
+          "columns_by_block": {
+            "1": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          },
+          "physical_state": {
+            "row": "3390",
+            "block": "phin",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "0",
+            "psi_V": "0.53520213377097348",
+            "phin_V": "0",
+            "phip_V": "0",
+            "electrons_m3": "6.4077198054579509e+25",
+            "holes_m3": "144205694.81767258",
+            "residual": "-9.123683485998218e-145",
+            "rhs": "9.123683485998218e-145",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phip": {
+          "nonzero_columns": 10,
+          "diagonal": 6.651980141275828e-16,
+          "absolute_row_sum": 3.51403888759361e-08,
+          "rhs": 9.123683485998218e-145,
+          "solution": null,
+          "columns_by_block": {
+            "1": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          },
+          "physical_state": {
+            "row": "5990",
+            "block": "phip",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "0",
+            "psi_V": "0.53520213377097348",
+            "phin_V": "0",
+            "phip_V": "0",
+            "electrons_m3": "6.4077198054579509e+25",
+            "holes_m3": "144205694.81767258",
+            "residual": "-9.123683485998218e-145",
+            "rhs": "9.123683485998218e-145",
+            "dF_d_inner_V": "0"
+          }
+        }
+      }
+    },
+    "first": {
+      "dimension": 7800,
+      "stored_entries": 112668,
+      "nonzero_entries": 99980,
+      "node790": {
+        "psi": {
+          "nonzero_columns": 7,
+          "diagonal": 119.60716058202726,
+          "absolute_row_sum": 239.21432116405452,
+          "rhs": 1.5443353617935499e-13,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "1": [
+              790
+            ],
+            "2": [
+              790
+            ]
+          },
+          "physical_state": {
+            "row": "790",
+            "block": "psi",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "20.702713737390521",
+            "psi_V": "0.5352065511176558",
+            "phin_V": "4.4173468202582545e-06",
+            "phip_V": "0.0042568313719148028",
+            "electrons_m3": "6.4077198054383874e+25",
+            "holes_m3": "169988610.08161506",
+            "residual": "-1.5443353617935499e-13",
+            "rhs": "1.5443353617935499e-13",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phin": {
+          "nonzero_columns": 15,
+          "diagonal": -352.72676696139763,
+          "absolute_row_sum": 705.4535339276998,
+          "rhs": -8.916922450989528e-24,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "1": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              790
+            ]
+          },
+          "physical_state": {
+            "row": "3390",
+            "block": "phin",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "-6.8696991967117569e-11",
+            "psi_V": "0.5352065511176558",
+            "phin_V": "4.4173468202582545e-06",
+            "phip_V": "0.0042568313719148028",
+            "electrons_m3": "6.4077198054383874e+25",
+            "holes_m3": "169988610.08161506",
+            "residual": "8.916922450989528e-24",
+            "rhs": "-8.916922450989528e-24",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phip": {
+          "nonzero_columns": 19,
+          "diagonal": 7.717436393824129e-16,
+          "absolute_row_sum": 3.7808276304108954e-08,
+          "rhs": 2.3972505714739818e-27,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "1": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          },
+          "physical_state": {
+            "row": "5990",
+            "block": "phip",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "0.16466158931922742",
+            "psi_V": "0.5352065511176558",
+            "phin_V": "4.4173468202582545e-06",
+            "phip_V": "0.0042568313719148028",
+            "electrons_m3": "6.4077198054383874e+25",
+            "holes_m3": "169988610.08161506",
+            "residual": "-2.3972505714739818e-27",
+            "rhs": "2.3972505714739818e-27",
+            "dF_d_inner_V": "0"
+          }
+        }
+      }
+    },
+    "second": {
+      "dimension": 7800,
+      "stored_entries": 112668,
+      "nonzero_entries": 99217,
+      "node790": {
+        "psi": {
+          "nonzero_columns": 7,
+          "diagonal": 119.60716058173651,
+          "absolute_row_sum": 239.21432116347302,
+          "rhs": -7.721676808967749e-14,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ],
+            "1": [
+              790
+            ],
+            "2": [
+              790
+            ]
+          },
+          "physical_state": {
+            "row": "790",
+            "block": "psi",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "20.702954664934779",
+            "psi_V": "0.5352127795764785",
+            "phin_V": "1.0645805837354213e-05",
+            "phip_V": "0.0093989035145495229",
+            "electrons_m3": "6.4077198054108145e+25",
+            "holes_m3": "207347211.62865859",
+            "residual": "7.7216768089677493e-14",
+            "rhs": "-7.7216768089677493e-14",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phin": {
+          "nonzero_columns": 15,
+          "diagonal": -352.72676694441543,
+          "absolute_row_sum": 705.4535338967448,
+          "rhs": 1.3160986804304796e-23,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "1": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              790
+            ]
+          },
+          "physical_state": {
+            "row": "3390",
+            "block": "phin",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "-1.6553917890817613e-10",
+            "psi_V": "0.5352127795764785",
+            "phin_V": "1.0645805837354213e-05",
+            "phip_V": "0.0093989035145495229",
+            "electrons_m3": "6.4077198054108145e+25",
+            "holes_m3": "207347211.62865859",
+            "residual": "-1.3160986804304796e-23",
+            "rhs": "1.3160986804304796e-23",
+            "dF_d_inner_V": "0"
+          }
+        },
+        "phip": {
+          "nonzero_columns": 19,
+          "diagonal": 9.220112913319204e-16,
+          "absolute_row_sum": 4.0914197291520495e-08,
+          "rhs": 1.3072335673758684e-32,
+          "solution": null,
+          "columns_by_block": {
+            "0": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "1": [
+              785,
+              786,
+              789,
+              790,
+              802,
+              821,
+              850
+            ],
+            "2": [
+              786,
+              789,
+              790,
+              802,
+              821
+            ]
+          },
+          "physical_state": {
+            "row": "5990",
+            "block": "phip",
+            "node_id": "790",
+            "x_um": "0.03125",
+            "y_um": "0.15890624999999997",
+            "state_scaled": "0.36356582052430231",
+            "psi_V": "0.5352127795764785",
+            "phin_V": "1.0645805837354213e-05",
+            "phip_V": "0.0093989035145495229",
+            "electrons_m3": "6.4077198054108145e+25",
+            "holes_m3": "207347211.62865859",
+            "residual": "-1.3072335673758684e-32",
+            "rhs": "1.3072335673758684e-32",
+            "dF_d_inner_V": "0"
+          }
+        }
+      }
+    }
+  },
+  "native_linear_systems": [
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.1498092879231058e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.3072707928324898e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.3050650475460464e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.2359002990419844e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.2822926576092764e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.3316703315535613e-16
+    },
+    {
+      "dimension": 2600,
+      "nonzero_entries": 13294,
+      "linear_componentwise_l1_backward_error": 1.5096630878388383e-16
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 90476,
+      "linear_componentwise_l1_backward_error": 1.5102998400540188e-15
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 89770,
+      "linear_componentwise_l1_backward_error": 1.0492028910269739e-15
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 88709,
+      "linear_componentwise_l1_backward_error": 1.0623998949830558e-16
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 66155,
+      "linear_componentwise_l1_backward_error": 9.48567999557817e-17
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 91378,
+      "linear_componentwise_l1_backward_error": 1.160110402553351e-16
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 90359,
+      "linear_componentwise_l1_backward_error": 1.2105241664600682e-16
+    },
+    {
+      "dimension": 6843,
+      "nonzero_entries": 90530,
+      "linear_componentwise_l1_backward_error": 9.326048467259262e-17
+    }
+  ],
+  "accepted_state_comparison": {
+    "zero": {
+      "geometry_max_error_um": 0.0,
+      "geometry_nodes": 2600,
+      "native_density_normalization": {
+        "eDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 4.551914400963142e-15,
+          "samples": 2121
+        },
+        "hDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 4.884981308350689e-15,
+          "samples": 2121
+        }
+      },
+      "native_density_update_audit": {
+        "eDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 0,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 4.551914400963142e-15
+        },
+        "hDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 0,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 4.884981308350689e-15
+        }
+      },
+      "node790_native_accepted": {
+        "ElectrostaticPotential": 0.5248910352666872,
+        "eQuasiFermiPotential": 9.184473720752675e-17,
+        "hQuasiFermiPotential": 1.3765979442033684e-09,
+        "eDensity": 6.399749213244634e+25,
+        "hDensity": 319368079.0024967
+      },
+      "node790_vela_accepted": {
+        "psi_V": 0.5352021337709735,
+        "phin_V": 0.0,
+        "phip_V": 0.0,
+        "electrons_m3": 6.407719805457951e+25,
+        "holes_m3": 144205694.81767258
+      },
+      "node790_native_pre_update_logp_shape": {
+        "790": 1.0,
+        "821": -0.09599935986331051,
+        "850": -3.2994486564221413e-26,
+        "802": -0.36322469674009017,
+        "785": 7.059233156695353e-20,
+        "786": -0.039722634143586205,
+        "789": -0.49710073208883815
+      },
+      "node790_vela_accepted_phip_shape": {
+        "786": -0.031256471714998374,
+        "789": -0.595423515434913,
+        "790": 1.0,
+        "802": -0.26258000896558303,
+        "821": -0.10676729115239109
+      },
+      "shape_relative_l1_difference": 0.10931682401024671,
+      "shape_is_correctness_gate": false,
+      "limitation": "native pre-update versus Vela accepted states; density versus quasi-Fermi variables; minority-hole logp approximation; full Fermi cross-block transformation not performed"
+    },
+    "first": {
+      "geometry_max_error_um": 0.0,
+      "geometry_nodes": 2600,
+      "native_density_normalization": {
+        "eDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 4.884981308350689e-15,
+          "samples": 2121
+        },
+        "hDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 4.851674617611934e-12,
+          "samples": 2116
+        }
+      },
+      "native_density_update_audit": {
+        "eDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 0,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 4.884981308350689e-15
+        },
+        "hDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 5,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [
+            0.00999999999999999,
+            0.01,
+            0.01000000000000002,
+            0.009999999999999998,
+            0.01
+          ],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 4.851674617611934e-12
+        }
+      },
+      "node790_native_accepted": {
+        "ElectrostaticPotential": 0.5248960108734003,
+        "eQuasiFermiPotential": 4.9756068753921635e-06,
+        "hQuasiFermiPotential": -2.1644519172351243e-05,
+        "eDensity": 6.3997492132215885e+25,
+        "hDensity": 319039373.9273843
+      },
+      "node790_vela_accepted": {
+        "psi_V": 0.5352065511176558,
+        "phin_V": 4.4173468202582545e-06,
+        "phip_V": 0.004256831371914803,
+        "electrons_m3": 6.407719805438387e+25,
+        "holes_m3": 169988610.08161506
+      },
+      "node790_native_pre_update_logp_shape": {
+        "790": 1.0,
+        "821": -0.09556976330650499,
+        "850": 5.810896706678804e-06,
+        "802": -0.3628358794314129,
+        "785": 2.5664302074592865e-05,
+        "786": -0.04021515913631724,
+        "789": -0.4974877033277491
+      },
+      "node790_vela_accepted_phip_shape": {
+        "786": -0.054153718824632074,
+        "789": -0.568781569431108,
+        "790": 1.0,
+        "802": -0.2772013012266689,
+        "821": -0.09594631353399496
+      },
+      "shape_relative_l1_difference": 0.08580311556522305,
+      "shape_is_correctness_gate": false,
+      "limitation": "native pre-update versus Vela accepted states; density versus quasi-Fermi variables; minority-hole logp approximation; full Fermi cross-block transformation not performed"
+    },
+    "second": {
+      "geometry_max_error_um": 0.0,
+      "geometry_nodes": 2600,
+      "native_density_normalization": {
+        "eDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 4.773959005888173e-15,
+          "samples": 2121
+        },
+        "hDensity": {
+          "median_cm3_per_debug_unit": 14824351000.0,
+          "max_relative_deviation": 1.2434497875801753e-14,
+          "samples": 2093
+        }
+      },
+      "native_density_update_audit": {
+        "eDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 0,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 4.773959005888173e-15
+        },
+        "hDensity": {
+          "nodes": 2121,
+          "raw_update_nonpositive_count": 28,
+          "accepted_nonpositive_count": 0,
+          "negative_update_accepted_over_old": [
+            0.010000000000000031,
+            0.01,
+            0.009999999999999998,
+            0.009999999999999998,
+            0.00999999999999998,
+            0.010000000000000007,
+            0.009999999999999985,
+            0.010000000000000005,
+            0.009999999999999967,
+            0.010000000000000002,
+            0.009999999999999997,
+            0.010000000000000004,
+            0.010000000000000004,
+            0.01,
+            0.010000000000000004,
+            0.010000000000000012,
+            0.009999999999999993,
+            0.010000000000000002,
+            0.009999999999999993,
+            0.010000000000000012,
+            0.01000000000000001,
+            0.010000000000000007,
+            0.010000000000000007,
+            0.010000000000000024,
+            0.009999999999999981,
+            0.010000000000000004,
+            0.009999999999999992,
+            0.009999999999999997
+          ],
+          "observed_rule": "if old+SOL > 0 use old+SOL; otherwise use 0.01*old",
+          "observed_rule_max_relative_error": 1.2434497875801753e-14
+        }
+      },
+      "node790_native_accepted": {
+        "ElectrostaticPotential": 0.5249030273231483,
+        "eQuasiFermiPotential": 1.1992056852732354e-05,
+        "hQuasiFermiPotential": 8.135405953361278e-06,
+        "eDensity": 6.399749213189088e+25,
+        "hDensity": 319320421.6066678
+      },
+      "node790_vela_accepted": {
+        "psi_V": 0.5352127795764785,
+        "phin_V": 1.0645805837354213e-05,
+        "phip_V": 0.009398903514549523,
+        "electrons_m3": 6.4077198054108145e+25,
+        "holes_m3": 207347211.6286586
+      },
+      "node790_native_pre_update_logp_shape": {
+        "790": 1.0,
+        "821": -0.09598775063422357,
+        "850": 9.93150578586817e-07,
+        "802": -0.3631454200271612,
+        "785": -4.987561690756888e-07,
+        "786": -0.03972119098027367,
+        "789": -0.4971845402127025
+      },
+      "node790_vela_accepted_phip_shape": {
+        "786": -0.078028856763745,
+        "789": -0.5411282390724786,
+        "790": 1.0,
+        "802": -0.29243755927152754,
+        "821": -0.08454511308842741
+      },
+      "shape_relative_l1_difference": 0.0823647434016314,
+      "shape_is_correctness_gate": false,
+      "limitation": "native pre-update versus Vela accepted states; density versus quasi-Fermi variables; minority-hole logp approximation; full Fermi cross-block transformation not performed"
+    }
+  },
+  "native_voltage_rows": [
+    {
+      "time": 0.0,
+      "outer_voltage_V": 0.0,
+      "inner_voltage_V": 0.0,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 4.79054686423927e-22,
+      "h_current_A_per_um": -1.25114770470976e-22,
+      "total_current_A_per_um": 3.53939915952951e-22,
+      "Charge": 1.84160554828262e-15
+    },
+    {
+      "time": 0.0,
+      "outer_voltage_V": 0.0,
+      "inner_voltage_V": -9.18447372075268e-17,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 6.8416582787159e-21,
+      "h_current_A_per_um": -3.11865472080617e-22,
+      "total_current_A_per_um": 6.52979280663528e-21,
+      "Charge": 1.84160554828262e-15
+    },
+    {
+      "time": 0.0,
+      "outer_voltage_V": 0.0,
+      "inner_voltage_V": -9.18447372075268e-17,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 2.78002401734439e-21,
+      "h_current_A_per_um": -1.87477291548152e-22,
+      "total_current_A_per_um": 2.59254672579624e-21,
+      "Charge": 1.84160554828262e-15
+    },
+    {
+      "time": 0.4149377593361,
+      "outer_voltage_V": 1e-05,
+      "inner_voltage_V": 4.97560847962123e-06,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 5.02439138762467e-13,
+      "h_current_A_per_um": -6.0523290314588e-19,
+      "total_current_A_per_um": 5.02438533529564e-13,
+      "Charge": 1.84161436745611e-15
+    },
+    {
+      "time": 0.97731673582296,
+      "outer_voltage_V": 2.35533333333333e-05,
+      "inner_voltage_V": 1.17200100585341e-05,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 1.18333240609933e-12,
+      "h_current_A_per_um": 7.89884394635062e-19,
+      "total_current_A_per_um": 1.18333319598373e-12,
+      "Charge": 1.84162632173583e-15
+    },
+    {
+      "time": 1.0,
+      "outer_voltage_V": 2.41e-05,
+      "inner_voltage_V": 1.19920607183051e-05,
+      "QuasiFermiPotential": 0.0,
+      "DisplacementCurrent": 0.0,
+      "e_current_A_per_um": 1.21079394261051e-12,
+      "h_current_A_per_um": 1.98062168301462e-20,
+      "total_current_A_per_um": 1.21079396241672e-12,
+      "Charge": 1.84162680393756e-15
+    }
+  ],
+  "iteration_mapping": [
+    {
+      "indexes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "phase": "initial Poisson"
+    },
+    {
+      "indexes": [
+        7
+      ],
+      "phase": "initial coupled zero"
+    },
+    {
+      "indexes": [
+        8
+      ],
+      "phase": "QS zero"
+    },
+    {
+      "indexes": [
+        9,
+        10,
+        11
+      ],
+      "phase": "outer 10 uV"
+    },
+    {
+      "indexes": [
+        12
+      ],
+      "phase": "outer 23.5533333333333 uV"
+    },
+    {
+      "indexes": [
+        13
+      ],
+      "phase": "outer 24.1 uV"
+    }
+  ],
+  "native_run": {
+    "phase": "completed",
+    "pid": "<private execution metadata; original preserved in ignored archive>",
+    "start": 1791526410.1526527,
+    "command": "<private execution metadata; original preserved in ignored archive>",
+    "exit": 0,
+    "seconds": 199.66730332374573,
+    "files": [
+      {
+        "path": "native/bias_state_0000_circuit_des.sav",
+        "size": 306,
+        "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+      },
+      {
+        "path": "native/bias_state_0000_des.tdr",
+        "size": 621875,
+        "sha256": "a23795e30085057f501b6f17817c68d84b876772088f9aa89d942a5947e77ad8"
+      },
+      {
+        "path": "native/bias_state_0001_circuit_des.sav",
+        "size": 306,
+        "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+      },
+      {
+        "path": "native/bias_state_0001_des.tdr",
+        "size": 665880,
+        "sha256": "2859ce4fdafecffa177c436a237b1e06c3e902b133367ab26b18dd510546d331"
+      },
+      {
+        "path": "native/bias_state_0002_circuit_des.sav",
+        "size": 306,
+        "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+      },
+      {
+        "path": "native/bias_state_0002_des.tdr",
+        "size": 668369,
+        "sha256": "1cf54e09b6ae254e2eceeaae5a5aab64692f8ee40210cbdb0b6a2a08aaa8cfbb"
+      },
+      {
+        "path": "native/bvmethods_nmos_msh.tdr",
+        "size": 173535,
+        "sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+      },
+      {
+        "path": "native/debug",
+        "size": 50500835,
+        "sha256": "c5c2997394274240ff62fddca8f3a0054375e04512df395e07eace0f756dae64"
+      },
+      {
+        "path": "native/external_resistor_des.log",
+        "size": 37231,
+        "sha256": "1a5ad7e77ec888ab6f4d66b5e6157057ae7ba7a419ccbfafca3fc2bcdf96055b"
+      },
+      {
+        "path": "native/external_resistor_des.plt",
+        "size": 6049,
+        "sha256": "6075b545b8151c98f35053cfb9c596a172d88a8a12573ab7b9dc67a152ba2b96"
+      },
+      {
+        "path": "native/external_resistor_des.tdr",
+        "size": 807088,
+        "sha256": "831d27ddcb330042d65eb54a988193772aea5077e0d278079c847fdb0ded140b"
+      },
+      {
+        "path": "native/matrix_debug.cmd",
+        "size": 1628,
+        "sha256": "04529ec9c3201e8cb3be40c6971c8f2fefd6c87c32ff9eacb1797c4f7d29298c"
+      },
+      {
+        "path": "native/models.par",
+        "size": 559,
+        "sha256": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed"
+      },
+      {
+        "path": "native/run.out",
+        "size": 37604,
+        "sha256": "519fb306603fa24d6d6219d9549374b07d5c41b84807841a48b28deda358ef2b"
+      },
+      {
+        "path": "native/super.debug",
+        "size": 20494763,
+        "sha256": "7d427516eefb7cf471f3bb504ef36c37bb8fe4bb6b5a86e1f1240008d85634a3"
+      },
+      {
+        "path": "native/zero_state_circuit_des.sav",
+        "size": 306,
+        "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+      },
+      {
+        "path": "native/zero_state_des.tdr",
+        "size": 626418,
+        "sha256": "0f760e252458b1ffafe4bc3af1bbb146133953a6460cb631c85cc52bb21f57ae"
+      }
+    ]
+  },
+  "native_archive": {
+    "sha256": "837ea33e238062d11724c848bf55bc1b815efb8cc05243010928318baf1fba03"
+  },
+  "configuration": {
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "free_carrier_nodes": 2121,
+    "native_actual_coupled_dimension": 6843,
+    "native_labeled_variable_count": 6853,
+    "vela_raw_dimension": 7800,
+    "native_version": "T-2022.03-SP2",
+    "resistance_ohm_um": 10000000.0,
+    "native_density_cm3_per_debug_unit": 14824351000.0,
+    "V0_V": 0.025851999786435535,
+    "native_short_target_V": 2.41e-05,
+    "original_target_V": 100000,
+    "physics_changed": false,
+    "core_changed_this_turn": false,
+    "matched_full_fermi_jacobian_certified": false,
+    "vela_backend": "SparseLU/COLAMD, threads 1; read-only raw assembly; no solve"
+  },
+  "version_identity": {
+    "HEAD": "a0ed4e073efee0214c39365d3be90a12be51c624",
+    "files": [
+      {
+        "path": "src/equation/CoupledDDAssembler.cpp",
+        "sha256": "aab9bbd34a2738a9f51b0e15e10b9a04f2692c18e42f579fa55ca2de93da4c67",
+        "bytes": 356891
+      },
+      {
+        "path": "src/solver/NewtonSolver.cpp",
+        "sha256": "9bae6c334ef6573e2c9fbe4de7d6363f6f6504b1cc461e3d2629b784f6dced47",
+        "bytes": 412738
+      },
+      {
+        "path": "src/tools/vela_example_runner.cpp",
+        "sha256": "fd3c7f6ca9d43d87e7555bd6aa30813c90b043c38ce1f2551b0d737b660034e9",
+        "bytes": 212022
+      },
+      {
+        "path": "include/vela/solver/NewtonSolver.h",
+        "sha256": "fcf0af3abcfd4c8d5cff57f9b3d23d7101771aa0d44af16917b622fc13804b8b",
+        "bytes": 41868
+      },
+      {
+        "path": "build-release/libvela_core.a",
+        "sha256": "93ddd55fd005aaf2af34c5ecb96cb4c2cdaa4901235879aabc6b85349ecd1e75",
+        "bytes": 17104712
+      },
+      {
+        "path": "scripts/compare_sentaurus_debug_matrix.py",
+        "sha256": "303638624a033f104d1344a64ac90d0e5c6a30b924d421dec235cf3416e7d4cd",
+        "bytes": 16341
+      },
+      {
+        "path": "tests/regression/test_sentaurus_debug_matrix.py",
+        "sha256": "c5db705aafb7cf10735d17c423e65ace4c25768366c0f64775a3891b6a662bdc",
+        "bytes": 2912
+      }
+    ]
+  },
+  "validation": {
+    "parser_property_tests": 4,
+    "parser_property_tests_passed": 4,
+    "native_linear_systems_verified": 14,
+    "native_exit": 0,
+    "vela_exports_exit": [
+      0,
+      0,
+      0
+    ],
+    "full_ctest_rerun": false
+  },
+  "checks": {
+    "native_physics_math_electrode_unchanged": true,
+    "final_strict_parser_matches_previous_output": true,
+    "production_core_identity_unchanged_during_task": true
+  },
+  "persistent_archives": {
+    "complete_evidence": {
+      "path": "<WORKTREE>\\build-release\\bvmethods_native_jacobian_20261009\\matrix_evidence_v1.tar.gz",
+      "sha256": "1d9b13e25d60f63742f77af42a5e14c604c5cf07834e07940f8fb25ad1c9d286",
+      "bytes": 39009465,
+      "manifest_entries": 290,
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>"
+    },
+    "complete_evidence_vm_verification": {
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "sha256": "1d9b13e25d60f63742f77af42a5e14c604c5cf07834e07940f8fb25ad1c9d286",
+      "verified_files": 290,
+      "bytes": 39009465
+    },
+    "final_analysis_overlay": {
+      "name": "analysis_tools_v2.tar.gz",
+      "bytes": 56604,
+      "sha256": "cb9a9239148428d41fa52bddf8f4c6f9094f6f54180e9f46e1335b2fd05d649d",
+      "manifest_entries": 8,
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>"
+    },
+    "final_analysis_vm_verification": {
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "sha256": "cb9a9239148428d41fa52bddf8f4c6f9094f6f54180e9f46e1335b2fd05d649d",
+      "verified_files": 8,
+      "bytes": 56604
+    }
+  }
+}

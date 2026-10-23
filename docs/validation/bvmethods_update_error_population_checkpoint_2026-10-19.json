@@ -1,0 +1,46 @@
+{
+  "schema": "vela.bvmethods.population-checkpoint-report.v1",
+  "date": "2026-10-19",
+  "scope": "report_only_no_band2band_fixed_internal_bias",
+  "production_acceptance_changed": false,
+  "native_runs_added": 0,
+  "strict_L1_qualified": false,
+  "full_report_noninterference_qualified": false,
+  "total_process_runs": 48,
+  "total_actual_iterations": 172,
+  "total_population_values": 894400,
+  "total_L2_events": 162,
+  "hosts": "<private execution metadata; original preserved in ignored archive>",
+  "tests": {
+    "local_newton": {
+      "cases": 144,
+      "assertions": 3239
+    },
+    "local_and_remote_report": {
+      "cases_per_host": 9,
+      "assertions_per_host": 66
+    },
+    "local_and_remote_state_archive": {
+      "cases_per_host": 11,
+      "assertions_per_host": 348
+    }
+  },
+  "remaining": [
+    "per_element_J",
+    "cache_identity_and_hit_history",
+    "independent_report_off_J_R",
+    "complete_NewtonResult_bit_encoding",
+    "row_gate_metadata_bound_to_current_state",
+    "best_rejected_candidate_report",
+    "isolated_static_replay"
+  ],
+  "fixed_drain_internal_bias_V": 0.00524437249039996,
+  "rows0_is_zero_bias": false,
+  "verification_checks_passed": 177,
+  "evidence_files_sealed": 864,
+  "serialized_ledger_RMS_checks": 1204,
+  "metric_entries_per_iteration": [
+    6764
+  ],
+  "evidence_manifest_sha256": "e109d75feb3af2fb14fef749556af69d9da9fa23050db96c791a80a2beafc9bb"
+}

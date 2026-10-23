@@ -1,0 +1,736 @@
+{
+  "date": "2026-10-13",
+  "head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "analysis": {
+    "host": "<private execution metadata; original preserved in ignored archive>",
+    "nonlinear_updates": 0,
+    "qualified": false,
+    "Si_nodes": 2152,
+    "Si_elements": 4156,
+    "obtuse_elements": 26,
+    "carrier_rows": 2121,
+    "poisson_rows": 2522,
+    "carrier": {
+      "baseline_electron": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 3.7284214781497125e-13,
+          "difference_L2": 1.0942187047258912e-21,
+          "max_abs": 6.611241045830074e-22
+        },
+        "native_transport": {
+          "relative_L2": 11.053365254429849,
+          "difference_L2": 2.9250509727749895e-09,
+          "max_abs": 7.467050629228245e-10
+        },
+        "top_difference_rows": [
+          {
+            "node": 137,
+            "difference": -7.467050629228245e-10
+          },
+          {
+            "node": 1454,
+            "difference": 7.466959073290314e-10
+          },
+          {
+            "node": 145,
+            "difference": -6.777419582966821e-10
+          },
+          {
+            "node": 1462,
+            "difference": 6.777208431249524e-10
+          },
+          {
+            "node": 2587,
+            "difference": -6.5138725769835e-10
+          },
+          {
+            "node": 1308,
+            "difference": 6.502575559062675e-10
+          },
+          {
+            "node": 144,
+            "difference": -6.108925030398795e-10
+          },
+          {
+            "node": 1461,
+            "difference": 6.10877524007e-10
+          },
+          {
+            "node": 2077,
+            "difference": -5.477977538017166e-10
+          },
+          {
+            "node": 784,
+            "difference": 5.47747195287685e-10
+          }
+        ]
+      },
+      "baseline_hole": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 3.0067320388722307e-14,
+          "difference_L2": 5.196645171109384e-26,
+          "max_abs": 8.17890986533145e-27
+        },
+        "native_transport": {
+          "relative_L2": 0.005693112833608366,
+          "difference_L2": 9.840556664723347e-15,
+          "max_abs": 3.4985625720339277e-15
+        },
+        "top_difference_rows": [
+          {
+            "node": 346,
+            "difference": -3.4985625720339277e-15
+          },
+          {
+            "node": 365,
+            "difference": -3.2244956246462766e-15
+          },
+          {
+            "node": 161,
+            "difference": 3.2136688434546146e-15
+          },
+          {
+            "node": 409,
+            "difference": 1.9167349131105943e-15
+          },
+          {
+            "node": 160,
+            "difference": 1.852789282541724e-15
+          },
+          {
+            "node": 345,
+            "difference": -1.8353984420337687e-15
+          },
+          {
+            "node": 348,
+            "difference": -1.8138187044224136e-15
+          },
+          {
+            "node": 343,
+            "difference": -1.790912086751068e-15
+          },
+          {
+            "node": 406,
+            "difference": 1.7018390648109333e-15
+          },
+          {
+            "node": 333,
+            "difference": 1.6826376270847043e-15
+          }
+        ]
+      },
+      "native_geometry_electron": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 8.367992804181453e-13,
+          "difference_L2": 1.0696893337468698e-21,
+          "max_abs": 6.380664450080917e-22
+        },
+        "native_transport": {
+          "relative_L2": 4.742778447123511,
+          "difference_L2": 1.255080999413736e-09,
+          "max_abs": 6.513872576983748e-10
+        },
+        "top_difference_rows": [
+          {
+            "node": 2587,
+            "difference": -6.513872576983748e-10
+          },
+          {
+            "node": 1308,
+            "difference": 6.502575559062687e-10
+          },
+          {
+            "node": 791,
+            "difference": 2.5972312238958494e-10
+          },
+          {
+            "node": 2084,
+            "difference": -2.5587845970204496e-10
+          },
+          {
+            "node": 774,
+            "difference": 2.0852874133786783e-10
+          },
+          {
+            "node": 2067,
+            "difference": -2.085247091330602e-10
+          },
+          {
+            "node": 2087,
+            "difference": -1.8692924254847548e-10
+          },
+          {
+            "node": 794,
+            "difference": 1.867692852170219e-10
+          },
+          {
+            "node": 782,
+            "difference": -1.722088536850119e-10
+          },
+          {
+            "node": 2075,
+            "difference": 1.7220462573254294e-10
+          }
+        ]
+      },
+      "native_geometry_hole": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 3.06023807586085e-14,
+          "difference_L2": 5.289078409347137e-26,
+          "max_abs": 8.784755040541187e-27
+        },
+        "native_transport": {
+          "relative_L2": 0.005519175071798276,
+          "difference_L2": 9.539904903331419e-15,
+          "max_abs": 3.4985625720339277e-15
+        },
+        "top_difference_rows": [
+          {
+            "node": 346,
+            "difference": -3.4985625720339277e-15
+          },
+          {
+            "node": 365,
+            "difference": -3.2244956246462766e-15
+          },
+          {
+            "node": 160,
+            "difference": 2.3315748327088246e-15
+          },
+          {
+            "node": 409,
+            "difference": 1.9167349131106598e-15
+          },
+          {
+            "node": 345,
+            "difference": -1.8353984420338208e-15
+          },
+          {
+            "node": 348,
+            "difference": -1.8138187044224136e-15
+          },
+          {
+            "node": 343,
+            "difference": -1.7909120867511448e-15
+          },
+          {
+            "node": 406,
+            "difference": 1.7018390648109333e-15
+          },
+          {
+            "node": 333,
+            "difference": 1.6826376270847043e-15
+          },
+          {
+            "node": 341,
+            "difference": -1.5769777996498004e-15
+          }
+        ]
+      },
+      "frozen_box_electron": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 3.698901670862214e-12,
+          "difference_L2": 9.788501463564486e-22,
+          "max_abs": 5.702505594758146e-22
+        },
+        "native_transport": {
+          "relative_L2": 9.760072130420753e-05,
+          "difference_L2": 2.582806939090323e-14,
+          "max_abs": 9.71201794953203e-15
+        },
+        "top_difference_rows": [
+          {
+            "node": 2156,
+            "difference": 9.71201794953203e-15
+          },
+          {
+            "node": 2174,
+            "difference": 9.703403706401034e-15
+          },
+          {
+            "node": 2365,
+            "difference": 8.316775342149311e-15
+          },
+          {
+            "node": 1107,
+            "difference": 6.354282169841518e-15
+          },
+          {
+            "node": 2157,
+            "difference": -5.6148222533075695e-15
+          },
+          {
+            "node": 2176,
+            "difference": -5.1185603118821685e-15
+          },
+          {
+            "node": 2402,
+            "difference": 4.904243080470738e-15
+          },
+          {
+            "node": 881,
+            "difference": 4.849474342573974e-15
+          },
+          {
+            "node": 2154,
+            "difference": 4.809306771856919e-15
+          },
+          {
+            "node": 2367,
+            "difference": -4.387578169113465e-15
+          }
+        ],
+        "offline_vs_actual": {
+          "relative_L2": 1.0162340206851132e-12,
+          "difference_L2": 2.6892870056968864e-22,
+          "max_abs": 7.511415131492601e-23
+        },
+        "full_RHS": {
+          "relative_L2": 9.760112672221634e-05,
+          "difference_L2": 2.5828176671287816e-14,
+          "max_abs": 9.712017949687127e-15
+        }
+      },
+      "frozen_box_hole": {
+        "edge_divergence_vs_actual_terms": {
+          "relative_L2": 3.007717410859086e-14,
+          "difference_L2": 5.197958442536048e-26,
+          "max_abs": 8.17890986533145e-27
+        },
+        "native_transport": {
+          "relative_L2": 0.00048184711070531014,
+          "difference_L2": 8.328736730172121e-16,
+          "max_abs": 1.0661559135047716e-16
+        },
+        "top_difference_rows": [
+          {
+            "node": 2515,
+            "difference": -1.0661559135047716e-16
+          },
+          {
+            "node": 2523,
+            "difference": -1.0546809150697604e-16
+          },
+          {
+            "node": 1182,
+            "difference": -1.0452949894300472e-16
+          },
+          {
+            "node": 2471,
+            "difference": -1.0300463835388025e-16
+          },
+          {
+            "node": 1236,
+            "difference": -1.0212051504770565e-16
+          },
+          {
+            "node": 2516,
+            "difference": 1.0203176469263167e-16
+          },
+          {
+            "node": 2513,
+            "difference": -1.0117984638531452e-16
+          },
+          {
+            "node": 1228,
+            "difference": -1.0010911722780406e-16
+          },
+          {
+            "node": 2524,
+            "difference": 9.983589326748436e-17
+          },
+          {
+            "node": 1237,
+            "difference": 9.856782528474007e-17
+          }
+        ],
+        "offline_vs_actual": {
+          "relative_L2": 3.89501988019806e-15,
+          "difference_L2": 6.731400828091227e-27,
+          "max_abs": 2.2340540835859054e-27
+        },
+        "full_RHS": {
+          "relative_L2": 0.00048376579514935195,
+          "difference_L2": 8.361820991659943e-16,
+          "max_abs": 1.0661559135047716e-16
+        }
+      },
+      "electron_native_mobility_candidates": {
+        "element_vertex_box": {
+          "relative_L2": 9.7600721313643e-05,
+          "difference_L2": 2.5828069393400137e-14,
+          "max_abs": 9.71201795016534e-15
+        },
+        "element_arithmetic": {
+          "relative_L2": 1.0895286167393796,
+          "difference_L2": 2.883218519339609e-10,
+          "max_abs": 7.421201620780158e-11
+        },
+        "edge_arithmetic": {
+          "relative_L2": 2.5742723775990473,
+          "difference_L2": 6.81229449037354e-10,
+          "max_abs": 1.7694727581712567e-10
+        },
+        "edge_harmonic": {
+          "relative_L2": 2.682017116468015,
+          "difference_L2": 7.097419288103133e-10,
+          "max_abs": 2.1422396260662196e-10
+        }
+      },
+      "hole_native_mobility_candidates": {
+        "element_vertex_box": {
+          "relative_L2": 0.00048184711070510224,
+          "difference_L2": 8.328736730168528e-16,
+          "max_abs": 1.0661559135110825e-16
+        },
+        "element_arithmetic": {
+          "relative_L2": 0.0005877197255607765,
+          "difference_L2": 1.0158746948092416e-15,
+          "max_abs": 2.440126567335267e-16
+        },
+        "edge_arithmetic": {
+          "relative_L2": 0.0010832055516267105,
+          "difference_L2": 1.8723229139952826e-15,
+          "max_abs": 7.225475450702594e-16
+        },
+        "edge_harmonic": {
+          "relative_L2": 0.001113429315806276,
+          "difference_L2": 1.9245647494766537e-15,
+          "max_abs": 7.867515036518708e-16
+        }
+      }
+    },
+    "geometry": {
+      "baseline": {
+        "all_edges": 7619,
+        "transport_edges": 4535,
+        "transport_couple_over_length": {
+          "relative_L2": 0.005198436992401941,
+          "difference_L2": 1.3524173952888299,
+          "max_abs": 0.3238574011448334
+        }
+      },
+      "native_geometry": {
+        "all_edges": 7619,
+        "transport_edges": 4535,
+        "transport_couple_over_length": {
+          "relative_L2": 2.058370799455242e-17,
+          "difference_L2": 5.355025903375621e-15,
+          "max_abs": 8.881784197001252e-16
+        }
+      },
+      "frozen_box": {
+        "all_edges": 7619,
+        "transport_edges": 4535,
+        "transport_couple_over_length": {
+          "relative_L2": 2.058370799455242e-17,
+          "difference_L2": 5.355025903375621e-15,
+          "max_abs": 8.881784197001252e-16
+        }
+      }
+    },
+    "poisson": {
+      "native_geometry_flux_closure": {
+        "relative_L2": 2.6541490712688048e-15,
+        "difference_L2": 5.215863144925199e-13,
+        "max_abs": 6.561418075534675e-14
+      },
+      "native_potential_variable_normalization": {
+        "relative_L2": 5.8457923746320566e-15,
+        "difference_L2": 1.2417575492227902e-13,
+        "max_abs": 3.597122599785507e-14
+      },
+      "native_offdiagonal_normalization": {
+        "value": 0.08403361344537813,
+        "relative_spread": 4.884981308350689e-15,
+        "entries": 10602
+      },
+      "baseline": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.04448294645390399,
+          "difference_L2": 8.37728786774147,
+          "max_abs": 2.7304204095747124
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 0.007789480460876578,
+          "difference_L2": 1.4793103127599199,
+          "max_abs": 0.37269405446037257
+        },
+        "observer_closure": {
+          "relative_L2": 2.5037302059065704e-12,
+          "difference_L2": 4.720185220949919e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "cell_material": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.044481830424652556,
+          "difference_L2": 8.377077690604985,
+          "max_abs": 2.7304204095747124
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 0.007788994550231826,
+          "difference_L2": 1.4792180328406785,
+          "max_abs": 0.37269405446037257
+        },
+        "observer_closure": {
+          "relative_L2": 2.5037290887425038e-12,
+          "difference_L2": 4.720182881361129e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "native_geometry": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.04377916673886251,
+          "difference_L2": 8.244747967883686,
+          "max_abs": 2.7304204095747124
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 2.6933543021620996e-15,
+          "difference_L2": 5.114984003254465e-13,
+          "max_abs": 6.561418075534675e-14
+        },
+        "observer_closure": {
+          "relative_L2": 2.5036384500655108e-12,
+          "difference_L2": 4.719938422160694e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "material_local": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.04433564743783049,
+          "difference_L2": 8.349547658095927,
+          "max_abs": 2.7304204095747124
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 0.007789480460876578,
+          "difference_L2": 1.4793103127599199,
+          "max_abs": 0.37269405446037257
+        },
+        "observer_closure": {
+          "relative_L2": 2.5037450786789024e-12,
+          "difference_L2": 4.720182420625998e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "native_material_local": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.043630690160014696,
+          "difference_L2": 8.216785992749813,
+          "max_abs": 2.7304204095747124
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 2.6933543021620996e-15,
+          "difference_L2": 5.114984003254465e-13,
+          "max_abs": 6.561418075534675e-14
+        },
+        "observer_closure": {
+          "relative_L2": 2.5036531814245684e-12,
+          "difference_L2": 4.719935601731543e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "native_mixed": {
+        "actual_residual_vs_native": {
+          "relative_L2": 0.004987863803858821,
+          "difference_L2": 0.9393435970639514,
+          "max_abs": 0.3458737888098846
+        },
+        "dielectric_vs_native_geometry": {
+          "relative_L2": 2.6933543021620996e-15,
+          "difference_L2": 5.114984003254465e-13,
+          "max_abs": 6.561418075534675e-14
+        },
+        "observer_closure": {
+          "relative_L2": 2.4953222446922486e-12,
+          "difference_L2": 4.699359578607944e-10,
+          "max_abs": 9.639933296057279e-11
+        }
+      },
+      "native_measure_reconstruction": {
+        "relative_L2": 1.996004548840936e-06,
+        "difference_L2": 0.0003758992158554383,
+        "max_abs": 6.764396564307162e-05
+      },
+      "native_geometry_native_measure_CODATA_q": {
+        "relative_L2": 1.1911626768655865e-05,
+        "difference_L2": 0.0022432670128434717,
+        "max_abs": 0.0004036809069916103
+      },
+      "decimal_epsilon_fingerprint": {
+        "eps0_candidate_SI": 8.8542e-12,
+        "charge_q_candidate": 1.602192e-19,
+        "not_a_production_change": true,
+        "result": {
+          "relative_L2": 2.0002635275923822e-12,
+          "difference_L2": 3.76701291569115e-10,
+          "max_abs": 1.0263434546686767e-10
+        }
+      },
+      "observed_charge_coefficient_diagnostic": {
+        "relative_to_assumed_q_over_eps0": 0.9999986235684798,
+        "relative_spread": 7.09177827573626e-10,
+        "resolved_rows": 1941,
+        "not_a_physical_calibration": true,
+        "reconstructed": {
+          "relative_L2": 2.0005102056252737e-12,
+          "difference_L2": 3.767477474147124e-10,
+          "max_abs": 1.0252065862914606e-10
+        }
+      },
+      "native_rhs_to_vela_factor": 1.0170938392658095
+    },
+    "sources": {
+      "actual_split_closure": {
+        "relative_L2": 5.3534828995943864e-17,
+        "difference_L2": 2.5369086225064407e-31,
+        "max_abs": 1.9721522630525295e-31
+      },
+      "native_plot_net_vs_native_ablation": {
+        "relative_L2": 9.621743832985687e-11,
+        "difference_L2": 4.5534435763632545e-25,
+        "max_abs": 2.6335659716143146e-25
+      },
+      "SRH": {
+        "relative_L2": 0.015702199406421945,
+        "difference_L2": 7.430989669078695e-17,
+        "max_abs": 5.227506974496431e-17
+      },
+      "BTBT": {
+        "relative_L2": 0.4378625601725567,
+        "difference_L2": 1.1629062534438826e-21,
+        "max_abs": 7.920322305198077e-22
+      },
+      "SRH_barycentric_to_native_support": {
+        "relative_L2": 0.015701679326666156,
+        "difference_L2": 7.430743543858123e-17,
+        "max_abs": 5.227506974496801e-17
+      },
+      "SRH_actual_rate_native_measure": {
+        "relative_L2": 3.180659036674132e-14,
+        "difference_L2": 1.5052314539274516e-28,
+        "max_abs": 4.9895452255228997e-29
+      },
+      "BTBT_original_E2_native_measure": {
+        "relative_L2": 0.39104754666013336,
+        "difference_L2": 1.038571640438372e-21,
+        "max_abs": 8.183622020859512e-22
+      },
+      "BTBT_original_E2_barycentric_vs_actual": {
+        "relative_L2": 1.3097492234204386e-10,
+        "difference_L2": 2.3257249731517824e-31,
+        "max_abs": 1.344933017917097e-31
+      },
+      "BTBT_transport_node_lumped": {
+        "relative_L2": 0.6769231797089169,
+        "difference_L2": 1.797820298849919e-21,
+        "max_abs": 1.2642504805063117e-21
+      },
+      "BTBT_transport_node_rate_native_measure": {
+        "relative_L2": 0.7001306547096571,
+        "difference_L2": 1.859456346915704e-21,
+        "max_abs": 1.2642504805063117e-21
+      },
+      "baseline_net": {
+        "relative_L2": 0.0157021994077724,
+        "difference_L2": 7.430989669770654e-17,
+        "max_abs": 5.227506974496421e-17
+      },
+      "mixed_transport_volume_net": {
+        "relative_L2": 0.015701679327778075,
+        "difference_L2": 7.430743544437195e-17,
+        "max_abs": 5.227506974496421e-17
+      }
+    },
+    "native_runtime_vertex_mapping": {
+      "original_mesh_nodes": 2600,
+      "additional_contact_copies": 78,
+      "coordinate_identity": true
+    },
+    "weak_nodes": {
+      "152": {
+        "electron": {
+          "native_transport": 8.327350954125526e-15,
+          "actual_transport": -4.1471060406507267e-10,
+          "native_geometry_transport": -1.0597012967760417e-12
+        },
+        "hole": {
+          "native_transport": 2.4246728813560236e-16,
+          "actual_transport": 1.852415937047625e-16,
+          "native_geometry_transport": 5.731535876179592e-16
+        }
+      },
+      "784": {
+        "electron": {
+          "native_transport": -1.834466654349959e-12,
+          "actual_transport": 5.45912728633335e-10,
+          "native_geometry_transport": 1.5077729085088468e-10
+        },
+        "hole": {
+          "native_transport": -1.1554793635968019e-19,
+          "actual_transport": 1.003058285910394e-19,
+          "native_geometry_transport": -7.994349166130232e-20
+        }
+      },
+      "409": {
+        "electron": {
+          "native_transport": -1.0046221650829701e-13,
+          "actual_transport": -9.82005157395156e-14,
+          "native_geometry_transport": -9.820051575418041e-14
+        },
+        "hole": {
+          "native_transport": 3.2384699196498327e-16,
+          "actual_transport": 2.2405819050755775e-15,
+          "native_geometry_transport": 2.240581905075643e-15
+        }
+      }
+    }
+  },
+  "evidence": {
+    "archive_sha256": "268562a5e8990d8f4ac01821724a7f250d7cc0f1ea0f048147e333c59867e7d1",
+    "archive_bytes": 35712799,
+    "manifest_files": 172,
+    "manifest_sha256": "184440dbd096f6bc9a384a69f1144c43a0154ca3720f442fe518c82a01816400",
+    "completion": {
+      "phase": "completed",
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "probes": 19,
+      "support_tests": 6,
+      "nonlinear_updates": 0,
+      "qualified": false,
+      "term_sum_actual_residual_identity": {
+        "baseline": {
+          "electron": 0.0,
+          "hole": 0.0
+        },
+        "native_geometry": {
+          "electron": 0.0,
+          "hole": 0.0
+        },
+        "frozen_box": {
+          "electron": 0.0,
+          "hole": 0.0
+        }
+      },
+      "inputs_verified": 33,
+      "core_sha256": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898",
+      "initial_runner_sha256": "9e4ce65e24563598c25373017645f87356af08fe9e4e9aa8ff6e8d2e3830d407",
+      "frozen_runner_sha256": "c1fb8736ccbdcee0ef6b43899b4673102f7cda9be06697e1adf99514faced426",
+      "analysis_sha256": "8e2f9a67ef44ea7049ea11adcd778f482d08ef02b755dd36ff87b2e2a175617e",
+      "initial_analysis_failure": "2678 runtime vertices include 78 contact copies; corrected by ID and coordinate mapping",
+      "analysis_v2_candidate_failure": "unavailable electron Boltzmann decomposition operands and conventional-current sign corrected using packed trace; v2 retained"
+    },
+    "download_verified_files": 172,
+    "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+    "remote_archive": "<REMOTE_WORKSPACE>/zero_qs_q0_q3_20261008/edge_poisson_source_20261013_v1/sealed_evidence.tgz"
+  },
+  "verification": {
+    "local_auxiliary_tests": 34,
+    "local_exit": 0,
+    "t470p_support_tests": 6,
+    "t470p_probes": 19,
+    "previous_sealed_files_verified": 740,
+    "production_changed": false,
+    "qualified": false
+  }
+}

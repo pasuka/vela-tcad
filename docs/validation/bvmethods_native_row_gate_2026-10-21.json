@@ -1,0 +1,670 @@
+{
+  "schema": "bvmethods_native_carrier_row_gate.v1",
+  "revision": 2,
+  "correction": "TCAD current-density/length factor 0.01 restored; former step2-4 passing claim withdrawn",
+  "native_runtime": {
+    "linear_solver_log": "blocked decomposition",
+    "nonlinear_solver_log": "Bank/Rose",
+    "solver_threads": 1
+  },
+  "scope": "no-BTBT first five accepted nonzero external-resistor QS states",
+  "production_acceptance_changed": false,
+  "native_equivalent_row_gate_claim_supported": false,
+  "threshold": 0.001,
+  "matrix_dimension": 6843,
+  "linear_systems": 15,
+  "accepted_carrier_rows": 21210,
+  "summary": [
+    {
+      "step": "1",
+      "carrier": "electron",
+      "rows": 2121,
+      "qualified": 653,
+      "failed": 72,
+      "maximum_ratio": 1.0000461709422328,
+      "worst_node": 1130
+    },
+    {
+      "step": "1",
+      "carrier": "hole",
+      "rows": 2121,
+      "qualified": 653,
+      "failed": 131,
+      "maximum_ratio": 1.0000094704372908,
+      "worst_node": 1002
+    },
+    {
+      "step": "2",
+      "carrier": "electron",
+      "rows": 2121,
+      "qualified": 773,
+      "failed": 7,
+      "maximum_ratio": 0.003936007552028584,
+      "worst_node": 1129
+    },
+    {
+      "step": "2",
+      "carrier": "hole",
+      "rows": 2121,
+      "qualified": 773,
+      "failed": 31,
+      "maximum_ratio": 0.003074220331272132,
+      "worst_node": 1200
+    },
+    {
+      "step": "3",
+      "carrier": "electron",
+      "rows": 2121,
+      "qualified": 839,
+      "failed": 6,
+      "maximum_ratio": 0.001957564786620332,
+      "worst_node": 1119
+    },
+    {
+      "step": "3",
+      "carrier": "hole",
+      "rows": 2121,
+      "qualified": 839,
+      "failed": 15,
+      "maximum_ratio": 0.0017847343757646467,
+      "worst_node": 1222
+    },
+    {
+      "step": "4",
+      "carrier": "electron",
+      "rows": 2121,
+      "qualified": 915,
+      "failed": 9,
+      "maximum_ratio": 0.0050304361265767275,
+      "worst_node": 1129
+    },
+    {
+      "step": "4",
+      "carrier": "hole",
+      "rows": 2121,
+      "qualified": 915,
+      "failed": 21,
+      "maximum_ratio": 0.0020384100966010827,
+      "worst_node": 741
+    },
+    {
+      "step": "5",
+      "carrier": "electron",
+      "rows": 2121,
+      "qualified": 951,
+      "failed": 17,
+      "maximum_ratio": 0.0552302990513832,
+      "worst_node": 1129
+    },
+    {
+      "step": "5",
+      "carrier": "hole",
+      "rows": 2121,
+      "qualified": 951,
+      "failed": 71,
+      "maximum_ratio": 0.030778285727773157,
+      "worst_node": 748
+    }
+  ],
+  "support_checks": [
+    {
+      "step": 1,
+      "carrier": "electron",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 0,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.368581373112917e-16,
+      "source_reconstruction_max_support_error": 4.265965752448063e-31
+    },
+    {
+      "step": 1,
+      "carrier": "hole",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 116,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.621597186029896e-16,
+      "source_reconstruction_max_support_error": 4.063032637525938e-19
+    },
+    {
+      "step": 2,
+      "carrier": "electron",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 0,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 2.5512063916249426e-16,
+      "source_reconstruction_max_support_error": 1.0642101361536658e-27
+    },
+    {
+      "step": 2,
+      "carrier": "hole",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 116,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 2.871576239292645e-16,
+      "source_reconstruction_max_support_error": 1.306214399650457e-16
+    },
+    {
+      "step": 3,
+      "carrier": "electron",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 0,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.8283930196227375e-16,
+      "source_reconstruction_max_support_error": 1.380838823032174e-27
+    },
+    {
+      "step": 3,
+      "carrier": "hole",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 116,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.643081769883164e-16,
+      "source_reconstruction_max_support_error": 1.4643059813822876e-16
+    },
+    {
+      "step": 4,
+      "carrier": "electron",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 0,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.498691077047914e-16,
+      "source_reconstruction_max_support_error": 1.0902066502109749e-27
+    },
+    {
+      "step": 4,
+      "carrier": "hole",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 116,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 3.617305845780941e-16,
+      "source_reconstruction_max_support_error": 1.515007148972018e-16
+    },
+    {
+      "step": 5,
+      "carrier": "electron",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 0,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 2.7835882957254824e-16,
+      "source_reconstruction_max_support_error": 5.65311212378459e-20
+    },
+    {
+      "step": 5,
+      "carrier": "hole",
+      "executed_product_samples": 6,
+      "samples_exact": true,
+      "silicon_cells": 4156,
+      "excluded_terminal_visits": 116,
+      "residual_repeat_exact": true,
+      "flux_reconstruction_max_support_error": 2.4984158348308575e-16,
+      "source_reconstruction_max_support_error": 1.2238909839952265e-16
+    }
+  ],
+  "normalization": {
+    "native_to_current_vela_continuity_scale": 7.950490318918126e-09,
+    "native_source_floor": 1.2577840609660366e-10
+  },
+  "identity": {
+    "trajectory_bytes_equal": true,
+    "two_observer_runs_equal": {
+      "debug_first24": true,
+      "n5_des.plt": true,
+      "pp5_des.cmd": true,
+      "pp5_des.par": true,
+      "n1_msh.tdr": true
+    },
+    "exit": 0
+  },
+  "checks": {
+    "rhs1_binding": [
+      {
+        "step": 1,
+        "iteration": 1,
+        "variable": "eDensity",
+        "relative_l1": 7.690193774894098e-16
+      },
+      {
+        "step": 1,
+        "iteration": 1,
+        "variable": "hDensity",
+        "relative_l1": 1.2319355401565237e-15
+      },
+      {
+        "step": 1,
+        "iteration": 2,
+        "variable": "eDensity",
+        "relative_l1": 8.763202823932415e-16
+      },
+      {
+        "step": 1,
+        "iteration": 2,
+        "variable": "hDensity",
+        "relative_l1": 9.68096846408761e-16
+      },
+      {
+        "step": 1,
+        "iteration": 3,
+        "variable": "eDensity",
+        "relative_l1": 1.1368496035551764e-15
+      },
+      {
+        "step": 1,
+        "iteration": 3,
+        "variable": "hDensity",
+        "relative_l1": 9.231404705244096e-16
+      },
+      {
+        "step": 2,
+        "iteration": 1,
+        "variable": "eDensity",
+        "relative_l1": 1.164501591916879e-15
+      },
+      {
+        "step": 2,
+        "iteration": 1,
+        "variable": "hDensity",
+        "relative_l1": 1.2257718480449402e-15
+      },
+      {
+        "step": 2,
+        "iteration": 2,
+        "variable": "eDensity",
+        "relative_l1": 1.2132032465435938e-15
+      },
+      {
+        "step": 2,
+        "iteration": 2,
+        "variable": "hDensity",
+        "relative_l1": 8.255507227463149e-16
+      },
+      {
+        "step": 2,
+        "iteration": 3,
+        "variable": "eDensity",
+        "relative_l1": 1.0342370630430668e-15
+      },
+      {
+        "step": 2,
+        "iteration": 3,
+        "variable": "hDensity",
+        "relative_l1": 9.72641775236916e-16
+      },
+      {
+        "step": 3,
+        "iteration": 1,
+        "variable": "eDensity",
+        "relative_l1": 8.635160821378324e-16
+      },
+      {
+        "step": 3,
+        "iteration": 1,
+        "variable": "hDensity",
+        "relative_l1": 9.827803267930792e-16
+      },
+      {
+        "step": 3,
+        "iteration": 2,
+        "variable": "eDensity",
+        "relative_l1": 8.601031277341839e-16
+      },
+      {
+        "step": 3,
+        "iteration": 2,
+        "variable": "hDensity",
+        "relative_l1": 1.2498515819020968e-15
+      },
+      {
+        "step": 3,
+        "iteration": 3,
+        "variable": "eDensity",
+        "relative_l1": 8.488220340040464e-16
+      },
+      {
+        "step": 3,
+        "iteration": 3,
+        "variable": "hDensity",
+        "relative_l1": 1.054260321316747e-15
+      },
+      {
+        "step": 4,
+        "iteration": 1,
+        "variable": "eDensity",
+        "relative_l1": 1.2039662417252177e-15
+      },
+      {
+        "step": 4,
+        "iteration": 1,
+        "variable": "hDensity",
+        "relative_l1": 8.127047084824449e-16
+      },
+      {
+        "step": 4,
+        "iteration": 2,
+        "variable": "eDensity",
+        "relative_l1": 1.168486118131562e-15
+      },
+      {
+        "step": 4,
+        "iteration": 2,
+        "variable": "hDensity",
+        "relative_l1": 1.0339691021965458e-15
+      },
+      {
+        "step": 4,
+        "iteration": 3,
+        "variable": "eDensity",
+        "relative_l1": 9.409441142773816e-16
+      },
+      {
+        "step": 4,
+        "iteration": 3,
+        "variable": "hDensity",
+        "relative_l1": 1.1511652167944637e-15
+      },
+      {
+        "step": 5,
+        "iteration": 1,
+        "variable": "eDensity",
+        "relative_l1": 9.049327835123405e-16
+      },
+      {
+        "step": 5,
+        "iteration": 1,
+        "variable": "hDensity",
+        "relative_l1": 1.197423093286074e-15
+      },
+      {
+        "step": 5,
+        "iteration": 2,
+        "variable": "eDensity",
+        "relative_l1": 1.1160361842927639e-15
+      },
+      {
+        "step": 5,
+        "iteration": 2,
+        "variable": "hDensity",
+        "relative_l1": 8.874063659556055e-16
+      },
+      {
+        "step": 5,
+        "iteration": 3,
+        "variable": "eDensity",
+        "relative_l1": 1.0703102078188645e-15
+      },
+      {
+        "step": 5,
+        "iteration": 3,
+        "variable": "hDensity",
+        "relative_l1": 9.951922810690155e-16
+      }
+    ],
+    "terminal_unit_checks": [
+      {
+        "step": 1,
+        "native_electron_current_A_per_um": 4.75561534259954e-10,
+        "reconstructed_A_per_um": 4.755588280329397e-10,
+        "relative_error": 5.690592740121281e-06,
+        "strict_terminal_identity_pass": false
+      },
+      {
+        "step": 2,
+        "native_electron_current_A_per_um": 1.02585443067856e-09,
+        "reconstructed_A_per_um": 1.0258443921452941e-09,
+        "relative_error": 9.785533859122291e-06,
+        "strict_terminal_identity_pass": false
+      },
+      {
+        "step": 3,
+        "native_electron_current_A_per_um": 1.58151539792646e-09,
+        "reconstructed_A_per_um": 1.5815010723295707e-09,
+        "relative_error": 9.058145692407834e-06,
+        "strict_terminal_identity_pass": false
+      },
+      {
+        "step": 4,
+        "native_electron_current_A_per_um": 2.00243964464673e-09,
+        "reconstructed_A_per_um": 2.0024196297376187e-09,
+        "relative_error": 9.99526211184331e-06,
+        "strict_terminal_identity_pass": false
+      },
+      {
+        "step": 5,
+        "native_electron_current_A_per_um": 2.18985201580355e-09,
+        "reconstructed_A_per_um": 2.189830112621464e-09,
+        "relative_error": 1.0002128878089673e-05,
+        "strict_terminal_identity_pass": false
+      }
+    ],
+    "rows": 21210,
+    "systems": 15,
+    "diagnostic_only": true,
+    "matrix_dimension": 6843,
+    "nominal_factor_A_per_um_per_native_row": 2.375122878641453e-13,
+    "normalization_method": "existing dimensioned particle-row normalization; terminal output comparison is an independent diagnostic, not fitted",
+    "terminal_identity_limitation": "strict terminal sum identity is not established; retain individual discrepancies",
+    "eligibility_scale_sensitivity": [
+      {
+        "normalization_multiplier": 0.99999,
+        "qualification_changes": 0
+      },
+      {
+        "normalization_multiplier": 1.00001,
+        "qualification_changes": 0
+      },
+      {
+        "normalization_multiplier": 0.999,
+        "qualification_changes": 0
+      },
+      {
+        "normalization_multiplier": 1.001,
+        "qualification_changes": 2
+      }
+    ]
+  },
+  "steps": [
+    {
+      "step": 1,
+      "outer_voltage_V": 0.01,
+      "inner_voltage_V": 0.00524437249039996,
+      "drain_current_A_per_um": 4.75561534260427e-10,
+      "iterations": [
+        {
+          "iteration": 1,
+          "error_printed": "2.75e+03",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 72499,
+            "linear_componentwise_l1_backward_error": 1.106061838047261e-16
+          }
+        },
+        {
+          "iteration": 2,
+          "error_printed": "8.02e+01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 76669,
+            "linear_componentwise_l1_backward_error": 1.7905406209659024e-16
+          }
+        },
+        {
+          "iteration": 3,
+          "error_printed": "2.50e-01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 75344,
+            "linear_componentwise_l1_backward_error": 1.3254549488045062e-16
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "outer_voltage_V": 0.0235533333333333,
+      "inner_voltage_V": 0.013294789026557,
+      "drain_current_A_per_um": 1.0258544306807e-09,
+      "iterations": [
+        {
+          "iteration": 1,
+          "error_printed": "4.73e+02",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 76141,
+            "linear_componentwise_l1_backward_error": 9.986552466090844e-17
+          }
+        },
+        {
+          "iteration": 2,
+          "error_printed": "2.76e+00",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 77082,
+            "linear_componentwise_l1_backward_error": 1.0882325184866869e-16
+          }
+        },
+        {
+          "iteration": 3,
+          "error_printed": "1.22e-04",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 76262,
+            "linear_componentwise_l1_backward_error": 1.0521739433375592e-16
+          }
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "outer_voltage_V": 0.0419226177777778,
+      "inner_voltage_V": 0.0261074637970595,
+      "drain_current_A_per_um": 1.58151539792982e-09,
+      "iterations": [
+        {
+          "iteration": 1,
+          "error_printed": "9.58e+02",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 77388,
+            "linear_componentwise_l1_backward_error": 9.291838473745734e-17
+          }
+        },
+        {
+          "iteration": 2,
+          "error_printed": "1.30e+01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 78129,
+            "linear_componentwise_l1_backward_error": 9.85895823481295e-17
+          }
+        },
+        {
+          "iteration": 3,
+          "error_printed": "4.05e-03",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 77429,
+            "linear_componentwise_l1_backward_error": 1.1890865498592146e-16
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "outer_voltage_V": 0.0668191212948148,
+      "inner_voltage_V": 0.0467947246698361,
+      "drain_current_A_per_um": 2.00243964465106e-09,
+      "iterations": [
+        {
+          "iteration": 1,
+          "error_printed": "1.74e+03",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 78679,
+            "linear_componentwise_l1_backward_error": 1.71766877617625e-16
+          }
+        },
+        {
+          "iteration": 2,
+          "error_printed": "5.30e+01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 79246,
+            "linear_componentwise_l1_backward_error": 1.158332169158302e-16
+          }
+        },
+        {
+          "iteration": 3,
+          "error_printed": "7.55e-02",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 78592,
+            "linear_componentwise_l1_backward_error": 1.1225739257467902e-16
+          }
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "outer_voltage_V": 0.100562182394906,
+      "inner_voltage_V": 0.0786636612716569,
+      "drain_current_A_per_um": 2.18985201580831e-09,
+      "iterations": [
+        {
+          "iteration": 1,
+          "error_printed": "2.36e+03",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 79602,
+            "linear_componentwise_l1_backward_error": 1.4069814894110366e-16
+          }
+        },
+        {
+          "iteration": 2,
+          "error_printed": "9.69e+01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 80487,
+            "linear_componentwise_l1_backward_error": 1.1026500050494016e-16
+          }
+        },
+        {
+          "iteration": 3,
+          "error_printed": "3.07e-01",
+          "independent_linear_checks": {
+            "dimension": 6843,
+            "nonzero_entries": 79875,
+            "linear_componentwise_l1_backward_error": 8.255050336408785e-17
+          }
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "carrier_row_audit_properties": 12,
+    "passed": 12,
+    "full_ctest_run": false
+  },
+  "limitations": [
+    "terminal-current reconstruction strict 1e-6 identity failed; discrepancies retained",
+    "Jacobians are pre-update linearizations; accepted-state residuals exported separately",
+    "post-state vectors reconstructed from debug variables and protected updates; not five new full TDR files",
+    "no full-physics NonLocalPath qualification or production acceptance replacement"
+  ]
+}

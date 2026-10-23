@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-15",
+  "status": "native_source_off_two_weak_rows_bound_to_original_printed_RHS1",
+  "manual": {
+    "title": "Sentaurus Device User Guide",
+    "version": "T-2022.03",
+    "sha256": "f33068f5040c1c8c7993bdc1c86a0d777925792780ab4405752accd682706e88",
+    "printed_pages": [
+      232,
+      233,
+      239,
+      240,
+      306,
+      1177,
+      1178
+    ]
+  },
+  "configuration": {
+    "mesh_nodes": 2600,
+    "tri3_cells": 5020,
+    "silicon_nodes": 2152,
+    "silicon_cells": 4156,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "sources_enabled": false,
+    "statistics": "Fermi + OldSlotboom, DensityIntegral(240)",
+    "native_version": "T-2022.03-SP2",
+    "native_precision": "binary80",
+    "native_backend": "existing blocked decomposition",
+    "native_threads": 1,
+    "vela_newton_run_this_round": false,
+    "units": {
+      "length": "um",
+      "population": "cm^-3",
+      "potential": "V",
+      "energy": "eV"
+    }
+  },
+  "endpoint_fields": {
+    "U": {
+      "slot": "0x50",
+      "type": "PotentialEntry",
+      "quantity": "electrostatic potential"
+    },
+    "W": {
+      "slot": "0x158",
+      "type": "ElectronAffinityVertexEntry",
+      "quantity": "electron affinity with configured BGN partition"
+    },
+    "Z": {
+      "slot": "0x168",
+      "type": "BandGapEntry",
+      "quantity": "base band gap"
+    },
+    "T": {
+      "slot": "0x178",
+      "type": "BandgapNarrowingEntry",
+      "quantity": "bandgap narrowing"
+    }
+  },
+  "slot_0x100": "normalized temperature, not FermiDelta",
+  "identity_target_capture": {
+    "names": true,
+    "variables": true,
+    "matrix": true,
+    "rhs1": true,
+    "solution": true,
+    "rhs2": true
+  },
+  "identity_scaling_capture": {
+    "names": true,
+    "variables": true,
+    "matrix": true,
+    "rhs1": true,
+    "solution": true,
+    "rhs2": true
+  },
+  "cache_before_and_after_RHS1_identical": true,
+  "samples": 24,
+  "ties_to_even_tests_passed": 3,
+  "independent_scales": {
+    "potential_V": 0.025851995266484913,
+    "length_cm": 0.0033864920021441317,
+    "density_cm3": 14824351000.0,
+    "reads": 16,
+    "source": "IISScaling constructor and SetRefMaterial returns; no RHS fitting"
+  },
+  "cases": {
+    "electron": {
+      "target": 2156,
+      "element_edges": 12,
+      "unique_edges": 6,
+      "support_complete": true,
+      "native_RHS1": "-0.0077969164157394299508041513036005198955535888671875",
+      "independent_scale_RHS1": "-0.007796916415739432050811925003767259490762549857815083068159387558020012474020079517841749458105646179",
+      "relative_RHS1_error": "2.69338243701181190013509724015198156763953559744332602306429481028169142107442559167E-16",
+      "sum_unscaled": "-10.21360046337268489762400924768040843403680009488927855931480138481315769931005059881478818958197610",
+      "B_max_abs_error": "1.67761478067114214846865016957411765049048891433562335462939463269224717682531707E-19",
+      "incident_cells": [
+        2725,
+        2726,
+        3902,
+        3906,
+        3907,
+        3908
+      ],
+      "zero_coefficient_samples": 4,
+      "actual_driver_rebuilt_bit_exact": 12
+    },
+    "hole": {
+      "target": 2515,
+      "element_edges": 12,
+      "unique_edges": 6,
+      "support_complete": true,
+      "native_RHS1": "-0.00002833468351009579906294409690215019281822605989873409271240234375",
+      "independent_scale_RHS1": "-0.00002833468351009575025082667775927731929399400044414427872747378876495305511602755943828550355076789184",
+      "relative_RHS1_error": "-1.7226985225280831086061021434904533960780577217729910647198807953406002386523570658452E-15",
+      "sum_unscaled": "0.03711712697650956352324284444914649809613082021132933730425200829155919142812259365060153237166217396",
+      "B_max_abs_error": "1.835806473728898080874080465506391516536562408516326481646623860869466089581820676E-19",
+      "incident_cells": [
+        4594,
+        4597,
+        4598,
+        4599,
+        4602,
+        4615
+      ],
+      "zero_coefficient_samples": 4,
+      "actual_driver_rebuilt_bit_exact": 12
+    }
+  },
+  "RHS_reconstruction": {
+    "current_source": "actual native cached current without mobility",
+    "coefficient_source": "previously audited native cell geometry and physical mobility",
+    "S": "sum outward current_without_mu * edge_length_um * cell_kappa_mu",
+    "electron": "+S * Vref / Lref_um",
+    "hole": "-S * Vref / Lref_um",
+    "scale_fitted_from_RHS": false,
+    "comparison_target": "original printed RHS1"
+  },
+  "native_files_verified_by_batch": [
+    18,
+    29,
+    29
+  ],
+  "native_files_verified_total": 76,
+  "t470p_analysis_and_source_hash_files_verified": 4,
+  "native_successful_diagnostic_exit_code": 2,
+  "exit_code_meaning": "one Newton update budget exhausted; not steady-state convergence",
+  "failed_attempts_preserved": [
+    "GDB Python condition filtering failure, stopped own diagnostic job",
+    "initial current-to-RHS unit candidate without reference length"
+  ],
+  "production_code_changed": false,
+  "physical_defaults_changed": false,
+  "acceptance_thresholds_changed": false,
+  "templates_or_packages_changed": false,
+  "complete_cross_solver_RHS_qualified": false,
+  "full_original_zero_QS_qualified": false,
+  "next": "Q2/Q3: compare bound native per-element input/current with Vela actual assembly before full RHS and four-arm derivatives",
+  "private_evidence_directory": "build-release/bvmethods_endpoint_rhs1_20261015/"
+}

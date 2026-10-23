@@ -1,0 +1,1155 @@
+{
+  "date": "2026-10-12",
+  "head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "worktree": "<WORKTREE>",
+  "scope": "fixed-state native source mobility sampling and conditional branch diagnosis",
+  "qualification": {
+    "native_hard_pmi_source_identity_two_states": true,
+    "production_vela_source": false,
+    "full_rhs": false,
+    "jacobian": false,
+    "zero_qs": false,
+    "unique_builtin_branch": false
+  },
+  "config": {
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "obtuse": 26,
+    "si_region": 3,
+    "si_elements": 4156,
+    "si_nodes": 2152,
+    "temperature_K": 300,
+    "external_resistance_ohm_um": 10000000.0,
+    "statistics": "Fermi + OldSlotboom",
+    "mobility": "Masetti + Enormal + GradQuasiFermi HFS",
+    "sources": [
+      "SRH(DopingDep)",
+      "E2 BTBT",
+      "VanOverstraeten Eparallel"
+    ],
+    "native_version": "T-2022.03-SP2",
+    "extended_precision_bits": 80,
+    "density_integral": 240,
+    "charge_C": 1.602192e-19,
+    "thermal_voltage_V": 0.02585199526648486,
+    "units": {
+      "coordinates": "um",
+      "native_density": "cm^-3",
+      "h5_density": "m^-3",
+      "field": "V/cm",
+      "current_2d": "A/um",
+      "generation": "cm^-3 s^-1",
+      "measure": "um^2"
+    },
+    "pde_solve": false,
+    "linear_backend_used": null
+  },
+  "native_runs": {
+    "main": {
+      "verified_files": 598,
+      "runs": [
+        {
+          "arm": "nearzero_default_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_inverse_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_inverse_unit",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_inverse_spatial",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_unit_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_builtin_unit",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_default_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_inverse_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_inverse_unit",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_inverse_spatial",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_unit_native",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_builtin_unit",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_pmi_step",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_builtin_step",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_pmi_swap",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "nearzero_builtin_swap",
+          "native_exit": 0,
+          "export_exit": 0
+        }
+      ]
+    },
+    "timestamp_code": 51,
+    "timestamp_nearzero": 51,
+    "total_successful_load_plot": 18
+  },
+  "source_identity": [
+    {
+      "state": "code",
+      "carrier": "e",
+      "cycles": 6,
+      "avalanche_calls": 11130,
+      "mobility_calls": 74808,
+      "elements": 4156,
+      "nodes": 2152,
+      "first_cycle": {
+        "element_vertex": {
+          "relative_L2": 0.016120908595163956,
+          "max_abs": 1.8128839739618733e+25
+        },
+        "representative": {
+          "relative_L2": 1.577495033940463e-16,
+          "max_abs": 274877906944.0
+        },
+        "mean_three": {
+          "relative_L2": 0.011409678835967689,
+          "max_abs": 1.4952159808263678e+25
+        },
+        "last": {
+          "relative_L2": 0.027162397016834164,
+          "max_abs": 4.182125856766995e+25
+        }
+      },
+      "max_representative_relative_L2": 1.577495033940463e-16
+    },
+    {
+      "state": "code",
+      "carrier": "h",
+      "cycles": 6,
+      "avalanche_calls": 11712,
+      "mobility_calls": 74808,
+      "elements": 4156,
+      "nodes": 2152,
+      "first_cycle": {
+        "element_vertex": {
+          "relative_L2": 0.011599538070899175,
+          "max_abs": 2.993069004997746e+20
+        },
+        "representative": {
+          "relative_L2": 1.7637390023869835e-16,
+          "max_abs": 4194304.0
+        },
+        "mean_three": {
+          "relative_L2": 0.015624718354327586,
+          "max_abs": 5.587806954446945e+20
+        },
+        "last": {
+          "relative_L2": 0.025114946905618902,
+          "max_abs": 8.89002866368609e+20
+        }
+      },
+      "max_representative_relative_L2": 1.7637390023869835e-16
+    },
+    {
+      "state": "nearzero",
+      "carrier": "e",
+      "cycles": 6,
+      "avalanche_calls": 11802,
+      "mobility_calls": 74808,
+      "elements": 4156,
+      "nodes": 2152,
+      "first_cycle": {
+        "element_vertex": {
+          "relative_L2": 0.026241882989720248,
+          "max_abs": 392055093347767.5
+        },
+        "representative": {
+          "relative_L2": 2.901469480790215e-16,
+          "max_abs": 3.0
+        },
+        "mean_three": {
+          "relative_L2": 0.025721234600336772,
+          "max_abs": 264952173336604.0
+        },
+        "last": {
+          "relative_L2": 0.047981646297583995,
+          "max_abs": 525863881363749.0
+        }
+      },
+      "max_representative_relative_L2": 2.901469480790215e-16
+    },
+    {
+      "state": "nearzero",
+      "carrier": "h",
+      "cycles": 6,
+      "avalanche_calls": 17490,
+      "mobility_calls": 74808,
+      "elements": 4156,
+      "nodes": 2152,
+      "first_cycle": {
+        "element_vertex": {
+          "relative_L2": 0.008340930986257131,
+          "max_abs": 8718029379297.0
+        },
+        "representative": {
+          "relative_L2": 2.5320281111175044e-16,
+          "max_abs": 0.1875
+        },
+        "mean_three": {
+          "relative_L2": 0.006409962142878329,
+          "max_abs": 4726515535992.0
+        },
+        "last": {
+          "relative_L2": 0.01877857127254418,
+          "max_abs": 16452624415090.25
+        }
+      },
+      "max_representative_relative_L2": 2.5320281111175044e-16
+    }
+  ],
+  "event_identity": {
+    "code": {
+      "all_fields_bitwise_equal": true,
+      "fields": 123,
+      "identity": {
+        "b'ElectrostaticPotential'|0|0": true,
+        "b'ElectrostaticPotential'|1|0": true,
+        "b'LatticeTemperature'|2|0": true,
+        "b'eIonIntegral'|3|0": true,
+        "b'hIonIntegral'|3|0": true,
+        "b'MeanIonIntegral'|3|0": true,
+        "b'eAlphaAvalanche'|3|0": true,
+        "b'hAlphaAvalanche'|3|0": true,
+        "b'ContactExternalVoltage'|13|4": true,
+        "b'ContactExternalVoltage'|14|4": true,
+        "b'ContactExternalVoltage'|15|4": true,
+        "b'ContactExternalVoltage'|16|4": true,
+        "b'ContactCurrentFlux'|13|4": true,
+        "b'LatticeTemperature'|3|0": true,
+        "b'ContactCurrentFlux'|14|4": true,
+        "b'ContactCurrentFlux'|15|4": true,
+        "b'ContactCurrentFlux'|16|4": true,
+        "b'ContactCharge'|13|4": true,
+        "b'ContactCharge'|14|4": true,
+        "b'ContactCharge'|15|4": true,
+        "b'ContactCharge'|16|4": true,
+        "b'QuasiFermiPotential'|0|0": true,
+        "b'QuasiFermiPotential'|1|0": true,
+        "b'QuasiFermiPotential'|2|0": true,
+        "b'LatticeTemperature'|4|0": true,
+        "b'QuasiFermiPotential'|3|0": true,
+        "b'QuasiFermiPotential'|4|0": true,
+        "b'QuasiFermiPotential'|5|0": true,
+        "b'LatticeTemperature'|5|0": true,
+        "b'eQuasiFermiPotential'|0|0": true,
+        "b'eQuasiFermiPotential'|1|0": true,
+        "b'eQuasiFermiPotential'|2|0": true,
+        "b'eQuasiFermiPotential'|3|0": true,
+        "b'eQuasiFermiPotential'|4|0": true,
+        "b'eQuasiFermiPotential'|5|0": true,
+        "b'ElectrostaticPotential'|2|0": true,
+        "b'hQuasiFermiPotential'|0|0": true,
+        "b'hQuasiFermiPotential'|1|0": true,
+        "b'hQuasiFermiPotential'|2|0": true,
+        "b'hQuasiFermiPotential'|3|0": true,
+        "b'hQuasiFermiPotential'|4|0": true,
+        "b'hQuasiFermiPotential'|5|0": true,
+        "b'eEffectiveStateDensity'|0|0": true,
+        "b'eEffectiveStateDensity'|1|0": true,
+        "b'eEffectiveStateDensity'|2|0": true,
+        "b'eEffectiveStateDensity'|3|0": true,
+        "b'ElectrostaticPotential'|3|0": true,
+        "b'eEffectiveStateDensity'|4|0": true,
+        "b'eEffectiveStateDensity'|5|0": true,
+        "b'hEffectiveStateDensity'|0|0": true,
+        "b'hEffectiveStateDensity'|1|0": true,
+        "b'hEffectiveStateDensity'|2|0": true,
+        "b'hEffectiveStateDensity'|3|0": true,
+        "b'hEffectiveStateDensity'|4|0": true,
+        "b'hEffectiveStateDensity'|5|0": true,
+        "b'BandGap'|0|0": true,
+        "b'BandGap'|1|0": true,
+        "b'ElectrostaticPotential'|4|0": true,
+        "b'BandGap'|2|0": true,
+        "b'BandGap'|3|0": true,
+        "b'BandGap'|4|0": true,
+        "b'BandGap'|5|0": true,
+        "b'BandgapNarrowing'|0|0": true,
+        "b'BandgapNarrowing'|1|0": true,
+        "b'BandgapNarrowing'|2|0": true,
+        "b'BandgapNarrowing'|3|0": true,
+        "b'BandgapNarrowing'|4|0": true,
+        "b'BandgapNarrowing'|5|0": true,
+        "b'ElectrostaticPotential'|5|0": true,
+        "b'ElectronAffinity'|0|0": true,
+        "b'ElectronAffinity'|1|0": true,
+        "b'ElectronAffinity'|2|0": true,
+        "b'ElectronAffinity'|3|0": true,
+        "b'ElectronAffinity'|4|0": true,
+        "b'ElectronAffinity'|5|0": true,
+        "b'EffectiveIntrinsicDensity'|3|0": true,
+        "b'ConductionBandEnergy'|0|0": true,
+        "b'ConductionBandEnergy'|1|0": true,
+        "b'ConductionBandEnergy'|2|0": true,
+        "b'eDensity'|3|0": true,
+        "b'ConductionBandEnergy'|3|0": true,
+        "b'ConductionBandEnergy'|4|0": true,
+        "b'ConductionBandEnergy'|5|0": true,
+        "b'ValenceBandEnergy'|0|0": true,
+        "b'ValenceBandEnergy'|1|0": true,
+        "b'ValenceBandEnergy'|2|0": true,
+        "b'ValenceBandEnergy'|3|0": true,
+        "b'ValenceBandEnergy'|4|0": true,
+        "b'ValenceBandEnergy'|5|0": true,
+        "b'eMobility'|3|0": true,
+        "b'hDensity'|3|0": true,
+        "b'hMobility'|3|0": true,
+        "b'eGradQuasiFermi'|3|0": true,
+        "b'hGradQuasiFermi'|3|0": true,
+        "b'eCurrentDensity'|3|3": true,
+        "b'hCurrentDensity'|3|3": true,
+        "b'eMobility'|3|3": true,
+        "b'hMobility'|3|3": true,
+        "b'DonorConcentration'|3|0": true,
+        "b'AcceptorConcentration'|3|0": true,
+        "b'TotalCurrentDensity'|0|0": true,
+        "b'LatticeTemperature'|0|0": true,
+        "b'TotalCurrentDensity'|1|0": true,
+        "b'TotalCurrentDensity'|2|0": true,
+        "b'TotalCurrentDensity'|3|0": true,
+        "b'TotalCurrentDensity'|4|0": true,
+        "b'TotalCurrentDensity'|5|0": true,
+        "b'eCurrentDensity'|3|0": true,
+        "b'hCurrentDensity'|3|0": true,
+        "b'ElectricField'|0|0": true,
+        "b'ElectricField'|1|0": true,
+        "b'ElectricField'|2|0": true,
+        "b'LatticeTemperature'|1|0": true,
+        "b'ElectricField'|3|0": true,
+        "b'ElectricField'|4|0": true,
+        "b'ElectricField'|5|0": true,
+        "b'SpaceCharge'|3|0": true,
+        "b'DopingConcentration'|3|0": true,
+        "b'srhRecombination'|3|0": true,
+        "b'Band2BandGeneration'|3|0": true,
+        "b'ImpactIonization'|3|0": true,
+        "b'eImpactIonization'|3|0": true,
+        "b'hImpactIonization'|3|0": true
+      }
+    },
+    "nearzero": {
+      "all_fields_bitwise_equal": true,
+      "fields": 123,
+      "identity": {
+        "b'ElectrostaticPotential'|0|0": true,
+        "b'ElectrostaticPotential'|1|0": true,
+        "b'LatticeTemperature'|2|0": true,
+        "b'eIonIntegral'|3|0": true,
+        "b'hIonIntegral'|3|0": true,
+        "b'MeanIonIntegral'|3|0": true,
+        "b'eAlphaAvalanche'|3|0": true,
+        "b'hAlphaAvalanche'|3|0": true,
+        "b'ContactExternalVoltage'|13|4": true,
+        "b'ContactExternalVoltage'|14|4": true,
+        "b'ContactExternalVoltage'|15|4": true,
+        "b'ContactExternalVoltage'|16|4": true,
+        "b'ContactCurrentFlux'|13|4": true,
+        "b'LatticeTemperature'|3|0": true,
+        "b'ContactCurrentFlux'|14|4": true,
+        "b'ContactCurrentFlux'|15|4": true,
+        "b'ContactCurrentFlux'|16|4": true,
+        "b'ContactCharge'|13|4": true,
+        "b'ContactCharge'|14|4": true,
+        "b'ContactCharge'|15|4": true,
+        "b'ContactCharge'|16|4": true,
+        "b'QuasiFermiPotential'|0|0": true,
+        "b'QuasiFermiPotential'|1|0": true,
+        "b'QuasiFermiPotential'|2|0": true,
+        "b'LatticeTemperature'|4|0": true,
+        "b'QuasiFermiPotential'|3|0": true,
+        "b'QuasiFermiPotential'|4|0": true,
+        "b'QuasiFermiPotential'|5|0": true,
+        "b'LatticeTemperature'|5|0": true,
+        "b'eQuasiFermiPotential'|0|0": true,
+        "b'eQuasiFermiPotential'|1|0": true,
+        "b'eQuasiFermiPotential'|2|0": true,
+        "b'eQuasiFermiPotential'|3|0": true,
+        "b'eQuasiFermiPotential'|4|0": true,
+        "b'eQuasiFermiPotential'|5|0": true,
+        "b'ElectrostaticPotential'|2|0": true,
+        "b'hQuasiFermiPotential'|0|0": true,
+        "b'hQuasiFermiPotential'|1|0": true,
+        "b'hQuasiFermiPotential'|2|0": true,
+        "b'hQuasiFermiPotential'|3|0": true,
+        "b'hQuasiFermiPotential'|4|0": true,
+        "b'hQuasiFermiPotential'|5|0": true,
+        "b'eEffectiveStateDensity'|0|0": true,
+        "b'eEffectiveStateDensity'|1|0": true,
+        "b'eEffectiveStateDensity'|2|0": true,
+        "b'eEffectiveStateDensity'|3|0": true,
+        "b'ElectrostaticPotential'|3|0": true,
+        "b'eEffectiveStateDensity'|4|0": true,
+        "b'eEffectiveStateDensity'|5|0": true,
+        "b'hEffectiveStateDensity'|0|0": true,
+        "b'hEffectiveStateDensity'|1|0": true,
+        "b'hEffectiveStateDensity'|2|0": true,
+        "b'hEffectiveStateDensity'|3|0": true,
+        "b'hEffectiveStateDensity'|4|0": true,
+        "b'hEffectiveStateDensity'|5|0": true,
+        "b'BandGap'|0|0": true,
+        "b'BandGap'|1|0": true,
+        "b'ElectrostaticPotential'|4|0": true,
+        "b'BandGap'|2|0": true,
+        "b'BandGap'|3|0": true,
+        "b'BandGap'|4|0": true,
+        "b'BandGap'|5|0": true,
+        "b'BandgapNarrowing'|0|0": true,
+        "b'BandgapNarrowing'|1|0": true,
+        "b'BandgapNarrowing'|2|0": true,
+        "b'BandgapNarrowing'|3|0": true,
+        "b'BandgapNarrowing'|4|0": true,
+        "b'BandgapNarrowing'|5|0": true,
+        "b'ElectrostaticPotential'|5|0": true,
+        "b'ElectronAffinity'|0|0": true,
+        "b'ElectronAffinity'|1|0": true,
+        "b'ElectronAffinity'|2|0": true,
+        "b'ElectronAffinity'|3|0": true,
+        "b'ElectronAffinity'|4|0": true,
+        "b'ElectronAffinity'|5|0": true,
+        "b'EffectiveIntrinsicDensity'|3|0": true,
+        "b'ConductionBandEnergy'|0|0": true,
+        "b'ConductionBandEnergy'|1|0": true,
+        "b'ConductionBandEnergy'|2|0": true,
+        "b'eDensity'|3|0": true,
+        "b'ConductionBandEnergy'|3|0": true,
+        "b'ConductionBandEnergy'|4|0": true,
+        "b'ConductionBandEnergy'|5|0": true,
+        "b'ValenceBandEnergy'|0|0": true,
+        "b'ValenceBandEnergy'|1|0": true,
+        "b'ValenceBandEnergy'|2|0": true,
+        "b'ValenceBandEnergy'|3|0": true,
+        "b'ValenceBandEnergy'|4|0": true,
+        "b'ValenceBandEnergy'|5|0": true,
+        "b'eMobility'|3|0": true,
+        "b'hDensity'|3|0": true,
+        "b'hMobility'|3|0": true,
+        "b'eGradQuasiFermi'|3|0": true,
+        "b'hGradQuasiFermi'|3|0": true,
+        "b'eCurrentDensity'|3|3": true,
+        "b'hCurrentDensity'|3|3": true,
+        "b'eMobility'|3|3": true,
+        "b'hMobility'|3|3": true,
+        "b'DonorConcentration'|3|0": true,
+        "b'AcceptorConcentration'|3|0": true,
+        "b'TotalCurrentDensity'|0|0": true,
+        "b'LatticeTemperature'|0|0": true,
+        "b'TotalCurrentDensity'|1|0": true,
+        "b'TotalCurrentDensity'|2|0": true,
+        "b'TotalCurrentDensity'|3|0": true,
+        "b'TotalCurrentDensity'|4|0": true,
+        "b'TotalCurrentDensity'|5|0": true,
+        "b'eCurrentDensity'|3|0": true,
+        "b'hCurrentDensity'|3|0": true,
+        "b'ElectricField'|0|0": true,
+        "b'ElectricField'|1|0": true,
+        "b'ElectricField'|2|0": true,
+        "b'LatticeTemperature'|1|0": true,
+        "b'ElectricField'|3|0": true,
+        "b'ElectricField'|4|0": true,
+        "b'ElectricField'|5|0": true,
+        "b'SpaceCharge'|3|0": true,
+        "b'DopingConcentration'|3|0": true,
+        "b'srhRecombination'|3|0": true,
+        "b'Band2BandGeneration'|3|0": true,
+        "b'ImpactIonization'|3|0": true,
+        "b'eImpactIonization'|3|0": true,
+        "b'hImpactIonization'|3|0": true
+      }
+    }
+  },
+  "controls": {
+    "qualification": false,
+    "primary_identity": {
+      "nearzero_default_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_inverse_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_inverse_unit": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_inverse_spatial": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_unit_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_builtin_unit": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_default_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_inverse_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_inverse_unit": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_inverse_spatial": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_unit_native": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "code_builtin_unit": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_pmi_step": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_builtin_step": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_pmi_swap": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      },
+      "nearzero_builtin_swap": {
+        "ElectrostaticPotential": true,
+        "eQuasiFermiPotential": true,
+        "hQuasiFermiPotential": true,
+        "eDensity": true,
+        "hDensity": true
+      }
+    },
+    "baseline_identity": {
+      "nearzero": {
+        "eMobility": {
+          "max_abs": 5.684341886080802e-14,
+          "relative_L2": 6.122840827475297e-17
+        },
+        "hMobility": {
+          "max_abs": 2.842170943040401e-14,
+          "relative_L2": 4.96823228777533e-17
+        },
+        "eImpactIonization": {
+          "max_abs": 0.5,
+          "relative_L2": 2.9119214349268626e-17
+        },
+        "hImpactIonization": {
+          "max_abs": 0.0625,
+          "relative_L2": 7.688724019877936e-17
+        }
+      },
+      "code": {
+        "eMobility": {
+          "max_abs": 5.684341886080802e-14,
+          "relative_L2": 6.384666817357863e-17
+        },
+        "hMobility": {
+          "max_abs": 2.842170943040401e-14,
+          "relative_L2": 6.067340741818674e-17
+        },
+        "eImpactIonization": {
+          "max_abs": 137438953472.0,
+          "relative_L2": 9.833221894259363e-17
+        },
+        "hImpactIonization": {
+          "max_abs": 1048576.0,
+          "relative_L2": 5.383181958367128e-17
+        }
+      }
+    },
+    "inverse_controls": {
+      "nearzero": {
+        "e": {
+          "callback_inputs_identity": {
+            "native": true,
+            "unit": true,
+            "spatial": true
+          },
+          "unit_source_range": [
+            0.0,
+            1.0000000000000002
+          ],
+          "unit_source_active_nodes": 1326,
+          "native_vs_recipient_nodal_mu": {
+            "max_abs": 18.892675757207883,
+            "relative_L2": 0.013535261663024102
+          },
+          "spatial_vs_recipient_nodal_mu": {
+            "max_abs": 0.24929504394531277,
+            "relative_L2": 0.004212827474405649
+          },
+          "effective_mu_active_range": [
+            26.19407225565236,
+            283.78335151241794
+          ],
+          "builtin_unit_vs_pmi_unit": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        },
+        "h": {
+          "callback_inputs_identity": {
+            "native": true,
+            "unit": true,
+            "spatial": true
+          },
+          "unit_source_range": [
+            0.0,
+            1.0000000000000002
+          ],
+          "unit_source_active_nodes": 1718,
+          "native_vs_recipient_nodal_mu": {
+            "max_abs": 8.898644418815266,
+            "relative_L2": 0.010959108916675604
+          },
+          "spatial_vs_recipient_nodal_mu": {
+            "max_abs": 0.2543730468749992,
+            "relative_L2": 0.0027747311340520996
+          },
+          "effective_mu_active_range": [
+            33.16736981231869,
+            160.31196698254797
+          ],
+          "builtin_unit_vs_pmi_unit": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        }
+      },
+      "code": {
+        "e": {
+          "callback_inputs_identity": {
+            "native": true,
+            "unit": true,
+            "spatial": true
+          },
+          "unit_source_range": [
+            0.0,
+            1.0
+          ],
+          "unit_source_active_nodes": 1884,
+          "native_vs_recipient_nodal_mu": {
+            "max_abs": 22.169870652905814,
+            "relative_L2": 0.030816863386435654
+          },
+          "spatial_vs_recipient_nodal_mu": {
+            "max_abs": 0.30271077473958385,
+            "relative_L2": 0.006547271263931652
+          },
+          "effective_mu_active_range": [
+            26.183579440330462,
+            283.49591985090166
+          ],
+          "builtin_unit_vs_pmi_unit": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        },
+        "h": {
+          "callback_inputs_identity": {
+            "native": true,
+            "unit": true,
+            "spatial": true
+          },
+          "unit_source_range": [
+            0.0,
+            1.0000000000000002
+          ],
+          "unit_source_active_nodes": 1887,
+          "native_vs_recipient_nodal_mu": {
+            "max_abs": 9.719811997237713,
+            "relative_L2": 0.021846481706748643
+          },
+          "spatial_vs_recipient_nodal_mu": {
+            "max_abs": 0.30271077473958385,
+            "relative_L2": 0.004193086508469839
+          },
+          "effective_mu_active_range": [
+            31.95353458928177,
+            160.25821536476218
+          ],
+          "builtin_unit_vs_pmi_unit": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        }
+      }
+    },
+    "branch_controls": {
+      "e": {
+        "builtin_vs_pmi_step": {
+          "max_abs": 122713062.99738646,
+          "relative_L2": 1.8878076969894597e-10
+        },
+        "builtin_vs_pmi_swap": {
+          "max_abs": 122713062.99738646,
+          "relative_L2": 9.439038484947292e-11
+        },
+        "builtin_complement_relative_L2": 5.58905640285847e-25,
+        "pmi_complement_relative_L2": 0.0,
+        "builtin_fraction_active_range": [
+          0.0,
+          0.1293407869482246
+        ],
+        "builtin_vs_pmi_fraction": {
+          "max_abs": 0.1293407869482246,
+          "relative_L2": null
+        }
+      },
+      "h": {
+        "builtin_vs_pmi_step": {
+          "max_abs": 8836524821.128777,
+          "relative_L2": 0.005499557066007746
+        },
+        "builtin_vs_pmi_swap": {
+          "max_abs": 8836524821.128784,
+          "relative_L2": 0.0027507906478484345
+        },
+        "builtin_complement_relative_L2": 6.703584170133305e-18,
+        "pmi_complement_relative_L2": 2.1843970185399862e-18,
+        "builtin_fraction_active_range": [
+          0.0,
+          0.9267109128936806
+        ],
+        "builtin_vs_pmi_fraction": {
+          "max_abs": 0.2278650855038591,
+          "relative_L2": 0.33664790533980504
+        }
+      }
+    }
+  },
+  "branch_selectors": {
+    "qualification": false,
+    "carriers": {
+      "e": {
+        "callback_F_step": {
+          "relative_L2": 1.8878076969906997e-10,
+          "max_abs": 122713062.99738646
+        },
+        "callback_F_default": {
+          "relative_L2": 5.696776652045456e-16,
+          "max_abs": 5.0
+        },
+        "full_E_step": {
+          "relative_L2": 0.3941200094212757,
+          "max_abs": 3.592775763954442e+17
+        },
+        "full_E_default": {
+          "relative_L2": 5.696776652045456e-16,
+          "max_abs": 5.0
+        }
+      },
+      "h": {
+        "callback_F_step": {
+          "relative_L2": 0.00549810334532796,
+          "max_abs": 8836524821.128792
+        },
+        "callback_F_default": {
+          "relative_L2": 0.0007329398128607477,
+          "max_abs": 670367035886.0625
+        },
+        "full_E_step": {
+          "relative_L2": 0.005561900600396077,
+          "max_abs": 8836524821.128792
+        },
+        "full_E_default": {
+          "relative_L2": 0.0007354111972657472,
+          "max_abs": 670367035886.0625
+        }
+      }
+    }
+  },
+  "conditional_nonunique_inverse": {
+    "qualification": false,
+    "assumption": "branch alpha for b=0 is between the two positive a coefficients; zero/one convex constraints are conditional",
+    "carriers": {
+      "e": {
+        "active_elements": 1967,
+        "known_zero": 1952,
+        "known_one": 0,
+        "unknown": 15,
+        "rank": 13,
+        "condition": 4.0520931400939784e+16,
+        "weight_min": -0.07000149871082266,
+        "weight_max": 0.3272772280798406,
+        "normalized_row_closure_max": 6.661338147750939e-16,
+        "step_reconstruction_relative_L2": 1.9192750880124677e-16,
+        "normalized_inverse_residual_L2": 3.8545826990754986e-16,
+        "default_candidates": {
+          "linear_parameters": {
+            "relative_L2": 5.106660710571272e-16,
+            "max_abs": 5.0
+          },
+          "linear_alpha": {
+            "relative_L2": 5.106659738325654e-16,
+            "max_abs": 5.0
+          },
+          "linear_log_alpha": {
+            "relative_L2": 9.095396432656748e-16,
+            "max_abs": 9.0
+          }
+        },
+        "identified_native_weights": false
+      },
+      "h": {
+        "active_elements": 2915,
+        "known_zero": 2813,
+        "known_one": 0,
+        "unknown": 102,
+        "rank": 75,
+        "condition": 2.9693406917700228e+16,
+        "weight_min": -0.06689043103782118,
+        "weight_max": 1.1724126898557037,
+        "normalized_row_closure_max": 6.661338147750939e-16,
+        "step_reconstruction_relative_L2": 2.1772698024251632e-16,
+        "normalized_inverse_residual_L2": 3.983827550300402e-15,
+        "default_candidates": {
+          "linear_parameters": {
+            "relative_L2": 0.02114034744896087,
+            "max_abs": 20343348513922.562
+          },
+          "linear_alpha": {
+            "relative_L2": 0.0008055053251278987,
+            "max_abs": 854376876795.8438
+          },
+          "linear_log_alpha": {
+            "relative_L2": 0.0007781329526287795,
+            "max_abs": 814938687389.9688
+          }
+        },
+        "identified_native_weights": false
+      }
+    }
+  },
+  "validation": {
+    "local_tests": 41,
+    "platform_tests": [
+      {
+        "node": "t470p",
+        "rc": 0,
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "count": 6,
+        "manifest": {
+          "scripts/analyze_bvmethods_source_sampling.py": "ae7e45e30891c0fb2c2df0d892d672024711b258bda746b393c8d5674c7f6687",
+          "tests/regression/test_bvmethods_source_sampling.py": "aa6bead69250bafb4714f8c5c724bbe3b35490983f9d3ff59fcb9914bebba62e"
+        }
+      },
+      {
+        "node": "c560",
+        "rc": 0,
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "count": 6,
+        "manifest": {
+          "scripts/analyze_bvmethods_source_sampling.py": "ae7e45e30891c0fb2c2df0d892d672024711b258bda746b393c8d5674c7f6687",
+          "tests/regression/test_bvmethods_source_sampling.py": "aa6bead69250bafb4714f8c5c724bbe3b35490983f9d3ff59fcb9914bebba62e"
+        }
+      }
+    ],
+    "platform_replay": [
+      {
+        "node": "t470p",
+        "rc": 0,
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "result": {
+          "qualification": false,
+          "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+          "numpy": "2.5.4",
+          "verified_files": 6,
+          "cases": [
+            {
+              "state": "code",
+              "carrier": "e",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 1.577495033940463e-16,
+                "element_vertex": 0.016120908595163956,
+                "mean_three": 0.011409678835967689,
+                "last": 0.027162397016834164
+              }
+            },
+            {
+              "state": "code",
+              "carrier": "h",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 1.7637390023869835e-16,
+                "element_vertex": 0.011599538070899175,
+                "mean_three": 0.015624718354327586,
+                "last": 0.025114946905618902
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "e",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 2.901469480790215e-16,
+                "element_vertex": 0.026241882989720248,
+                "mean_three": 0.025721234600336772,
+                "last": 0.047981646297583995
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "h",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 2.5320281111175044e-16,
+                "element_vertex": 0.008340930986257131,
+                "mean_three": 0.006409962142878329,
+                "last": 0.01877857127254418
+              }
+            }
+          ]
+        }
+      },
+      {
+        "node": "c560",
+        "rc": 0,
+        "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+        "result": {
+          "qualification": false,
+          "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+          "numpy": "2.3.5",
+          "verified_files": 6,
+          "cases": [
+            {
+              "state": "code",
+              "carrier": "e",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 1.5774950339404628e-16,
+                "element_vertex": 0.016120908595163956,
+                "mean_three": 0.011409678835967689,
+                "last": 0.027162397016834157
+              }
+            },
+            {
+              "state": "code",
+              "carrier": "h",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 1.7637390023869835e-16,
+                "element_vertex": 0.011599538070899175,
+                "mean_three": 0.015624718354327586,
+                "last": 0.025114946905618902
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "e",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 2.901469480790214e-16,
+                "element_vertex": 0.026241882989720244,
+                "mean_three": 0.025721234600336765,
+                "last": 0.04798164629758399
+              }
+            },
+            {
+              "state": "nearzero",
+              "carrier": "h",
+              "nodes": 2152,
+              "elements": 4156,
+              "relative_L2": {
+                "representative": 2.532028111117504e-16,
+                "element_vertex": 0.00834093098625713,
+                "mean_three": 0.0064099621428783254,
+                "last": 0.018778571272544176
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "local_replay": {
+      "qualification": false,
+      "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+      "numpy": "2.5.4",
+      "verified_files": 6,
+      "cases": [
+        {
+          "state": "code",
+          "carrier": "e",
+          "nodes": 2152,
+          "elements": 4156,
+          "relative_L2": {
+            "representative": 1.577495033940463e-16,
+            "element_vertex": 0.016120908595163956,
+            "mean_three": 0.011409678835967689,
+            "last": 0.027162397016834164
+          }
+        },
+        {
+          "state": "code",
+          "carrier": "h",
+          "nodes": 2152,
+          "elements": 4156,
+          "relative_L2": {
+            "representative": 1.7637390023869835e-16,
+            "element_vertex": 0.011599538070899175,
+            "mean_three": 0.015624718354327586,
+            "last": 0.025114946905618902
+          }
+        },
+        {
+          "state": "nearzero",
+          "carrier": "e",
+          "nodes": 2152,
+          "elements": 4156,
+          "relative_L2": {
+            "representative": 2.901469480790215e-16,
+            "element_vertex": 0.026241882989720248,
+            "mean_three": 0.025721234600336772,
+            "last": 0.047981646297583995
+          }
+        },
+        {
+          "state": "nearzero",
+          "carrier": "h",
+          "nodes": 2152,
+          "elements": 4156,
+          "relative_L2": {
+            "representative": 2.5320281111175044e-16,
+            "element_vertex": 0.008340930986257131,
+            "mean_three": 0.006409962142878329,
+            "last": 0.01877857127254418
+          }
+        }
+      ]
+    }
+  },
+  "evidence": {
+    "local_directory": "<WORKTREE>\\build-release\\bvmethods_source_mobility_transition_20261012",
+    "vm_run": "/root/sentaurus_runs/bvmethods_source_mobility_transition_20261012",
+    "vm_timestamp_code": "/root/sentaurus_runs/bvmethods_source_mobility_transition_events_20261012_v1",
+    "vm_timestamp_nearzero": "/root/sentaurus_runs/bvmethods_source_mobility_transition_events_20261012_v2",
+    "archive_vm": "/root/sentaurus_runs/bvmethods_source_mobility_transition_archive_20261012_v1",
+    "manifest": "manifest.json",
+    "archive_receipt": "archive_receipt.json",
+    "remote_receipt": "archive_remote_receipt.json"
+  },
+  "limitations": [
+    "PMI callback current and alpha remain native inputs; not a self-contained Vela source or SG qualification",
+    "Only two fixed states; no production numerical or default change",
+    "Conditional branch inverse is rank deficient with unphysical unconstrained weights; no unique native transition formula",
+    "No full residual, Jacobian or pure QS qualification"
+  ],
+  "next_steps": [
+    "Use a controlled one-element or independently observed element branch probe with a prescribed force scan around E0; include physical and swapped/constant coefficients",
+    "Rebuild unique representative SG currents independently using the timestamp-resolved element/vertex mapping",
+    "After source and transport alignment, compare full RHS and weak rows before Newton/QS acceptance"
+  ]
+}

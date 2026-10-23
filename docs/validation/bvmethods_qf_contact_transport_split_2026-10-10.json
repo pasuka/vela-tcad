@@ -1,0 +1,963 @@
+{
+  "date": "2026-10-10",
+  "git_head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "scope": "same-population inverse QF/contact/transport separation and complete residual comparison; diagnostic controls only",
+  "configuration": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "obtuse_triangles": 26,
+    "temperature_K": 300,
+    "mesh_coordinate": "um",
+    "state_population": "m^-3",
+    "native_population": "cm^-3",
+    "current": "A/um",
+    "resistance": "1e7 ohm um",
+    "local_export_backend": "SparseLU/COLAMD single thread",
+    "HDF5_available": true,
+    "UMFPACK_available": true
+  },
+  "checks": {
+    "read_only_exports_passed": 36,
+    "baseline_files_bitwise_equal": 12,
+    "local_tests_passed": 17,
+    "nonlinear_solves": 0
+  },
+  "qualification": {
+    "requested_difference_separation_completed": true,
+    "complete_residual_comparison_formed": true,
+    "production_physics_changed": false,
+    "native_complete_physical_residual_certified": false,
+    "unique_native_SG_support_certified": false,
+    "all_cross_blocks_certified": false,
+    "original_full_zero_QS_pass": false,
+    "Q4_entered": false
+  },
+  "frame_audit": {
+    "zero": {
+      "eDensity_vs_preupdate_debug_max_relative_error": 3.9745984281580604e-14,
+      "hDensity_vs_preupdate_debug_max_relative_error": 3.2862601528904634e-14
+    },
+    "first": {
+      "eDensity_vs_preupdate_debug_max_relative_error": 3.68594044175552e-14,
+      "hDensity_vs_preupdate_debug_max_relative_error": 3.419486915845482e-14
+    },
+    "second": {
+      "eDensity_vs_preupdate_debug_max_relative_error": 3.9968028886505635e-14,
+      "hDensity_vs_preupdate_debug_max_relative_error": 3.4861002973229915e-14
+    }
+  },
+  "analysis": {
+    "method": "Separate inverse-statistics/contact changes from frozen-population transport.\n\nThe counterfactuals retain populations, mobility, degeneracy secants and Vela\nsources, and shift effective band drift with QF. They are diagnostic operators,\nnot admissible device states or a certificate of native SG support. Every full\nRHS uses the baseline Vela chained diagonal and the native original diagonal;\nno new-state Jacobian is normalized using an old population transform.\n",
+    "continuity_SI_kernel_to_internal_factor": 5.363128759510705e-21,
+    "qualified_native_full_residual": false,
+    "snapshots": {
+      "zero": {
+        "qf_mapping": {
+          "electron": {
+            "difference_V": {
+              "median": 6.853972321870298e-06,
+              "p95": 1.9194987231057665e-05,
+              "max": 0.00019166611233180895
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.337695989817483e-06,
+                "p95": 1.973804712085414e-05,
+                "max": 0.00019222390656703503
+              },
+              "DOS": {
+                "median": 1.4230088046141795e-05,
+                "p95": 3.4412922797151134e-05,
+                "max": 7.912369695073102e-05
+              },
+              "thermal_voltage": {
+                "median": 4.798419492454868e-08,
+                "p95": 1.7081709270984776e-07,
+                "max": 1.7081709271775346e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.908136743504763e-15,
+                "p95": 4.5065785649440165e-06,
+                "max": 0.0003047295823077526
+              }
+            },
+            "component_closure_max_V": 3.323731874037457e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.285149929865838e-13,
+                "contact_max_relative": 0.001351579283443649
+              },
+              "all_population": {
+                "free_max_relative": 3.285149929865838e-13,
+                "contact_max_relative": 1.5543122344752192e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.001364558474143407,
+                "contact_max_relative": 0.001351579283443649
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00019188093366417913
+          },
+          "hole": {
+            "difference_V": {
+              "median": 6.801673151592005e-06,
+              "p95": 6.981338782741098e-06,
+              "max": 0.00017817332558439457
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.154805642839435e-06,
+                "p95": 7.23347141334818e-06,
+                "max": 0.0001777595745926508
+              },
+              "DOS": {
+                "median": 2.3399358969165064e-07,
+                "p95": 2.366558834975606e-07,
+                "max": 2.3665588354348297e-07
+              },
+              "thermal_voltage": {
+                "median": 1.3643845159280304e-07,
+                "p95": 1.778136427560374e-07,
+                "max": 1.7975740435005267e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.4473330210801212e-15,
+                "p95": 2.4584767481562564e-15,
+                "max": 7.581505385974222e-15
+              }
+            },
+            "component_closure_max_V": 2.6284618199427096e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.390621117205228e-13,
+                "contact_max_relative": 0.006923419493391592
+              },
+              "all_population": {
+                "free_max_relative": 3.390621117205228e-13,
+                "contact_max_relative": 1.3322676295501878e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.006915856798439535,
+                "contact_max_relative": 0.006923419493391592
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00017836749280564224
+          }
+        },
+        "carriers": {
+          "electron": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 4.018626432434608e-15,
+            "divergence_replay_relative_L2": 8.015727127393475e-15,
+            "partition_closure_relative_L2": 1.2771264654680884e-16,
+            "RHS_difference_L2": {
+              "baseline": 102361156.92560141,
+              "all_population": 26338894.2201262,
+              "frozen_native_interior": 98456322.27876617,
+              "frozen_native_all": 0.010121271479864791
+            },
+            "partition_L2": {
+              "contact_population": 98299772.35928236,
+              "interior_QF_transport": 102512334.80394064,
+              "contact_QF_transport": 98456322.27883092,
+              "unresolved_transport_sources": 0.010121271479864791
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 1.77828367673335e-08,
+              "impact": 0.01009957454767765,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 3.411437597895722e-07,
+                "p95": 4.6540051570960364e-05,
+                "max": 0.0006750174865312421
+              },
+              "all_population": {
+                "median": 3.411437597895722e-07,
+                "p95": 2.8418573326980612e-05,
+                "max": 0.0005351179855426577
+              },
+              "frozen_native_all": {
+                "median": 7.082865968475369e-11,
+                "p95": 2.1641290261989996e-07,
+                "max": 4.010991664605559e-06
+              },
+              "native_qf_state": {
+                "median": 7.425984370956073e-15,
+                "p95": 3.4102570650142727e-13,
+                "max": 3.762409334699328e-10
+              }
+            }
+          },
+          "hole": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 4.8878373245688195e-15,
+            "divergence_replay_relative_L2": 7.0161582787403275e-15,
+            "partition_closure_relative_L2": 1.5883539391114712e-16,
+            "RHS_difference_L2": {
+              "baseline": 15149.632306515019,
+              "all_population": 21.897567069220038,
+              "frozen_native_interior": 15151.650811397298,
+              "frozen_native_all": 0.012258539555384263
+            },
+            "partition_L2": {
+              "contact_population": 15149.616480648376,
+              "interior_QF_transport": 15151.666635129961,
+              "contact_QF_transport": 15151.650811404605,
+              "unresolved_transport_sources": 0.012258539555384263
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 3.0570137102644103e-08,
+              "impact": 0.012258535034319977,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 6.564884165574558e-07,
+                "p95": 9.820962761721196,
+                "max": 3959.6477829375567
+              },
+              "all_population": {
+                "median": 6.485080804031243e-07,
+                "p95": 9.820962761721196,
+                "max": 3959.6477829375567
+              },
+              "frozen_native_all": {
+                "median": 1.820666724532323e-08,
+                "p95": 9.82095921534789,
+                "max": 3959.647777564716
+              },
+              "native_qf_state": {
+                "median": 2.2647747005599443e-13,
+                "p95": 3.6292793363333114e-06,
+                "max": 0.003627398764593931
+              }
+            }
+          }
+        },
+        "full_rhs": {
+          "psi": {
+            "baseline_difference_L2": 1.2474617843921667,
+            "all_population_difference_L2": 1.2474617843921667,
+            "native_qf_difference_L2": 11.659885281478905
+          },
+          "electron": {
+            "baseline_difference_L2": 102361156.92560141,
+            "all_population_difference_L2": 26338894.2201262,
+            "native_qf_difference_L2": 0.0006606608861044114
+          },
+          "hole": {
+            "baseline_difference_L2": 15149.632306515019,
+            "all_population_difference_L2": 21.897567069220038,
+            "native_qf_difference_L2": 1.0539767444236827e-05
+          }
+        },
+        "internal_closure": {
+          "electron": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 9.496069449510291e-17,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.3165635792048533e-21
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.4849460780445313e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.5650508876759228e-20
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 1.0457061462145196e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 7.327842044444272e-17
+            }
+          },
+          "hole": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 4.044379437165638e-19,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 3.4155970750073795e-19
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.7206626515716445e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.4531498885953302e-16
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 1.318813544474059e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 2.6312442157019127e-17
+            }
+          }
+        },
+        "poisson_box_counterfactual": {
+          "scope": "residual only, supplied populations and native Si box replacement; fixed baseline diagonal; no Jacobian or production geometry change",
+          "probe_vs_full_residual_relative_L2": 1.6536251270513056e-12,
+          "baseline_difference_L2": 1.247461784392171,
+          "native_Si_box_difference_L2": 0.3095216280966142,
+          "native_cell_coefficients_and_box_difference_L2": 0.00013121004246914583,
+          "native_matrix_charge_scale_over_vela": 1.0000082142581175,
+          "matrix_charge_scale_fit_node": 243,
+          "heldout_charge_matrix_coefficient_max_relative_error": 6.8833827526759706e-15,
+          "native_cell_box_and_matrix_scale_difference_L2": 3.7588309477223226e-11,
+          "native_cell_flux_change_L2": 0.3095214315658489
+        }
+      },
+      "first": {
+        "qf_mapping": {
+          "electron": {
+            "difference_V": {
+              "median": 6.853972322029174e-06,
+              "p95": 1.9194987231320428e-05,
+              "max": 0.0001916661123324305
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.337695989706461e-06,
+                "p95": 1.973804712054883e-05,
+                "max": 0.0001922239065673681
+              },
+              "DOS": {
+                "median": 1.4230088046187717e-05,
+                "p95": 3.4412922797151134e-05,
+                "max": 7.912369695073102e-05
+              },
+              "thermal_voltage": {
+                "median": 4.7984194800477956e-08,
+                "p95": 1.708173800854133e-07,
+                "max": 1.708178254872449e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.895359886291796e-15,
+                "p95": 4.5065785649378975e-06,
+                "max": 0.00030472958230775665
+              }
+            },
+            "component_closure_max_V": 2.025721645006022e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.275157922644212e-13,
+                "contact_max_relative": 0.0013515792834453144
+              },
+              "all_population": {
+                "free_max_relative": 3.275157922644212e-13,
+                "contact_max_relative": 1.5543122344752192e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.0013645584741647232,
+                "contact_max_relative": 0.001351579283443649
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00019188093366417913
+          },
+          "hole": {
+            "difference_V": {
+              "median": 6.8016727150274674e-06,
+              "p95": 6.9813387825504145e-06,
+              "max": 0.00017817332558491572
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.154805642506368e-06,
+                "p95": 7.233471413389814e-06,
+                "max": 0.00017775957459331693
+              },
+              "DOS": {
+                "median": 2.3399358969165064e-07,
+                "p95": 2.366558834975606e-07,
+                "max": 2.3665588354348297e-07
+              },
+              "thermal_voltage": {
+                "median": 1.364389828660659e-07,
+                "p95": 1.7781364274701355e-07,
+                "max": 1.7975740422665114e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.4221450378544969e-15,
+                "p95": 2.4904116854413218e-15,
+                "max": 7.605252630383345e-15
+              }
+            },
+            "component_closure_max_V": 3.2237481049435593e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.3639757646142243e-13,
+                "contact_max_relative": 0.006923419493398919
+              },
+              "all_population": {
+                "free_max_relative": 3.3639757646142243e-13,
+                "contact_max_relative": 1.3322676295501878e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.006915856798470621,
+                "contact_max_relative": 0.006923419493398919
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00017836749280578305
+          }
+        },
+        "carriers": {
+          "electron": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 4.667613924170393e-15,
+            "divergence_replay_relative_L2": 8.06766845429446e-15,
+            "partition_closure_relative_L2": 9.406904034341503e-17,
+            "RHS_difference_L2": {
+              "baseline": 102361156.92459399,
+              "all_population": 26338894.224362463,
+              "frozen_native_interior": 98456322.28049807,
+              "frozen_native_all": 0.018332023171334595
+            },
+            "partition_L2": {
+              "contact_population": 98299772.36103971,
+              "interior_QF_transport": 102512334.80289483,
+              "contact_QF_transport": 98456322.28053336,
+              "unresolved_transport_sources": 0.018332023171334595
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 1.4902078774221137e-08,
+              "impact": 0.010099577882532044,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 3.3585266343275623e-07,
+                "p95": 4.654005159510885e-05,
+                "max": 0.0006750174866734698
+              },
+              "all_population": {
+                "median": 3.3585266343275623e-07,
+                "p95": 2.841857331968978e-05,
+                "max": 0.0005351179855202709
+              },
+              "frozen_native_all": {
+                "median": 1.1255231296633222e-10,
+                "p95": 2.1593908527662545e-07,
+                "max": 3.947350150133096e-06
+              },
+              "native_qf_state": {
+                "median": 1.0635438616730057e-13,
+                "p95": 2.5259142063902044e-09,
+                "max": 6.922997067506062e-08
+              }
+            },
+            "native_source_control": {
+              "scope": "first pre-update Save round trip; identical primary variables across four native arms; finite subtraction resolution retained; frozen Vela QF transport and sources do not form a re-solved state",
+              "save_population_roundtrip_max_relative_error": 3.552713678800501e-14,
+              "save_rhs_vs_original_normalized_difference_L2": 0.00057875688289968,
+              "native_transport_L2": 0.0005966851622720074,
+              "frozen_transport_difference_L2": 0.015285242186631692,
+              "recombination_difference_L2": 1.7758057195374844e-08,
+              "avalanche_difference_L2": 0.010099577614488866,
+              "native_avalanche_L2": 4.887548756328029e-09,
+              "frozen_vela_avalanche_L2": 0.010099577882532044,
+              "full_difference_L2_against_save": 0.018320485581736025,
+              "full_partition_closure_relative_L2": 1.259943976662414e-16,
+              "source_subtraction_unresolved_rows": {
+                "no_srh": 45,
+                "no_btbt": 1803,
+                "no_avalanche": 1040
+              }
+            }
+          },
+          "hole": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 4.510851601473135e-15,
+            "divergence_replay_relative_L2": 6.653771130805416e-15,
+            "partition_closure_relative_L2": 2.079642931250449e-16,
+            "RHS_difference_L2": {
+              "baseline": 15149.632300717854,
+              "all_population": 21.897590808978343,
+              "frozen_native_interior": 15151.650811397289,
+              "frozen_native_all": 0.012258740083170742
+            },
+            "partition_L2": {
+              "contact_population": 15149.616480648592,
+              "interior_QF_transport": 15151.66662933256,
+              "contact_QF_transport": 15151.650811404848,
+              "unresolved_transport_sources": 0.012258740083170742
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 2.561919099323062e-08,
+              "impact": 0.012258735642968003,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 1.0223263400217823e-06,
+                "p95": 9.822201742131833,
+                "max": 3960.4021950226397
+              },
+              "all_population": {
+                "median": 9.515298585631556e-07,
+                "p95": 9.822201742131833,
+                "max": 3960.4021950226397
+              },
+              "frozen_native_all": {
+                "median": 3.508035354327004e-08,
+                "p95": 9.82219819575211,
+                "max": 3960.402189649785
+              },
+              "native_qf_state": {
+                "median": 2.2420630871337808e-11,
+                "p95": 0.0008398848530593793,
+                "max": 4.452565559870097
+              }
+            },
+            "native_source_control": {
+              "scope": "first pre-update Save round trip; identical primary variables across four native arms; finite subtraction resolution retained; frozen Vela QF transport and sources do not form a re-solved state",
+              "save_population_roundtrip_max_relative_error": 3.197442310920451e-14,
+              "save_rhs_vs_original_normalized_difference_L2": 1.4296535510522107e-06,
+              "native_transport_L2": 2.282281853985012e-06,
+              "frozen_transport_difference_L2": 1.0447866187378837e-05,
+              "recombination_difference_L2": 3.0527690426241995e-08,
+              "avalanche_difference_L2": 0.012258735335565915,
+              "native_avalanche_L2": 7.256921903224192e-09,
+              "frozen_vela_avalanche_L2": 0.012258735642968003,
+              "full_difference_L2_against_save": 0.012258740014447956,
+              "full_partition_closure_relative_L2": 1.0311597459866647e-16,
+              "source_subtraction_unresolved_rows": {
+                "no_srh": 0,
+                "no_btbt": 1737,
+                "no_avalanche": 921
+              }
+            }
+          }
+        },
+        "full_rhs": {
+          "psi": {
+            "baseline_difference_L2": 1.2474639454688112,
+            "all_population_difference_L2": 1.2474639454688112,
+            "native_qf_difference_L2": 11.659885512804657
+          },
+          "electron": {
+            "baseline_difference_L2": 102361156.92459399,
+            "all_population_difference_L2": 26338894.224362463,
+            "native_qf_difference_L2": 0.01529680738484553
+          },
+          "hole": {
+            "baseline_difference_L2": 15149.632300717854,
+            "all_population_difference_L2": 21.897590808978343,
+            "native_qf_difference_L2": 1.0998208986194368e-05
+          }
+        },
+        "internal_closure": {
+          "electron": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 1.3177404389883624e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.0778927514192908e-21
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.49739354126892e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.2813334912926871e-20
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 1.0727650172125809e-14,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 7.335269653756138e-17
+            }
+          },
+          "hole": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 4.127971658725383e-17,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 8.756458623437057e-17
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.5202608341997089e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.0750173723267967e-16
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 1.391245250891431e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.0377104701339266e-16
+            }
+          }
+        },
+        "poisson_box_counterfactual": {
+          "scope": "residual only, supplied populations and native Si box replacement; fixed baseline diagonal; no Jacobian or production geometry change",
+          "probe_vs_full_residual_relative_L2": 1.7449462060951054e-12,
+          "baseline_difference_L2": 1.2474639454688154,
+          "native_Si_box_difference_L2": 0.3095212910426227,
+          "native_cell_coefficients_and_box_difference_L2": 0.00013121035834734703,
+          "native_matrix_charge_scale_over_vela": 1.0000082142581175,
+          "matrix_charge_scale_fit_node": 243,
+          "heldout_charge_matrix_coefficient_max_relative_error": 6.8833827526759706e-15,
+          "native_cell_box_and_matrix_scale_difference_L2": 3.7847102054562453e-11,
+          "native_cell_flux_change_L2": 0.30952109451296805
+        }
+      },
+      "second": {
+        "qf_mapping": {
+          "electron": {
+            "difference_V": {
+              "median": 6.853972321754131e-06,
+              "p95": 1.919498723213948e-05,
+              "max": 0.0001916661123327391
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.3376959899285055e-06,
+                "p95": 1.9738047119743918e-05,
+                "max": 0.00019222390656623012
+              },
+              "DOS": {
+                "median": 1.4230088046141795e-05,
+                "p95": 3.4412922797151134e-05,
+                "max": 7.912369695073102e-05
+              },
+              "thermal_voltage": {
+                "median": 4.798419462551601e-08,
+                "p95": 1.7081793320848587e-07,
+                "max": 1.708189244996725e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.9073737780991775e-15,
+                "p95": 4.506578564943362e-06,
+                "max": 0.0003047295823077924
+              }
+            },
+            "component_closure_max_V": 2.7900079436430497e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.268496584496461e-13,
+                "contact_max_relative": 0.0013515792834563056
+              },
+              "all_population": {
+                "free_max_relative": 3.268496584496461e-13,
+                "contact_max_relative": 1.5543122344752192e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.0013645584741597272,
+                "contact_max_relative": 0.0013515792834489782
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00019188093366417913
+          },
+          "hole": {
+            "difference_V": {
+              "median": 6.801672099633474e-06,
+              "p95": 6.981338782205423e-06,
+              "max": 0.00017817332582825037
+            },
+            "components_V": {
+              "band_anchor": {
+                "median": 7.154805642284323e-06,
+                "p95": 7.23347141334818e-06,
+                "max": 0.00017775957459353897
+              },
+              "DOS": {
+                "median": 2.3399358969165064e-07,
+                "p95": 2.366558834975606e-07,
+                "max": 2.3665588354348297e-07
+              },
+              "thermal_voltage": {
+                "median": 1.3643979380535717e-07,
+                "p95": 1.7890418680137116e-07,
+                "max": 2.453191566005866e-07
+              },
+              "native_inverse_approximation": {
+                "median": 1.451678653086783e-15,
+                "p95": 2.539744065503327e-15,
+                "max": 7.732617719122431e-15
+              }
+            },
+            "component_closure_max_V": 2.972052264666944e-16,
+            "population_errors": {
+              "baseline": {
+                "free_max_relative": 3.389510894180603e-13,
+                "contact_max_relative": 0.006923419493391592
+              },
+              "all_population": {
+                "free_max_relative": 3.389510894180603e-13,
+                "contact_max_relative": 6.994405055138486e-15
+              },
+              "native_qf": {
+                "free_max_relative": 0.0069158568079414895,
+                "contact_max_relative": 0.006923419493391592
+              }
+            },
+            "all_population_contact_QF_violation_max_V": 0.00017836749280564224
+          }
+        },
+        "carriers": {
+          "electron": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 5.0651591094319174e-15,
+            "divergence_replay_relative_L2": 8.307747276081587e-15,
+            "partition_closure_relative_L2": 1.220416878688409e-16,
+            "RHS_difference_L2": {
+              "baseline": 102361156.91713686,
+              "all_population": 26338894.23136,
+              "frozen_native_interior": 98456322.2760994,
+              "frozen_native_all": 0.03820454147084903
+            },
+            "partition_L2": {
+              "contact_population": 98299772.35653187,
+              "interior_QF_transport": 102512334.79552686,
+              "contact_QF_transport": 98456322.27618966,
+              "unresolved_transport_sources": 0.03820454147084903
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 1.266326997498124e-08,
+              "impact": 0.01009958266140723,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 3.355847439908082e-07,
+                "p95": 4.654005157127698e-05,
+                "max": 0.0006750174865780649
+              },
+              "all_population": {
+                "median": 3.355847439908082e-07,
+                "p95": 2.8418573324078792e-05,
+                "max": 0.0005351179855185564
+              },
+              "frozen_native_all": {
+                "median": 1.3497949427699736e-10,
+                "p95": 2.1552966605841277e-07,
+                "max": 3.856727696385977e-06
+              },
+              "native_qf_state": {
+                "median": 2.955338465777678e-13,
+                "p95": 5.4557957938475005e-09,
+                "max": 1.6706556647870436e-07
+              }
+            }
+          },
+          "hole": {
+            "positive_mobility_edges": 6307,
+            "kernel_replay_relative_L2": 5.5432483325641275e-15,
+            "divergence_replay_relative_L2": 7.629454438006673e-15,
+            "partition_closure_relative_L2": 1.2006828321041412e-16,
+            "RHS_difference_L2": {
+              "baseline": 15149.632306460073,
+              "all_population": 21.89762051912579,
+              "frozen_native_interior": 15151.650811396672,
+              "frozen_native_all": 0.012262446526800036
+            },
+            "partition_L2": {
+              "contact_population": 15149.616480648374,
+              "interior_QF_transport": 15151.666635074362,
+              "contact_QF_transport": 15151.650811404661,
+              "unresolved_transport_sources": 0.012262446526800036
+            },
+            "frozen_sources_L2_over_baseline_diag": {
+              "recombination": 2.183067502538073e-08,
+              "impact": 0.012262442202090013,
+              "gauge": 0.0,
+              "boundary": 0.0
+            },
+            "population_relative_RHS_error": {
+              "baseline": {
+                "median": 8.681597093166426e-07,
+                "p95": 12.087472930903303,
+                "max": 4028.7258174740628
+              },
+              "all_population": {
+                "median": 8.497453115075618e-07,
+                "p95": 12.087472930903303,
+                "max": 4028.7258174740628
+              },
+              "frozen_native_all": {
+                "median": 2.805583276846897e-08,
+                "p95": 12.087469640203455,
+                "max": 4028.725812012575
+              },
+              "native_qf_state": {
+                "median": 1.436785024013628e-11,
+                "p95": 0.0005041428314350557,
+                "max": 65829.18931161462
+              }
+            }
+          }
+        },
+        "full_rhs": {
+          "psi": {
+            "baseline_difference_L2": 1.2474669930618711,
+            "all_population_difference_L2": 1.2474669930618711,
+            "native_qf_difference_L2": 11.659885839023545
+          },
+          "electron": {
+            "baseline_difference_L2": 102361156.91713686,
+            "all_population_difference_L2": 26338894.23136,
+            "native_qf_difference_L2": 0.036839875457156834
+          },
+          "hole": {
+            "baseline_difference_L2": 15149.632306460073,
+            "all_population_difference_L2": 21.89762051912579,
+            "native_qf_difference_L2": 0.0001713607752196457
+          }
+        },
+        "internal_closure": {
+          "electron": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 1.1826674811020473e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.3696308796043315e-21
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.5808128376625816e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.62813407409865e-20
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 2.1635375326669278e-15,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 9.556347239073855e-17
+            }
+          },
+          "hole": {
+            "baseline": {
+              "edge_to_flux_relative_L2": 4.160981784311682e-19,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 5.837666804735614e-17
+            },
+            "all_population": {
+              "edge_to_flux_relative_L2": 1.7702799139202985e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 1.0485863468696762e-16
+            },
+            "native_qf": {
+              "edge_to_flux_relative_L2": 1.2713219517915429e-16,
+              "term_to_residual_relative_L2": 0.0,
+              "residual_to_full_RHS_relative_L2": 9.316866005080952e-17
+            }
+          }
+        },
+        "poisson_box_counterfactual": {
+          "scope": "residual only, supplied populations and native Si box replacement; fixed baseline diagonal; no Jacobian or production geometry change",
+          "probe_vs_full_residual_relative_L2": 1.6563221755378146e-12,
+          "baseline_difference_L2": 1.247466993061875,
+          "native_Si_box_difference_L2": 0.3095208158581147,
+          "native_cell_coefficients_and_box_difference_L2": 0.0001312108038004628,
+          "native_matrix_charge_scale_over_vela": 1.0000082142581175,
+          "matrix_charge_scale_fit_node": 243,
+          "heldout_charge_matrix_coefficient_max_relative_error": 6.8833827526759706e-15,
+          "native_cell_box_and_matrix_scale_difference_L2": 3.754644936330699e-11,
+          "native_cell_flux_change_L2": 0.3095206193299109
+        }
+      }
+    }
+  },
+  "platforms": {
+    "t470p": {
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "status": {
+        "phase": "completed",
+        "platform": "win32",
+        "input_files_verified": 216,
+        "nonlinear_solves": 0,
+        "test_scope": "14 numpy-only diagnostics; three scipy matrix-transform tests verified locally; scipy absent on both remote nodes",
+        "core_sources_verified": {
+          "src/physics/MobilityModel.cpp": "1eefa09eb3dac5371d740943db5ed56dec1285713dc450598b8d36b41057e431",
+          "src/physics/CarrierStatistics.cpp": "0205ae78880e309a340c757caf69487c5aff0698226b39604b75891d577b3e8a",
+          "src/physics/FermiHalfCoefficients.inc": "4ce1f2b37f03b511ecb2e4a3cfb1f6b2721ed8cc335249624a6e4d6adfd81f85",
+          "src/discretization/ScharfetterGummel.cpp": "938ed5626a34f842c4fa4a93d6d175c16f4a8ee6fc7899e07253e481aa2ff072",
+          "include/vela/discretization/ScharfetterGummel.h": "128fda882be53cd3433e2d3dd9a1584f394520b45ea04fa87c8d6c2cb9b84271"
+        },
+        "core_sha256": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898",
+        "runs": [
+          {
+            "label": "helper_build",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 1.879595900001732
+          },
+          {
+            "label": "tests",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 0.5590638000030594
+          },
+          {
+            "label": "analysis",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 16.051552799999627
+          }
+        ],
+        "helper_sha256": "989246bbd93dbf94ff96187486ee5fbe61b8070b648ff12c875d9fa3a323ef98",
+        "analysis_sha256": "08940237d19d0ecaa694cab455fbe9ce1201b0d996fc1806e76843eb59773414"
+      },
+      "results_archive_sha256": "3efda1f0d855baa51418b3d39e49285e7405ee98a21a032e05c0626a0453ad24",
+      "downloaded_archive_verified": true,
+      "max_relative_carrier_L2_metric_difference": 0.0,
+      "tests_passed": 14
+    },
+    "c560": {
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "status": {
+        "phase": "completed",
+        "platform": "linux",
+        "input_files_verified": 216,
+        "nonlinear_solves": 0,
+        "test_scope": "14 numpy-only diagnostics; three scipy matrix-transform tests verified locally; scipy absent on both remote nodes",
+        "core_sources_verified": {
+          "src/physics/MobilityModel.cpp": "1eefa09eb3dac5371d740943db5ed56dec1285713dc450598b8d36b41057e431",
+          "src/physics/CarrierStatistics.cpp": "0205ae78880e309a340c757caf69487c5aff0698226b39604b75891d577b3e8a",
+          "src/physics/FermiHalfCoefficients.inc": "4ce1f2b37f03b511ecb2e4a3cfb1f6b2721ed8cc335249624a6e4d6adfd81f85",
+          "src/discretization/ScharfetterGummel.cpp": "938ed5626a34f842c4fa4a93d6d175c16f4a8ee6fc7899e07253e481aa2ff072",
+          "include/vela/discretization/ScharfetterGummel.h": "128fda882be53cd3433e2d3dd9a1584f394520b45ea04fa87c8d6c2cb9b84271"
+        },
+        "core_sha256": "13e2610f6afb28ba642b3c2d2526ee1c8f8d7a9c4938c898409812cbb7b40e5d",
+        "runs": [
+          {
+            "label": "helper_build",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 2.224140709000494
+          },
+          {
+            "label": "tests",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 0.31502705000093556
+          },
+          {
+            "label": "analysis",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "rc": 0,
+            "wall_s": 12.966388116998132
+          }
+        ],
+        "helper_sha256": "cc496bac95499ef8b785697e902e5c56bd47be2fec308a8f0e99424df791017c",
+        "analysis_sha256": "8b532fd3d6f3b89e42e521a0ccfa289cf34156fe7857962d5b8d1f240aa89ec8"
+      },
+      "results_archive_sha256": "2acebca811de00b910e3950aa3518dc4ae6797d9c316f3b5e6b0138f4594c0b9",
+      "downloaded_archive_verified": true,
+      "max_relative_carrier_L2_metric_difference": 6.661338147750939e-16,
+      "tests_passed": 14
+    }
+  },
+  "limitations": [
+    "Counterfactuals freeze populations, mobility and sources; not admissible solved device states.",
+    "Contact population matching violates prescribed QF; native-QF operator changes populations.",
+    "Minority tail remains; native source subtraction resolution and Save roundtrip retained.",
+    "Poisson charge scale is obtained from an independent matrix coefficient; not an RHS fit or a measurement of q and epsilon separately.",
+    "First remote attempt lacked scipy; three matrix-transform tests passed locally; no dependency installation.",
+    "No new native sdevice sweep, production default change, commit, push or package replacement."
+  ],
+  "evidence_archive": {
+    "archive": "<WORKTREE>\\build-release\\bvmethods_qf_contact_transport_split_20261010\\evidence_v1.tar.gz",
+    "sha256": "d7eeb87e1493a021764167041b45f259ec25e897d38afaec608bdfece2a2164c",
+    "bytes": 176735145,
+    "manifest_entries": 425,
+    "manifest_sha256": "1a643ed4c9e5ff83ba44d39c8f0691c13355a130f55971aa642eb6174c3297f5",
+    "remote": {
+      "verified": true,
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "verified_files": 425,
+      "archive_sha256": "d7eeb87e1493a021764167041b45f259ec25e897d38afaec608bdfece2a2164c",
+      "manifest_sha256": "1a643ed4c9e5ff83ba44d39c8f0691c13355a130f55971aa642eb6174c3297f5"
+    }
+  }
+}

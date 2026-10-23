@@ -1,0 +1,61 @@
+{
+  "contract_id": "bvmethods.external_resistor.r0.v1",
+  "date": "2026-10-22",
+  "reference_version": "T-2022.03-SP2",
+  "profile": "installed_library_no_band2band",
+  "native_contracts": [
+    "bvmethods_update_error_s0.v1.json",
+    "bvmethods_nonlocalpath_n0.v1.json"
+  ],
+  "geometry": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "temperature_K": 300
+  },
+  "circuit": {
+    "contact": "drain",
+    "resistance_ohm_um": 10000000.0,
+    "current_unit": "A/um",
+    "load_equation": "Vint + R * Idrain - Vext = 0",
+    "outer_goal_V": 100000.0,
+    "initial_outer_step_V": 0.01,
+    "minimum_outer_step_V": 1e-05,
+    "maximum_outer_step_V": 2500,
+    "increment": 1.41,
+    "decrement": {
+      "value": 2,
+      "status": "pending_2022_default_or_explicit_confirmation"
+    },
+    "stop_current_A_per_um": 0.0013
+  },
+  "archived_vela_result": {
+    "wrapper_exit": 0,
+    "simulation_exit": 124,
+    "termination": "3600_second_timeout",
+    "complete_main_csv_rows": 34,
+    "incomplete_main_csv_rows": 1,
+    "first_positive_outer_V": 1e-05,
+    "last_complete_outer_V": 0.0006052646194894805,
+    "last_complete_inner_V": 0.00030202476123710956,
+    "last_complete_load_error_V": -8.909498069159787e-08,
+    "matched_inner": {
+      "exit_code": 1,
+      "bias_V": 0.0052443724904,
+      "reason": "carrier_row_convergence_line_search_rejected",
+      "carrier_row_violations": 371,
+      "global_closure_satisfied": true
+    }
+  },
+  "identity": {
+    "full_archive_sha256": "e68db038c6b62d9a94044093d8bbe27bb99ceaff8977cd837940634412818107",
+    "verified_archived_files": 240,
+    "matched_config_sha256": "1608b0b6746c4dd0fd6ca338a4abd3ea12595eb4842580216e17479b99388cf2"
+  },
+  "unresolved": [
+    "Native N=0 growth and exact minimum-step termination semantics",
+    "Native denominator/mask equivalence across protected iterations",
+    "Full restart history L2 for augmented continuation",
+    "State/current mapping must qualify actual augmented BVmethods, not infer from toy tests"
+  ],
+  "acceptance_strategy_changed": false
+}

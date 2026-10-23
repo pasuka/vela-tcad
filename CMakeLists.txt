@@ -1612,6 +1612,42 @@ set_tests_properties(wp14_zero_qs PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(wp14_zero_qs)
 
+add_test(NAME bvmethods_original_reference
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_original_reference)
+set_tests_properties(bvmethods_original_reference PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_original_reference)
+
+add_test(NAME bvmethods_sg_representation_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sg_representation_contract)
+set_tests_properties(bvmethods_sg_representation_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_sg_representation_contract)
+
+add_test(NAME bvmethods_sg_rhs_binding
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sg_rhs_binding)
+set_tests_properties(bvmethods_sg_rhs_binding PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_sg_rhs_binding)
+
+add_test(NAME bvmethods_matched_direction
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_matched_direction)
+set_tests_properties(bvmethods_matched_direction PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_matched_direction)
+
+add_test(NAME bvmethods_nonlocalpath_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_nonlocalpath_contract)
+set_tests_properties(bvmethods_nonlocalpath_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_nonlocalpath_contract)
+
+add_test(NAME bvmethods_nonlocalpath_collection_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_nonlocalpath_collection_audit)
+set_tests_properties(bvmethods_nonlocalpath_collection_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_nonlocalpath_collection_audit)
+
 add_test(NAME wp14_gate_qs
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_gate_qs)
 set_tests_properties(wp14_gate_qs PROPERTIES

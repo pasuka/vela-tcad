@@ -1,0 +1,1805 @@
+{
+  "schema": "vela.validation.bvmethods.augmented_increment_support.v1",
+  "date": "2026-10-17",
+  "scope": "private diagnostic extension; initial reference plus actual current population; native baseline and matrices reused from the sealed positive QS second system",
+  "configuration": {
+    "reference": "T-2022.03-SP2 installed-library BVmethods resistor",
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_cells": 4156,
+    "independent_equations": 6843,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "population_reference_cm3": 14824351000,
+    "source_internal_units": "SI",
+    "current_unit": "A/um",
+    "psi_coordinate": "potential divided by thermal voltage",
+    "carrier_coordinate": "density divided by population reference",
+    "candidate_load_coordinate": "V",
+    "native_load_coordinate": "V divided by thermal voltage",
+    "environment": "Ubuntu 26.04.1, GCC 15.2, C++20, Release O1, floating contraction off",
+    "math": "private certified MPFR binary64 scalar adapter; exact sums of rounded actual primitive inputs",
+    "linear_backend_invoked": false
+  },
+  "profiles": {
+    "mixed": {
+      "evaluations": 7,
+      "max_term_closure_error": 1.6494374768282012e-13,
+      "term_closure_failed_rows": 0,
+      "QF_failures": 0,
+      "max_pair_imbalance": 1.0370901578251033e-16,
+      "native_baseline": {
+        "failed": 0,
+        "max_error": 1.7806260513340104e-09
+      },
+      "directions": [
+        {
+          "h": 0.001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 197,
+              "unresolved_rows": 2403,
+              "exact_zero_responses": 67,
+              "native_default": {
+                "raw_symmetric_failed": 38,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 5.652752453732437e-07
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 38,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 5.652752453732437e-07
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 1,
+              "unresolved_rows": 0,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.3915813756692312e-09
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.3915813756692312e-09
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 853,
+              "unresolved_rows": 1268,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2039,
+                "resolved_symmetric_failed": 819,
+                "failed_and_gap_above_resolution_estimate": 310,
+                "resolved_support_scaled_failed": 16,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2029,
+                "resolved_symmetric_failed": 810,
+                "failed_and_gap_above_resolution_estimate": 86,
+                "resolved_support_scaled_failed": 4,
+                "max_resolved_symmetric_error": 1.0
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 559,
+              "unresolved_rows": 1562,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2091,
+                "resolved_symmetric_failed": 546,
+                "failed_and_gap_above_resolution_estimate": 208,
+                "resolved_support_scaled_failed": 8,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2086,
+                "resolved_symmetric_failed": 545,
+                "failed_and_gap_above_resolution_estimate": 26,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 7,
+            "collection_signature": 3,
+            "partition_signature": 0
+          },
+          "load_response_resolved": true,
+          "full_direction_qualified": false
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 0,
+              "unresolved_rows": 2600,
+              "exact_zero_responses": 67,
+              "native_default": {
+                "raw_symmetric_failed": 30,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 30,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 1,
+              "unresolved_rows": 0,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.685304081753933e-09
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.685304081753933e-09
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 70,
+              "unresolved_rows": 2051,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2101,
+                "resolved_symmetric_failed": 70,
+                "failed_and_gap_above_resolution_estimate": 12,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2100,
+                "resolved_symmetric_failed": 70,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 0.005501197464557353
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 0,
+              "unresolved_rows": 2121,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2115,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2112,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": true,
+          "full_direction_qualified": false
+        },
+        {
+          "h": 1e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 0,
+              "unresolved_rows": 2600,
+              "exact_zero_responses": 67,
+              "native_default": {
+                "raw_symmetric_failed": 26,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 26,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 1,
+              "unresolved_rows": 0,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.65203462811942e-07
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.65203462811942e-07
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 0,
+              "unresolved_rows": 2121,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2119,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2117,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 0,
+              "unresolved_rows": 2121,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 2120,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 2120,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": true,
+          "full_direction_qualified": false
+        }
+      ]
+    },
+    "potential": {
+      "evaluations": 7,
+      "max_term_closure_error": 1.0603312999400435e-13,
+      "term_closure_failed_rows": 0,
+      "QF_failures": 0,
+      "max_pair_imbalance": 9.209997138436986e-17,
+      "native_baseline": {
+        "failed": 0,
+        "max_error": 1.7806260513340104e-09
+      },
+      "directions": [
+        {
+          "h": 0.0001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 5,
+              "unresolved_rows": 2595,
+              "exact_zero_responses": 2595,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.940439914250632e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.940439914250632e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 17,
+              "unresolved_rows": 2104,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 10,
+                "resolved_symmetric_failed": 10,
+                "failed_and_gap_above_resolution_estimate": 10,
+                "resolved_support_scaled_failed": 10,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.4406601346756375e-07
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 8,
+              "unresolved_rows": 2113,
+              "exact_zero_responses": 2113,
+              "native_default": {
+                "raw_symmetric_failed": 8,
+                "resolved_symmetric_failed": 8,
+                "failed_and_gap_above_resolution_estimate": 8,
+                "resolved_support_scaled_failed": 8,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.142559933040246e-09
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 0,
+              "max_error": 3.4406601346756375e-07
+            },
+            "hole": {
+              "resolved_far_rows": 1,
+              "unresolved_far_rows": 2113,
+              "exact_zero_responses": 2113,
+              "failed_1e5": 0,
+              "max_error": 3.142559933040246e-09
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 5,
+              "unresolved_rows": 2595,
+              "exact_zero_responses": 2595,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.0104503889698705e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.0104503889698705e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 17,
+              "unresolved_rows": 2104,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 10,
+                "resolved_symmetric_failed": 10,
+                "failed_and_gap_above_resolution_estimate": 10,
+                "resolved_support_scaled_failed": 10,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.093688045137339e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 8,
+              "unresolved_rows": 2113,
+              "exact_zero_responses": 2113,
+              "native_default": {
+                "raw_symmetric_failed": 8,
+                "resolved_symmetric_failed": 8,
+                "failed_and_gap_above_resolution_estimate": 8,
+                "resolved_support_scaled_failed": 8,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.46410768357225e-10
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 0,
+              "max_error": 3.093688045137339e-08
+            },
+            "hole": {
+              "resolved_far_rows": 1,
+              "unresolved_far_rows": 2113,
+              "exact_zero_responses": 2113,
+              "failed_1e5": 0,
+              "max_error": 2.1774696965635895e-10
+            }
+          }
+        },
+        {
+          "h": 1e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 5,
+              "unresolved_rows": 2595,
+              "exact_zero_responses": 2595,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.9404399134149088e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.9404399134149088e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 17,
+              "unresolved_rows": 2104,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 10,
+                "resolved_symmetric_failed": 10,
+                "failed_and_gap_above_resolution_estimate": 10,
+                "resolved_support_scaled_failed": 10,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.2477126417137985e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 8,
+              "unresolved_rows": 2113,
+              "exact_zero_responses": 2113,
+              "native_default": {
+                "raw_symmetric_failed": 8,
+                "resolved_symmetric_failed": 8,
+                "failed_and_gap_above_resolution_estimate": 7,
+                "resolved_support_scaled_failed": 8,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.7340808845103245e-08
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 0,
+              "max_error": 2.2477126417137985e-08
+            },
+            "hole": {
+              "resolved_far_rows": 1,
+              "unresolved_far_rows": 2113,
+              "exact_zero_responses": 2113,
+              "failed_1e5": 0,
+              "max_error": 1.7340808845103245e-08
+            }
+          }
+        }
+      ]
+    },
+    "electron": {
+      "evaluations": 7,
+      "max_term_closure_error": 1.0603312999400435e-13,
+      "term_closure_failed_rows": 0,
+      "QF_failures": 0,
+      "max_pair_imbalance": 1.2066566825493386e-16,
+      "native_baseline": {
+        "failed": 0,
+        "max_error": 1.7806260513340104e-09
+      },
+      "directions": [
+        {
+          "h": 0.0001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 0.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 0.0
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 7,
+              "unresolved_rows": 2114,
+              "exact_zero_responses": 2114,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 4.025067940289787e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.5667323572215616e-09
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 11,
+              "unresolved_rows": 2110,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 11,
+                "resolved_symmetric_failed": 5,
+                "failed_and_gap_above_resolution_estimate": 3,
+                "resolved_support_scaled_failed": 5,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.510196390673345e-07
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2114,
+              "exact_zero_responses": 2114,
+              "failed_1e5": 0,
+              "max_error": null
+            },
+            "hole": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 0,
+              "max_error": 3.5016410402742986e-07
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.733167895029977e-17
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.733167895029977e-17
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 7,
+              "unresolved_rows": 2114,
+              "exact_zero_responses": 2114,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 4.0256340489169995e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.344425143226955e-10
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 8,
+              "unresolved_rows": 2113,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 11,
+                "resolved_symmetric_failed": 2,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 2,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 1,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.9996997203703243e-07
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2114,
+              "exact_zero_responses": 2114,
+              "failed_1e5": 0,
+              "max_error": null
+            },
+            "hole": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 1,
+              "max_error": 1.2728664381303259e-05
+            }
+          }
+        },
+        {
+          "h": 1e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.733167895029977e-17
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 8.733167895029977e-17
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 7,
+              "unresolved_rows": 2114,
+              "exact_zero_responses": 2114,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 4.025339467551287e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 7.306904751057491e-10
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 7,
+              "unresolved_rows": 2114,
+              "exact_zero_responses": 2104,
+              "native_default": {
+                "raw_symmetric_failed": 11,
+                "resolved_symmetric_failed": 1,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 1,
+                "max_resolved_symmetric_error": 1.3898846649591592e-05
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 1,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 9.93962865583466e-10
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2114,
+              "exact_zero_responses": 2114,
+              "failed_1e5": 0,
+              "max_error": null
+            },
+            "hole": {
+              "resolved_far_rows": 10,
+              "unresolved_far_rows": 2104,
+              "exact_zero_responses": 2104,
+              "failed_1e5": 1,
+              "max_error": 6.82156294030885e-05
+            }
+          }
+        }
+      ]
+    },
+    "hole": {
+      "evaluations": 7,
+      "max_term_closure_error": 1.0603312999400435e-13,
+      "term_closure_failed_rows": 0,
+      "QF_failures": 0,
+      "max_pair_imbalance": 1.0715674169109754e-16,
+      "native_baseline": {
+        "failed": 0,
+        "max_error": 1.7806260513340104e-09
+      },
+      "directions": [
+        {
+          "h": 0.0001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945114957e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945114957e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 12,
+              "unresolved_rows": 2109,
+              "exact_zero_responses": 2109,
+              "native_default": {
+                "raw_symmetric_failed": 7,
+                "resolved_symmetric_failed": 7,
+                "failed_and_gap_above_resolution_estimate": 7,
+                "resolved_support_scaled_failed": 7,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.2508356655172808e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 5,
+              "unresolved_rows": 2116,
+              "exact_zero_responses": 2116,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 7.873891515069044e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.071960967380402e-09
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 7,
+              "unresolved_far_rows": 2109,
+              "exact_zero_responses": 2109,
+              "failed_1e5": 0,
+              "max_error": 2.2508356655172808e-08
+            },
+            "hole": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2116,
+              "exact_zero_responses": 2116,
+              "failed_1e5": 0,
+              "max_error": null
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945137031e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945137031e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 12,
+              "unresolved_rows": 2109,
+              "exact_zero_responses": 2109,
+              "native_default": {
+                "raw_symmetric_failed": 7,
+                "resolved_symmetric_failed": 7,
+                "failed_and_gap_above_resolution_estimate": 5,
+                "resolved_support_scaled_failed": 7,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 6.469547931958748e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 5,
+              "unresolved_rows": 2116,
+              "exact_zero_responses": 2116,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 7.872059589289293e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.4003517090283793e-10
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 7,
+              "unresolved_far_rows": 2109,
+              "exact_zero_responses": 2109,
+              "failed_1e5": 0,
+              "max_error": 6.469547931958748e-08
+            },
+            "hole": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2116,
+              "exact_zero_responses": 2116,
+              "failed_1e5": 0,
+              "max_error": null
+            }
+          }
+        },
+        {
+          "h": 1e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 1,
+              "unresolved_rows": 2599,
+              "exact_zero_responses": 2599,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945137031e-15
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0458939945137031e-15
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 1,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 10,
+              "unresolved_rows": 2111,
+              "exact_zero_responses": 2109,
+              "native_default": {
+                "raw_symmetric_failed": 7,
+                "resolved_symmetric_failed": 5,
+                "failed_and_gap_above_resolution_estimate": 5,
+                "resolved_support_scaled_failed": 5,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.5021463498262547e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 5,
+              "unresolved_rows": 2116,
+              "exact_zero_responses": 2116,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 7.87154701144076e-06
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.72542677661895e-10
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false,
+          "far_nonlocal": {
+            "electron": {
+              "resolved_far_rows": 7,
+              "unresolved_far_rows": 2109,
+              "exact_zero_responses": 2109,
+              "failed_1e5": 0,
+              "max_error": 4.315012695107289e-07
+            },
+            "hole": {
+              "resolved_far_rows": 0,
+              "unresolved_far_rows": 2116,
+              "exact_zero_responses": 2116,
+              "failed_1e5": 0,
+              "max_error": null
+            }
+          }
+        }
+      ]
+    },
+    "combined": {
+      "evaluations": 7,
+      "max_term_closure_error": 1.0603312999400435e-13,
+      "term_closure_failed_rows": 0,
+      "QF_failures": 0,
+      "max_pair_imbalance": 7.521377506316238e-17,
+      "native_baseline": {
+        "failed": 0,
+        "max_error": 1.7806260513340104e-09
+      },
+      "directions": [
+        {
+          "h": 0.0001,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 18,
+              "unresolved_rows": 2582,
+              "exact_zero_responses": 2582,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.9336025881116394e-10
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.9336025881116394e-10
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 19,
+              "unresolved_rows": 2102,
+              "exact_zero_responses": 2101,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 11,
+                "failed_and_gap_above_resolution_estimate": 11,
+                "resolved_support_scaled_failed": 11,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.1106266904338972e-07
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 16,
+              "unresolved_rows": 2105,
+              "exact_zero_responses": 2102,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 9,
+                "failed_and_gap_above_resolution_estimate": 8,
+                "resolved_support_scaled_failed": 9,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.142559933040246e-09
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 18,
+              "unresolved_rows": 2582,
+              "exact_zero_responses": 2582,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.5544959573474393e-09
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 3.5544959573474393e-09
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 19,
+              "unresolved_rows": 2102,
+              "exact_zero_responses": 2101,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 11,
+                "failed_and_gap_above_resolution_estimate": 11,
+                "resolved_support_scaled_failed": 11,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.0420213839340302e-08
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 16,
+              "unresolved_rows": 2105,
+              "exact_zero_responses": 2102,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 9,
+                "failed_and_gap_above_resolution_estimate": 8,
+                "resolved_support_scaled_failed": 9,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 1,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 2.641999340863216e-09
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false
+        },
+        {
+          "h": 1e-05,
+          "blocks": {
+            "poisson": {
+              "rows": 2600,
+              "resolved_rows": 18,
+              "unresolved_rows": 2582,
+              "exact_zero_responses": 2582,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.1050208047861299e-08
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.1050208047861299e-08
+              }
+            },
+            "load": {
+              "rows": 1,
+              "resolved_rows": 0,
+              "unresolved_rows": 1,
+              "exact_zero_responses": 0,
+              "native_default": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": null
+              }
+            },
+            "electron": {
+              "rows": 2121,
+              "resolved_rows": 19,
+              "unresolved_rows": 2102,
+              "exact_zero_responses": 2101,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 11,
+                "failed_and_gap_above_resolution_estimate": 11,
+                "resolved_support_scaled_failed": 11,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 0,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.2284434105763533e-07
+              }
+            },
+            "hole": {
+              "rows": 2121,
+              "resolved_rows": 16,
+              "unresolved_rows": 2105,
+              "exact_zero_responses": 2102,
+              "native_default": {
+                "raw_symmetric_failed": 12,
+                "resolved_symmetric_failed": 9,
+                "failed_and_gap_above_resolution_estimate": 7,
+                "resolved_support_scaled_failed": 9,
+                "max_resolved_symmetric_error": 1.0
+              },
+              "native_explicit": {
+                "raw_symmetric_failed": 1,
+                "resolved_symmetric_failed": 0,
+                "failed_and_gap_above_resolution_estimate": 0,
+                "resolved_support_scaled_failed": 0,
+                "max_resolved_symmetric_error": 1.7340808845103245e-08
+              }
+            }
+          },
+          "source_support_changes": {
+            "path_signature": 0,
+            "collection_signature": 0,
+            "partition_signature": 0
+          },
+          "load_response_resolved": false,
+          "full_direction_qualified": false
+        }
+      ]
+    }
+  },
+  "independent_load_column": {
+    "default": {
+      "rows": 6843,
+      "failed_1e10": 0,
+      "max_symmetric_error": 8.355960030881202e-17,
+      "nonzero_actual_entries": 12
+    },
+    "explicit": {
+      "rows": 6843,
+      "failed_1e10": 0,
+      "max_symmetric_error": 8.355960030881202e-17,
+      "nonzero_actual_entries": 12
+    }
+  },
+  "event_control": {
+    "seed": 2670,
+    "bracket": [
+      0.0005092773437500001,
+      0.000509765625
+    ],
+    "bracket_width": 4.882812499999462e-07,
+    "focused_evaluations": 28,
+    "full_metadata_identity": true,
+    "partial_full_residual_rejected": true,
+    "all_QF_guards_passed": true,
+    "maximum_pair_balance": 4.638045470110082e-16,
+    "side_convergence": [
+      {
+        "side": "left",
+        "carrier": "electron",
+        "h_pair": [
+          4.882812499999462e-07,
+          4.882812499999462e-08
+        ],
+        "nodes": [
+          445,
+          446,
+          448
+        ],
+        "weighted_L1_difference": 1.1969135015891497e-08,
+        "max_row_relative_difference": 2.567404778904736e-08,
+        "failed_1e5": 0
+      },
+      {
+        "side": "left",
+        "carrier": "hole",
+        "h_pair": [
+          4.882812499999462e-07,
+          4.882812499999462e-08
+        ],
+        "nodes": [
+          437,
+          438,
+          1310
+        ],
+        "weighted_L1_difference": 2.543645610818899e-07,
+        "max_row_relative_difference": 1.5254654309351894e-06,
+        "failed_1e5": 0
+      },
+      {
+        "side": "right",
+        "carrier": "electron",
+        "h_pair": [
+          4.882812499999462e-07,
+          4.882812499999462e-08
+        ],
+        "nodes": [
+          445,
+          446
+        ],
+        "weighted_L1_difference": 1.5150033856576463e-07,
+        "max_row_relative_difference": 1.601810002752052e-07,
+        "failed_1e5": 0
+      },
+      {
+        "side": "right",
+        "carrier": "hole",
+        "h_pair": [
+          4.882812499999462e-07,
+          4.882812499999462e-08
+        ],
+        "nodes": [
+          437,
+          438,
+          1310
+        ],
+        "weighted_L1_difference": 4.383502312932974e-07,
+        "max_row_relative_difference": 2.3070979198077227e-06,
+        "failed_1e5": 0
+      }
+    ],
+    "slope_changes": {
+      "electron": {
+        "L1_slope_difference": 0.779607894957672,
+        "nodes_with_response": [
+          445,
+          446,
+          448
+        ],
+        "zero_right_nonzero_left": [
+          448
+        ]
+      },
+      "hole": {
+        "L1_slope_difference": 3.0263522642562785e-05,
+        "nodes_with_response": [
+          437,
+          438,
+          1310
+        ],
+        "zero_right_nonzero_left": []
+      }
+    }
+  },
+  "event_interpretation": {
+    "perturbation": "local normalized potential at node 437, not outer bias or BV",
+    "changed_seed_count": 1,
+    "path_support_changed": false,
+    "energy_leaf_partition_changed": false,
+    "collection_event_counts": [
+      33,
+      32
+    ],
+    "same_side_controls_per_side": 3,
+    "left_electron_support_nodes": [
+      445,
+      446,
+      448
+    ],
+    "right_electron_support_nodes": [
+      445,
+      446
+    ],
+    "continuity_refinement_first": {
+      "width": 0.0005,
+      "source_symmetric_L1_difference": {
+        "electron": 0.0001930154818675949,
+        "hole": 6.300358808649376e-05
+      }
+    },
+    "continuity_refinement_last": {
+      "width": 4.882812499999462e-07,
+      "source_symmetric_L1_difference": {
+        "electron": 4.0765187261741104e-07,
+        "hole": 6.144141213854553e-08
+      }
+    },
+    "native_same_event_control_obtained": false,
+    "global_continuity_proven": false
+  },
+  "retained_failures": {
+    "electron_population_to_remote_hole_node": 1317,
+    "three_step_source_relative_errors": [
+      3.5016410402742986e-07,
+      1.2728664381303259e-05,
+      6.82156294030885e-05
+    ],
+    "Newton_direction_smooth_midstep_failed_electron_rows": 70,
+    "Newton_midstep_error_gap_above_conservative_resolution_rows": 0,
+    "Newton_small_step_PDE_responses_unresolved": true,
+    "native_default_is_complete_derivative_oracle": false,
+    "explicit_derivative_is_complete_derivative_oracle": false
+  },
+  "verification": {
+    "evidence_tests": 20,
+    "profile_augmented_evaluations": 35,
+    "additional_full_augmented_smoke": 1,
+    "additional_full_source_coarse_control": 1,
+    "focused_source_evaluations": 28,
+    "partial_augmented_entry_rejected_exit": 2,
+    "previous_sealed_files_verified": [
+      610,
+      593,
+      394,
+      305,
+      261
+    ],
+    "new_native_VM_jobs": 0
+  },
+  "qualification": {
+    "N4_complete": false,
+    "N5_started": false,
+    "full_Jacobian": false,
+    "full_Jv": false,
+    "augmented_Newton": false,
+    "zero_start_pure_QS": false,
+    "production_promoted": false,
+    "thresholds_changed": false
+  },
+  "next": "Resolve node 1317 source operand precision versus mathematical derivative; use scaled block directions to avoid Newton transport/source cancellation; extend independent load/current and untested columns, bind native event sides, then verify full Jacobian and Newton."
+}

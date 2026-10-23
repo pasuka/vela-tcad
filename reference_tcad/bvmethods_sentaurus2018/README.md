@@ -1,5 +1,16 @@
 # Sentaurus 2018 BVmethods NMOS reference
 
+As of 2026-10-15, the user-selected target for the ongoing external-resistor
+investigation is the installed T-2022.03-SP2 library's original `resistor`
+branch: NonLocalPath BTBT, GradQuasiFermi avalanche, and a `1.3e-3 A/um`
+stop. See the [active alignment plan](../../docs/superpowers/plans/2026-10-15-bvmethods-installed-library-alignment-plan.md).
+The checked-in E2/Eparallel sources and existing qualifications retain their
+historical scope; they have not been rewritten or requalified as library originals.
+The [2026-10-15 original-reference audit](../../docs/validation/bvmethods_original_reference_q0_q1_2026-10-15.md)
+reproduces the archived T-2022.03-SP2 curve byte for byte in a new from-zero run;
+its native formatted BV is 6.67 V (independent linear interpolation: 6.673594819 V).
+Vela still rejects NonLocalPath with E106; this native reference is not Vela equivalence.
+
 This directory preserves the text inputs used by the Sentaurus Training
 `BVmethods` NMOS example and the method mapping used by Vela validation. Binary
 TDR/PLT/log outputs remain generated artifacts under `build*/reference_tcad/`
@@ -27,7 +38,7 @@ For example, archived `v1/source/pp5_des.cmd` declares
 `Band2Band(E2)`, `Avalanche(Eparallel)` and `1.443e-3 A/um`.
 The historical final current sample must not be confused with its declared
 stop. See the [zero-QS diagnosis](../../docs/validation/bvmethods_zero_qs_diagnosis_2026-10-06.md)
-for the current native contract and retained failure evidence.
+for the historical E2/Eparallel contract and retained failure evidence.
 
 Run the structure deck first. It builds `bvmethods_nmos_half_msh.tdr`, mirrors
 it about `x=0`, renames the mirrored drain contact to source, and writes
@@ -57,7 +68,7 @@ these hashes differ from LF-normalised `producer.cmd_sha256`. The v4
 `source/wp14_inputs.json` receipt is included with the authored inputs so its
 repository provenance can be verified. Raw simulation results remain external.
 
-The validated Sentaurus threshold voltages are `6.379791636 V` for the
+The historical O-2018 reference threshold voltages are `6.379791636 V` for the
 external-resistor method and `6.383184201 V` for voltage-to-current control at
 the example drain-current criterion. No mobility or avalanche coefficient
 scaling is used by the Vela templates.

@@ -1,0 +1,421 @@
+{
+  "date": "2026-10-18",
+  "scope": "N4 actual SG operands and variable-path spectrum primitives",
+  "configuration": {
+    "native_reference": "T-2022.03-SP2 installed-library BVmethods",
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "nodes": 2600,
+    "Tri3": 5020,
+    "Si_cells": 4156,
+    "independent_equations": 6843,
+    "population_reference_cm3": 14824351000,
+    "current_unit": "A/um",
+    "execution": "Ubuntu 26.04.1 GCC15.2 C++20 Release O1; ffp-contract off; existing binary64 MPFR scalar adapter",
+    "candidate_linear_backend_invoked": false
+  },
+  "SG_primitive": {
+    "precision_decimal_digits": 80,
+    "autonomous_analytic_partials": [
+      "argument_a",
+      "density_0",
+      "density_1",
+      "coefficient"
+    ],
+    "explicit_dependency_composition": true,
+    "actual_edges": 9070,
+    "actual_rows_analyzed": 15,
+    "decomposition_max_error": 2.123908929980431e-67,
+    "frozen_coefficient_coarse_fine_reduction_factor_range": [
+      3731.8955467554356,
+      222327.4008114019
+    ],
+    "same_coefficient_direction_checks": {
+      "directions": [
+        {
+          "h": 0.0003,
+          "max_primitive_jv_error": 9.531638088044363e-14,
+          "failed_1e5": 0
+        },
+        {
+          "h": 0.0001,
+          "max_primitive_jv_error": 8.35505593429465e-14,
+          "failed_1e5": 0
+        },
+        {
+          "h": 3e-05,
+          "max_primitive_jv_error": 4.3824385849135333e-14,
+          "failed_1e5": 0
+        }
+      ],
+      "input_direction_is_realized_operand_secant": true,
+      "complete_primary_Jv_qualified": false
+    },
+    "primitive_is_not_complete_primary_variable_jacobian": true
+  },
+  "mobility_control": {
+    "passive_residual_identity": true,
+    "low_field_mobility_unchanged": true,
+    "sampled_cell_carrier_records_per_state": 8312,
+    "rows": [
+      {
+        "node": 1760,
+        "incident_cells": 6,
+        "branch_switch_cells": 4,
+        "base_inactive_both_trials_active": 3,
+        "max_even_mobility_relative_change": 6.814719238981237e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.3542141412533309,
+          0.6044929301998627
+        ],
+        "trial_drive_over_cutoff_max": 1.7681995918019344
+      },
+      {
+        "node": 1900,
+        "incident_cells": 6,
+        "branch_switch_cells": 4,
+        "base_inactive_both_trials_active": 4,
+        "max_even_mobility_relative_change": 6.967931403526406e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.1751046132683247,
+          0.20691914624043836
+        ],
+        "trial_drive_over_cutoff_max": 1.8128322434000435
+      },
+      {
+        "node": 1910,
+        "incident_cells": 5,
+        "branch_switch_cells": 3,
+        "base_inactive_both_trials_active": 3,
+        "max_even_mobility_relative_change": 8.101799391113831e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.16955278771847554,
+          0.19638271460980125
+        ],
+        "trial_drive_over_cutoff_max": 1.9927267690996848
+      },
+      {
+        "node": 1928,
+        "incident_cells": 7,
+        "branch_switch_cells": 4,
+        "base_inactive_both_trials_active": 4,
+        "max_even_mobility_relative_change": 8.533859080067879e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.18303166183759434,
+          0.20227201452065566
+        ],
+        "trial_drive_over_cutoff_max": 1.9725208641044127
+      },
+      {
+        "node": 1929,
+        "incident_cells": 6,
+        "branch_switch_cells": 2,
+        "base_inactive_both_trials_active": 2,
+        "max_even_mobility_relative_change": 6.612713493703131e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.195571751968662,
+          0.21287873570807356
+        ],
+        "trial_drive_over_cutoff_max": 1.5636195210320165
+      },
+      {
+        "node": 2004,
+        "incident_cells": 6,
+        "branch_switch_cells": 1,
+        "base_inactive_both_trials_active": 1,
+        "max_even_mobility_relative_change": 4.768167688504933e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.17665055384094436,
+          0.20977352170248878
+        ],
+        "trial_drive_over_cutoff_max": 1.0952971637936513
+      },
+      {
+        "node": 2137,
+        "incident_cells": 7,
+        "branch_switch_cells": 3,
+        "base_inactive_both_trials_active": 3,
+        "max_even_mobility_relative_change": 5.586089130672044e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.004472774667695806,
+          0.007489522899186869
+        ],
+        "trial_drive_over_cutoff_max": 1.5429693002594858
+      },
+      {
+        "node": 2237,
+        "incident_cells": 6,
+        "branch_switch_cells": 3,
+        "base_inactive_both_trials_active": 3,
+        "max_even_mobility_relative_change": 8.637637786476747e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.0011821019210949545,
+          0.001609578628325098
+        ],
+        "trial_drive_over_cutoff_max": 2.413131502727393
+      },
+      {
+        "node": 2270,
+        "incident_cells": 6,
+        "branch_switch_cells": 4,
+        "base_inactive_both_trials_active": 4,
+        "max_even_mobility_relative_change": 1.0647856620188864e-05,
+        "baseline_drive_over_cutoff_range": [
+          0.0011687686552998072,
+          0.001418705497401841
+        ],
+        "trial_drive_over_cutoff_max": 2.5841649172790206
+      },
+      {
+        "node": 2271,
+        "incident_cells": 5,
+        "branch_switch_cells": 3,
+        "base_inactive_both_trials_active": 3,
+        "max_even_mobility_relative_change": 8.550203298969118e-06,
+        "baseline_drive_over_cutoff_range": [
+          0.0012224595350041761,
+          0.001362028595394469
+        ],
+        "trial_drive_over_cutoff_max": 2.132219260640162
+      }
+    ],
+    "full_mobility_chain_Jacobian_qualified": false
+  },
+  "variable_source": {
+    "evaluations": 8,
+    "precision_decimal_digits": 80,
+    "independent_current_state_evaluation": true,
+    "uses_fixed_reference_rate": false,
+    "geometry_and_inner_WKB_inputs_remain_binary64": true,
+    "states": [
+      {
+        "h": 0.0,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 3.705099702224275e-15,
+            "integral_error": 3.683584111047807e-15
+          },
+          "hole": {
+            "weighted_L1": 3.683584111047807e-15,
+            "integral_error": 3.683584111047807e-15
+          }
+        },
+        "pair_balance": 2.4635410712669072e-17,
+        "distance_or_support_changed": false,
+        "band_profile_changed": false,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": 0.0001,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 3.85584240031308e-15,
+            "integral_error": 3.85584240031308e-15
+          },
+          "hole": {
+            "weighted_L1": 3.85584240031308e-15,
+            "integral_error": 3.85584240031308e-15
+          }
+        },
+        "pair_balance": 6.158905702665839e-18,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": -0.0001,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 2.4868291103375464e-16,
+            "integral_error": 2.4868291103375464e-16
+          },
+          "hole": {
+            "weighted_L1": 6.895117223592905e-16,
+            "integral_error": 2.4868291103375464e-16
+          }
+        },
+        "pair_balance": 7.471616850710893e-80,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": 3e-05,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 4.1671812154727405e-15,
+            "integral_error": 4.165799539435212e-15
+          },
+          "hole": {
+            "weighted_L1": 4.165799539435212e-15,
+            "integral_error": 4.165799539435212e-15
+          }
+        },
+        "pair_balance": 0.0,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": -3e-05,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 2.4857328096708326e-15,
+            "integral_error": 2.4834153997565663e-15
+          },
+          "hole": {
+            "weighted_L1": 2.4834153997565663e-15,
+            "integral_error": 2.4834153997565663e-15
+          }
+        },
+        "pair_balance": 1.847651025069596e-17,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": 1e-05,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 3.930369848424489e-15,
+            "integral_error": 3.909353597467977e-15
+          },
+          "hole": {
+            "weighted_L1": 3.909353597467977e-15,
+            "integral_error": 3.909353597467977e-15
+          }
+        },
+        "pair_balance": 0.0,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": -1e-05,
+        "events": 33,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 1.1189337639749663e-15,
+            "integral_error": 1.1161622753063815e-15
+          },
+          "hole": {
+            "weighted_L1": 1.1161622753063815e-15,
+            "integral_error": 1.1161622753063815e-15
+          }
+        },
+        "pair_balance": 1.2317694739810248e-17,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 11503188315205799813,
+        "partition_signature": 14885586121143650445
+      },
+      {
+        "h": 0.001,
+        "events": 32,
+        "cartesian_event_count_matches_actual": true,
+        "quality": {
+          "electron": {
+            "weighted_L1": 1.78213023761047e-15,
+            "integral_error": 1.78213023761047e-15
+          },
+          "hole": {
+            "weighted_L1": 1.78213023761047e-15,
+            "integral_error": 1.78213023761047e-15
+          }
+        },
+        "pair_balance": 1.2318755793931632e-17,
+        "distance_or_support_changed": true,
+        "band_profile_changed": true,
+        "QF_failures": 0,
+        "partial_rejected": true,
+        "collection_signature": 17971093484213982651,
+        "partition_signature": 14885586121143650445
+      }
+    ],
+    "direction_convergence": [
+      {
+        "carrier": "electron",
+        "nodes": [
+          445,
+          446,
+          448
+        ],
+        "maximum_row_error": 2.5343409833741034e-07,
+        "failed_1e5": 0
+      },
+      {
+        "carrier": "hole",
+        "nodes": [
+          437,
+          438,
+          1310
+        ],
+        "maximum_row_error": 1.1615685907221994e-06,
+        "failed_1e5": 0
+      }
+    ],
+    "full_source_Jacobian_qualified": false
+  },
+  "spectrum_primitive": {
+    "analytic_partial_count": 9,
+    "derivative_test_sizes": 3,
+    "same_geometry_or_reference_rate_not_required": true,
+    "inner_WKB_geometry_remain_binary64_inputs": true
+  },
+  "verification": {
+    "catch2_cases": 8,
+    "catch2_assertions": 66,
+    "spectrum_derivative_properties": 5,
+    "evidence_checks": 18,
+    "full_augmented_state_evaluations": 12,
+    "focused_source_states": 8,
+    "new_native_jobs": 0
+  },
+  "qualification": {
+    "N4_complete": false,
+    "N5_started": false,
+    "full_autonomous_Jacobian": false,
+    "full_Jv": false,
+    "actual_Newton_acceptance_executed": false,
+    "production_promoted": false,
+    "thresholds_changed": false
+  },
+  "next": [
+    "Assemble complete primary-variable derivatives including Gamma, mobility, moving WKB and collection support",
+    "Preserve branch-local controls instead of using a crossing finite difference as a smooth Jacobian oracle",
+    "Verify full residual/Jv and linear direction before invoking actual Newton projection and line search"
+  ]
+}

@@ -1,0 +1,329 @@
+{
+  "schema": "vela.validation.nonlocalpath.n4.primary_pair_mobility.v1",
+  "date": "2026-10-18",
+  "status": "N4 ongoing; first item partially verified; N5 not started",
+  "configuration": {
+    "target": "installed-library BVmethods resistor",
+    "temperature_K": 300,
+    "statistics": "Fermi + OldSlotboom default Joyce-Dixon",
+    "density_reference_cm3": 14824351000.0,
+    "thermal_voltage_V": 0.025851995266484913,
+    "resistance_ohm_um": 10000000.0,
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "Si_seeds": 4156,
+    "free_carrier_nodes": 2121,
+    "augmented_dimension": 6843,
+    "direction": "electron primary population; h is direction multiplier, not bias step",
+    "steps": [
+      0.0003,
+      0.0001,
+      3e-05
+    ],
+    "source_rate_unit": "cm^-3 s^-1",
+    "terminal_current_unit": "A/um"
+  },
+  "production_changes": false,
+  "native_rerun": false,
+  "linear_solve_or_Newton_run": false,
+  "threshold_changes": false,
+  "actual_assembly": {
+    "complete_states": 7,
+    "passive_numeric_identity": true,
+    "baseline_native_rhs_max_error_carried": 1.7806260513340255e-09,
+    "source_resolution_and_population_guards": true
+  },
+  "primary_pair_SRH": {
+    "old_intended_failures": [
+      120,
+      144,
+      178
+    ],
+    "new_intended_failures": [
+      0,
+      0,
+      0
+    ],
+    "max_error": [
+      9.944337185074336e-09,
+      9.944337185074338e-09,
+      9.944337185074338e-09
+    ],
+    "baseline_precast_identity": 0.0,
+    "independent_oracle_max_error": 7.616259327374613e-78
+  },
+  "primary_pair_SG": {
+    "fixed_coefficient_failures": [
+      0,
+      0,
+      0
+    ],
+    "fixed_coefficient_max_error": [
+      1.2673586010747828e-14,
+      1.4081762234164416e-15,
+      1.267358601074799e-16
+    ],
+    "current_coefficient_failures": [
+      2,
+      4,
+      1
+    ],
+    "canonical_absolute_native_failures_retained": 95,
+    "candidate_accepted": false
+  },
+  "row864": {
+    "same_branch_cells": [
+      1821,
+      1823,
+      1826,
+      1827,
+      1860,
+      1864
+    ],
+    "actual_field_max_direction_error": 0.05762334759435873,
+    "canonical_direction_errors": [
+      5.979080251051634e-14,
+      5.979080247058731e-14,
+      5.979080246604539e-14
+    ],
+    "coefficient_geometry_max_error": 2.783309918818429e-16,
+    "candidate_scope": "private n-direction primitive reconstruction, unchanged low mobility, no full residual qualification"
+  },
+  "cell4701": {
+    "cell": 4701,
+    "h_root": "0.00008964917878928155580206952828744023881973603408820951022442559466827716127222483",
+    "field_residual": "1.99973628390840062530920E-56",
+    "jump_high_minus_low": [
+      "-0.00041275650677291574772674280934817983381898595186558885363505222916922163018",
+      "-0.00041616345317399653097575343886287151342262366729096200222892541492265555557",
+      "-0.00047580669392189601567252541508155774365980149043051579299005659676594144389"
+    ],
+    "sides": [
+      {
+        "side": -1,
+        "center": "0.00008954917878928155580206952828744023881973603408820951022442559466827716127222483",
+        "field": "1.0000131106846464386074756257601948794460808965331710686648305100247060300934773",
+        "active": true,
+        "checks": [
+          {
+            "h": "1E-8",
+            "node": 2593,
+            "error": 4.938635499534214e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "1E-8",
+            "node": 2594,
+            "error": 4.938635393852523e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "1E-8",
+            "node": 1726,
+            "error": 4.938633606026556e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "3E-9",
+            "node": 2593,
+            "error": 1.4815923150927868e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "3E-9",
+            "node": 2594,
+            "error": 1.4815922833883015e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "3E-9",
+            "node": 1726,
+            "error": 1.481591747040882e-07,
+            "zero_branch": false
+          },
+          {
+            "h": "1E-9",
+            "node": 2593,
+            "error": 4.938642636246986e-08,
+            "zero_branch": false
+          },
+          {
+            "h": "1E-9",
+            "node": 2594,
+            "error": 4.938642530565389e-08,
+            "zero_branch": false
+          },
+          {
+            "h": "1E-9",
+            "node": 1726,
+            "error": 4.93864074274101e-08,
+            "zero_branch": false
+          }
+        ]
+      },
+      {
+        "side": 1,
+        "center": "0.00008974917878928155580206952828744023881973603408820951022442559466827716127222483",
+        "field": "0.99998688955562653669615459949944667354928229067046234920428721645037897664934932",
+        "active": false,
+        "checks": [
+          {
+            "h": "1E-8",
+            "node": 2593,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "1E-8",
+            "node": 2594,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "1E-8",
+            "node": 1726,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "3E-9",
+            "node": 2593,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "3E-9",
+            "node": 2594,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "3E-9",
+            "node": 1726,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "1E-9",
+            "node": 2593,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "1E-9",
+            "node": 2594,
+            "error": 0.0,
+            "zero_branch": true
+          },
+          {
+            "h": "1E-9",
+            "node": 1726,
+            "error": 0.0,
+            "zero_branch": true
+          }
+        ]
+      }
+    ]
+  },
+  "refined_1735_support": [
+    {
+      "cell": 3053,
+      "h": "0.000003",
+      "field_error": 6.922219443379781e-07,
+      "mobility_max_error": 6.299160921795595e-07
+    },
+    {
+      "cell": 3053,
+      "h": "0.000001",
+      "field_error": 7.691353300901698e-08,
+      "mobility_max_error": 6.999066892553185e-08
+    },
+    {
+      "cell": 3053,
+      "h": "3E-7",
+      "field_error": 6.9222178033041455e-09,
+      "mobility_max_error": 6.299160121566443e-09
+    },
+    {
+      "cell": 3058,
+      "h": "0.000003",
+      "field_error": 2.399948395957054e-06,
+      "mobility_max_error": 2.1400692364128094e-06
+    },
+    {
+      "cell": 3058,
+      "h": "0.000001",
+      "field_error": 2.66662055952179e-07,
+      "mobility_max_error": 2.3778647137770948e-07
+    },
+    {
+      "cell": 3058,
+      "h": "3E-7",
+      "field_error": 2.399959653317315e-08,
+      "mobility_max_error": 2.1400792668364794e-08
+    },
+    {
+      "cell": 3067,
+      "h": "0.000003",
+      "field_error": 2.0351603638672867e-06,
+      "mobility_max_error": 1.8394926050549844e-06
+    },
+    {
+      "cell": 3067,
+      "h": "0.000001",
+      "field_error": 2.2612909789752821e-07,
+      "mobility_max_error": 2.043882571474072e-07
+    },
+    {
+      "cell": 3067,
+      "h": "3E-7",
+      "field_error": 2.035162053656071e-08,
+      "mobility_max_error": 1.8394945087527735e-08
+    }
+  ],
+  "validation": {
+    "evidence_checks": 34,
+    "all_evidence_checks_pass": true,
+    "platforms": [
+      "Windows UCRT64 GCC16.2 Boost1.92",
+      "Ubuntu26.04.1 GCC15.2 Boost1.90"
+    ],
+    "CXX_standard": 20,
+    "pair_tests_each_platform": {
+      "cases": 3,
+      "assertions": 14,
+      "passed": true
+    },
+    "CXX_scope_rejection_tests": 3,
+    "cross_platform_primitive_values": 142044,
+    "cross_platform_max_error": 0.0,
+    "CXX_mobility_cross_platform_exact": true,
+    "independent_mobility_field_oracle_max": 8.859842219235884e-75,
+    "independent_mobility_row_direction_oracle_max": 1.7069768795571895e-69,
+    "production_CTest_run": false
+  },
+  "remaining": [
+    "SG compatible absolute RHS and precise increment joint contract: 95 canonical failures remain",
+    "connect paired primary state to all actual physics views and full Jacobian",
+    "extend QF/mobility to psi/p/contact and changing low-mobility directions",
+    "full source/load/KCL and autonomous Newton acceptance"
+  ],
+  "private_evidence_directory": "bvmethods_n4_primary_pair_mobility_20261018",
+  "producer_sha256": {
+    "PrimaryPair.h": "c1ba29368d3eed887d89f7c8751937afb2161f12add7092100979b5e8615683c",
+    "PrimaryMobility.h": "5ecc1cccfdbe1f9813d7df2e2a1d9a3201872e3fd5b9e08ab07da8c9ef8dfb6d",
+    "PairReplay.cpp": "419533675a2a812f965e35d501e3d4b93302a64fb2749432400f4dc7301ba407",
+    "MobilityReplay.cpp": "b68541a60ac852eea7d99e409e9f0d43746396454a1babdd282a6769c73c55e4",
+    "ElementOperands_live.h": "43668fee884ee72c7acb726e9d3d9b249aaf3c38b722c97ed551f4ef78dd929c",
+    "bin/augmented_probe": "6044e4d9d823e434d2cea912bbd69e94d81c44f0d3543171e010fae509d789dd",
+    "bin/pair_replay": "87c149838702da1a8ae5c4988d7b67185bf3878da721cef4e7954604a8ff238f",
+    "bin/mobility_replay": "716deb37dc745cf993bfda47ed26774edfa114878d87c9948edfae8211305cec",
+    "windows_pair/pair_replay.exe": "4c2645c461663d7ccd2a60a648a7c5d6d0b7282fc4516b8f930fb9c72dd17e4c",
+    "windows_pair/mobility_replay.exe": "20d1eeae2bda3cdd65492fa408d792071df352cf41942fee8423ad8cdc21582d"
+  },
+  "seal": {
+    "file_count": 110,
+    "bytes": 295627879,
+    "manifest_sha256": "634c141ae2b2f26df4cecdafea7eac41fcd641ec47cef7c0c528d2db69b06fbb"
+  }
+}

@@ -1,0 +1,1122 @@
+{
+  "case": "BVmethods Band2Band-off fixed-inner-bias diagnostic",
+  "bias_V": 0.00524437249039996,
+  "mesh_nodes": 2600,
+  "mesh_triangles": 5020,
+  "source_threshold": 1e-18,
+  "row_epsilon": 0.001,
+  "scale_floor": 1e-30,
+  "closure_tolerance": 0.01,
+  "production_changed": false,
+  "original_QS_qualified": false,
+  "N4_complete": false,
+  "local": {
+    "coordinate": {
+      "calls": 277,
+      "violation_count": 11,
+      "qualified_count": 1346,
+      "exited_count": 0,
+      "exited_ratio_failure_count": 0,
+      "exited_ratio_failures": [],
+      "blocks": {
+        "combined": 4.166076103156572e-11,
+        "phin": 2.962418809007659e-13,
+        "phip": 5.578680422047193e-16,
+        "psi": 4.165970775420788e-11
+      },
+      "closure": {
+        "electron": {
+          "contact_flux": -2.938796262064979e-11,
+          "integrated_source": -2.9352327031394865e-11,
+          "mismatch": -3.563558925492538e-14,
+          "qualified": true,
+          "ratio": 0.001212591349557714
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.93522799355957e-11,
+          "integrated_source": -2.9352327031394865e-11,
+          "mismatch": 4.709579916136777e-17,
+          "qualified": true,
+          "ratio": 1.6044996742845882e-06
+        },
+        "satisfied": true
+      },
+      "strict_Si_positive": true,
+      "term_parity_max": 2.415294078029354e-28
+    },
+    "pair": {
+      "calls": 36,
+      "violation_count": 10,
+      "qualified_count": 1346,
+      "exited_count": 0,
+      "exited_ratio_failure_count": 0,
+      "exited_ratio_failures": [],
+      "blocks": {
+        "combined": 4.1660761031298344e-11,
+        "phin": 2.962418809005922e-13,
+        "phip": 5.528958006514781e-16,
+        "psi": 4.1659707754006794e-11
+      },
+      "closure": {
+        "electron": {
+          "contact_flux": -2.938796262064979e-11,
+          "integrated_source": -2.935232701375378e-11,
+          "mismatch": -3.5635606896012433e-14,
+          "qualified": true,
+          "ratio": 0.001212591949840465
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.93522799355957e-11,
+          "integrated_source": -2.935232701375378e-11,
+          "mismatch": 4.707815807431431e-17,
+          "qualified": true,
+          "ratio": 1.6038986637159857e-06
+        },
+        "satisfied": true
+      },
+      "strict_Si_positive": true,
+      "term_parity_max": 2.415294078029354e-28
+    },
+    "branch": {
+      "calls": 392,
+      "violation_count": 5,
+      "qualified_count": 1326,
+      "exited_count": 20,
+      "exited_ratio_failure_count": 6,
+      "exited_ratio_failures": [
+        338,
+        340,
+        354,
+        358,
+        359,
+        418
+      ],
+      "blocks": {
+        "combined": 4.1660761182295745e-11,
+        "phin": 2.962418808199366e-13,
+        "phip": 4.289036452900648e-15,
+        "psi": 4.165970768789064e-11
+      },
+      "closure": {
+        "electron": {
+          "contact_flux": -2.938796262064979e-11,
+          "integrated_source": -2.935229999993559e-11,
+          "mismatch": -3.566262071420294e-14,
+          "qualified": true,
+          "ratio": 0.0012135111635518479
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.93522799355957e-11,
+          "integrated_source": -2.935229999993559e-11,
+          "mismatch": 2.006433988381083e-17,
+          "qualified": true,
+          "ratio": 6.83569597062406e-07
+        },
+        "satisfied": true
+      },
+      "strict_Si_positive": true,
+      "term_parity_max": 2.415294078029354e-28
+    },
+    "bounded_patch": {
+      "calls": 399,
+      "violation_count": 0,
+      "qualified_count": 1306,
+      "exited_count": 40,
+      "exited_ratio_failure_count": 7,
+      "exited_ratio_failures": [
+        338,
+        340,
+        354,
+        358,
+        359,
+        418,
+        611
+      ],
+      "blocks": {
+        "combined": 4.1660761043937057e-11,
+        "phin": 2.9624188084987686e-13,
+        "phip": 4.445850861953462e-15,
+        "psi": 4.165970753308842e-11
+      },
+      "closure": {
+        "electron": {
+          "contact_flux": -2.938796262064979e-11,
+          "integrated_source": -2.9352263474186406e-11,
+          "mismatch": -3.569914646338389e-14,
+          "qualified": true,
+          "ratio": 0.0012147540448516657
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.93522799355957e-11,
+          "integrated_source": -2.9352263474186406e-11,
+          "mismatch": -1.6461409297144673e-17,
+          "qualified": true,
+          "ratio": 5.608221689512375e-07
+        },
+        "satisfied": true
+      },
+      "strict_Si_positive": true,
+      "term_parity_max": 2.415294078029354e-28
+    },
+    "adaptive_patch": {
+      "calls": 248,
+      "violation_count": 0,
+      "qualified_count": 1306,
+      "exited_count": 40,
+      "exited_ratio_failure_count": 7,
+      "exited_ratio_failures": [
+        338,
+        340,
+        354,
+        358,
+        359,
+        418,
+        611
+      ],
+      "blocks": {
+        "combined": 4.1660761091477543e-11,
+        "phin": 2.9624188084869773e-13,
+        "phip": 4.4357508081499526e-15,
+        "psi": 4.165970758170675e-11
+      },
+      "closure": {
+        "electron": {
+          "contact_flux": -2.938796262064979e-11,
+          "integrated_source": -2.9352261993909884e-11,
+          "mismatch": -3.5700626739906056e-14,
+          "qualified": true,
+          "ratio": 0.001214804415016528
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.93522799355957e-11,
+          "integrated_source": -2.9352261993909884e-11,
+          "mismatch": -1.7941685819307923e-17,
+          "qualified": true,
+          "ratio": 6.112535673097721e-07
+        },
+        "satisfied": true
+      },
+      "strict_Si_positive": false,
+      "term_parity_max": 2.415294078029354e-28
+    }
+  },
+  "remote": {
+    "baseline": {
+      "exit": 1,
+      "seconds": 106.63082242012024,
+      "converged": false,
+      "iterations": 100,
+      "failure_reason": "carrier_row_convergence",
+      "initial_residual": 4.166076103155117e-11,
+      "final_residual": 4.0971975384263695e-11,
+      "final_block_residuals": {
+        "combined": 4.0971975384263695e-11,
+        "phin": 1.946921660762998e-13,
+        "phip": 1.4355767514959323e-16,
+        "psi": 4.097151280864023e-11
+      },
+      "carrier_row_convergence": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 3882,
+        "max_ratio": 1.0899951210606618,
+        "max_ratio_carrier": "hole",
+        "max_ratio_node": 598,
+        "qualified_row_count": 1318,
+        "satisfied": false,
+        "violation_count": 7,
+        "violations": [
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 287.317445958635,
+            "density_qualified": false,
+            "flux": 1.0267438612336047e-17,
+            "flux_qualified": false,
+            "impact": -7.46712991510136e-18,
+            "node_id": 229,
+            "ratio": 0.2785787065210194,
+            "residual": 2.8602897679085463e-18,
+            "scale": 1.0267438612336047e-17,
+            "source_qualified": true,
+            "srh": 5.998107067385822e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2.199329957823007e-106,
+            "density_qualified": false,
+            "flux": -7.523836290872808e-17,
+            "flux_qualified": false,
+            "impact": -1.8042088349662324e-18,
+            "node_id": 357,
+            "ratio": 1.0278170963426825,
+            "residual": -7.733127569842587e-17,
+            "scale": 7.523836290872808e-17,
+            "source_qualified": true,
+            "srh": -2.8870395473156133e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 6.210890050857194e-122,
+            "density_qualified": false,
+            "flux": -2.936285695622182e-17,
+            "flux_qualified": false,
+            "impact": -1.2673974831322612e-18,
+            "node_id": 427,
+            "ratio": 1.0573756850269052,
+            "residual": -3.104757098843208e-17,
+            "scale": 2.936285695622182e-17,
+            "source_qualified": true,
+            "srh": -4.1731654907799444e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 3.7337694664634286e-122,
+            "density_qualified": false,
+            "flux": -2.2431472293409573e-17,
+            "flux_qualified": false,
+            "impact": -1.4183425631128052e-18,
+            "node_id": 598,
+            "ratio": 1.0899951210606618,
+            "residual": -2.4450195358023847e-17,
+            "scale": 2.2431472293409573e-17,
+            "source_qualified": true,
+            "srh": -6.00380501501471e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.130766909812419e-105,
+            "density_qualified": false,
+            "flux": -2.759410964132882e-17,
+            "flux_qualified": false,
+            "impact": -1.7167985061587564e-18,
+            "node_id": 601,
+            "ratio": 1.0842242311670756,
+            "residual": -2.991820231060973e-17,
+            "scale": 2.759410964132882e-17,
+            "source_qualified": true,
+            "srh": -6.072941631221495e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1333.390691924396,
+            "density_qualified": false,
+            "flux": 1.749232935542137e-17,
+            "flux_qualified": false,
+            "impact": -1.049334837085559e-18,
+            "node_id": 603,
+            "ratio": 0.9315449917664985,
+            "residual": 1.629489180537288e-17,
+            "scale": 1.749232935542137e-17,
+            "source_qualified": true,
+            "srh": -1.4810271296293347e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.0552505470598124e-105,
+            "density_qualified": false,
+            "flux": -3.434576671439802e-17,
+            "flux_qualified": false,
+            "impact": -2.1326477152346664e-18,
+            "node_id": 610,
+            "ratio": 1.0813673150854368,
+            "residual": -3.714038953649935e-17,
+            "scale": 3.434576671439802e-17,
+            "source_qualified": true,
+            "srh": -6.619751068666606e-19
+          }
+        ]
+      },
+      "global_continuity_closure": {
+        "electron": {
+          "contact_flux": -2.9331822236594104e-11,
+          "integrated_source": -2.9352281543245264e-11,
+          "mismatch": 2.0459306651159473e-14,
+          "qualified": true,
+          "ratio": 0.0006970261109350697
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.935225974548732e-11,
+          "integrated_source": -2.9352281543245264e-11,
+          "mismatch": 2.1797757945996405e-17,
+          "qualified": true,
+          "ratio": 7.426256767768244e-07
+        },
+        "satisfied": true
+      }
+    },
+    "coordinate": {
+      "exit": 1,
+      "seconds": 106.23860335350037,
+      "converged": false,
+      "iterations": 100,
+      "failure_reason": "carrier_row_convergence",
+      "initial_residual": 4.166076103156572e-11,
+      "final_residual": 4.097198125803331e-11,
+      "final_block_residuals": {
+        "combined": 4.097198125803331e-11,
+        "phin": 1.9469216609680313e-13,
+        "phip": 1.4357896565307635e-16,
+        "psi": 4.097151868247598e-11
+      },
+      "carrier_row_convergence": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 3882,
+        "max_ratio": 1.0899951211235053,
+        "max_ratio_carrier": "hole",
+        "max_ratio_node": 598,
+        "qualified_row_count": 1318,
+        "satisfied": false,
+        "violation_count": 7,
+        "violations": [
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 287.31744293169766,
+            "density_qualified": false,
+            "flux": 1.0267438112827076e-17,
+            "flux_qualified": false,
+            "impact": -7.467129914681633e-18,
+            "node_id": 229,
+            "ratio": 0.27857867069825876,
+            "residual": 2.8602892609480053e-18,
+            "scale": 1.0267438112827076e-17,
+            "source_qualified": true,
+            "srh": 5.998106280256306e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2.199329957823007e-106,
+            "density_qualified": false,
+            "flux": -7.523836291179993e-17,
+            "flux_qualified": false,
+            "impact": -1.804208834682737e-18,
+            "node_id": 357,
+            "ratio": 1.0278170963377788,
+            "residual": -7.733127570121423e-17,
+            "scale": 7.523836291179993e-17,
+            "source_qualified": true,
+            "srh": -2.8870395473156133e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 6.210890050857194e-122,
+            "density_qualified": false,
+            "flux": -2.936285680695434e-17,
+            "flux_qualified": false,
+            "impact": -1.2673974778877263e-18,
+            "node_id": 427,
+            "ratio": 1.0573756851399658,
+            "residual": -3.1047570833920055e-17,
+            "scale": 2.936285680695434e-17,
+            "source_qualified": true,
+            "srh": -4.1731654907799444e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 3.7337694664634286e-122,
+            "density_qualified": false,
+            "flux": -2.243147223676112e-17,
+            "flux_qualified": false,
+            "impact": -1.4183425594243919e-18,
+            "node_id": 598,
+            "ratio": 1.0899951211235053,
+            "residual": -2.4450195297686983e-17,
+            "scale": 2.243147223676112e-17,
+            "source_qualified": true,
+            "srh": -6.00380501501471e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.130766909812419e-105,
+            "density_qualified": false,
+            "flux": -2.7594109543927985e-17,
+            "flux_qualified": false,
+            "impact": -1.7167985002646649e-18,
+            "node_id": 601,
+            "ratio": 1.0842242312507682,
+            "residual": -2.9918202207314804e-17,
+            "scale": 2.7594109543927985e-17,
+            "source_qualified": true,
+            "srh": -6.072941631221495e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1333.3906903912819,
+            "density_qualified": false,
+            "flux": 1.7492323056868752e-17,
+            "flux_qualified": false,
+            "impact": -1.0493348358833665e-18,
+            "node_id": 603,
+            "ratio": 0.9315449671429308,
+            "residual": 1.6294885507264332e-17,
+            "scale": 1.7492323056868752e-17,
+            "source_qualified": true,
+            "srh": -1.4810271372105362e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.0552505470598124e-105,
+            "density_qualified": false,
+            "flux": -3.434576663742745e-17,
+            "flux_qualified": false,
+            "impact": -2.1326477105522666e-18,
+            "node_id": 610,
+            "ratio": 1.0813673151314538,
+            "residual": -3.7140389454846377e-17,
+            "scale": 3.434576663742745e-17,
+            "source_qualified": true,
+            "srh": -6.619751068666606e-19
+          }
+        ]
+      },
+      "global_continuity_closure": {
+        "electron": {
+          "contact_flux": -2.933182226369916e-11,
+          "integrated_source": -2.935228154455784e-11,
+          "mismatch": 2.0459280858679234e-14,
+          "qualified": true,
+          "ratio": 0.0006970252321824216
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.9352259745456777e-11,
+          "integrated_source": -2.935228154455784e-11,
+          "mismatch": 2.1799101061128993e-17,
+          "qualified": true,
+          "ratio": 7.426714352012861e-07
+        },
+        "satisfied": true
+      }
+    },
+    "pair": {
+      "exit": 1,
+      "seconds": 105.71564149856567,
+      "converged": false,
+      "iterations": 100,
+      "failure_reason": "carrier_row_convergence",
+      "initial_residual": 4.1660761031298344e-11,
+      "final_residual": 4.097198125943818e-11,
+      "final_block_residuals": {
+        "combined": 4.097198125943818e-11,
+        "phin": 1.9469216608264665e-13,
+        "phip": 1.4359154377509056e-16,
+        "psi": 4.0971518683880896e-11
+      },
+      "carrier_row_convergence": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 3882,
+        "max_ratio": 1.0899951210133692,
+        "max_ratio_carrier": "hole",
+        "max_ratio_node": 598,
+        "qualified_row_count": 1318,
+        "satisfied": false,
+        "violation_count": 7,
+        "violations": [
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 287.31744263723385,
+            "density_qualified": false,
+            "flux": 1.0267438057056177e-17,
+            "flux_qualified": false,
+            "impact": -7.467129914640804e-18,
+            "node_id": 229,
+            "ratio": 0.27857866670902504,
+            "residual": 2.8602892044522124e-18,
+            "scale": 1.0267438057056177e-17,
+            "source_qualified": true,
+            "srh": 5.998106203683887e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2.199329957823007e-106,
+            "density_qualified": false,
+            "flux": -7.52383628984924e-17,
+            "flux_qualified": false,
+            "impact": -1.804208834358286e-18,
+            "node_id": 357,
+            "ratio": 1.0278170963383866,
+            "residual": -7.733127568758225e-17,
+            "scale": 7.52383628984924e-17,
+            "source_qualified": true,
+            "srh": -2.8870395473156133e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 6.210890050857194e-122,
+            "density_qualified": false,
+            "flux": -2.9362856860881277e-17,
+            "flux_qualified": false,
+            "impact": -1.2673974798532934e-18,
+            "node_id": 427,
+            "ratio": 1.0573756851015321,
+            "residual": -3.1047570889812563e-17,
+            "scale": 2.9362856860881277e-17,
+            "source_qualified": true,
+            "srh": -4.1731654907799444e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 3.7337694664634286e-122,
+            "density_qualified": false,
+            "flux": -2.2431472331107507e-17,
+            "flux_qualified": false,
+            "impact": -1.4183425654445931e-18,
+            "node_id": 598,
+            "ratio": 1.0899951210133692,
+            "residual": -2.445019539805357e-17,
+            "scale": 2.2431472331107507e-17,
+            "source_qualified": true,
+            "srh": -6.00380501501471e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.130766909812419e-105,
+            "density_qualified": false,
+            "flux": -2.759410964524108e-17,
+            "flux_qualified": false,
+            "impact": -1.716798506216559e-18,
+            "node_id": 601,
+            "ratio": 1.084224231157229,
+            "residual": -2.991820231457979e-17,
+            "scale": 2.759410964524108e-17,
+            "source_qualified": true,
+            "srh": -6.072941631221495e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1333.390691419074,
+            "density_qualified": false,
+            "flux": 1.7492327271679306e-17,
+            "flux_qualified": false,
+            "impact": -1.0493348366892698e-18,
+            "node_id": 603,
+            "ratio": 0.9315449836202883,
+            "residual": 1.629488972177722e-17,
+            "scale": 1.7492327271679306e-17,
+            "source_qualified": true,
+            "srh": -1.4810271321281725e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 4.0552505470598124e-105,
+            "density_qualified": false,
+            "flux": -3.434576667247865e-17,
+            "flux_qualified": false,
+            "impact": -2.132647712731586e-18,
+            "node_id": 610,
+            "ratio": 1.0813673151118675,
+            "residual": -3.71403894920769e-17,
+            "scale": 3.434576667247865e-17,
+            "source_qualified": true,
+            "srh": -6.619751068666606e-19
+          }
+        ]
+      },
+      "global_continuity_closure": {
+        "electron": {
+          "contact_flux": -2.9331822297580476e-11,
+          "integrated_source": -2.935228154533183e-11,
+          "mismatch": 2.0459247751356828e-14,
+          "qualified": true,
+          "ratio": 0.0006970241042339229
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.935225974543891e-11,
+          "integrated_source": -2.935228154533183e-11,
+          "mismatch": 2.17998929250068e-17,
+          "qualified": true,
+          "ratio": 7.426984131144598e-07
+        },
+        "satisfied": true
+      }
+    },
+    "branch": {
+      "exit": 1,
+      "seconds": 192.409010887146,
+      "converged": false,
+      "iterations": 100,
+      "failure_reason": "carrier_row_convergence",
+      "initial_residual": 4.1660761182295745e-11,
+      "final_residual": 4.0971105672017614e-11,
+      "final_block_residuals": {
+        "combined": 4.0971105672017614e-11,
+        "phin": 1.9469216620314726e-13,
+        "phip": 1.793741256824238e-15,
+        "psi": 4.097064304755962e-11
+      },
+      "carrier_row_convergence": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 3866,
+        "max_ratio": 1.0625311068631103,
+        "max_ratio_carrier": "hole",
+        "max_ratio_node": 598,
+        "qualified_row_count": 1334,
+        "satisfied": false,
+        "violation_count": 18,
+        "violations": [
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 287.51860114901297,
+            "density_qualified": false,
+            "flux": 1.5826918524137197e-17,
+            "flux_qualified": false,
+            "impact": -7.549035437085162e-18,
+            "node_id": 229,
+            "ratio": 0.5268484343255038,
+            "residual": 8.338387244638996e-18,
+            "scale": 1.5826918524137197e-17,
+            "source_qualified": true,
+            "srh": 6.05041575869598e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1.6951427717463895e-29,
+            "density_qualified": false,
+            "flux": -1.3780992777834398e-16,
+            "flux_qualified": false,
+            "impact": -1.7352822145275953e-18,
+            "node_id": 337,
+            "ratio": 1.0133425378644763,
+            "residual": -1.3964866195782727e-16,
+            "scale": 1.3780992777834398e-16,
+            "source_qualified": true,
+            "srh": -1.0345196495569261e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 9869.056256026272,
+            "density_qualified": false,
+            "flux": -1.5124997526087488e-17,
+            "flux_qualified": false,
+            "impact": -2.7702492629702283e-18,
+            "node_id": 338,
+            "ratio": 0.028480982248852395,
+            "residual": -1.793715816057408e-17,
+            "scale": 6.297942256291682e-16,
+            "source_qualified": true,
+            "srh": -4.191137151636118e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 218238.0603528351,
+            "density_qualified": false,
+            "flux": 8.735182852316502e-19,
+            "flux_qualified": false,
+            "impact": -2.193411764566e-312,
+            "node_id": 343,
+            "ratio": 0.0012270332887840533,
+            "residual": -1.3515269815147954e-19,
+            "scale": 1.1014590996582586e-16,
+            "source_qualified": true,
+            "srh": -1.0086709833831298e-18
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 0.10237581268006331,
+            "density_qualified": false,
+            "flux": -8.893850469287025e-16,
+            "flux_qualified": false,
+            "impact": -8.236210280628746e-18,
+            "node_id": 354,
+            "ratio": 1.009302341994014,
+            "residual": -8.977446984255192e-16,
+            "scale": 8.894705392755777e-16,
+            "source_qualified": true,
+            "srh": -1.234412161878195e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2592.4249691355467,
+            "density_qualified": false,
+            "flux": 2.7406549063089092e-16,
+            "flux_qualified": false,
+            "impact": -1.2596536315082762e-18,
+            "node_id": 356,
+            "ratio": 0.9953532115539157,
+            "residual": 2.7279196627555686e-16,
+            "scale": 2.7406549063089092e-16,
+            "source_qualified": true,
+            "srh": -1.3870723825795722e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 8726.736114048605,
+            "density_qualified": false,
+            "flux": 1.46001251639853e-15,
+            "flux_qualified": false,
+            "impact": -5.3281030839858585e-18,
+            "node_id": 357,
+            "ratio": 0.9963186590172705,
+            "residual": 1.4546377124866141e-15,
+            "scale": 1.46001251639853e-15,
+            "source_qualified": true,
+            "srh": -4.6700827930021804e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 101111.86810439058,
+            "density_qualified": false,
+            "flux": 1.3873079078592935e-18,
+            "flux_qualified": false,
+            "impact": -1.100818997502e-312,
+            "node_id": 375,
+            "ratio": 0.0011512896763844923,
+            "residual": -1.3385347942951367e-20,
+            "scale": 1.162639448395532e-17,
+            "source_qualified": true,
+            "srh": -1.400693255802245e-18
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 61434.89817860841,
+            "density_qualified": false,
+            "flux": 1.4388647807276402e-18,
+            "flux_qualified": false,
+            "impact": -1.166420841795e-312,
+            "node_id": 429,
+            "ratio": 0.0011387441200370603,
+            "residual": -7.648004905205602e-21,
+            "scale": 6.716175100826601e-18,
+            "source_qualified": true,
+            "srh": -1.4465127856328458e-18
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1.3497771421309803e-41,
+            "density_qualified": false,
+            "flux": -6.351780920503688e-17,
+            "flux_qualified": false,
+            "impact": -3.371458413609343e-18,
+            "node_id": 598,
+            "ratio": 1.0625311068631103,
+            "residual": -6.74896481201477e-17,
+            "scale": 6.351780920503688e-17,
+            "source_qualified": true,
+            "srh": -6.00380501501471e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 728.7898122237269,
+            "density_qualified": false,
+            "flux": 4.056148713370354e-17,
+            "flux_qualified": false,
+            "impact": -1.839211534681947e-18,
+            "node_id": 599,
+            "ratio": 0.9521101182943154,
+            "residual": 3.861900231306383e-17,
+            "scale": 4.056148713370354e-17,
+            "source_qualified": true,
+            "srh": -1.0327328595776666e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1110.4377834629308,
+            "density_qualified": false,
+            "flux": 4.836713242525797e-17,
+            "flux_qualified": false,
+            "impact": -2.2180272833056745e-18,
+            "node_id": 600,
+            "ratio": 0.951436130950428,
+            "residual": 4.6018237339854435e-17,
+            "scale": 4.836713242525797e-17,
+            "source_qualified": true,
+            "srh": -1.3086780209786404e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1.4932937891370921e-24,
+            "density_qualified": false,
+            "flux": -1.0995444978888255e-16,
+            "flux_qualified": false,
+            "impact": -4.9122049645794326e-18,
+            "node_id": 601,
+            "ratio": 1.0501980514503895,
+            "residual": -1.1547394891658414e-16,
+            "scale": 1.0995444978888255e-16,
+            "source_qualified": true,
+            "srh": -6.072941631221495e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1334.3023334868406,
+            "density_qualified": false,
+            "flux": 7.035917384395305e-17,
+            "flux_qualified": false,
+            "impact": -2.994727623243906e-18,
+            "node_id": 603,
+            "ratio": 0.9553380268521515,
+            "residual": 6.721679431102961e-17,
+            "scale": 7.035917384395305e-17,
+            "source_qualified": true,
+            "srh": -1.4765190967952194e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 784.4729393606452,
+            "density_qualified": false,
+            "flux": 5.445609325963559e-17,
+            "flux_qualified": false,
+            "impact": -2.3152625055051503e-18,
+            "node_id": 608,
+            "ratio": 0.9555872687685311,
+            "residual": 5.203754942577959e-17,
+            "scale": 5.445609325963559e-17,
+            "source_qualified": true,
+            "srh": -1.0328132835085039e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 1.4659942300142873e-24,
+            "density_qualified": false,
+            "flux": -1.364941299016766e-16,
+            "flux_qualified": false,
+            "impact": -6.098543218496344e-18,
+            "node_id": 610,
+            "ratio": 1.0495297367750023,
+            "residual": -1.432546482270396e-16,
+            "scale": 1.364941299016766e-16,
+            "source_qualified": true,
+            "srh": -6.619751068666606e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 923.1928600568979,
+            "density_qualified": false,
+            "flux": 2.902491593917549e-17,
+            "flux_qualified": false,
+            "impact": -1.2733739458056546e-18,
+            "node_id": 611,
+            "ratio": 0.7742919194649883,
+            "residual": 2.7548717972453676e-17,
+            "scale": 3.5579239922184626e-17,
+            "source_qualified": true,
+            "srh": -2.0282402091615863e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2276.0432874654985,
+            "density_qualified": false,
+            "flux": 5.006427198821304e-17,
+            "flux_qualified": false,
+            "impact": -2.058915330645973e-18,
+            "node_id": 612,
+            "ratio": 0.9314369435263226,
+            "residual": 4.7780134840204893e-17,
+            "scale": 5.129722969685346e-17,
+            "source_qualified": true,
+            "srh": -2.252218173621781e-19
+          }
+        ]
+      },
+      "global_continuity_closure": {
+        "electron": {
+          "contact_flux": -2.93318501073662e-11,
+          "integrated_source": -2.935231284688453e-11,
+          "mismatch": 2.0462739518330046e-14,
+          "qualified": true,
+          "ratio": 0.0006971423214611168
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.9352287504402584e-11,
+          "integrated_source": -2.935231284688453e-11,
+          "mismatch": 2.5342481946145176e-17,
+          "qualified": true,
+          "ratio": 8.633896101592908e-07
+        },
+        "satisfied": true
+      }
+    },
+    "bounded_patch": {
+      "exit": 1,
+      "seconds": 7.8170006275177,
+      "converged": false,
+      "iterations": 4,
+      "failure_reason": "carrier_row_convergence_line_search_rejected",
+      "initial_residual": 4.1660761043937057e-11,
+      "final_residual": 4.148969647147099e-11,
+      "final_block_residuals": {
+        "combined": 4.148969647147099e-11,
+        "phin": 1.9469216581408036e-13,
+        "phip": 3.1561416866313416e-15,
+        "psi": 4.1489239548274836e-11
+      },
+      "carrier_row_convergence": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 3886,
+        "max_ratio": 1.007047331743786,
+        "max_ratio_carrier": "hole",
+        "max_ratio_node": 354,
+        "qualified_row_count": 1314,
+        "satisfied": false,
+        "violation_count": 6,
+        "violations": [
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 287.34581635820086,
+            "density_qualified": false,
+            "flux": 1.6002440143874735e-17,
+            "flux_qualified": false,
+            "impact": -7.551853856389103e-18,
+            "node_id": 229,
+            "ratio": 0.5318339613487669,
+            "residual": 8.510641132963432e-18,
+            "scale": 1.6002440143874735e-17,
+            "source_qualified": true,
+            "srh": 6.005484547780156e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 9753.987543307252,
+            "density_qualified": false,
+            "flux": -4.1723087961497826e-16,
+            "flux_qualified": false,
+            "impact": -1.6761568053931883e-18,
+            "node_id": 338,
+            "ratio": 0.42913088085133094,
+            "residual": -4.1895100971011477e-16,
+            "scale": 9.762779338531386e-16,
+            "source_qualified": true,
+            "srh": -4.397328974333733e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 218221.05007279874,
+            "density_qualified": false,
+            "flux": 5.907853102083521e-19,
+            "flux_qualified": false,
+            "impact": -2.193411765396e-312,
+            "node_id": 343,
+            "ratio": 0.001434793377235834,
+            "residual": -4.1823527309548837e-19,
+            "scale": 2.9149512377958514e-16,
+            "source_qualified": true,
+            "srh": -1.0090205833038404e-18
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 0.841813107257906,
+            "density_qualified": false,
+            "flux": -1.1199763991801867e-15,
+            "flux_qualified": false,
+            "impact": -8.477357789275376e-18,
+            "node_id": 354,
+            "ratio": 1.007047331743786,
+            "residual": -1.1285771827673243e-15,
+            "scale": 1.1206793833742644e-15,
+            "source_qualified": true,
+            "srh": -1.2342579786211113e-19
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 2636.743188049856,
+            "density_qualified": false,
+            "flux": 5.590129092775704e-16,
+            "flux_qualified": false,
+            "impact": -1.1767025297309024e-18,
+            "node_id": 356,
+            "ratio": 0.9978721538039809,
+            "residual": 5.578234157850385e-16,
+            "scale": 5.590129092775704e-16,
+            "source_qualified": true,
+            "srh": -1.2790962800998655e-20
+          },
+          {
+            "carrier": "hole",
+            "carrier_density_m3": 9030.800584653934,
+            "density_qualified": false,
+            "flux": 2.7167929462229296e-15,
+            "flux_qualified": false,
+            "impact": -5.9034654822784895e-18,
+            "node_id": 357,
+            "ratio": 0.9978129602269898,
+            "residual": 2.7108512119945066e-15,
+            "scale": 2.7167929462229296e-15,
+            "source_qualified": true,
+            "srh": -3.826874614433861e-20
+          }
+        ]
+      },
+      "global_continuity_closure": {
+        "electron": {
+          "contact_flux": -2.933184066125477e-11,
+          "integrated_source": -2.935228128127151e-11,
+          "mismatch": 2.0440620016736247e-14,
+          "qualified": true,
+          "ratio": 0.0006963894840357288
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": -2.9352278156422546e-11,
+          "integrated_source": -2.935228128127151e-11,
+          "mismatch": 3.124848962986187e-18,
+          "qualified": true,
+          "ratio": 1.0646017367583709e-07
+        },
+        "satisfied": true
+      }
+    }
+  },
+  "old_seal_check": {
+    "files": 224,
+    "mismatches": []
+  },
+  "contact_check": {
+    "contact_nodes": 78,
+    "reference_and_increment_max_difference": 0
+  },
+  "remote_verification": {
+    "baseline": {
+      "solver_physics_and_gates_identical": true,
+      "initial_residual_parity_max": 0.0,
+      "strict_Si_positive": true
+    },
+    "coordinate": {
+      "solver_physics_and_gates_identical": true,
+      "initial_residual_parity_max": 0.0,
+      "strict_Si_positive": true
+    },
+    "pair": {
+      "solver_physics_and_gates_identical": true,
+      "initial_residual_parity_max": 0.0,
+      "strict_Si_positive": true
+    },
+    "branch": {
+      "solver_physics_and_gates_identical": true,
+      "initial_residual_parity_max": 0.0,
+      "strict_Si_positive": true
+    },
+    "bounded_patch": {
+      "solver_physics_and_gates_identical": true,
+      "initial_residual_parity_max": 0.0,
+      "strict_Si_positive": true
+    }
+  },
+  "excluded_candidate_note": "Unbounded control excluded for excessive QF and zero Si hole population",
+  "private_evidence": "build-release/bvmethods_dynamic_rows_20261019/"
+}

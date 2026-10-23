@@ -1,0 +1,2046 @@
+{
+  "schema": "vela.validation.nonlocalpath.n4.paired_live_assembly.v1",
+  "date": "2026-10-18",
+  "stage": "N4 ongoing; N5 not started",
+  "target": "installed library BVmethods resistor, original default statistics and physics",
+  "scope": "private actual assembly diagnostics; no production Newton consumer",
+  "mesh": {
+    "nodes": 2600,
+    "Tri3_cells": 5020,
+    "Si_seeds": 4156,
+    "free_carrier_nodes": 2121,
+    "augmented_unknowns": 6843
+  },
+  "units": {
+    "temperature_K": 300,
+    "reference_cm3": 14824351000.0,
+    "thermal_voltage_V": 0.025851995266484913,
+    "resistor_ohm_um": 10000000.0,
+    "path": "m/J",
+    "terminal_current": "A/um"
+  },
+  "runtime": {
+    "assembly": "Ubuntu 26.04.1, GCC 15.2, C++20 Release O1, contraction disabled",
+    "state_properties": [
+      "Windows UCRT64 GCC 16.2",
+      "Ubuntu 26.04 GCC 15.2"
+    ],
+    "enabled_features": [
+      "HDF5",
+      "UMFPACK",
+      "SPQR",
+      "METIS"
+    ],
+    "linear_solver_called": false,
+    "paired_state_and_load_tests_per_platform": {
+      "cases": 7,
+      "assertions": 43
+    },
+    "Ubuntu_related_properties": {
+      "cases": 20,
+      "assertions": 149
+    }
+  },
+  "directions": [
+    {
+      "direction": "n",
+      "states": [
+        {
+          "h": 0.0,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 3.2013340560774764e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0003,
+          "oracle_error": 2.495530720247156e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 7.387694107546957e-18,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0003,
+          "oracle_error": 2.497614731769681e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 1.0054299526166867e-16,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0001,
+          "oracle_error": 2.490253396047247e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 1.0342771627381136e-16,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0001,
+          "oracle_error": 2.478430680887515e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 1.1377048654615994e-16,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 3e-05,
+          "oracle_error": 2.49859848475004e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 7.035899036915976e-19,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -3e-05,
+          "oracle_error": 2.489442129494284e-80,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 8.44307881413147e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        }
+      ],
+      "native_baseline": {
+        "failed_1e8": 95,
+        "max_error": 0.0003275692477236401
+      },
+      "baseline_components": {
+        "SRH": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "avalanche": {
+          "failed_1e8": 0,
+          "max_error": 7.511062834707663e-10
+        },
+        "charge": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "dielectric": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "electron_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 1.5271451739190423e-16
+        },
+        "electron_transport": {
+          "failed_1e8": 95,
+          "max_error": 0.0003275692477237747
+        },
+        "hole_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 3.464647415887428e-17
+        },
+        "hole_transport": {
+          "failed_1e8": 0,
+          "max_error": 6.39549310599e-11
+        }
+      },
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 2,
+              "nonzero": 2121,
+              "max_error": 1.0647796682081018e-05
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 2121,
+              "max_error": 9.20114895526439e-09
+            },
+            "avalanche": {
+              "failed_1e5": 61,
+              "nonzero": 1287,
+              "max_error": 1.0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 3,
+              "nonzero": 2121,
+              "max_error": 3.121883180875865e-05
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 2121,
+              "max_error": 1.0223498965219794e-09
+            },
+            "avalanche": {
+              "failed_1e5": 43,
+              "nonzero": 1287,
+              "max_error": 1.0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 2121,
+              "max_error": 8.262089987500783e-06
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 2121,
+              "max_error": 9.201151206461e-11
+            },
+            "avalanche": {
+              "failed_1e5": 29,
+              "nonzero": 1287,
+              "max_error": 1.0
+            }
+          }
+        }
+      ],
+      "projection": {
+        "values": 90384,
+        "nearest_mismatches": 751,
+        "max_ulp": 0.5316389482703184,
+        "steps": [
+          {
+            "h": 0.0003,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 69,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 0,
+                "max_error": 0.0149123158195449
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 109,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 0,
+                "max_error": 0.007655081693041143
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          },
+          {
+            "h": 0.0001,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 83,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 0,
+                "max_error": 0.06749092392625333
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 139,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 1,
+                "max_error": 0.02429177586675672
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          },
+          {
+            "h": 3e-05,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 99,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 0,
+                "max_error": 0.09918594865026667
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 169,
+                "lost_nonzero": 0,
+                "nonzero": 2121,
+                "above_rounding_bound": 0,
+                "max_error": 0.04865319361128336
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      "events": [
+        {
+          "h": 0.0003,
+          "HFS_crossings": 48,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 2,
+              "with_HFS_overlap": 1
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 61,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "HFS_crossings": 10,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 3,
+              "with_HFS_overlap": 3
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 43,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "HFS_crossings": 2,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 29,
+              "with_HFS_overlap": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "direction": "psi",
+      "states": [
+        {
+          "h": 0.0,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 3.2013340560774764e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0003,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 5.340278170373663e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0003,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 5.136176632177845e-18,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0001,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 5.452832233318093e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0001,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 6.128256258511289e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 3e-05,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 8.056109032475464e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -3e-05,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 1.1996200912359258e-16,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        }
+      ],
+      "native_baseline": {
+        "failed_1e8": 95,
+        "max_error": 0.0003275692477236401
+      },
+      "baseline_components": {
+        "SRH": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "avalanche": {
+          "failed_1e8": 0,
+          "max_error": 7.511062834707663e-10
+        },
+        "charge": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "dielectric": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "electron_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 1.5271451739190423e-16
+        },
+        "electron_transport": {
+          "failed_1e8": 95,
+          "max_error": 0.0003275692477237747
+        },
+        "hole_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 3.464647415887428e-17
+        },
+        "hole_transport": {
+          "failed_1e8": 0,
+          "max_error": 6.39549310599e-11
+        }
+      },
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 8.646223977956483e-10
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 1.4643086114369855e-09
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 1.2885116628885905e-07
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 9.60691376803364e-11
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 1.627010223050553e-10
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 1.4552146531753906e-08
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 8.646204114738549e-12
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 1.4643158560695465e-11
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 7,
+              "max_error": 6.475417750010497e-10
+            }
+          }
+        }
+      ],
+      "projection": {
+        "values": 90384,
+        "nearest_mismatches": 686,
+        "max_ulp": 0.5316389482703184,
+        "steps": [
+          {
+            "h": 0.0003,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.439084329062463e-12
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.439084329062463e-12
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.439084329062463e-12
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.439084329062463e-12
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          },
+          {
+            "h": 0.0001,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 2.0813211061941145e-11
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 3.730896584653544e-11
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 2.0813211061941145e-11
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 2.0813211061941145e-11
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          },
+          {
+            "h": 3e-05,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.4391407979256131e-12
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 9.830943565664721e-11
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 9.543115404202828e-11
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 9.543115404202828e-11
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      "events": [
+        {
+          "h": 0.0003,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 8,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 8,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 8,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "direction": "p",
+      "states": [
+        {
+          "h": 0.0,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 3.2013340560774764e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0003,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 9.498464081450911e-18,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0003,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 5.903119033682047e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 0.0001,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 9.498463815734175e-18,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -0.0001,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 8.379755620773002e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": 3e-05,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 4.1019291484076863e-17,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        },
+        {
+          "h": -3e-05,
+          "oracle_error": 3.9947565311096717e-79,
+          "population_failures": 0,
+          "source_resolved": true,
+          "source_records": 4156,
+          "source_pair_balance": 1.1531838452508817e-16,
+          "source_revision_rejected": true,
+          "source_content_rejected": true
+        }
+      ],
+      "native_baseline": {
+        "failed_1e8": 95,
+        "max_error": 0.0003275692477236401
+      },
+      "baseline_components": {
+        "SRH": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "avalanche": {
+          "failed_1e8": 0,
+          "max_error": 7.511062834707663e-10
+        },
+        "charge": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "dielectric": {
+          "failed_1e8": 0,
+          "max_error": 0.0
+        },
+        "electron_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 1.5271451739190423e-16
+        },
+        "electron_transport": {
+          "failed_1e8": 95,
+          "max_error": 0.0003275692477237747
+        },
+        "hole_nonlocal": {
+          "failed_1e8": 0,
+          "max_error": 3.464647415887428e-17
+        },
+        "hole_transport": {
+          "failed_1e8": 0,
+          "max_error": 6.39549310599e-11
+        }
+      },
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 1.896385458684601e-08
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 1,
+              "max_error": 4.479787958415689e-08
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 3.658767121903279e-08
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 2.1070948307845963e-09
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 1,
+              "max_error": 4.9775419649755826e-09
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 4.085890078268639e-09
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failed_1e5": 0,
+              "nonzero": 0,
+              "max_error": 0.0
+            },
+            "hole_transport": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 1.896384744914295e-10
+            },
+            "SRH": {
+              "failed_1e5": 0,
+              "nonzero": 1,
+              "max_error": 4.479787616793864e-10
+            },
+            "avalanche": {
+              "failed_1e5": 0,
+              "nonzero": 5,
+              "max_error": 3.2303181251727373e-10
+            }
+          }
+        }
+      ],
+      "projection": {
+        "values": 90384,
+        "nearest_mismatches": 686,
+        "max_ulp": 0.5316389482703184,
+        "steps": [
+          {
+            "h": 0.0003,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.8183371839691156e-13
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 7.314998766093813e-14
+              }
+            ]
+          },
+          {
+            "h": 0.0001,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 4.151505414295037e-12
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.4064447833652176e-13
+              }
+            ]
+          },
+          {
+            "h": 3e-05,
+            "fields": [
+              {
+                "field": "Ec_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "Ev_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFn_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "EFp_J",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 7.729902331214352e-11
+              },
+              {
+                "field": "n_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 0,
+                "above_rounding_bound": 0,
+                "max_error": 0.0
+              },
+              {
+                "field": "p_m3",
+                "failed_direction_1e5": 0,
+                "lost_nonzero": 0,
+                "nonzero": 1,
+                "above_rounding_bound": 0,
+                "max_error": 1.406331845638917e-13
+              }
+            ]
+          }
+        ]
+      },
+      "events": [
+        {
+          "h": 0.0003,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "HFS_crossings": 0,
+          "changed_low_mobility_cells": 0,
+          "blocks": {
+            "electron_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "hole_transport": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "SRH": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            },
+            "avalanche": {
+              "failed": 0,
+              "with_HFS_overlap": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "compatibility_control": {
+    "failed_1e8": 0,
+    "max_error": 1.7806260513340255e-09,
+    "failed_rows": []
+  },
+  "source_band_binding": [
+    {
+      "name": "n",
+      "states": [
+        {
+          "h": 0.0,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0003,
+          "fields": 8608,
+          "max_error": 5.404127184237719e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0003,
+          "fields": 8608,
+          "max_error": 1.313479676762743e-67,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0001,
+          "fields": 8608,
+          "max_error": 4.137918506065311e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0001,
+          "fields": 8608,
+          "max_error": 1.6681641247632345e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 3e-05,
+          "fields": 8608,
+          "max_error": 1.0191138213502397e-67,
+          "failed_1e65": 0
+        },
+        {
+          "h": -3e-05,
+          "fields": 8608,
+          "max_error": 5.366779497717392e-68,
+          "failed_1e65": 0
+        }
+      ]
+    },
+    {
+      "name": "psi",
+      "states": [
+        {
+          "h": 0.0,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0003,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0003,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0001,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0001,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 3e-05,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -3e-05,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        }
+      ]
+    },
+    {
+      "name": "p_parallel",
+      "states": [
+        {
+          "h": 0.0,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0003,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0003,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 0.0001,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -0.0001,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": 3e-05,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        },
+        {
+          "h": -3e-05,
+          "fields": 8608,
+          "max_error": 5.509612337823751e-68,
+          "failed_1e65": 0
+        }
+      ]
+    }
+  ],
+  "selected_path_chain": {
+    "seed": 2693,
+    "steps": [
+      {
+        "direction": "n",
+        "h": 0.0003,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 6,
+        "max_error": 6.404566281218386e-14
+      },
+      {
+        "direction": "n",
+        "h": 0.0001,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 6,
+        "max_error": 7.116184710194432e-15
+      },
+      {
+        "direction": "n",
+        "h": 3e-05,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 6,
+        "max_error": 6.404566234392551e-16
+      },
+      {
+        "direction": "psi",
+        "h": 0.0003,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      },
+      {
+        "direction": "psi",
+        "h": 0.0001,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      },
+      {
+        "direction": "psi",
+        "h": 3e-05,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      },
+      {
+        "direction": "p",
+        "h": 0.0003,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      },
+      {
+        "direction": "p",
+        "h": 0.0001,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      },
+      {
+        "direction": "p",
+        "h": 3e-05,
+        "same_branch_signature": true,
+        "failed_1e5": 0,
+        "nonzero": 0,
+        "max_error": 0
+      }
+    ],
+    "seconds": 125.84160208702087,
+    "full_source_Jacobian": false,
+    "actual_projected_source_Jv_qualified": false
+  },
+  "selected_active_paths": {
+    "controls": [
+      {
+        "direction": "psi",
+        "seed": 2670,
+        "candidate_selection": "largest absolute AD support among preselected incident seeds; no FD error used",
+        "steps": [
+          {
+            "h": 3e-05,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 1.054751388428584e-07
+          },
+          {
+            "h": 1e-05,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 1.1719399197692205e-08
+          },
+          {
+            "h": 3e-06,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 1.0547453066499732e-09
+          }
+        ]
+      },
+      {
+        "direction": "p",
+        "seed": 977,
+        "candidate_selection": "largest absolute AD support among preselected incident seeds; no FD error used",
+        "steps": [
+          {
+            "h": 0.0003,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 9.518775745037212e-09
+          },
+          {
+            "h": 0.0001,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 1.057641714879182e-09
+          },
+          {
+            "h": 3e-05,
+            "same_branch_signature": true,
+            "nonzero": 6,
+            "failed_1e5": 0,
+            "max_error": 9.518775398522219e-11
+          }
+        ]
+      }
+    ],
+    "actual_projected_Cpp_source_Jv_qualified": false
+  },
+  "audit": {
+    "passed": 54,
+    "failed": [],
+    "old_sealed_file_counts": [
+      123,
+      110
+    ]
+  },
+  "limits": [
+    "canonical SG absolute RHS candidate remains rejected",
+    "NonLocalPath current input still projected to binary64",
+    "avalanche current/force/generation contains binary64 and long-double boundaries",
+    "local derivative tape remains binary64",
+    "selected source chain is not a full current NonLocalPath Jacobian",
+    "no full coupled Jv, autonomous Newton or QS qualification"
+  ],
+  "production_changes": false,
+  "native_rerun": false,
+  "full_CTest_run": false,
+  "Newton_eligible": false,
+  "threshold_changes": false,
+  "rounding_repair": {
+    "platforms": {
+      "windows": {
+        "cases": 38238,
+        "nearest_failures": 0,
+        "old_conversion_mismatches_to_observed": 0,
+        "old_conversion_not_nearest": 266,
+        "property_cases": 1,
+        "property_assertions": 23,
+        "property_errors": 0
+      },
+      "ubuntu": {
+        "cases": 38238,
+        "nearest_failures": 0,
+        "old_conversion_mismatches_to_observed": 0,
+        "old_conversion_not_nearest": 266,
+        "property_cases": 1,
+        "property_assertions": 23,
+        "property_errors": 0
+      }
+    },
+    "checks": [
+      {
+        "name": "cross_platform_replay_bits",
+        "passed": true
+      },
+      {
+        "name": "nearest_oracle_38238",
+        "passed": true
+      },
+      {
+        "name": "original_conversion_reproduced",
+        "passed": true
+      },
+      {
+        "name": "actual_three_states",
+        "passed": true
+      },
+      {
+        "name": "actual_RNE_projection",
+        "passed": true
+      },
+      {
+        "name": "unaffected_physics_identical",
+        "passed": true
+      },
+      {
+        "name": "source_rounding_change_within_source_gates",
+        "passed": true
+      },
+      {
+        "name": "RHS_fraction_identity",
+        "passed": true
+      },
+      {
+        "name": "source_and_population_identity",
+        "passed": true
+      },
+      {
+        "name": "SG_absolute_rejection_preserved",
+        "passed": true
+      }
+    ],
+    "passed": 10,
+    "failed": [],
+    "source_changes": [
+      {
+        "h": 0.0,
+        "non_NonLocalPath_blocks_identical": true,
+        "exact_band_operands_identical": true,
+        "sources": {
+          "electron": {
+            "weighted_L1_change": 5.046542077733613e-17,
+            "integral_change": 3.1430213903092244e-17
+          },
+          "hole": {
+            "weighted_L1_change": 4.9153419203723496e-17,
+            "integral_change": 3.1441805129577344e-17
+          }
+        }
+      },
+      {
+        "h": 3e-05,
+        "non_NonLocalPath_blocks_identical": true,
+        "exact_band_operands_identical": true,
+        "sources": {
+          "electron": {
+            "weighted_L1_change": 5.045264404649425e-17,
+            "integral_change": 3.1447690658513204e-17
+          },
+          "hole": {
+            "weighted_L1_change": 4.911914699448933e-17,
+            "integral_change": 3.145928188492192e-17
+          }
+        }
+      },
+      {
+        "h": -3e-05,
+        "non_NonLocalPath_blocks_identical": true,
+        "exact_band_operands_identical": true,
+        "sources": {
+          "electron": {
+            "weighted_L1_change": 5.0435732425280714e-17,
+            "integral_change": 3.142955812140856e-17
+          },
+          "hole": {
+            "weighted_L1_change": 4.9125455469401286e-17,
+            "integral_change": 3.1441149347970046e-17
+          }
+        }
+      }
+    ],
+    "actual_projection": {
+      "name": "n_rne",
+      "rounded_values": 38736,
+      "nearest_mismatches": 0,
+      "max_ulp": 0.49998240049676645,
+      "meaning": "API input projection resolution audit, not a NonLocalPath source Jv test"
+    },
+    "projection_directions": [
+      {
+        "h": 3e-05,
+        "fields": [
+          {
+            "field": "Ec_J",
+            "failed_direction_1e5": 0,
+            "lost_nonzero": 0,
+            "nonzero": 0,
+            "above_rounding_bound": 0,
+            "max_error": 0.0
+          },
+          {
+            "field": "Ev_J",
+            "failed_direction_1e5": 0,
+            "lost_nonzero": 0,
+            "nonzero": 0,
+            "above_rounding_bound": 0,
+            "max_error": 0.0
+          },
+          {
+            "field": "EFn_J",
+            "failed_direction_1e5": 100,
+            "lost_nonzero": 0,
+            "nonzero": 2121,
+            "above_rounding_bound": 0,
+            "max_error": 0.09918594865026667
+          },
+          {
+            "field": "EFp_J",
+            "failed_direction_1e5": 0,
+            "lost_nonzero": 0,
+            "nonzero": 0,
+            "above_rounding_bound": 0,
+            "max_error": 0.0
+          },
+          {
+            "field": "n_m3",
+            "failed_direction_1e5": 169,
+            "lost_nonzero": 0,
+            "nonzero": 2121,
+            "above_rounding_bound": 0,
+            "max_error": 0.04865319361128336
+          },
+          {
+            "field": "p_m3",
+            "failed_direction_1e5": 0,
+            "lost_nonzero": 0,
+            "nonzero": 0,
+            "above_rounding_bound": 0,
+            "max_error": 0.0
+          }
+        ]
+      }
+    ],
+    "actual_native_baseline": {
+      "failed_1e8": 95,
+      "max_error": 0.0003275692477236401
+    },
+    "qualification": "interface rounding repair only; full three-size/five-state coupled Jv remains unqualified"
+  },
+  "matched_band_fields": 180768,
+  "baseline_scalar_oracle_max": 3.9947565311096717e-79,
+  "row864_actual_direction_max": 6.480828480245491e-15,
+  "completed_current_state_evaluations": 24,
+  "compatibility_control_evaluations": 1,
+  "configuration": {
+    "statistics": "Fermi + OldSlotboom default Joyce-Dixon",
+    "avalanche": "GradQuasiFermi",
+    "native_version": "T-2022.03-SP2",
+    "h_meaning": "dimensionless direction multiplier, not a bias step",
+    "directions": {
+      "n": "electron population vector",
+      "psi": "local potential at node 437",
+      "p": "local hole population at node 1318"
+    }
+  },
+  "rounding_resolution": [
+    {
+      "direction": "n",
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failures": 2,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 61,
+              "inside_final_rounding_interval": 26
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failures": 3,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 43,
+              "inside_final_rounding_interval": 24
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 29,
+              "inside_final_rounding_interval": 23
+            }
+          }
+        }
+      ]
+    },
+    {
+      "direction": "psi",
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "direction": "p",
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        },
+        {
+          "h": 0.0001,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        },
+        {
+          "h": 3e-05,
+          "blocks": {
+            "electron_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "hole_transport": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "SRH": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            },
+            "avalanche": {
+              "failures": 0,
+              "inside_final_rounding_interval": 0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "private_evidence": {
+    "directory": "build-release/bvmethods_n4_paired_live_20261018",
+    "sealed_files": 296,
+    "sealed_bytes": 1041244640,
+    "manifest_sha256": "d46b96368a469d8e123e3dca03f4d205a9dd31e4a851f0105bd3730fabf4e352",
+    "old_seals_unchanged": true
+  }
+}

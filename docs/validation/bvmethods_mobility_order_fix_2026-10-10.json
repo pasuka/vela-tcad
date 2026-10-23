@@ -1,0 +1,1751 @@
+{
+  "date": "2026-10-10",
+  "git_head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "scope": "surface low-field then Canali HFS order repair; derivative consistency and SG/full device RHS verification",
+  "qualification": {
+    "mobility_composition_corrected": true,
+    "model_chain_rule_and_coupled_transport_tests_pass": true,
+    "selected_actual_transport_columns_consistent": true,
+    "internal_SG_source_full_RHS_closure": true,
+    "native_unique_SG_support_certified": false,
+    "native_complete_RHS_aligned": false,
+    "all_native_cross_blocks_certified": false,
+    "biased_trajectory_requalified": false,
+    "original_full_zero_QS_pass": false,
+    "Q4_entered": false
+  },
+  "environment": {
+    "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "diagnostic_backend": "SparseLU/COLAMD",
+    "threads": 1,
+    "HDF5_available": true,
+    "UMFPACK_available": true,
+    "native_reference": "T-2022.03-SP2",
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "mesh_triangles": 5020,
+    "obtuse_triangles": 26,
+    "coordinate_unit": "um",
+    "state_population_unit": "m^-3",
+    "current_unit": "A/um",
+    "resistor_ohm_um": 10000000.0
+  },
+  "regression": {
+    "local_ctest": {
+      "total": 1049,
+      "first_pass": 971,
+      "first_environment_failures": 78,
+      "retry_pass": 78,
+      "final_all_pass": true,
+      "retry_environment": "serial; PYTHONUTF8=1; normal filesystem permissions"
+    },
+    "model_order_chain_rule_assertions": 24,
+    "coupled_transport_assertions": 12,
+    "analysis_unittests": 13
+  },
+  "comparison": {
+    "qualification": false,
+    "scope": "same native pre-update psi/free populations; full device rows, excludes circuit and constrained psi; no nonlinear trajectory certificate",
+    "states": {
+      "zero": {
+        "before": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808898899318809e-14,
+                "p90": 7.022087085287135e-09,
+                "p99": 0.059193063147399756,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.252770590876756e-13,
+              "rhs_vela_diag_normalized_L2": 1.2474617843921647,
+              "rhs_difference_L2": 1.2474617843921667,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159983,
+                "hole": 0.06517150177159924
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 4.237866316035849e-11,
+                "median": 0.0007355526268646038,
+                "p90": 0.010765402730775368,
+                "p99": 0.07037860596763132,
+                "max": 0.2879630657070226
+              },
+              "rhs_native_diag_normalized_L2": 9.683283616401007e-05,
+              "rhs_vela_diag_normalized_L2": 102361156.94179325,
+              "rhs_difference_L2": 102361156.94180566,
+              "subblock_relative_L2": {
+                "psi": 0.007990035664487511,
+                "electron": 0.009892982045299812,
+                "hole": 0.0529409005664981
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.41143759789852e-07,
+                4.65400515709666e-05,
+                0.0006750174875643318
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.308229044133978e-08,
+                "median": 0.001977177670368527,
+                "p90": 0.9999999527642269,
+                "p99": 26.435599942392823,
+                "max": 1237.0907953151138
+              },
+              "rhs_native_diag_normalized_L2": 1.3789476957810132e-06,
+              "rhs_vela_diag_normalized_L2": 15149.63230647773,
+              "rhs_difference_L2": 15149.632306515019,
+              "subblock_relative_L2": {
+                "psi": 0.00021983132038029876,
+                "electron": 0.5341049531917816,
+                "hole": 0.007107451450053962
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                6.564884165574791e-07,
+                9.820962761755863,
+                3959.6477829851133
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 1.0816803237214851e-16,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.1640982843427363e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.1456768470472466e-19,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 3.4500442288966933e-19
+            }
+          }
+        },
+        "after": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808898899318809e-14,
+                "p90": 7.022087085287135e-09,
+                "p99": 0.059193063147399756,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.252770590876756e-13,
+              "rhs_vela_diag_normalized_L2": 1.2474617843921647,
+              "rhs_difference_L2": 1.2474617843921667,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159983,
+                "hole": 0.06517150177159924
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 4.237866316035849e-11,
+                "median": 0.0007355526229943522,
+                "p90": 0.010765402669279297,
+                "p99": 0.07037860596761857,
+                "max": 0.2879630657070226
+              },
+              "rhs_native_diag_normalized_L2": 9.683283616401007e-05,
+              "rhs_vela_diag_normalized_L2": 102361156.925589,
+              "rhs_difference_L2": 102361156.92560141,
+              "subblock_relative_L2": {
+                "psi": 0.007990038211271302,
+                "electron": 0.009892981798853713,
+                "hole": 0.05294090039924654
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.4114375978957216e-07,
+                4.654005157096009e-05,
+                0.0006750174865312422
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.308229044133978e-08,
+                "median": 0.001977177670368526,
+                "p90": 0.9999999527642269,
+                "p99": 26.43559993640004,
+                "max": 1237.0907952991818
+              },
+              "rhs_native_diag_normalized_L2": 1.3789476957810132e-06,
+              "rhs_vela_diag_normalized_L2": 15149.63230647773,
+              "rhs_difference_L2": 15149.632306515019,
+              "subblock_relative_L2": {
+                "psi": 0.00021983132038979678,
+                "electron": 0.5341049531629913,
+                "hole": 0.007107453542263699
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                6.564884165574542e-07,
+                9.820962761721288,
+                3959.647782937565
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 9.496069449510291e-17,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.3165635792048533e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.044379437165638e-19,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 3.4155970750073795e-19
+            }
+          }
+        },
+        "edge_mobility_change": {
+          "electron": {
+            "positive_edges": 6307,
+            "max_relative": 1.0645789516594562e-07,
+            "relative_L2": 3.358038430587215e-09
+          },
+          "hole": {
+            "positive_edges": 6307,
+            "max_relative": 1.0127191416575698e-06,
+            "relative_L2": 9.338502457701112e-09
+          }
+        },
+        "population_probe_bitwise_equal": true,
+        "free_population_match_max_relative_error": {
+          "electron": 3.285149929865838e-13,
+          "hole": 3.390621117205228e-13
+        }
+      },
+      "first": {
+        "before": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808898898810978e-14,
+                "p90": 7.022087085287107e-09,
+                "p99": 0.059193063147399756,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.322101509910153e-13,
+              "rhs_vela_diag_normalized_L2": 1.2474639454688097,
+              "rhs_difference_L2": 1.2474639454688112,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159921,
+                "hole": 0.06517150177159925
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 7.74700610354765e-09,
+                "median": 0.000867767160616959,
+                "p90": 0.015528183813511197,
+                "p99": 0.2144652165698387,
+                "max": 0.9459283811236215
+              },
+              "rhs_native_diag_normalized_L2": 7.712533853878612e-05,
+              "rhs_vela_diag_normalized_L2": 102361156.94533797,
+              "rhs_difference_L2": 102361156.94533898,
+              "subblock_relative_L2": {
+                "psi": 0.00799003419817279,
+                "electron": 0.009896236504164043,
+                "hole": 0.053907709240526076
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.358526634328381e-07,
+                4.654005159529968e-05,
+                0.00067501748770721
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.308229652984806e-08,
+                "median": 0.001481915045796626,
+                "p90": 9.067036284009443,
+                "p99": 783.7343274681705,
+                "max": 3575.3666702485175
+              },
+              "rhs_native_diag_normalized_L2": 1.8353251948772101e-06,
+              "rhs_vela_diag_normalized_L2": 15149.632300729567,
+              "rhs_difference_L2": 15149.632300717856,
+              "subblock_relative_L2": {
+                "psi": 0.00021906312176609748,
+                "electron": 0.542163299901469,
+                "hole": 0.01808974435439648
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                1.022326340558823e-06,
+                9.823313303513915,
+                3960.4021950601527
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 1.400692854326372e-16,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.3273492999941996e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.1279893343863206e-17,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 8.756460282859786e-17
+            }
+          }
+        },
+        "after": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808898898810978e-14,
+                "p90": 7.022087085287107e-09,
+                "p99": 0.059193063147399756,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.322101509910153e-13,
+              "rhs_vela_diag_normalized_L2": 1.2474639454688097,
+              "rhs_difference_L2": 1.2474639454688112,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159921,
+                "hole": 0.06517150177159925
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 7.74700610354765e-09,
+                "median": 0.000867767157525672,
+                "p90": 0.015528179829276153,
+                "p99": 0.2144652165698416,
+                "max": 0.9459283811236231
+              },
+              "rhs_native_diag_normalized_L2": 7.712533853878612e-05,
+              "rhs_vela_diag_normalized_L2": 102361156.92459299,
+              "rhs_difference_L2": 102361156.92459399,
+              "subblock_relative_L2": {
+                "psi": 0.007990036749264047,
+                "electron": 0.009896236260557956,
+                "hole": 0.05390769122777667
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.35852663432757e-07,
+                4.654005159510901e-05,
+                0.0006750174866734691
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.308229652984806e-08,
+                "median": 0.001481915045796626,
+                "p90": 9.041923194098379,
+                "p99": 783.7343274289465,
+                "max": 3575.366669720837
+              },
+              "rhs_native_diag_normalized_L2": 1.8353251948772101e-06,
+              "rhs_vela_diag_normalized_L2": 15149.632300729567,
+              "rhs_difference_L2": 15149.632300717854,
+              "subblock_relative_L2": {
+                "psi": 0.00021906311671265275,
+                "electron": 0.5421628512790316,
+                "hole": 0.017985684690912294
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                1.0223263400217838e-06,
+                9.82220174213193,
+                3960.4021950226443
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 1.3177404389883624e-16,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.0778927514192908e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.127971658725383e-17,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 8.756458623437057e-17
+            }
+          }
+        },
+        "edge_mobility_change": {
+          "electron": {
+            "positive_edges": 6307,
+            "max_relative": 1.5942263598134332e-07,
+            "relative_L2": 1.3798671060493087e-08
+          },
+          "hole": {
+            "positive_edges": 6307,
+            "max_relative": 0.027545558364236777,
+            "relative_L2": 0.0010687088459751344
+          }
+        },
+        "population_probe_bitwise_equal": true,
+        "free_population_match_max_relative_error": {
+          "electron": 3.275157922644212e-13,
+          "hole": 3.3639757646142243e-13
+        }
+      },
+      "second": {
+        "before": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808893568883809e-14,
+                "p90": 7.022087085287092e-09,
+                "p99": 0.05919306314739972,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.743694523615812e-11,
+              "rhs_vela_diag_normalized_L2": 1.247466993060799,
+              "rhs_difference_L2": 1.2474669930618711,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159899,
+                "hole": 0.06517150177159925
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 2.0357777495103696e-08,
+                "median": 0.0008496019777875561,
+                "p90": 0.019974971791877315,
+                "p99": 0.27463158120057624,
+                "max": 0.9447010276176141
+              },
+              "rhs_native_diag_normalized_L2": 0.0019017884781995101,
+              "rhs_vela_diag_normalized_L2": 102361156.94005795,
+              "rhs_difference_L2": 102361156.93998136,
+              "subblock_relative_L2": {
+                "psi": 0.00799003209095096,
+                "electron": 0.009898184642777787,
+                "hole": 0.09432124780124966
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.3558474399080455e-07,
+                4.654005157145819e-05,
+                0.0006750174875109563
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.30822535055804e-08,
+                "median": 0.0011810580916682873,
+                "p90": 8.990618161741567,
+                "p99": 766.6834158003835,
+                "max": 3575.356144775147
+              },
+              "rhs_native_diag_normalized_L2": 3.5466575219508156e-05,
+              "rhs_vela_diag_normalized_L2": 15149.632306552778,
+              "rhs_difference_L2": 15149.632306460073,
+              "subblock_relative_L2": {
+                "psi": 0.00021906365017438175,
+                "electron": 0.5445471987567806,
+                "hole": 0.9641964572997286
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                8.681826094014671e-07,
+                12.08747293090336,
+                4028.7263021844074
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 1.400935243627207e-16,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.5277078532996105e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.1520846959203604e-19,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 5.837664512814973e-17
+            }
+          }
+        },
+        "after": {
+          "native_comparison": {
+            "psi": {
+              "row_relative_L2_difference": {
+                "min": 5.33745411617504e-17,
+                "median": 9.808893568883809e-14,
+                "p90": 7.022087085287092e-09,
+                "p99": 0.05919306314739972,
+                "max": 0.13345958168691935
+              },
+              "rhs_native_diag_normalized_L2": 3.743694523615812e-11,
+              "rhs_vela_diag_normalized_L2": 1.247466993060799,
+              "rhs_difference_L2": 1.2474669930618711,
+              "subblock_relative_L2": {
+                "psi": 0.0087147840048877,
+                "electron": 0.06517150177159899,
+                "hole": 0.06517150177159925
+              }
+            },
+            "electron": {
+              "row_relative_L2_difference": {
+                "min": 2.0357777495103696e-08,
+                "median": 0.0008496019307230695,
+                "p90": 0.01997497179187671,
+                "p99": 0.27463158120058734,
+                "max": 0.9447010276176141
+              },
+              "rhs_native_diag_normalized_L2": 0.0019017884781995101,
+              "rhs_vela_diag_normalized_L2": 102361156.91721345,
+              "rhs_difference_L2": 102361156.91713686,
+              "subblock_relative_L2": {
+                "psi": 0.007990034636369932,
+                "electron": 0.009898184405937163,
+                "hole": 0.09557227264019198
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                3.3558474399080974e-07,
+                4.6540051571276964e-05,
+                0.000675017486578066
+              ]
+            },
+            "hole": {
+              "row_relative_L2_difference": {
+                "min": 7.30822535055804e-08,
+                "median": 0.0011770263906666768,
+                "p90": 8.990618161456796,
+                "p99": 766.6834150620879,
+                "max": 3575.356144240239
+              },
+              "rhs_native_diag_normalized_L2": 3.5466575219508156e-05,
+              "rhs_vela_diag_normalized_L2": 15149.632306552778,
+              "rhs_difference_L2": 15149.632306460073,
+              "subblock_relative_L2": {
+                "psi": 0.00021906364821209592,
+                "electron": 0.5445470483326083,
+                "hole": 0.9639241015317324
+              },
+              "rhs_diagonal_difference_over_native_population_p50_p95_max": [
+                8.681597093166412e-07,
+                12.08747293090336,
+                4028.725817474059
+              ]
+            }
+          },
+          "closure": {
+            "electron": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 1.1826674811020473e-16,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 1.3696308796043315e-21
+            },
+            "hole": {
+              "SG_edge_divergence_vs_carrier_flux_relative_L2": 4.160981784311682e-19,
+              "carrier_sum_vs_residual_relative_L2": 0.0,
+              "carrier_residual_vs_full_RHS_relative_L2": 5.837666804735614e-17
+            }
+          }
+        },
+        "edge_mobility_change": {
+          "electron": {
+            "positive_edges": 6307,
+            "max_relative": 4.225899583598647e-07,
+            "relative_L2": 3.5509719904684304e-08
+          },
+          "hole": {
+            "positive_edges": 6307,
+            "max_relative": 0.02794041702679806,
+            "relative_L2": 0.0005716697051044004
+          }
+        },
+        "population_probe_bitwise_equal": true,
+        "free_population_match_max_relative_error": {
+          "electron": 3.268496584496461e-13,
+          "hole": 3.389510894180603e-13
+        }
+      }
+    }
+  },
+  "export_runs": [
+    {
+      "arm": "before",
+      "label": "zero",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 3.4950764999994135
+    },
+    {
+      "arm": "before",
+      "label": "zero",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 1.0890658999996958
+    },
+    {
+      "arm": "before",
+      "label": "zero",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.2802018000002136
+    },
+    {
+      "arm": "before",
+      "label": "zero",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.7774364999968384
+    },
+    {
+      "arm": "before",
+      "label": "first",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 4.690289899997879
+    },
+    {
+      "arm": "before",
+      "label": "first",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 1.2127211000006355
+    },
+    {
+      "arm": "before",
+      "label": "first",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.111820500002068
+    },
+    {
+      "arm": "before",
+      "label": "first",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.6397493999975268
+    },
+    {
+      "arm": "before",
+      "label": "second",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 4.201925900000788
+    },
+    {
+      "arm": "before",
+      "label": "second",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 0.7404683999993722
+    },
+    {
+      "arm": "before",
+      "label": "second",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.130756400001701
+    },
+    {
+      "arm": "before",
+      "label": "second",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.6082721999991918
+    },
+    {
+      "arm": "after",
+      "label": "zero",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 4.004209999999148
+    },
+    {
+      "arm": "after",
+      "label": "zero",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 0.800766600001225
+    },
+    {
+      "arm": "after",
+      "label": "zero",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.1963749999995343
+    },
+    {
+      "arm": "after",
+      "label": "zero",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.6489653999997245
+    },
+    {
+      "arm": "after",
+      "label": "first",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 4.959284900000057
+    },
+    {
+      "arm": "after",
+      "label": "first",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 0.7906416000005265
+    },
+    {
+      "arm": "after",
+      "label": "first",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.1961764000006951
+    },
+    {
+      "arm": "after",
+      "label": "first",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.5971395000015036
+    },
+    {
+      "arm": "after",
+      "label": "second",
+      "kind": "raw_matrix_export",
+      "rc": 0,
+      "wall_s": 3.9173244000012346
+    },
+    {
+      "arm": "after",
+      "label": "second",
+      "kind": "newton_carrier_term_probe",
+      "rc": 0,
+      "wall_s": 0.7299927000021853
+    },
+    {
+      "arm": "after",
+      "label": "second",
+      "kind": "sg_edge_flux_probe",
+      "rc": 0,
+      "wall_s": 1.090467500001978
+    },
+    {
+      "arm": "after",
+      "label": "second",
+      "kind": "newton_poisson_term_probe",
+      "rc": 0,
+      "wall_s": 0.5826338000006217
+    }
+  ],
+  "derivative_runs": [
+    {
+      "arm": "before",
+      "state": "first",
+      "step": 1e-07,
+      "rc": 0,
+      "wall_s": 2.7029428999994707
+    },
+    {
+      "arm": "after",
+      "state": "first",
+      "step": 1e-07,
+      "rc": 0,
+      "wall_s": 2.6256920999985596
+    },
+    {
+      "arm": "before",
+      "state": "first",
+      "step": 1e-08,
+      "rc": 0,
+      "wall_s": 2.6617529000031936
+    },
+    {
+      "arm": "after",
+      "state": "first",
+      "step": 1e-08,
+      "rc": 0,
+      "wall_s": 2.4813565999975253
+    },
+    {
+      "arm": "before",
+      "state": "second",
+      "step": 1e-07,
+      "rc": 0,
+      "wall_s": 2.6603109999996377
+    },
+    {
+      "arm": "after",
+      "state": "second",
+      "step": 1e-07,
+      "rc": 0,
+      "wall_s": 3.046537199999875
+    },
+    {
+      "arm": "before",
+      "state": "second",
+      "step": 1e-08,
+      "rc": 0,
+      "wall_s": 3.3943106000006082
+    },
+    {
+      "arm": "after",
+      "state": "second",
+      "step": 1e-08,
+      "rc": 0,
+      "wall_s": 3.113252500003
+    }
+  ],
+  "selected_derivatives": [
+    {
+      "label": "first_1e-07_after",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 4.6905852362497435e-07,
+      "all_row_block_max_relative_error": 3.685643267681281e+287
+    },
+    {
+      "label": "first_1e-07_before",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 4.1032601345027735e-07,
+      "all_row_block_max_relative_error": 3.685643267681281e+287
+    },
+    {
+      "label": "first_1e-08_after",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 3.127537547517008e-06,
+      "all_row_block_max_relative_error": 3.685643267681281e+287
+    },
+    {
+      "label": "first_1e-08_before",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 1.259172776965292e-06,
+      "all_row_block_max_relative_error": 3.685643267681281e+287
+    },
+    {
+      "label": "second_1e-07_after",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 3.584933503942848e-07,
+      "all_row_block_max_relative_error": 3.684856899711053e+287
+    },
+    {
+      "label": "second_1e-07_before",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 7.193143769817877e-07,
+      "all_row_block_max_relative_error": 3.684856899711053e+287
+    },
+    {
+      "label": "second_1e-08_after",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 1.8323026621033022e-06,
+      "all_row_block_max_relative_error": 3.684856899711053e+287
+    },
+    {
+      "label": "second_1e-08_before",
+      "columns": 27,
+      "carrier_row_block_max_relative_error": 3.171061347123649e-06,
+      "all_row_block_max_relative_error": 3.684856899711053e+287
+    }
+  ],
+  "remote": {
+    "t470p": {
+      "regression": {
+        "mobility": 0,
+        "newton": 0
+      },
+      "mobility_test_cases": 95,
+      "mobility_assertions": 53641,
+      "newton_test_cases": 143,
+      "newton_assertions": 3147,
+      "fresh_zero": {
+        "phase": "completed",
+        "binary_sha256": "da32a97af32c06caaea9a457e2e3a6e8ce1b2c103bb16af55c51915db6e836f9",
+        "runs": [
+          {
+            "name": "fresh_zero",
+            "rc": 0,
+            "seconds": 11.510104000000865,
+            "result": {
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\fresh_zero\\config.json",
+              "converged": true,
+              "points": 1,
+              "simulation_type": "dc_sweep"
+            }
+          },
+          {
+            "name": "current_drain",
+            "rc": 0,
+            "seconds": 0.2733223999966867,
+            "result": {
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\current_drain\\config.json",
+              "contact": "drain",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_source",
+            "rc": 0,
+            "seconds": 0.2723699000016495,
+            "result": {
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\current_source\\config.json",
+              "contact": "source",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_gate",
+            "rc": 0,
+            "seconds": 0.2752050999988569,
+            "result": {
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\current_gate\\config.json",
+              "contact": "gate",
+              "contact_bias_V": 0.55,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_substrate",
+            "rc": 0,
+            "seconds": 0.27643730000272626,
+            "result": {
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\current_substrate\\config.json",
+              "contact": "substrate",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "saved_carrier_terms",
+            "rc": 0,
+            "seconds": 0.3636657999995805,
+            "result": {
+              "adjusted_block_residuals": {
+                "combined": 1.1469147812680174e-10,
+                "phin": 2.2653831530957425e-21,
+                "phip": 2.2653831530957425e-21,
+                "psi": 1.1469147812680174e-10
+              },
+              "block_residuals": {
+                "combined": 1.1469147812680174e-10,
+                "phin": 2.265383153095744e-21,
+                "phip": 2.265383153095744e-21,
+                "psi": 1.1469147812680174e-10
+              },
+              "carrier_term_probe": {
+                "electron_impact_scale": 1.0,
+                "hole_impact_scale": 1.0,
+                "solved_equation_terms": true
+              },
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\saved_carrier_terms\\config.json",
+              "converged": true,
+              "nodes": 2600,
+              "potential_scale": 0.025851999786435535,
+              "row_count": 2600,
+              "scaled_state": true,
+              "simulation_type": "newton_carrier_term_probe"
+            }
+          },
+          {
+            "name": "raw_carrier_terms",
+            "rc": 0,
+            "seconds": 0.3643430000010994,
+            "result": {
+              "adjusted_block_residuals": {
+                "combined": 1.1469147812680174e-10,
+                "phin": 2.2653831530957425e-21,
+                "phip": 2.2653831530957425e-21,
+                "psi": 1.1469147812680174e-10
+              },
+              "block_residuals": {
+                "combined": 1.1469147812680174e-10,
+                "phin": 2.265383153095744e-21,
+                "phip": 2.265383153095744e-21,
+                "psi": 1.1469147812680174e-10
+              },
+              "carrier_term_probe": {
+                "electron_impact_scale": 1.0,
+                "hole_impact_scale": 1.0,
+                "solved_equation_terms": false
+              },
+              "config": "<REMOTE_WORKSPACE>\\zero_qs_q0_q3_20261008\\mobility_order_fix_20261010\\raw_carrier_terms\\config.json",
+              "converged": true,
+              "nodes": 2600,
+              "potential_scale": 0.025851999786435535,
+              "row_count": 2600,
+              "scaled_state": true,
+              "simulation_type": "newton_carrier_term_probe"
+            }
+          }
+        ],
+        "points": [
+          {
+            "mode": "iv",
+            "bias_contact": "drain",
+            "bias_V": "0",
+            "current_contact": "drain",
+            "current_electron": "0",
+            "current_electron_drift": "29085.560672370309",
+            "current_electron_diffusion": "-29085.560672370102",
+            "current_hole": "0",
+            "current_hole_drift": "-1.1030871802680694e-15",
+            "current_hole_diffusion": "1.1030871802677623e-15",
+            "current_total": "0",
+            "converged": "1",
+            "iterations": "0",
+            "solver_method": "newton",
+            "gummel_iterations": "0",
+            "newton_iterations": "0",
+            "handoff_stage": "poisson_block_newton",
+            "newton_convergence_reason": "initial_stall_residual_floor",
+            "final_psi_residual_norm": "1.1469147812680174e-10",
+            "final_electron_continuity_residual_norm": "2.265383153095744e-21",
+            "final_hole_continuity_residual_norm": "2.265383153095744e-21",
+            "carrier_row_violations": "0",
+            "carrier_row_max_ratio": "0",
+            "carrier_row_recovery_attempted": "0",
+            "carrier_row_recovery_electron_rows": "0",
+            "carrier_row_recovery_hole_rows": "0",
+            "carrier_row_recovery_density_passes": "0",
+            "carrier_row_recovery_cycles": "0",
+            "carrier_row_recovery_max_density_relative_change": "0",
+            "carrier_row_recovery_max_psi_delta_V": "0",
+            "carrier_row_recovery_max_density_ratio": "0",
+            "step_diagnostics": "attempted_step=0;accepted_step=0;retry_count=0;qf_bounds_violations=0",
+            "validation_diagnostics": "",
+            "qf_bounds_violations": "0",
+            "failure_reason": "",
+            "newton_failure_class": "",
+            "newton_failure_diagnostics_json": "",
+            "current_total_A_per_um": "0",
+            "current_electron_A_per_um": "0",
+            "current_electron_drift_A_per_um": "0.029085560672370309",
+            "current_electron_diffusion_A_per_um": "-0.0290855606723701",
+            "current_hole_A_per_um": "0",
+            "current_hole_drift_A_per_um": "-1.1030871802680693e-21",
+            "current_hole_diffusion_A_per_um": "1.1030871802677622e-21",
+            "contact_gate_electron_A_per_um": "0",
+            "contact_gate_hole_A_per_um": "0",
+            "contact_gate_total_A_per_um": "0",
+            "contact_substrate_electron_A_per_um": "0",
+            "contact_substrate_hole_A_per_um": "0",
+            "contact_substrate_total_A_per_um": "0",
+            "contact_drain_electron_A_per_um": "0",
+            "contact_drain_hole_A_per_um": "0",
+            "contact_drain_total_A_per_um": "0",
+            "contact_source_electron_A_per_um": "0",
+            "contact_source_hole_A_per_um": "0",
+            "contact_source_total_A_per_um": "0",
+            "stop_criterion": "",
+            "stop_current_A_per_um": "0"
+          }
+        ],
+        "currents_A_per_um": {
+          "drain": 0.0,
+          "source": 0.0,
+          "gate": 0.0,
+          "substrate": 0.0
+        },
+        "kcl_A_per_um": 0.0,
+        "load_error_V": 0.0,
+        "kcl_load_pass": true,
+        "independent_row_gates": {
+          "electron": {
+            "qualified_rows": 0,
+            "max_ratio": 0.0,
+            "eps_row": 0.001,
+            "pass": true
+          },
+          "hole": {
+            "qualified_rows": 0,
+            "max_ratio": 0.0,
+            "eps_row": 0.001,
+            "pass": true
+          }
+        },
+        "independent_global_gates": {
+          "electron": {
+            "contact_flux": 0.0,
+            "source": -6.1331734616066086e-21,
+            "ratio": 6.133173461606608e-07,
+            "qualified": false,
+            "tolerance": 0.01,
+            "pass": true
+          },
+          "hole": {
+            "contact_flux": 0.0,
+            "source": -6.1331734616066086e-21,
+            "ratio": 6.133173461606608e-07,
+            "qualified": false,
+            "tolerance": 0.01,
+            "pass": true
+          }
+        },
+        "physical_gates_pass": true
+      }
+    },
+    "c560": {
+      "regression": {
+        "mobility": 0,
+        "newton": 0
+      },
+      "mobility_test_cases": 95,
+      "mobility_assertions": 53641,
+      "newton_test_cases": 143,
+      "newton_assertions": 3147,
+      "fresh_zero": {
+        "phase": "completed",
+        "binary_sha256": "b1c15679cac436ccc7335bf6f770fbf6e9734f9d3bc44bd01036ece763b87bbf",
+        "runs": [
+          {
+            "name": "fresh_zero",
+            "rc": 0,
+            "seconds": 14.067651690002094,
+            "result": {
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/fresh_zero/config.json",
+              "converged": true,
+              "points": 1,
+              "simulation_type": "dc_sweep"
+            }
+          },
+          {
+            "name": "current_drain",
+            "rc": 0,
+            "seconds": 0.3167041300002893,
+            "result": {
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/current_drain/config.json",
+              "contact": "drain",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_source",
+            "rc": 0,
+            "seconds": 0.31631777200163924,
+            "result": {
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/current_source/config.json",
+              "contact": "source",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_gate",
+            "rc": 0,
+            "seconds": 0.3189915689981717,
+            "result": {
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/current_gate/config.json",
+              "contact": "gate",
+              "contact_bias_V": 0.55,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "current_substrate",
+            "rc": 0,
+            "seconds": 0.31570968899904983,
+            "result": {
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/current_substrate/config.json",
+              "contact": "substrate",
+              "contact_bias_V": 0.0,
+              "contact_current_extractor_A_per_um": 0.0,
+              "contact_current_extractor_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_A_per_um": 0.0,
+              "contact_current_extractor_electron_compensated_A_per_um": 0.0,
+              "contact_current_extractor_electron_long_double_A_per_um": 0.0,
+              "contact_current_extractor_hole_A_per_um": 0.0,
+              "contact_current_extractor_hole_compensated_A_per_um": 0.0,
+              "contact_current_extractor_hole_long_double_A_per_um": 0.0,
+              "contact_current_extractor_long_double_A_per_um": 0.0,
+              "converged": true,
+              "current_A_per_um": 0.0,
+              "current_scale": 1e-08,
+              "diagnostic_schema": "vela.terminal_current_functional_probe.v1",
+              "nodes": 2600,
+              "operator_minus_extractor_A_per_um": 0.0,
+              "read_only": true,
+              "simulation_type": "terminal_current_functional_probe"
+            }
+          },
+          {
+            "name": "saved_carrier_terms",
+            "rc": 0,
+            "seconds": 0.3653706420009257,
+            "result": {
+              "adjusted_block_residuals": {
+                "combined": 1.1469171991646046e-10,
+                "phin": 2.2653831530956947e-21,
+                "phip": 2.2653831530956947e-21,
+                "psi": 1.1469171991646046e-10
+              },
+              "block_residuals": {
+                "combined": 1.1469171991646046e-10,
+                "phin": 2.2653831530956962e-21,
+                "phip": 2.2653831530956962e-21,
+                "psi": 1.1469171991646046e-10
+              },
+              "carrier_term_probe": {
+                "electron_impact_scale": 1.0,
+                "hole_impact_scale": 1.0,
+                "solved_equation_terms": true
+              },
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/saved_carrier_terms/config.json",
+              "converged": true,
+              "nodes": 2600,
+              "potential_scale": 0.025851999786435535,
+              "row_count": 2600,
+              "scaled_state": true,
+              "simulation_type": "newton_carrier_term_probe"
+            }
+          },
+          {
+            "name": "raw_carrier_terms",
+            "rc": 0,
+            "seconds": 0.36615966799945454,
+            "result": {
+              "adjusted_block_residuals": {
+                "combined": 1.1469171991646046e-10,
+                "phin": 2.2653831530956947e-21,
+                "phip": 2.2653831530956947e-21,
+                "psi": 1.1469171991646046e-10
+              },
+              "block_residuals": {
+                "combined": 1.1469171991646046e-10,
+                "phin": 2.2653831530956962e-21,
+                "phip": 2.2653831530956962e-21,
+                "psi": 1.1469171991646046e-10
+              },
+              "carrier_term_probe": {
+                "electron_impact_scale": 1.0,
+                "hole_impact_scale": 1.0,
+                "solved_equation_terms": false
+              },
+              "config": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008/mobility_order_fix_20261010/raw_carrier_terms/config.json",
+              "converged": true,
+              "nodes": 2600,
+              "potential_scale": 0.025851999786435535,
+              "row_count": 2600,
+              "scaled_state": true,
+              "simulation_type": "newton_carrier_term_probe"
+            }
+          }
+        ],
+        "points": [
+          {
+            "mode": "iv",
+            "bias_contact": "drain",
+            "bias_V": "0",
+            "current_contact": "drain",
+            "current_electron": "0",
+            "current_electron_drift": "29085.560672370404",
+            "current_electron_diffusion": "-29085.560672370102",
+            "current_hole": "0",
+            "current_hole_drift": "-1.1030871802680505e-15",
+            "current_hole_diffusion": "1.1030871802677625e-15",
+            "current_total": "0",
+            "converged": "1",
+            "iterations": "0",
+            "solver_method": "newton",
+            "gummel_iterations": "0",
+            "newton_iterations": "0",
+            "handoff_stage": "poisson_block_newton",
+            "newton_convergence_reason": "initial_stall_residual_floor",
+            "final_psi_residual_norm": "1.1469171991646046e-10",
+            "final_electron_continuity_residual_norm": "2.2653831530956962e-21",
+            "final_hole_continuity_residual_norm": "2.2653831530956962e-21",
+            "carrier_row_violations": "0",
+            "carrier_row_max_ratio": "0",
+            "carrier_row_recovery_attempted": "0",
+            "carrier_row_recovery_electron_rows": "0",
+            "carrier_row_recovery_hole_rows": "0",
+            "carrier_row_recovery_density_passes": "0",
+            "carrier_row_recovery_cycles": "0",
+            "carrier_row_recovery_max_density_relative_change": "0",
+            "carrier_row_recovery_max_psi_delta_V": "0",
+            "carrier_row_recovery_max_density_ratio": "0",
+            "step_diagnostics": "attempted_step=0;accepted_step=0;retry_count=0;qf_bounds_violations=0",
+            "validation_diagnostics": "",
+            "qf_bounds_violations": "0",
+            "failure_reason": "",
+            "newton_failure_class": "",
+            "newton_failure_diagnostics_json": "",
+            "current_total_A_per_um": "0",
+            "current_electron_A_per_um": "0",
+            "current_electron_drift_A_per_um": "0.029085560672370402",
+            "current_electron_diffusion_A_per_um": "-0.0290855606723701",
+            "current_hole_A_per_um": "0",
+            "current_hole_drift_A_per_um": "-1.1030871802680503e-21",
+            "current_hole_diffusion_A_per_um": "1.1030871802677624e-21",
+            "contact_gate_electron_A_per_um": "0",
+            "contact_gate_hole_A_per_um": "0",
+            "contact_gate_total_A_per_um": "0",
+            "contact_substrate_electron_A_per_um": "0",
+            "contact_substrate_hole_A_per_um": "0",
+            "contact_substrate_total_A_per_um": "0",
+            "contact_drain_electron_A_per_um": "0",
+            "contact_drain_hole_A_per_um": "0",
+            "contact_drain_total_A_per_um": "0",
+            "contact_source_electron_A_per_um": "0",
+            "contact_source_hole_A_per_um": "0",
+            "contact_source_total_A_per_um": "0",
+            "stop_criterion": "",
+            "stop_current_A_per_um": "0"
+          }
+        ],
+        "currents_A_per_um": {
+          "drain": 0.0,
+          "source": 0.0,
+          "gate": 0.0,
+          "substrate": 0.0
+        },
+        "kcl_A_per_um": 0.0,
+        "load_error_V": 0.0,
+        "kcl_load_pass": true,
+        "independent_row_gates": {
+          "electron": {
+            "qualified_rows": 0,
+            "max_ratio": 0.0,
+            "eps_row": 0.001,
+            "pass": true
+          },
+          "hole": {
+            "qualified_rows": 0,
+            "max_ratio": 0.0,
+            "eps_row": 0.001,
+            "pass": true
+          }
+        },
+        "independent_global_gates": {
+          "electron": {
+            "contact_flux": 0.0,
+            "source": -6.1331734616065236e-21,
+            "ratio": 6.133173461606523e-07,
+            "qualified": false,
+            "tolerance": 0.01,
+            "pass": true
+          },
+          "hole": {
+            "contact_flux": 0.0,
+            "source": -6.1331734616065236e-21,
+            "ratio": 6.133173461606523e-07,
+            "qualified": false,
+            "tolerance": 0.01,
+            "pass": true
+          }
+        },
+        "physical_gates_pass": true
+      }
+    }
+  },
+  "source_hashes": {
+    "CMakeLists.txt": "81a5600ada21325055d58fd2e8b615d2ca56df7e901441175555a2f04f07c71c",
+    "CMakePresets.json": "38867ea6305fd59120c9289ac1251842632a6357c0cee91642a73a5060395aea",
+    "scripts/compare_bvmethods_native_elements.py": "c72b4119858677966a8b52c80823a3164f851ef666b8835c3845e5b98e018216",
+    "scripts/compare_sentaurus_debug_matrix.py": "303638624a033f104d1344a64ac90d0e5c6a30b924d421dec235cf3416e7d4cd",
+    "tests/test_mobility.cpp": "0112773e743e2baeacbeb1bfb673c5d2c41eb81cbc0fb92c09a1d436f2b16d81",
+    "tests/test_newton_solver.cpp": "1faa3e1c3e8ea0e4e261353d9f54f410c3a4062e8d0b28748a1eed92fa553f8d",
+    "src/boundary/BoundaryCondition.cpp": "3fc1416616f52306a23f844a95cb847375af9ef6a12560557b1111e3478e73b7",
+    "src/core/PerformanceProfiler.cpp": "2b0b9c0d2d336ca02c737417277e58a7472a2f659a238c9338b041952ab0be6e",
+    "src/core/RuntimeLog.cpp": "d2b0bf6b6aad2ce7c44a2181815b7235f500aae68411f134734de20bde62d530",
+    "src/core/ScalingSystem.cpp": "928d1b2ce10ed35c886b4ad758fc65f5fe90ce99a240e9016d6ab2e054a4a237",
+    "src/core/UnitScaling.cpp": "7eac98407fbd47f68cdccdf54469c46e3631767118fd4da86794405361d43050",
+    "src/core/UnitScalingSystem.cpp": "bafb57a822da5fe613f1d203211df7c24a5bb0be6d141f30afc78f265bf14ac8",
+    "src/discretization/Bernoulli.cpp": "f73a0da2bbc31a83df7756952fe9fc6fa5b54067c5b0a049fef1aaa5ba53614e",
+    "src/discretization/ScharfetterGummel.cpp": "938ed5626a34f842c4fa4a93d6d175c16f4a8ee6fc7899e07253e481aa2ff072",
+    "src/discretization/ThermalSgCurrent.cpp": "6594da49411c799c1eac301bd040b8809604d9ef9c979eff1f609fceabe1e7cc",
+    "src/equation/BVProcessProbe.cpp": "34f273b0174d1890960de3450e51f0aa976756026ffcde2ab0b287853fb6d831",
+    "src/equation/CoupledDDAssembler.cpp": "aab9bbd34a2738a9f51b0e15e10b9a04f2692c18e42f579fa55ca2de93da4c67",
+    "src/equation/DDAssembler.cpp": "656859000f5c52e63d9c3e30d6a5e25f588e0abfd7288c3a38d0a079df14e24d",
+    "src/equation/ElectrothermalAssembler.cpp": "471c9e4d8cdbf9c9788697b44bd8b98425fdbd95935494f4b8a44eeefcb3d66e",
+    "src/equation/FixedStateOperatorAudit.cpp": "cd17f22aad44d7b4286a42e6075fbf528c079286a4d06133bf85eb27dc390fbc",
+    "src/equation/IalElementMobility.cpp": "d95e1c03ab87733d9e424f1d6f89142e055fd677f7d440190cfcf671c3fe1a92",
+    "src/equation/IalTransport.cpp": "867e64e516af5c6b94b5497d52f6c591875bc237f9f16d8334aa4c479e6e5b4e",
+    "src/equation/LatticeBandEdgeWork.cpp": "a9523ad24e28cd5f3c26933b5af661382dba2c2a815412e24e7889fc1d5b9643",
+    "src/equation/LatticeHeatAssembler.cpp": "fb67f188d2944c81aa4726fc01857db7961f664d504512108578c072862178a6",
+    "src/equation/PoissonAssembler.cpp": "02e1f57f0ae539f3c920df369ad414ecd19b8f16a24fedf71524d55590a69827",
+    "src/equation/SplitDDRuntime.cpp": "9b4d378bf7eefc37864b437471762cdd87a2910b8f20c92f6397f90726c2c2ab",
+    "src/io/CsvUtils.cpp": "4a98e05c4f0f597a5751eee5f89f45af10d182f7df1f2d73ad7fd7f5c9748157",
+    "src/io/CSVWriter.cpp": "2a4e068128837403f60a51f85c05acb5cff2549c2065b5239f62d2b7c6c09b77",
+    "src/io/DDSolutionBinary.cpp": "e829171bc42cc71ce39935243da00a965e0eab4caa337920f0ff51b3f6fc5f84",
+    "src/io/DDSolutionCsv.cpp": "e4813a1f9487fe5a7d559ba4701fbc14446fcafefa9134dba7e81d3ae698f12c",
+    "src/io/DDSolutionFile.cpp": "ed48f4ed225174a11eaadd376d8065277d2ba41395739ea1e29b978397836400",
+    "src/io/DDSolutionState.cpp": "87f0ef76c8588b1692a950ec1483962e102cb18248cc9879529edd9484d2586a",
+    "src/io/DDStateFormats.cpp": "6a1283de7faaa66d5cae474a468969f1da87eadd25ba845b63d739614a764511",
+    "src/io/DDStateFormats.h": "00d80571386fea03563b3c84d5382d0ee1640566df8ebc6d284a9160e15abdad",
+    "src/io/ElectrothermalState.cpp": "fea372a47a55a2ddc4865293f82f87e55efb1db6bae474b2b218dce32d890e8e",
+    "src/io/MeshReader.cpp": "1de8bc5173212af9840f3bc15e33e72cec9f4faa69e61965c2f729418029dc19",
+    "src/io/SentaurusTdrReader.cpp": "7c51bc2d94b51729914a36921e3830a60bbe9b02ea82c9f0e0bdbd51624f64bc",
+    "src/io/StateArchive.cpp": "e2424a40031307168e700bdb31fb7536e34dbe88346dcba0d0c22febed319d0a",
+    "src/io/StateIdentity.cpp": "678d24c93f7cca3c9dde1375c55a5b5f861e76b5b42fbbce491297193f99cf5d",
+    "src/io/VTKWriter.cpp": "24dcaeaa3232d03c17a28f1cef822da5c255cec4e8ae4039e69912dbb1ab7d59",
+    "src/io/VtuWriter.cpp": "17326aa40f4d6faec674fea97e5117ac40b1c77e3344e578e506315c7c96f68c",
+    "src/material/Material.cpp": "2ba94bd2826576eb4dac13434c0c62f10609b2c941977d46029ef7f99b33be41",
+    "src/material/MaterialDatabase.cpp": "824132c573b566314fef9f3e29044ca1b7351939354ac515681cfedd6b1291e8",
+    "src/mesh/BoxGeometryBuilder.cpp": "215f5e7bf7c4222dd3be62c62604f4e06abc10fdd0206211a3ab935b62a67075",
+    "src/mesh/DeviceMesh.cpp": "66398174c7a88138f939d86c47fc9ba1127fbed5eb8a6220962f58089e61b868",
+    "src/numerics/LineSearch.cpp": "5a5f2444832ef2a83d91b1a8f712e3dd30bc21abc227e2fdf79a0cc862540bc9",
+    "src/numerics/ResidualNorm.cpp": "73203ee7a2d925977619e054cecf45fa6057a072823145844e8d7e2316de6288",
+    "src/physics/BandgapNarrowing.cpp": "06666a89dcc9634874ce8b37a1589651aa95af8f43f197572e19e2bdf47aa5dc",
+    "src/physics/BandToBandTunnelingModel.cpp": "b000863579d6cc907e1eb4ee780c080ba55e653b9d9c85ecb2c3f4ae885acf24",
+    "src/physics/CarrierStatistics.cpp": "0205ae78880e309a340c757caf69487c5aff0698226b39604b75891d577b3e8a",
+    "src/physics/DensityGradientQuantumPotential.cpp": "5e8cb5e0f45edccd62500bc214a481fb66458b8eddbddfbcaeb886ae758dc9b1",
+    "src/physics/DopingModel.cpp": "ab4e1cf3cd95c027ed2ee068bc8bf7719c429c5810c4c218cb3fafaad88b8a9a",
+    "src/physics/FermiHalfCoefficients.inc": "4ce1f2b37f03b511ecb2e4a3cfb1f6b2721ed8cc335249624a6e4d6adfd81f85",
+    "src/physics/IalHighFieldMobility.cpp": "05420d70f66e7781bdee29077f147fa99a876dd3af7131de63d322fc59009fe0",
+    "src/physics/IalInterfaceGeometry.cpp": "b81df23dc2c2b99d2cc1e26c960d7a8251b06e1ddb2d1aa0396c9bce38bf19a6",
+    "src/physics/IalMobility.cpp": "ed80735342d5771cd32726849d4390d34c0965bc4d2d75c26280189167958e74",
+    "src/physics/ImpactIonizationModel.cpp": "87e5f0a7d430df0e6dc917406311ef3ef0d68e8243379f7d17a9e01fd460acba",
+    "src/physics/MobilityModel.cpp": "1eefa09eb3dac5371d740943db5ed56dec1285713dc450598b8d36b41057e431",
+    "src/physics/RecombinationModel.cpp": "97c69aa4c2053c0765040086ede09811dddaf5f12b741614beabe8645df989b1",
+    "src/physics/SiliconThermalPhysics.cpp": "b11c0181336f643aea13e35a6dc50df31cb5bc4a01a5dff533d653a4c5732dba",
+    "src/physics/SRHRecombination.cpp": "c54a18d71618659c60294f66bafee6101049572410b9036a14e277870bf2d22c",
+    "src/post/ContactCurrent.cpp": "7b7fcc2f16584e1dbf85b88708d9ae399d4b7cd05658cca2722a2b78bc66f30b",
+    "src/post/ElectricFieldDiagnostics.cpp": "b99000133da5c3e352009729fc10b30f68f91af8f23d27b7af5eb2117eb460c6",
+    "src/post/PathIonizationIntegral.cpp": "8069cb481301732b39c2a2e1e303ccdd445011f8ef5d79be3923df220049f148",
+    "src/post/StoredCharge.cpp": "262194f0dbb8adb37e82bd746975710a4acb661095fd85a67b5287e1c1232223",
+    "src/post/TerminalCharge.cpp": "9b077c3734c892ad0ae21a95c8616777c65ff8750d4ee8d1e7ccead957f75fd0",
+    "src/simulation/BoundaryControl.cpp": "7c84d31af3a730296644901eeb220028b68d0bfa37c8b5e72bef9d3adc716746",
+    "src/simulation/ConfigParsing.cpp": "49b5276f86f14720192ae4256d3b81a2058ca3b4d0041ccb3addd64e1b8956a3",
+    "src/simulation/CurveSweep.cpp": "cd95e8a84a79bf507ec5afbe4f942dc5405b83a48a611d9be15b094b8b7b74e8",
+    "src/simulation/DCSweep.cpp": "3e67d73ef531052547c6794e8c77337a5cd3596bb505f40b315ff381d6d348ba",
+    "src/simulation/ElectrothermalSimulation.cpp": "50387cdf0fe0805b2160c6c0fc7973b88a5da2df2bf0dd242f9c0bc4feb87125",
+    "src/simulation/ElectrothermalSweep.cpp": "a1c40f5bb4ede65d9e7e79275225ae1719ac7f1a41490aebca4b1f08dcdd51ff",
+    "src/simulation/PoissonSimulation.cpp": "73b71241d6c8e0e8007c3cf69025967bfddc2ea71e34f25b8255591e38d72b84",
+    "src/solver/DirectBackend.h": "77f208bcbe1f7dd00267fe2b613b8acb4f6c6cde6f49eff23ce9d980a01a54eb",
+    "src/solver/GummelSolver.cpp": "9e2080ecd4cbc52a4f990b076984deabc267049eca941b3d9ce3a289217a6d47",
+    "src/solver/LinearCapture.cpp": "78104e30648b088dd2d0c57f8ce12b36b74281c412d6e8d302df8e8f3ac7ee33",
+    "src/solver/LinearCapture.h": "d1997eca0b6c8fd12db17e4333f3c3997b6e8bac5cc04be4b3eb7e1069d6ae67",
+    "src/solver/LinearSolver.cpp": "fad54b6254cabcddb4576ff98718a61c2b0d5592dc735a51c2a28171661246fb",
+    "src/solver/MetisBackend.cpp": "b5c4ad5e83e5e533735138aee0bade5154c1ca9656f8d900a60dfe7da48c9619",
+    "src/solver/MumpsBackend.cpp": "d46da2fa17f7a87a8e8a34e0baea0dc3d79eaed2b1114bfd6b2a116eac8c762a",
+    "src/solver/NewtonSolver.cpp": "9bae6c334ef6573e2c9fbe4de7d6363f6f6504b1cc461e3d2629b784f6dced47",
+    "src/solver/SolutionValidation.cpp": "9f7ab9054591a1e3af0bc2d87c16858b6d44e2f72e64347b4a21ff33b8f9099a",
+    "src/solver/StrumpackBackend.cpp": "dbfcf144aaf97575ee783c13197c28438ed7317e71c7e78895416e3495bc7766",
+    "src/solver/SuperLuMtBackend.cpp": "984427d70b99b391233e37e799d0dec2f25bcc9904a4bd6cf4498b0bf20158ab",
+    "src/tools/alpha_from_sentaurus_f.cpp": "d28e1123eb9e5b4a152f880441031c7a765574a42ff752f2e25db3c19111e707",
+    "src/tools/ElectrothermalIterationControl.h": "2871dac56e803f5942dd6106808c7a3edd4f86a4add79f81b9d72d7fad8931d6",
+    "src/tools/electrothermal_probe.cpp": "592f9f22f55b6787672b3e6d405d3e1c08636d95a6c54d2024a6112cd3ebba2b",
+    "src/tools/ialmob_element_probe.cpp": "71fc54f24117c6df32dab8753b298197d75bf93646b6a93a7d2bda8f51af062d",
+    "src/tools/ialmob_geometry_probe.cpp": "dfc5a422bc1bd903492b8338020560e0e2fe74291119634ace0b0744629c7f28",
+    "src/tools/ialmob_kernel_bench.cpp": "0733e04fc794cf793def42bff777b30e8602ddfd059f553c97b8da54270aa546",
+    "src/tools/ialmob_probe.cpp": "da8da0f1dffe6782ee754a2e19c6191f829121c8c4723e5e8e3edbf2d357bfdb",
+    "src/tools/IalProbeParameters.h": "41fdd42486acad590f7099ae72cb1570e9de70a8760c51feb69aed9f07fa85d9",
+    "src/tools/lattice_heat_probe.cpp": "101232f9636652da08d8512cca771c7e976a917f55ae85927b029a8454853dd6",
+    "src/tools/LinearReplaySystem.h": "74da5d24e7ba239ac4f14fb6a8b6156b93936d4f75dd5d4500bb36c644a29a16",
+    "src/tools/linear_solver_acceleration_study.cpp": "ec115ce55bd401af9a87f914fcc35eada5a558031eb47da1a1b9eb14b89f0fd4",
+    "src/tools/linear_solver_replay.cpp": "4cd62cd1d03e3990fe7b2f5ee8d5c01b0d5e45a1115ba9a7c5b1bdbbaf8c61bc",
+    "src/tools/linear_solver_strategy_study.cpp": "b39ba544b5c6380a6ffb2d8475b28bceab0b03b647e6ed6f2b9222a087d8e341",
+    "src/tools/pn2d_jacobian_block_audit.cpp": "293511e8ca6c75a3d7bb37879a35de41fbebf78327cc15b165c4ac028894fd42",
+    "src/tools/sentaurus_import.cpp": "e42cd480d695201e3894bf885be0314e48a6fc5d87aaf92de4158734a10cc13c",
+    "src/tools/sentaurus_vanoverstraeten_fit.cpp": "1492e5a1c31d518ef8711699c2ca83d1eb25042e92a8aa331e6a9da039e96de7",
+    "src/tools/silicon_thermal_probe.cpp": "3b679e0248a8f9c61508693d048d481e81b73ecdddf02a02cb3f6261ba234159",
+    "src/tools/vanoverstraeten_parameter_sweep.cpp": "ba10d25ca8e94c4a171bf275f18f18ce8048780e39b61184b636f3b84a8ddde1",
+    "src/tools/vela.cpp": "d5c1f3d1c55518983e1c0dc66c5fb2663b98cedf5ae94ecfe0e61ddc34b3f411",
+    "src/tools/vela_example_runner.cpp": "fd3c7f6ca9d43d87e7555bd6aa30813c90b043c38ce1f2551b0d737b660034e9",
+    "src/tools/vela_state_archive_tool.cpp": "0344ed3188ee1581e397def9cc6d691f628844fde4692f053a54619fa9f8e560",
+    "include/vela/boundary/BoundaryCondition.h": "cdfacd18f741d58091f6f79e6647d7e949b9ba85637338b1844e8bc3e77dc3d0",
+    "include/vela/core/ElectrothermalCostProfile.h": "4b1d7391f589d80caf2ce2f40c5a8c371581cfb4d1344637382a9ab341812d0f",
+    "include/vela/core/IalKernelProfiling.h": "dc4e35099d16b4a8bc360ea62188dc4f5f1318349534fc66670d0056c1aac2aa",
+    "include/vela/core/PerformanceProfiler.h": "48427da57a97d440c6e6bb8f50b20cb640a9ebde6046efae972d341bb10bb1df",
+    "include/vela/core/PhysicalConstants.h": "ae0d7660a15d5df591cea9b985d5ca278aef8b137583bd4dde506c19023b1f74",
+    "include/vela/core/PhysicsCallCounters.h": "f126ec27cf7a724003636494ac2e7b989c6da8c9908abd6d5bafbbbbed489711",
+    "include/vela/core/RuntimeLog.h": "d8251b3815b5fbe90e462ec44a3f817c2ffa0ae6050adb815470fa0dded50848",
+    "include/vela/core/ScalingSystem.h": "c6eb4f123d04dca7b6bd9bcc70979771debcaf5806597a74ccdc3af525c172d9",
+    "include/vela/core/Types.h": "da841617a5848860819b82a82d92308f6b6df540c7a4009aaf8992b9d688093e",
+    "include/vela/core/UnitScaling.h": "3cd69b80926daafb52a06081780a1fdbc6beaecb82802845bd22971e7f887183",
+    "include/vela/core/UnitScalingSystem.h": "90f8f42dc7b84315513f5981d7c6306c834bddd051d0065941919f07f2dc6bef",
+    "include/vela/discretization/Bernoulli.h": "975da2ddf08fd403e5ce996940a89f86625af98aab7cce30a569f75f52a3f020",
+    "include/vela/discretization/ElementQfGradient.h": "695e0a77c6ee1fafa6f49a1fe43a4eb8c210d3713e0d743d773a3eab24410b57",
+    "include/vela/discretization/ScharfetterGummel.h": "128fda882be53cd3433e2d3dd9a1584f394520b45ea04fa87c8d6c2cb9b84271",
+    "include/vela/discretization/StableSGDerivative.h": "062db6ada0b9778ad8ec42d140073e7b8a003d6abc8739946b176f6bc97526ee",
+    "include/vela/discretization/ThermalSgCurrent.h": "cdb1d2c3a2733abdeafa1e8ae235e4916a4108aa6426b389a5efd21b55eddb25",
+    "include/vela/equation/AssemblerUtils.h": "643b984b59d238c2fb502baaf2c01315b5fe355d1030eff5c7658ec9b1c45cee",
+    "include/vela/equation/BVProcessProbe.h": "af51eda0658eb8eee1f3d76b886b035e2705769b93460d87d5b80712cd44e087",
+    "include/vela/equation/ChargeSpec.h": "e45d69423404d30bc7b6b2c4bd3090a760a579c08393a27248fbeacdfc374d24",
+    "include/vela/equation/CoupledDDAssembler.h": "a54ddc7db4e13ff7d520939013461471360803408155e666eae40af0cb9ff54f",
+    "include/vela/equation/DDAssembler.h": "71631c01ac2e24eba7d1526af2671fa7bee86e78ff504b16f28a56570766448f",
+    "include/vela/equation/ElectrothermalAssembler.h": "eb6750bc2d74cb1afd756efdb2e66ffbcad00bcf2e06aaaeb2087cde6d9f3b73",
+    "include/vela/equation/ElementEdgeGssLauxAD.inl": "53ef8fbd6504762fdd4965d5768f4424f98ce7529a600958e790a10df30b7375",
+    "include/vela/equation/ExtendedPoissonResidual.h": "b1e6dae58371d9bb486cb902c3b94f7189b1dd7d6a7731863adfa6672c3cedfc",
+    "include/vela/equation/FixedStateOperatorAudit.h": "10c015c7295f26b4f76842c8c7e64135f2849d1de55e3e6e746b505e8d9d9af1",
+    "include/vela/equation/IalElementMobility.h": "49b143c0cea1b4ab3511ab6f40e8b6ed893eca0ad6760c51aef955c73243ff7f",
+    "include/vela/equation/IalTransport.h": "23bb5519d8c8a6153c31fd128cf4f4a44b72048dda8cbfc0101b076a6310f6b5",
+    "include/vela/equation/LatticeBandEdgeWork.h": "c136fc15474d5467b99657786c38bf0152246b91e546b52bc85b3e0d4c7f4bdd",
+    "include/vela/equation/LatticeHeatAssembler.h": "de93ec9ab83ddebda5a5cd1b95240e6e3dcab75faf3203051dc269ab3fe36e0d",
+    "include/vela/equation/PoissonAssembler.h": "298529ef49d5c3caceb9f1fd5ef6aa23d6d7612141d8ff9e3d72d1be741428cf",
+    "include/vela/equation/PoissonChargeVolume.h": "d5a35b86964cb3454be3fb19207cb367f3b6487305b6f4d2ee16d4d55a2468c1",
+    "include/vela/equation/SparseAssemblyStructure.h": "026fb4d9320b35c960d36e266626f2accb544dc793b5bfae0a1a3d57a799d2bb",
+    "include/vela/equation/SplitDDOperator.h": "b06fad2f795dc5af210aec44ed5c30c7fc132a748be310e2ec3cb496199031ef",
+    "include/vela/equation/SplitDDRuntime.h": "7803a9f91bda5619ba519af74f12dd2a496d564ebbaf7cab1ba981ebe92dac2d",
+    "include/vela/equation/Tri3LocalForwardAD.h": "12aa883a67a1db6105aea1ad99e58339bce13f9c537212f011e27c542ada7f96",
+    "include/vela/io/CsvUtils.h": "64bcf0e212cd62fe430a4937337462ae7ffc1f1ec7ab6680df09287b4dba9225",
+    "include/vela/io/CSVWriter.h": "3b2209e3a1abc4334e74dfc7b76cd79325a7dab66d9f16be71f45fb95e06917c",
+    "include/vela/io/DDSolutionCsv.h": "d04962db6d67956a793cb4cf28d5714ab8eb2ac5369a462a35cc66c9e72a40a4",
+    "include/vela/io/DDSolutionState.h": "694a5662219e78f0894b44528a2bbb9e9b8428b0929b90319ec2d703ec107957",
+    "include/vela/io/ElectrothermalState.h": "d69a2054d37dc2e7d26dd9b02a65ebf2d70c0dd4104d2e2f524712b24d6eadd8",
+    "include/vela/io/MeshReader.h": "fe6ee9f42f21ce357524d4f89d298a79af0a4f1f675ba81e3e5e91d5efecf069",
+    "include/vela/io/SentaurusTdrReader.h": "e359dcad6fdabc0bb0ff052e03bbb60cdb7b22196c972c5d94df3688192c7306",
+    "include/vela/io/StateArchive.h": "499ec98705a5300d905aaa6ee813569800af4dd09c035ed562bac0816516a2c1",
+    "include/vela/io/StateIdentity.h": "6db3eb6ddfed136e090aee72c6af96b29f0528fe9c10c116af8d878be2d0c1df",
+    "include/vela/io/VTKWriter.h": "f7239c37262603cff8ec9327a5b0d5a4c962391ab701d73576ea167f20c5a9d1",
+    "include/vela/io/VtuWriter.h": "d134a78b9563814d93d97594b9203619cc4816b2adff170b8770c5712011ce2c",
+    "include/vela/material/Material.h": "54ce7c21c71603bbb91279f10f48d5055a85107ae62fa528732c3679bc0c3e0f",
+    "include/vela/material/MaterialDatabase.h": "87826abd5f057d7424e1659dfce3bcbded9281f458bf1ce667624cbf48c9dd3b",
+    "include/vela/mesh/BoxGeometryBuilder.h": "1e407da4d3b95eb1108d762734570edb606d1954025cc936453dcc2eb14960fb",
+    "include/vela/mesh/DelaunayBox.h": "6f3746546c5d0477b33a75f59c026b0bdba81057e978a45a254d0080ff252c6d",
+    "include/vela/mesh/DeviceMesh.h": "96578ac1b0af54a64987c635b5f06892af102a64bf16be1a483577687e7aee4d",
+    "include/vela/mesh/MeshEntity.h": "3b85b2a58393bbbb2c1e53d56432b88f7809fcd0f78d7c28d3be5d5ee2ac1447",
+    "include/vela/numerics/LineSearch.h": "44ee7de83f8225ce82762a55656f4700327b911c77a790d12a77f30ac1f02775",
+    "include/vela/numerics/ResidualNorm.h": "267d6da01441aeaf788bf661f7863422971c8d5b010aae4b023d69bd71663a7c",
+    "include/vela/numerics/SplitCoordinate.h": "8cf40f250a39fcd5483f8eb4d726e29d137bb4721e87181bb1877c371f0e8082",
+    "include/vela/numerics/SplitDDState.h": "280f4882ce0df79421c4a1c5887c4578b154a5d3ab0eb6313cb9db21da32d0a7",
+    "include/vela/numerics/StableMeritComparison.h": "6d2beda8e0d012f300f6ddfea29ef9966c1e132cacd0b912210acc64f33ed8c5",
+    "include/vela/physics/BandgapNarrowing.h": "5e49b0ff1c8f191a2403f1d9cb8fcdc4880f3e682aae7b19421cbaeb88f3d8d2",
+    "include/vela/physics/BandToBandTunnelingModel.h": "99a43354b9e4cdbcf89684965db66e5e470ca38b44a7dd32c7f0d45d233f4f57",
+    "include/vela/physics/CarrierStatistics.h": "1cc5c67c4fd4f65446008064b1f3f3a2eaeed51f43de956905dda03c7e973f99",
+    "include/vela/physics/DensityGradientQuantumPotential.h": "77f4bfcf8e71c7bf9a732fcabad7794ce76feaec695e75d5b092790bc58c6dc2",
+    "include/vela/physics/DopingModel.h": "b4a5e8408449d1820c485361c058871376ec44388d155d0f092caa2e841b4cc9",
+    "include/vela/physics/ElementHighField.h": "097a012f3d14dfa69777aa3e0dc736d264de1d907e2b2758c5443e4dc42ccda2",
+    "include/vela/physics/ElementLombardi.h": "3c0956cf2bae86b9b7dd4f76334999f67c82569b95e4d755733eff93dc612192",
+    "include/vela/physics/IalHighFieldMobility.h": "879033759b3bf0506755e6b387043544f7646d2e99a89982889263dfdd0dcbfd",
+    "include/vela/physics/IalInterfaceGeometry.h": "6b69b0eed8c88cc3d4f846c1e770d683a45820a53bdbbc27d84f7638d200b183",
+    "include/vela/physics/IalMobility.h": "3117d47b4367fc56c09eed50f80e19f7e2418aa72e6f70424a46c49313dda0a0",
+    "include/vela/physics/IalMobilityJson.h": "9621ad90b65b0e7eb4ff4137c7d380cd8ad21c352bd7c9e896a2a4500d94e641",
+    "include/vela/physics/IalScreeningRoot.h": "4d14e1cb0a2f6069ed7a6a6ddb84660cfffceb9153f2bdec00781a33e5f4b3d2",
+    "include/vela/physics/ImpactIonizationModel.h": "0b51c2db1fbfc6cdb3ef601a4b04b919bdae88002992c9712d5cea885a8458be",
+    "include/vela/physics/MobilityModel.h": "269d7a0e59d67d5464cdfac136a1efb35ab8ce74d87a2caa8e520d74ad6b8240",
+    "include/vela/physics/RecombinationModel.h": "ca5b921003877a30cd817206852673a3829a603833edd3e6d2fadb82776ce06d",
+    "include/vela/physics/SiliconThermalPhysics.h": "32ab5864ada3fded8d5b69bd7a94f89e54f972fc44766928c3e17a987946abf5",
+    "include/vela/physics/SRHRecombination.h": "c6fe441c807f6f4d0bee86c79eceaa494d043ad349aedd6ee117b03d13cebe7b",
+    "include/vela/post/ContactCurrent.h": "7c3d6673fb41fd72c892b750aab6e899554f15338a428f2a46b44fd36cdb5e7f",
+    "include/vela/post/ElectricFieldDiagnostics.h": "bcaf40da07a032850a1271f56cc903bf38a3f4de4c9d1fecae93c11564a975e3",
+    "include/vela/post/PathIonizationIntegral.h": "1f965f2da2b25dcf1ecf7a2dc42a869d7294546ab6104febb63933950e7745b9",
+    "include/vela/post/StoredCharge.h": "72f91c933d0f6af8e287085e29d7e1722542e987816b936b514c102ce1635a65",
+    "include/vela/post/TerminalCharge.h": "7f05e2201c757aaf40f0254344544ee838815f96fb9b9adccb320068319880a8",
+    "include/vela/simulation/BoundaryControl.h": "53c93d165942fc2117dba5e4724b9aff810f61e16a411dc3e4555767b2f4e197",
+    "include/vela/simulation/ConfigParsing.h": "935c5979e53998c1960feaf6c423f9f10f80314d600afdc42bc80e204f5d43a3",
+    "include/vela/simulation/CoupledLoadLine.h": "b655a31b9156468c3d30fa7a217af43263b665be61995723e5d0fb50b5b4cacf",
+    "include/vela/simulation/CurveSweep.h": "ae42f211478d56fbfd32d3b09fac58e8ecccb8f201d6331602a7d2cca237e602",
+    "include/vela/simulation/DCSweep.h": "8dce979fe56547c3166339b546c3625afb635e5ae9e7d9a73859dafaed52aaff",
+    "include/vela/simulation/DCSweepPredictor.h": "0ca395f67bb029315e3cabeb2e4e8fb8ce6319cc97cccf870a0c35618eda138d",
+    "include/vela/simulation/DCSweepStepControl.h": "657be9e2cf781fb81c4504b188b8ab5bd4b57bdd28cbf37c3a33397e7f9e8fef",
+    "include/vela/simulation/ElectrothermalSimulation.h": "eaa5de9e03fb9938c414020475a51b0207e902d5c398bc1d255e70d04c4a04d3",
+    "include/vela/simulation/PoissonSimulation.h": "fc5f6fac79e4c922cd7169931669b964f620b7df27468c6d0f7ae430f90ffe13",
+    "include/vela/simulation/PseudoArclength.h": "c614006b4d6337439eaeb3c052693807205b58ecf3f1c68ec0db3fca931a26ed",
+    "include/vela/simulation/QfBoundsGuard.h": "3d290b956b5ad24a665f06e545430ead29223f1e147692bf1685f3d9f9ffd357",
+    "include/vela/solver/ElectrothermalDensityUpdate.h": "c0d7e94e2ce9c2cee6788a2f983c9aae6110858ab3f892258e93eb605187bf1b",
+    "include/vela/solver/ElectrothermalIterationControl.h": "f128c022d7edfbcf4d3641ae67024e14fd0fd574ff0ce2877669aff4561f9b7c",
+    "include/vela/solver/ElectrothermalLocalPrediction.h": "30013d45769dcce348ae5830ad060524d0fe5b68b6b7a1041d563b5946d7ad7c",
+    "include/vela/solver/ElectrothermalNaturalDamping.h": "0e175be7fa535f9fdb05b7356ba51ef53d092aff04455f7c627cf5684f2fdacb",
+    "include/vela/solver/ElectrothermalNearSteady.h": "939d35d4c7ff2be61eb4d31ce441e3cf0cae08a5364ebda5db0045f33bd6be26",
+    "include/vela/solver/ElectrothermalPredictorQuality.h": "be5f9ecbc381b8b71d3f79580ab79afc2e5137194204ac9d9d1bf459d6a32dab",
+    "include/vela/solver/ElectrothermalPseudoTransient.h": "26de20910f962b0f75af1441eb43ac8b6699e9eb6586d59c2d7ea3576405cbaa",
+    "include/vela/solver/ElectrothermalResidualMixing.h": "69d24d3fc30a80401453e43a03c4d39557fe2ad5543aa1fbf818c0d784435380",
+    "include/vela/solver/ElectrothermalStepControl.h": "cd41b7cb629d03476ea908219d8bd46ccf778f53453f54c1184c3784aecac7eb",
+    "include/vela/solver/ElectrothermalTangent.h": "aed78754bb5a890e746277aa68715ffa2c05f9251dad171569a6b2f482393a3f",
+    "include/vela/solver/GummelSolver.h": "42f29d6dfc6d4337c2bb674852444373302a763553273d4a52813190ebf6e0c9",
+    "include/vela/solver/LinearRefinement.h": "0f54bfb795e5461d1cb1abcc16d4428c73391ac13f249c166223f124bb1f952d",
+    "include/vela/solver/LinearSolver.h": "3d475bf1cb87e553b8e30e9a3340f53ee3adcaa63aa07b9eac7245422deaaf30",
+    "include/vela/solver/NewtonSolver.h": "fcf0af3abcfd4c8d5cff57f9b3d23d7101771aa0d44af16917b622fc13804b8b",
+    "include/vela/solver/SolutionValidation.h": "aca05554da21e46165d916a0e81962f6db22f7c7c38c78a484e1907dbd402127",
+    "include/vela/solver/detail/ContinuityTermCache.h": "4380a723bd322529edf1cedf33eda3093dc6b835b3820260795b2b3bc6bc57c4",
+    "include/vela/physics/detail/IalMobilityEvaluation.h": "967543a376748d727fb933af029a1eb1416fe73e623fff3cae8e73eb2705e8db",
+    "include/vela/physics/detail/IalMobilityGenerated.h": "b23cb37c202eedf2da8a84791d5889c724e379db97bdd1ad0bd66dfb7337075a"
+  },
+  "frozen_inputs": {
+    "<WORKTREE>\\build-release\\bvmethods_native_jacobian_20261009\\mesh.json": {
+      "sha256": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+      "copy": "frozen_inputs/mesh.json"
+    },
+    "<WORKTREE>\\build-release\\bvmethods_native_jacobian_20261009\\doping.csv": {
+      "sha256": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+      "copy": "frozen_inputs/doping.csv"
+    },
+    "<WORKTREE>\\build-release\\bvmethods_native_jacobian_20261009\\materials.json": {
+      "sha256": "fea40506708b492b61387703295e3584df747a510734d9315549c216eeb4eebe",
+      "copy": "frozen_inputs/materials.json"
+    },
+    "<WORKTREE>\\build-release\\bvmethods_element_audit_20261010\\fermi_bgn_control\\zero_matched.h5": {
+      "sha256": "c99ff3843c28b401b11836cee7628d5713187dba7f8e305c9d6052589b34ff6c",
+      "copy": "frozen_inputs/zero_matched.h5"
+    },
+    "<WORKTREE>\\build-release\\bvmethods_element_audit_20261010\\fermi_bgn_control\\first_matched.h5": {
+      "sha256": "8c786ce24d3d79a5f58194020b506216f098c5d8767fa20cae0789ae9e443281",
+      "copy": "frozen_inputs/first_matched.h5"
+    },
+    "<WORKTREE>\\build-release\\bvmethods_element_audit_20261010\\fermi_bgn_control\\second_matched.h5": {
+      "sha256": "28e3b71d59401eb2e9421dd400f44e495ecb5715bdc46e1e4fd1b9d4bf6e29a2",
+      "copy": "frozen_inputs/second_matched.h5"
+    }
+  },
+  "prior_sealed_archive": {
+    "path": "<WORKTREE>\\build-release\\bvmethods_sg_support_followup_20261010\\evidence_v1.tar.gz",
+    "sha256": "857f39e7a63b169acfefcb3cc0546575ce853104e96043818a87c304ebc62976",
+    "verified_unchanged": true
+  },
+  "binary_hashes": {
+    "matrix_runner.exe": "bbe10e7fb414aba3cf95a8b10f76bf4de44f10b87ca77fb6d9dce99a4ef729cb",
+    "matrix_runner_before.exe": "a700f9d03c7d347a49e60ffc4b45ad5d3da722ff9f429e5a2835f8d699e756e7",
+    "libvela_core_before.a": "759b07f7d6effce27833489788f59aa4c1264dc813d4761d914bd231e7930397",
+    "libvela_core.a": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898"
+  },
+  "source_repair_baseline": {
+    "method": "same current core archive; replace only MobilityModel.cpp.obj compiled from MobilityModel.before.cpp",
+    "commands_file": "<WORKTREE>\\build-release\\bvmethods_mobility_order_fix_20261010\\before_control\\commands.json",
+    "old_source_sha256": "574b5b27894efa8b8fcc17598ebc8254099af48c8f7196aea105ab8964bb9bf3"
+  },
+  "remote_evidence": [
+    {
+      "node": "t470p",
+      "remote_path": "<private execution metadata; original preserved in ignored archive>",
+      "local_file": "<WORKTREE>\\build-release\\bvmethods_mobility_order_fix_20261010\\t470p_case_evidence_v1.tgz",
+      "sha256": "03fb7ed0493a79d20a71f246afe5d14b53c1aa7b63fdd418a6120aa52dd673ee",
+      "bytes": 259649,
+      "verified": true
+    },
+    {
+      "node": "c560",
+      "remote_path": "<private execution metadata; original preserved in ignored archive>",
+      "local_file": "<WORKTREE>\\build-release\\bvmethods_mobility_order_fix_20261010\\c560_case_evidence_v1.tgz",
+      "sha256": "5616d30745e58f60721e89b1be5260cef39d7b7ae48ed208d2da4486b28a54e4",
+      "bytes": 257163,
+      "verified": true
+    }
+  ],
+  "evidence_directory": "<WORKTREE>\\build-release\\bvmethods_mobility_order_fix_20261010",
+  "evidence_archive": {
+    "archive": "<WORKTREE>\\build-release\\bvmethods_mobility_order_fix_20261010\\evidence_v1.tar.gz",
+    "sha256": "b624a5dec8666288f6dfd40a8bbfbaedf0500aff4818139a25d5208ce7f502f0",
+    "bytes": 65666994,
+    "manifest_entries": 467,
+    "manifest_sha256": "6d2b05b8bcc950d6a56c044d41cd4f321292c05d06ce8bc38eb5f23eda6c04df",
+    "control_object_audit": {
+      "members": 71,
+      "different_objects": [
+        "MobilityModel.cpp.obj"
+      ],
+      "isolated": true
+    },
+    "remote": {
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "archive_sha256": "b624a5dec8666288f6dfd40a8bbfbaedf0500aff4818139a25d5208ce7f502f0",
+      "verified_files": 467,
+      "manifest_sha256": "6d2b05b8bcc950d6a56c044d41cd4f321292c05d06ce8bc38eb5f23eda6c04df",
+      "verified": true
+    }
+  }
+}

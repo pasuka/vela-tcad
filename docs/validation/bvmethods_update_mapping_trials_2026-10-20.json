@@ -1,0 +1,234 @@
+{
+  "scope": "T470p fixed-internal-bias no-BTBT isolated report diagnosis; no acceptance changes",
+  "date": "2026-10-20",
+  "manifest_sha256": "2fcb154134030993217dca975128726089bdec66c4da9074b37a3ee247b87e2b",
+  "analysis_sha256": "3e8c1230d9ad1b935b845663a6b0146aa7489f38e1b91736f100555b199e6563",
+  "checks_passed": 53,
+  "repetitions": 4,
+  "state_labels_are_seed_names": true,
+  "units": {
+    "population": "cm^-3",
+    "qf_increment": "packed coordinate; multiply potentialScale for V",
+    "residual": "internal assembled equation units",
+    "terminal_current": "A/um"
+  },
+  "states": {
+    "rows5": {
+      "base_merit": 0.0006977896682557535,
+      "checkpoint_qualified_rows": 1332,
+      "checkpoint_violations": 14,
+      "trials": [
+        {
+          "attempt": 0,
+          "damping": 1.0,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.002614737203245557,
+          "raw_merit": 3.241212584969662e-19,
+          "requested_merit": 1.1102687349466602e-06,
+          "written_merit": 0.002283539794669301
+        },
+        {
+          "attempt": 1,
+          "damping": 0.5,
+          "accepted": true,
+          "reason": "",
+          "native_merit": 0.0006973985975936088,
+          "raw_merit": 3.241212584969662e-19,
+          "requested_merit": 0.00034928843418698775,
+          "written_merit": 0.0006974286952856736
+        }
+      ],
+      "raw_underflow_nodes": [],
+      "current_contacts": [
+        {
+          "bias_V": 0.0,
+          "name": "substrate",
+          "total_A_per_um": -8.768814485560021e-16
+        },
+        {
+          "bias_V": 0.55,
+          "name": "gate",
+          "total_A_per_um": 0.0
+        },
+        {
+          "bias_V": 0.0,
+          "name": "source",
+          "total_A_per_um": -5.98660701152518e-10
+        },
+        {
+          "bias_V": 0.00524437249039996,
+          "name": "drain",
+          "total_A_per_um": 5.986615774234112e-10
+        }
+      ],
+      "selected_contact": "gate"
+    },
+    "rows285": {
+      "base_merit": 0.0038416304919719757,
+      "checkpoint_qualified_rows": 1616,
+      "checkpoint_violations": 285,
+      "trials": [
+        {
+          "attempt": 0,
+          "damping": 1.0,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.0072971211994817455,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.006956098853770117,
+          "written_merit": 0.007678049258966546
+        },
+        {
+          "attempt": 1,
+          "damping": 0.5,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.0062750725042357005,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.005260754489870883,
+          "written_merit": 0.006315239366167487
+        },
+        {
+          "attempt": 2,
+          "damping": 0.25,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.005046195948129453,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.004499170618893338,
+          "written_merit": 0.00505649545643929
+        },
+        {
+          "attempt": 3,
+          "damping": 0.125,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.004438727972082717,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.004154125272775917,
+          "written_merit": 0.004441297728302565
+        },
+        {
+          "attempt": 4,
+          "damping": 0.0625,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.004138459122292335,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.003993312831223737,
+          "written_merit": 0.004139096837145686
+        },
+        {
+          "attempt": 5,
+          "damping": 0.03125,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.003989546567533896,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.003916262598714619,
+          "written_merit": 0.00398970526005327
+        },
+        {
+          "attempt": 6,
+          "damping": 0.015625,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.003915455244554574,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.003878635449405425,
+          "written_merit": 0.0039154939095113256
+        },
+        {
+          "attempt": 7,
+          "damping": 0.0078125,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.0038785066654279097,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038600540712657133,
+          "written_merit": 0.0038785174790051235
+        },
+        {
+          "attempt": 8,
+          "damping": 0.00390625,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.0038600599897540724,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038508224147533183,
+          "written_merit": 0.003860062641420841
+        },
+        {
+          "attempt": 9,
+          "damping": 0.001953125,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.003850843330444267,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038462214688127438,
+          "written_merit": 0.003850843719520251
+        },
+        {
+          "attempt": 10,
+          "damping": 0.0009765625,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.003846236586909398,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038439247320206016,
+          "written_merit": 0.0038462363793653584
+        },
+        {
+          "attempt": 11,
+          "damping": 0.00048828125,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.00384393238816155,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038427772996237064,
+          "written_merit": 0.003843933239148618
+        },
+        {
+          "attempt": 12,
+          "damping": 0.000244140625,
+          "accepted": false,
+          "reason": "line_search_non_decrease",
+          "native_merit": 0.0038427809134562968,
+          "raw_merit": 3.341431811063207e-17,
+          "requested_merit": 0.0038422038176696986,
+          "written_merit": 0.003842781825302887
+        }
+      ],
+      "raw_underflow_nodes": [
+        [
+          2,
+          918
+        ]
+      ],
+      "current_contacts": [
+        {
+          "bias_V": 0.0,
+          "name": "substrate",
+          "total_A_per_um": -9.19942486678544e-16
+        },
+        {
+          "bias_V": 0.55,
+          "name": "gate",
+          "total_A_per_um": 0.0
+        },
+        {
+          "bias_V": 0.0,
+          "name": "source",
+          "total_A_per_um": -5.986607028341186e-10
+        },
+        {
+          "bias_V": 0.00524437249039996,
+          "name": "drain",
+          "total_A_per_um": 5.986616205009387e-10
+        }
+      ],
+      "selected_contact": "gate"
+    }
+  }
+}
