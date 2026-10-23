@@ -40,7 +40,8 @@
     "tau_p_s": 3e-06,
     "temperature_K": 300.0,
     "method": "newton",
-    "max_iter": 100
+    "max_iter": 100,
+    "warm_start": true
   },
   "output_csv": "stage00.csv",
   "contacts": [
@@ -99,7 +100,8 @@
     "write_state_file": "stage00_state.h5",
     "predictor": "linear",
     "initialization": {
-      "mode": "poisson_block"
+      "mode": "poisson_block",
+      "poisson_max_iter": 100
     },
     "bias_points": [
       0.0

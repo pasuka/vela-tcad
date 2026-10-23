@@ -40,7 +40,7 @@
     ],
     "impact_ionization": {
       "model": "van_overstraeten",
-      "driving_force": "electric_field_parallel",
+      "driving_force": "eparallel",
       "generation": "current_density",
       "current_approximation": "density_gradient",
       "electron_a_low_cm_inv": 703000.0,
@@ -59,7 +59,8 @@
       "model": "old_slotboom",
       "coefficient_eV": 0.009,
       "reference_doping_cm3": 1e+17,
-      "smoothing": 0.5
+      "smoothing": 0.5,
+      "fermi_statistics_correction": true
     },
     "carrier_statistics": {
       "model": "fermi_dirac"
@@ -181,6 +182,9 @@
     "external_circuit": {
       "mode": "series_resistor",
       "resistance_ohm_um": 10000000.0
+    },
+    "boundary_control": {
+      "adaptive_outer_continuation": true
     },
     "breakdown": {
       "current_contact": "drain",

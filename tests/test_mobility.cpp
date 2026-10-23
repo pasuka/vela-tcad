@@ -543,6 +543,54 @@ TEST_CASE("Caughey-Thomas field mobility rolls off toward velocity saturation", 
     REQUIRE(highField * 1.0e8 <= config.electronField.saturationVelocity * 1.01);
 }
 
+TEST_CASE("Surface limited low field mobility feeds Canali saturation and its derivatives",
+          "[mobility][field][surface][composition_order]")
+{
+    const Material silicon = MaterialDatabase{}.getMaterial("Si");
+    // Exercise every non-PhuMob family with both mechanisms active. Comparing
+    // only against the bulk value cannot distinguish the two composition orders.
+    for (const std::string family : {"constant_field_lombardi",
+             "masetti_field_lombardi",
+             "caughey_thomas_field_surface", "masetti_field_surface"}) {
+        CAPTURE(family);
+        auto config = mobilityModelConfig(family);
+        config.surface.thetaElectron = 8.0e-8;
+        config.surface.thetaHole = 4.0e-8;
+        const auto model = makeMobilityModel(config);
+        for (const bool electron : {true, false}) {
+            CAPTURE(electron);
+            const auto evaluate = [&](Real parallel, Real normal) {
+                return electron
+                    ? model->electronMobility(silicon, 1.0e23, 2.0e21,
+                                              1.0e20, parallel, normal, 0.0)
+                    : model->holeMobility(silicon, 1.0e23, 2.0e21,
+                                          1.0e20, parallel, normal, 0.0);
+            };
+            const auto& field = electron ? config.electronField : config.holeField;
+            const Real parallel = 3.0e6, normal = 2.0e7;
+            const Real low = evaluate(0.0, normal);
+            const Real power = std::pow(low * parallel / field.saturationVelocity,
+                                        field.beta);
+            const Real expected = low / std::pow(1.0 + power, 1.0 / field.beta);
+            REQUIRE(evaluate(parallel, normal) ==
+                    Catch::Approx(expected).epsilon(1.0e-12));
+            // Independent chain rule: dCanali/dmu_low and dCanali/dF.
+            const Real hn = normal * 1.0e-5, hp = parallel * 1.0e-5;
+            const Real dLow = (evaluate(0.0, normal + hn) -
+                               evaluate(0.0, normal - hn)) / (2.0 * hn);
+            const Real dNormal = dLow *
+                std::pow(1.0 + power, -1.0 / field.beta - 1.0);
+            const Real dParallel = -expected / parallel * power / (1.0 + power);
+            CHECK((evaluate(parallel, normal + hn) -
+                   evaluate(parallel, normal - hn)) / (2.0 * hn) ==
+                  Catch::Approx(dNormal).epsilon(2.0e-7));
+            CHECK((evaluate(parallel + hp, normal) -
+                   evaluate(parallel - hp, normal)) / (2.0 * hp) ==
+                  Catch::Approx(dParallel).epsilon(2.0e-7));
+        }
+    }
+}
+
 TEST_CASE("Constant mobility composes orthogonally with HFS and Lombardi",
           "[mobility][field][surface][lombardi][factorial]")
 {

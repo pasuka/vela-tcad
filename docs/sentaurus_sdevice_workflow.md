@@ -511,14 +511,18 @@ schema 之外、golden 夹具所依赖的确定性规则：
 4. **电极属性**：只记录 deck 写出的属性；`Resistor=` 折叠为 `resist_ohm_um` 并发 W112；
    `Poisson=Dirichlet`/`AreaFactor=1` 丢弃并发 W113；其它 Table 206 属性 → E108，未知 → E111。
 5. **Physics 规范键**（`effective[].key`，按 ASCII 升序排列）：
-   `EffectiveIntrinsicDensity.OldSlotboom`、`Fermi`、`Mobility.DopingDependence`（别名 `DopingDep`）、
+   `EffectiveIntrinsicDensity.OldSlotboom`、`EffectiveIntrinsicDensity.NoFermi`、`Fermi`、`Mobility.DopingDependence`（别名 `DopingDep`）、
    `Mobility.HighFieldSaturation`（别名 `HighFieldsaturation`；`e/hHighFieldSaturation` 保留前缀为
    `Mobility.eHighFieldSaturation`/`Mobility.hHighFieldSaturation`）、`Mobility.Enormal`、
    `Recombination.SRH`（`parameters.doping_dependence`/`temperature_dependence`）、`Recombination.Auger`、
    `Recombination.Avalanche`（`parameters.model`、`parameters.driving_force`，均只在写出时存在）、
    `Recombination.Band2Band`（`parameters.model`）、`eQuantumPotential`。`Temperature=` 不进入
    `global[]`，写入 `temperature_K`（缺省 300）。`vela` 字段为说明性映射字符串，WP4 可修正其内容
-   并同步更新 golden。
+   并同步更新 golden。`Fermi + OldSlotboom` 默认发射
+   `solver.bandgap_narrowing.fermi_statistics_correction=true`；显式
+   `EffectiveIntrinsicDensity(NoFermi)` 将其设为 `false`，仍保留 Fermi 载流子统计。
+   未显式声明 Fermi/NoFermi 时省略修正键，保持 C++ 默认 `false`。该开关独立于材料 `ni` 中已折入的 `dEg0`；
+   采用旧前端映射的 Fermi + OldSlotboom 数值结果须重新基线化，不能继承旧资格。
 6. **Plot 别名 → 数据名**：`Potential→ElectrostaticPotential`、`eQuasiFermi→eQuasiFermiPotential`、
    `Doping→DopingConcentration`、`eCurrent→eCurrentDensity`（`TotalCurrent→TotalCurrentDensity`）、
    `SRH/SRHRecombination→srhRecombination`、`Auger→AugerRecombination`、`Band2Band→Band2BandGeneration`、

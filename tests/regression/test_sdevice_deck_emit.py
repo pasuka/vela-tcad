@@ -71,6 +71,40 @@ def emit(ir: dict, **kwargs):
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_old_slotboom_fermi_correction_and_explicit_nofermi(self):
+        for fermi in (False, True):
+            for nofermi in (False, True):
+                for reverse in (False, True):
+                    models = ["EffectiveIntrinsicDensity(OldSlotboom" +
+                              (" NoFermi" if nofermi else "") + ")"]
+                    if fermi:
+                        models.append("Fermi")
+                    if reverse:
+                        models.reverse()
+                    text = '''File {Grid="mesh.tdr" Parameter="models.par"}
+                        Electrode { {Name="a" Voltage=0} {Name="c" Voltage=0} }
+                        Physics { MODELS } Solve {Coupled {Poisson Electron Hole}}'''
+                    ir = parse_cmd_text(text.replace("MODELS", "\n".join(models)), path_name="control.cmd")
+                    self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+                    solver = emit(ir).decks[0]["solver"]
+                    self.assertEqual(solver["bandgap_narrowing"].get("fermi_statistics_correction", False),
+                                     fermi and not nofermi)
+                    self.assertEqual("fermi_statistics_correction" in solver["bandgap_narrowing"],
+                                     fermi or nofermi)
+                    self.assertEqual(solver.get("carrier_statistics", {}).get("model"),
+                                     "fermi_dirac" if fermi else None)
+                    self.assertEqual(solver["bandgap_narrowing"]["model"], "old_slotboom")
+
+    def test_resistor_qs_emits_adaptive_outer_continuation(self):
+        ir = accepted("bvmethods_sentaurus2018/external_resistor_sdevice.cmd")
+        result = emit(ir, mesh_qualification=qualification(ir, ("Si", "SiO2")),
+                      materials_report=material_result(ir, ("Si", "SiO2")).report)
+        sweep = result.decks[1]["sweep"]
+        self.assertTrue(sweep["boundary_control"]["adaptive_outer_continuation"])
+        self.assertAlmostEqual(sweep["initial_step"], 0.01)
+        self.assertAlmostEqual(sweep["min_step"], 1e-5)
+        self.assertAlmostEqual(sweep["max_step"], 2500)
+
     def setUp(self):
         self.ir = accepted("pn2d_sentaurus2018/pn2d_iv_sdevice.cmd")
 
@@ -140,9 +174,23 @@ class DeckEmitterTests(unittest.TestCase):
         stages = result.stage_plan["stages"]
         self.assertEqual(stages[0]["kind"], "equilibrium")
         self.assertIsNone(stages[0]["input_state"])
-        self.assertEqual(result.decks[0]["sweep"]["initialization"], {"mode": "poisson_block"})
+        self.assertEqual(result.decks[0]["sweep"]["initialization"],
+                         {"mode": "poisson_block", "poisson_max_iter": 100})
+        self.assertEqual(result.decks[0]["solver"]["method"], "newton")
+        self.assertTrue(result.decks[0]["solver"]["warm_start"])
         self.assertEqual(stages[1]["input_state"], stages[0]["output_state"])
         self.assertNotIn("initialization", result.decks[1]["sweep"])
+
+    def test_merged_poisson_preserves_its_own_iteration_budget(self):
+        ir = deepcopy(self.ir)
+        ir["stages"][0]["iterations"] = 7
+        ir["stages"][1]["iterations"] = None
+        ir["math"]["iterations"] = 13
+        result = emit(ir)
+        self.assertEqual(result.decks[0]["sweep"]["initialization"]["poisson_max_iter"], 7)
+        self.assertEqual(result.decks[0]["solver"]["max_iter"], 13)
+        ir["stages"][0]["iterations"] = None
+        self.assertEqual(emit(ir).decks[0]["sweep"]["initialization"]["poisson_max_iter"], 13)
 
     def test_multistage_rebase_updates_later_contacts_and_step_sizes(self):
         ir = accepted("genius_bjt_sentaurus2022/bjt_m0_des.cmd")
@@ -348,7 +396,7 @@ class DeckEmitterTests(unittest.TestCase):
 
     def test_coupled_continuation_preserves_state_and_resolves_tiny_currents(self):
         result = emit(self.ir)
-        self.assertEqual(result.decks[0]["solver"]["method"], "gummel_newton")
+        self.assertEqual(result.decks[0]["solver"]["method"], "newton")
         for deck in result.decks[1:]:
             self.assertEqual(deck["solver"]["method"], "newton")
             self.assertTrue(deck["solver"]["warm_start"])
@@ -435,13 +483,15 @@ class RunnerSmokeTests(unittest.TestCase):
             self.skipTest("VELA_EXAMPLE_RUNNER is not available")
         ir = parse_cmd_text('''File { Grid="mesh.grd" Parameter="models.par" }
             Electrode { {Name="left" Voltage=0} {Name="right" Voltage=0} }
-            Physics { Recombination(SRH) }
+            Physics { Recombination(SRH Avalanche(Eparallel)) }
             Plot { eDensity hDensity eQuasiFermi hQuasiFermi }
             Solve { Coupled {Poisson Electron Hole}
               Quasistationary(Goal {Name="left" Voltage=0.2}) {Coupled {Poisson Electron Hole}} }''',
             path_name="ohmic.cmd")
         materials = material_result(ir)
         result = emit(ir, materials_report=materials.report)
+        for deck in result.decks:
+            self.assertEqual(deck["solver"]["impact_ionization"]["driving_force"], "eparallel")
         mesh = {"nodes": [{"id": i, "x": x, "y": y} for i, (x, y) in
                           enumerate(((0, 0), (1, 0), (1, 1), (0, 1)))],
             "triangles": [{"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
