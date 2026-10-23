@@ -1,5 +1,9 @@
 # SDevice runtime packaging
 
+For the qualified runtime archives, checksums, end-user commands and support boundaries,
+see [the delivery guide](sdevice_delivery.md). This page describes building a package;
+rebuilding does not automatically inherit the qualification of a previously tested archive.
+
 The runtime distribution is built from the `SDeviceRuntime` CMake install
 component. `scripts/package_vela.py` consumes offline Python archives and license
 texts; it makes no network requests. Python API bindings are not needed.

@@ -1,16 +1,13 @@
 # `vela device`：SDevice 命令文件直跑工作流
 
-状态：**WP0–WP14 按具名范围完成，遗留修复验证通过**（2026-10-06）。WP14 外接电阻资格为 v4 恢复路径，
-原始从零 QS 数值限制保留。逐项状态见
-[本轮记录](validation/sdevice_followup_2026-10-06.md)。本文是
-[开发计划](superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md)
-第 4–6 节契约与第 10.0 节接口契约的可执行版本：schema 文件、夹具、消息目录以本文为准；
-计划文档保留决策依据。WP10 已按原契约收口，资格范围与已知限制见第 3.3 节；
-WP11 分发与并发验收已完成（2026-10-04），见[打包指南](sdevice_packaging.md)与
-[Ubuntu 26.04 验收记录](validation/sdevice_wp11_ubuntu26_04_2026-10-04.md)。
-当前支持范围与可执行示例见第 2.9–2.10 节；六条 DoD 的初始账本见
-[WP12 收口记录](validation/sdevice_wp12_closeout_2026-10-05.md)，后续补缺状态见
-[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)。完成前端工作包不等于任意 SDevice deck 均可无缝运行。
+当前用户入口与资格见[交付指南和支持矩阵](sdevice_delivery.md)。D0–D4 已于 2026-10-23 收口：
+[D1–D3](validation/sdevice_delivery_revalidation_2026-10-22.md)完成发布差分、同输入 cmd/JSON
+数值对照、Windows/Ubuntu 26.04 新包验收；[D4](validation/sdevice_delivery_d4_2026-10-23.md)
+完成 T470p/C560 的原包入口与短算例验证。新包绑定运行时 `6a56593b`，完整身份与哈希见交付指南。
+
+本文保留字段、CLI 和输出契约；历史 WP0–WP14 完成记录是各自具名输入的证据，不意味着任意
+SDevice deck 可运行。PN2D 当前完整数值资格、其他输入的 check/拒绝资格及安装库原版
+NonLocalPath/R2/R3 独立研发范围以交付支持矩阵区分，历史报告中的“下一步”不作为发布前置。
 
 ## 1. 契约文件索引
 
@@ -273,7 +270,7 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 | File/Grid/Parameter | `.tdr` 或二维三角形 DF-ISE `.grd` + 同名 `.dat`；必须声明参数文件 | TDR 需实际 HDF5 importer；坐标 um，掺杂 cm^-3；`sdevice_mesh_import` |
 | Electrode | 大小写敏感的接触名，Voltage、栅 Barrier/WorkFunction/Material、Schottky、Resist/Resistor | 不支持分布电阻或掺杂多晶硅栅；电阻只可在扫描接触；`sdevice_gate_contact_mapping`/`sdevice_deck_emit` |
 | Physics | 等温 DD、Boltzmann/Fermi、常数/Masetti 迁移率、高场、SRH/Auger、OldSlotboom、VanOverstraeten、已映射带间隧穿与固定电荷 | 有效作用域需可表达；`.par` 活跃参数逐项门控；IALMob/热输运及未映射系数模型拒绝；`sdevice_materials` |
-| Math | 线程、Iterations、Digits/ErrRef、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria | 收敛映射是记录在案的启发式；无等价项 W102，不静默激活额外物理 |
+| Math | 线程、Iterations、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria；解析并记录 Digits/RelErrControl/ErrRef | stage Iterations 映射 max_iter；Digits/RelErrControl/ErrRef 记录 W201，不替代 Vela 接受规则；其他无等价项按消息目录警告 |
 | Solve | 初始/续接 Coupled、单接触 Quasistationary 电压或电流目标、Save/Load、Plot/CurrentPlot Time、NewCurrentPrefix | HDF5 状态链；Current Time 在实际运行时绑定；多 Goal/Transient/Continuation/ACCoupled/System 拒绝 |
 | ABA/外接电阻/电流目标/Schottky | 解析、校验、deck 发射已有覆盖；门控成功可生成计划 | `sdevice_deck_emit` + WP12 中性网格 `--check`；除具名验收外，原生数值资格未建立 |
 | Plot | 第 3.3 节数据名、`/Vector`、VTU/PVD、ASCII 或 inline base64 binary | 不能提供的已识别字段 W202；坐标采样/积分/极值 CurrentPlot 请求 W105/W106 |
@@ -282,7 +279,7 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 
 PN2D 的已绑定原生数值资格见第 3.3 节。Windows/Ubuntu 26.04 分发包的合成网格
 与并发验证不替代原生 PN2D 在两个包中的数值验收；从解包入口运行的当前结果见
-[原生包验收记录](validation/sdevice_native_package_e2e_2026-10-05.md)：两平台 0V/IV/BV 与 check-only gates
+[当前原生包验收记录](validation/sdevice_delivery_revalidation_2026-10-22.md)：两平台 0V/IV/BV 与 check-only gates
 均通过，运行后包指纹不变，范围保持第 3.3 节原契约。
 
 ### 2.10 可执行中性示例与 sidecar
@@ -447,7 +444,7 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 | W112 | warning | — | `Electrode attribute 'Resistor' accepted as an alias of 'Resist' (Table 206)` | `Resistor=` |
 | W113 | warning | — | `Electrode attribute '{kw}={value}' equals the default and is dropped` | `Poisson=Dirichlet`、`AreaFactor=1` |
 | W114 | warning | — | `Physics model '{key}' is recorded as metadata only` | 有效集中 `status=metadata_only` 的模型 |
-| W201 | warning | — | `Math '{kw}={value}' mapped heuristically to '{vela}'` | `Digits/ErrRef/Iterations` → `solver.*` |
+| W201 | warning | — | `Math '{kw}={value}' mapped heuristically to '{vela}'` | Iterations 映射 `solver.max_iter`；Digits/RelErrControl/ErrRef 仅记录，目标为空，不声明原生收敛等价 |
 | W202 | warning | — | `Plot field '{data_name}' is not available in Vela; skipped` | 如 `eTemperature` |
 | W203 | warning | — | `Implicit plot fields appended: {list}` | 无 `PlotExplicit` 时 |
 | W204 | warning | — | `Device plot '{tdr}' is written as '{vtu}'` | `.tdr`→`.vtu` |

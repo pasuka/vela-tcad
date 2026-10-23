@@ -1,5 +1,16 @@
 # Vela Documentation
 
+- [SDevice 用户交付入口与支持矩阵](sdevice_delivery.md)：D0–D4 收口；发行包哈希、两平台命令、
+  PN2D 数值资格及 check/拒绝边界；[D4 两机验证](validation/sdevice_delivery_d4_2026-10-23.md)。
+
+- [SDevice 发布差分与重新验收，2026-10-22](validation/sdevice_delivery_revalidation_2026-10-22.md)：
+  D1–D3 已完成（10-23 收口）；同输入三路数值对照、两平台全套回归和新包原生 E2E 通过。
+  Linux 完整并发及相对 RUNPATH、Windows 锁冲突和两包迁移/指纹通过，平台跳过单列。
+
+- [SDevice 前端交付范围与成果审查，2026-10-22](validation/sdevice_delivery_scope_audit_2026-10-22.md)：
+  冻结 10 个原始 fixture，盘点 43 个参考 cmd；区分旧包数值资格、当前源码及独立 BVmethods 研发。
+  同输入重新发射发现 PN2D 初始化流程已变，下一项先审查发布差分并重新验证主线，不能沿用旧包资格。
+
 This directory is organized around current project behavior: build it, choose
 a configuration schema, import reference fixtures, and inspect validation
 evidence.
