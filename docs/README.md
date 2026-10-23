@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [PARDISO main 接入与双机验证，2026-10-23](validation/pardiso_cross_host_validation_2026-10-23.md)：
+  T470p／C560 完成匹配源码的 Debug 构建、全套回归失败项复核、MKL 多线程契约与四组数值回归；默认后端不变。
+
 - [BVmethods 外接电阻法开发交接，2026-10-23](validation/bvmethods_external_resistor_handoff_2026-10-23.md)：
   当前检出与历史私有证据位置、R0–R7 状态、两态 R2 进展及持续增广 Newton 的下一轮入口；尚无完整 BV 资格。
 
