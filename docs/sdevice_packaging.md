@@ -10,12 +10,12 @@ texts; it makes no network requests. Python API bindings are not needed.
 
 ## Build and package
 
-On Windows, use the UCRT64 Release preset and build the three shipped programs:
+On Windows, use the UCRT64 Release preset and build the four shipped programs:
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
 cmake --preset windows-ucrt64-release
-cmake --build --preset windows-ucrt64-release --target vela vela_example_runner sentaurus_import
+cmake --build --preset windows-ucrt64-release --target sd-sim vela vela_example_runner sentaurus_import
 python scripts/package_vela.py --build-dir build-release --python-archive build-release/wp11/downloads/python-3.12.10-embed-amd64.zip --python-sha256 4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3 --python-license-dir build-release/wp11/licenses/python-runtime --license-root build-release/wp11/licenses --output-dir build-release/wp11/packages
 ```
 
@@ -34,7 +34,7 @@ binaries as an Ubuntu 26.04 package.
 
 ```bash
 cmake -S . -B build-linux26 -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-linux26 --target vela vela_example_runner sentaurus_import --parallel 4
+cmake --build build-linux26 --target sd-sim vela vela_example_runner sentaurus_import --parallel 4
 python3 scripts/package_vela.py --build-dir build-linux26 --python-archive build-release/wp11/downloads/cpython-3.12.12-linux.tar.gz --python-sha256 6249bea270cdd4218a258edb3a1c5602dd9dc0f785b9d29963676276a3838e60 --python-license-dir build-release/wp11/licenses/python-runtime --license-root build-release/wp11/licenses --output-dir build-release/wp11/packages
 ```
 
@@ -55,8 +55,10 @@ frontend archive. Leave the option empty for ordinary Git checkouts.
 
 ```text
 vela/
+  sd-sim[.exe]                   # preferred: sd-sim [options] deck.cmd
   vela[.exe]
   bin/
+    sd-sim[.exe]
     vela[.exe]
     vela_example_runner[.exe]
     sentaurus_import[.exe]
@@ -73,14 +75,15 @@ vela/
   PACKAGE_MANIFEST.json
 ```
 
-Both launcher entry points work after relocation. Linux uses **DT_RUNPATH**,
+Both launcher names are installed at the root and in bin/ and work after relocation.
+`vela device` remains the compatibility entry. Linux uses **DT_RUNPATH**,
 with paths relative to each ELF object's `$ORIGIN` (its own directory, independent
 of the caller's working directory):
 
 | ELF location | Runtime library search path |
 | --- | --- |
-| `bin/vela`, `bin/vela_example_runner`, `bin/sentaurus_import` | `$ORIGIN/../lib` |
-| Root `vela` launcher | `$ORIGIN/lib` |
+| `bin/sd-sim`, `bin/vela`, `bin/vela_example_runner`, `bin/sentaurus_import` | `$ORIGIN/../lib` |
+| Root `sd-sim` and `vela` launchers | `$ORIGIN/lib` |
 | Bundled libraries in `lib/` | `$ORIGIN` |
 | Bundled Python executables and extension libraries | Their own directory, the private Python `lib/`, then the Vela `lib/`, all expressed using `$ORIGIN` |
 

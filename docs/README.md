@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [sd-sim 入口与 CLI 更新计划](superpowers/plans/2026-10-23-sd-sim-cli-plan.md)：用户确定新名称，
+  保留旧入口；未实现参数具名预留，`-d` 数值导出延期。
+
 - [BVmethods 三组源码与诊断归档，2026-10-23](validation/bvmethods_worktree_organization_2026-10-23.md)：
   交付修复、实验依赖和诊断资料分别提交；原始执行记录保留 ignored，N4/R2/R3 未取得新资格。
 

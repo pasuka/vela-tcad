@@ -133,6 +133,18 @@ class VelaLauncherTest(unittest.TestCase):
         self.assertEqual(payload["nousersite"], "1")
         self.assertNotIn(b"using Python from PATH", result.stderr)
 
+    def test_sd_sim_direct_arguments_and_exit_code(self) -> None:
+        direct = Path(os.environ.get("SD_SIM_LAUNCHER") or LAUNCHER.with_name(f"sd-sim{EXE_SUFFIX}"))
+        if not direct.is_file():
+            self.skipTest("sd-sim launcher not built")
+        for layout in (self.root_layout, self.flat_layout):
+            target = layout / direct.name
+            shutil.copy2(direct, target)
+            result = self.run_launcher(TRICKY_ARGS, launcher=target,
+                                       env=self.base_env(fake_exit=2, use_override=False))
+            self.assertEqual(result.returncode, 2, result.stderr.decode("utf-8", "replace"))
+            self.assertEqual(self.echo(result)["argv"], ["sd-sim", *TRICKY_ARGS])
+
     # -- (b) exit code propagation --------------------------------------------
 
     def test_exit_codes_are_propagated(self) -> None:

@@ -1,6 +1,7 @@
 // vela: native launcher for the sdevice-compatible front end (contract C9).
 //
 //   vela device <args...>  ->  <python> <bin>/vela_sdevice.pyz device <args...>
+//   sd-sim <args...>       ->  <python> <bin>/vela_sdevice.pyz sd-sim <args...>
 //
 // The child runs in the same working directory with the same standard
 // handles; every argument is forwarded unchanged and the child's exit code is
@@ -450,6 +451,7 @@ int printVersion()
 
 int launcherMain(int argc, NativeChar** argv)
 {
+#ifndef VELA_DIRECT_DEVICE_CLI
     if (argc < 2) {
         printErr("vela: E201 no command given\n");
         printErr(kUsage);
@@ -469,6 +471,7 @@ int launcherMain(int argc, NativeChar** argv)
         printErr(kUsage);
         return 2;
     }
+#endif
 
     const Layout layout = discoverLayout(executablePath(argv[0]));
     if (layout.pyz.empty()) {
@@ -496,6 +499,9 @@ int launcherMain(int argc, NativeChar** argv)
     std::vector<NativeString> arguments;
     arguments.reserve(static_cast<std::size_t>(argc));
     arguments.push_back(layout.pyz.native());
+#ifdef VELA_DIRECT_DEVICE_CLI
+    arguments.emplace_back(VELA_T("sd-sim"));
+#endif
     for (int i = 1; i < argc; ++i) {
         arguments.emplace_back(argv[i]);
     }

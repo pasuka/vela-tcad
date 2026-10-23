@@ -620,17 +620,21 @@ elseif(Git_FOUND)
     endif()
 endif()
 add_executable(vela src/tools/vela.cpp)
-add_dependencies(vela vela_sdevice_pyz)
-target_compile_definitions(vela PRIVATE
-    VELA_VERSION="${PROJECT_VERSION}"
-    VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
-if(MINGW)
-    # wmain entry point; fully static so the launcher also runs from the
-    # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
-    target_link_options(vela PRIVATE -municode -static)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_link_options(vela PRIVATE -static-libgcc -static-libstdc++)
-endif()
+add_executable(sd-sim src/tools/vela.cpp)
+target_compile_definitions(sd-sim PRIVATE VELA_DIRECT_DEVICE_CLI=1)
+foreach(_launcher IN ITEMS vela sd-sim)
+    add_dependencies(${_launcher} vela_sdevice_pyz)
+    target_compile_definitions(${_launcher} PRIVATE
+        VELA_VERSION="${PROJECT_VERSION}"
+        VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
+    if(MINGW)
+        # wmain entry point; fully static so the launcher also runs from the
+        # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
+        target_link_options(${_launcher} PRIVATE -municode -static)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(${_launcher} PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+endforeach()
 
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
@@ -668,7 +672,7 @@ endif()
 
 # WP11: install only the frontend's runtime closure, never reference fixtures.
 # Keep both the documented root launcher and the conventional bin/ entry point.
-set(_vela_distribution_targets vela vela_example_runner)
+set(_vela_distribution_targets vela sd-sim vela_example_runner)
 if(TARGET sentaurus_import)
     list(APPEND _vela_distribution_targets sentaurus_import)
 endif()
@@ -687,6 +691,7 @@ install(TARGETS ${_vela_distribution_targets}
     RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
     RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
 install(PROGRAMS "$<TARGET_FILE:vela>" DESTINATION . COMPONENT SDeviceRuntime)
+install(PROGRAMS "$<TARGET_FILE:sd-sim>" DESTINATION . COMPONENT SDeviceRuntime)
 if(WIN32)
     install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
         DIRECTORIES "${VELA_MINGW_RUNTIME_DIR}"
@@ -1635,7 +1640,7 @@ set_tests_properties(sdevice_vela_launcher PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_vela_launcher)
 set_property(TEST sdevice_vela_launcher APPEND PROPERTY
-    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>")
+    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>" "SD_SIM_LAUNCHER=$<TARGET_FILE:sd-sim>")
 
 add_test(NAME sdevice_materials
     COMMAND ${Python3_EXECUTABLE} -m unittest

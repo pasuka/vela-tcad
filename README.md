@@ -11,6 +11,10 @@ calibrated commercial TCAD replacement.
 
 For the qualified SDevice cmd frontend packages, installation commands and exact case
 support levels, see the [SDevice delivery guide](docs/sdevice_delivery.md).
+Current source builds provide `sd-sim [options] deck.cmd` as the preferred entry;
+`vela device [options] deck.cmd` remains available. See the
+[CLI support and reserved options](docs/sentaurus_sdevice_workflow.md#21-调用形式).
+Previously qualified packages retain their recorded entry points and capabilities.
 
 ## What Is Implemented
 
