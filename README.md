@@ -94,7 +94,13 @@ Prerequisites:
 
 - CMake 3.21 or newer
 - C++20 compiler
-- Boost headers (Boost.Multiprecision)
+- Boost headers (Boost.Multiprecision and Boost.PFR). Exact diagnostic field
+  encoding requires PFR field-name reflection from Boost 1.84 or newer. CMake
+  uses an installed compatible `boost_pfr` package or downloads the standalone
+  PFR 1.87 headers with a pinned SHA-256; the system Boost installation is kept.
+  For offline builds, provide the extracted PFR source with
+  `-DFETCHCONTENT_SOURCE_DIR_BOOST_PFR=/path/to/pfr` when no compatible package
+  is installed.
 - Eigen3
 - nlohmann/json
 - Catch2 v3

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.21)
 if(POLICY CMP0207)
     cmake_policy(SET CMP0207 NEW)
 endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 project(vela-tcad VERSION 0.1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
@@ -23,6 +26,26 @@ find_package(nlohmann_json REQUIRED)
 
 # Boost.Multiprecision (header-only arbitrary-precision arithmetic)
 find_package(Boost CONFIG REQUIRED)
+
+# ExactValueBits uses PFR field-name reflection, introduced in Boost 1.84.
+# Older distribution Boost packages still suffice for Multiprecision. Fetch
+# only the standalone, dependency-free PFR headers when that component is old.
+find_package(boost_pfr 1.84 CONFIG QUIET)
+if(NOT TARGET Boost::pfr)
+    include(FetchContent)
+    FetchContent_Declare(boost_pfr
+        URL https://codeload.github.com/boostorg/pfr/tar.gz/refs/tags/boost-1.87.0
+        URL_HASH SHA256=0fef7062020959216582e80a23b5bbc091b6f1a5f8762f12fa5ce9458d6f1617
+        # Use headers only; do not register upstream tests via BUILD_TESTING.
+        SOURCE_SUBDIR include)
+    FetchContent_MakeAvailable(boost_pfr)
+    add_library(vela_pfr INTERFACE)
+    add_library(Boost::pfr ALIAS vela_pfr)
+    target_include_directories(vela_pfr SYSTEM INTERFACE ${boost_pfr_SOURCE_DIR}/include)
+    message(STATUS "Boost.PFR field-name reflection: pinned 1.87 headers")
+else()
+    message(STATUS "Boost.PFR field-name reflection: installed package")
+endif()
 
 # spdlog (logging): prefer system package, fallback to FetchContent
 find_package(spdlog CONFIG QUIET)
@@ -341,7 +364,7 @@ target_link_libraries(vela_core
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
         spdlog::spdlog
-    PRIVATE
+        Boost::pfr
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
