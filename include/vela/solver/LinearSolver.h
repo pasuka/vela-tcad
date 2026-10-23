@@ -37,7 +37,10 @@ bool solveSpqrSystem(const SparseMatrixd& A,
  * VELA_LINEAR_SOLVER to one of "sparselu", "sparseqr",
  * "umfpack", "sparselu_metis", "umfpack_metis", "mumps", "mumps_metis",
  * "superlu_mt", "superlu_mt_metis", "strumpack", "bicgstab_ilut",
- * "gmres_ilut", or "simplicial_ldlt". Optional direct backends retain symbolic
+ * "gmres_ilut", "simplicial_ldlt", or "pardiso_mkl". The latter requires an
+ * explicit absolute VELA_MKL_RT_LIBRARY (or VELA_MKL_RT_DLL) runtime path on
+ * Windows/Linux and is never selected automatically. It uses binary64 LP64.
+ * Optional direct backends retain symbolic
  * and identical-value numeric factors; the other alternate backends do not.
  */
 class LinearSolver {

@@ -476,6 +476,28 @@ numeric factors; unavailable UMFPACK and failed solves raise errors rather than
 silently changing backends. This override is independent of the electrothermal
 configuration below; it does not select a different physical model.
 
+On Windows and Linux, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
+oneMKL PARDISO runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
+of the installed MKL runtime; `VELA_MKL_RT_DLL` is a compatibility fallback
+when that variable is unset or empty. The runtime's dependent libraries must
+also be discoverable (on Windows, include their directories in the process
+`PATH`). No MKL headers or link-time libraries are required, and other backends
+do not load MKL. Missing libraries, symbols and failed solves raise errors
+without switching backends. The default preference order is unchanged.
+
+This backend uses LP64, real nonsymmetric binary64, METIS ordering, scaling,
+matching and up to two iterative-refinement steps. `VELA_LINEAR_THREADS`
+accepts `1` (default), `2`, or `4`; each call restores the previous thread-local
+MKL setting. Its reported thread count is the requested setting, not a measured
+worker count. Exact sparse patterns and identical numerical factors are reused.
+Selection applies to shared auxiliary solves too; it does not select the
+separate electrothermal backend or change assembly, nonlinear updates or
+acceptance criteria. This is not extended-precision solving or a guarantee of
+Sentaurus-equivalent results. Constraint-elimination variants are not included.
+In an embedding process, MKL must permit LP64 initialization before other MKL
+calls; preinitialized NumPy/MKL and Python API compatibility need separate
+qualification. Runtime paths belong in local environment configuration.
+
 Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
 `mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
 They require their detected CMake packages (`VELA_ENABLE_METIS`,
