@@ -476,8 +476,17 @@ numeric factors; unavailable UMFPACK and failed solves raise errors rather than
 silently changing backends. This override is independent of the electrothermal
 configuration below; it does not select a different physical model.
 
-On Windows and Linux, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
-oneMKL PARDISO runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
+The oneMKL PARDISO backend is a compile-time option, disabled by default.
+Configure with `-DVELA_ENABLE_MKL_PARDISO=ON` on Windows or Linux to build it.
+The default `OFF` excludes the adapter, its test runtime libraries and its
+dynamic-loader link dependency; explicitly selecting `pardiso_mkl` then raises
+an error naming the required CMake option. The disabled-build rejection test
+still runs without MKL. GitHub CI explicitly uses `OFF`.
+Existing CMake caches retain an explicit selection; reconfigure with
+`-DVELA_ENABLE_MKL_PARDISO=OFF` to disable a previously enabled build.
+
+In an enabled build, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
+runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
 of the installed MKL runtime; `VELA_MKL_RT_DLL` is a compatibility fallback
 when that variable is unset or empty. The runtime's dependent libraries must
 also be discoverable (on Windows, include their directories in the process

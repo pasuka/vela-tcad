@@ -301,7 +301,15 @@ LinearSolver::LinearSolver(const std::string& backend)
 LinearSolver::~LinearSolver() = default;
 
 void LinearSolver::createDirectBackend() {
-    if (backend_ == "pardiso_mkl") direct_ = detail::makeMklPardiso();
+    if (backend_ == "pardiso_mkl") {
+#ifdef VELA_HAS_MKL_PARDISO
+        direct_ = detail::makeMklPardiso();
+#else
+        throw std::invalid_argument(
+            "LinearSolver: pardiso_mkl was not enabled in this build; "
+            "configure with VELA_ENABLE_MKL_PARDISO=ON");
+#endif
+    }
     else if (backend_ == "sparselu_metis") direct_ = detail::makeMetisSparseLU();
     else if (backend_ == "mumps" || backend_ == "mumps_metis") direct_ = detail::makeMumps(backend_ == "mumps_metis");
     else if (backend_ == "superlu_mt" || backend_ == "superlu_mt_metis") direct_ = detail::makeSuperLuMt(backend_ == "superlu_mt_metis");

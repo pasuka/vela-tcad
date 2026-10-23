@@ -57,12 +57,13 @@ jobs:
         run: /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; print(h5py.version.info)"
 
       - name: Configure debug build
-        # Keep optional OpenMP direct backends disabled in this Linux CI job.
+        # This job has no MKL runtime; keep PARDISO and optional OpenMP backends disabled.
         run: |
           set -euo pipefail
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
             -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
+            -DVELA_ENABLE_MKL_PARDISO=OFF \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
             -DVELA_ENABLE_STRUMPACK=OFF | tee configure.log
@@ -71,6 +72,7 @@ jobs:
           grep -F 'METIS ordering enabled' configure.log
           grep -F 'Eigen headers:' configure.log
           grep -F 'Boost headers and PFR:' configure.log
+          grep -F 'oneMKL PARDISO runtime backend disabled' configure.log
           grep -F 'VELA_BOOST_PFR_HEADERS_WORK - Success' configure.log
 
       - name: Build

@@ -28,6 +28,21 @@ struct Environment {
 };
 }
 
+#ifndef VELA_HAS_MKL_PARDISO
+TEST_CASE("PARDISO disabled builds reject explicit selection", "[linear_solver][pardiso]") {
+    const auto defaults = LinearSolver::availableDirectBackends();
+    REQUIRE(std::find(defaults.begin(), defaults.end(), "pardiso_mkl") == defaults.end());
+    Environment library("VELA_MKL_RT_LIBRARY"), selection("VELA_LINEAR_SOLVER");
+    library.set("disabled-backends-must-not-load-this-library");
+    REQUIRE_THROWS_WITH(LinearSolver("pardiso_mkl"), ContainsSubstring("VELA_ENABLE_MKL_PARDISO=ON"));
+    selection.set("pardiso_mkl");
+    REQUIRE_THROWS_WITH(LinearSolver(), ContainsSubstring("VELA_ENABLE_MKL_PARDISO=ON"));
+    LinearSolver solver("sparselu");
+    SparseMatrixd a(2,2); a.insert(0,0)=2.; a.insert(1,0)=1.; a.insert(1,1)=3.; a.makeCompressed();
+    VectorXd b(2); b<<4.,-1.;
+    REQUIRE((a*solver.solve(a,b)-b).norm()<1e-13);
+}
+#else
 TEST_CASE("PARDISO requires explicit runtime selection", "[linear_solver][pardiso]") {
     Environment library("VELA_MKL_RT_LIBRARY"), legacy("VELA_MKL_RT_DLL");
     library.set(nullptr); legacy.set(nullptr);
@@ -114,3 +129,4 @@ TEST_CASE("PARDISO real runtime preserves nonsymmetric equations and cache bound
     SKIP("Runtime adapter supported on Windows and Linux only");
 #endif
 }
+#endif

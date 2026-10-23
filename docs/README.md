@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [PARDISO 编译开关与 HFS 测试耗时分析，2026-10-23](validation/pardiso_build_option_hfs_audit_2026-10-23.md)：
+  PARDISO 默认编译关闭、GitHub CI 显式关闭；HFS 高精度 Jacobian 检查的工作量与双机 OFF／ON 验证。
+
 - [PARDISO main 接入与双机验证，2026-10-23](validation/pardiso_cross_host_validation_2026-10-23.md)：
   T470p／C560 完成匹配源码的 Debug 构建、全套回归失败项复核、MKL 多线程契约与四组数值回归；默认后端不变。
 
