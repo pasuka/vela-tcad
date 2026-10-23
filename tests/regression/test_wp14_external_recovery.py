@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
 from validate_wp14_external_recovery import check_state, STOP, RESISTANCE
+from reference_artifacts import lf_sha256
 
 
 class FixedResistorStateTest(unittest.TestCase):
@@ -12,7 +13,11 @@ class FixedResistorStateTest(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         original = root / 'reference_tcad/bvmethods_sentaurus2018/source'
         qualified = root / 'reference_tcad/bvmethods_sentaurus2018/wp14_sources/v4'
-        self.assertEqual((original/'models.par').read_bytes(), (qualified/'models.par').read_bytes())
+        # Match the validator's source-identity rule: archived bytes retain
+        # their original EOLs, while a Git checkout may use different EOLs.
+        # Raw archive fingerprints remain byte-exact in the validator.
+        self.assertEqual(lf_sha256((original/'models.par').read_bytes()),
+                         lf_sha256((qualified/'models.par').read_bytes()))
         physics = lambda text: re.sub(r'\s+', '', re.search(r'Physics\s*\{([^}]*)\}', text).group(1))
         baseline = physics((original/'external_resistor_sdevice.cmd').read_text())
         for name in ('external_transient_saved','external_dc_saved','external_recovery_saved'):
@@ -23,6 +28,16 @@ class FixedResistorStateTest(unittest.TestCase):
             if name != 'external_transient_saved':
                 self.assertIn('Load(FilePrefix="../external_transient_saved_v2/external_transient_seed")', text)
             if name == 'external_recovery_saved': self.assertIn('Voltage=100000.0', text)
+
+    def test_material_identity_allows_eol_changes_but_rejects_parameter_changes(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / 'reference_tcad/bvmethods_sentaurus2018/source/models.par').read_bytes()
+        lf = source.replace(b'\r\n', b'\n')
+        self.assertEqual(lf_sha256(source), lf_sha256(lf))
+        self.assertEqual(lf_sha256(source), lf_sha256(lf.replace(b'\n', b'\r\n')))
+        changed = lf.replace(b'1.0000e-07', b'2.0000e-07', 1)
+        self.assertNotEqual(lf, changed)  # Ensure the lifetime control changed a parameter.
+        self.assertNotEqual(lf_sha256(source), lf_sha256(changed))
 
     def state(self):
         current = STOP * 1.01
