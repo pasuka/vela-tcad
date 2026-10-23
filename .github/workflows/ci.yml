@@ -71,6 +71,7 @@ jobs:
           grep -F 'METIS ordering enabled' configure.log
           grep -F 'Eigen headers:' configure.log
           grep -F 'Boost headers and PFR:' configure.log
+          grep -F 'VELA_BOOST_PFR_HEADERS_WORK - Success' configure.log
 
       - name: Build
         run: cmake --build build --parallel

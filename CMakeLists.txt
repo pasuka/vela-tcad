@@ -42,8 +42,37 @@ endif()
 find_package(nlohmann_json REQUIRED)
 
 # System Boost.Multiprecision and PFR; field-name reflection needs Boost >=1.84.
-# Ubuntu 26.04 supplies a sufficiently recent Boost; no separate PFR download.
-find_package(Boost 1.84 CONFIG REQUIRED COMPONENTS pfr)
+# Some distro packages ship PFR headers without a boost_pfr CMake component.
+# Neither PFR nor Multiprecision needs a separately linked library. Check the
+# actual reflection API instead of requiring that optional package metadata.
+find_package(Boost 1.84 CONFIG REQUIRED)
+include(CMakePushCheckState)
+include(CheckCXXSourceCompiles)
+cmake_push_check_state(RESET)
+set(CMAKE_REQUIRED_LIBRARIES Boost::headers)
+# Recheck after dependency/toolchain changes in an existing build directory.
+unset(VELA_BOOST_PFR_HEADERS_WORK CACHE)
+check_cxx_source_compiles([=[
+    #include <boost/pfr/core.hpp>
+    #include <boost/pfr/core_name.hpp>
+    #include <boost/multiprecision/cpp_dec_float.hpp>
+    struct Fields { double value; int count; };
+    static_assert(boost::pfr::get_name<0, Fields>() == "value");
+    int main() {
+        Fields fields{1.0, 2};
+        boost::pfr::for_each_field(fields, [](const auto&, auto) {});
+        boost::multiprecision::cpp_dec_float_50 value = fields.value;
+        return value == 1 ? 0 : 1;
+    }
+]=] VELA_BOOST_PFR_HEADERS_WORK)
+cmake_pop_check_state()
+if(NOT VELA_BOOST_PFR_HEADERS_WORK)
+    message(FATAL_ERROR
+        "System Boost must provide working PFR field-name reflection and Multiprecision headers. "
+        "Install Boost >=1.84 development headers (libboost-dev on Ubuntu 26.04), "
+        "including boost/pfr/core_name.hpp, and use a supported C++20 compiler. "
+        "See the CMake configure log for the compile error; no boost_pfr package config is required.")
+endif()
 message(STATUS "Boost headers and PFR: installed ${Boost_VERSION}")
 
 # spdlog (logging): prefer system package, fallback to FetchContent
@@ -363,7 +392,6 @@ target_link_libraries(vela_core
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
         spdlog::spdlog
-        Boost::pfr
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")

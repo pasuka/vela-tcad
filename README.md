@@ -96,6 +96,8 @@ Prerequisites:
 - C++20 compiler
 - System Boost 1.84 or newer, including Multiprecision and PFR headers.
   PFR field-name reflection is required; CMake does not download a separate PFR.
+  Vela uses `Boost::headers` and checks the reflection API during configuration;
+  an independent `boost_pfrConfig.cmake` is not required.
 - Eigen 5.0.1 or newer within the 5.x series (the CMake package/target names
   remain `Eigen3` / `Eigen3::Eigen`). CMake uses a compatible installed package
   or downloads the official 5.0.1 headers with a pinned SHA-256. An older
