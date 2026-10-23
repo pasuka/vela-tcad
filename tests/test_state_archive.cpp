@@ -4,6 +4,7 @@
 #include "vela/io/ElectrothermalState.h"
 #include "vela/io/DDSolutionCsv.h"
 #include "vela/numerics/SplitDDState.h"
+#include "vela/solver/experimental/PopulationCheckpoint.h"
 #include <catch2/catch_test_macros.hpp>
 #include <bit>
 #include <chrono>
@@ -181,6 +182,46 @@ TEST_CASE("State SHA256 matches known empty and multiblock vectors", "[state_arc
     REQUIRE(vela::stateSha256("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     REQUIRE(vela::stateSha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     REQUIRE(vela::stateSha256(std::string(1000000,'a')) == "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+}
+
+TEST_CASE("Private population checkpoint preserves internal bits and rejects stale bindings", "[state_archive][population_checkpoint]") {
+    Workspace w;
+    const vela::UnitScalingConfig scaling{vela::UnitScalingMode::UnitScaling};
+    auto solution=vela::restoreDDSolution(example(),scaling);
+    // Find an actual internal -> SI -> internal non-involution, not a tolerance assertion.
+    double lossy=1.2345678901234567;
+    const auto units=scaling.unitSystem();
+    for(int i=0;i<10000 && units.m3ToInternalConcentration(units.internalConcentrationToM3(lossy))==lossy;++i)
+        lossy=std::nextafter(lossy,2.);
+    REQUIRE(units.m3ToInternalConcentration(units.internalConcentrationToM3(lossy))!=lossy);
+    solution.n<<lossy,std::numeric_limits<double>::denorm_min(),-0.;
+    solution.p<<std::nextafter(lossy,2.),1e-200,1e100;
+    const auto archive=vela::archiveDDSolution(solution,example().metadata,scaling);
+    const auto sidecar=vela::experimental::populationCheckpoint(solution,archive,scaling);
+    vela::writeStateArchive(w.root/"physical.h5",archive);
+    const auto disk=vela::readStateArchive(w.root/"physical.h5",3,std::string(64,'a'));
+    // JSON text and HDF5 transport both participate in this check.
+    const auto parsed=nlohmann::json::parse(sidecar.dump());
+    const auto restored=vela::experimental::restorePopulationCheckpoint(disk,parsed,scaling);
+    for(int i=0;i<3;++i) {
+        REQUIRE(std::bit_cast<std::uint64_t>(solution.n[i])==std::bit_cast<std::uint64_t>(restored.n[i]));
+        REQUIRE(std::bit_cast<std::uint64_t>(solution.p[i])==std::bit_cast<std::uint64_t>(restored.p[i]));
+    }
+    REQUIRE(vela::restoreDDSolution(disk,scaling).n[0]!=solution.n[0]);
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,parsed));
+    auto changed=disk;changed.metadata["bias_V"]=41.;
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(changed,parsed,scaling));
+    changed=disk;changed.fields.at("psi")[0]=.1;
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(changed,parsed,scaling));
+    auto invalid=parsed;invalid["electrons_bits"][0]="0000000000000000";
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,invalid,scaling));
+    // Even a recomputed payload digest cannot bind incompatible SI populations.
+    invalid.erase("payload_sha256");invalid["payload_sha256"]=vela::stateSha256(invalid.dump());
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,invalid,scaling));
+    auto stale=solution;stale.psi[0]=.1;
+    REQUIRE_THROWS(vela::experimental::populationCheckpoint(stale,disk,scaling));
+    stale=solution;stale.p[0]=std::numeric_limits<double>::infinity();
+    REQUIRE_THROWS(vela::experimental::populationCheckpoint(stale,disk,scaling));
 }
 TEST_CASE("State mesh identity distinguishes equal sized meshes and units", "[state_archive]") {
     vela::DeviceMesh a,b;

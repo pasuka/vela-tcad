@@ -1,6 +1,10 @@
+#include "vela/equation/experimental/ResidualAudit.h"
 #include "vela/equation/ExtendedPoissonResidual.h"
+#include "vela/equation/experimental/PopulationCapture.h"
+#include "vela/equation/experimental/AssemblyAudit.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/physics/NonlocalPathSourceAssembly.h"
 #include "vela/discretization/StableSGDerivative.h"
 #include "vela/equation/BVProcessProbe.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -26,6 +30,44 @@
 
 namespace vela {
 namespace {
+
+// Callback form of detail::edgeAveragedCellVectorCurrent: recompute only the
+// cell edges affected by a Jacobian column, preserving the residual's vector
+// averaging, singular-cell guard and edge fallback.
+template<class FluxAt>
+Point2 perturbedEdgeCellCurrent(Index edgeId, FluxAt fluxAt,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<std::vector<Index>>& cellEdges, const DeviceMesh& mesh)
+{
+    Point2 sum = Point2::Zero();
+    int count = 0;
+    for (Index cell : edgeCells[edgeId]) {
+        Real a00=0, a01=0, a11=0, b0=0, b1=0;
+        int used=0;
+        for (Index id : cellEdges[cell]) {
+            const Edge& edge = mesh.getEdge(id);
+            if (edge.length <= 1e-30) continue;
+            const auto& p0 = mesh.getNode(edge.n0);
+            const auto& p1 = mesh.getNode(edge.n1);
+            const Real tx=(p1.x-p0.x)/edge.length, ty=(p1.y-p0.y)/edge.length;
+            const Real flux=fluxAt(id);
+            a00+=tx*tx; a01+=tx*ty; a11+=ty*ty;
+            b0+=tx*flux; b1+=ty*flux; ++used;
+        }
+        const Real det=a00*a11-a01*a01;
+        const Real scale=std::max({std::abs(a00*a11),std::abs(a01*a01),Real{1}});
+        if (used<2 || std::abs(det)<=1e-24*scale) continue;
+        const Point2 current{(b0*a11-b1*a01)/det,(a00*b1-a01*b0)/det};
+        if (current.squaredNorm()<=0) continue;
+        sum+=current; ++count;
+    }
+    if (count>0) return (sum/static_cast<Real>(count)).eval();
+    const Edge& edge=mesh.getEdge(edgeId);
+    if (edge.length<=1e-30) return Point2::Zero();
+    const auto& p0=mesh.getNode(edge.n0);
+    const auto& p1=mesh.getNode(edge.n1);
+    return fluxAt(edgeId)*Point2{(p1.x-p0.x)/edge.length,(p1.y-p0.y)/edge.length};
+}
 
 Real bernoulliDerivative(Real x)
 {
@@ -1158,6 +1200,15 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
     return state;
 }
 
+void CoupledDDAssembler::setLegacyEdgeJacobianSteps(Real transport, Real avalanche)
+{
+    if (!std::isfinite(transport) || transport <= 0.0 ||
+        !std::isfinite(avalanche) || avalanche <= 0.0)
+        throw std::invalid_argument("Legacy edge Jacobian steps must be finite and positive");
+    legacyTransportJacobianStep_ = transport;
+    legacyAvalancheJacobianStep_ = avalanche;
+}
+
 void CoupledDDAssembler::setQuasiFermiReferences(
     Real electronReference_V,
     Real holeReference_V)
@@ -1518,6 +1569,72 @@ VectorXd CoupledDDAssembler::feedbackSubstitutionResidual(
     return residualImpl(x, bcs, &substitution);
 }
 
+void CoupledDDAssembler::validateExperimentalNonlocalState(const VectorXd& x,
+    const experimental::TunnelingSourceAssembly& assembly,
+    const experimental::TunnelingBandState& state,
+    const CoupledDDFeedbackStateSubstitution* frozen) const
+{
+    assembly.requireResolved(state);
+    if (state.nodes.size()!=mesh_.numNodes() || x.size()!=3*static_cast<int>(mesh_.numNodes()) ||
+        recombination_.bandToBandEnabled() || splitRuntime())
+        throw std::invalid_argument("N4 diagnostic size, double-counted E2 or unsupported split residual");
+    if(frozen && (!frozen->replaceElectronDensity || !frozen->replaceHoleDensity ||
+        frozen->replaceElectronQuasiFermi || frozen->replaceHoleQuasiFermi || frozen->replaceTransportMobility ||
+        frozen->electronDensity.size()!=static_cast<int>(mesh_.numNodes()) || frozen->holeDensity.size()!=static_cast<int>(mesh_.numNodes())))
+        throw std::invalid_argument("N4 frozen audit requires both populations and unchanged QF/mobility");
+    const VectorXd n=frozen?frozen->electronDensity:electronDensity(x),p=frozen?frozen->holeDensity:holeDensity(x);
+    const Real q=experimental::tunnelingElementaryCharge(assembly.constants);
+    const Real scale=scaling_.enabled ? scaling_.V0 : 1;
+    const Real densityScale=scaling_.enabled ? scaling_.unitSystem.concentrationM3PerInternal() : 1;
+    auto same=[](Real a,Real b) {
+        return std::isfinite(a) && std::isfinite(b) &&
+            std::abs(a-b)<=128*std::numeric_limits<Real>::epsilon()*(std::abs(a)+std::abs(b));
+    };
+    const auto& sourceMesh=assembly.sourceMesh;
+    const Real lengthScale=scaling_.enabled ? scaling_.unitSystem.lengthMPerInternal() : 1;
+    if (sourceMesh.cells.size()!=mesh_.numCells())
+        throw std::invalid_argument("N4 source/actual residual mesh cell count differs");
+    for (Index i=0;i<sourceMesh.positions_m.size();++i) {
+        const auto& node=mesh_.getNode(i);
+        if (!same(sourceMesh.positions_m[i].x(),node.x*lengthScale) ||
+            !same(sourceMesh.positions_m[i].y(),node.y*lengthScale))
+            throw std::invalid_argument("N4 source/actual residual mesh coordinates differ");
+    }
+    for (Index i=0;i<sourceMesh.cells.size();++i) {
+        const auto& source=sourceMesh.cells[i];const auto& cell=mesh_.getCell(i);
+        if (cell.node_ids.size()!=3 || source.region!=cell.region_id ||
+            !std::equal(source.nodes.begin(),source.nodes.end(),cell.node_ids.begin()) ||
+            (source.semiconductor && (source.material!=sourceMesh.siliconMaterial ||
+                (cellMaterials_[i].name!="Si" && cellMaterials_[i].name!="Silicon"))))
+            throw std::invalid_argument("N4 source/actual residual mesh topology or material differs");
+    }
+    for (Index i=0;i<state.nodes.size();++i) {
+        const auto& node=state.nodes[i];if (!node.semiconductor) continue;
+        const Real temperature=Vt_*constants::q/constants::kb;
+        const Real temperatureAllowance=4*(std::nextafter(temperature,std::numeric_limits<Real>::infinity())-temperature);
+        if (!std::isfinite(node.temperature_K) || std::abs(node.temperature_K-temperature)>temperatureAllowance)
+            throw std::invalid_argument("N4 source temperature differs from actual residual state");
+        if (!same(node.electrons_per_m3,n(i)*densityScale) || !same(node.holes_per_m3,p(i)*densityScale) ||
+            !same(node.electronFermi_J,-q*(electronQuasiFermiReferenceAt(i)+scale*x(phinOffset()+i))) ||
+            !same(node.holeFermi_J,-q*(holeQuasiFermiReferenceAt(i)+scale*x(phipOffset()+i))))
+            throw std::invalid_argument("N4 source population/QF differs from actual residual state");
+    }
+}
+
+VectorXd CoupledDDAssembler::experimentalNonlocalResidual(const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs,const experimental::TunnelingSourceAssembly& assembly,
+    const experimental::TunnelingBandState& state) const {
+    validateExperimentalNonlocalState(x,assembly,state,nullptr);
+    return residualImpl(x,bcs,nullptr,&assembly.sources);
+}
+
+VectorXd CoupledDDAssembler::experimentalNonlocalFrozenResidual(const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs,const experimental::TunnelingSourceAssembly& assembly,
+    const experimental::TunnelingBandState& state,const CoupledDDFeedbackStateSubstitution& frozen) const {
+    validateExperimentalNonlocalState(x,assembly,state,&frozen);
+    return residualImpl(x,bcs,&frozen,&assembly.sources);
+}
+
 std::vector<CoupledDDPoissonTermDiagnostic>
 CoupledDDAssembler::poissonTermDiagnostics(
     const VectorXd& x,
@@ -1532,6 +1649,29 @@ CoupledDDAssembler::poissonTermDiagnostics(
     const CoupledDDBoundaryConditions& bcs,
     const VectorXd& suppliedElectronDensity,
     const VectorXd& suppliedHoleDensity) const
+{
+    return poissonTermDiagnosticsImpl(x, bcs, suppliedElectronDensity,
+                                      suppliedHoleDensity, nullptr);
+}
+
+std::vector<CoupledDDPoissonTermDiagnostic>
+CoupledDDAssembler::feedbackSubstitutionPoissonTermDiagnostics(
+    const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+    const CoupledDDFeedbackStateSubstitution& substitution) const
+{
+    if (!substitution.replaceElectronDensity || !substitution.replaceHoleDensity ||
+        substitution.replaceElectronQuasiFermi || substitution.replaceHoleQuasiFermi ||
+        substitution.replaceTransportMobility)
+        throw std::invalid_argument("Frozen Poisson ledger requires both densities only.");
+    return poissonTermDiagnosticsImpl(x, bcs, substitution.electronDensity,
+                                      substitution.holeDensity, &substitution);
+}
+
+std::vector<CoupledDDPoissonTermDiagnostic>
+CoupledDDAssembler::poissonTermDiagnosticsImpl(
+    const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+    const VectorXd& suppliedElectronDensity, const VectorXd& suppliedHoleDensity,
+    const CoupledDDFeedbackStateSubstitution* substitution) const
 {
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
@@ -1548,6 +1688,12 @@ CoupledDDAssembler::poissonTermDiagnostics(
             "CoupledDDAssembler::poissonTermDiagnostics: supplied density size mismatch.");
     }
 
+    // Validate substitutions through the actual entry before evaluating the
+    // observer. The ordinary four-argument observer still only diagnoses the
+    // supplied map and retains its original reconstructed-charge semantics.
+    const VectorXd production = substitution
+        ? feedbackSubstitutionResidual(x, bcs, *substitution) : residual(x, bcs);
+
     std::vector<CoupledDDPoissonTermDiagnostic> terms(Nidx);
     for (Index node = 0; node < Nidx; ++node)
         terms[node].nodeId = node;
@@ -1557,16 +1703,20 @@ CoupledDDAssembler::poissonTermDiagnostics(
         const Edge& edge = mesh_.getEdge(edgeId);
         if (edge.length < 1.0e-30)
             continue;
-        const Real eps = detail::edgeEpsilon(
-            edgeCells_, mesh_, matdb_, edgeId);
-        const Real conductance = detail::poissonEdgeCoefficient(
-            mesh_, matdb_, edgeCells_, edgeId,
-            scaling_.regionResolvedInterfaceAssembly.poissonEdgeCoupling);
-        const Real flux = conductance * potentialScale *
-            (x(psiOffset() + static_cast<int>(edge.n0)) -
-             x(psiOffset() + static_cast<int>(edge.n1)));
+        // Match the actual edge loop's coefficient and operation order. In a
+        // biased, nearly flat region, scaling a previously subtracted packed
+        // difference gives a different rounded flux than scaling endpoints.
+        const Real conductance = edge.length > 1.0e-30
+            ? edgeAssemblyKernels_[edgeId].poissonCoupling
+            : detail::edgeEpsilon(edgeCells_, mesh_, matdb_, edgeId) *
+                poissonCouple_[edgeId] / edge.length;
+        const Real psi0 = x(psiOffset() + static_cast<int>(edge.n0)) * potentialScale;
+        const Real psi1 = x(psiOffset() + static_cast<int>(edge.n1)) * potentialScale;
+        const Real flux = conductance * (psi0 - psi1);
         terms[edge.n0].dielectricFlux += flux;
         terms[edge.n1].dielectricFlux -= flux;
+        terms[edge.n0].dielectricFluxAbsSum += std::abs(flux);
+        terms[edge.n1].dielectricFluxAbsSum += std::abs(flux);
     }
 
     const VectorXd n = electronDensity(x);
@@ -1613,8 +1763,10 @@ CoupledDDAssembler::poissonTermDiagnostics(
                 terms[node].holeRequiredQuasiFermiPotential;
             terms[node].hasSuppliedCarrierState = true;
         }
-        terms[node].electronCharge = constants::q * poissonElectronVol_[node] * chargeAreaFactor * n(i);
-        terms[node].holeCharge = -constants::q * poissonHoleVol_[node] * chargeAreaFactor * p(i);
+        terms[node].electronCharge = constants::q * poissonElectronVol_[node] * chargeAreaFactor *
+            (substitution ? suppliedElectronDensity(i) : n(i));
+        terms[node].holeCharge = -constants::q * poissonHoleVol_[node] * chargeAreaFactor *
+            (substitution ? suppliedHoleDensity(i) : p(i));
         terms[node].dopingCharge =
             -constants::q * poissonDopantVol_[node] * chargeAreaFactor * doping_.netDoping(node);
         terms[node].fixedInterfaceCharge = -fixedInterfaceChargeRhs_(i);
@@ -1625,6 +1777,7 @@ CoupledDDAssembler::poissonTermDiagnostics(
             scaling_.permittivityReference_F_per_m * scaling_.V0;
         for (auto& term : terms) {
             term.dielectricFlux /= poissonScale;
+            term.dielectricFluxAbsSum /= std::abs(poissonScale);
             term.electronCharge /= poissonScale;
             term.holeCharge /= poissonScale;
             term.dopingCharge /= poissonScale;
@@ -1632,7 +1785,6 @@ CoupledDDAssembler::poissonTermDiagnostics(
         }
     }
 
-    const VectorXd production = residual(x, bcs);
     for (Index node = 0; node < Nidx; ++node) {
         auto& term = terms[node];
         term.unconstrainedResidual =
@@ -1653,19 +1805,21 @@ CoupledDDAssembler::poissonTermDiagnostics(
 VectorXd CoupledDDAssembler::residualImpl(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs,
-    const CoupledDDFeedbackStateSubstitution* substitution) const
+    const CoupledDDFeedbackStateSubstitution* substitution,
+    const experimental::NonlocalPairSources* nonlocal) const
 {
     if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
         throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
 
     if(auto split=splitRuntime()) {
-        if(substitution)throw std::invalid_argument("Split DD feedback substitution is unqualified");
+        if(substitution || nonlocal)throw std::invalid_argument("Split DD feedback/nonlocal substitution is unqualified");
         return split->residual(x,bcs);
     }
     ScopedPerformanceTimer timer("dd.residual");
     incrementPerformanceCounter("dd.residual_calls");
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
+    experimental::ResidualAuditScope::begin(3*N);
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::residualImpl: vector size mismatch.");
 
@@ -1952,8 +2106,8 @@ VectorXd CoupledDDAssembler::residualImpl(
             ? edgeKernel.poissonCoupling
             : detail::edgeEpsilon(edgeCells, mesh_, matdb_, e) * poissonCouple[e] / h;
         const Real psiFlux = G * (psi_i - psi_j);
-        r(psiOffset() + i) += psiFlux;
-        r(psiOffset() + j) -= psiFlux;
+        { r(psiOffset() + i) += psiFlux; experimental::ResidualAuditScope::operation(psiOffset() + i, '+', [&]() -> Real { return psiFlux; }); }
+        { r(psiOffset() + j) -= psiFlux; experimental::ResidualAuditScope::operation(psiOffset() + j, '-', [&]() -> Real { return psiFlux; }); }
 
         if (elementQfCurrent)
             continue;
@@ -1996,8 +2150,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                     SGBoltzmannFluxPolicy{
                         bgnEnabled_, compensatedEqualNiFlux_});
             }
-            r(phinOffset() + i) += nFlux;
-            r(phinOffset() + j) -= nFlux;
+            { r(phinOffset() + i) += nFlux; experimental::ResidualAuditScope::operation(phinOffset() + i, '+', [&]() -> Real { return nFlux; }); }
+            { r(phinOffset() + j) -= nFlux; experimental::ResidualAuditScope::operation(phinOffset() + j, '-', [&]() -> Real { return nFlux; }); }
         }
 
         const Real mup = frozenTransportMobility
@@ -2031,8 +2185,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                     SGBoltzmannFluxPolicy{
                         bgnEnabled_, compensatedEqualNiFlux_});
             }
-            r(phipOffset() + i) += pFlux;
-            r(phipOffset() + j) -= pFlux;
+            { r(phipOffset() + i) += pFlux; experimental::ResidualAuditScope::operation(phipOffset() + i, '+', [&]() -> Real { return pFlux; }); }
+            { r(phipOffset() + j) -= pFlux; experimental::ResidualAuditScope::operation(phipOffset() + j, '-', [&]() -> Real { return pFlux; }); }
         }
     }
 
@@ -2104,13 +2258,13 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const int node = static_cast<int>(
                     cell.node_ids[static_cast<std::size_t>(local)]);
                 if (mun > 0.0) {
-                    r(phinOffset() + node) +=
-                        current.electronResidual[static_cast<std::size_t>(local)];
+                    { r(phinOffset() + node) +=
+                        current.electronResidual[static_cast<std::size_t>(local)]; experimental::ResidualAuditScope::operation(phinOffset() + node, '+', [&]() -> Real { return current.electronResidual[static_cast<std::size_t>(local)]; }); }
                     hasElectronContribution[static_cast<std::size_t>(node)] = true;
                 }
                 if (mup > 0.0) {
-                    r(phipOffset() + node) +=
-                        current.holeResidual[static_cast<std::size_t>(local)];
+                    { r(phipOffset() + node) +=
+                        current.holeResidual[static_cast<std::size_t>(local)]; experimental::ResidualAuditScope::operation(phipOffset() + node, '+', [&]() -> Real { return current.holeResidual[static_cast<std::size_t>(local)]; }); }
                     hasHoleContribution[static_cast<std::size_t>(node)] = true;
                 }
             }
@@ -2122,12 +2276,15 @@ VectorXd CoupledDDAssembler::residualImpl(
         // Diagnostic charge-term volume splits are deliberately confined to
         // Poisson. All continuity/source and transport assembly retains the
         // production node volume.
-        r(psiOffset() + ii) -= constants::q * p(ii) *
-            poissonHoleVol_[i] * chargeAreaFactor;
-        r(psiOffset() + ii) -= constants::q * doping_.netDoping(i) *
-            poissonDopantVol_[i] * chargeAreaFactor;
-        r(psiOffset() + ii) += constants::q * n(ii) *
-            poissonElectronVol_[i] * chargeAreaFactor;
+        { r(psiOffset() + ii) -= constants::q * p(ii) *
+            poissonHoleVol_[i] * chargeAreaFactor; experimental::ResidualAuditScope::operation(psiOffset() + ii, '-', [&]() -> Real { return constants::q * p(ii) *
+            poissonHoleVol_[i] * chargeAreaFactor; }); }
+        { r(psiOffset() + ii) -= constants::q * doping_.netDoping(i) *
+            poissonDopantVol_[i] * chargeAreaFactor; experimental::ResidualAuditScope::operation(psiOffset() + ii, '-', [&]() -> Real { return constants::q * doping_.netDoping(i) *
+            poissonDopantVol_[i] * chargeAreaFactor; }); }
+        { r(psiOffset() + ii) += constants::q * n(ii) *
+            poissonElectronVol_[i] * chargeAreaFactor; experimental::ResidualAuditScope::operation(psiOffset() + ii, '+', [&]() -> Real { return constants::q * n(ii) *
+            poissonElectronVol_[i] * chargeAreaFactor; }); }
 
         const Real ni = ni_[i];
         if (ni <= 0.0)
@@ -2148,15 +2305,18 @@ VectorXd CoupledDDAssembler::residualImpl(
                 : referencedDifference(
                     electronQuasiFermiReferenceAt(i), phinIncrement(ii),
                     holeQuasiFermiReferenceAt(i), phipIncrement(ii));
-            const Real nSrh = electronSrhDensityAt(
-                i,
-                psi(ii) - electronQuasiFermiReferenceAt(i),
-                phinIncrement(ii));
+            // Preserve the independent quantum SRH population only for the
+            // explicit coupling policy. Otherwise use the same transported
+            // (possibly frozen) population as the term ledger and Auger path.
+            const Real nSrh = usesSentaurusDefaultSrhDensityCoupling()
+                ? electronSrhDensityAt(
+                    i, psi(ii) - electronQuasiFermiReferenceAt(i), phinIncrement(ii))
+                : n(ii);
             const Real R = nodeRecombinationRate(
                 i, n(ii), nSrh, p(ii), dPhi);
             if (R != 0.0) {
-                r(phinOffset() + ii) += R * srhVol_[i] * sourceIntegralFactor;
-                r(phipOffset() + ii) += R * srhVol_[i] * sourceIntegralFactor;
+                { r(phinOffset() + ii) += R * srhVol_[i] * sourceIntegralFactor; experimental::ResidualAuditScope::operation(phinOffset() + ii, '+', [&]() -> Real { return R * srhVol_[i] * sourceIntegralFactor; }); }
+                { r(phipOffset() + ii) += R * srhVol_[i] * sourceIntegralFactor; experimental::ResidualAuditScope::operation(phipOffset() + ii, '+', [&]() -> Real { return R * srhVol_[i] * sourceIntegralFactor; }); }
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
@@ -2165,18 +2325,31 @@ VectorXd CoupledDDAssembler::residualImpl(
         if (recombination_.bandToBandEnabled()) {
             const Real source = bandToBandSourceIntegrals[i] * sourceIntegralFactor;
             if (source != 0.0) {
-                r(phinOffset() + ii) -= source;
-                r(phipOffset() + ii) -= source;
+                { r(phinOffset() + ii) -= source; experimental::ResidualAuditScope::operation(phinOffset() + ii, '-', [&]() -> Real { return source; }); }
+                { r(phipOffset() + ii) -= source; experimental::ResidualAuditScope::operation(phipOffset() + ii, '-', [&]() -> Real { return source; }); }
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
         }
 
+        if (nonlocal) {
+            // N4 events are already physical SI integrals, unlike the local
+            // source integrals above which use internal density and area.
+            const Real factor=scaling_.enabled ? sourceIntegralFactor /
+                (scaling_.unitSystem.concentrationM3PerInternal()*scaling_.unitSystem.areaM2PerInternal()) : 1;
+            const Real electron=nonlocal->electronIntegrals_per_m_s[i]*factor;
+            const Real hole=nonlocal->holeIntegrals_per_m_s[i]*factor;
+            { r(phinOffset()+ii)-=electron; experimental::ResidualAuditScope::operation(phinOffset()+ii, '-', [&]() -> Real { return electron; }); }
+            { r(phipOffset()+ii)-=hole; experimental::ResidualAuditScope::operation(phipOffset()+ii, '-', [&]() -> Real { return hole; }); }
+            hasElectronContribution[i]=hasElectronContribution[i] || electron!=0;
+            hasHoleContribution[i]=hasHoleContribution[i] || hole!=0;
+        }
+
         if (impactIonizationCoupled_ && sgCurrentAvalanche) {
             const Real source = sgAvalancheSourceIntegrals[i] * sourceIntegralFactor;
             if (source != 0.0) {
-                r(phinOffset() + ii) -= source;
-                r(phipOffset() + ii) -= source;
+                { r(phinOffset() + ii) -= source; experimental::ResidualAuditScope::operation(phinOffset() + ii, '-', [&]() -> Real { return source; }); }
+                { r(phipOffset() + ii) -= source; experimental::ResidualAuditScope::operation(phipOffset() + ii, '-', [&]() -> Real { return source; }); }
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
@@ -2197,8 +2370,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                 n(ii),
                 p(ii));
             if (G != 0.0) {
-                r(phinOffset() + ii) -= G * vol_[i] * sourceIntegralFactor;
-                r(phipOffset() + ii) -= G * vol_[i] * sourceIntegralFactor;
+                { r(phinOffset() + ii) -= G * vol_[i] * sourceIntegralFactor; experimental::ResidualAuditScope::operation(phinOffset() + ii, '-', [&]() -> Real { return G * vol_[i] * sourceIntegralFactor; }); }
+                { r(phipOffset() + ii) -= G * vol_[i] * sourceIntegralFactor; experimental::ResidualAuditScope::operation(phipOffset() + ii, '-', [&]() -> Real { return G * vol_[i] * sourceIntegralFactor; }); }
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
@@ -2221,10 +2394,12 @@ VectorXd CoupledDDAssembler::residualImpl(
     for (const auto& [node, boundary] : bcs.thermionic) {
         const int ii = static_cast<int>(node);
         const Real measureFactor = boundary.boundaryMeasure * thermionicSurfaceFactor;
-        r(phinOffset() + ii) += boundary.electronVelocity
-            * (n(ii) - boundary.electronEquilibriumDensity) * measureFactor;
-        r(phipOffset() + ii) -= boundary.holeVelocity
-            * (p(ii) - boundary.holeEquilibriumDensity) * measureFactor;
+        { r(phinOffset() + ii) += boundary.electronVelocity
+            * (n(ii) - boundary.electronEquilibriumDensity) * measureFactor; experimental::ResidualAuditScope::operation(phinOffset() + ii, '+', [&]() -> Real { return boundary.electronVelocity
+            * (n(ii) - boundary.electronEquilibriumDensity) * measureFactor; }); }
+        { r(phipOffset() + ii) -= boundary.holeVelocity
+            * (p(ii) - boundary.holeEquilibriumDensity) * measureFactor; experimental::ResidualAuditScope::operation(phipOffset() + ii, '-', [&]() -> Real { return boundary.holeVelocity
+            * (p(ii) - boundary.holeEquilibriumDensity) * measureFactor; }); }
         hasElectronContribution[static_cast<std::size_t>(ii)] = true;
         hasHoleContribution[static_cast<std::size_t>(ii)] = true;
     }
@@ -2237,26 +2412,28 @@ VectorXd CoupledDDAssembler::residualImpl(
     for (Index i = 0; i < Nidx; ++i) {
         const int ii = static_cast<int>(i);
         if (!hasElectronContribution[static_cast<std::size_t>(ii)])
-            r(phinOffset() + ii) =
+            { r(phinOffset() + ii) =
                 x(phinOffset() + ii)
-                + electronQuasiFermiReferenceAt(i) / potentialScale;
+                + electronQuasiFermiReferenceAt(i) / potentialScale; experimental::ResidualAuditScope::operation(phinOffset() + ii, '=', [&]() -> Real { return x(phinOffset() + ii)
+                + electronQuasiFermiReferenceAt(i) / potentialScale; }); }
         if (!hasHoleContribution[static_cast<std::size_t>(ii)])
-            r(phipOffset() + ii) =
+            { r(phipOffset() + ii) =
                 x(phipOffset() + ii)
-                + holeQuasiFermiReferenceAt(i) / potentialScale;
+                + holeQuasiFermiReferenceAt(i) / potentialScale; experimental::ResidualAuditScope::operation(phipOffset() + ii, '=', [&]() -> Real { return x(phipOffset() + ii)
+                + holeQuasiFermiReferenceAt(i) / potentialScale; }); }
     }
 
     for (int i = 0; i < N; ++i)
-        r(psiOffset() + i) -= fixedInterfaceChargeRhs_(i);
+        { r(psiOffset() + i) -= fixedInterfaceChargeRhs_(i); experimental::ResidualAuditScope::operation(psiOffset() + i, '-', [&]() -> Real { return fixedInterfaceChargeRhs_(i); }); }
 
     if (scaling_.enabled) {
         const Real poissonScale =
             scaling_.permittivityReference_F_per_m * scaling_.V0;
         const Real continuityScale = scaling_.C0 * scaling_.D0;
         for (int i = 0; i < N; ++i) {
-            r(psiOffset() + i) /= poissonScale;
-            r(phinOffset() + i) /= continuityScale;
-            r(phipOffset() + i) /= continuityScale;
+            { r(psiOffset() + i) /= poissonScale; experimental::ResidualAuditScope::operation(psiOffset() + i, '/', [&]() -> Real { return poissonScale; }); }
+            { r(phinOffset() + i) /= continuityScale; experimental::ResidualAuditScope::operation(phinOffset() + i, '/', [&]() -> Real { return continuityScale; }); }
+            { r(phipOffset() + i) /= continuityScale; experimental::ResidualAuditScope::operation(phipOffset() + i, '/', [&]() -> Real { return continuityScale; }); }
         }
     }
 
@@ -2264,13 +2441,15 @@ VectorXd CoupledDDAssembler::residualImpl(
         for (Index i = 0; i < Nidx; ++i) {
             const int ii = static_cast<int>(i);
             if (!hasElectronContribution[static_cast<std::size_t>(ii)])
-                r(phinOffset() + ii) =
+                { r(phinOffset() + ii) =
                     x(phinOffset() + ii)
-                    + electronQuasiFermiReferenceAt(i) / potentialScale;
+                    + electronQuasiFermiReferenceAt(i) / potentialScale; experimental::ResidualAuditScope::operation(phinOffset() + ii, '=', [&]() -> Real { return x(phinOffset() + ii)
+                    + electronQuasiFermiReferenceAt(i) / potentialScale; }); }
             if (!hasHoleContribution[static_cast<std::size_t>(ii)])
-                r(phipOffset() + ii) =
+                { r(phipOffset() + ii) =
                     x(phipOffset() + ii)
-                    + holeQuasiFermiReferenceAt(i) / potentialScale;
+                    + holeQuasiFermiReferenceAt(i) / potentialScale; experimental::ResidualAuditScope::operation(phipOffset() + ii, '=', [&]() -> Real { return x(phipOffset() + ii)
+                    + holeQuasiFermiReferenceAt(i) / potentialScale; }); }
         }
     }
 
@@ -2296,20 +2475,23 @@ VectorXd CoupledDDAssembler::residualImpl(
             pe.push_back({static_cast<int>(edge.n0),static_cast<int>(edge.n1),edgeAssemblyKernels_[e].poissonCoupling});
         }
         const auto pr=pp::evaluate(pn,pe,true);
-        for(int i=0;i<N;++i)r(i)=static_cast<Real>(pr[i]);
+        for(int i=0;i<N;++i){ r(i)=static_cast<Real>(pr[i]); experimental::ResidualAuditScope::operation(i, '=', [&]() -> Real { return static_cast<Real>(pr[i]); }); }
     }
 
     for (const auto& [node, value] : bcs.psi)
-        r(psiOffset() + static_cast<int>(node)) = x(psiOffset() + static_cast<int>(node)) - value;
+        { r(psiOffset() + static_cast<int>(node)) = x(psiOffset() + static_cast<int>(node)) - value; experimental::ResidualAuditScope::operation(psiOffset() + static_cast<int>(node), '=', [&]() -> Real { return x(psiOffset() + static_cast<int>(node)) - value; }); }
     for (const auto& [node, value] : bcs.phin)
-        r(phinOffset() + static_cast<int>(node)) =
+        { r(phinOffset() + static_cast<int>(node)) =
             x(phinOffset() + static_cast<int>(node))
-            - (value - electronQuasiFermiReferenceAt(node) / potentialScale);
+            - (value - electronQuasiFermiReferenceAt(node) / potentialScale); experimental::ResidualAuditScope::operation(phinOffset() + static_cast<int>(node), '=', [&]() -> Real { return x(phinOffset() + static_cast<int>(node))
+            - (value - electronQuasiFermiReferenceAt(node) / potentialScale); }); }
     for (const auto& [node, value] : bcs.phip)
-        r(phipOffset() + static_cast<int>(node)) =
+        { r(phipOffset() + static_cast<int>(node)) =
             x(phipOffset() + static_cast<int>(node))
-            - (value - holeQuasiFermiReferenceAt(node) / potentialScale);
+            - (value - holeQuasiFermiReferenceAt(node) / potentialScale); experimental::ResidualAuditScope::operation(phipOffset() + static_cast<int>(node), '=', [&]() -> Real { return x(phipOffset() + static_cast<int>(node))
+            - (value - holeQuasiFermiReferenceAt(node) / potentialScale); }); }
 
+    experimental::ResidualAuditScope::end(r);
     return r;
 }
 
@@ -4043,6 +4225,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    experimental::AssemblyPopulationCaptureScope::record(x, n, p);
     refreshIalMobility(x);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
@@ -4264,6 +4447,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         ScopedPerformanceTimer initializeTimer("jacobian.initialize_values");
         J = fixedJacobian_->pattern;
     }
+    experimental::AssemblyAuditScope::begin(x,n,p,J,constrainedRows);
     double* jacobianValues = J.valuePtr();
     std::size_t assembledContributionCount = 0;
     std::uint64_t avalanchePrecomputedScatterAdds = 0;
@@ -4345,6 +4529,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         if (value != 0.0 && !constrainedRows[static_cast<std::size_t>(row)]) {
             const Real scaled = scaleDerivative(row, col, value);
             jacobianValues[scatterOffset(row, col)] += scaled;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,col,scaled);
             ++assembledContributionCount;
             if (row == col)
                 assembledDiagonal[static_cast<std::size_t>(row)] += scaled;
@@ -4364,6 +4549,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         }
         const Real scaled = scaleDerivative(row, col, value);
         jacobianValues[offset] += scaled;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,col,scaled);
         ++assembledContributionCount;
         ++avalanchePrecomputedScatterAdds;
         if (row == col)
@@ -4373,6 +4559,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     auto addGauge = [&](int row, int col, Real value) {
         if (value != 0.0 && !constrainedRows[static_cast<std::size_t>(row)]) {
             jacobianValues[scatterOffset(row, col)] += value;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,col,value);
             ++assembledContributionCount;
             if (row == col)
                 assembledDiagonal[static_cast<std::size_t>(row)] += value;
@@ -4395,6 +4582,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         Index psiNode;
         Index electronQfNode;
         Index holeQfNode;
+        Real interiorPsiValue = 0.0;
     };
     std::vector<Real> avalancheElectronFluxCache(mesh_.numEdges(), 0.0);
     std::vector<Real> avalancheHoleFluxCache(mesh_.numEdges(), 0.0);
@@ -4640,8 +4828,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     edgeId, basePsiAt, basePhinAt, true, &psi);
             avalancheBaseHoleFlux[edgeId] = evaluateHoleAvalancheFlux(
                 edgeId, basePsiAt, basePhipAt, true, &psi);
-            if (sentaurusEparallelImpact &&
-                nodalVectorCurrentReconstructedCurrent) {
+            if (sentaurusEparallelImpact) {
                 bool validElectricGradient = false;
                 const Point2 electricGradient =
                     detail::edgeAveragedCellScalarGradient(
@@ -4741,7 +4928,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             : 0.0;
         auto psiAt = [&](Index node) {
             const int nodeIndex = static_cast<int>(node);
-            return node == idxI ? psi_i : (node == idxJ ? psi_j : psi(nodeIndex));
+            return node == idxI ? psi_i : (node == idxJ ? psi_j :
+                (node == perturbation.psiNode ? perturbation.interiorPsiValue : psi(nodeIndex)));
         };
         auto electronQfAt = [&](Index node) {
             const Real psiNode = psiAt(node);
@@ -5068,8 +5256,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             return holeNodalReconstruction;
         };
         Point2 edgeElectricVector = Point2::Zero();
-        if (sentaurusEparallelImpact &&
-            nodalVectorCurrentReconstructedCurrent) {
+        if (sentaurusEparallelImpact) {
             if (perturbation.psiNode >= mesh_.numNodes()) {
                 edgeElectricVector = avalancheBaseElectricVector[e];
                 ++avalancheElectricVectorReuses;
@@ -5120,11 +5307,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         Real electronSource = 0.0;
         if (mun > 0.0) {
             const Real electronImpactField =
-                sentaurusEparallelImpact &&
-                nodalVectorCurrentReconstructedCurrent
+                sentaurusEparallelImpact
                 ? detail::sentaurusEparallelAvalancheDrivingField(
                     edgeElectricVector,
-                    -reconstructedElectronNodalCurrent().vector)
+                    nodalVectorCurrentReconstructedCurrent
+                        ? Point2(-reconstructedElectronNodalCurrent().vector)
+                        : Point2(-perturbedEdgeCellCurrent(e, signedElectronFluxForEdge,
+                            edgeCells_, cellEdges, mesh_)))
                 : (currentAlignedImpact
                 ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxN)
                 : interpolatedAvalancheField(
@@ -5155,11 +5344,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         Real holeSource = 0.0;
         if (mup > 0.0) {
             const Real holeImpactField =
-                sentaurusEparallelImpact &&
-                nodalVectorCurrentReconstructedCurrent
+                sentaurusEparallelImpact
                 ? detail::sentaurusEparallelAvalancheDrivingField(
                     edgeElectricVector,
-                    reconstructedHoleNodalCurrent().vector)
+                    nodalVectorCurrentReconstructedCurrent
+                        ? Point2(reconstructedHoleNodalCurrent().vector)
+                        : perturbedEdgeCellCurrent(e, signedHoleFluxForEdge,
+                            edgeCells_, cellEdges, mesh_))
                 : (currentAlignedImpact
                 ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxP)
                 : interpolatedAvalancheField(
@@ -5724,7 +5915,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     : 0.0;
                 const int derivativeCount = isPhuMobModel(mobilityConfig_) ? 6 : 4;
                 for (int k = 0; k < derivativeCount; ++k) {
-                    const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
+                    const Real step = legacyTransportJacobianStep_ * std::max(1.0, std::abs(vals[k]));
                     Real vp[6] = {
                         vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]};
                     Real vm[6] = {
@@ -5754,7 +5945,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                             continue;
                         const Real value = psi(static_cast<int>(node));
                         const Real step =
-                            1.0e-6 * std::max(1.0, std::abs(value));
+                            legacyTransportJacobianStep_ * std::max(1.0, std::abs(value));
                         const Real fp = edgeElectronTransportFlux(
                             e, i, j, h, vals[0], vals[1], vals[2], vals[3],
                             vals[4], vals[5], -1.0, node, value + step);
@@ -5897,7 +6088,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     : 0.0;
                 const int derivativeCount = isPhuMobModel(mobilityConfig_) ? 6 : 4;
                 for (int k = 0; k < derivativeCount; ++k) {
-                    const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
+                    const Real step = legacyTransportJacobianStep_ * std::max(1.0, std::abs(vals[k]));
                     Real vp[6] = {
                         vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]};
                     Real vm[6] = {
@@ -5927,7 +6118,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                             continue;
                         const Real value = psi(static_cast<int>(node));
                         const Real step =
-                            1.0e-6 * std::max(1.0, std::abs(value));
+                            legacyTransportJacobianStep_ * std::max(1.0, std::abs(value));
                         const Real fp = edgeHoleTransportFlux(
                             e, i, j, h, vals[0], vals[1], vals[2], vals[3],
                             vals[4], vals[5], -1.0, node, value + step);
@@ -6059,7 +6250,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             const Real psiVals[2] = {psi_i, psi_j};
             const int psiCols[2] = {psiOffset() + i, psiOffset() + j};
             for (int k = 0; k < 2; ++k) {
-                const Real step = 1.0e-7 * std::max(1.0, std::abs(psiVals[k]));
+                const Real step = legacyAvalancheJacobianStep_ * std::max(1.0, std::abs(psiVals[k]));
                 Real psiP[2] = {psi_i, psi_j};
                 Real psiM[2] = {psi_i, psi_j};
                 psiP[k] += step;
@@ -6078,12 +6269,39 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 appendDerivative(psiCols[k], sp, sm, step);
             }
 
+            if (sentaurusEparallelImpact && !nodalVectorCurrentReconstructedCurrent) {
+                // The Eparallel cell vector and electric gradient also depend
+                // on adjacent vertices beyond the two edge endpoints. Their
+                // slots already exist in the cell pattern; endpoint scatter
+                // layout remains unchanged for the other source profiles.
+                for (std::size_t k=0; k<qfStencilNodeCount; ++k) {
+                    const Index node=qfStencilNodes[k];
+                    if (node==static_cast<Index>(i) || node==static_cast<Index>(j)) continue;
+                    const Real value=psi(node);
+                    const Real step=legacyAvalancheJacobianStep_*std::max(Real{1},std::abs(value));
+                    const EdgeAvalancheNodeSources sp=edgeAvalancheNodeSources(
+                        e,i,j,h,psi_i,psi_j,phinAt,phipAt,
+                        {node,noPerturbedNode,noPerturbedNode,value+step},&base);
+                    const EdgeAvalancheNodeSources sm=edgeAvalancheNodeSources(
+                        e,i,j,h,psi_i,psi_j,phinAt,phipAt,
+                        {node,noPerturbedNode,noPerturbedNode,value-step},&base);
+                    avalanchePerturbedEvaluations+=2;
+                    const Real d0=(sp.node0-sm.node0)*sourceIntegralFactor/(2*step);
+                    const Real d1=(sp.node1-sm.node1)*sourceIntegralFactor/(2*step);
+                    anyNonzero = anyNonzero || d0 != 0.0 || d1 != 0.0;
+                    add(phinOffset()+i,psiOffset()+node,-d0);
+                    add(phipOffset()+i,psiOffset()+node,-d0);
+                    add(phinOffset()+j,psiOffset()+node,-d1);
+                    add(phipOffset()+j,psiOffset()+node,-d1);
+                }
+            }
+
             for (std::size_t stencilIndex = 0;
                  stencilIndex < qfStencilNodeCount; ++stencilIndex) {
                 const Index node = qfStencilNodes[stencilIndex];
                 const int nodeIndex = static_cast<int>(node);
                 const Real phinValue = phinState(nodeIndex);
-                const Real step = 1.0e-7 * std::max(1.0, std::abs(phinValue));
+                const Real step = legacyAvalancheJacobianStep_ * std::max(1.0, std::abs(phinValue));
                 auto phinPlusAt = [&](Index queryNode) {
                     return queryNode == node ? phinValue + step
                                              : phinState(static_cast<int>(queryNode));
@@ -6109,7 +6327,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Index node = qfStencilNodes[stencilIndex];
                 const int nodeIndex = static_cast<int>(node);
                 const Real phipValue = phipState(nodeIndex);
-                const Real step = 1.0e-7 * std::max(1.0, std::abs(phipValue));
+                const Real step = legacyAvalancheJacobianStep_ * std::max(1.0, std::abs(phipValue));
                 auto phipPlusAt = [&](Index queryNode) {
                     return queryNode == node ? phipValue + step
                                              : phipState(static_cast<int>(queryNode));
@@ -6959,6 +7177,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real sign = diagonal < 0.0 ? -1.0 : (diagonal > 0.0 ? 1.0 : fallbackSign);
                 const Real addition = sign * (floor - absDiagonal);
                 jacobianValues[scatterOffset(row, row)] += addition;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,row,addition);
                 ++assembledContributionCount;
                 assembledDiagonal[static_cast<std::size_t>(row)] += addition;
             };
@@ -6985,18 +7204,21 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             (void)value;
             const int row = psiOffset() + static_cast<int>(node);
             jacobianValues[fixedJacobianOffset(row, row)] += 1.0;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,row,1.0);
             ++assembledContributionCount;
         }
         for (const auto& [node, value] : bcs.phin) {
             (void)value;
             const int row = phinOffset() + static_cast<int>(node);
             jacobianValues[fixedJacobianOffset(row, row)] += 1.0;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,row,1.0);
             ++assembledContributionCount;
         }
         for (const auto& [node, value] : bcs.phip) {
             (void)value;
             const int row = phipOffset() + static_cast<int>(node);
             jacobianValues[fixedJacobianOffset(row, row)] += 1.0;
+            experimental::AssemblyAuditScope::add(activeEdge,activeCell,activeNode,row,row,1.0);
             ++assembledContributionCount;
         }
     }
@@ -7033,6 +7255,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         hasObservedJacobianPattern_ = true;
         lastObservedJacobianPattern_ = pattern;
     }
+    experimental::AssemblyAuditScope::end(J);
     incrementPerformanceCounter("jacobian.endpoint_cache_hits", endpointCacheHits);
     incrementPerformanceCounter("jacobian.endpoint_cache_misses", endpointCacheMisses);
     return J;

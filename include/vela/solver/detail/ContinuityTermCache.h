@@ -3,6 +3,7 @@
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include <cstring>
+#include "vela/core/experimental/CacheAudit.h"
 
 namespace vela::detail {
 
@@ -23,9 +24,11 @@ public:
         if (valid_ && state.size() == state_.size() &&
             std::memcmp(state.data(), state_.data(),
                         static_cast<std::size_t>(state.size()) * sizeof(Real)) == 0) {
+            experimental::CacheAuditScope::event("continuity.key.hit",1,&state,valid_);
             incrementPerformanceCounter("newton.continuity_terms_cache_hits");
             return terms_;
         }
+        experimental::CacheAuditScope::event("continuity.key.miss",1,&state,valid_);
         incrementPerformanceCounter("newton.continuity_terms_cache_misses");
         // Invalidate before evaluating: an exception cannot leave a stale hit.
         valid_ = false;
@@ -35,7 +38,7 @@ public:
         return terms_;
     }
 
-    void clear() { valid_ = false; }
+    void clear() { experimental::CacheAuditScope::event("continuity.clear",1,nullptr,valid_); valid_ = false; }
 
 private:
     const CoupledDDAssembler& assembler_;

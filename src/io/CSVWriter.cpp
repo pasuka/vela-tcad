@@ -19,7 +19,17 @@ void CSVWriter::writeRow(const std::vector<std::string>& values)
 {
     for (std::size_t i = 0; i < values.size(); ++i) {
         if (i > 0) ofs_ << ',';
-        ofs_ << values[i];
+        const auto& value = values[i];
+        if (value.find_first_of(",\"\r\n") == std::string::npos) {
+            ofs_ << value;
+        } else {
+            ofs_ << '"';
+            for (char ch : value) {
+                if (ch == '"') ofs_ << '"';
+                ofs_ << ch;
+            }
+            ofs_ << '"';
+        }
     }
     ofs_ << '\n';
 }

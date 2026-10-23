@@ -284,6 +284,11 @@ add_library(vela_core STATIC
     src/physics/CarrierStatistics.cpp
     src/physics/DensityGradientQuantumPotential.cpp
     src/physics/BandToBandTunnelingModel.cpp
+    src/physics/NonlocalPathBandToBand.cpp
+    src/physics/NonlocalPathGeometry.cpp
+    src/physics/NonlocalPathPhononKernel.cpp
+    src/physics/NonlocalPathSourceAssembly.cpp
+    src/physics/NonlocalPathCellSource.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
     src/physics/IalMobility.cpp
@@ -805,6 +810,9 @@ target_link_libraries(test_device_stability PRIVATE vela_core Catch2::Catch2With
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_update_error_report tests/test_update_error_report.cpp)
+target_link_libraries(test_update_error_report PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_external_state tests/test_external_state.cpp)
 target_link_libraries(test_external_state PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_external_state PRIVATE
@@ -837,6 +845,28 @@ target_link_libraries(test_bv_process_probe PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_nonlocalpath_contract tests/test_nonlocalpath_contract.cpp)
+target_link_libraries(test_nonlocalpath_contract PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n1_contract COMMAND test_nonlocalpath_contract)
+vela_set_windows_msys2_test_path(nonlocalpath_n1_contract)
+add_executable(test_nonlocalpath_geometry tests/test_nonlocalpath_geometry.cpp)
+target_link_libraries(test_nonlocalpath_geometry PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n2_geometry COMMAND test_nonlocalpath_geometry)
+vela_set_windows_msys2_test_path(nonlocalpath_n2_geometry)
+add_executable(vela_nonlocalpath_geometry_probe EXCLUDE_FROM_ALL src/tools/vela_nonlocalpath_geometry_probe.cpp)
+target_link_libraries(vela_nonlocalpath_geometry_probe PRIVATE vela_core)
+add_executable(test_nonlocalpath_phonon tests/test_nonlocalpath_phonon.cpp)
+target_link_libraries(test_nonlocalpath_phonon PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n3_phonon COMMAND test_nonlocalpath_phonon)
+vela_set_windows_msys2_test_path(nonlocalpath_n3_phonon)
+
+add_executable(test_nonlocalpath_source tests/test_nonlocalpath_source.cpp)
+target_link_libraries(test_nonlocalpath_source PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n4_source COMMAND test_nonlocalpath_source)
+vela_set_windows_msys2_test_path(nonlocalpath_n4_source)
+
+add_executable(vela_nonlocalpath_source_probe EXCLUDE_FROM_ALL src/tools/vela_nonlocalpath_source_probe.cpp)
+target_link_libraries(vela_nonlocalpath_source_probe PRIVATE vela_core)
 add_executable(test_lattice_heat tests/test_lattice_heat.cpp)
 target_link_libraries(test_lattice_heat PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -927,6 +957,7 @@ vela_catch_discover_tests(test_gummel_high_doping)
 vela_catch_discover_tests(test_device_stability)
 add_test(NAME device_stability COMMAND test_device_stability [device_stability])
 vela_catch_discover_tests(test_newton_solver)
+vela_catch_discover_tests(test_update_error_report)
 vela_catch_discover_tests(test_external_state)
 vela_catch_discover_tests(test_mobility)
 vela_catch_discover_tests(test_phumob)

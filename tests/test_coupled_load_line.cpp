@@ -5,6 +5,81 @@
 
 using namespace vela;
 
+TEST_CASE("resistor analytic diode audits raw and representable applied directions",
+          "[coupled_load_line][resistor_contract]")
+{
+    // x is junction voltage; the boundary equality couples it to the port.
+    constexpr Real thermal = .02585, saturation = 1e-9, resistance = 1e7;
+    ArclengthSystem device;
+    device.residual = [](const VectorXd& x, Real v) { return VectorXd::Constant(1, x(0)-v); };
+    device.jacobian = [](const VectorXd&, Real) {
+        SparseMatrixd j(1,1); j.insert(0,0)=1; return j;
+    };
+    device.parameterDerivative = [](const VectorXd&, Real) { return VectorXd::Constant(1,-1); };
+    device.solveJacobian = [](const VectorXd&,Real,const VectorXd& b,VectorXd& y) { y=b; return true; };
+    ArclengthScalarFunctional port;
+    port.value = [](const VectorXd& x, Real) { return saturation*std::expm1(x(0)/thermal); };
+    port.linearize = [port](const VectorXd& x, Real v) {
+        ArclengthScalarLinearization l;
+        l.value=port.value(x,v);
+        l.stateDerivative=VectorXd::Constant(1,saturation/thermal*std::exp(x(0)/thermal));
+        l.parameterDerivative=0; return l;
+    };
+    const Real targetInner=.06;
+    const Real targetOuter=targetInner+resistance*saturation*std::expm1(targetInner/thermal);
+    ArclengthState seed{VectorXd::Zero(1),0};
+    CoupledLoadLineConfig cfg;
+    cfg.linearSolver="direct_bordered";
+    cfg.equationTolerance=1e-12; cfg.loadLineTolerance_V=1e-12;
+    cfg.maxVoltageUpdate_V=.012; // Forces protection of the whole direction.
+    const auto baseline=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+    cfg.linearizationAuditEnabled=true;
+    const auto report=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+    REQUIRE(baseline.converged); REQUIRE(report.converged);
+    REQUIRE(report.state.x(0)==baseline.state.x(0));
+    REQUIRE(report.state.lambda==baseline.state.lambda);
+    REQUIRE(report.iterations==baseline.iterations);
+    REQUIRE(report.lineSearchAttempts==baseline.lineSearchAttempts);
+    REQUIRE(report.state.lambda==Catch::Approx(targetInner).margin(1e-11));
+    REQUIRE(seed.x(0)==0); REQUIRE(seed.lambda==0);
+    bool sawLimited=false, sawNonlinear=false;
+    for (std::size_t k=0;k<report.trace.size();++k) {
+        const auto& t=report.trace[k];
+        REQUIRE(t.acceptedAlpha==baseline.trace[k].acceptedAlpha);
+        if(t.rawStateUpdate.size()==0) continue; // terminal convergence record
+        REQUIRE(t.componentwiseBackwardError<=1e-10);
+        REQUIRE(t.rawPredictedDeviceResidual.norm()<=1e-12);
+        sawLimited |= std::abs(t.rawVoltageUpdate_V)>cfg.maxVoltageUpdate_V;
+        for(const auto& trial:t.trials) {
+            REQUIRE(trial.appliedStateUpdate(0)==Catch::Approx(trial.appliedVoltageUpdate_V).margin(1e-15));
+            REQUIRE(trial.predictedDeviceResidual(0)==Catch::Approx(trial.actualDeviceResidual(0)).margin(1e-15));
+            sawNonlinear |= std::abs(trial.predictedLoadResidual_V-trial.actualLoadResidual_V)>1e-8;
+        }
+    }
+    REQUIRE(sawLimited); REQUIRE(sawNonlinear);
+    cfg.directRefinementSteps=2;
+    const auto refined=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+    REQUIRE(refined.converged);
+    // Already accurate directions must not be perturbed by unnecessary corrections.
+    REQUIRE(refined.state.x(0)==report.state.x(0));
+    REQUIRE(refined.state.lambda==report.state.lambda);
+    REQUIRE(refined.iterations==report.iterations);
+    REQUIRE(refined.lineSearchAttempts==report.lineSearchAttempts);
+    for(const auto& t:refined.trace)
+        if(t.rawStateUpdate.size()) REQUIRE(t.componentwiseBackwardError<=1e-10);
+    cfg.directRefinementSteps=-1;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(device,port.value,cfg,port),std::invalid_argument);
+    cfg.directRefinementSteps=9;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(device,port.value,cfg,port),std::invalid_argument);
+    cfg.linearSolver="schur";
+    cfg.directRefinementSteps=1;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(device,port.value,cfg,port),std::invalid_argument);
+    cfg.directRefinementSteps=0;
+    const auto schur=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+    REQUIRE(schur.converged);
+    REQUIRE(schur.state.lambda==Catch::Approx(report.state.lambda).margin(1e-11));
+}
+
 namespace {
 
 ArclengthSystem foldedDeviceSystem()

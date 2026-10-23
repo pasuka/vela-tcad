@@ -175,6 +175,8 @@ struct NewtonConfig {
     Real quasiFermiTrustRegionMinMultiplier = 1.0; ///< Positive minimum multiplier used by adaptive contraction.
     // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
     int linearRefinementIterations = 0;
+    Real legacyTransportJacobianStep = 1e-6;
+    Real legacyAvalancheJacobianStep = 1e-7;
     std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.
     bool splitDDState = false; ///< Opt-in unified hi/lo plain-PhuMob state.
     bool stableMeritComparison = false; ///< Exact-sign squared-norm comparison for unweighted L2 merit searches.
@@ -357,6 +359,12 @@ struct NewtonResult {
     NewtonFailureDiagnostics failureDiagnostics;
 };
 
+struct NewtonStateConvergenceEvaluation {
+    NewtonBlockResidualInfo blockNorms;
+    NewtonCarrierRowConvergenceEvaluation carrierRows;
+    NewtonGlobalContinuityClosureEvaluation globalContinuity;
+};
+
 struct NewtonResidualEvaluation {
     VectorXd raw;
     NewtonBlockResidualInfo blockNorms;
@@ -378,6 +386,18 @@ struct NewtonStepEvaluation {
     VectorXd deltaPsi;
     VectorXd deltaPhin;
     VectorXd deltaPhip;
+    VectorXd rawDeltaPsi;
+    VectorXd rawDeltaPhin;
+    VectorXd rawDeltaPhip;
+    VectorXd rawLinearDefect;
+    VectorXd cappedLinearDefect;
+    VectorXd rawLinearBackwardErrors;
+    VectorXd cappedLinearBackwardErrors;
+    VectorXd directionalAnalyticChange;
+    VectorXd directionalFiniteDifferenceChange;
+    VectorXd freeElectronRows;
+    VectorXd freeHoleRows;
+    Real directionalAuditScale = 0.0;
     Real rawStepNorm = 0.0;
     Real stepNorm = 0.0;
 };
@@ -764,7 +784,8 @@ public:
     Real maxContactMajorityQuasiFermiDrop(
         const DDSolution& state,
         const std::vector<std::string>& contacts) const;
-    NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
+    NewtonStepEvaluation evaluateStep(
+        const DDSolution& state, Real directionalAuditScale = 0.0) const;
     std::vector<NewtonFeedbackSubstitutionEvaluation>
     evaluateFeedbackSubstitutions(
         const DDSolution& state,
@@ -839,6 +860,10 @@ public:
     /// evaluations inside bordered circuit Newton.
     std::function<DDSolution(const VectorXd&)>
     makeArclengthStateUnpacker() const;
+    /// Evaluate the standard carrier/closure gates at the actual packed state
+    /// and contact bias, without running Newton or altering the physical state.
+    std::function<NewtonStateConvergenceEvaluation(const VectorXd&, Real)>
+    makeArclengthConvergenceEvaluator(const std::string& activeContact) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the

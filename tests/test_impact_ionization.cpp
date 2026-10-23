@@ -3044,6 +3044,76 @@ TEST_CASE("Sentaurus Eparallel uses independent conventional carrier-current vec
             == 0.0);
 }
 
+TEST_CASE("Eparallel zero-current source has directional limits without a unique linear derivative",
+          "[impact_ionization][eparallel][branch]")
+{
+    ImpactIonizationModelConfig config;
+    config.model = "van_overstraeten";
+    const auto impact = makeImpactIonizationModel(config);
+    const Point2 field{1e8, 0.0};
+    const auto source = [&](const Point2& current) {
+        return impact->electronCoefficient(
+            detail::sentaurusEparallelAvalancheDrivingField(field, current)) *
+            current.norm();
+    };
+    REQUIRE(source(Point2::Zero()) == 0.0);
+    const Point2 along{1.0, 0.0};
+    REQUIRE(source(along) > 0.0);
+    REQUIRE(source(-along) == 0.0);
+    const Point2 first{1.0, 1.0}, second{1.0, -1.0};
+    const Real epsilon = 1e-9;
+    const Real jointLimit = source(epsilon * (first + second)) / epsilon;
+    const Real separateLimits = (source(epsilon * first) + source(epsilon * second)) / epsilon;
+    REQUIRE(jointLimit == Catch::Approx(source(first + second)).epsilon(1e-12));
+    REQUIRE(std::abs(jointLimit - separateLimits) > 0.01 * jointLimit);
+    // A sum of coordinate finite differences need not predict this combined
+    // direction at J=0. Smooth-state audits must stay on one active branch.
+}
+
+TEST_CASE("Eparallel legacy source Jacobian follows the residual cell current vector",
+          "[impact][eparallel][jacobian]")
+{
+    const auto mesh = makePNMesh(false);
+    MaterialDatabase materials;
+    const auto doping = DopingModel::fromMeshAndRegions(mesh,
+        {{"n_region",1e22,0},{"p_region",0,1e22}});
+    auto impact = impactIonizationModelConfig("selberherr");
+    impact.drivingForce = "eparallel";
+    impact.generation = "current_density";
+    impact.currentApproximation = "density_gradient";
+    impact.electronA = impact.holeA = 1e5;
+    impact.electronB = impact.holeB = 1e4;
+    const auto statistics = CarrierStatisticsConfig{GENERATE("boltzmann", "fermi_dirac")};
+    CoupledDDAssembler full(mesh,materials,doping,constants::Vt_300,
+        mobilityModelConfig("constant"),recombinationModelConfig({"none"}),
+        {},impact,{},{},{},{},statistics);
+    CoupledDDAssembler off(mesh,materials,doping,constants::Vt_300,
+        mobilityModelConfig("constant"),recombinationModelConfig({"none"}),
+        {},{},{},{},{},{},statistics);
+    VectorXd x(12);
+    x << .1,-.05,.03,.2, .001,-.002,-.001,.003, -.001,.004,.002,-.003;
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd sourceJ = full.assembleJacobian(x,bcs)-off.assembleJacobian(x,bcs);
+    for (int block = 0; block < 3; ++block) {
+        VectorXd direction = VectorXd::Zero(12);
+        direction(4*block+3) = 1e-7;
+        const auto source = [&](const VectorXd& state) -> VectorXd {
+            return (full.residual(state,bcs)-off.residual(state,bcs)).eval();
+        };
+        const VectorXd difference = .5*(source((x+direction).eval())-source((x-direction).eval()));
+        const VectorXd analytic = sourceJ*direction;
+        CAPTURE(statistics.model,block,analytic.norm(),difference.norm());
+        if (block < 2) REQUIRE(difference.tail(8).norm()>0.0);
+        if (difference.tail(8).norm()>0.0)
+            CHECK((analytic.tail(8)-difference.tail(8)).norm()/difference.tail(8).norm()<1e-4);
+        else
+            CHECK(analytic.tail(8).norm()==0.0);
+        // Subtracting two transport Jacobians introduces roundoff before
+        // isolating the equal electron/hole source contributions.
+        CHECK((analytic.segment(4,4)-analytic.tail(4)).norm()<=1e-13*analytic.norm());
+    }
+}
+
 TEST_CASE("Nodal SG least-squares reconstruction preserves a constant vector field",
           "[impact][eparallel]")
 {

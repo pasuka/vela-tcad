@@ -241,6 +241,7 @@ struct SweepContinuationConfig {
 
 struct SweepInitializationConfig {
     std::string mode = "none";
+    int poissonMaxIter = 0; ///< Positive: complete nonlinear Poisson initialization; zero: legacy single block step.
     std::string diagnosticCsv;
     std::string writeStateFile;
 };
@@ -298,6 +299,7 @@ struct BoundaryControlPersistenceConfig {
     Real predictorMaxStepFactor = 4.0;
     int preferredMaxEvaluations = 3;
     bool adaptiveDeviceContinuation = false;
+    bool adaptiveOuterContinuation = false;
 };
 
 struct DCSweepConfig {

@@ -1,6 +1,9 @@
 #include "vela/numerics/StableMeritComparison.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/experimental/NewtonCapture.h"
+#include "vela/solver/experimental/NewtonAudit.h"
+#include "vela/core/experimental/CacheAudit.h"
 #include "vela/solver/LinearRefinement.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -635,7 +638,8 @@ Real relativeVectorDifference(
 
 Real addCarrierRowRegularization(SparseMatrixd& matrix,
                                  int nodeCount,
-                                 Real regularizationScale)
+                                 Real regularizationScale,
+                                 const CoupledDDBoundaryConditions& bcs)
 {
     if (regularizationScale <= 0.0)
         return 0.0;
@@ -653,6 +657,11 @@ Real addCarrierRowRegularization(SparseMatrixd& matrix,
 
     Real diagonalNormSq = 0.0;
     for (int localRow = 0; localRow < 2 * nodeCount; ++localRow) {
+        // Boundary identity equations must stay exact. Stabilize only the
+        // physical free-carrier rows, including when exact updates are used.
+        if ((localRow < nodeCount && bcs.phin.contains(localRow)) ||
+            (localRow >= nodeCount && bcs.phip.contains(localRow - nodeCount)))
+            continue;
         const int row = nodeCount + localRow;
         const Real diagonal = matrix.coeff(row, row);
         const Real sign = diagonal < 0.0 ? -1.0 : 1.0;
@@ -1288,6 +1297,39 @@ TwoSidedL2EquilibratedSystem twoSidedL2Equilibrate(
     return result;
 }
 
+VectorXd solveNewtonLinearSystem(const SparseMatrixd& J, const VectorXd& residual,
+                                const VectorXd& rowWeights, const NewtonConfig& cfg,
+                                LinearSolver& solver)
+{
+    const auto solve = [&solver, &cfg](const SparseMatrixd& matrix,
+                                     const VectorXd& rhs) -> VectorXd {
+        if (cfg.linearEquilibration.mode != "l2_row_column")
+            return solver.solve(matrix, rhs);
+        ScopedPerformanceTimer timer("newton.linear_l2_row_column");
+        const auto equilibrated = twoSidedL2Equilibrate(matrix, rhs);
+        return solver.solve(equilibrated.matrix, equilibrated.rhs)
+            .cwiseProduct(equilibrated.columnScale).eval();
+    };
+    VectorXd step;
+    if (cfg.continuityRowScaling.enabled) {
+        ScopedPerformanceTimer timer("newton.linear_row_scaling");
+        step = solve(leftScaleRows(J, rowWeights),
+                     (-residual.cwiseProduct(rowWeights)).eval());
+    } else {
+        step = solve(J, -residual);
+    }
+    if (cfg.linearRefinementIterations > 0) {
+        ScopedPerformanceTimer timer("newton.linear_refinement");
+        const VectorXd weights = cfg.continuityRowScaling.enabled
+            ? rowWeights : VectorXd::Ones(residual.size());
+        // Corrections must use the same equilibration as the initial solve.
+        step = linear_refinement::refineWithSolve(J, residual, weights,
+            std::move(step), solve, cfg.linearRefinementIterations,
+            [](int, const VectorXd&, const linear_refinement::Defect&) {});
+    }
+    return step;
+}
+
 DDScalingSpec buildRecoveryScalingSpec(const DeviceMesh& mesh,
                                        const MaterialDatabase& matdb,
                                        const DopingModel& doping,
@@ -1543,8 +1585,6 @@ void validateNumericalPrecisionOptions(const NewtonConfig& cfg)
     if (cfg.stableMeritComparison &&
         (cfg.lineSearchMode != "merit" || cfg.globalContinuityClosure.mode != "off"))
         throw std::invalid_argument("stable_merit_comparison requires merit line search and global continuity merit off.");
-    if (cfg.exactDirichletUpdates && cfg.carrierRegularizationScale != 0.0)
-        throw std::invalid_argument("exact_dirichlet_updates requires unregularized Dirichlet identity rows.");
 }
 } // namespace
 
@@ -1757,6 +1797,15 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         "quasi_fermi_trust_region_min_multiplier",
         cfg.quasiFermiTrustRegionMinMultiplier);
     cfg.linearRefinementIterations = json.value("linear_refinement_iterations", 0);
+    if (json.contains("legacy_edge_jacobian_steps")) {
+        const auto& steps = json.at("legacy_edge_jacobian_steps");
+        if (!steps.is_object()) throw std::invalid_argument("legacy_edge_jacobian_steps must be an object");
+        cfg.legacyTransportJacobianStep = steps.value("transport", cfg.legacyTransportJacobianStep);
+        cfg.legacyAvalancheJacobianStep = steps.value("avalanche", cfg.legacyAvalancheJacobianStep);
+    }
+    if (!std::isfinite(cfg.legacyTransportJacobianStep) || cfg.legacyTransportJacobianStep <= 0.0 ||
+        !std::isfinite(cfg.legacyAvalancheJacobianStep) || cfg.legacyAvalancheJacobianStep <= 0.0)
+        throw std::invalid_argument("legacy_edge_jacobian_steps must be finite and positive");
     cfg.poissonResidualPrecision = json.value("poisson_residual_precision", cfg.poissonResidualPrecision);
     cfg.stableMeritComparison = json.value("stable_merit_comparison", cfg.stableMeritComparison);
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
@@ -2791,6 +2840,9 @@ NewtonSolver::NewtonSolver(
     , sheetCharges_(std::move(sheetCharges))
 {
     validateNumericalPrecisionOptions(cfg_);
+    if (!std::isfinite(cfg_.legacyTransportJacobianStep) || cfg_.legacyTransportJacobianStep <= 0.0 ||
+        !std::isfinite(cfg_.legacyAvalancheJacobianStep) || cfg_.legacyAvalancheJacobianStep <= 0.0)
+        throw std::invalid_argument("NewtonSolver: legacy edge Jacobian steps must be finite and positive");
     if (cfg_.linearRefinementIterations < 0 || cfg_.linearRefinementIterations > 10)
         throw std::invalid_argument("NewtonSolver: linear_refinement_iterations must be between 0 and 10.");
     if (cfg_.jacobian != "analytic" && cfg_.jacobian != "finite_difference")
@@ -2986,6 +3038,8 @@ void NewtonSolver::configureAssemblerNumerics(
 {
     assembler.enableSplitDDState(cfg_.splitDDState);
     assembler.setExtendedPoissonResidual(cfg_.poissonResidualPrecision == "binary128");
+    assembler.setLegacyEdgeJacobianSteps(
+        cfg_.legacyTransportJacobianStep, cfg_.legacyAvalancheJacobianStep);
     if (cfg_.quasiFermiReference == "none")
         return;
 
@@ -3549,6 +3603,33 @@ NewtonSolver::makeArclengthStateUnpacker() const
     };
 }
 
+std::function<NewtonStateConvergenceEvaluation(const VectorXd&, Real)>
+NewtonSolver::makeArclengthConvergenceEvaluator(const std::string& activeContact) const
+{
+    // Retain exactly the packed coordinates, including split QF tails. Repacking
+    // via ordinary voltage vectors would erase small carrier/current signals.
+    auto assembler = makeArclengthAssembler();
+    const NewtonSolver* self = this;
+    return [self, assembler, activeContact](const VectorXd& x, Real bias) {
+        auto biases = self->contactBiases_;
+        biases[activeContact] = bias;
+        const auto bcs = self->buildBoundaryConditions(*assembler, biases);
+        NewtonStateConvergenceEvaluation evaluation;
+        evaluation.blockNorms = blockResidualInfo(
+            assembler->residual(x, bcs), self->mesh_.numNodes());
+        evaluation.carrierRows = evaluateCarrierRowConvergence(
+            assembler->carrierContinuityEquationTermDiagnostics(x, bcs),
+            self->cfg_.carrierRowConvergence);
+        std::vector<Index> electronContacts, holeContacts;
+        for (const auto& [node, value] : bcs.phin) electronContacts.push_back(node);
+        for (const auto& [node, value] : bcs.phip) holeContacts.push_back(node);
+        evaluation.globalContinuity = evaluateGlobalContinuityClosure(
+            assembler->carrierContinuityEquationTermDiagnostics(x, {}),
+            electronContacts, holeContacts, self->cfg_.globalContinuityClosure);
+        return evaluation;
+    };
+}
+
 ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     const std::string& contactName,
     Real currentScale) const
@@ -3858,8 +3939,11 @@ NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
     return evaluation;
 }
 
-NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
+NewtonStepEvaluation NewtonSolver::evaluateStep(
+    const DDSolution& state, Real directionalAuditScale) const
 {
+    if (!std::isfinite(directionalAuditScale) || directionalAuditScale < 0.0)
+        throw std::invalid_argument("Newton step audit scale must be finite and nonnegative");
     const double Vt = thermalVoltage(cfg_.temperature_K);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
@@ -3894,15 +3978,24 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
     const VectorXd x = packReferencedSolution(assembler, state, bcs);
     const VectorXd raw = assembler.residual(x, bcs);
-    const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+    SparseMatrixd J = (cfg_.jacobian == "finite_difference")
         ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
         : assembler.assembleJacobian(x, bcs);
 
+    const int N = static_cast<int>(mesh_.numNodes());
+    addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale, bcs);
+    const VectorXd weights = continuityRowWeights(
+        assembler, x, bcs, cfg_.continuityRowScaling);
     LinearSolver linearSolver;
-    VectorXd step = linearSolver.solve(J, -raw);
+    VectorXd step = solveNewtonLinearSystem(J, raw, weights, cfg_, linearSolver);
+    if (cfg_.exactDirichletUpdates) {
+        for (const auto& [node, value] : bcs.psi) step(node) = -raw(node);
+        for (const auto& [node, value] : bcs.phin) step(N + node) = -raw(N + node);
+        for (const auto& [node, value] : bcs.phip) step(2 * N + node) = -raw(2 * N + node);
+    }
+    const VectorXd rawStep = step;
     const Real rawStepNorm = step.norm();
 
-    const int N = static_cast<int>(mesh_.numNodes());
     applyConfiguredStepCapsAndPoissonRecorrection(
         step, J, raw, cfg_, N, potentialScale, doping_);
 
@@ -3910,6 +4003,33 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
 
     NewtonStepEvaluation evaluation;
+    const auto rawDefect = linear_refinement::highPrecisionDefect(J, raw, rawStep);
+    const auto cappedDefect = linear_refinement::highPrecisionDefect(J, raw, step);
+    evaluation.rawDeltaPsi = rawStep.head(N) * potentialScale;
+    evaluation.rawDeltaPhin = rawStep.segment(N, N) * potentialScale;
+    evaluation.rawDeltaPhip = rawStep.tail(N) * potentialScale;
+    evaluation.rawLinearDefect = rawDefect.values;
+    evaluation.cappedLinearDefect = cappedDefect.values;
+    evaluation.rawLinearBackwardErrors = rawDefect.componentwiseBackwardErrors;
+    evaluation.cappedLinearBackwardErrors = cappedDefect.componentwiseBackwardErrors;
+    evaluation.directionalAuditScale = directionalAuditScale;
+    evaluation.freeElectronRows = VectorXd::Zero(N);
+    evaluation.freeHoleRows = VectorXd::Zero(N);
+    for (const auto& terms : assembler.carrierContinuityEquationTermDiagnostics(x, bcs)) {
+        const int node = static_cast<int>(terms.nodeId);
+        evaluation.freeElectronRows(node) = terms.electronContinuityActive && !bcs.phin.contains(terms.nodeId);
+        evaluation.freeHoleRows(node) = terms.holeContinuityActive && !bcs.phip.contains(terms.nodeId);
+    }
+    if (directionalAuditScale > 0.0) {
+        const VectorXd direction = directionalAuditScale * step;
+        evaluation.directionalAnalyticChange = J * direction;
+        evaluation.directionalFiniteDifferenceChange =
+            (0.5 * (assembler.residual((x + direction).eval(), bcs) -
+                    assembler.residual((x - direction).eval(), bcs))).eval();
+    } else {
+        evaluation.directionalAnalyticChange = VectorXd::Zero(3 * N);
+        evaluation.directionalFiniteDifferenceChange = VectorXd::Zero(3 * N);
+    }
     evaluation.residual.raw = raw;
     evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
     evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
@@ -4707,6 +4827,9 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
     SparseMatrixd regularizedBlock = carrierBlock;
     Real regularizationDiagonalNormSq = 0.0;
     for (int row = 0; row < 2 * N; ++row) {
+        if ((row < N && bcs.phin.contains(row)) ||
+            (row >= N && bcs.phip.contains(row - N)))
+            continue;
         const Real diagonal = carrierBlock.coeff(row, row);
         const Real sign = diagonal < 0.0 ? -1.0 : 1.0;
         const Real addition =
@@ -4947,7 +5070,7 @@ NewtonSolver::evaluatePoissonLinearDiagnostics(
     SparseMatrixd J = (cfg_.jacobian == "finite_difference")
         ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
         : assembler.assembleJacobian(x, bcs);
-    addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale);
+    addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale, bcs);
 
     const VectorXd rowWeights = continuityRowWeights(
         assembler, x, bcs, cfg_.continuityRowScaling);
@@ -6806,6 +6929,20 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         }
     }
     auto splitRuntime=assembler.splitRuntime();
+    experimental::NewtonAuditScope::begin(!splitRuntime && !cfg_.electronQuantumPotential.enabled &&
+        !cfg_.quasiFermiRecenterOnStall && cfg_.carrierRowRecovery.mode == "off");
+    experimental::NewtonCaptureScope::record([&](auto& capture) {
+        // Other formulations need their own state/history identity contracts.
+        if (capture.initialized || splitRuntime || cfg_.electronQuantumPotential.enabled ||
+            cfg_.quasiFermiRecenterOnStall || cfg_.carrierRowRecovery.mode != "off") {
+            capture.unsupported = true;
+            return;
+        }
+        capture.potentialScale = potentialScale;
+        capture.electronReference = assembler.electronQuasiFermiReferenceField();
+        capture.holeReference = assembler.holeQuasiFermiReferenceField();
+        capture.initialized = true;
+    });
     if(splitRuntime) {
         if(initial.packedLow.size()!=0)x=splitRuntime->restoreForContinuation(initial);
         splitRuntime->applyBoundary(x,bcs);
@@ -7363,6 +7500,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     int quasiFermiRecenters = 0;
 
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
+        experimental::CacheAuditScope::iteration(iter);
         ScopedPerformanceTimer iterationTimer("newton.iteration");
         activeGlobalElectronScale = std::max(
             std::abs(activeGlobalEval.electron.integratedSource),
@@ -7377,44 +7515,35 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 cfg_.continuityRowScaling.enabled ? &continuityAt(x) : nullptr);
         }
         SparseMatrixd J;
+        experimental::AssemblyPopulationCapture capturedPopulation;
         {
             ScopedPerformanceTimer timer("newton.jacobian");
+            experimental::AssemblyPopulationCaptureScope populationScope(
+                experimental::NewtonCaptureScope::hasCapacity() && cfg_.jacobian != "finite_difference"
+                    ? &capturedPopulation : nullptr);
             J = (cfg_.jacobian == "finite_difference")
                 ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
                 : assembler.assembleJacobian(x, bcs);
-            addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale);
+            addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale, bcs);
         }
         VectorXd step;
+        experimental::NewtonAuditScope::system(iter,x,r,J,activeRowWeights);
+        experimental::NewtonCaptureScope::record([&](auto& capture) {
+            if (capture.iterations.size() >= capture.limit) {
+                capture.truncated = true;
+                return;
+            }
+            experimental::NewtonCapturedIteration item;
+            item.iteration = iter;
+            item.x = x;
+            item.residual = r;
+            item.rowWeights = activeRowWeights;
+            item.jacobian = J;
+            item.population = std::move(capturedPopulation);
+            capture.iterations.push_back(std::move(item));
+        });
         try {
-            const auto solveProductionSystem = [&linearSolver, this](
-                const SparseMatrixd& matrix,
-                const VectorXd& rhs) -> VectorXd {
-                if (cfg_.linearEquilibration.mode != "l2_row_column")
-                    return linearSolver.solve(matrix, rhs);
-                ScopedPerformanceTimer timer("newton.linear_l2_row_column");
-                const TwoSidedL2EquilibratedSystem equilibrated =
-                    twoSidedL2Equilibrate(matrix, rhs);
-                const VectorXd equilibratedCoordinates =
-                    linearSolver.solve(equilibrated.matrix, equilibrated.rhs);
-                return equilibratedCoordinates.cwiseProduct(
-                    equilibrated.columnScale).eval();
-            };
-            if (cfg_.continuityRowScaling.enabled) {
-                ScopedPerformanceTimer timer("newton.linear_row_scaling");
-                const SparseMatrixd scaledJ = leftScaleRows(J, activeRowWeights);
-                step = solveProductionSystem(
-                    scaledJ, -r.cwiseProduct(activeRowWeights));
-            } else {
-                step = solveProductionSystem(J, -r);
-            }
-            if (cfg_.linearRefinementIterations > 0) {
-                ScopedPerformanceTimer timer("newton.linear_refinement");
-                const VectorXd weights = cfg_.continuityRowScaling.enabled
-                    ? activeRowWeights : VectorXd::Ones(r.size());
-                step = linear_refinement::refine(J, r, weights, std::move(step),
-                    linearSolver, cfg_.linearRefinementIterations,
-                    [](int, const VectorXd&, const linear_refinement::Defect&) {});
-            }
+            step = solveNewtonLinearSystem(J, r, activeRowWeights, cfg_, linearSolver);
         } catch (const std::runtime_error&) {
             NewtonIterationInfo failedTrace;
             failedTrace.iter = iter;
@@ -7453,6 +7582,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             }
             return result;
         }
+
+        experimental::NewtonAuditScope::direction(iter,step);
+        experimental::NewtonCaptureScope::record([&](auto& capture) {
+            if (capture.truncated || capture.iterations.empty()) return;
+            auto& item = capture.iterations.back();
+            item.linearDirection = step;
+            item.hasLinearDirection = true;
+        });
 
         // These rows are exact identity equations. A sparse direct solve can
         // pollute their zero update with tiny roundoff, creating artificial
@@ -7733,6 +7870,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         writeLocalUpdateTraceCsv(
             iter, x, r, J, rawStep, step,
             rawLinearResidual, cappedLinearResidual, ls);
+        experimental::NewtonAuditScope::search(iter,step,ls);
+        experimental::NewtonCaptureScope::record([&](auto& capture) {
+            if (capture.truncated || capture.iterations.empty()) return;
+            auto& item = capture.iterations.back();
+            item.protectedDirection = step;
+            item.searched = ls;
+            item.hasSearch = true;
+        });
 
         if (!ls.accepted) {
             const Real stalledNorm = residualNormFn(acceptedR);
