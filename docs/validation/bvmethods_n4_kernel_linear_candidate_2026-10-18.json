@@ -1,0 +1,323 @@
+{
+  "date": "2026-10-18",
+  "scope": "N4 kernel increment, transport separation and linear/RHS-consistent candidate",
+  "configuration": {
+    "reference": "T-2022.03-SP2 installed-library BVmethods",
+    "nodes": 2600,
+    "triangles": 5020,
+    "Si_cells": 4156,
+    "independent_equations": 6843,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "population_reference_cm3": 14824351000,
+    "current_unit": "A/um",
+    "environment": "Ubuntu 26.04.1 GCC15.2 C++20 Release O1; binary64 MPFR scalar adapter; floating contraction off",
+    "sparse_direction_control": "SciPy SuperLU on sealed native printed matrix; not a Vela assembled Jacobian"
+  },
+  "kernel_precision": {
+    "precision_decimal_digits": 80,
+    "fixed_band_input_and_geometry": true,
+    "not_a_deployable_variable_geometry_kernel": true,
+    "directions": [
+      {
+        "h": 0.003,
+        "stages": {
+          "actual_endpoints": {
+            "FD": 0.00015154899304824928,
+            "relative_error": 1.405719373515563e-06
+          },
+          "wide_path_interpolation": {
+            "FD": 0.00015154899304175432,
+            "relative_error": 1.4056979449096646e-06
+          },
+          "wide_node_and_path": {
+            "FD": 0.0001515489930423916,
+            "relative_error": 1.405700047441291e-06
+          }
+        }
+      },
+      {
+        "h": 0.001,
+        "stages": {
+          "actual_endpoints": {
+            "FD": 0.00015154861431830097,
+            "relative_error": 1.5618807038966812e-07
+          },
+          "wide_path_interpolation": {
+            "FD": 0.00015154861431812113,
+            "relative_error": 1.5618747698014065e-07
+          },
+          "wide_node_and_path": {
+            "FD": 0.00015154861431770157,
+            "relative_error": 1.5618609277919875e-07
+          }
+        }
+      },
+      {
+        "h": 0.0003,
+        "stages": {
+          "actual_endpoints": {
+            "FD": 0.00015154857133898802,
+            "relative_error": 1.438763472717615e-08
+          },
+          "wide_path_interpolation": {
+            "FD": 0.00015154857124066324,
+            "relative_error": 1.4063234574695157e-08
+          },
+          "wide_node_and_path": {
+            "FD": 0.00015154857124120415,
+            "relative_error": 1.406501913933446e-08
+          }
+        }
+      },
+      {
+        "h": 3e-05,
+        "stages": {
+          "actual_endpoints": {
+            "FD": 0.00015154856659350198,
+            "relative_error": 1.2690159847660818e-09
+          },
+          "wide_path_interpolation": {
+            "FD": 0.0001515485669650583,
+            "relative_error": 4.315053320779554e-11
+          },
+          "wide_node_and_path": {
+            "FD": 0.0001515485669732073,
+            "relative_error": 1.626473142352357e-11
+          }
+        }
+      },
+      {
+        "h": 1e-05,
+        "stages": {
+          "actual_endpoints": {
+            "FD": 0.00015154856663282846,
+            "relative_error": 1.139267282604086e-09
+          },
+          "wide_path_interpolation": {
+            "FD": 0.00015154856696759773,
+            "relative_error": 3.477224752059468e-11
+          },
+          "wide_node_and_path": {
+            "FD": 0.00015154856697574678,
+            "relative_error": 7.886312985816172e-12
+          }
+        }
+      }
+    ]
+  },
+  "transport_separation": {
+    "rows": 10,
+    "nodes": [
+      1760,
+      1900,
+      1910,
+      1928,
+      1929,
+      2004,
+      2137,
+      2237,
+      2270,
+      2271
+    ],
+    "steps": [
+      0.001,
+      0.0003,
+      0.0001
+    ],
+    "max_nontransport_coarse_fine_change": 2.9986569479915194e-21,
+    "native_component_derivatives_observed": false
+  },
+  "linear": {
+    "backend": "SciPy SuperLU independent printed-system control",
+    "native_printed_rhs_resolve": [
+      {
+        "iteration": 0,
+        "max_componentwise_backward": 1.3455115769839302e-08,
+        "failed_1e10": 7,
+        "exact_contact_constraints_eliminated": 0
+      },
+      {
+        "iteration": 1,
+        "max_componentwise_backward": 1.654634807412806e-16,
+        "failed_1e10": 0,
+        "exact_contact_constraints_eliminated": 0
+      }
+    ],
+    "candidate_actual_rhs_resolve": [
+      {
+        "iteration": 0,
+        "max_componentwise_backward": 5.398122810597057e-10,
+        "failed_1e10": 6,
+        "exact_contact_constraints_eliminated": 0
+      },
+      {
+        "iteration": 1,
+        "max_componentwise_backward": 2.1616489566870055e-16,
+        "failed_1e10": 0,
+        "exact_contact_constraints_eliminated": 0
+      }
+    ],
+    "max_delta_difference_from_printed_solution": 2.2714630176778883e-10,
+    "full_Jacobian_qualified": false
+  },
+  "candidate": {
+    "trials": [
+      {
+        "alpha": 0.0,
+        "block_L1": {
+          "poisson": 3.004136493282907e-09,
+          "electron": 3113.0641745243342,
+          "hole": 12.859704599425585
+        },
+        "block_ratio": {
+          "poisson": 1.0,
+          "electron": 1.0,
+          "hole": 1.0
+        },
+        "load_V": -0.000999808355118148,
+        "load_pass": false,
+        "KCL_A_per_um": 1.917035672312733e-14,
+        "KCL_relative": 9.394917180085643e-11,
+        "KCL_pass": true,
+        "QF_failures": 0,
+        "pair_balance": 5.762401300939442e-17,
+        "source_resolved": true
+      },
+      {
+        "alpha": 1.0,
+        "block_L1": {
+          "poisson": 1.9467531384422523e-10,
+          "electron": 3100.599613487802,
+          "hole": 4.80331328992474
+        },
+        "block_ratio": {
+          "poisson": 0.06480241969015359,
+          "electron": 0.9959960475153272,
+          "hole": 0.37351661173766726
+        },
+        "load_V": -1.2924215297971386e-07,
+        "load_pass": true,
+        "KCL_A_per_um": 1.2510367297077777e-14,
+        "KCL_relative": 6.13101525285339e-11,
+        "KCL_pass": true,
+        "QF_failures": 0,
+        "pair_balance": 1.3368207595766046e-18,
+        "source_resolved": true
+      },
+      {
+        "alpha": 0.5,
+        "block_L1": {
+          "poisson": 1.5563913749612404e-09,
+          "electron": 3685.915880747022,
+          "hole": 8.345246640505335
+        },
+        "block_ratio": {
+          "poisson": 0.5180827763456323,
+          "electron": 1.184015386162162,
+          "hole": 0.6489454385194897
+        },
+        "load_V": -0.0004997667360839841,
+        "load_pass": false,
+        "KCL_A_per_um": 2.310458917325026e-14,
+        "KCL_relative": 1.1322981544877585e-10,
+        "KCL_pass": true,
+        "QF_failures": 0,
+        "pair_balance": 3.363159664391395e-17,
+        "source_resolved": true
+      },
+      {
+        "alpha": 0.25,
+        "block_L1": {
+          "poisson": 2.2677403126681598e-09,
+          "electron": 4560.778583784376,
+          "hole": 10.787666467495097
+        },
+        "block_ratio": {
+          "poisson": 0.7548725957487981,
+          "electron": 1.4650448330321515,
+          "hole": 0.8388735825220245
+        },
+        "load_V": -0.0007497220994991949,
+        "load_pass": false,
+        "KCL_A_per_um": 2.8119996368352464e-14,
+        "KCL_relative": 1.3780910603684875e-10,
+        "KCL_pass": true,
+        "QF_failures": 0,
+        "pair_balance": 2.962113458755377e-16,
+        "source_resolved": true
+      }
+    ],
+    "actual_solver_acceptance_executed": false,
+    "full_Newton_qualified": false,
+    "weak_rows": [
+      {
+        "carrier": "electron",
+        "node": 2156,
+        "baseline": -11.820347588366479,
+        "trial": 10.478254406689885,
+        "absolute_residual_improved": true,
+        "baseline_assembly_absolute": 66639657.69966356,
+        "trial_assembly_absolute": 66639680.00544132
+      },
+      {
+        "carrier": "hole",
+        "node": 2515,
+        "baseline": 0.009438039131280135,
+        "trial": 0.01149202879881164,
+        "absolute_residual_improved": false,
+        "baseline_assembly_absolute": 146509359102.72662,
+        "trial_assembly_absolute": 146509498194.84073
+      },
+      {
+        "carrier": "hole",
+        "node": 2423,
+        "baseline": 6.318946927253278e-15,
+        "trial": -1.2741256653023898e-12,
+        "absolute_residual_improved": false,
+        "baseline_assembly_absolute": 0.0018872594791939732,
+        "trial_assembly_absolute": 0.0018872618810325688
+      },
+      {
+        "carrier": "hole",
+        "node": 2432,
+        "baseline": 2.927639550137784e-08,
+        "trial": -9.771341805059775e-07,
+        "absolute_residual_improved": false,
+        "baseline_assembly_absolute": 866.1005307803537,
+        "trial_assembly_absolute": 866.1016894849089
+      },
+      {
+        "carrier": "hole",
+        "node": 1317,
+        "baseline": -2.9702480735918895e-05,
+        "trial": -1.7096195307302154e-05,
+        "absolute_residual_improved": true,
+        "baseline_assembly_absolute": 16737391004.316896,
+        "trial_assembly_absolute": 16737406017.09238
+      }
+    ],
+    "all_selected_weak_rows_improved": false
+  },
+  "verification": {
+    "evidence_tests": 19,
+    "kernel_focused_evaluations": 22,
+    "candidate_augmented_evaluations": 6,
+    "new_native_jobs": 0,
+    "candidate_full_step_replays": 2
+  },
+  "qualification": {
+    "N4_complete": false,
+    "N5_started": false,
+    "full_autonomous_Jacobian": false,
+    "full_Jv": false,
+    "Newton": false,
+    "production_promoted": false,
+    "thresholds_changed": false
+  },
+  "next": [
+    "Transfer stable SG primitive increments and establish reproducible weak-row derivative controls",
+    "Replace the reference matrix with an autonomous consistent Jacobian and perform actual solver acceptance",
+    "Generalize the fixed-geometry precision oracle to changing geometry and verify original native controls"
+  ]
+}

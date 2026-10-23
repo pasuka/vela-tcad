@@ -1,0 +1,269 @@
+{
+  "scope": "BVmethods fixed internal bias without Band2Band; private stopping-policy replacement",
+  "solver_default_changed": false,
+  "original_thresholds_changed": false,
+  "newton_budget": 20,
+  "simulation_runs": 42,
+  "hook_wiring_test_is_not_physical_acceptance": true,
+  "checks": {
+    "remote": 345,
+    "finite_independent": 1530,
+    "requested_independent": 437,
+    "arithmetic_properties": 9
+  },
+  "cases": [
+    {
+      "label": "rows5",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 20,
+      "original_initial_violations": 14,
+      "original_final_violations": 18,
+      "original_final_max_ratio": 1.0625135452405041,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 13,
+        "damping": 0.000244140625,
+        "iter": 20,
+        "norm": 4.0971105673001836e-11,
+        "reason": "carrier_row_convergence",
+        "search_reason": "",
+        "step": 0.004223748092871013
+      },
+      "last_accepted_metrics": {
+        "iter": 20,
+        "wrms": 7.336520346018033e-06,
+        "normf_rowsum_concentration_coordinates": 2.8955945231678582e-11,
+        "relative": 0.0009448241668900557,
+        "absolute": 0.056200051429186715,
+        "damping": 0.000244140625,
+        "worst_relative_nodes": [
+          -1,
+          -1,
+          354
+        ]
+      },
+      "last_accepted_requested_relative": 0.0009452703727373253,
+      "last_observed_accepted": true,
+      "last_observed_relative": 0.0009448241668900557,
+      "contact_currents_A_per_um": {
+        "substrate": -8.768819687740787e-16,
+        "gate": 0.0,
+        "source": -5.98660701152518e-10,
+        "drain": 5.986615774239396e-10
+      },
+      "sum_current_A_per_um": -6.105470766066416e-19,
+      "relative_kcl_sum_absolute_denominator": 5.099267259830766e-10
+    },
+    {
+      "label": "rows285",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 0,
+      "original_initial_violations": 285,
+      "original_final_violations": 285,
+      "original_final_max_ratio": 1.5683448339320096,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 13,
+        "damping": 0.0,
+        "iter": 1,
+        "norm": 4.760946964215924e-11,
+        "reason": "carrier_row_convergence_line_search_rejected",
+        "search_reason": "line_search_non_decrease",
+        "step": 45.50986359411827
+      },
+      "last_accepted_metrics": null,
+      "last_accepted_requested_relative": null,
+      "last_observed_accepted": false,
+      "last_observed_relative": 0.0009448241694947207,
+      "contact_currents_A_per_um": {
+        "substrate": -9.19942486678544e-16,
+        "gate": 0.0,
+        "source": -5.986607028341186e-10,
+        "drain": 5.986616205009387e-10
+      },
+      "sum_current_A_per_um": -2.2756666127595616e-18,
+      "relative_kcl_sum_absolute_denominator": 1.9006284439364665e-09
+    },
+    {
+      "label": "rows21",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 20,
+      "original_initial_violations": 21,
+      "original_final_violations": 16,
+      "original_final_max_ratio": 1.0692119509913547,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 2,
+        "damping": 0.5,
+        "iter": 20,
+        "norm": 4.148972890364902e-11,
+        "reason": "carrier_row_convergence",
+        "search_reason": "",
+        "step": 9.275835241179415
+      },
+      "last_accepted_metrics": {
+        "iter": 20,
+        "wrms": 0.002449362450108469,
+        "normf_rowsum_concentration_coordinates": 2.9232712499150945e-14,
+        "relative": 0.04035346222659241,
+        "absolute": 786453.5477062401,
+        "damping": 0.5,
+        "worst_relative_nodes": [
+          937,
+          1065,
+          351
+        ]
+      },
+      "last_accepted_requested_relative": 0.03952808285437472,
+      "last_observed_accepted": true,
+      "last_observed_relative": 0.04035346222659241,
+      "contact_currents_A_per_um": {
+        "substrate": -8.768813736404818e-16,
+        "gate": 0.0,
+        "source": -5.98660701152518e-10,
+        "drain": 5.986615774233431e-10
+      },
+      "sum_current_A_per_um": -6.105485241727136e-19,
+      "relative_kcl_sum_absolute_denominator": 5.099279349855694e-10
+    },
+    {
+      "label": "rows11",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 20,
+      "original_initial_violations": 21,
+      "original_final_violations": 16,
+      "original_final_max_ratio": 1.0692119510477713,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 2,
+        "damping": 0.5,
+        "iter": 20,
+        "norm": 4.14897408944587e-11,
+        "reason": "carrier_row_convergence",
+        "search_reason": "",
+        "step": 9.275835217151913
+      },
+      "last_accepted_metrics": {
+        "iter": 20,
+        "wrms": 0.002451299724154326,
+        "normf_rowsum_concentration_coordinates": 2.9232719041694475e-14,
+        "relative": 0.040353395328201785,
+        "absolute": 786453.5709991533,
+        "damping": 0.5,
+        "worst_relative_nodes": [
+          1963,
+          1065,
+          351
+        ]
+      },
+      "last_accepted_requested_relative": 0.0395280187115382,
+      "last_observed_accepted": true,
+      "last_observed_relative": 0.040353395328201785,
+      "contact_currents_A_per_um": {
+        "substrate": -8.768813736442848e-16,
+        "gate": 0.0,
+        "source": -5.98660701152518e-10,
+        "drain": 5.986615774233438e-10
+      },
+      "sum_current_A_per_um": -6.105479037872542e-19,
+      "relative_kcl_sum_absolute_denominator": 5.099274168418611e-10
+    },
+    {
+      "label": "rows10",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 20,
+      "original_initial_violations": 21,
+      "original_final_violations": 16,
+      "original_final_max_ratio": 1.0692119510583236,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 2,
+        "damping": 0.5,
+        "iter": 20,
+        "norm": 4.148974089445878e-11,
+        "reason": "carrier_row_convergence",
+        "search_reason": "",
+        "step": 9.27583520396539
+      },
+      "last_accepted_metrics": {
+        "iter": 20,
+        "wrms": 0.0024523748804723116,
+        "normf_rowsum_concentration_coordinates": 2.923271904171784e-14,
+        "relative": 0.040353471437401325,
+        "absolute": 786453.5839123037,
+        "damping": 0.5,
+        "worst_relative_nodes": [
+          1963,
+          1065,
+          351
+        ]
+      },
+      "last_accepted_requested_relative": 0.03952809168578726,
+      "last_observed_accepted": true,
+      "last_observed_relative": 0.040353471437401325,
+      "contact_currents_A_per_um": {
+        "substrate": -8.768813736466016e-16,
+        "gate": 0.0,
+        "source": -5.98660701152518e-10,
+        "drain": 5.986615774233431e-10
+      },
+      "sum_current_A_per_um": -6.105485241727136e-19,
+      "relative_kcl_sum_absolute_denominator": 5.099279349855694e-10
+    },
+    {
+      "label": "rows0",
+      "all_seven_arms_identical_result_and_events": true,
+      "converged": false,
+      "accepted_iterations": 3,
+      "original_initial_violations": 3,
+      "original_final_violations": 6,
+      "original_final_max_ratio": 1.007047331743786,
+      "global_closure_satisfied": true,
+      "failure": {
+        "attempts": 13,
+        "damping": 0.0,
+        "iter": 4,
+        "norm": 4.148969647147099e-11,
+        "reason": "carrier_row_convergence_line_search_rejected",
+        "search_reason": "line_search_non_decrease",
+        "step": 14.983722355408242
+      },
+      "last_accepted_metrics": {
+        "iter": 3,
+        "wrms": 0.0001428344040972685,
+        "normf_rowsum_concentration_coordinates": 7.655751271230557e-11,
+        "relative": 0.007583636025226944,
+        "absolute": 1.07493470794725,
+        "damping": 0.001953125,
+        "worst_relative_nodes": [
+          -1,
+          -1,
+          354
+        ]
+      },
+      "last_accepted_requested_relative": 0.007612319376206782,
+      "last_observed_accepted": false,
+      "last_observed_relative": 0.0009448241676340229,
+      "contact_currents_A_per_um": {
+        "substrate": -8.768816879017959e-16,
+        "gate": 0.0,
+        "source": -5.98660701152518e-10,
+        "drain": 5.986615774236576e-10
+      },
+      "sum_current_A_per_um": -6.105483173775604e-19,
+      "relative_kcl_sum_absolute_denominator": 5.099277622707322e-10
+    }
+  ],
+  "all_metric_candidates_unconverged": true,
+  "complete_seven_arm_equality_checks": 36,
+  "evidence_archives": {
+    "primary_sha256": "d6cdb1e2f81cff6eb80468fda10af54245ea4a89f9916b678f310f997b79d85f",
+    "requested_sha256": "02e86786558ee1baac5490d1cce24fd0b88149e24916e446e3dc3cb2b8eeb3c7"
+  },
+  "evidence_root": "build-release/bvmethods_alternate_stopping_20261020/"
+}

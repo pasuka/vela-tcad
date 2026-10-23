@@ -1,0 +1,731 @@
+{
+  "schema": "vela.validation.bvmethods.n4.drive_path_chain.v1",
+  "date": "2026-10-18",
+  "status": "N4_in_progress",
+  "N5_started": false,
+  "production_promoted": false,
+  "Newton_loop_run": false,
+  "new_native_jobs": 0,
+  "scope": {
+    "reference": "installed_library_BVmethods_resistor_T2022.03SP2",
+    "state": "bound_positive_QS_second_coupled_system",
+    "nodes": 2600,
+    "triangles": 5020,
+    "Si_seeds": 4156,
+    "free_semiconductor_nodes": 2121,
+    "augmented_dimension": 6843,
+    "temperature_K": 300,
+    "Vt_V": 0.025851995266484913,
+    "density_reference_cm3": 14824351000.0,
+    "geometry_internal": "m",
+    "assembly_rate": "cm^-3 s^-1",
+    "terminal_current": "A/um",
+    "cpp_environment": "Ubuntu 26.04.1 GCC 15.2 C++20 Release O1 ffp-contract-off",
+    "python_environment": "Windows Decimal 80 digits",
+    "solver_invoked": false,
+    "native_default_derivative_equal_to_full_mathematical_chain": false
+  },
+  "full_source": {
+    "seed_count": 4156,
+    "resolved_seeds": 4156,
+    "errors": [],
+    "quality": {
+      "electron": {
+        "weighted_L1": 1.781408128278237e-14,
+        "integral_error": 3.155360053456036e-15
+      },
+      "hole": {
+        "weighted_L1": 7.30061165745294e-15,
+        "integral_error": 3.1553624498969693e-15
+      }
+    },
+    "all_seeds_covered": true
+  },
+  "derivative_properties": {
+    "full_source_columns": 3064,
+    "pair_derivative_imbalance_max": 5.468414886602376e-79,
+    "potential_gauge_error_max": 9.801558982829537e-78,
+    "remote_control": {
+      "hole_node": 1317,
+      "electron_node": 446,
+      "column": 2830,
+      "derivative": "-1360.3713234528300009336421173046939650681446667017954895560367562072360341754877",
+      "outside_one_ring": true
+    }
+  },
+  "path_direction_checks": [
+    {
+      "name": "kernel",
+      "seed": 2693,
+      "derivative_pair_balance_max": 8.406970930466501e-80,
+      "steps": [
+        {
+          "h": 0.0001,
+          "max_error": 1.5618847743660892e-09,
+          "failures_1e5": 0
+        },
+        {
+          "h": 3e-05,
+          "max_error": 1.4056962914403145e-10,
+          "failures_1e5": 0
+        },
+        {
+          "h": 1e-05,
+          "max_error": 1.561884767730834e-11,
+          "failures_1e5": 0
+        }
+      ]
+    },
+    {
+      "name": "path",
+      "seed": 2670,
+      "derivative_pair_balance_max": 5.28331753161011e-80,
+      "steps": [
+        {
+          "h": 0.0001,
+          "max_error": 1.1720150097566498e-06,
+          "failures_1e5": 0
+        },
+        {
+          "h": 3e-05,
+          "max_error": 1.054751388428745e-07,
+          "failures_1e5": 0
+        },
+        {
+          "h": 1e-05,
+          "max_error": 1.1719399197693991e-08,
+          "failures_1e5": 0
+        }
+      ]
+    }
+  ],
+  "collection_event_sides": [
+    {
+      "side": "left",
+      "events": 33,
+      "steps": [
+        {
+          "h": "3E-7",
+          "positive_events": 33,
+          "negative_events": 33,
+          "max_error": 1.2317167112424832e-11
+        },
+        {
+          "h": "1E-7",
+          "positive_events": 33,
+          "negative_events": 33,
+          "max_error": 1.3685741227914565e-12
+        },
+        {
+          "h": "3E-8",
+          "positive_events": 33,
+          "negative_events": 33,
+          "max_error": 1.2317167104292537e-13
+        }
+      ]
+    },
+    {
+      "side": "right",
+      "events": 32,
+      "steps": [
+        {
+          "h": "3E-7",
+          "positive_events": 32,
+          "negative_events": 32,
+          "max_error": 1.2324948875122116e-11
+        },
+        {
+          "h": "1E-7",
+          "positive_events": 32,
+          "negative_events": 32,
+          "max_error": 1.369438763090196e-12
+        },
+        {
+          "h": "3E-8",
+          "positive_events": 32,
+          "negative_events": 32,
+          "max_error": 1.232494886698021e-13
+        }
+      ]
+    }
+  ],
+  "assembled_candidate": {
+    "derivative_contract": "full_branch_local_selected_global_extremum",
+    "nonlocal_matrix_nnz": 75189,
+    "assembled_candidate_nnz": 146123,
+    "native_same_state_hybrid_residual": {
+      "max_row_error": 1.7806260513340106e-09,
+      "failed_rows_1e8": 0,
+      "rows": []
+    },
+    "full_Jacobian_qualified": false,
+    "Newton_loop_run": false
+  },
+  "complete_direction_checks": [
+    {
+      "name": "n",
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 5.671466305178773e-09,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 9.57909165824408e-07,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 2.392915385900132e-08,
+              "failures_above_residual_rounding_estimate": 146
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 6.195032168125148e-12,
+              "failures_above_residual_rounding_estimate": 3
+            }
+          ]
+        },
+        {
+          "h": 0.0001,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 1.5717343165907845e-08,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 3.0686294033034313e-08,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 5.859777669807028e-08,
+              "failures_above_residual_rounding_estimate": 167
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 3.165438460269614e-12,
+              "failures_above_residual_rounding_estimate": 3
+            }
+          ]
+        },
+        {
+          "h": 3e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 6.621196903538029e-08,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 8.125171959807943e-06,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 1.2756124014874527e-07,
+              "failures_above_residual_rounding_estimate": 185
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 1.0115567228719307e-11,
+              "failures_above_residual_rounding_estimate": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "psi",
+      "steps": [
+        {
+          "h": 0.0003,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 4.7622513721616515e-09,
+              "failures_above_residual_rounding_estimate": 12
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 7.269883427267008e-08,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 2.652238820883029e-07,
+              "failures_above_residual_rounding_estimate": 216
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 1.2900108003262372e-09,
+              "failures_above_residual_rounding_estimate": 90
+            }
+          ]
+        },
+        {
+          "h": 0.0001,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 1.4868236699499086e-08,
+              "failures_above_residual_rounding_estimate": 27
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 1.8790005693227943e-06,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 8.256135421770366e-07,
+              "failures_above_residual_rounding_estimate": 237
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 2.369194309972976e-09,
+              "failures_above_residual_rounding_estimate": 114
+            }
+          ]
+        },
+        {
+          "h": 3e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 4.9638580939325456e-08,
+              "failures_above_residual_rounding_estimate": 17
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 6.311049845988603e-06,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 2.588353475725983e-06,
+              "failures_above_residual_rounding_estimate": 256
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 8.682284566278451e-09,
+              "failures_above_residual_rounding_estimate": 127
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "local",
+      "steps": [
+        {
+          "h": 3e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 7.661365638182996e-13,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 1.301494867625605e-05,
+              "failures_above_residual_rounding_estimate": 6
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 0.9974134768210106,
+              "failures_above_residual_rounding_estimate": 4
+            }
+          ]
+        },
+        {
+          "h": 1e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 2.4874162999340277e-12,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 3.848827778900567e-06,
+              "failures_above_residual_rounding_estimate": 1
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 0.9922008368298414,
+              "failures_above_residual_rounding_estimate": 4
+            }
+          ]
+        },
+        {
+          "h": 3e-06,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 6.5696013427212135e-12,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 9.995555607394387e-07,
+              "failures_above_residual_rounding_estimate": 1
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 0.9742156425756472,
+              "failures_above_residual_rounding_estimate": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "psi_local",
+      "steps": [
+        {
+          "h": 3e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 7.814081226971871e-11,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 2.584815469268084e-10,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 8.223035140542427e-11,
+              "failures_above_residual_rounding_estimate": 0
+            }
+          ]
+        },
+        {
+          "h": 1e-05,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 1.587067296697987e-10,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 2.369143525218974e-10,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 1.6409018127932904e-10,
+              "failures_above_residual_rounding_estimate": 0
+            }
+          ]
+        },
+        {
+          "h": 3e-06,
+          "blocks": [
+            {
+              "block": "Poisson",
+              "L1_symmetric_error": 1.1060970877888825e-09,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "load",
+              "L1_symmetric_error": 0.0,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "electron",
+              "L1_symmetric_error": 9.848305877741262e-10,
+              "failures_above_residual_rounding_estimate": 0
+            },
+            {
+              "block": "hole",
+              "L1_symmetric_error": 1.1872357935317955e-09,
+              "failures_above_residual_rounding_estimate": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "SG_isolation": {
+    "hybrid_actual_mobility": true,
+    "reference_increment_isolation_not_an_autonomous_candidate": true,
+    "directions": [
+      {
+        "name": "n",
+        "passive_residual_identity": true,
+        "max_SG_argument_wide_realized_error": 1.3875347116387502e-09,
+        "max_SG_and_force_wide_realized_error": 1.3872781953068157e-09
+      },
+      {
+        "name": "psi",
+        "passive_residual_identity": true,
+        "max_SG_argument_wide_realized_error": 4.217409169148902e-09,
+        "max_SG_and_force_wide_realized_error": 1.207638677697155e-10
+      }
+    ],
+    "local_current_radius": [
+      {
+        "cell": 2722,
+        "nodes": [
+          1550,
+          2084,
+          2567
+        ],
+        "current_norm": 5.329991949569385e+18,
+        "current_direction_norm": 3.5936327285135226e+26,
+        "relative_population_step_for_unit_current_change": "1.4831765937789905292814218170615489546356717485339424779025061023459018001453458E-8",
+        "coarse_three_step_ratios": [
+          2022.6856414692265,
+          674.2285471564089,
+          202.26856414692267
+        ]
+      },
+      {
+        "cell": 3763,
+        "nodes": [
+          2084,
+          1550,
+          2090
+        ],
+        "current_norm": 5.345153568838085e+18,
+        "current_direction_norm": 3.624943978932284e+26,
+        "relative_population_step_for_unit_current_change": "1.4745479102307348385848026414994864314051529574775220599539906504770310079459720E-8",
+        "coarse_three_step_ratios": [
+          2034.5218891738587,
+          678.1739630579528,
+          203.45218891738585
+        ]
+      },
+      {
+        "cell": 4682,
+        "nodes": [
+          2567,
+          2084,
+          2587
+        ],
+        "current_norm": 7.809345151603839e+18,
+        "current_direction_norm": 2.478606656832533e+26,
+        "relative_population_step_for_unit_current_change": "3.1506996602613729817601963039155158519721952924078930229849968056568505050393165E-8",
+        "coarse_three_step_ratios": [
+          952.1694618620452,
+          317.3898206206817,
+          95.21694618620451
+        ]
+      },
+      {
+        "cell": 4683,
+        "nodes": [
+          2567,
+          2587,
+          1546
+        ],
+        "current_norm": 9.786917233194813e+18,
+        "current_direction_norm": 2.479699936470231e+26,
+        "relative_population_step_for_unit_current_change": "3.9468151324495163994384050824669700467424562026804471670711693927325475910041637E-8",
+        "coarse_three_step_ratios": [
+          760.106541432587,
+          253.36884714419568,
+          76.0106541432587
+        ]
+      }
+    ]
+  },
+  "rejected_wide_SG_candidate": {
+    "same_primary": true,
+    "population_guard_failures": 0,
+    "max_fixed_budget_error": 0.00032756924772352317,
+    "fixed_budget_failed_1e8": 95,
+    "promoted_to_production": false
+  },
+  "SRH": {
+    "staged_control_counts": [
+      {
+        "h": 0.0003,
+        "counts": {
+          "actual": {
+            "nominal_error": 258,
+            "realized_error": 256
+          },
+          "numerator_only": {
+            "nominal_error": 134,
+            "realized_error": 121
+          },
+          "full_statistics": {
+            "nominal_error": 120,
+            "realized_error": 0
+          }
+        }
+      },
+      {
+        "h": 0.0001,
+        "counts": {
+          "actual": {
+            "nominal_error": 286,
+            "realized_error": 285
+          },
+          "numerator_only": {
+            "nominal_error": 155,
+            "realized_error": 135
+          },
+          "full_statistics": {
+            "nominal_error": 144,
+            "realized_error": 0
+          }
+        }
+      },
+      {
+        "h": 3e-05,
+        "counts": {
+          "actual": {
+            "nominal_error": 302,
+            "realized_error": 307
+          },
+          "numerator_only": {
+            "nominal_error": 179,
+            "realized_error": 166
+          },
+          "full_statistics": {
+            "nominal_error": 178,
+            "realized_error": 0
+          }
+        }
+      }
+    ],
+    "staged_baseline": {
+      "max_error": 7.40852539284098e-15,
+      "failed_1e8": 0
+    },
+    "actual_candidate": {
+      "precision_mode": "srh_wide",
+      "same_primary": true,
+      "max_native_same_state_fixed_budget_error": 1.780626051334041e-09,
+      "failed_native_rows_1e8": 0,
+      "population_guards_pass": true,
+      "source_resolved": true,
+      "private_candidate_only": true,
+      "production_promoted": false
+    },
+    "actual_candidate_steps": [
+      {
+        "h": 0.0003,
+        "nominal_failures": 245,
+        "realized_primary_failures": 192,
+        "max_realized_primary_error": 1.0
+      },
+      {
+        "h": 0.0001,
+        "nominal_failures": 266,
+        "realized_primary_failures": 230,
+        "max_realized_primary_error": 1.0
+      },
+      {
+        "h": 3e-05,
+        "nominal_failures": 289,
+        "realized_primary_failures": 259,
+        "max_realized_primary_error": 1.0
+      }
+    ],
+    "output_precision": {
+      "isolation_only_no_failure_reclassified": true,
+      "maximum_actual_rate_minus_wide_over_ulp": 0.5319954492908543,
+      "steps": [
+        {
+          "h": 0.0003,
+          "full_precision_failures_1e5": 0,
+          "double_output_control_failures_1e5": 192,
+          "actual_failures_1e5": 192,
+          "resolvable_actual_failures": 0,
+          "above_final_output_half_ulp_budget": 0
+        },
+        {
+          "h": 0.0001,
+          "full_precision_failures_1e5": 0,
+          "double_output_control_failures_1e5": 230,
+          "actual_failures_1e5": 230,
+          "resolvable_actual_failures": 0,
+          "above_final_output_half_ulp_budget": 0
+        },
+        {
+          "h": 3e-05,
+          "full_precision_failures_1e5": 0,
+          "double_output_control_failures_1e5": 259,
+          "actual_failures_1e5": 259,
+          "resolvable_actual_failures": 0,
+          "above_final_output_half_ulp_budget": 0
+        }
+      ]
+    }
+  },
+  "verification": {
+    "complete_Cpp_evaluations": 29,
+    "focused_Cpp_source_evaluations": 15,
+    "reused_previous_local_potential_states": 7,
+    "existing_Catch2_cases_rerun": 12,
+    "existing_Catch2_assertions_rerun": 123,
+    "new_path_property_tests": 4,
+    "evidence_tests": 21,
+    "previous_seals_verified": [
+      {
+        "name": "bvmethods_n4_primary_jacobian_20261018",
+        "files": 90,
+        "unchanged": true
+      },
+      {
+        "name": "bvmethods_n4_sg_variable_path_20261018",
+        "files": 69,
+        "unchanged": true
+      },
+      {
+        "name": "bvmethods_n4_kernel_linear_candidate_20261018",
+        "files": 64,
+        "unchanged": true
+      }
+    ],
+    "production_or_threshold_changed": false
+  },
+  "remaining": [
+    "SG absolute-value compatibility with deployable preserved reference/increment",
+    "SRH output precision through actual assembly, not only internal arithmetic",
+    "weak rows and primary rounding in resolvable directions",
+    "five-state full path derivative extension and native default/explicit/full contracts",
+    "C++ actual full-chain dispatch and complete RHS, load and KCL gates",
+    "autonomous linear backward error and real Newton acceptance"
+  ]
+}

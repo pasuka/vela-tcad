@@ -1,0 +1,1976 @@
+{
+  "schema": "vela.validation.bvmethods_state_contact_mapping.v1",
+  "environment": {
+    "execution": "T470p",
+    "toolchain": "Windows UCRT64 Release/private O1",
+    "mesh_nodes": 2600,
+    "device_dimension": 7800,
+    "temperature_K": 300,
+    "physics": "no Band2Band; Fermi, OldSlotboom, mobility, SRH, avalanche",
+    "geometry": "barycentric; non-obtuse qualification disabled",
+    "units": "um, cm^-3, V, A/um",
+    "linear_solver_executed": false,
+    "new_native_run": false
+  },
+  "arms": {
+    "production_projection": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 0.005200715436656786,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 10935945.374941189,
+        "sum_terminal_A_per_um": 0.01040126800911455,
+        "load_V": -52007.14961094035,
+        "residual_blocks_L2": [
+          6.369444464982391,
+          82.84251585048281,
+          0.0018575170778552586
+        ],
+        "population_roundtrip_max_relative": 3.4205971388701073e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001918809336630689,
+          "source": 0.00019188093366262482,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00019107370317028582
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 0.005200715638419336,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 5069641.907296731,
+        "sum_terminal_A_per_um": 0.010401267623283146,
+        "load_V": -52007.14612564905,
+        "residual_blocks_L2": [
+          6.390690502170583,
+          82.84251545283728,
+          0.0018575170512348418
+        ],
+        "population_roundtrip_max_relative": 3.3739677718358507e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00019188093366195869,
+          "source": 0.00019188093366262482,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00019107370378635032
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 0.00520071561810822,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 3288437.180820673,
+        "sum_terminal_A_per_um": 0.010401267009654182,
+        "load_V": -52007.140365928215,
+        "residual_blocks_L2": [
+          6.425675158354388,
+          82.84251482558692,
+          0.00185751702238244
+        ],
+        "population_roundtrip_max_relative": 3.362865541589599e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00019188093366195869,
+          "source": 0.00019188093366262482,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.0001910737044117372
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 0.0052007150776932345,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 2597188.429197252,
+        "sum_terminal_A_per_um": 0.010401266019779455,
+        "load_V": -52007.13075253572,
+        "residual_blocks_L2": [
+          6.4847864295636395,
+          82.84251382216979,
+          0.001857517003549945
+        ],
+        "population_roundtrip_max_relative": 3.3595348725157237e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00019188093366317993,
+          "source": 0.00019188093366262482,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00019107370488102848
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 0.0052007137550832425,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 2374914.618744938,
+        "sum_terminal_A_per_um": 0.010401264497062803,
+        "load_V": -52007.1156523113,
+        "residual_blocks_L2": [
+          6.580928163653462,
+          82.84251229915256,
+          0.001857517022860123
+        ],
+        "population_roundtrip_max_relative": 3.4794389591752406e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001918809336615146,
+          "source": 0.00019188093366262482,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00019107370508886223
+      }
+    ],
+    "dos_only": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 0.004324767564121973,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 9094022.070742397,
+        "sum_terminal_A_per_um": 0.008649372139120794,
+        "load_V": -43247.670885592226,
+        "residual_blocks_L2": [
+          6.364497794049968,
+          68.86880477710645,
+          0.0018578691555423427
+        ],
+        "population_roundtrip_max_relative": 3.4305891460917337e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001594186878816073,
+          "source": 0.0001594186878811632,
+          "substrate": 6.982669925714724e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.0001588630556853543
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 0.00432476790940976,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 4215770.536454821,
+        "sum_terminal_A_per_um": 0.008649371896345364,
+        "load_V": -43247.6688355533,
+        "residual_blocks_L2": [
+          6.385760257312163,
+          68.8688044620644,
+          0.0018578691652721723
+        ],
+        "population_roundtrip_max_relative": 3.3728575488112256e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015941868788049707,
+          "source": 0.0001594186878811632,
+          "substrate": 6.982669925714724e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00015886305630141706
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 0.004324768117195367,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 2734571.248146571,
+        "sum_terminal_A_per_um": 0.008649371510341083,
+        "load_V": -43247.66535679969,
+        "residual_blocks_L2": [
+          6.420771726176823,
+          68.8688039637777,
+          0.001857869189272529
+        ],
+        "population_roundtrip_max_relative": 3.3639757646142243e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015941868788049707,
+          "source": 0.0001594186878811632,
+          "substrate": 6.982669925714724e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00015886305692680222
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 0.004324767944513708,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 2159748.461645987,
+        "sum_terminal_A_per_um": 0.008649370887840105,
+        "load_V": -43247.659420740456,
+        "residual_blocks_L2": [
+          6.479927646663032,
+          68.86880316325237,
+          0.0018578692449997844
+        ],
+        "population_roundtrip_max_relative": 3.3595348725157237e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001594186878817183,
+          "source": 0.0001594186878811632,
+          "substrate": 6.982669925714724e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.00015886305739609696
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 0.004324767187657696,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 1974911.9879268825,
+        "sum_terminal_A_per_um": 0.00864936993071758,
+        "load_V": -43247.64997805584,
+        "residual_blocks_L2": [
+          6.576140292491386,
+          68.86880194181815,
+          0.0018578693599143618
+        ],
+        "population_roundtrip_max_relative": 3.4783287361506154e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015941868788005298,
+          "source": 0.0001594186878811632,
+          "substrate": 6.982669925714724e-06
+        },
+        "node1071_qfn_minus_drain_V": -0.0001588630576039307
+      }
+    ],
+    "ni_only": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 0.005007497486003724,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 10529651.053947488,
+        "sum_terminal_A_per_um": 0.01001499232901477,
+        "load_V": -50074.97010440973,
+        "residual_blocks_L2": [
+          6.368303411279267,
+          79.88274927744565,
+          2.1787374630457407e-05
+        ],
+        "population_roundtrip_max_relative": 3.4205971388701073e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001849798275284087,
+          "source": 0.0001849798275279646,
+          "substrate": 8.02326323157132e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00018417259702396827
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 0.0050074977119733384,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 4881293.618624049,
+        "sum_terminal_A_per_um": 0.010014991967251474,
+        "load_V": -50074.966861189074,
+        "residual_blocks_L2": [
+          6.389553230781503,
+          79.8827488958523,
+          2.178512773632647e-05
+        ],
+        "population_roundtrip_max_relative": 3.3739677718358507e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00018497982752729847,
+          "source": 0.0001849798275279646,
+          "substrate": 8.02326323157132e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00018417259764003276
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 0.005007497730117274,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 3166264.5556006683,
+        "sum_terminal_A_per_um": 0.01001499139193767,
+        "load_V": -50074.96148601876,
+        "residual_blocks_L2": [
+          6.4245440612214,
+          79.88274829416275,
+          2.1782662176241546e-05
+        ],
+        "population_roundtrip_max_relative": 3.362865541589599e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00018497982752729847,
+          "source": 0.0001849798275279646,
+          "substrate": 8.02326323157132e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00018417259826541965
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 0.0050074972516977465,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 2500697.2183327377,
+        "sum_terminal_A_per_um": 0.010014990463952163,
+        "load_V": -50074.952492580844,
+        "residual_blocks_L2": [
+          6.483665614643464,
+          79.88274733203697,
+          2.1781070430382775e-05
+        ],
+        "population_roundtrip_max_relative": 3.3595348725157237e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00018497982752851971,
+          "source": 0.0001849798275279646,
+          "substrate": 8.02326323157132e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00018417259873471092
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 0.005007496024537264,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 2286681.382365877,
+        "sum_terminal_A_per_um": 0.010014989036637608,
+        "load_V": -50074.938346851515,
+        "residual_blocks_L2": [
+          6.579823680180789,
+          79.88274587263099,
+          2.1782699560036285e-05
+        ],
+        "population_roundtrip_max_relative": 3.4794389591752406e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00018497982752685438,
+          "source": 0.0001849798275279646,
+          "substrate": 8.02326323157132e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00018417259894254467
+      }
+    ],
+    "material_combined": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 0.0041314762464821015,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 8687573.475314109,
+        "sum_terminal_A_per_um": 0.008262949725010642,
+        "load_V": -41314.7577091935,
+        "residual_blocks_L2": [
+          6.363546134739828,
+          65.91118816799668,
+          2.1957807187481166e-05
+        ],
+        "population_roundtrip_max_relative": 3.4305891460917337e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001525175817351787,
+          "source": 0.00015251758173473462,
+          "substrate": 8.156377928614233e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00015196194953892572
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 0.004131476616035135,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 4027350.7299074456,
+        "sum_terminal_A_per_um": 0.008262949506363805,
+        "load_V": -41314.75590180704,
+        "residual_blocks_L2": [
+          6.384811755345989,
+          65.91118786983378,
+          2.1958653030396718e-05
+        ],
+        "population_roundtrip_max_relative": 3.3728575488112256e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015251758173406849,
+          "source": 0.00015251758173473462,
+          "substrate": 8.156377928614233e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.0001519619501549902
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 0.0041314768623706664,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 2612352.232715096,
+        "sum_terminal_A_per_um": 0.008262949158770507,
+        "load_V": -41314.75280855269,
+        "residual_blocks_L2": [
+          6.419828378269399,
+          65.91118739834388,
+          2.1960678280091913e-05
+        ],
+        "population_roundtrip_max_relative": 3.3639757646142243e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015251758173406849,
+          "source": 0.00015251758173473462,
+          "substrate": 8.156377928614233e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.0001519619507803771
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 0.004131476751838377,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 2063220.6121341914,
+        "sum_terminal_A_per_um": 0.00826294859831446,
+        "load_V": -41314.747493987146,
+        "residual_blocks_L2": [
+          6.478992881947363,
+          65.91118664093955,
+          2.1965406425777138e-05
+        ],
+        "population_roundtrip_max_relative": 3.3595348725157237e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.00015251758173528973,
+          "source": 0.00015251758173473462,
+          "substrate": 8.156377928614233e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00015196195124966838
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 0.004131476090671404,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 1886645.248626261,
+        "sum_terminal_A_per_um": 0.008262947736834203,
+        "load_V": -41314.73900819291,
+        "residual_blocks_L2": [
+          6.575219160340153,
+          65.91118548561539,
+          2.197510648364592e-05
+        ],
+        "population_roundtrip_max_relative": 3.4783287361506154e-13,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 0.0001525175817336244,
+          "source": 0.00015251758173473462,
+          "substrate": 8.156377928614233e-08
+        },
+        "node1071_qfn_minus_drain_V": -0.00015196195145750213
+      }
+    ],
+    "jd_only": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 0.0010733135423866723,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 2256938.3549792534,
+        "sum_terminal_A_per_um": 0.0021464640754992916,
+        "load_V": -10733.130668239213,
+        "residual_blocks_L2": [
+          6.353834727045845,
+          17.03470974393621,
+          0.0018575170778553024
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 3.945419416817586e-05,
+          "source": 3.945419416773177e-05,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -3.9201749996387036e-05
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 0.0010733139634567664,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 1046262.4184311852,
+        "sum_terminal_A_per_um": 0.0021464639069973686,
+        "load_V": -10733.129376023357,
+        "residual_blocks_L2": [
+          6.375132670582355,
+          17.034709661412265,
+          0.0018575170512348897
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 3.945419416706564e-05,
+          "source": 3.945419416773177e-05,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -3.920175061245153e-05
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 0.001073314290728606,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 678660.9290166624,
+        "sum_terminal_A_per_um": 0.0021464636389535944,
+        "load_V": -10733.127092132081,
+        "residual_blocks_L2": [
+          6.410202053691317,
+          17.034709539123547,
+          0.0018575170223825539
+        ],
+        "population_roundtrip_max_relative": 1.0103029524088925e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 3.945419416706564e-05,
+          "source": 3.945419416773177e-05,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -3.920175123783495e-05
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 0.0010733143090211207,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 536002.3256873286,
+        "sum_terminal_A_per_um": 0.0021464632062736105,
+        "load_V": -10733.123065814581,
+        "residual_blocks_L2": [
+          6.469454411316158,
+          17.03470935572942,
+          0.0018575170035500098
+        ],
+        "population_roundtrip_max_relative": 1.021405182655144e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 3.945419416828688e-05,
+          "source": 3.945419416773177e-05,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -3.9201751707129695e-05
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 0.0010733138435569632,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 490129.7649141696,
+        "sum_terminal_A_per_um": 0.0021464625400293485,
+        "load_V": -10733.116537048509,
+        "residual_blocks_L2": [
+          6.5658202082341495,
+          17.03470909910997,
+          0.0018575170228602672
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 3.945419416662155e-05,
+          "source": 3.945419416773177e-05,
+          "substrate": 6.981338778744295e-06
+        },
+        "node1071_qfn_minus_drain_V": -3.9201751914963445e-05
+      }
+    ],
+    "jd_material": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 3.390204633075533e-06,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 7127.845351943433,
+        "sum_terminal_A_per_um": 6.77749582714314e-06,
+        "load_V": -33.89729070324572,
+        "residual_blocks_L2": [
+          6.352983477591059,
+          0.05247805258217083,
+          2.1957807163087504e-05
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.2152924522279562e-07,
+          "source": 1.2152924477870641e-07,
+          "substrate": 8.156377911960888e-08
+        },
+        "node1071_qfn_minus_drain_V": -1.2138487570645395e-07
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 3.3907942895358425e-06,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 3304.3366911774215,
+        "sum_terminal_A_per_um": 6.777495406955377e-06,
+        "load_V": -33.897684351051645,
+        "residual_blocks_L2": [
+          6.374284221651345,
+          0.05247805233511686,
+          2.1958653008713955e-05
+        ],
+        "population_roundtrip_max_relative": 1.0658141036401503e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.2152924533381793e-07,
+          "source": 1.2152924477870641e-07,
+          "substrate": 8.156377911960888e-08
+        },
+        "node1071_qfn_minus_drain_V": -1.2138549177094504e-07
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 3.391389535789524e-06,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 2143.392359523532,
+        "sum_terminal_A_per_um": 6.777494828567248e-06,
+        "load_V": -33.898080203914525,
+        "residual_blocks_L2": [
+          6.409358177963524,
+          0.05247805315949301,
+          2.196067825503661e-05
+        ],
+        "population_roundtrip_max_relative": 1.021405182655144e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.2152924533381793e-07,
+          "source": 1.2152924477870641e-07,
+          "substrate": 8.156377911960888e-08
+        },
+        "node1071_qfn_minus_drain_V": -1.213861171578401e-07
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 3.3918399426081126e-06,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 1692.853770658424,
+        "sum_terminal_A_per_um": 6.777493876296634e-06,
+        "load_V": -33.89837502945615,
+        "residual_blocks_L2": [
+          6.468618154823904,
+          0.05247805339621307,
+          2.196540640424302e-05
+        ],
+        "population_roundtrip_max_relative": 1.021405182655144e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.2152924533381793e-07,
+          "source": 1.2152924477870641e-07,
+          "substrate": 8.156377911960888e-08
+        },
+        "node1071_qfn_minus_drain_V": -1.213865864491126e-07
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 3.392039450354239e-06,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 1547.9811301711097,
+        "sum_terminal_A_per_um": 6.777492432536242e-06,
+        "load_V": -33.89849598241914,
+        "residual_blocks_L2": [
+          6.564996058988842,
+          0.05247805392524743,
+          2.1975106462903728e-05
+        ],
+        "population_roundtrip_max_relative": 1.0880185641326534e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.2152924477870641e-07,
+          "source": 1.2152924477870641e-07,
+          "substrate": 8.156377911960888e-08
+        },
+        "node1071_qfn_minus_drain_V": -1.213867942828628e-07
+      }
+    ],
+    "contract_first_attempt": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 2.626538059422137e-06,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 5522.024614484048,
+        "sum_terminal_A_per_um": 5.249617809644278e-06,
+        "load_V": -26.26062496671177,
+        "residual_blocks_L2": [
+          6.352983336945795,
+          0.040246175914964384,
+          2.7944606205766112e-05
+        ],
+        "population_roundtrip_max_relative": 9.547918011776346e-15,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 9.850057680615976e-08,
+          "source": 9.850057636207055e-08,
+          "substrate": 1.0502791591981975e-07
+        },
+        "node1071_qfn_minus_drain_V": -9.323989091925e-08
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 2.6271278001441636e-06,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 2559.916755412313,
+        "sum_terminal_A_per_um": 5.249617473490374e-06,
+        "load_V": -26.26101945713486,
+        "residual_blocks_L2": [
+          6.374284081451113,
+          0.04024617588593119,
+          2.794460593524822e-05
+        ],
+        "population_roundtrip_max_relative": 1.0658141036401503e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 9.850057569593673e-08,
+          "source": 9.850057636207055e-08,
+          "substrate": 1.0502791591981975e-07
+        },
+        "node1071_qfn_minus_drain_V": -9.324050698374109e-08
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 2.6277231801731836e-06,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 1660.5223497746742,
+        "sum_terminal_A_per_um": 5.2496170287786605e-06,
+        "load_V": -26.26141664775112,
+        "residual_blocks_L2": [
+          6.409358038490686,
+          0.040246177019627016,
+          2.7944605998199418e-05
+        ],
+        "population_roundtrip_max_relative": 9.880984919163893e-15,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 9.850057558491443e-08,
+          "source": 9.850057636207055e-08,
+          "substrate": 1.0502791591981975e-07
+        },
+        "node1071_qfn_minus_drain_V": -9.324113237063614e-08
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 2.628173803080571e-06,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 1311.4859019351616,
+        "sum_terminal_A_per_um": 5.249616292695396e-06,
+        "load_V": -26.261713634180733,
+        "residual_blocks_L2": [
+          6.468618016565492,
+          0.0402461776746606,
+          2.794460582890279e-05
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 9.850057680615976e-08,
+          "source": 9.850057636207055e-08,
+          "substrate": 1.0502791591981975e-07
+        },
+        "node1071_qfn_minus_drain_V": -9.324160166190865e-08
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 2.6283736430930397e-06,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 1199.2517175220464,
+        "sum_terminal_A_per_um": 5.249615180356083e-06,
+        "load_V": -26.26183790980715,
+        "residual_blocks_L2": [
+          6.5649959226636625,
+          0.04024617866171047,
+          2.7944606037556282e-05
+        ],
+        "population_roundtrip_max_relative": 1.0547118733938987e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 9.850057502980292e-08,
+          "source": 9.850057636207055e-08,
+          "substrate": 1.0502791591981975e-07
+        },
+        "node1071_qfn_minus_drain_V": -9.324180949565886e-08
+      }
+    ],
+    "consistent_contract": [
+      {
+        "step": 1,
+        "outer_V": 0.01,
+        "inner_V": 0.00524437249039996,
+        "drain_A_per_um": 5.099712280136291e-10,
+        "native_drain_A_per_um": 4.75561534260427e-10,
+        "relative_drain_error": 0.07235592299683069,
+        "sum_terminal_A_per_um": 4.702547222151211e-14,
+        "load_V": -0.00034408477053625083,
+        "residual_blocks_L2": [
+          6.3529828461116296,
+          2.7698080760918046e-06,
+          1.9154877450739353e-11
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.432187701766452e-14,
+          "source": 1.4765966227514582e-14,
+          "substrate": 1.4432899320127035e-15
+        },
+        "node1071_qfn_minus_drain_V": -5.365707878013382e-13
+      },
+      {
+        "step": 2,
+        "outer_V": 0.0235533333333333,
+        "inner_V": 0.013294789026557,
+        "drain_A_per_um": 1.1000727067558386e-09,
+        "native_drain_A_per_um": 1.0258544306807e-09,
+        "relative_drain_error": 0.07234776577987923,
+        "sum_terminal_A_per_um": 7.046430049050979e-14,
+        "load_V": -0.0007421827607820841,
+        "residual_blocks_L2": [
+          6.3742835920878465,
+          5.976925378763446e-06,
+          6.745467480458355e-12
+        ],
+        "population_roundtrip_max_relative": 9.992007221626409e-15,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.3100631690576847e-14,
+          "source": 1.4765966227514582e-14,
+          "substrate": 1.4432899320127035e-15
+        },
+        "node1071_qfn_minus_drain_V": -1.1526352788893135e-12
+      },
+      {
+        "step": 3,
+        "outer_V": 0.0419226177777778,
+        "inner_V": 0.0261074637970595,
+        "drain_A_per_um": 1.6960263024420943e-09,
+        "native_drain_A_per_um": 1.58151539792982e-09,
+        "relative_drain_error": 0.07240581069407703,
+        "sum_terminal_A_per_um": 1.984564818769137e-13,
+        "load_V": -0.0011451090437026405,
+        "residual_blocks_L2": [
+          6.4093575515375045,
+          9.216888876315642e-06,
+          7.0786335181082495e-12
+        ],
+        "population_roundtrip_max_relative": 1.0436096431476471e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.3100631690576847e-14,
+          "source": 1.4765966227514582e-14,
+          "substrate": 1.4432899320127035e-15
+        },
+        "node1071_qfn_minus_drain_V": -1.7780221739371882e-12
+      },
+      {
+        "step": 4,
+        "outer_V": 0.0668191212948148,
+        "inner_V": 0.0467947246698361,
+        "drain_A_per_um": 2.1475766283752057e-09,
+        "native_drain_A_per_um": 2.00243964465106e-09,
+        "relative_drain_error": 0.0724800790434994,
+        "sum_terminal_A_per_um": 3.8929048044895734e-13,
+        "load_V": -0.0014513696587733493,
+        "residual_blocks_L2": [
+          6.468617533644626,
+          1.1657138957695275e-05,
+          6.819033352964899e-12
+        ],
+        "population_roundtrip_max_relative": 1.0658141036401503e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.432187701766452e-14,
+          "source": 1.4765966227514582e-14,
+          "substrate": 1.4432899320127035e-15
+        },
+        "node1071_qfn_minus_drain_V": -2.247313446446242e-12
+      },
+      {
+        "step": 5,
+        "outer_V": 0.100562182394906,
+        "inner_V": 0.0786636612716569,
+        "drain_A_per_um": 2.3488443108087154e-09,
+        "native_drain_A_per_um": 2.18985201580831e-09,
+        "relative_drain_error": 0.07260412751759326,
+        "sum_terminal_A_per_um": 7.040041585853392e-13,
+        "load_V": -0.0015899219848380594,
+        "residual_blocks_L2": [
+          6.564995446182113,
+          1.2642325897295314e-05,
+          6.850590693235097e-12
+        ],
+        "population_roundtrip_max_relative": 1.0658141036401503e-14,
+        "contact_psi_projection_max_V": {
+          "gate": 1.1102230246251565e-15,
+          "drain": 1.3433698597964394e-14,
+          "source": 1.4765966227514582e-14,
+          "substrate": 1.4432899320127035e-15
+        },
+        "node1071_qfn_minus_drain_V": -2.455147196656071e-12
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "production_projection/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 old state exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/1 old current exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 old state exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/2 old current exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 old state exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/3 old current exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 old state exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/4 old current exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 old state exact",
+      "pass": true
+    },
+    {
+      "name": "production_projection/5 old current exact",
+      "pass": true
+    },
+    {
+      "name": "dos_only/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "dos_only/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "dos_only/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "dos_only/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "dos_only/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "dos_only/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "dos_only/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "dos_only/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "dos_only/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "dos_only/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "dos_only/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "dos_only/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "dos_only/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "dos_only/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "dos_only/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "dos_only/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "ni_only/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "ni_only/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "ni_only/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "ni_only/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "ni_only/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "ni_only/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "ni_only/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "ni_only/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "ni_only/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "ni_only/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "ni_only/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "ni_only/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "ni_only/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "ni_only/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "ni_only/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "ni_only/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "material_combined/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "material_combined/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "material_combined/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "material_combined/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "material_combined/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "material_combined/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "material_combined/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "material_combined/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "material_combined/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "material_combined/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "material_combined/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "material_combined/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "material_combined/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "material_combined/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "material_combined/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "material_combined/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_only/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_only/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_only/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_only/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_only/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_only/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_only/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_only/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_only/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_only/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_only/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_only/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_only/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_only/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_only/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_only/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_material/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_material/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_material/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_material/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_material/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_material/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_material/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_material/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_material/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_material/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_material/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_material/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "jd_material/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "jd_material/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "jd_material/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "jd_material/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "contract_first_attempt/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/1 node identity",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/1 residual norm",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/1 n coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/1 p coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/1 population mapping",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/2 node identity",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/2 residual norm",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/2 n coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/2 p coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/2 population mapping",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/3 node identity",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/3 residual norm",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/3 n coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/3 p coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/3 population mapping",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/4 node identity",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/4 residual norm",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/4 n coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/4 p coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/4 population mapping",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/5 node identity",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/5 residual norm",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/5 n coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/5 p coverage",
+      "pass": true
+    },
+    {
+      "name": "consistent_contract/5 population mapping",
+      "pass": true
+    },
+    {
+      "name": "independent math count",
+      "pass": true
+    },
+    {
+      "name": "independent contact math",
+      "pass": true
+    },
+    {
+      "name": "unchanged production src/solver/NewtonSolver.cpp",
+      "pass": true
+    },
+    {
+      "name": "unchanged production src/equation/CoupledDDAssembler.cpp",
+      "pass": true
+    },
+    {
+      "name": "unchanged production src/physics/CarrierStatistics.cpp",
+      "pass": true
+    },
+    {
+      "name": "unchanged production include/vela/equation/AssemblerUtils.h",
+      "pass": true
+    },
+    {
+      "name": "unchanged production include/vela/core/PhysicalConstants.h",
+      "pass": true
+    },
+    {
+      "name": "unchanged production build-release/libvela_core.a",
+      "pass": true
+    },
+    {
+      "name": "repeat/1/accepted_projected_nodes.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/1/accepted_projected_edges.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/1/native.json",
+      "pass": true
+    },
+    {
+      "name": "repeat/1/current residual state hash",
+      "pass": true
+    },
+    {
+      "name": "repeat/2/accepted_projected_nodes.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/2/accepted_projected_edges.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/2/native.json",
+      "pass": true
+    },
+    {
+      "name": "repeat/2/current residual state hash",
+      "pass": true
+    },
+    {
+      "name": "repeat/3/accepted_projected_nodes.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/3/accepted_projected_edges.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/3/native.json",
+      "pass": true
+    },
+    {
+      "name": "repeat/3/current residual state hash",
+      "pass": true
+    },
+    {
+      "name": "repeat/4/accepted_projected_nodes.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/4/accepted_projected_edges.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/4/native.json",
+      "pass": true
+    },
+    {
+      "name": "repeat/4/current residual state hash",
+      "pass": true
+    },
+    {
+      "name": "repeat/5/accepted_projected_nodes.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/5/accepted_projected_edges.csv",
+      "pass": true
+    },
+    {
+      "name": "repeat/5/native.json",
+      "pass": true
+    },
+    {
+      "name": "repeat/5/current residual state hash",
+      "pass": true
+    },
+    {
+      "name": "remote input mesh.json",
+      "pass": true
+    },
+    {
+      "name": "remote input doping.csv",
+      "pass": true
+    },
+    {
+      "name": "remote input materials.json",
+      "pass": true
+    }
+  ],
+  "contact_math": {
+    "vt_native": 0.025851995266484913,
+    "vt_vela": 0.025851999786435535,
+    "base_ni_native": 14638805412.559162,
+    "gap_eV": 1.1082092307692308,
+    "arms": {
+      "combined_current": {
+        "count": 155,
+        "max_error_V": 1.2152924533381793e-07,
+        "by_contact": {
+          "drain": 1.2152924533381793e-07,
+          "source": 1.215292446676841e-07,
+          "substrate": 8.156377911960888e-08
+        }
+      },
+      "consistent_constants": {
+        "count": 155,
+        "max_error_V": 1.7763568394002505e-15,
+        "by_contact": {
+          "drain": 1.7763568394002505e-15,
+          "source": 8.881784197001252e-16,
+          "substrate": 1.4988010832439613e-15
+        }
+      },
+      "native_vt_only": {
+        "count": 155,
+        "max_error_V": 1.7763568394002505e-15,
+        "by_contact": {
+          "drain": 1.7763568394002505e-15,
+          "source": 8.881784197001252e-16,
+          "substrate": 1.4988010832439613e-15
+        }
+      }
+    }
+  },
+  "qualification": {
+    "production_changes": false,
+    "production_acceptance_or_threshold_changes": false,
+    "complete_rhs": false,
+    "native_low_parts_bound": false,
+    "Jv_or_Newton_qualified": false,
+    "complete_QS": false,
+    "contact_boundary_mapping": true,
+    "free_population_roundtrip": true,
+    "mapping_scope": "private explicit material/statistics/thermal-voltage contract; reconstructed QF, no native low parts",
+    "private_contact_mapping": true,
+    "free_population_mapping": true,
+    "native_QF_low_parts": false,
+    "production_promoted": false
+  },
+  "run_counts": {
+    "completed_native_projection_diagnostic_executions": 45,
+    "independent_contact_math_samples": 465,
+    "consistent_contact_math_samples": 155,
+    "checks": 241,
+    "repeat_states": 5
+  }
+}

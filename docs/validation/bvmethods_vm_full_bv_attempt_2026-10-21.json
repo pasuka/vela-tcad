@@ -1,0 +1,133 @@
+{
+  "scope": "private no-BTBT cold-start BV diagnostic",
+  "status": "remote_status_unavailable_after_start",
+  "native_settings": {
+    "normalized_initial": 1e-07,
+    "normalized_min": 1e-10,
+    "normalized_max": 0.025,
+    "outer_goal_V": 100000.0,
+    "increment": 1.41,
+    "stop_current_A_per_um": 0.0013
+  },
+  "vela_settings": {
+    "initial_outer_step_V": 0.01,
+    "minimum_outer_step_V": 1e-05,
+    "maximum_outer_step_V": 2500,
+    "growth_factor": 1.41,
+    "shrink_factor": 0.5,
+    "max_retries": 16,
+    "external_circuit": "nested_scalar",
+    "resistor_Ohm_um": 10000000.0,
+    "max_iter": 20,
+    "reltol": 1e-08,
+    "abstol": 1e-18
+  },
+  "zero_comparison": {
+    "coordinate_max_error_um": 0.0,
+    "fields": {
+      "ElectrostaticPotential": {
+        "nodes": 2600,
+        "max_error": 3.6992631180510216e-13,
+        "worst_node": 300,
+        "reference_at_worst": [
+          -0.4109176698487046
+        ],
+        "candidate_at_worst": [
+          -0.4109176698490745
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.001,
+        "pass": true,
+        "failed_nodes": 0
+      },
+      "eDensity": {
+        "nodes": 2152,
+        "max_error": 1.4316103858038944e-11,
+        "worst_node": 300,
+        "reference_at_worst": [
+          4178.515108410492
+        ],
+        "candidate_at_worst": [
+          4178.515108350672
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.009950330853168092,
+        "pass": true,
+        "failed_nodes": 0
+      },
+      "hDensity": {
+        "nodes": 2152,
+        "max_error": 3.7699632311928076e-10,
+        "worst_node": 229,
+        "reference_at_worst": [
+          265.73068114560925
+        ],
+        "candidate_at_worst": [
+          265.7306810454298
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.009950330853168092,
+        "pass": true,
+        "failed_nodes": 0
+      },
+      "ElectricField": {
+        "nodes": 2600,
+        "max_error": 436882.4187627712,
+        "worst_node": 1286,
+        "reference_at_worst": [
+          443636.0345897154,
+          5.125582981527711e-12
+        ],
+        "candidate_at_worst": [
+          880518.4533524866,
+          -7.86148825363363e-12,
+          0.0
+        ],
+        "conflicting_region_duplicates": 0,
+        "max_over_reference_peak": 0.3255271798227084,
+        "barycentric_weighted_L1_relative_error": 0.014774309884913307,
+        "pass": false,
+        "weighting": "fixed same-mesh barycentric comparison weights; not the private charge-volume policy"
+      }
+    },
+    "native_BTBT_all_zero": true,
+    "vela_BTBT_all_zero": true,
+    "scope": "cold-zero private candidate vs archived native no-BTBT zero; independent configured model, no cmd digest equivalence claimed"
+  },
+  "complete_curve": false,
+  "production_acceptance_changed": false,
+  "zero_exit_code": 0,
+  "initialization_iterations": 7,
+  "nonzero_accepted_points_confirmed": 0,
+  "minimum_step_attempt_confirmed": false,
+  "matched_inner_control": {
+    "bias_V": 0.0052443724904,
+    "status": "submitted_final_status_not_retrieved"
+  },
+  "observed_failed_trials": [
+    {
+      "outer_V": 0.01,
+      "trial_inner_V": 0.01,
+      "newton_updates": 4,
+      "row_violations": 967,
+      "row_max_ratio": 2.0017948781096027,
+      "global_continuity_satisfied": false,
+      "reason": "global_continuity_closure_line_search_rejected"
+    },
+    {
+      "outer_V": 0.005,
+      "trial_inner_V": 0.005,
+      "newton_updates": 9,
+      "row_violations": 420,
+      "row_max_ratio": 1.954698078001551,
+      "global_continuity_satisfied": true,
+      "reason": "carrier_row_convergence_line_search_rejected"
+    }
+  ],
+  "evidence": {
+    "zero_snapshot_archive_sha256": "fc19708d29c31d133ed24e80ac9ec6cd303038b1de811a0f7f9754b63516e236",
+    "previous_export_failure_files_verified": 12,
+    "complete_sweep_archive_retrieved": false,
+    "failed_trial_provenance": "successful remote read of boundary_evaluations.csv, final archive pending"
+  }
+}

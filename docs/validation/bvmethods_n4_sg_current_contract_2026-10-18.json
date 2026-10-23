@@ -1,0 +1,467 @@
+{
+  "schema": "vela.validation.bvmethods.n4.sg_current_contract.v1",
+  "date": "2026-10-18",
+  "status": "N4 ongoing; no model or tolerance changes; no Newton or QS qualification",
+  "configuration": {
+    "reference": "T-2022.03-SP2 installed-library BVmethods resistor",
+    "temperature_K": 300,
+    "nodes": 2600,
+    "tri3_cells": 5020,
+    "free_carrier_nodes": 2121,
+    "augmented_unknowns": 6843,
+    "resistance_ohm_um": 10000000.0
+  },
+  "scope": "21 previously assembled paired states plus one compatibility control; independent SG replay only; no new native perturbed states or full residual assembly",
+  "canonical_baseline_absolute_failures": 95,
+  "analysis": {
+    "control_edges_bit_exact": 9070,
+    "directions": {
+      "n": {
+        "states": 7,
+        "baseline_projected_compatibility_difference": {
+          "failed": 0,
+          "max": 1.1653872524302733e-14
+        },
+        "steps": {
+          "0.0003": {
+            "canonical_absolute_fail": 110,
+            "anchor_absolute_fail": 124,
+            "compatibility_Jv_fail": 147,
+            "canonical_Jv_fail": 2,
+            "incompatible_intervals": 43,
+            "nonzero": 2121,
+            "rebase_max_over_budget": 0.00027843133088054263,
+            "incompatible_rows": [
+              "electron:1546",
+              "electron:2084",
+              "electron:2093",
+              "electron:2155",
+              "electron:2156",
+              "electron:2157",
+              "electron:2159",
+              "electron:2161",
+              "electron:2173",
+              "electron:2174",
+              "electron:2175",
+              "electron:2176",
+              "electron:2177",
+              "electron:2178",
+              "electron:2179",
+              "electron:2180",
+              "electron:2181",
+              "electron:2182",
+              "electron:2183",
+              "electron:2185",
+              "electron:2364",
+              "electron:2365",
+              "electron:2366",
+              "electron:2367",
+              "electron:2368",
+              "electron:2369",
+              "electron:2370",
+              "electron:2371",
+              "electron:2373",
+              "electron:2374",
+              "electron:2376",
+              "electron:2400",
+              "electron:2401",
+              "electron:2402",
+              "electron:2403",
+              "electron:2404",
+              "electron:2405",
+              "electron:2406",
+              "electron:2407",
+              "electron:2408",
+              "electron:2409",
+              "electron:2410",
+              "electron:2594"
+            ]
+          },
+          "0.0001": {
+            "canonical_absolute_fail": 105,
+            "anchor_absolute_fail": 116,
+            "compatibility_Jv_fail": 168,
+            "canonical_Jv_fail": 3,
+            "incompatible_intervals": 45,
+            "nonzero": 2121,
+            "rebase_max_over_budget": 0.0005992533519702896,
+            "incompatible_rows": [
+              "electron:1546",
+              "electron:1726",
+              "electron:2073",
+              "electron:2090",
+              "electron:2092",
+              "electron:2154",
+              "electron:2155",
+              "electron:2156",
+              "electron:2157",
+              "electron:2159",
+              "electron:2173",
+              "electron:2174",
+              "electron:2175",
+              "electron:2177",
+              "electron:2178",
+              "electron:2179",
+              "electron:2180",
+              "electron:2181",
+              "electron:2185",
+              "electron:2364",
+              "electron:2365",
+              "electron:2366",
+              "electron:2367",
+              "electron:2368",
+              "electron:2369",
+              "electron:2370",
+              "electron:2371",
+              "electron:2372",
+              "electron:2373",
+              "electron:2374",
+              "electron:2376",
+              "electron:2400",
+              "electron:2401",
+              "electron:2402",
+              "electron:2403",
+              "electron:2404",
+              "electron:2405",
+              "electron:2406",
+              "electron:2407",
+              "electron:2408",
+              "electron:2409",
+              "electron:2410",
+              "electron:2412",
+              "electron:2593",
+              "electron:2594"
+            ]
+          },
+          "3e-05": {
+            "canonical_absolute_fail": 108,
+            "anchor_absolute_fail": 118,
+            "compatibility_Jv_fail": 185,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 41,
+            "nonzero": 2121,
+            "rebase_max_over_budget": 0.0005245921085380978,
+            "incompatible_rows": [
+              "electron:2154",
+              "electron:2155",
+              "electron:2156",
+              "electron:2157",
+              "electron:2158",
+              "electron:2159",
+              "electron:2161",
+              "electron:2170",
+              "electron:2173",
+              "electron:2174",
+              "electron:2175",
+              "electron:2176",
+              "electron:2177",
+              "electron:2178",
+              "electron:2180",
+              "electron:2182",
+              "electron:2185",
+              "electron:2364",
+              "electron:2365",
+              "electron:2366",
+              "electron:2367",
+              "electron:2368",
+              "electron:2369",
+              "electron:2370",
+              "electron:2371",
+              "electron:2372",
+              "electron:2373",
+              "electron:2374",
+              "electron:2376",
+              "electron:2400",
+              "electron:2401",
+              "electron:2402",
+              "electron:2403",
+              "electron:2404",
+              "electron:2405",
+              "electron:2406",
+              "electron:2407",
+              "electron:2408",
+              "electron:2409",
+              "electron:2410",
+              "electron:2412"
+            ]
+          }
+        },
+        "reverse": [
+          {
+            "h": 0.0,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          }
+        ]
+      },
+      "psi": {
+        "states": 7,
+        "baseline_projected_compatibility_difference": {
+          "failed": 0,
+          "max": 1.1653872524302733e-14
+        },
+        "steps": {
+          "0.0003": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 14,
+            "rebase_max_over_budget": 2.3963195991070062e-15,
+            "incompatible_rows": []
+          },
+          "0.0001": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 14,
+            "rebase_max_over_budget": 1.9045975755322932e-15,
+            "incompatible_rows": []
+          },
+          "3e-05": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 14,
+            "rebase_max_over_budget": 2.62506251077643e-15,
+            "incompatible_rows": []
+          }
+        },
+        "reverse": [
+          {
+            "h": 0.0,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          }
+        ]
+      },
+      "p": {
+        "states": 7,
+        "baseline_projected_compatibility_difference": {
+          "failed": 0,
+          "max": 1.1653872524302733e-14
+        },
+        "steps": {
+          "0.0003": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 5,
+            "rebase_max_over_budget": 1.6836381643398065e-16,
+            "incompatible_rows": []
+          },
+          "0.0001": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 5,
+            "rebase_max_over_budget": 1.0031147306347663e-16,
+            "incompatible_rows": []
+          },
+          "3e-05": {
+            "canonical_absolute_fail": 95,
+            "anchor_absolute_fail": 0,
+            "compatibility_Jv_fail": 0,
+            "canonical_Jv_fail": 0,
+            "incompatible_intervals": 0,
+            "nonzero": 5,
+            "rebase_max_over_budget": 3.79577132572419e-16,
+            "incompatible_rows": []
+          }
+        },
+        "reverse": [
+          {
+            "h": 0.0,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0003,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -0.0001,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": 3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          },
+          {
+            "h": -3e-05,
+            "failed": 0,
+            "max_error": 0.0
+          }
+        ]
+      }
+    },
+    "full_actual_residual_recomputed": false,
+    "meaning": "SG-only current compatibility replay on projected paired operands. Current paired mobility coefficient is retained. No source/Jv or acceptance-loop qualification."
+  },
+  "conditional_interval_controls": {
+    "n": {
+      "0.0001": {
+        "count": 45,
+        "canonical_secant_pass": 42,
+        "HFS_support_overlap": 3,
+        "minimum_separation_over_absolute_radius": 0.27745519363035087,
+        "example": {
+          "row": "electron:2401",
+          "h": "0.000100000000000000004792173602385929598312941379845142364501953125",
+          "compatibility_fd": "-31927701.6737463532673108690685090601109693743159772653820352404109206087874582045239091200",
+          "canonical_fd": "-31920431.1661607336665888486143945499168560015387865014290635611955023669249799884088815176",
+          "jv": "-31920431.166160728785703537450974012349116681436765233250645478151302163244785556",
+          "absolute_secant_interval": [
+            "-31927702.5042808929046667489623800765775620631681303448054856799139846778882613103593197311",
+            "-31927700.8432118136299549891746380436443766854638241859585848009078565396866550986884985089"
+          ],
+          "Jv_secant_interval": [
+            "-31921069.5811682020750121446077946000352405250088296891998699833059167354337723415789757898",
+            "-31919792.7639214279641360390552089505194879953899969656286566851296693535296178119663203368"
+          ]
+        }
+      },
+      "0.0003": {
+        "count": 43,
+        "canonical_secant_pass": 42,
+        "HFS_support_overlap": 1,
+        "minimum_separation_over_absolute_radius": 0.048096709313805455,
+        "example": {
+          "row": "electron:2401",
+          "h": "0.0002999999999999999737189393389513725196593441069126129150390625",
+          "compatibility_fd": "-31921751.2022130494752263757118139187257210823753819514994598335288967917788626463862811708",
+          "canonical_fd": "-31920431.1661607336665888511734670952576059804375880243702440618716902799192306020345201079",
+          "jv": "-31920431.166160728785703537450974012349116681436765233250645478151302163244785556",
+          "absolute_secant_interval": [
+            "-31921751.4790578960210117065292439325091527200054585583986134279664748546856255540627875207",
+            "-31921750.9253682029294410448943839049422894447453053446003062390913187288720997387097748209"
+          ],
+          "Jv_secant_interval": [
+            "-31921069.5811682020750121446077946000352405250088296891998699833059167354337723415789757898",
+            "-31919792.7639214279641360390552089505194879953899969656286566851296693535296178119663203368"
+          ]
+        }
+      },
+      "3e-05": {
+        "count": 41,
+        "canonical_secant_pass": 41,
+        "HFS_support_overlap": 0,
+        "minimum_separation_over_absolute_radius": 0.014625937459524535,
+        "example": {
+          "row": "electron:2401",
+          "h": "0.00003000000000000000076002572291233860823922441340982913970947265625",
+          "compatibility_fd": "-31960149.3422224341180036013401478316210100700776441346600132437879857244458211283303170284",
+          "canonical_fd": "-31920431.1661607336665888483233000478843456013744883038143236314049933672836514377470932835",
+          "jv": "-31920431.166160728785703537450974012349116681436765233250645478151302163244785556",
+          "absolute_secant_interval": [
+            "-31960152.1106708995758565968521729003339243173326855570200141782879402892420218634584707437",
+            "-31960146.5737739686601506058281227629080958228226027123000123092880311596496203932021633131"
+          ],
+          "Jv_secant_interval": [
+            "-31921069.5811682020750121446077946000352405250088296891998699833059167354337723415789757898",
+            "-31919792.7639214279641360390552089505194879953899969656286566851296693535296178119663203368"
+          ]
+        }
+      }
+    },
+    "psi": {},
+    "p": {}
+  },
+  "verification": {
+    "new_unittests_windows": 8,
+    "new_unittests_ubuntu": 8,
+    "windows_release_ctest_passed": 4,
+    "evidence_checks_passed": 25,
+    "prior_sealed_files_unchanged": 296
+  },
+  "evidence": {
+    "directory": "build-release/bvmethods_n4_sg_current_contract_20261018",
+    "prior_manifest_sha256": "d46b96368a469d8e123e3dca03f4d205a9dd31e4a851f0105bd3730fabf4e352",
+    "files": 38,
+    "bytes": 234252544,
+    "manifest_sha256": "e0744dd4957b5b0f7fb2dca7f68f131038c2b9ddeabefce9faadb55ae17db9ac"
+  },
+  "next": "Bind the 41 fine-step weak rows to identical nonzero native primary variables, actual SG operands and RHS before concluding a native contract conflict. Preserve source, full-Jv, contact/load and five-state gates."
+}

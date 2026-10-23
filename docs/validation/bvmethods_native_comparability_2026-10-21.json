@@ -1,0 +1,42 @@
+{
+  "diagnostic_only": true,
+  "scope": "no-BTBT original external-resistor first five nonzero accepted points",
+  "new_simulations": false,
+  "production_acceptance_changed": false,
+  "iterations": 15,
+  "rhs_bindings": 60,
+  "maximum_rhs_binding_relative_l1": 1.2524258145876323e-15,
+  "independent_carrier_state_transitions": 20,
+  "maximum_next_VAR_relative_error": 9.325873406851315e-15,
+  "nonpositive_raw_population_count": 0,
+  "all_factors_one": true,
+  "native_carrier_only_reduction": [
+    {
+      "step": 1,
+      "eDensity": 5.722760718955041,
+      "hDensity": 78.20562171176792
+    },
+    {
+      "step": 2,
+      "eDensity": 2.6092263530588347e-09,
+      "hDensity": 8.268381563647845e-09
+    },
+    {
+      "step": 3,
+      "eDensity": 1.1741376701095415e-09,
+      "hDensity": 4.065670833563328e-09
+    },
+    {
+      "step": 4,
+      "eDensity": 8.449857573600352e-10,
+      "hDensity": 1.8221334418856436e-09
+    },
+    {
+      "step": 5,
+      "eDensity": 3.67838730730736e-09,
+      "hDensity": 8.051679280520573e-09
+    }
+  ],
+  "relative_vela_acceptance": "not determined: initial state, complete row projection and physical Poisson normalization not bound",
+  "line_search_vela_acceptance": "not determined: raw/applied QF directions and trial merit under Vela operator not evaluated"
+}

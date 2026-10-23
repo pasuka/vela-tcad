@@ -50,12 +50,16 @@ def source_checks(source: str, baseline: str) -> dict:
     }
 
 
-def trajectory_checks(rows: list[dict], log: str) -> dict:
+def trajectory_checks(rows: list[dict], log: str, *, stop: float = STOP,
+                      resistance: float = RESISTANCE) -> dict:
+    if not (math.isfinite(stop) and stop > 0 and
+            math.isfinite(resistance) and resistance > 0):
+        raise ValueError('positive finite stop and resistance required')
     if not rows:
         raise ValueError('terminal trajectory is empty')
     drain = [row['drain'] for row in rows]
     finite = all(math.isfinite(value) for row in rows for name in CONTACTS for value in row[name].values())
-    load = [abs(d['outer_voltage_V'] - d['inner_voltage_V'] - RESISTANCE * d['total_current_A_per_um']) for d in drain]
+    load = [abs(d['outer_voltage_V'] - d['inner_voltage_V'] - resistance * d['total_current_A_per_um']) for d in drain]
     # At zero current a relative KCL measure is undefined. The absolute floor
     # applies only to low-current states, preserving the recovery's 1e-5
     # relative budget at every high-current state.
@@ -74,7 +78,7 @@ def trajectory_checks(rows: list[dict], log: str) -> dict:
     checks = {
         'finite': finite,
         'starts_at_zero_voltage': abs(drain[0]['outer_voltage_V']) <= 1e-12,
-        'starts_below_original_stop': abs(drain[0]['total_current_A_per_um']) < STOP,
+        'starts_below_original_stop': abs(drain[0]['total_current_A_per_um']) < stop,
         'original_fixed_bias_contacts_all_states': all(
             abs(row[name]['outer_voltage_V']) <= 1e-12
             for row in rows for name in ('source', 'gate', 'substrate')),
@@ -83,7 +87,7 @@ def trajectory_checks(rows: list[dict], log: str) -> dict:
         'terminal_kcl_all_states': all(kcl_checks),
         'negligible_displacement_all_states': all(displacement),
         'current_components_all_states': all(component),
-        'original_stop_reached': abs(drain[-1]['total_current_A_per_um']) >= STOP,
+        'original_stop_reached': abs(drain[-1]['total_current_A_per_um']) >= stop,
         'native_current_stop_reported': 'Contact current exceeded limit:' in log,
         'native_success': log_exit_status(log) == 'Good Bye',
     }

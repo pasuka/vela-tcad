@@ -1,0 +1,1803 @@
+{
+  "schema": "vela.validation.bvmethods_population_bgn_contract.v1",
+  "target": "installed-library original BVmethods; ordinary precision; default Joyce-Dixon; Fermi/OldSlotboom; 300 K",
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "semiconductor_nodes": 2152,
+    "semiconductor_triangles": 4156,
+    "free_continuity_rows_per_carrier": 2121
+  },
+  "units": {
+    "source": "SI m, m^-3",
+    "core": "um, cm^-3",
+    "normalized_primary_reference_cm3": 14824351000.0,
+    "terminal_current": "A/um",
+    "native_RHS_to_Vela": -10000.0
+  },
+  "backend": "local Release residual assembly; no linear solve or Newton/QS; native passive frozen-state captures on VM",
+  "scope": "private actual SG transport candidate; source physical views unchanged; not production state admission or normalization promotion",
+  "gate": 1e-08,
+  "actual_runs": 35,
+  "native_system_identity": {
+    "zero": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    },
+    "first": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    },
+    "before_BV": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    },
+    "after_BV": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    },
+    "last": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true
+    }
+  },
+  "population_losses": {
+    "zero": {
+      "electron": 314,
+      "hole": 224
+    },
+    "first": {
+      "electron": 299,
+      "hole": 267
+    },
+    "before_BV": {
+      "electron": 300,
+      "hole": 280
+    },
+    "after_BV": {
+      "electron": 317,
+      "hole": 299
+    },
+    "last": {
+      "electron": 292,
+      "hole": 274
+    }
+  },
+  "autonomous_statistics_exact": 21520,
+  "material_model_windows": {
+    "zero": {
+      "count": 2152,
+      "gamma_exact": 4304,
+      "BGN_exact": 2148,
+      "old_BGN_exact": 678,
+      "affinity_exact": 2152,
+      "old_affinity_exact": 2128,
+      "gap_exact": 2152
+    },
+    "first": {
+      "count": 2152,
+      "gamma_exact": 4304,
+      "BGN_exact": 2148,
+      "old_BGN_exact": 678,
+      "affinity_exact": 2152,
+      "old_affinity_exact": 2128,
+      "gap_exact": 2152
+    },
+    "before_BV": {
+      "count": 2152,
+      "gamma_exact": 4304,
+      "BGN_exact": 2148,
+      "old_BGN_exact": 678,
+      "affinity_exact": 2152,
+      "old_affinity_exact": 2128,
+      "gap_exact": 2152
+    },
+    "after_BV": {
+      "count": 2152,
+      "gamma_exact": 4304,
+      "BGN_exact": 2148,
+      "old_BGN_exact": 678,
+      "affinity_exact": 2152,
+      "old_affinity_exact": 2128,
+      "gap_exact": 2152
+    },
+    "last": {
+      "count": 2152,
+      "gamma_exact": 4304,
+      "BGN_exact": 2148,
+      "old_BGN_exact": 678,
+      "affinity_exact": 2152,
+      "old_affinity_exact": 2128,
+      "gap_exact": 2152
+    }
+  },
+  "same_independent_math_platform_control": {
+    "nodes": 2152,
+    "native_exact": {
+      "windows": 2148,
+      "linux": 2152
+    },
+    "platform_exact": 2148,
+    "windows_model_identical": true
+  },
+  "math_policy": "ordinary GNU/Linux scalar evaluator reproduces all native BGN values; Windows UCRT64 differs in four nodes. Explicit private distributed material evaluation control; no portable production libm policy claimed.",
+  "candidate_sources_poisson_boundaries_invariant": true,
+  "derived_native_Gamma_a_B_band_cache_input": false,
+  "tests": {
+    "cpp_cases": 12,
+    "cpp_assertions": 10880,
+    "evidence_tests": 16
+  },
+  "states": {
+    "zero": {
+      "legacy": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09703009616919568,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10731245567663748,
+            "max_free_row_error_over_actual_absolute_terms": 4.827885678693597,
+            "failed_free_rows_at_1e_8": 1888,
+            "max_actual_ledger_error": 2.2175267340276677e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4015370707851518,
+                "error_over_unchanged_baseline_absolute_terms": 1.304895414159706
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.8240697050657158,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.5772621407388931,
+            "max_free_row_error_over_actual_absolute_terms": 65.0246002088373,
+            "failed_free_rows_at_1e_8": 2111,
+            "max_actual_ledger_error": 2.2203968309015127e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.008315451011748224,
+                "error_over_unchanged_baseline_absolute_terms": 0.007650167559319557
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.0643130257647326,
+                "error_over_unchanged_baseline_absolute_terms": 1.0800438267929746
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09816552035214589,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.11104360673568528,
+            "max_free_row_error_over_actual_absolute_terms": 10.873613805081124,
+            "failed_free_rows_at_1e_8": 1697,
+            "max_actual_ledger_error": 2.2025162303004896e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4157123289387918,
+                "error_over_unchanged_baseline_absolute_terms": 1.3008309756887484
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.8241031057784989,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.576625601043648,
+            "max_free_row_error_over_actual_absolute_terms": 65.0246002088373,
+            "failed_free_rows_at_1e_8": 2111,
+            "max_actual_ledger_error": 2.2203968309015127e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.0075940025926087085,
+                "error_over_unchanged_baseline_absolute_terms": 0.00698136019883144
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.0643130257647326,
+                "error_over_unchanged_baseline_absolute_terms": 1.0800438267929746
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "bgn": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09230040619335689,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10182945633496791,
+            "max_free_row_error_over_actual_absolute_terms": 4.827885678693597,
+            "failed_free_rows_at_1e_8": 1880,
+            "max_actual_ledger_error": 2.2175267340276677e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.004671583439466699,
+                "error_over_unchanged_baseline_absolute_terms": 0.004273509296606462
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.015393020468061838,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.002711248278454308,
+            "max_free_row_error_over_actual_absolute_terms": 34.129496854735606,
+            "failed_free_rows_at_1e_8": 1847,
+            "max_actual_ledger_error": 2.2153452397142978e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.00041910668977224966,
+                "error_over_unchanged_baseline_absolute_terms": 0.0003889587430515423
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8295189425949831e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.1464243311034756e-17
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09353936058558378,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10555507271677418,
+            "max_free_row_error_over_actual_absolute_terms": 10.873613805081124,
+            "failed_free_rows_at_1e_8": 1689,
+            "max_actual_ledger_error": 2.2025162303004896e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.0002275346690106103,
+                "error_over_unchanged_baseline_absolute_terms": 0.0002090708256485668
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.011363662832011697,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.001995873281923752,
+            "max_free_row_error_over_actual_absolute_terms": 34.129496854735606,
+            "failed_free_rows_at_1e_8": 1808,
+            "max_actual_ledger_error": 2.2004411813949872e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.0011405748376386575,
+                "error_over_unchanged_baseline_absolute_terms": 0.0010577661035397004
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8295189425949831e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.1464243311034756e-17
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09816552035214589,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.11104360673568528,
+            "max_free_row_error_over_actual_absolute_terms": 10.873613805081124,
+            "failed_free_rows_at_1e_8": 1697,
+            "max_actual_ledger_error": 2.2025162303004896e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.4157123289387918,
+                "error_over_unchanged_baseline_absolute_terms": 1.3008309756887484
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.8241031057784989,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.576625601043648,
+            "max_free_row_error_over_actual_absolute_terms": 65.0246002088373,
+            "failed_free_rows_at_1e_8": 2111,
+            "max_actual_ledger_error": 2.2203968309015127e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.0075940025926087085,
+                "error_over_unchanged_baseline_absolute_terms": 0.00698136019883144
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.0643130257647326,
+                "error_over_unchanged_baseline_absolute_terms": 1.0800438267929746
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09351076194418967,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10551922482167815,
+            "max_free_row_error_over_actual_absolute_terms": 10.873613805081124,
+            "failed_free_rows_at_1e_8": 1689,
+            "max_actual_ledger_error": 2.2025162303004896e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.0002275346690106103,
+                "error_over_unchanged_baseline_absolute_terms": 0.0002090708256485668
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.00808166477371859,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.0014194472167868284,
+            "max_free_row_error_over_actual_absolute_terms": 43.74064258332255,
+            "failed_free_rows_at_1e_8": 1751,
+            "max_actual_ledger_error": 2.2126783088856525e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.0011405748376386575,
+                "error_over_unchanged_baseline_absolute_terms": 0.0010577661035397004
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8295189425949831e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.1464243311034756e-17
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "linux_math_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.09351076194418967,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.10551922482167815,
+            "max_free_row_error_over_actual_absolute_terms": 10.873613805081124,
+            "failed_free_rows_at_1e_8": 1689,
+            "max_actual_ledger_error": 2.2025162303004896e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.111280597695999e-16,
+                "error_over_unchanged_baseline_absolute_terms": 9.168807737741126e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.0002275346690106103,
+                "error_over_unchanged_baseline_absolute_terms": 0.0002090708256485668
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.008081654412595526,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.0014194453673844947,
+            "max_free_row_error_over_actual_absolute_terms": 43.74064258332255,
+            "failed_free_rows_at_1e_8": 1750,
+            "max_actual_ledger_error": 2.2126783088856525e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 0.0011405748376386575,
+                "error_over_unchanged_baseline_absolute_terms": 0.0010577661035397004
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.8295189425949831e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.1464243311034756e-17
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      }
+    },
+    "first": {
+      "legacy": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.777275072754594e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.777275251784702e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.06464580535488339,
+            "failed_free_rows_at_1e_8": 429,
+            "max_actual_ledger_error": 1.573574232852308e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3101666101637313e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.310166610144388e-11
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.01238545154869907,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.012410959081253977,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 941,
+            "max_actual_ledger_error": 2.1886377206894937e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 9.611150541090441e-11,
+                "error_over_unchanged_baseline_absolute_terms": 9.61115053323625e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.2553954709404202,
+                "error_over_unchanged_baseline_absolute_terms": 0.3528242210279019
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.549178760714526e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.5491788658958284e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.07190734020720839,
+            "failed_free_rows_at_1e_8": 312,
+            "max_actual_ledger_error": 1.573575064429008e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3101666101637313e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.310166610144388e-11
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.012373902712754034,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.012399309221767804,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 932,
+            "max_actual_ledger_error": 2.1886379972767117e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.747946984600905e-11,
+                "error_over_unchanged_baseline_absolute_terms": 8.747946977377835e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.2553954709404202,
+                "error_over_unchanged_baseline_absolute_terms": 0.3528242210279019
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "bgn": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.197938127256773e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.197938291034543e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.06464580535488339,
+            "failed_free_rows_at_1e_8": 415,
+            "max_actual_ledger_error": 1.573574232852308e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.5218964447387068e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.5218964447361747e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.164373444816273e-05,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.167083021526887e-05,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 627,
+            "max_actual_ledger_error": 2.1886377206894937e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.014177453307012e-12,
+                "error_over_unchanged_baseline_absolute_terms": 7.014177448301344e-12
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2753831773647895e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.3603926186217772e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.969686296507327e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.9696863845389065e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.07190734020720839,
+            "failed_free_rows_at_1e_8": 298,
+            "max_actual_ledger_error": 1.573575064429008e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.5218964447387068e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.5218964447361747e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.930891061457697e-05,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.93261167153976e-05,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 563,
+            "max_actual_ledger_error": 2.1886379972767117e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.5646213018184312e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.5646213006885533e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2753831773647895e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.3603926186217772e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.549178760714526e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.5491788658958284e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.07190734020720839,
+            "failed_free_rows_at_1e_8": 312,
+            "max_actual_ledger_error": 1.573575064429008e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.3101666101637313e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.310166610144388e-11
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 0.012373902712754034,
+            "block_L1_over_unchanged_baseline_absolute_terms": 0.012399309221767804,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 932,
+            "max_actual_ledger_error": 2.1886379972767117e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 8.747946984600905e-11,
+                "error_over_unchanged_baseline_absolute_terms": 8.747946977377835e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 0.2553954709404202,
+                "error_over_unchanged_baseline_absolute_terms": 0.3528242210279019
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.965833193415373e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.9658332813323574e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.07190734020720839,
+            "failed_free_rows_at_1e_8": 285,
+            "max_actual_ledger_error": 1.573575064429008e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.5218964447387068e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.5218964447361747e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.167309447427225e-05,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.1686955708613906e-05,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 455,
+            "max_actual_ledger_error": 2.1883175470939725e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.5646213018184312e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.5646213006885533e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2753831773647895e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.3603926186217772e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "linux_math_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.965833193415373e-08,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.9658332813323574e-08,
+            "max_free_row_error_over_actual_absolute_terms": 0.07190734020720839,
+            "failed_free_rows_at_1e_8": 285,
+            "max_actual_ledger_error": 1.573575064429008e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6217567633154452e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.6217564150448554e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.5218964447387068e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.5218964447361747e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 3.167309369048788e-05,
+            "block_L1_over_unchanged_baseline_absolute_terms": 3.168695492448653e-05,
+            "max_free_row_error_over_actual_absolute_terms": 1.7830453830545587,
+            "failed_free_rows_at_1e_8": 454,
+            "max_actual_ledger_error": 2.1883175470939725e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.5646213018184312e-11,
+                "error_over_unchanged_baseline_absolute_terms": 1.5646213006885533e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2753831773647895e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.3603926186217772e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": true,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      }
+    },
+    "before_BV": {
+      "legacy": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 8.689876815424173e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 8.689876815389965e-13,
+            "max_free_row_error_over_actual_absolute_terms": 0.00027017350528965454,
+            "failed_free_rows_at_1e_8": 72,
+            "max_actual_ledger_error": 9.45729477696677e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.437849467765331e-11,
+                "error_over_unchanged_baseline_absolute_terms": 3.437849446412335e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.2917756363456104e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.291775636345886e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.3738293514831216e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.373829351483128e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.381854336325885e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.311351105176308e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.4841083597693044e-14,
+                "error_over_unchanged_baseline_absolute_terms": 4.4841083597666204e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.306943025518846e-12,
+                "error_over_unchanged_baseline_absolute_terms": 3.3069430255313805e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.72517593063533e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.725175930612706e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.386435145486164e-05,
+            "failed_free_rows_at_1e_8": 43,
+            "max_actual_ledger_error": 7.635124242088687e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1750633820858472e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.1750633747200555e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.2917756363456104e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.291775636345886e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.372098723917096e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.3720987239171026e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.381854336325885e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.311351105176308e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.9627451910471005e-14,
+                "error_over_unchanged_baseline_absolute_terms": 4.9627451910441067e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.306943025518846e-12,
+                "error_over_unchanged_baseline_absolute_terms": 3.3069430255313805e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "bgn": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 7.809068288593701e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 7.809068288562844e-13,
+            "max_free_row_error_over_actual_absolute_terms": 0.00027017350528965454,
+            "failed_free_rows_at_1e_8": 66,
+            "max_actual_ledger_error": 1.0447640271114437e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.437849467765331e-11,
+                "error_over_unchanged_baseline_absolute_terms": 3.437849446412335e-11
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.414895180746394e-16,
+                "error_over_unchanged_baseline_absolute_terms": 2.414895180746392e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.78483863798128e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.784838637981289e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.276436717384688e-10,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.269336709730877e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.7663255545638514e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.7663255545629048e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2260426168185937e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.226042616820072e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.843097490629935e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.843097490610725e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.386435145486164e-05,
+            "failed_free_rows_at_1e_8": 37,
+            "max_actual_ledger_error": 1.0447640271114437e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1750633820858472e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.1750633747200555e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.414895180746394e-16,
+                "error_over_unchanged_baseline_absolute_terms": 2.414895180746392e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.745923310023483e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.745923310023493e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.276436717384688e-10,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.269336709730877e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.2783036873787089e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.2783036873780177e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2260426168185937e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.226042616820072e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.72517593063533e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.725175930612706e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.386435145486164e-05,
+            "failed_free_rows_at_1e_8": 43,
+            "max_actual_ledger_error": 7.635124242088687e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1750633820858472e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.1750633747200555e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.2917756363456104e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.291775636345886e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.372098723917096e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.3720987239171026e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.381854336325885e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.311351105176308e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 4.9627451910471005e-14,
+                "error_over_unchanged_baseline_absolute_terms": 4.9627451910441067e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.306943025518846e-12,
+                "error_over_unchanged_baseline_absolute_terms": 3.3069430255313805e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.836445018914014e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.83644501889483e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.386435145486164e-05,
+            "failed_free_rows_at_1e_8": 37,
+            "max_actual_ledger_error": 1.0447640271114437e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1750633820858472e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.1750633747200555e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.414895180746394e-16,
+                "error_over_unchanged_baseline_absolute_terms": 2.414895180746392e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.739972510716263e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.739972510716271e-14,
+            "max_free_row_error_over_actual_absolute_terms": 4.8501378820874195e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.269336709730877e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.2783036873787089e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.2783036873780177e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2260426168185937e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.226042616820072e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "linux_math_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.836445018914014e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.83644501889483e-13,
+            "max_free_row_error_over_actual_absolute_terms": 6.386435145486164e-05,
+            "failed_free_rows_at_1e_8": 37,
+            "max_actual_ledger_error": 1.0447640271114437e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.1750633820858472e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.1750633747200555e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.414895180746394e-16,
+                "error_over_unchanged_baseline_absolute_terms": 2.414895180746392e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 5.739933074198483e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 5.73993307419849e-14,
+            "max_free_row_error_over_actual_absolute_terms": 4.8501378820874195e-11,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.269336709730877e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.2783036873787089e-14,
+                "error_over_unchanged_baseline_absolute_terms": 1.2783036873780177e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 3.2260426168185937e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.226042616820072e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      }
+    },
+    "after_BV": {
+      "legacy": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.1429129204348957e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.142912920435477e-12,
+            "max_free_row_error_over_actual_absolute_terms": 5.1332032907591165e-05,
+            "failed_free_rows_at_1e_8": 70,
+            "max_actual_ledger_error": 9.241849964055831e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.7553425467599072e-07,
+                "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.427345200668892e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.427345200669178e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.0256166948868048e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0256166948868074e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806793712506825e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.309675223362087e-14,
+                "error_over_unchanged_baseline_absolute_terms": 3.309675223360814e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.4853954450606033e-12,
+                "error_over_unchanged_baseline_absolute_terms": 2.485395445067779e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.816343915624843e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.816343915628003e-13,
+            "max_free_row_error_over_actual_absolute_terms": 4.824497979325982e-05,
+            "failed_free_rows_at_1e_8": 43,
+            "max_actual_ledger_error": 9.241849964055831e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.8239203693933486e-17,
+                "error_over_unchanged_baseline_absolute_terms": 1.823920564873418e-17
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.427345200668892e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.427345200669178e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.0255418107156715e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0255418107156743e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806812132052188e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.003438905921047e-14,
+                "error_over_unchanged_baseline_absolute_terms": 3.0034389059198815e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.4853954450606033e-12,
+                "error_over_unchanged_baseline_absolute_terms": 2.485395445067779e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "bgn": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.078355232948891e-12,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0783552329494272e-12,
+            "max_free_row_error_over_actual_absolute_terms": 5.1332032907591165e-05,
+            "failed_free_rows_at_1e_8": 65,
+            "max_actual_ledger_error": 1.1063208775631742e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.7553425467599072e-07,
+                "error_over_unchanged_baseline_absolute_terms": 1.7553427425869572e-07
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 7.746539856951761e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.746539856951754e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.4396963018255835e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.439696301825584e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806793712506825e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 1.05070264862486e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.771698532811295e-15,
+                "error_over_unchanged_baseline_absolute_terms": 3.771698532809983e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.1159396458268516e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.115939645828428e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.168200978305203e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.168200978307892e-13,
+            "max_free_row_error_over_actual_absolute_terms": 4.824497979325982e-05,
+            "failed_free_rows_at_1e_8": 38,
+            "max_actual_ledger_error": 1.1063208775631742e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.8239203693933486e-17,
+                "error_over_unchanged_baseline_absolute_terms": 1.823920564873418e-17
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 7.746539856951761e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.746539856951754e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.42693979242408e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.426939792424081e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806812132052188e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 1.05070264862486e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.834061707221702e-15,
+                "error_over_unchanged_baseline_absolute_terms": 6.834061707219304e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.1159396458268516e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.115939645828428e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.816343915624843e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.816343915628003e-13,
+            "max_free_row_error_over_actual_absolute_terms": 4.824497979325982e-05,
+            "failed_free_rows_at_1e_8": 43,
+            "max_actual_ledger_error": 9.241849964055831e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.8239203693933486e-17,
+                "error_over_unchanged_baseline_absolute_terms": 1.823920564873418e-17
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.427345200668892e-14,
+                "error_over_unchanged_baseline_absolute_terms": 5.427345200669178e-14
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 1.0255418107156715e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 1.0255418107156743e-13,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806812132052188e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.003438905921047e-14,
+                "error_over_unchanged_baseline_absolute_terms": 3.0034389059198815e-14
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 2.4853954450606033e-12,
+                "error_over_unchanged_baseline_absolute_terms": 2.485395445067779e-12
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.163073099630465e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.1630730996331503e-13,
+            "max_free_row_error_over_actual_absolute_terms": 4.824497979325982e-05,
+            "failed_free_rows_at_1e_8": 38,
+            "max_actual_ledger_error": 1.1063208775631742e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.8239203693933486e-17,
+                "error_over_unchanged_baseline_absolute_terms": 1.823920564873418e-17
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 7.746539856951761e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.746539856951754e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.4234135813489374e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.423413581348938e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806812132052188e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.834061707221702e-15,
+                "error_over_unchanged_baseline_absolute_terms": 6.834061707219304e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.1159396458268516e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.115939645828428e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "linux_math_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.163073099630465e-13,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.1630730996331503e-13,
+            "max_free_row_error_over_actual_absolute_terms": 4.824497979325982e-05,
+            "failed_free_rows_at_1e_8": 38,
+            "max_actual_ledger_error": 1.1063208775631742e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.8239203693933486e-17,
+                "error_over_unchanged_baseline_absolute_terms": 1.823920564873418e-17
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 7.746539856951761e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.746539856951754e-16
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 4.423423700536974e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 4.4234237005369743e-14,
+            "max_free_row_error_over_actual_absolute_terms": 1.3806812132052188e-09,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.917420206779679e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.834061707221702e-15,
+                "error_over_unchanged_baseline_absolute_terms": 6.834061707219304e-15
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 4.1159396458268516e-16,
+                "error_over_unchanged_baseline_absolute_terms": 4.115939645828428e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      }
+    },
+    "last": {
+      "legacy": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 8.78700556994679e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 8.787005569945042e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2621625509377787e-06,
+            "failed_free_rows_at_1e_8": 25,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.847174749416597e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.847174749412863e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.25650564175157e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.256505641751572e-15,
+            "max_free_row_error_over_actual_absolute_terms": 6.6862230398327344e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.698792122202999e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 7.264463059597814e-16,
+                "error_over_unchanged_baseline_absolute_terms": 7.264463059597721e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.816941796080834e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.8169417960812209e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 7.388788550344955e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 7.388788550343495e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2648066933996396e-06,
+            "failed_free_rows_at_1e_8": 17,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.847174749416597e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.847174749412863e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.2575980576488436e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.257598057648845e-15,
+            "max_free_row_error_over_actual_absolute_terms": 6.6862230398327344e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.698792122202999e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.58011957859038e-16,
+                "error_over_unchanged_baseline_absolute_terms": 6.580119578590296e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.839531923840441e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.8395319238408334e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "bgn": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 8.248420294459042e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 8.248420294457394e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2621625509377787e-06,
+            "failed_free_rows_at_1e_8": 25,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.982971565500812e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.982971565500709e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.08671164209661e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.08671164209661e-15,
+            "max_free_row_error_over_actual_absolute_terms": 3.985643194703579e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 7.221066673488244e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 2.316345674506272e-16,
+                "error_over_unchanged_baseline_absolute_terms": 2.316345674506245e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.577340764219778e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.5773407642198226e-15
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.848759128750425e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.848759128749066e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2648066933996396e-06,
+            "failed_free_rows_at_1e_8": 17,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.982971565500812e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.982971565500709e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.077938332896356e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.077938332896356e-15,
+            "max_free_row_error_over_actual_absolute_terms": 3.3210687053546682e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 7.221066673488244e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.000689155513707e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.0006891555136714e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 8.274147714808631e-16,
+                "error_over_unchanged_baseline_absolute_terms": 8.27414771480887e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "primary_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 7.388788550344955e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 7.388788550343495e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2648066933996396e-06,
+            "failed_free_rows_at_1e_8": 17,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 5.847174749416597e-13,
+                "error_over_unchanged_baseline_absolute_terms": 5.847174749412863e-13
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.2575980576488436e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.257598057648845e-15,
+            "max_free_row_error_over_actual_absolute_terms": 6.6862230398327344e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 9.698792122202999e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 6.58011957859038e-16,
+                "error_over_unchanged_baseline_absolute_terms": 6.580119578590296e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.839531923840441e-13,
+                "error_over_unchanged_baseline_absolute_terms": 1.8395319238408334e-13
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "combined_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.824865347724988e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.824865347723633e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2648066933996396e-06,
+            "failed_free_rows_at_1e_8": 17,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.982971565500812e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.982971565500709e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.052286679365323e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.052286679365323e-15,
+            "max_free_row_error_over_actual_absolute_terms": 1.3538587385341789e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.596386236394395e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.000689155513707e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.0006891555136714e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 8.274147714808631e-16,
+                "error_over_unchanged_baseline_absolute_terms": 8.27414771480887e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      },
+      "linux_math_v2": {
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 6.824865347724988e-14,
+            "block_L1_over_unchanged_baseline_absolute_terms": 6.824865347723633e-14,
+            "max_free_row_error_over_actual_absolute_terms": 3.2648066933996396e-06,
+            "failed_free_rows_at_1e_8": 17,
+            "max_actual_ledger_error": 1.0363436637039745e-16,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 1.6132949821031513e-16,
+                "error_over_unchanged_baseline_absolute_terms": 1.613294979917535e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 1.982971565500812e-15,
+                "error_over_unchanged_baseline_absolute_terms": 1.982971565500709e-15
+              }
+            ]
+          },
+          "hole": {
+            "free_rows": 2121,
+            "block_L1_over_actual_absolute_terms": 2.0519965842732122e-15,
+            "block_L1_over_unchanged_baseline_absolute_terms": 2.0519965842732122e-15,
+            "max_free_row_error_over_actual_absolute_terms": 1.3538587385341789e-12,
+            "failed_free_rows_at_1e_8": 0,
+            "max_actual_ledger_error": 8.596386236394395e-17,
+            "weak": [
+              {
+                "node": 2156,
+                "error_over_actual_absolute_terms": 3.000689155513707e-16,
+                "error_over_unchanged_baseline_absolute_terms": 3.0006891555136714e-16
+              },
+              {
+                "node": 2515,
+                "error_over_actual_absolute_terms": 8.274147714808631e-16,
+                "error_over_unchanged_baseline_absolute_terms": 8.27414771480887e-16
+              }
+            ]
+          }
+        },
+        "strict_state_accepted": false,
+        "full_rhs_qualified": false,
+        "coupled_Newton_verified": false
+      }
+    }
+  },
+  "full_rhs_qualified": false,
+  "strict_constitutive_population_qualified": false,
+  "augmented_load_qualified": false,
+  "N4_complete": false,
+  "N5_started": false
+}

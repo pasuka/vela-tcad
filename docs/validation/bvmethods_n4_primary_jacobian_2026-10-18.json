@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-18",
+  "status": "N4_in_progress_N5_not_started",
+  "configuration": {
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_triangles": 4156,
+    "unknowns": 6843,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "density_reference_cm3": 14824351000.0,
+    "source_units": "SI",
+    "terminal_current_unit": "A/um",
+    "fixed_material_DOS_doping_temperature": true,
+    "environment": "Ubuntu 26.04.1 GCC 15.2 C++20 Release O1 ffp-contract=off"
+  },
+  "implementation": {
+    "private_candidate_only": true,
+    "production_changed": false,
+    "transport_primary_J_nonzeros": 57630,
+    "local_partial_J_nonzeros": 93787,
+    "source_derivative_terms": {
+      "SRH": 2152,
+      "avalanche": 8312
+    },
+    "uses_native_matrix": false,
+    "uses_operand_secants_for_primary_J": false,
+    "nonlocal_derivative_included": false
+  },
+  "evaluations": {
+    "complete_augmented_states": 29,
+    "transport_version_states": 28,
+    "source_chain_version_states": 1,
+    "two_versions_baseline_residual_bit_identical": true,
+    "new_native_jobs": 0
+  },
+  "localized_potential_validation": {
+    "node": 437,
+    "nonzero_transport_rows": 14,
+    "nonzero_avalanche_rows": 14,
+    "steps": [
+      3e-05,
+      1e-05,
+      3e-06
+    ],
+    "SG_max_errors": [
+      2.598330467187504e-10,
+      3.312110395776966e-10,
+      2.090492289774167e-09
+    ],
+    "avalanche_max_errors": [
+      2.1720745466457104e-09,
+      8.473227525892388e-09,
+      3.0060107317837937e-09
+    ]
+  },
+  "retained_failures": {
+    "nominal_psi_transport_resolvable_failures": [
+      41,
+      49,
+      62
+    ],
+    "same_primary_secant_isolation_remaining": [
+      1,
+      0,
+      0
+    ],
+    "weak_avalanche_nodes": [
+      1546,
+      2084,
+      2587
+    ],
+    "actual_population_secant_does_not_remove_n_direction_source_failure": true,
+    "SRH_nearzero_FD_quantization_not_qualified": true,
+    "factorized_80_digit_Jv_does_not_reduce_current_failure_counts": true
+  },
+  "missing_nonlocal_local_psi_response": {
+    "metric": "sum_abs_FD_minus_Jv_over_sum_abs_FD_plus_sum_abs_Jv",
+    "electron": [
+      0.048314677916801566,
+      0.04831467788338056,
+      0.04831467840805997
+    ],
+    "hole": [
+      0.00021505136166161256,
+      0.0002150514037775859,
+      0.00021505162179634476
+    ]
+  },
+  "checks": {
+    "Catch2_cases": 12,
+    "Catch2_assertions": 123,
+    "evidence_tests": 19,
+    "previous_seal_counts": [
+      69,
+      64,
+      138
+    ],
+    "numerical_failure_audits_are_not_qualification": true
+  },
+  "qualification": {
+    "full_Jacobian": false,
+    "full_Jv": false,
+    "autonomous_linear_direction": false,
+    "Newton_loop_run": false,
+    "from_zero_pure_QS": false,
+    "thresholds_changed": false
+  },
+  "next": [
+    "Resolve nearzero SRH numerator and weak avalanche SG effective-drive precision with resolvable primary controls",
+    "Compose NonLocalPath moving geometry turning WKB quadrature collection and remote support derivatives",
+    "Validate full residual Jv load KCL and autonomous linear backward error before Newton"
+  ]
+}

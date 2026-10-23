@@ -1,0 +1,157 @@
+{
+  "schema": "vela.validation.bvmethods.representative_order.v1",
+  "date": "2026-10-17",
+  "configuration": {
+    "target": "installed_library_original",
+    "temperature_K": 300,
+    "precision": "ordinary",
+    "statistics": "Fermi",
+    "BGN": "OldSlotboom",
+    "BTBT": "NonLocalPath",
+    "avalanche": "GradQuasiFermi",
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "silicon_triangles": 4156,
+    "runtime_vertices": 2678,
+    "interface_vertex_aliases": 78,
+    "native_edges": 7619,
+    "source_geometry_units": "um",
+    "private_source_interface_units": "m",
+    "internal_geometry": "normalized length coordinates"
+  },
+  "historical_cycles": {
+    "code/e": {
+      "cycles": 6,
+      "mismatched_triplets": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "code/h": {
+      "cycles": 6,
+      "mismatched_triplets": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "nearzero/e": {
+      "cycles": 6,
+      "mismatched_triplets": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "nearzero/h": {
+      "cycles": 6,
+      "mismatched_triplets": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "callback_e_h_equal": true,
+  "callback_permutations": {
+    "(2, 1, 0)": 1908,
+    "(0, 1, 2)": 1965,
+    "(1, 0, 2)": 283
+  },
+  "controls": {
+    "exported_input_m_cosine_tolerance": {
+      "all": 4156,
+      "match": 4118,
+      "untied": 4006,
+      "untied_match": 4006,
+      "tied": 150,
+      "tied_match": 112
+    },
+    "exported_runtime_um_cosine_direct": {
+      "all": 4156,
+      "match": 4134,
+      "untied": 4006,
+      "untied_match": 4006,
+      "tied": 150,
+      "tied_match": 128
+    },
+    "exported_runtime_m_determinant_direct": {
+      "all": 4156,
+      "match": 4135,
+      "untied": 4006,
+      "untied_match": 4006,
+      "tied": 150,
+      "tied_match": 129
+    },
+    "internal_cosine_direct": {
+      "all": 4156,
+      "match": 4142,
+      "tied": 150,
+      "tied_match": 136
+    },
+    "internal_determinant_division": {
+      "all": 4156,
+      "match": 4148,
+      "tied": 150,
+      "tied_match": 142
+    },
+    "internal_determinant_reciprocal": {
+      "all": 4156,
+      "match": 4156,
+      "tied": 150,
+      "tied_match": 150
+    }
+  },
+  "native_rule": {
+    "score": "absolute determinant of two normalized incident edge directions",
+    "normalization": "multiply coordinate differences by reciprocal cached edge length",
+    "comparison": "strictly greater; first exact tie retained",
+    "traversal": "swap selected local index with local index zero",
+    "double_and_extended_selection_use_double_geometry": true
+  },
+  "original_configuration_binding": {
+    "fixed_Load_Plot_exit": 0,
+    "trace": {
+      "errors": [],
+      "exit": 0,
+      "snapshots": 1
+    },
+    "historical_representatives_match": 4156,
+    "autonomous_internal_geometry_representatives_match": 4156,
+    "tied_representatives_match": 150,
+    "recomputed_edge_lengths_bitwise_equal": 7619
+  },
+  "verification": {
+    "local_diagnostic_tests_passed": 15,
+    "native_fixed_Load_Plot_runs": 1,
+    "native_Newton_updates": 0,
+    "native_QS_scans": 0,
+    "linear_backend": "not invoked"
+  },
+  "qualification": {
+    "native_comparison_and_traversal_rule_identified": true,
+    "original_configuration_geometry_identity_bound": true,
+    "geometry_rule_from_original_internal_coordinates": true,
+    "autonomous_internal_coordinate_normalization_definition": false,
+    "integrated_private_actual_assembly": false,
+    "complete_RHS": false,
+    "N4_complete": false,
+    "N5_started": false
+  },
+  "private_evidence_directory": "build-release/bvmethods_representative_order_20261017",
+  "next": "independently reconstruct internal length normalization and conversion order; integrate private actual assembly, then source and weak-row gates"
+}

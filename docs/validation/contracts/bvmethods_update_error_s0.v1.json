@@ -1,0 +1,201 @@
+{
+  "schema": "vela.bvmethods.update-error.stage0.v1",
+  "status": "partial_definition_not_native_equivalent",
+  "scope": "installed-library 2022 BVmethods with entire Band2Band disabled; report only",
+  "authorization": {
+    "native_new_collection": true,
+    "production_acceptance_change": false
+  },
+  "evidence": {
+    "manual": {
+      "version": "T-2022.03",
+      "pages": [
+        193,
+        194,
+        195,
+        209,
+        1594,
+        1722,
+        1723
+      ],
+      "text_sha256": "ba58b2653dae35f2913b9018928b3e711224490b99d783ad29f627ab07f7bb16",
+      "pdf_sha256": "f33068f5040c1c8c7993bdc1c86a0d777925792780ab4405752accd682706e88"
+    },
+    "cmd": {
+      "basename": "pp5_des.cmd",
+      "sha256": "47ed4a2330f20bcb190535175aa5dc6fb180cf49315093659c79d8e450c2a518"
+    },
+    "log": {
+      "basename": "n5_des.log",
+      "sha256": "8c36e61a1a32cb558d94f39d4f4c3e69f7fa33e28a2615eb4a065891a583750f"
+    }
+  },
+  "known": {
+    "formula": "sqrt(sum_k sum_j (abs(delta_x_kj)/(10^(-digits)*(abs(x_kj)+err_ref_k)))^2 / sum_k N_k)",
+    "equation_composition": "E_global^2 = sum_k N_k E_k^2 / sum_k N_k",
+    "digits": 5,
+    "rhs_min_native": 1e-05,
+    "line_search_damping": 1.0,
+    "not_damped": 100,
+    "iterations": 20,
+    "native_acceptance": "update_error < 1 OR rhs_norm < rhs_min unless explicit overrides",
+    "acceptance_overrides": [
+      "RhsAndUpdateConvergence",
+      "RhsMinFactor",
+      "CheckRhsAfterUpdate"
+    ],
+    "bank_rose_activation": "iteration count exceeds NotDamped; solver name alone is not evidence of damping",
+    "references": {
+      "Poisson": {
+        "value": 0.025852,
+        "unit": "V",
+        "source": "log reference table"
+      },
+      "Electron": {
+        "value": 10000000000.0,
+        "unit": "cm^-3",
+        "source": "log reference table"
+      },
+      "Hole": {
+        "value": 10000000000.0,
+        "unit": "cm^-3",
+        "source": "log reference table"
+      },
+      "Contact": {
+        "value": 0.025852,
+        "unit": "unconfirmed",
+        "source": "log reference table"
+      },
+      "electron quasi-fermi-potential": {
+        "value": 0.025852,
+        "unit": "V",
+        "source": "log reference table"
+      },
+      "hole quasi-fermi-potential": {
+        "value": 0.025852,
+        "unit": "V",
+        "source": "log reference table"
+      }
+    },
+    "equation_categories": [
+      "poisson",
+      "electron",
+      "hole",
+      "current-contact"
+    ],
+    "first_step": {
+      "outer_V": 0.01,
+      "rhs_printed": [
+        4210.0,
+        3700000.0,
+        6550.0,
+        0.025
+      ],
+      "error_printed": [
+        2750.0,
+        80.2,
+        0.25
+      ],
+      "factor_printed": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "termination_error_printed": "2.4996E-01",
+      "termination_rounding_interval_conservative": [
+        0.249955,
+        0.249965
+      ],
+      "native_rhs_increase_from_rounded_values": 878.8598574821852,
+      "unamplified_rms_first": 0.0275
+    }
+  },
+  "unknown": {
+    "S1_Newton_unknowns": "density-primary for collected profile; normalized potential/contact and n/p independently bound",
+    "S2_metric_variables": "density and potential for collected profile; error entries include 11 aliases of one contact unknown",
+    "S3_mapping_and_protection_order": "factor=1 observed: raw delta numerator with post-protection denominator; general damping order remains unresolved",
+    "denominator_timing": "post-protection current state for collected factor=1 trajectory",
+    "equation_masks_and_counts": "observed metric 2600+11+2121+2121; coupled linear system 6843; not interchangeable",
+    "contact_variable_and_unit": "current-contact potential; thermal-voltage normalization; alias weighting distinct from independent solve dimension",
+    "reference_exact_values_beyond_print_precision": "unresolved",
+    "raw_vs_applied_update": "raw linear numerator distinguished from applied delta by protected transitions"
+  },
+  "native_equivalence_frozen": false,
+  "rhs_min_branch_implemented": false,
+  "freeze_gate": [
+    "full-state and iteration identity",
+    "full active masks and counts",
+    "complete error in printed rounding interval with reconstruction uncertainty",
+    "same definition reproduces iterations 2 and 3",
+    "same definition reproduces independent bias state",
+    "unresolved combinations remain explicit"
+  ],
+  "vela_report_candidates": {
+    "modes": [
+      "off",
+      "report"
+    ],
+    "default": "off",
+    "updates": [
+      "U1_full_state_tangent",
+      "U2_full_state_finite",
+      "U3_actual_accepted"
+    ],
+    "denominators": [
+      "D0_before",
+      "D1_U1_tangent_after",
+      "D1_U2_finite_after",
+      "D2_U3_accepted_after"
+    ],
+    "invalid": [
+      "candidate_unrepresentable",
+      "underflow_degeneracy",
+      "no_accepted_update"
+    ],
+    "scope_missing_contact": "device_subsystem_only_not_full_native_RMS",
+    "native_observed_additional_pair": "raw_linear_delta_with_applied_state_denominator; keep separate from U3 actual applied delta"
+  },
+  "unchanged_gates": {
+    "carrier_row_ratio": 0.001,
+    "source_qualification": 1e-18,
+    "row_scale_floor": 1e-30,
+    "global_closure": 0.01,
+    "operator": 1e-08
+  },
+  "stage0_existing_evidence_completed": true,
+  "stage0_collection_and_identity_completed": false,
+  "native_collection_execution": {
+    "status": "completed_collected_hash_verified",
+    "baseline_exit_code": 0,
+    "observed_exit_code": 0,
+    "trajectory_bytes_equal": true,
+    "report": "../bvmethods_update_error_native_collection_2026-10-19.md"
+  },
+  "observed_factor_one_contract": {
+    "S1": "normalized electrostatic potential, one independent current-contact potential, electron and hole densities",
+    "S2": "potential and current-contact potential normalized by thermal voltage, densities normalized by 1.4824351e10 cm^-3",
+    "S3_observed_factor_one": "raw linear update in numerator; post-protection current state in denominator; nonpositive raw density replaced by 0.01 times old density",
+    "independent_coupled_linear_dimension": 6843,
+    "error_entry_counts": {
+      "poisson": 2600,
+      "contact_aliases": 11,
+      "electron": 2121,
+      "hole": 2121
+    },
+    "error_entry_total": 6853,
+    "contact_aliases_are_not_independent_unknowns": true,
+    "normalizations": {
+      "ElectrostaticPotential": 0.025851995266484913,
+      "eDensity": 14824351000.0,
+      "hDensity": 14824351000.0
+    },
+    "scope_exclusions": [
+      "damping factors other than one",
+      "other variable formulations",
+      "other contacts or geometries",
+      "RhsMin scaling in Vela"
+    ],
+    "verification": "412 of 412 printed errors; six NewtonPlot-bound rounds; 74 protected disambiguating transitions"
+  },
+  "stage0_observed_factor_one_contract_verified": true
+}

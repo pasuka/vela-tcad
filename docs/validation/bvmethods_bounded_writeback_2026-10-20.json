@@ -1,0 +1,676 @@
+{
+  "date": "2026-10-20",
+  "scope": "T470p writeback decomposition and bounded directions; output-contact fix; no acceptance change",
+  "manifest_sha256": "40e65aca7c9931c0f41257ce035d0d0eeb3f465fe892575e54836db19def5209",
+  "analysis_checks": 144,
+  "repeated_diagnostic_processes": 4,
+  "unique_candidate_trials": 52,
+  "external_state_catch2": {
+    "cases": 6,
+    "assertions": 174,
+    "passed": true
+  },
+  "standard_cmake_runner_checks": true,
+  "states": {
+    "rows5": {
+      "base_merit": 0.0006977896682557535,
+      "writeback": [
+        {
+          "actual_merit": 0.002614737203245557,
+          "alpha": 1.0,
+          "blocks": [
+            {
+              "block": 0,
+              "e_sum_change": 2.484999117335798e-21,
+              "h_sum_change": 1.0570352621551368e-26,
+              "loss_norm": 4.206793941149458e-14,
+              "removed_loss_merit": 0.0022835398793303956
+            },
+            {
+              "block": 1,
+              "e_sum_change": -6.700413213476955e-14,
+              "h_sum_change": -3.065698146116934e-28,
+              "loss_norm": 2.756978710248777e-16,
+              "removed_loss_merit": 1.1102088720776515e-06
+            },
+            {
+              "block": 2,
+              "e_sum_change": 3.240677671184321e-33,
+              "h_sum_change": 4.263395200297972e-28,
+              "loss_norm": 7.99501878243078e-15,
+              "removed_loss_merit": 0.002283539794669301
+            }
+          ],
+          "collapsed_R": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "collapsed_x": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "request_merit": 1.1102687349466602e-06,
+          "size": 7800,
+          "two_sum_long_double_checks": 7800,
+          "written_merit": 0.002283539794669301
+        },
+        {
+          "actual_merit": 0.0006973985975936088,
+          "alpha": 0.5,
+          "blocks": [
+            {
+              "block": 0,
+              "e_sum_change": 2.571858603304562e-21,
+              "h_sum_change": 1.8360577542474653e-27,
+              "loss_norm": 2.897630624949607e-14,
+              "removed_loss_merit": 0.0006974287829058548
+            },
+            {
+              "block": 1,
+              "e_sum_change": -1.0218752197110114e-14,
+              "h_sum_change": -1.531799022914236e-28,
+              "loss_norm": 1.815587749549271e-16,
+              "removed_loss_merit": 0.0003492883465671541
+            },
+            {
+              "block": 2,
+              "e_sum_change": 1.0236329913404758e-32,
+              "h_sum_change": -6.74389765362229e-28,
+              "loss_norm": 2.8514278269364834e-15,
+              "removed_loss_merit": 0.0006974286952856735
+            }
+          ],
+          "collapsed_R": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "collapsed_x": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "request_merit": 0.00034928843418698775,
+          "size": 7800,
+          "two_sum_long_double_checks": 7800,
+          "written_merit": 0.0006974286952856736
+        }
+      ],
+      "recenter": {
+        "baseline_J_difference": {
+          "nonzeros_after": 112668,
+          "nonzeros_before": 112668,
+          "structure_equal": true,
+          "values": {
+            "bitwise_equal": false,
+            "different_values": 19584,
+            "first_index": 912,
+            "max_absolute_difference": 3.985951479990035e-08,
+            "size_after": 112668,
+            "size_before": 112668
+          }
+        },
+        "baseline_R_difference": {
+          "bitwise_equal": false,
+          "different_values": 2719,
+          "first_index": 144,
+          "max_absolute_difference": 3.212217552530584e-11,
+          "size_after": 7800,
+          "size_before": 7800
+        },
+        "baseline_n_difference": {
+          "bitwise_equal": false,
+          "different_values": 369,
+          "first_index": 144,
+          "max_absolute_difference": 720896.0,
+          "size_after": 2600,
+          "size_before": 2600
+        },
+        "baseline_p_difference": {
+          "bitwise_equal": true,
+          "different_values": 0,
+          "first_index": -1,
+          "max_absolute_difference": 0.0,
+          "size_after": 2600,
+          "size_before": 2600
+        }
+      },
+      "candidates": [
+        {
+          "name": "focus_qf_box",
+          "columns": 8,
+          "passes": 2000,
+          "projected_step_inf": 1.9350638856018335e-08,
+          "linear_merit": 2.432552059806608e-09,
+          "best": {
+            "alpha": 0.5,
+            "merit": 0.0006970055412699995,
+            "requested_merit": 0.00034889483413909177,
+            "written_merit": 0.000697035624527987,
+            "decreased": true,
+            "violations": 25,
+            "fixed_initial_qualified_violations": 25,
+            "qualified": 1332,
+            "exited": [],
+            "entered": [],
+            "closure_satisfied": true,
+            "rows_satisfied": false,
+            "semiconductor_positive_finite": true,
+            "drain_A_per_um": 5.986615774237665e-10,
+            "terminal_kcl_relative": 1.019858268326104e-09,
+            "max_row_node": 716,
+            "max_row_ratio": 1.3558630856600962
+          }
+        },
+        {
+          "name": "one_ring_qf_box",
+          "columns": 40,
+          "passes": 2000,
+          "projected_step_inf": 5.726670246400471e-11,
+          "linear_merit": 1.0967684243956847e-10,
+          "best": {
+            "alpha": 0.5,
+            "merit": 0.0006970055417795103,
+            "requested_merit": 0.0003488948341273827,
+            "written_merit": 0.0006970356245196407,
+            "decreased": true,
+            "violations": 28,
+            "fixed_initial_qualified_violations": 28,
+            "qualified": 1332,
+            "exited": [],
+            "entered": [],
+            "closure_satisfied": true,
+            "rows_satisfied": false,
+            "semiconductor_positive_finite": true,
+            "drain_A_per_um": 5.986615774237665e-10,
+            "terminal_kcl_relative": 1.019858268326104e-09,
+            "max_row_node": 598,
+            "max_row_ratio": 1.061559884204618
+          }
+        }
+      ]
+    },
+    "rows285": {
+      "base_merit": 0.0038416304919719757,
+      "writeback": [
+        {
+          "actual_merit": 0.0072971211994817455,
+          "alpha": 1.0,
+          "blocks": [
+            {
+              "block": 0,
+              "e_sum_change": 2.0886602885275798e-21,
+              "h_sum_change": 6.959450825867292e-27,
+              "loss_norm": 4.286771780908694e-14,
+              "removed_loss_merit": 0.007678049310925555
+            },
+            {
+              "block": 1,
+              "e_sum_change": -3.016245976049931e-14,
+              "h_sum_change": -2.0049467432529085e-28,
+              "loss_norm": 2.7793951687199856e-16,
+              "removed_loss_merit": 0.006956098805947017
+            },
+            {
+              "block": 2,
+              "e_sum_change": 4.84222988897727e-30,
+              "h_sum_change": 7.379363124489822e-28,
+              "loss_norm": 1.5135294977104073e-14,
+              "removed_loss_merit": 0.007678049258966568
+            }
+          ],
+          "collapsed_R": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "collapsed_x": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "request_merit": 0.006956098853770117,
+          "size": 7800,
+          "two_sum_long_double_checks": 7800,
+          "written_merit": 0.007678049258966546
+        },
+        {
+          "actual_merit": 0.0062750725042357005,
+          "alpha": 0.5,
+          "blocks": [
+            {
+              "block": 0,
+              "e_sum_change": 2.372867795197977e-21,
+              "h_sum_change": 3.992955124807304e-28,
+              "loss_norm": 3.812405601830586e-14,
+              "removed_loss_merit": 0.00631523943352589
+            },
+            {
+              "block": 1,
+              "e_sum_change": -3.836454365542797e-14,
+              "h_sum_change": -9.816698227772426e-29,
+              "loss_norm": 2.0299348966426248e-16,
+              "removed_loss_merit": 0.005260754427216924
+            },
+            {
+              "block": 2,
+              "e_sum_change": 2.4551098521501354e-30,
+              "h_sum_change": -3.9179890756085964e-28,
+              "loss_norm": 8.229965153553479e-15,
+              "removed_loss_merit": 0.0063152393661675
+            }
+          ],
+          "collapsed_R": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "collapsed_x": {
+            "bitwise_equal": true,
+            "different_values": 0,
+            "first_index": -1,
+            "max_absolute_difference": 0.0,
+            "size_after": 7800,
+            "size_before": 7800
+          },
+          "request_merit": 0.005260754489870883,
+          "size": 7800,
+          "two_sum_long_double_checks": 7800,
+          "written_merit": 0.006315239366167487
+        }
+      ],
+      "recenter": {
+        "baseline_J_difference": {
+          "nonzeros_after": 112668,
+          "nonzeros_before": 112668,
+          "structure_equal": true,
+          "values": {
+            "bitwise_equal": false,
+            "different_values": 20020,
+            "first_index": 811,
+            "max_absolute_difference": 3.985951479990035e-08,
+            "size_after": 112668,
+            "size_before": 112668
+          }
+        },
+        "baseline_R_difference": {
+          "bitwise_equal": false,
+          "different_values": 2676,
+          "first_index": 136,
+          "max_absolute_difference": 2.965123894643616e-11,
+          "size_after": 7800,
+          "size_before": 7800
+        },
+        "baseline_n_difference": {
+          "bitwise_equal": false,
+          "different_values": 387,
+          "first_index": 136,
+          "max_absolute_difference": 720896.0,
+          "size_after": 2600,
+          "size_before": 2600
+        },
+        "baseline_p_difference": {
+          "bitwise_equal": true,
+          "different_values": 0,
+          "first_index": -1,
+          "max_absolute_difference": 0.0,
+          "size_after": 2600,
+          "size_before": 2600
+        }
+      },
+      "candidates": [
+        {
+          "name": "focus_qf_box",
+          "columns": 8,
+          "passes": 2000,
+          "projected_step_inf": 0.00010471372267356616,
+          "linear_merit": 1.686244434880873e-05,
+          "best": {
+            "alpha": 1.0,
+            "merit": 0.0005442367318852933,
+            "requested_merit": 1.686244434880873e-05,
+            "written_merit": 0.0009700388847386878,
+            "decreased": true,
+            "violations": 277,
+            "fixed_initial_qualified_violations": 289,
+            "qualified": 1590,
+            "exited": [
+              [
+                1,
+                145
+              ],
+              [
+                2,
+                145
+              ],
+              [
+                1,
+                152
+              ],
+              [
+                2,
+                152
+              ],
+              [
+                1,
+                169
+              ],
+              [
+                2,
+                169
+              ],
+              [
+                1,
+                402
+              ],
+              [
+                2,
+                402
+              ],
+              [
+                1,
+                403
+              ],
+              [
+                2,
+                403
+              ],
+              [
+                1,
+                404
+              ],
+              [
+                2,
+                404
+              ],
+              [
+                1,
+                405
+              ],
+              [
+                2,
+                405
+              ],
+              [
+                1,
+                406
+              ],
+              [
+                2,
+                406
+              ],
+              [
+                1,
+                407
+              ],
+              [
+                2,
+                407
+              ],
+              [
+                1,
+                408
+              ],
+              [
+                2,
+                408
+              ],
+              [
+                1,
+                409
+              ],
+              [
+                2,
+                409
+              ],
+              [
+                1,
+                422
+              ],
+              [
+                2,
+                422
+              ],
+              [
+                1,
+                423
+              ],
+              [
+                2,
+                423
+              ],
+              [
+                1,
+                627
+              ],
+              [
+                2,
+                627
+              ],
+              [
+                1,
+                798
+              ],
+              [
+                2,
+                798
+              ]
+            ],
+            "entered": [
+              [
+                1,
+                353
+              ],
+              [
+                2,
+                353
+              ],
+              [
+                1,
+                424
+              ],
+              [
+                2,
+                424
+              ]
+            ],
+            "closure_satisfied": true,
+            "rows_satisfied": false,
+            "semiconductor_positive_finite": true,
+            "drain_A_per_um": 5.986616166285483e-10,
+            "terminal_kcl_relative": 9.93882636811192e-10,
+            "max_row_node": 881,
+            "max_row_ratio": 1.5523958971385499
+          }
+        },
+        {
+          "name": "one_ring_qf_box",
+          "columns": 40,
+          "passes": 2000,
+          "projected_step_inf": 3.260115712122602e-07,
+          "linear_merit": 1.1934448354998325e-05,
+          "best": {
+            "alpha": 1.0,
+            "merit": 0.0006182898580321919,
+            "requested_merit": 1.1934448354998325e-05,
+            "written_merit": 0.0009699656555172228,
+            "decreased": true,
+            "violations": 306,
+            "fixed_initial_qualified_violations": 318,
+            "qualified": 1590,
+            "exited": [
+              [
+                1,
+                145
+              ],
+              [
+                2,
+                145
+              ],
+              [
+                1,
+                152
+              ],
+              [
+                2,
+                152
+              ],
+              [
+                1,
+                169
+              ],
+              [
+                2,
+                169
+              ],
+              [
+                1,
+                402
+              ],
+              [
+                2,
+                402
+              ],
+              [
+                1,
+                403
+              ],
+              [
+                2,
+                403
+              ],
+              [
+                1,
+                404
+              ],
+              [
+                2,
+                404
+              ],
+              [
+                1,
+                405
+              ],
+              [
+                2,
+                405
+              ],
+              [
+                1,
+                406
+              ],
+              [
+                2,
+                406
+              ],
+              [
+                1,
+                407
+              ],
+              [
+                2,
+                407
+              ],
+              [
+                1,
+                408
+              ],
+              [
+                2,
+                408
+              ],
+              [
+                1,
+                409
+              ],
+              [
+                2,
+                409
+              ],
+              [
+                1,
+                422
+              ],
+              [
+                2,
+                422
+              ],
+              [
+                1,
+                423
+              ],
+              [
+                2,
+                423
+              ],
+              [
+                1,
+                627
+              ],
+              [
+                2,
+                627
+              ],
+              [
+                1,
+                798
+              ],
+              [
+                2,
+                798
+              ]
+            ],
+            "entered": [
+              [
+                1,
+                353
+              ],
+              [
+                2,
+                353
+              ],
+              [
+                1,
+                424
+              ],
+              [
+                2,
+                424
+              ]
+            ],
+            "closure_satisfied": true,
+            "rows_satisfied": false,
+            "semiconductor_positive_finite": true,
+            "drain_A_per_um": 5.986616166285483e-10,
+            "terminal_kcl_relative": 9.93882636811192e-10,
+            "max_row_node": 881,
+            "max_row_ratio": 1.5523958971385499
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "purpose": "independent reference precision check, specified before reference outputs",
+  "precision_digits": [
+    50,
+    80
+  ],
+  "states": [
+    1,
+    5
+  ],
+  "direction": "newton",
+  "h": [
+    3e-05,
+    1e-05,
+    3e-06
+  ],
+  "comparison": "same full residual mobility chain and same original state/direction; non-mobility models retain existing mixed precision",
+  "reference_difference": "norm(FD50-FD80)/common Jv norm, empirical precision sensitivity rather than certified bound",
+  "random_and_localized": "no independent 80-digit qualification in this batch; report separately",
+  "isolation": "retain old 3e-6 failure; no acceptance or threshold change"
+}

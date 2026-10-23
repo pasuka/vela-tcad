@@ -10,7 +10,7 @@ D4 用户交付入口与支持矩阵也已完成：见[交付指南](../../sdevi
 [T470p/C560 验证](../../validation/sdevice_delivery_d4_2026-10-23.md)。下文历史 WP 完成不代表当前 dirty
 源码已重新验收；新增安装库原版 NonLocalPath／R2/R3 保留独立研发，不取消、不冒充前端已发布能力。
 
-状态：方案 v2.11（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+状态：方案 v2.18（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
 修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10；v2.4 于 2026-09-29
 记录阶段 1–2（WP0 + 并行组 A）全部完成，新增第 10.5 节“完成情况汇总与交接说明”，把 WP4/WP5/WP10–WP12
 细化为可由另一执行者直接落地的步骤，并新增 WP13“C++ 内置材料参数对齐与重新基线化”、WP14“Sentaurus
@@ -51,6 +51,53 @@ Windows/Ubuntu 26.04 两包，分别执行全新 PN2D 0V/IV/BV、十点严格场
 [发行包收口记录](../../validation/sdevice_package_closeout_2026-10-07.md)。
 原固定栅压从零纯 QS 的 13 组及辅助栅两组原生对照均未修复原路径；
 其失败证据与校验工具一并提交，本次不继续数值研究或扩大 v4 资格。
+
+v2.12 后续数值计划（2026-10-08，用户要求制定计划）：T470p 负责 Windows 定位与修复，
+联想 C560 的 Ubuntu 26.04 负责 Linux 验证，Sentaurus VM 负责原生对照，当前电脑中转文件。
+连接及小文件往返测试通过，尚未部署新源码或启动数值任务。独立 Q0–Q7 的顺序、资格与停止规则见
+[从零纯 QS 后续计划](2026-10-08-bvmethods-zero-qs-followup-plan.md)；已完成工作包不重开。
+
+v2.13 Q0–Q3 首轮（2026-10-08，用户授权执行）：两节点部署、原生复现、材料/支路空间审计和
+三项候选已执行；Eparallel 前端键值修复通过两平台相关回归。原生仍止于 14.1 kV，
+Vela 零偏初始化未通过，继续 Q2/Q3 定位；Q4–Q7 未启动，未替换发行包或提交合并。
+见 [阶段执行记录](../../validation/bvmethods_zero_qs_q0_q3_2026-10-08.md)。
+
+v2.14 零偏初始化与诊断（2026-10-08，用户要求继续）：修复合并初始阶段只做一次 Poisson 更新、
+丢失原 100 次预算的问题，并用暖启动 Newton 保持完整 Poisson 平衡态。T470p/C560 各两次新鲜
+零偏、两项性质测试及 10 项相关 CTest 通过。原物理、网格、材料和门限不变；零电流 Eparallel
+源项线性化边界已定位并保留。下一步仍属 Q2/Q3 外电阻与有偏置导数对照；完整 QS、Q4–Q7
+和发行包替换未执行，未提交/推送/合并。见[零偏诊断记录](../../validation/bvmethods_zero_bias_initialization_2026-10-08.md)。
+
+v2.15 外电阻及有偏置导数对照（2026-10-08，用户授权继续）：两平台重新取得新鲜零偏，
+完成 nested/coupled 同首步、缩括区及严格 QR 对照；均未获得非零接受点。
+有偏置 phin 方向差异经只读消融定位到雪崩源项；继续检查 Eparallel 分支和少数载流子块条件化。
+17 项本地性质/集成测试通过，10 个远端归档哈希核验；生产模型、材料、网格和门限未改。
+仍在 Q2/Q3，Q4–Q7 未启动，未提交/推送/合并或换包。详见
+[控制器及导数对照](../../validation/bvmethods_loadline_biased_derivatives_2026-10-08.md)。
+
+v2.16 分支/条件化及步长追踪（2026-10-08，用户要求执行下一步）：完成相邻边匹配方向探针、
+源项冻结和行列缩放/边界控制消融；修复 nested 外目标自适应编排和设备失败试探的状态追踪。
+本地及两平台各 10 项相关 CTest、外电阻契约通过；新鲜零偏通过，原算例六次回退均未取得非零接受点。
+源项方向分支与少数载流子弱行仍需最小数值修复；物理、网格、材料和门限不变，Q4–Q7 未启动，
+未提交/推送/合并或换包。见[本轮记录](../../validation/bvmethods_branch_conditioning_step_trace_2026-10-08.md)。
+
+v2.17 自由弱行与同方向审计（2026-10-08，用户要求执行下一步）：修复精化纠正步丢失 L2、
+探针绕过生产数值配置及 Eparallel 源项 Jacobian 未采用 residual 单元电流向量的问题。
+两平台候选在归档态通过线性/导数筛查，新鲜零偏到 10 µV 完成原定 20 次迭代后仍因
+载流子逐行门限拒绝；全局连续性及拒绝态独立 KCL 通过，指定外目标负载未验收。
+真实拒绝态节点 790 的极小空穴密度/巨大原始更新已定位；统一限幅停滞及电子导数分辨率仍待修复。
+本地、T470p、Ubuntu 26.04 C560 完整 Release CTest 各 1039 通过、4 外部参考项跳过、0 失败；
+24 个运行时文件和 8 个最终归档完成哈希核验，物理、网格、材料及门限不变。
+仍在 Q2/Q3，Q4–Q7 未启动，未提交/推送/合并或换包。见
+[弱行及方向审计](../../validation/bvmethods_weak_rows_direction_audit_2026-10-08.md)。
+
+v2.18 耦合接受与弱行恢复（2026-10-09，用户要求执行下一步）：耦合外电阻增加真实
+载流子行/连续性、实际 KCL 和负载接受检查，修复 JSON CSV 转义及正则化扰动接触恒等行。
+完整迁移率导数的稳态密度恢复候选通过直接 10 µV，匹配下一点两次恢复取得通过；
+从新鲜零偏连续到第二外目标 24.1 µV 的平台结果及独立检查见
+[本轮验证](../../validation/bvmethods_coupled_acceptance_weak_update_2026-10-09.md)。
+本地/C560 完整 Release 各 1043 通过、4 外部参考项跳过；T470p 依赖搜索路径失败项修正后通过。
+空穴可分辨方向差分仍未认证，完整高压 QS 尚未通过；继续 Q2/Q3，Q4–Q7、提交/换包未执行。
 
 目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
 
@@ -640,7 +687,7 @@ flowchart LR
 - 范围：写出 C1、C2、C4、C7、C10 的 JSON schema；把第 8 节验收 deck 复制为
   `tests/fixtures/sdevice/<case>/` 夹具（cmd + `.par`），并手写每个 deck 的期望 IR v2 golden
   （含被拒绝 deck 的期望错误编号）；写 `docs/sentaurus_sdevice_workflow.md` 初稿（第 4–6 节
-  契约 + 消息目录 C8）；在 VM 建 `/home/tcad/vela_reference_artifacts/` 并归档首批产物。
+  契约 + 消息目录 C8）；在 VM 建 `<REMOTE_HOME>/vela_reference_artifacts/` 并归档首批产物。
 - 输入：本方案。输出：schema 文件、夹具、workflow 文档初稿、VM 目录。
 - 独占文件：`schemas/vela.sentaurus_execution_ir.v2.schema.json`、
   `schemas/vela.mesh_qualification.v1.schema.json`、`schemas/vela.stage_plan.v1.schema.json`、
@@ -1196,13 +1243,18 @@ WP14 外接电阻 v4 恢复路径已通过独立稳态和 C7 六项，原始从�
 门控归档版本绑定修复 `fd0396d7`；最终包指纹和首轮/复验记录见发行包收口记录。
 纯 QS 两组辅助栅候选均失败，不作为待执行候选重复列入；后续数值调查仍独立保留。
 
+2026-10-08 后续计划已制定、尚未执行：先按
+[Q0–Q7](2026-10-08-bvmethods-zero-qs-followup-plan.md) 冻结并部署当前源码、复现原生与 Vela 路径，
+定位支路/线性化问题后再选择最小候选。T470p 执行 Windows 任务，C560 执行 Ubuntu 26.04 验证；
+原生与 Vela 从零纯 QS 分别判定，保留 v4 已有恢复资格和 2026-10-07 已验收包。
+
 #### 10.5.4 交接执行说明（供另一执行者/模型直接使用）
 
 完整交接文档：[sdevice_cmd_frontend_handoff_2026-09-30.md](../../validation/sdevice_cmd_frontend_handoff_2026-09-30.md)
 （资产地图、命令速查、契约陷阱、每个剩余 WP 的任务票据与验收清单）。以下为摘要：
 
 - 环境（Windows）：`$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"`；在工作树根
-  `D:\code-repo\vela-tcad\.worktrees\sdevice-cmd-frontend` 执行 `cmake --preset windows-ucrt64-debug; cmake --build --preset
+  `<WORKTREE>` 执行 `cmake --preset windows-ucrt64-debug; cmake --build --preset
   windows-ucrt64-debug`；`build/` 已完整构建（`vela_example_runner.exe`、`vela.exe`、全部 Catch2 测试；`sentaurus_import` 取决于 HDF5
   检测，见配置输出）。Python 为 MSYS2 3.14，脚本只用标准库并保持 3.10 兼容（不用 3.13+ 语法/库）。
 - 测试：单个 Python 测试 `python -m unittest tests.regression.test_sdevice_<x>`；组内 `ctest --test-dir build -R sdevice
@@ -1327,7 +1379,7 @@ WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平�
 当前阶段决定（决定 18）：**采用 S3**，验收产物存放在 Sentaurus 虚拟机的指定路径。
 具体约定：
 
-- VM 根目录 `/home/tcad/vela_reference_artifacts/<case>/`（与现有自动化根目录
+- VM 根目录 `<REMOTE_HOME>/vela_reference_artifacts/<case>/`（与现有自动化根目录
   `~/sentaurus_runs/vela_oracle_2022` 并列，不混用；若你指定其它路径，在 manifest 的
   `store.root` 中记录即可）；案例内目录与 manifest 的相对名一致（`source/`、`mesh/`、
   `plt/`、`tdr/`、`log/`）。登记后的文件视为只读：文件内容变化会被哈希核对拒绝，
@@ -1335,7 +1387,7 @@ WP12 已逐项登记提交/测试证据。原生部署包补缺独立于两平�
 - 传输使用现有 SSH 别名 `sentaurus`（用户 `tcad`，`docs/sentaurus_vm_ssh_workflow.md`）：
   `fetch` 用 `scp`/`rsync` 拉到 `reference_staging/<case>/` 后立即校验哈希；`register` 在 VM
   上用 `sha256sum` 算哈希（避免先下载大文件），再拉取提取摘要所需的文件。
-- manifest 的 `store` 字段写 `{"kind":"ssh","host":"sentaurus","root":"/home/tcad/vela_reference_artifacts"}`；
+- manifest 的 `store` 字段写 `{"kind":"ssh","host":"sentaurus","root":"<REMOTE_HOME>/vela_reference_artifacts"}`；
   哈希与摘要与存储后端无关，日后切换到 S2b/S1 只需改 `store` 并重跑 `verify`。
 - 单点风险缓解：（a）`reference_staging/` 本地镜像保留已拉取的副本，`verify` 在 VM 不在线时
   可对本地副本核对并在报告中标注“未与源比对”；（b）建议定期把 VM 根目录同步到一份
@@ -1452,14 +1504,14 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 
 | 编号 | 事项 | 状态 |
 | --- | --- | --- |
-| A-1 | VM 归档目录布局（盘点文档第 5 节）；首批 7 个案例已复制到 `/home/tcad/vela_reference_artifacts/<case>/v1/`，manifest 入库 | 已确认并执行（2026-09-26） |
+| A-1 | VM 归档目录布局（盘点文档第 5 节）；首批 7 个案例已复制到 `<REMOTE_HOME>/vela_reference_artifacts/<case>/v1/`，manifest 入库 | 已确认并执行（2026-09-26） |
 | A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
 | A-3 | 原生参考重跑范围 | 用户于 2026-10-06 明确要求执行剩余 WP14；栅 v3、BVmethods v4 具名恢复路径已完成六项核验，原始从零 QS 限制与失败控制保留；见本轮记录 |
 | A-4 | 多段 `.plt` Time 与电流符号 | WP10 已用 v2 BJT base/collector 与 PN2D IV 固定：每段 t 重置 0–1，`CURRENT_SIGN_FACTOR=+1.0`；原生文件哈希见 workflow §3.3 |
 | A-5 | C++ `MaterialDatabase` 内置 Si/SiO2 是否对齐 Sentaurus 默认参数集并重新基线化（用户 2026-09-29：列入后续计划） | WP13 完成 Windows 原卡片验收；额外环境/重启限制见验证记录 |
 
 执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径已盘点完毕；若希望
-使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在确认 A-1 时指定。
+使用不同于 `<REMOTE_HOME>/vela_reference_artifacts/` 的根目录，在确认 A-1 时指定。
 
 截至 2026-10-05，没有阻止 WP12 文档收口的待确认事项。A-1/A-2/A-4 已落实；A-3/A-5 是
 具名独立后续。当前 Linux 目标为 Ubuntu 26.04，旧环境/包已删除（WP11）；

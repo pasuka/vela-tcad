@@ -1,0 +1,3476 @@
+{
+  "date": "2026-10-20",
+  "scope": "no-BTBT fixed internal bias; partial low SG assembly and explicit hard constrained direction",
+  "machine": "T470p",
+  "build": "Release UCRT64",
+  "production_backend": "UMFPACK",
+  "poisson_candidate_backend": "Eigen SparseLU",
+  "nodes": 2600,
+  "coordinates": 7800,
+  "temperature_K": 300,
+  "drain_V": 0.00524437249039996,
+  "production_changes": false,
+  "acceptance_changes": false,
+  "full_ctest_run": false,
+  "qualified_fix": false,
+  "low_scope": "independent electron SG drive low; high-state coefficients/population/source frozen",
+  "batches": [
+    {
+      "optimizer": "ADMM",
+      "remote_checks": 93,
+      "independent_checks": 82,
+      "runs": 6,
+      "archive_sha256": "73de0e542dcf4838a3a749a118b361b0a4ce0a0114b8a7b9b6913c5dd10434b8",
+      "download_manifest_files": 177,
+      "executable_sha256": "423a284920b0a489f55292e41cae6bbc432c3c794d619ca48cb92947748e0528",
+      "baseline_and_repeats_exact": true,
+      "samples": [
+        {
+          "label": "rows0",
+          "iteration": 4,
+          "base_merit": 0.0006963893863150802,
+          "precision": [
+            {
+              "alpha": 0.0,
+              "changed_residual_high": 0,
+              "low_merit": 0.0006963893863150811,
+              "nonzero_edge_increment": 0,
+              "nonzero_low": 0,
+              "ordinary_merit": 0.0006963893863150802,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              }
+            },
+            {
+              "alpha": 1.0,
+              "changed_residual_high": 2121,
+              "low_merit": 0.00033136490477478093,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0026141211120758252,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.5,
+              "changed_residual_high": 2121,
+              "low_merit": 0.00034825373666584,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0006963948584944029,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.000244140625,
+              "changed_residual_high": 2121,
+              "low_merit": 0.000696219403077372,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0006963893868846613,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            }
+          ],
+          "low_controls": {
+            "gauge_delta": 0.0,
+            "gauge_identity": {
+              "bitwise_equal": true,
+              "different_values": 0,
+              "first_index": -1,
+              "max_absolute_difference": 0.0,
+              "size_after": 7800,
+              "size_before": 7800
+            },
+            "odd_relative": 5.062869069810854e-19,
+            "signal": 3.2690871976659954e-17
+          },
+          "bounded": []
+        },
+        {
+          "label": "rows285",
+          "iteration": 1,
+          "base_merit": 0.003841630491971976,
+          "precision": [
+            {
+              "alpha": 0.0,
+              "changed_residual_high": 0,
+              "low_merit": 0.003841630491971951,
+              "nonzero_edge_increment": 0,
+              "nonzero_low": 0,
+              "ordinary_merit": 0.003841630491971976,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              }
+            },
+            {
+              "alpha": 1.0,
+              "changed_residual_high": 2121,
+              "low_merit": 0.006595196546581906,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0072971211994817455,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.5,
+              "changed_residual_high": 2121,
+              "low_merit": 0.005219523408576596,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0062750725042357005,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.000244140625,
+              "changed_residual_high": 2121,
+              "low_merit": 0.0038422029057968853,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0038427809134562968,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            }
+          ],
+          "low_controls": {
+            "gauge_delta": 0.0,
+            "gauge_identity": {
+              "bitwise_equal": true,
+              "different_values": 0,
+              "first_index": -1,
+              "max_absolute_difference": 0.0,
+              "size_after": 7800,
+              "size_before": 7800
+            },
+            "odd_relative": 5.062869069810862e-19,
+            "signal": 3.26908719766599e-17
+          },
+          "bounded": [
+            {
+              "columns": 160,
+              "complementarity": 6617444.900424221,
+              "converged": false,
+              "diagnostic_linear_bad_1e10": 3,
+              "dual": 0.00014171355892021183,
+              "fixed_rows": 1616,
+              "iterations": 30000,
+              "linear_merit": 0.0032864081931789865,
+              "max_linear_ratio": 1.0000000080697455,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "primal": 2.6936031909841063e-05,
+              "slope": -2.1822367752815395e-06,
+              "stationarity": 8.857097251016945e-05,
+              "strict_linear_bad": 15,
+              "trials": [
+                {
+                  "actual_merit": 0.00328370694425781,
+                  "alpha": 1.0,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.081587796231533e-11,
+                      "mismatch": 9.869890775043045e-14,
+                      "qualified": true,
+                      "ratio": 0.0032028588596803615
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.081587796231533e-11,
+                      "mismatch": 2.2523193064684714e-14,
+                      "qualified": true,
+                      "ratio": 0.000730895712016652
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "b217d71d8de3c50b0d5de1b5d094fa88e16c1f71c53c800ca6591b0e290e6f0f",
+                      "ninc": "6e6bd5382ff73d54050977bf4081e4a50027484e9083e4a6ded8714a21eaff50",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "b462c6d6270e16a4a9646023c98fc771732a6edfc69d1f4f1b0296b1811b5a2c",
+                      "packed": "e9578e1f916486454c0b25fb19dea4da5482ab1898e5759640c9572bde3ed260",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "3ed32ae4ecec9445a70f478893876e10f1f44cf16138a09d19e337636dea0132",
+                      "phip": "0302be655216e5b95ee13bd3f1ffb8c7f623e61f7aeb5eca85a8c3264d3fa62c",
+                      "pinc": "0302be655216e5b95ee13bd3f1ffb8c7f623e61f7aeb5eca85a8c3264d3fa62c",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "0cc88fb452fb4443f23c62c6155fcd8ed094771864412413a37f1d8dd0ec32a0",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 12,
+                  "max_bound_ratio": 1.0066646834030968,
+                  "original_violations": 285,
+                  "requested_merit": 0.0032864081925447386,
+                  "strict_nonworsening_bad": 27,
+                  "written_merit": 0.0032864081930287226,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0066646834030968
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0027610745819082
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0023620205393182
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.001035375580193
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0005129828553465
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0001594810809904
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0001114287597601
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 718,
+                      "ratio": 1.0000001967857317
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0035598264282874124,
+                  "alpha": 0.5,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0822881468716245e-11,
+                      "mismatch": 1.0570241415134858e-13,
+                      "qualified": true,
+                      "ratio": 0.003429348883511475
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0822881468716245e-11,
+                      "mismatch": 2.952669946560284e-14,
+                      "qualified": true,
+                      "ratio": 0.0009579474098023909
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "07328d2fb252518601f5159e02168de87d74d9816c1d7f41ed13c0b4610ff7e9",
+                      "ninc": "19d7694f7a85b7cdd658017701d22dfedda978c6488e0824b60e44e887fcca04",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "f377074690275e6a085aeb99cc1d1c0047ba234947660f6a60d7438c750de2f7",
+                      "packed": "64ba749f2444983c1cdcc82687aa5744c53198d0ad0a94e02c916cea3673ebc7",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4e0717933fdfa3a35ae751d852504666b104361744d8faffc0c40c7251148c4e",
+                      "phip": "b484ed198f2e7cf0eb7e90e94b040665d01dc598e22b1ac3f43cef5f5a3c4f18",
+                      "pinc": "b484ed198f2e7cf0eb7e90e94b040665d01dc598e22b1ac3f43cef5f5a3c4f18",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "567b306e5e6847b0d2f60c82cf471c5684bf262e3c21f7cca1ae5b02b26bb284",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 12,
+                  "max_bound_ratio": 1.0017554693254893,
+                  "original_violations": 285,
+                  "requested_merit": 0.0035605610430819775,
+                  "strict_nonworsening_bad": 26,
+                  "written_merit": 0.0035605610430418733,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0017554693254893
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0007217025853536
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0006054454469715
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0002741182651769
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0001293081170926
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.000040157354676
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000280319831965
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 718,
+                      "ratio": 1.0000000471956627
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0037001418677325526,
+                  "alpha": 0.25,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082637140179634e-11,
+                      "mismatch": 1.0919234723144669e-13,
+                      "qualified": true,
+                      "ratio": 0.0035421732194235397
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082637140179634e-11,
+                      "mismatch": 3.301663254570095e-14,
+                      "qualified": true,
+                      "ratio": 0.0010710515394548505
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "8690746d0f6b1655af205d494672645271a48a03544b3448d43f54d8253dac4b",
+                      "ninc": "1d9a3f0f7f8464b4512e3c3f237f182616375e7d8dd4da260e147cfa512a5d54",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4f0e6a1cd6fa31abdd4a91ae7157db0c7a460688a064308badbe7fc1bd31d09d",
+                      "packed": "e09e7242a7a2aebf9fb647760c733950c1cdd6dad2b1f10c3916d1aa2c4ca8ab",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "f02f1ecbf76a3858b806a56d9109d65bf482870a1c704955934d3daac0e7cdc3",
+                      "phip": "b46f8d91eb3edfed04b87a49f463ab525f38946a0ee20888cf5af323176375eb",
+                      "pinc": "b46f8d91eb3edfed04b87a49f463ab525f38946a0ee20888cf5af323176375eb",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "baa705038597ad885e8b7ffa74cc4a090ecc915b8c984f1324086eab6729064b",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 11,
+                  "max_bound_ratio": 1.0004535363496783,
+                  "original_violations": 285,
+                  "requested_merit": 0.003700328791984323,
+                  "strict_nonworsening_bad": 25,
+                  "written_merit": 0.0037003287919947806,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0004535363496783
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.000184613238176
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0001533032032242
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000704608857844
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000324602650805
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000100753932724
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000070301488595
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 718,
+                      "ratio": 1.0000000107923206
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0037707518181728282,
+                  "alpha": 0.125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0828112960761655e-11,
+                      "mismatch": 1.1093390619675857e-13,
+                      "qualified": true,
+                      "ratio": 0.0035984656711864397
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0828112960761655e-11,
+                      "mismatch": 3.4758191511012835e-14,
+                      "qualified": true,
+                      "ratio": 0.0011274835912030497
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "3c973b73ff552a4e02f01fb9e764132c872c640672680cee26f949eb082dfa2f",
+                      "ninc": "03c3f5c507290b42545bfc19c5ec5bb4d8bdb8acd998cdae122d4a1be4694f5c",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "6693a1c327025db031d21aaa6f40b762ec2a20962763c09fde1ab1d376c29ddb",
+                      "packed": "8cf96ed1a5eed3f85a454749f0cb7e3601cb7d65a581570b811f442005061ab3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "30b1c6ce4411d95fe0251758f57c1d29e8bbea14c86ffa502546acbd57d574ab",
+                      "phip": "2fbb09226dc4e57a7d31b8bd9346d90b5822e2c98181546f662e6979ed95c6c2",
+                      "pinc": "2fbb09226dc4e57a7d31b8bd9346d90b5822e2c98181546f662e6979ed95c6c2",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "4143e14372b6178ece45efcd5906ec38090f0a40a527fd63847dd0ad596556a6",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 11,
+                  "max_bound_ratio": 1.0001158850707579,
+                  "original_violations": 285,
+                  "requested_merit": 0.0037707986319782307,
+                  "strict_nonworsening_bad": 25,
+                  "written_merit": 0.003770798631894477,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0001158850707579
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000466939582422
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000385734900346
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000178610535806
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000081312433864
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000025232758463
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000017603701998
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 718,
+                      "ratio": 1.000000002194009
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038061588805205974,
+                  "alpha": 0.0625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0828982869399697e-11,
+                      "mismatch": 1.1180381483480025e-13,
+                      "qualified": true,
+                      "ratio": 0.0036265813669050604
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0828982869399697e-11,
+                      "mismatch": 3.562810014905451e-14,
+                      "qualified": true,
+                      "ratio": 0.001155669011202388
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "294a4eb1ce062c3eab4fff5daf6440de799d2d5cd863507915cba758b1cc52e3",
+                      "ninc": "e499d2b6255e537fdddca1adfc67a27f5390daff49dd2a5355397dae58c0f483",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "a72a8e911b19db5698ee5aec48fb101c3d08ecf636b2efd4646988d8ce0a4aa3",
+                      "packed": "311322ceb6c0e1ee64f3501c95dd6973caeec8f60281e5fdcecb5bde3e80ae90",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "1698c77ec8c7f6b943d3951c023d9055aae952707b489f83ed0dc69df83fe429",
+                      "phip": "fde46294be45196196d4c03cf4c9e415cebf6e3e918d0b73820ba5751a1ba5be",
+                      "pinc": "fde46294be45196196d4c03cf4c9e415cebf6e3e918d0b73820ba5751a1ba5be",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "016e156462b643d3c3c8b8e9d1c2ba4fef61b41513ad8da5cf24c088d08fa3b4",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 11,
+                  "max_bound_ratio": 1.0000292183093944,
+                  "original_violations": 285,
+                  "requested_merit": 0.0038061705702407004,
+                  "strict_nonworsening_bad": 26,
+                  "written_merit": 0.003806170570264587,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000292183093944
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000117419346282
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000096747656935
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000044962707781
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000020345497762
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000006313223948
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.000000440473001
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000006194913
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.00382388677034054,
+                  "alpha": 0.03125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082941760662964e-11,
+                      "mismatch": 1.1223855206474126e-13,
+                      "qualified": true,
+                      "ratio": 0.0036406316037772054
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082941760662964e-11,
+                      "mismatch": 3.6062837378995525e-14,
+                      "qualified": true,
+                      "ratio": 0.0011697540913403592
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "48607e0acfb896ad539618b7cdd2637f2725c45f23494dc754dceb1e2f366ac8",
+                      "ninc": "343950cd76b8bf521ace7fdf5903d6c16f8b64d97dc745ede13563ff2ac075fa",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "6f164ec6ffba9613fd354ac89271b538b70eb010bc0e4d299eb85be4dbc9fad2",
+                      "packed": "bb60396baf55170057a464a209df31f29cf3895415d9724fd0be8b8aeb96f048",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "2f850c78f08c8ce599d1526ba05cd1a6fa23b6e688ab87ce30fcf8f902a2f01e",
+                      "phip": "3fdd93f86edafbdd5d18b53578f709a404a621837700170a0ba07f1c950e934a",
+                      "pinc": "3fdd93f86edafbdd5d18b53578f709a404a621837700170a0ba07f1c950e934a",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "51bb6638790d0ca1eedf7f0910a80e8b6086b874c67d0e30a7c9396f69a9246a",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 8,
+                  "max_bound_ratio": 1.0000073294074336,
+                  "original_violations": 285,
+                  "requested_merit": 0.00382388968599621,
+                  "strict_nonworsening_bad": 23,
+                  "written_merit": 0.0038238896860474272,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000073294074336
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000029439648166
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000024227013051
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.000001127953578
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000005087106887
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000001578678535
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000001101786344
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000002808689
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038327566994582844,
+                  "alpha": 0.015625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082963492126027e-11,
+                      "mismatch": 1.1245586669537499e-13,
+                      "qualified": true,
+                      "ratio": 0.0036476548289524134
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082963492126027e-11,
+                      "mismatch": 3.628015200962925e-14,
+                      "qualified": true,
+                      "ratio": 0.001176794733453372
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "0cad683147eba9ea349e50a6dfabbdaaff454cf78232938433fc00897526e561",
+                      "ninc": "f55c9973cd56d7e7d1cdb3e4cb10e16a8fd26705aebf6bd6dfb9b0c20b8223f5",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "ec80481a1e5b77d3f613317be4d8d6bf79ef98f4bdc23585a05920bc1a26441e",
+                      "packed": "f93680c9a6b6c699896fe932cb8f0264a1718aa65f3e68a4c2f90dd0c4394e25",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "2e9606016027e22aa57e31949de3889ca9ba245b74a38f3a908c945c216ac287",
+                      "phip": "096b6a0dbfcf0abf995f615f63228ad571dbda984a6a3b6e55c6e21863d2d88b",
+                      "pinc": "096b6a0dbfcf0abf995f615f63228ad571dbda984a6a3b6e55c6e21863d2d88b",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "ee8950d7fcdf48422828f39549b7710f3f91b4ff1b5954dd9089ccb9a3f099d5",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 8,
+                  "max_bound_ratio": 1.0000018355935458,
+                  "original_violations": 285,
+                  "requested_merit": 0.003832757396534142,
+                  "strict_nonworsening_bad": 23,
+                  "written_merit": 0.0038327573965288796,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000018355935458
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000007369817148
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000006062111946
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.000000282470835
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000001271148107
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000000394587454
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000275585808
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000001332146
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038371930952659835,
+                  "alpha": 0.0078125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0829743565129406e-11,
+                      "mismatch": 1.125645105645091e-13,
+                      "qualified": true,
+                      "ratio": 0.003651165969859945
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0829743565129406e-11,
+                      "mismatch": 3.638879587876336e-14,
+                      "qualified": true,
+                      "ratio": 0.0011803145816600834
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "54efae31db68f0b48d3f9c55d8f3a69aa37c599e15d38a603ede2779db2e0f7c",
+                      "ninc": "f99f50ab0e3fb1c3ed868575c1138666a2f827772b0292abbcc309c1c5dcdc5b",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "b0ee6e1cd504c1bf99a4b6e53bce1d78c6701af945b702146af172ad2cdb21c7",
+                      "packed": "386df20bf87b86c72f565ea53491d74bede074067142440571a97573d8c2f565",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "bebf5c6129325c91431e7c2b14014d784dd7c215d2ff3cba91c62bcc5c54679d",
+                      "phip": "1217d8f361a1d6d97ecc06d4e38960b812089178eb535e4034a8db4179300d65",
+                      "pinc": "1217d8f361a1d6d97ecc06d4e38960b812089178eb535e4034a8db4179300d65",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "e1724a1703b38f99c601c920848e679cca2397911a434c1c00097c1f46aca1cf",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 7,
+                  "max_bound_ratio": 1.000000459396823,
+                  "original_violations": 285,
+                  "requested_merit": 0.003837193273477278,
+                  "strict_nonworsening_bad": 27,
+                  "written_merit": 0.0038371932734692247,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.000000459396823
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000001843323834
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000001516365944
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000000706758458
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.00000003173485
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000000098572133
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000068945925
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000000648048
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.00383941169480605,
+                  "alpha": 0.00390625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0829797883709565e-11,
+                      "mismatch": 1.1261882914466813e-13,
+                      "qualified": true,
+                      "ratio": 0.0036529214226271593
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0829797883709565e-11,
+                      "mismatch": 3.6443114458922395e-14,
+                      "qualified": true,
+                      "ratio": 0.0011820743877850365
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "32ae689e31e9d8102dae11c4806ecf5fb64ac63aa7c1fe9b365d18c40559a7ca",
+                      "ninc": "98ad6140e3ac8b4ecd1935b40c97118183ddf06be1a56a2f2a9e6211840bba3d",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "e68fc918dc70ed0c9b6ccc34346f450eb57a10f71e3177a326fbe2566ba4c1da",
+                      "packed": "bd3fed8aa3ca7248046883dc925834fab11d82f4884eafff5b81d086c2bb9395",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "3fcdca2d8925d097fba914d38c4b07e4786e44f9e113f027ccd2117972fa360e",
+                      "phip": "70d068152e8cfb946642a98fd8984f5ae34db6aee5a8be8cbe568b4d5f1ba774",
+                      "pinc": "70d068152e8cfb946642a98fd8984f5ae34db6aee5a8be8cbe568b4d5f1ba774",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "0f6833cd3a51cc1316f1fe155df88c3ce1ab4559ff1d09e90cd26f25a96bf03f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 7,
+                  "max_bound_ratio": 1.0000001149591429,
+                  "original_violations": 285,
+                  "requested_merit": 0.0038394117153206023,
+                  "strict_nonworsening_bad": 30,
+                  "written_merit": 0.003839411715316744,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000001149591429
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000000460754062
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000000379279936
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000000176751107
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000000079099847
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000000024601512
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000017258541
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.000000000031952
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038405210146659737,
+                  "alpha": 0.001953125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082982504216199e-11,
+                      "mismatch": 1.126459875970948e-13,
+                      "qualified": true,
+                      "ratio": 0.003653799119620152
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082982504216199e-11,
+                      "mismatch": 3.6470272911349064e-14,
+                      "qualified": true,
+                      "ratio": 0.0011829542613840123
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "c4db7fa52c5f0eb546b1c59f00c5dc3b8d6512575fad414e03473daa7651bfc4",
+                      "ninc": "40cd54f2b67e9e155523cb8e6e767c5c1be261b6fe126ecd7fad69a0514b2fd1",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "24605345e9538d2fdf35dbfbc03a702df1e97d792d86c36e4ac3e36b97081477",
+                      "packed": "aa0de26013087078b2959e9d77f420251daf29791a4af19092e2cc86ad745819",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "f12aa4b227b90763b3ff53e1616dae5cff72db1e6236db6285e44b992c082df5",
+                      "phip": "8adb10d1dd4d928ff677cd465cdfbe8a89ecf5add3e51433e5581b5552ba93b7",
+                      "pinc": "8adb10d1dd4d928ff677cd465cdfbe8a89ecf5add3e51433e5581b5552ba93b7",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "493efb970296e5bf3e69ec7748acdf871485a418c49f41ed6743677c3b0347b0",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 7,
+                  "max_bound_ratio": 1.000000028777407,
+                  "original_violations": 285,
+                  "requested_merit": 0.003840521061833266,
+                  "strict_nonworsening_bad": 22,
+                  "written_merit": 0.0038405210618314193,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.000000028777407
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.0000000115085992
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000000094885384
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000000044189827
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000000019651405
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.000000000612913
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000004325327
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000000158655
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841075754875646,
+                  "alpha": 0.0009765625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082983862117893e-11,
+                      "mismatch": 1.1265956661403144e-13,
+                      "qualified": true,
+                      "ratio": 0.0036542379607734502
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082983862117893e-11,
+                      "mismatch": 3.64838519282857e-14,
+                      "qualified": true,
+                      "ratio": 0.0011833941908220916
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "2bb705bcd6a1b43239336fb7f590921153f7a27abd3c78d4ae92f3e3ec8b106e",
+                      "ninc": "67841065f02746d41213f9360c221eac3ca9e05ecbd2f0e6389f04702159738f",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "38ebd00d80130562b9f2daaa4bc6c9e1c08ff3dbbc0717dff51517721bd2e5a2",
+                      "packed": "f841f852eb6f53b23115ef1bac7109757e879be0d3669970fd45a9ac4ccb4161",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "719dbe32539941abfba22c63b3c91ee3a82e1f7724995f317a9e265d306647c2",
+                      "phip": "7947221e6b548b73874ab7bd90cd8eeb205c37f796ecdfbd268d6f9660d5f0b5",
+                      "pinc": "7947221e6b548b73874ab7bd90cd8eeb205c37f796ecdfbd268d6f9660d5f0b5",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "ab1eba290c66fcc191f9c2a5a425f093f83f95809cde34cf40a1549245b53ccb",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 7,
+                  "max_bound_ratio": 1.0000000072109836,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841075766452294,
+                  "strict_nonworsening_bad": 21,
+                  "written_merit": 0.0038410757664522318,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000000072109836
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.000000002871225
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.000000002375045
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000000011044836
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000000004856116
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.0000000001521572
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000001086489
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000000079066
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038413531160526883,
+                  "alpha": 0.00048828125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.0829845410635074e-11,
+                      "mismatch": 1.1266635607017736e-13,
+                      "qualified": true,
+                      "ratio": 0.0036544573795142007
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.0829845410635074e-11,
+                      "mismatch": 3.649064138443162e-14,
+                      "qualified": true,
+                      "ratio": 0.0011836141537006797
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "558ce40c872ba766e6838cf144319e70a5ee818c11f99d22ef318bcd03098680",
+                      "ninc": "9e6f56d2dbbf6f1b0cac58079397ce91496758744f45b1069e1997a62de5d028",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "b9051fb3e55781ad0faf443e3f6f50371e94b26122f441f0241e48f9359ba43a",
+                      "packed": "79b938d1797d264858e957555ba45c0f468f5645c44631453ed736f8e3dde158",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "da36559b7d1c8773bfe6ad9dc3707bc1e84df8700e49cb12bec2ca6cc5776a71",
+                      "phip": "825d79984dc1238798c41ee11dee7c126cf0ba5b0055593f565da9421fce79c6",
+                      "pinc": "825d79984dc1238798c41ee11dee7c126cf0ba5b0055593f565da9421fce79c6",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "43ef9c0cb899bc64a168d99eb725d3eee9b6733039acfaf388e333d9e00c3662",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 5,
+                  "max_bound_ratio": 1.0000000018107957,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841353126600244,
+                  "strict_nonworsening_bad": 21,
+                  "written_merit": 0.003841353126599858,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000000018107957
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.000000000714743
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.0000000005951692
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.0000000002759533
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.0000000001182927
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.000000000037518
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000000274254
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000000039502
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.0038414918378438696,
+                  "alpha": 0.000244140625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082984880535007e-11,
+                      "mismatch": 1.1266975078517375e-13,
+                      "qualified": true,
+                      "ratio": 0.0036545670884257325
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082984880535007e-11,
+                      "mismatch": 3.649403609942801e-14,
+                      "qualified": true,
+                      "ratio": 0.0011837241346799926
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "11f47a3cb475518a4113619a12211a6e40f99e315ec83efaa950db8ac6b257e4",
+                      "ninc": "a154886a0b838e23dbb43f4ba7b6ba03fdcc210f0e780ddcc068eddf2a97906e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "b4106cfa37983460c3225a4d13e5ed1e6bc5edcd8e98ec46fcd213fdbd0346b0",
+                      "packed": "e2a1660da394a801e4ffbad3205cf1feda893c3c8647648020d8f218bfc62ece",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4a658022d25636dd1463ee8d984112c3331cb6be36c9f1b5d5aa0044fec035d1",
+                      "phip": "e9a4edc1687e220af6ce0377d154ac635b3127ca3c43cbed4aa4bb2f89f085cd",
+                      "pinc": "e9a4edc1687e220af6ce0377d154ac635b3127ca3c43cbed4aa4bb2f89f085cd",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "c93bbb2b4ab177a60089860abe757989df015adbfe93ea49221182a5e0413e8e",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 3,
+                  "max_bound_ratio": 1.0000000004566927,
+                  "original_violations": 285,
+                  "requested_merit": 0.0038414918086331915,
+                  "strict_nonworsening_bad": 17,
+                  "written_merit": 0.00384149180863304,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 651,
+                      "ratio": 1.0000000004566927
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 725,
+                      "ratio": 1.000000000177139
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 823,
+                      "ratio": 1.000000000149493
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 722,
+                      "ratio": 1.000000000068893
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 709,
+                      "ratio": 1.000000000028173
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 710,
+                      "ratio": 1.000000000009108
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 845,
+                      "ratio": 1.0000000000069618
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 723,
+                      "ratio": 1.0000000000019738
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "rows5",
+          "iteration": 1,
+          "base_merit": 0.0006977896682557535,
+          "precision": [
+            {
+              "alpha": 0.0,
+              "changed_residual_high": 0,
+              "low_merit": 0.0006977896682557545,
+              "nonzero_edge_increment": 0,
+              "nonzero_low": 0,
+              "ordinary_merit": 0.0006977896682557535,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              }
+            },
+            {
+              "alpha": 1.0,
+              "changed_residual_high": 2121,
+              "low_merit": 0.00033198321540467115,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.002614737203245557,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.5,
+              "changed_residual_high": 2121,
+              "low_merit": 0.0003492582102786817,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0006973985975936088,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.000244140625,
+              "changed_residual_high": 2121,
+              "low_merit": 0.0006976186388216449,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0006977886471644041,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            }
+          ],
+          "low_controls": {
+            "gauge_delta": 0.0,
+            "gauge_identity": {
+              "bitwise_equal": true,
+              "different_values": 0,
+              "first_index": -1,
+              "max_absolute_difference": 0.0,
+              "size_after": 7800,
+              "size_before": 7800
+            },
+            "odd_relative": 5.062869069810854e-19,
+            "signal": 3.2690871976659954e-17
+          },
+          "bounded": []
+        }
+      ]
+    },
+    {
+      "optimizer": "feasible_primal_active_set",
+      "remote_checks": 31,
+      "independent_checks": 56,
+      "runs": 2,
+      "archive_sha256": "c5fc53f90873c3925e9cc6adeb78529e820724134774978ef33eee8c3eeeff09",
+      "download_manifest_files": 121,
+      "executable_sha256": "c8a6e51ca6ac21434f26501f1be1162197cd47a84bd26eb00f6bafb2b26e34d9",
+      "baseline_and_repeats_exact": true,
+      "samples": [
+        {
+          "label": "rows285",
+          "iteration": 1,
+          "base_merit": 0.003841630491971976,
+          "precision": [
+            {
+              "alpha": 0.0,
+              "changed_residual_high": 0,
+              "low_merit": 0.003841630491971951,
+              "nonzero_edge_increment": 0,
+              "nonzero_low": 0,
+              "ordinary_merit": 0.003841630491971976,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              }
+            },
+            {
+              "alpha": 1.0,
+              "changed_residual_high": 2121,
+              "low_merit": 0.006595196546581906,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0072971211994817455,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.5,
+              "changed_residual_high": 2121,
+              "low_merit": 0.005219523408576596,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0062750725042357005,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            },
+            {
+              "alpha": 0.000244140625,
+              "changed_residual_high": 2121,
+              "low_merit": 0.0038422029057968853,
+              "nonzero_edge_increment": 4507,
+              "nonzero_low": 2121,
+              "ordinary_merit": 0.0038427809134562968,
+              "scope": "electron SG drive only, high coefficients and source frozen",
+              "zero_identity": null
+            }
+          ],
+          "low_controls": {
+            "gauge_delta": 0.0,
+            "gauge_identity": {
+              "bitwise_equal": true,
+              "different_values": 0,
+              "first_index": -1,
+              "max_absolute_difference": 0.0,
+              "size_after": 7800,
+              "size_before": 7800
+            },
+            "odd_relative": 5.062869069810862e-19,
+            "signal": 3.26908719766599e-17
+          },
+          "bounded": [
+            {
+              "columns": 160,
+              "complementarity": 0.0,
+              "converged": false,
+              "diagnostic_linear_bad_1e10": 0,
+              "dual": 47.89885064753243,
+              "fixed_rows": 1616,
+              "iterations": 21,
+              "linear_merit": 0.003841630491971976,
+              "max_linear_ratio": 1.0,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "primal": 0.0,
+              "slope": 0.0,
+              "stationarity": 0.008235062464239395,
+              "strict_linear_bad": 0,
+              "trials": [
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 1.0,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.5,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.25,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.0625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.03125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.015625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.0078125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.00390625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.001953125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.0009765625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.00048828125,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                },
+                {
+                  "actual_merit": 0.003841630491971976,
+                  "alpha": 0.000244140625,
+                  "closure": {
+                    "electron": {
+                      "contact_flux": -3.0717179054564896e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 1.1267314549147183e-13,
+                      "qualified": true,
+                      "ratio": 0.0036546767970319955
+                    },
+                    "enabled": true,
+                    "enforced": true,
+                    "hole": {
+                      "contact_flux": -3.079335476925064e-11,
+                      "integrated_source": -3.082985220005637e-11,
+                      "mismatch": 3.6497430805726087e-14,
+                      "qualified": true,
+                      "ratio": 0.0011838341153532794
+                    },
+                    "satisfied": true
+                  },
+                  "currents": {
+                    "contacts": [
+                      {
+                        "bias_V": 0.0,
+                        "name": "substrate",
+                        "total_A_per_um": -9.19942486678544e-16
+                      },
+                      {
+                        "bias_V": 0.55,
+                        "name": "gate",
+                        "total_A_per_um": 0.0
+                      },
+                      {
+                        "bias_V": 0.0,
+                        "name": "source",
+                        "total_A_per_um": -5.986607028341186e-10
+                      },
+                      {
+                        "bias_V": 0.00524437249039996,
+                        "name": "drain",
+                        "total_A_per_um": 5.986616205009387e-10
+                      }
+                    ],
+                    "selected": "gate",
+                    "state": {
+                      "converged": false,
+                      "iters": 0,
+                      "n": "6ffc8f67412d377e401f3084f1f4c3034b3bfc67b45cf99575b355cb1d84b0f2",
+                      "ninc": "ed381dbb400b508cb4167744a35e667a36116962e2870f26195fd6be2f9e912e",
+                      "nref": "09f56c39225fd2dd9bf3fab4d73ed705e7895c0e1790ec3ad0a0f6df5532a7a4",
+                      "nref_scalar": 0.00524437249039996,
+                      "p": "4c6b6993716607e752de46b0d12cf01a8c9c785dda0b221f41908f333510f8ac",
+                      "packed": "4dec2cd7ded5ef8f6d4268a603979d60c1dbf0ce11f8f1a346b2e9fbaaef03a3",
+                      "packed_low": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      "phin": "4366106185acfe213792d6191ba5af4cfcf3ff82de12441e62c79664a3925c83",
+                      "phip": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pinc": "7dcaba8bded83ee8ce622330d9f425acbe40dcdc87e48735d3eeb449b81a5498",
+                      "pref": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+                      "pref_scalar": 0.0,
+                      "psi": "acc07db3799109a9bed4a0234b1cece912470426dbd49c53e82e0eb09c8bdf6f",
+                      "scale": 0.0
+                    },
+                    "sum_A_per_um": -2.2756666127595616e-18,
+                    "zero_bias_selector_only": "substrate"
+                  },
+                  "diagnostic_nonworsening_bad_1e10": 0,
+                  "max_bound_ratio": 1.0,
+                  "original_violations": 285,
+                  "requested_merit": 0.003841630491971976,
+                  "strict_nonworsening_bad": 0,
+                  "written_merit": 0.003841630491971976,
+                  "exited_qualification": 0,
+                  "entered_qualification": 0,
+                  "largest_bound_ratios": [
+                    {
+                      "carrier": "h",
+                      "node": 145,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 152,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 169,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 229,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 273,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 309,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 310,
+                      "ratio": 1.0
+                    },
+                    {
+                      "carrier": "h",
+                      "node": 312,
+                      "ratio": 1.0
+                    }
+                  ],
+                  "original_gate_pass": false,
+                  "passes_hard_screen_and_descent": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "runs": 8,
+  "remote_checks": 124,
+  "independent_checks": 138
+}

@@ -1,0 +1,903 @@
+{
+  "schema": "vela.bvmethods.no_btbt_diagnosis.v1",
+  "date": "2026-10-19",
+  "status": "causes_localized_partial_qualification",
+  "configuration": {
+    "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "first_outer_voltage_V": 0.01,
+    "stop_current_A_per_um": 0.0013,
+    "units": {
+      "length": "um",
+      "density": "cm^-3",
+      "field": "V/cm",
+      "current": "A/um"
+    },
+    "vela": "Release C++20 UCRT64; UMFPACK; one thread; current production frontend defaults",
+    "mesh_volume": "barycentric; 26 obtuse cells retained",
+    "runner_sha256": "112c2fcb1e8ab7b43124624ff10293033d8dc998551321e67d9f5e157ebe104d"
+  },
+  "control_count": 15,
+  "controls": {
+    "direct_native_inner": {
+      "exit": 1,
+      "seconds": 16.364849090576172,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 2
+    },
+    "direct_small_inner": {
+      "exit": 0,
+      "seconds": 10.73553991317749,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        },
+        {
+          "bias_V": 1e-05,
+          "outer_voltage_V": 1e-05,
+          "current_A_per_um": 1.2711594886978855e-12
+        }
+      ],
+      "attempt_count": 2
+    },
+    "follow/aligned_geometry_exact_min": {
+      "exit": 0,
+      "seconds": 15.162553310394287,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.0001918809336620697,
+          "worst_node": 237,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "eDensity": {
+          "maximum": 0.0005341801755050072,
+          "worst_node": 1252,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "hDensity": {
+          "maximum": 0.0005622348138949055,
+          "worst_node": 229,
+          "failed_nodes": 0,
+          "pass": true
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        },
+        {
+          "bias_V": 4.176904226781021e-06,
+          "outer_voltage_V": 1e-05,
+          "current_A_per_um": 5.823769622494228e-13
+        }
+      ],
+      "attempt_count": 2
+    },
+    "follow/aligned_geometry_first": {
+      "exit": 1,
+      "seconds": 64.06184935569763,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.0001918809336620697,
+          "worst_node": 237,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "eDensity": {
+          "maximum": 0.0005341801755050072,
+          "worst_node": 1252,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "hDensity": {
+          "maximum": 0.0005622348138949055,
+          "worst_node": 229,
+          "failed_nodes": 0,
+          "pass": true
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 6
+    },
+    "follow/baseline_exact_min": {
+      "exit": 0,
+      "seconds": 16.113476514816284,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        },
+        {
+          "bias_V": 4.403037325103601e-06,
+          "outer_voltage_V": 1e-05,
+          "current_A_per_um": 5.597585716716653e-13
+        }
+      ],
+      "attempt_count": 2
+    },
+    "geometry/cell_and_signed": {
+      "exit": 0,
+      "seconds": 10.632532119750977,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.0026606128138511737,
+          "worst_node": 724,
+          "failed_nodes": 54,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.10278912346370608,
+          "worst_node": 1007,
+          "failed_nodes": 232,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.1031824396695444,
+          "worst_node": 724,
+          "failed_nodes": 232,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "geometry/cell_material": {
+      "exit": 0,
+      "seconds": 10.565962076187134,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1029,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "geometry/signed_charge": {
+      "exit": 0,
+      "seconds": 10.453203201293945,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.0026606129347782753,
+          "worst_node": 724,
+          "failed_nodes": 56,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.10278912324606335,
+          "worst_node": 1007,
+          "failed_nodes": 232,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.10318244434721065,
+          "worst_node": 724,
+          "failed_nodes": 232,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "geometry/transfer_and_signed": {
+      "exit": 0,
+      "seconds": 10.556708812713623,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.0001918809336620697,
+          "worst_node": 237,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "eDensity": {
+          "maximum": 0.0005341801755050072,
+          "worst_node": 1252,
+          "failed_nodes": 0,
+          "pass": true
+        },
+        "hDensity": {
+          "maximum": 0.0005622348138949055,
+          "worst_node": 229,
+          "failed_nodes": 0,
+          "pass": true
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "linear/direct_native_inner_observed": {
+      "exit": 1,
+      "seconds": 17.787981271743774,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 2
+    },
+    "outer_extended_retries": {
+      "exit": 1,
+      "seconds": 121.59925556182861,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 10
+    },
+    "zero_material_local": {
+      "exit": 0,
+      "seconds": 9.716064691543579,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 565,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 989,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 999,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "zero_mixed_global": {
+      "exit": 0,
+      "seconds": 9.78026270866394,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.002964737312866117,
+          "worst_node": 1007,
+          "failed_nodes": 237,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.11494571581815198,
+          "worst_node": 1007,
+          "failed_nodes": 620,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.11441355184331001,
+          "worst_node": 1007,
+          "failed_nodes": 620,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "zero_no_fallback": {
+      "exit": 0,
+      "seconds": 9.982489109039307,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.00874207874606353,
+          "worst_node": 2433,
+          "failed_nodes": 581,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509863888,
+          "worst_node": 2433,
+          "failed_nodes": 1021,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.33842588961307296,
+          "worst_node": 2433,
+          "failed_nodes": 1029,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    },
+    "zero_repeat": {
+      "exit": 0,
+      "seconds": 9.76140809059143,
+      "zero_fields": {
+        "ElectrostaticPotential": {
+          "maximum": 0.008742078746091952,
+          "worst_node": 1140,
+          "failed_nodes": 573,
+          "pass": false
+        },
+        "eDensity": {
+          "maximum": 0.3378936509874889,
+          "worst_node": 1140,
+          "failed_nodes": 1017,
+          "pass": false
+        },
+        "hDensity": {
+          "maximum": 0.3384258896141731,
+          "worst_node": 1140,
+          "failed_nodes": 1031,
+          "pass": false
+        }
+      },
+      "accepted_points": [
+        {
+          "bias_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "current_A_per_um": 0.0
+        }
+      ],
+      "attempt_count": 1
+    }
+  },
+  "offline": {
+    "transferred_edges": 26,
+    "free_poisson_nodes": 2522,
+    "population": {
+      "node": 1140,
+      "coordinate_um": [
+        0.109375,
+        0.565
+      ],
+      "donors_cm3": 2.9543562086702925e+17,
+      "acceptors_cm3": 9.999999999999986e+17,
+      "delta_psi_over_Vt": 0.33815870409680626,
+      "ln_electron_ratio": 0.3378936509874889,
+      "ln_hole_ratio": -0.3384258896141731,
+      "ln_np_ratio": -0.0005322386266843771
+    },
+    "poisson_same_state_geometry_controls": {
+      "native": {
+        "legacy_global_bary": {
+          "absolute_residual_Linf_eps0_scaled": 0.455864113812118,
+          "relative_over_absolute_terms_Linf": 0.22104569163025814,
+          "node1140": {
+            "flux": -2.6378714297529524,
+            "charge": -2.34475534379922,
+            "residual": -0.2931160859537325,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_global_bary": {
+          "absolute_residual_Linf_eps0_scaled": 0.455864113812118,
+          "relative_over_absolute_terms_Linf": 0.08608532201211495,
+          "node1140": {
+            "flux": -2.6378714297529524,
+            "charge": -2.34475534379922,
+            "residual": -0.2931160859537325,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_si_bary": {
+          "absolute_residual_Linf_eps0_scaled": 0.455864113812118,
+          "relative_over_absolute_terms_Linf": 0.08608532201211495,
+          "node1140": {
+            "flux": -2.6378714297529524,
+            "charge": -2.34475534379922,
+            "residual": -0.2931160859537325,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_si_transferred_box": {
+          "absolute_residual_Linf_eps0_scaled": 7.733049611680087e-05,
+          "relative_over_absolute_terms_Linf": 2.792448349717373e-06,
+          "node1140": {
+            "flux": -2.6378714297529524,
+            "charge": -2.63784976177412,
+            "residual": -2.166797883251803e-05,
+            "volume_um2": 0.00020690917968749998
+          }
+        }
+      },
+      "vela": {
+        "legacy_global_bary": {
+          "absolute_residual_Linf_eps0_scaled": 2.1533774763327074e-11,
+          "relative_over_absolute_terms_Linf": 4.559398047497163e-12,
+          "node1140": {
+            "flux": -2.344774020798396,
+            "charge": -2.344774020798401,
+            "residual": 4.884981308350689e-15,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_global_bary": {
+          "absolute_residual_Linf_eps0_scaled": 0.09659579174305244,
+          "relative_over_absolute_terms_Linf": 0.17152879548303443,
+          "node1140": {
+            "flux": -2.344774020798396,
+            "charge": -2.344774020798401,
+            "residual": 4.884981308350689e-15,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_si_bary": {
+          "absolute_residual_Linf_eps0_scaled": 0.09659579174305244,
+          "relative_over_absolute_terms_Linf": 0.17152879548303443,
+          "node1140": {
+            "flux": -2.344774020798396,
+            "charge": -2.344774020798401,
+            "residual": 4.884981308350689e-15,
+            "volume_um2": 0.00018391927083333346
+          }
+        },
+        "native_cell_si_transferred_box": {
+          "absolute_residual_Linf_eps0_scaled": 0.5108640449370752,
+          "relative_over_absolute_terms_Linf": 0.17152879548303443,
+          "node1140": {
+            "flux": -2.344774020798396,
+            "charge": -2.637870773398199,
+            "residual": 0.29309675259980317,
+            "volume_um2": 0.00020690917968749998
+          }
+        }
+      }
+    },
+    "field_recovery_controls": {
+      "native_rule_replay_relative_l2": 1.6767595580216932e-15,
+      "native_rule_replay_max_over_peak": 2.1075302682780867e-15,
+      "same_rule_potential_change_max_over_peak": 0.01356887631954878,
+      "same_vela_potential_recovery_difference_max_over_peak": 0.3305523845156398,
+      "node1286": {
+        "native": [
+          443636.0345897154,
+          5.125582981527711e-12
+        ],
+        "vela": [
+          889504.7190132963,
+          -7.86148825363363e-12
+        ],
+        "native_rule_on_vela_psi": [
+          445878.0904975282,
+          -2.3384790870643616e-12
+        ]
+      }
+    },
+    "scope": "Independent fixed-state arithmetic diagnostic; not an actual residual/Jacobian qualification. Physical constants use current Vela CODATA."
+  },
+  "aligned_field_recovery": {
+    "current_output_max_error_over_native_peak": 0.3255268873691763,
+    "independent_native_rule_on_aligned_potential_max_error_over_peak": 0.0001600442082132355,
+    "no_output_operator_promotion": true
+  },
+  "accepted_minimum_outer_step": {
+    "baseline_exact_min": {
+      "outer_voltage_V": 1e-05,
+      "inner_voltage_V": 4.403037325103601e-06,
+      "current_A_per_um": 5.597585716716653e-13,
+      "load_residual_V": 6.230418202536646e-10,
+      "KCL_absolute_A_per_um": 3.0116034966539872e-21,
+      "carrier_row_violations": 0
+    },
+    "aligned_geometry_exact_min": {
+      "outer_voltage_V": 1e-05,
+      "inner_voltage_V": 4.176904226781021e-06,
+      "current_A_per_um": 5.823769622494228e-13,
+      "load_residual_V": 6.738492752477549e-10,
+      "KCL_absolute_A_per_um": 2.5401294881408663e-21,
+      "carrier_row_violations": 0
+    }
+  },
+  "linear": {
+    "observation_iteration_trace_byte_identical": true,
+    "maximum_reported_componentwise_backward_error": 5.507740988492154e-14,
+    "last_iteration": {
+      "raw_linear_residual_inf": "1.4136387421560532e-26",
+      "capped_linear_residual_inf": "1.124377403672477e-11",
+      "line_search_accepted": "0"
+    },
+    "selected_last_rows": [
+      {
+        "node_id": "718",
+        "carrier": "electron",
+        "residual": "4.5000118800743159e-14",
+        "raw_linear_step_V": "1.594122126013757e-12",
+        "capped_step_V": "1.594122126013757e-12",
+        "applied_step_V": "3.8918997246867894e-16",
+        "raw_linear_residual": "6.3108872417680944e-30",
+        "capped_linear_residual": "4.2567087973939301e-15",
+        "selected_trial_residual": "4.4990171521902638e-14"
+      },
+      {
+        "node_id": "718",
+        "carrier": "hole",
+        "residual": "-1.2362538622335124e-11",
+        "raw_linear_step_V": "-1.1011605205020669",
+        "capped_step_V": "-0.10000000000000001",
+        "applied_step_V": "-2.4414062499989247e-05",
+        "raw_linear_residual": "8.0779356694631609e-27",
+        "capped_linear_residual": "-1.124377403672477e-11",
+        "selected_trial_residual": "-1.2362265492633389e-11"
+      },
+      {
+        "node_id": "723",
+        "carrier": "electron",
+        "residual": "8.0924424504656014e-14",
+        "raw_linear_step_V": "2.3708614017917717e-10",
+        "capped_step_V": "2.3708614017917717e-10",
+        "applied_step_V": "5.7882358441871872e-14",
+        "raw_linear_residual": "5.0487097934144756e-29",
+        "capped_linear_residual": "5.6208368286810133e-14",
+        "selected_trial_residual": "8.0918390333850943e-14"
+      },
+      {
+        "node_id": "723",
+        "carrier": "hole",
+        "residual": "5.7493323363317655e-12",
+        "raw_linear_step_V": "-4.2429742710682104e-09",
+        "capped_step_V": "-4.2429742710682104e-09",
+        "applied_step_V": "-1.0358823903973221e-12",
+        "raw_linear_residual": "0",
+        "capped_linear_residual": "5.2006667019501405e-12",
+        "selected_trial_residual": "5.7491983876762695e-12"
+      },
+      {
+        "node_id": "1140",
+        "carrier": "electron",
+        "residual": "-7.6720172302876042e-29",
+        "raw_linear_step_V": "-6.069166402145416e-22",
+        "capped_step_V": "-6.069166402145416e-22",
+        "applied_step_V": "0",
+        "raw_linear_residual": "1.3452465257518244e-43",
+        "capped_linear_residual": "1.3452465257518244e-43",
+        "selected_trial_residual": "-7.6720172302876042e-29"
+      },
+      {
+        "node_id": "1140",
+        "carrier": "hole",
+        "residual": "-5.7076291852109229e-25",
+        "raw_linear_step_V": "-9.4953628310772456e-16",
+        "capped_step_V": "-9.4953628310772456e-16",
+        "applied_step_V": "-2.3182038159640728e-19",
+        "raw_linear_residual": "-2.4661989948041636e-33",
+        "capped_linear_residual": "-2.4661989948041636e-33",
+        "selected_trial_residual": "-5.6598069444754637e-25"
+      },
+      {
+        "node_id": "1546",
+        "carrier": "electron",
+        "residual": "6.58053605861153e-15",
+        "raw_linear_step_V": "2.4919037397267981e-19",
+        "capped_step_V": "2.4919037397267981e-19",
+        "applied_step_V": "0",
+        "raw_linear_residual": "-7.8886090522101181e-31",
+        "capped_linear_residual": "-7.8886090522101181e-31",
+        "selected_trial_residual": "6.58053605861153e-15"
+      },
+      {
+        "node_id": "1546",
+        "carrier": "hole",
+        "residual": "1.8274735052939306e-29",
+        "raw_linear_step_V": "-6.237474153997103e-16",
+        "capped_step_V": "-6.237474153997103e-16",
+        "applied_step_V": "-1.7938428372190851e-19",
+        "raw_linear_residual": "0",
+        "capped_linear_residual": "0",
+        "selected_trial_residual": "1.8262248045728551e-29"
+      },
+      {
+        "node_id": "2084",
+        "carrier": "electron",
+        "residual": "1.4710826121267662e-14",
+        "raw_linear_step_V": "3.3734012994564345e-19",
+        "capped_step_V": "3.3734012994564345e-19",
+        "applied_step_V": "0",
+        "raw_linear_residual": "-3.1554436208840472e-30",
+        "capped_linear_residual": "-3.1554436208840472e-30",
+        "selected_trial_residual": "1.4710826121267662e-14"
+      },
+      {
+        "node_id": "2084",
+        "carrier": "hole",
+        "residual": "-7.3656880180429934e-32",
+        "raw_linear_step_V": "-5.9095501111694821e-17",
+        "capped_step_V": "-5.9095501111694821e-17",
+        "applied_step_V": "-1.4014397165774103e-20",
+        "raw_linear_residual": "-1.2151885120316773e-45",
+        "capped_linear_residual": "-1.2151885120316773e-45",
+        "selected_trial_residual": "-7.277888748592376e-32"
+      },
+      {
+        "node_id": "2587",
+        "carrier": "electron",
+        "residual": "-3.8604893745838828e-15",
+        "raw_linear_step_V": "-1.7237169051777839e-19",
+        "capped_step_V": "-1.7237169051777839e-19",
+        "applied_step_V": "0",
+        "raw_linear_residual": "-4.7331654313260708e-30",
+        "capped_linear_residual": "-4.7331654313260708e-30",
+        "selected_trial_residual": "-3.8604893745838828e-15"
+      },
+      {
+        "node_id": "2587",
+        "carrier": "hole",
+        "residual": "-7.9427852995361189e-32",
+        "raw_linear_step_V": "-1.0503555791234132e-16",
+        "capped_step_V": "-1.0503555791234132e-16",
+        "applied_step_V": "-2.2423035465238563e-20",
+        "raw_linear_residual": "3.9083089981559351e-45",
+        "capped_linear_residual": "3.9083089981559351e-45",
+        "selected_trial_residual": "-7.786697709401687e-32"
+      }
+    ],
+    "scope": "Reported production diagnostic in double arithmetic, not independent Jv/condition-number or forward-error certification. Applied steps on rejected trials are best-rejected observations, not accepted updates."
+  },
+  "extended_retries": [
+    {
+      "target_value": "0.01",
+      "inner_voltage_V": "0.01",
+      "carrier_row_violations": "819",
+      "carrier_row_max_ratio": "1.9887992455512546",
+      "failure_reason": "global_continuity_closure_line_search_rejected"
+    },
+    {
+      "target_value": "0.0050000000000000001",
+      "inner_voltage_V": "0.0050000000000000001",
+      "carrier_row_violations": "230",
+      "carrier_row_max_ratio": "1.7610474064109873",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "0.0025000000000000001",
+      "inner_voltage_V": "0.0025000000000000001",
+      "carrier_row_violations": "222",
+      "carrier_row_max_ratio": "1.3698622359898849",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "0.00125",
+      "inner_voltage_V": "0.00125",
+      "carrier_row_violations": "168",
+      "carrier_row_max_ratio": "1.8743387434973746",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "0.00062500000000000001",
+      "inner_voltage_V": "0.00062500000000000001",
+      "carrier_row_violations": "176",
+      "carrier_row_max_ratio": "1.5163308936565403",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "0.00031250000000000001",
+      "inner_voltage_V": "0.00031250000000000001",
+      "carrier_row_violations": "113",
+      "carrier_row_max_ratio": "1.4993320763302618",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "0.00015625",
+      "inner_voltage_V": "0.00015625",
+      "carrier_row_violations": "24",
+      "carrier_row_max_ratio": "1.2154997849414693",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "7.8125000000000002e-05",
+      "inner_voltage_V": "7.8125000000000002e-05",
+      "carrier_row_violations": "22",
+      "carrier_row_max_ratio": "1.0304876123070033",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    },
+    {
+      "target_value": "3.9062500000000001e-05",
+      "inner_voltage_V": "3.9062500000000001e-05",
+      "carrier_row_violations": "2",
+      "carrier_row_max_ratio": "1.1497707582273504",
+      "failure_reason": "carrier_row_convergence"
+    },
+    {
+      "target_value": "1.953125e-05",
+      "inner_voltage_V": "1.953125e-05",
+      "carrier_row_violations": "7",
+      "carrier_row_max_ratio": "1.0524559107347977",
+      "failure_reason": "carrier_row_convergence_line_search_rejected"
+    }
+  ],
+  "checks": {
+    "prior_372_files_unchanged": true,
+    "all_runner_hashes_match": true,
+    "all_remote_config_hashes_match": true,
+    "three_archives_hash_verified": true,
+    "gate_contract_unchanged": true
+  },
+  "tests": {
+    "geometry_field": 8,
+    "zero_qs_contract": 9
+  },
+  "limitations": [
+    "No production source, template or gate changes.",
+    "Zero potential and carrier engineering gates pass only for explicit geometry diagnostic; production ElectricField output still fails.",
+    "The original 0.01 V first step still fails after geometry alignment.",
+    "Accepted 10 uV outer point is a solver/load control, not same-bias native field or IV/BV qualification.",
+    "No new Sentaurus run was needed; frozen same-mesh native no-BTBT reference was reused."
+  ]
+}

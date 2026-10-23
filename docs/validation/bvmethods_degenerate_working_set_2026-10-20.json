@@ -1,0 +1,1580 @@
+{
+  "remote_checks": 104,
+  "archives": [
+    {
+      "name": "projection",
+      "files": 158,
+      "sha256": "bce536c402b15903ff3a655bc348ad5b633171f7dc987cb4c38dbb5225552db5"
+    },
+    {
+      "name": "margin",
+      "files": 156,
+      "sha256": "cd428680271b9a608931389c71467a5f63ad438bac5703f545036cbd97f22dc5"
+    },
+    {
+      "name": "interior_actual",
+      "files": 154,
+      "sha256": "0cdd16f4b61e69caff308bec23909c31741c3fcb50afd376bef0c79bb51a8f42"
+    }
+  ],
+  "projection": {
+    "complementarity": "6.94799171266358068285527926145418112e-67",
+    "dual_violation": "0.00000000000000000000000000000000000e+00",
+    "iterations": 236,
+    "normalization": "unit norm of each active outward normal; all original inequalities retained",
+    "precision_decimal_digits": 100,
+    "projection_norm": "1.43134348163573168144111606649209823e-02",
+    "slope": "-2.04874416242109815719597510506360337e-04",
+    "step": "3.37129767986849227781184720410405320e+02",
+    "stop": "dual_stationary",
+    "synthetic_controls": 3,
+    "tangent_violation": "3.27968967458414930398876204744045686e-83",
+    "working_set_exchanges": 182,
+    "smallest_logged_pivot": "400.132690177507325261E-51",
+    "independent_decimal": {
+      "precision": 110,
+      "tangent_violation": "3.4549023892692111797469464127110168112634692354586844137567052E-83",
+      "dual_violation": "0",
+      "complementarity": "7.4816484714440435063909406101426614681194776633724728701022385749831070926336153432735935626867039067425318610E-67",
+      "descent": "-0.00020487441624210981571959751050636033695431770374917072582705186455517773055927333985220739273572429092468907914"
+    }
+  },
+  "affine_projection": {
+    "independent_precision": 110,
+    "max_affine_violation": "7.54590338132922865676503777517786939699121636789009E-72",
+    "min_normal_dot": "-1154013.8690849482468143096082910036203033399155326530084609023201787254867203885878168876550580076699351041366",
+    "max_normal_dot": "-9.9999999999999999999999999999999999999999999999999999999999245409661867077134323496222482213060300878363210991E-13",
+    "affine_complementarity": "4.4953317037028175732236434631594865157240051100344223624259039451819665381724420077912512066405533254748215016E-44",
+    "min_multiplier": "0E-105",
+    "slope": "-3185.9057163638215930177302927827382738530600840594772052240508532486960898141389309552211927523371279515597059"
+  },
+  "exact_operand_audit": [
+    {
+      "arm": "endpoint",
+      "strict_violations": {
+        "scaled_constraints": 12,
+        "JD_z": 32,
+        "J_direction": 25
+      },
+      "box_violations": 0,
+      "largest_primary_relative_excess": 1.760939335904305e-18
+    },
+    {
+      "arm": "new_bound_margin",
+      "strict_violations": {
+        "scaled_constraints": 11,
+        "JD_z": 22,
+        "J_direction": 24
+      },
+      "box_violations": 0,
+      "largest_primary_relative_excess": 1.4231101040585955e-20
+    },
+    {
+      "arm": "active_margin",
+      "strict_violations": {
+        "scaled_constraints": 3,
+        "JD_z": 12,
+        "J_direction": 15
+      },
+      "box_violations": 0,
+      "largest_primary_relative_excess": 3.316647994382328e-20
+    }
+  ],
+  "controls": [
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 2,
+      "name": "orthogonal",
+      "pass": true
+    },
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 2,
+      "name": "duplicate",
+      "pass": true
+    },
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 2,
+      "name": "opposed",
+      "pass": true
+    },
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 2,
+      "name": "near_parallel",
+      "pass": true
+    },
+    {
+      "error": "5.714936956411374911078917741527e-101",
+      "iterations": 2,
+      "name": "negative_combination",
+      "pass": true
+    },
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 3,
+      "name": "small_valid_multiplier",
+      "pass": true
+    },
+    {
+      "error": "0.000000000000000000000000000000e+00",
+      "iterations": 3,
+      "name": "scaled_normal",
+      "pass": true
+    }
+  ],
+  "samples": [
+    {
+      "arm": "projection_endpoint",
+      "base_merit": 0.003841630491971976,
+      "linear_merit": 0.0035788578543948487,
+      "strict_linear_bad": 1,
+      "max_linear_ratio": 1.0000000000000002,
+      "trials": [
+        {
+          "alpha": 1.0,
+          "actual_merit": 0.003577540753475851,
+          "strict_nonworsening_bad": 12,
+          "original_violations": 286,
+          "max_bound_ratio": 1.0000667476325626,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3435,
+              "ratio": 1.0000667476325626
+            },
+            {
+              "row": 5922,
+              "ratio": 1.0000005030604382
+            },
+            {
+              "row": 5909,
+              "ratio": 1.000000189491238
+            },
+            {
+              "row": 6045,
+              "ratio": 1.00000013610321
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000080253658
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000029409895
+            }
+          ]
+        },
+        {
+          "alpha": 0.5,
+          "actual_merit": 0.0037092519604893896,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000001254786852,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000001254786852
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000473239659
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000340427246
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000200613937
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000007348093
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000152245
+            }
+          ]
+        },
+        {
+          "alpha": 0.25,
+          "actual_merit": 0.0037753666452284345,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000031332173,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.000000031332173
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000118039378
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000085163347
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000050131663
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000001834768
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000038671
+            }
+          ]
+        },
+        {
+          "alpha": 0.125,
+          "actual_merit": 0.003808480704061625,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000007828008,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.000000007828008
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000029370089
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000021315616
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000001252059
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000457512
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000009936
+            }
+          ]
+        },
+        {
+          "alpha": 0.0625,
+          "actual_merit": 0.0038250511928589978,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.00000000195623,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.00000000195623
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000007268373
+            },
+            {
+              "row": 6045,
+              "ratio": 1.00000000053406
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000003123914
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000113791
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000002636
+            }
+          ]
+        },
+        {
+          "alpha": 0.03125,
+          "actual_merit": 0.003833339729182159,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000004888903,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000004888903
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000001783393
+            },
+            {
+              "row": 6045,
+              "ratio": 1.000000000134099
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000777771
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000028135
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000000777
+            }
+          ]
+        },
+        {
+          "alpha": 0.015625,
+          "actual_merit": 0.0038374848548268555,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000001221616,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000001221616
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000428595
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000338212
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000192821
+            },
+            {
+              "row": 6007,
+              "ratio": 1.000000000000693
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000000187
+            }
+          ]
+        },
+        {
+          "alpha": 0.0078125,
+          "actual_merit": 0.003839557621295855,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000305138,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000305138
+            },
+            {
+              "row": 5909,
+              "ratio": 1.000000000010114
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000086169
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000000004739
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000001643
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000009
+            }
+          ]
+        },
+        {
+          "alpha": 0.00390625,
+          "actual_merit": 0.0038405940288163535,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000076126,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000076126
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000023075
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000022065
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000011322
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000116
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000264
+            }
+          ]
+        },
+        {
+          "alpha": 0.001953125,
+          "actual_merit": 0.003841112255517784,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000018965,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000018965
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000007137
+            },
+            {
+              "row": 6045,
+              "ratio": 1.000000000000569
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000002662
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000023
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000122
+            }
+          ]
+        },
+        {
+          "alpha": 0.0009765625,
+          "actual_merit": 0.0038413713543720396,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000006242,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5909,
+              "ratio": 1.0000000000006242
+            },
+            {
+              "row": 5922,
+              "ratio": 1.0000000000004716
+            },
+            {
+              "row": 6045,
+              "ratio": 1.000000000000166
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000000000031
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000069
+            },
+            {
+              "row": 5607,
+              "ratio": 1.000000000000006
+            }
+          ]
+        },
+        {
+          "alpha": 0.00048828125,
+          "actual_merit": 0.003841500912439232,
+          "strict_nonworsening_bad": 6,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000002116,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5604,
+              "ratio": 1.0000000000002116
+            },
+            {
+              "row": 5922,
+              "ratio": 1.000000000000106
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000000386
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000000198
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000038
+            },
+            {
+              "row": 5609,
+              "ratio": 1.0000000000000009
+            }
+          ]
+        },
+        {
+          "alpha": 0.000244140625,
+          "actual_merit": 0.0038415657001352054,
+          "strict_nonworsening_bad": 6,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000000295,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000000295
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000000113
+            },
+            {
+              "row": 5607,
+              "ratio": 1.000000000000006
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000044
+            },
+            {
+              "row": 5608,
+              "ratio": 1.0000000000000038
+            },
+            {
+              "row": 5923,
+              "ratio": 1.0000000000000016
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "new_bound_margin",
+      "base_merit": 0.003841630491971976,
+      "linear_merit": 0.003581458332208295,
+      "strict_linear_bad": 0,
+      "max_linear_ratio": 1.0,
+      "trials": [
+        {
+          "alpha": 1.0,
+          "actual_merit": 0.0035801672792774627,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000004930275876,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000004930275876
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000001857184886
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000001333957078
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000786566752
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000028824436
+            },
+            {
+              "row": 5918,
+              "ratio": 1.000000000059251
+            }
+          ]
+        },
+        {
+          "alpha": 0.5,
+          "actual_merit": 0.003710572687898403,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000122978783,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.000000122978783
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000463809506
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000333655266
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000196620922
+            },
+            {
+              "row": 6007,
+              "ratio": 1.000000000720179
+            },
+            {
+              "row": 5918,
+              "ratio": 1.000000000014929
+            }
+          ]
+        },
+        {
+          "alpha": 0.25,
+          "actual_merit": 0.0037760286002861865,
+          "strict_nonworsening_bad": 8,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000307082886,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000307082886
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000115683256
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000083469556
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000049133622
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000001798108
+            },
+            {
+              "row": 5918,
+              "ratio": 1.000000000003789
+            }
+          ]
+        },
+        {
+          "alpha": 0.125,
+          "actual_merit": 0.0038088120073311096,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000076721738,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000076721738
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000028784608
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000020891886
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000001227122
+            },
+            {
+              "row": 6007,
+              "ratio": 1.000000000044838
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000009752
+            }
+          ]
+        },
+        {
+          "alpha": 0.0625,
+          "actual_merit": 0.003825216923135256,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000019172886,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000019172886
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000007128462
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000005234557
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000003061527
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000111573
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000002598
+            }
+          ]
+        },
+        {
+          "alpha": 0.03125,
+          "actual_merit": 0.003833422627634945,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000004791603,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000004791603
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000001744975
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000001314613
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000762206
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000027596
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000136
+            }
+          ]
+        },
+        {
+          "alpha": 0.015625,
+          "actual_merit": 0.0038375262918636794,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000001197316,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000001197316
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000419043
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000331564
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000188896
+            },
+            {
+              "row": 6007,
+              "ratio": 1.000000000000684
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000293
+            }
+          ]
+        },
+        {
+          "alpha": 0.0078125,
+          "actual_merit": 0.0038395783275467234,
+          "strict_nonworsening_bad": 8,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000299067,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000299067
+            },
+            {
+              "row": 5909,
+              "ratio": 1.00000000000928
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000084248
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000046432
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000001588
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000087
+            }
+          ]
+        },
+        {
+          "alpha": 0.00390625,
+          "actual_merit": 0.0038406043791379247,
+          "strict_nonworsening_bad": 12,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000000007465,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.000000000007465
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000021756
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000021136
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000011153
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000953
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000449
+            }
+          ]
+        },
+        {
+          "alpha": 0.001953125,
+          "actual_merit": 0.0038411174353220633,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000000001856,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.000000000001856
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000005742
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000004645
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000002587
+            },
+            {
+              "row": 6007,
+              "ratio": 1.0000000000000109
+            },
+            {
+              "row": 5369,
+              "ratio": 1.0000000000000093
+            }
+          ]
+        },
+        {
+          "alpha": 0.0009765625,
+          "actual_merit": 0.003841373971996086,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000004565,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5922,
+              "ratio": 1.0000000000004565
+            },
+            {
+              "row": 6045,
+              "ratio": 1.0000000000001625
+            },
+            {
+              "row": 5910,
+              "ratio": 1.000000000000061
+            },
+            {
+              "row": 5918,
+              "ratio": 1.0000000000000058
+            },
+            {
+              "row": 5923,
+              "ratio": 1.000000000000003
+            },
+            {
+              "row": 5609,
+              "ratio": 1.0000000000000029
+            }
+          ]
+        },
+        {
+          "alpha": 0.00048828125,
+          "actual_merit": 0.00384150221000368,
+          "strict_nonworsening_bad": 4,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000001905,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5604,
+              "ratio": 1.0000000000001905
+            },
+            {
+              "row": 5922,
+              "ratio": 1.000000000000112
+            },
+            {
+              "row": 6045,
+              "ratio": 1.000000000000034
+            },
+            {
+              "row": 5909,
+              "ratio": 1.0000000000000058
+            },
+            {
+              "row": 6273,
+              "ratio": 1.0
+            },
+            {
+              "row": 5473,
+              "ratio": 1.0
+            }
+          ]
+        },
+        {
+          "alpha": 0.000244140625,
+          "actual_merit": 0.0038415663456251394,
+          "strict_nonworsening_bad": 10,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000001374,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5909,
+              "ratio": 1.0000000000001374
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000001186
+            },
+            {
+              "row": 5922,
+              "ratio": 1.000000000000024
+            },
+            {
+              "row": 6007,
+              "ratio": 1.000000000000016
+            },
+            {
+              "row": 5609,
+              "ratio": 1.0000000000000062
+            },
+            {
+              "row": 5910,
+              "ratio": 1.0000000000000053
+            }
+          ]
+        }
+      ],
+      "double_linear_screen_and_descent": true
+    },
+    {
+      "arm": "active_margin",
+      "base_merit": 0.003841630491971976,
+      "linear_merit": 0.003841547443650626,
+      "strict_linear_bad": 0,
+      "max_linear_ratio": 1.0,
+      "trials": [
+        {
+          "alpha": 1.0,
+          "actual_merit": 0.003841547255082858,
+          "strict_nonworsening_bad": 15,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000066131565,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5917,
+              "ratio": 1.0000000066131565
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000013608874
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000007467884
+            },
+            {
+              "row": 3496,
+              "ratio": 1.0000000003277278
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000582892
+            },
+            {
+              "row": 5851,
+              "ratio": 1.000000000002519
+            }
+          ]
+        },
+        {
+          "alpha": 0.5,
+          "actual_merit": 0.003841588918104449,
+          "strict_nonworsening_bad": 16,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000016432022,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5917,
+              "ratio": 1.0000000016432022
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000003372018
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000001879552
+            },
+            {
+              "row": 3496,
+              "ratio": 1.0000000001521696
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000145075
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000007583
+            }
+          ]
+        },
+        {
+          "alpha": 0.25,
+          "actual_merit": 0.0038416097124063455,
+          "strict_nonworsening_bad": 14,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000004057419,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5917,
+              "ratio": 1.0000000004057419
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000000827771
+            },
+            {
+              "row": 3496,
+              "ratio": 1.0000000000693114
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000476168
+            },
+            {
+              "row": 6038,
+              "ratio": 1.00000000000359
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000002525
+            }
+          ]
+        },
+        {
+          "alpha": 0.125,
+          "actual_merit": 0.0038416200958623996,
+          "strict_nonworsening_bad": 12,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000988987,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5917,
+              "ratio": 1.0000000000988987
+            },
+            {
+              "row": 3496,
+              "ratio": 1.000000000038312
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000000199463
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000122264
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000008815
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000001221
+            }
+          ]
+        },
+        {
+          "alpha": 0.0625,
+          "actual_merit": 0.0038416252896787306,
+          "strict_nonworsening_bad": 13,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000234603,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 5917,
+              "ratio": 1.0000000000234603
+            },
+            {
+              "row": 3496,
+              "ratio": 1.0000000000155513
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000000046072
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000032174
+            },
+            {
+              "row": 5907,
+              "ratio": 1.000000000001538
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000002094
+            }
+          ]
+        },
+        {
+          "alpha": 0.03125,
+          "actual_merit": 0.003841627869474193,
+          "strict_nonworsening_bad": 12,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000081637,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000081637
+            },
+            {
+              "row": 5917,
+              "ratio": 1.0000000000052363
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000000009772
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000008853
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000002536
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000000486
+            }
+          ]
+        },
+        {
+          "alpha": 0.015625,
+          "actual_merit": 0.0038416291905772615,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000028297,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000028297
+            },
+            {
+              "row": 5917,
+              "ratio": 1.0000000000009963
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000002636
+            },
+            {
+              "row": 5912,
+              "ratio": 1.0000000000001643
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000000113
+            },
+            {
+              "row": 6038,
+              "ratio": 1.0000000000000069
+            }
+          ]
+        },
+        {
+          "alpha": 0.0078125,
+          "actual_merit": 0.0038416298365777516,
+          "strict_nonworsening_bad": 13,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000000001748,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.000000000001748
+            },
+            {
+              "row": 5917,
+              "ratio": 1.000000000000093
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000000913
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000442
+            },
+            {
+              "row": 6036,
+              "ratio": 1.0000000000000075
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000000058
+            }
+          ]
+        },
+        {
+          "alpha": 0.00390625,
+          "actual_merit": 0.0038416301245624736,
+          "strict_nonworsening_bad": 12,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000028184,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000028184
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000948
+            },
+            {
+              "row": 5906,
+              "ratio": 1.000000000000031
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000000075
+            },
+            {
+              "row": 5836,
+              "ratio": 1.000000000000005
+            },
+            {
+              "row": 6114,
+              "ratio": 1.0000000000000044
+            }
+          ]
+        },
+        {
+          "alpha": 0.001953125,
+          "actual_merit": 0.0038416303310083214,
+          "strict_nonworsening_bad": 11,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000027685,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000027685
+            },
+            {
+              "row": 5604,
+              "ratio": 1.000000000000187
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000000144
+            },
+            {
+              "row": 5369,
+              "ratio": 1.0000000000000047
+            },
+            {
+              "row": 6114,
+              "ratio": 1.0000000000000044
+            },
+            {
+              "row": 6117,
+              "ratio": 1.0000000000000042
+            }
+          ]
+        },
+        {
+          "alpha": 0.0009765625,
+          "actual_merit": 0.003841630397904449,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.000000000000961,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.000000000000961
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000000866
+            },
+            {
+              "row": 5369,
+              "ratio": 1.0000000000000093
+            },
+            {
+              "row": 6026,
+              "ratio": 1.000000000000007
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000000044
+            },
+            {
+              "row": 6036,
+              "ratio": 1.0000000000000038
+            }
+          ]
+        },
+        {
+          "alpha": 0.00048828125,
+          "actual_merit": 0.003841630450096679,
+          "strict_nonworsening_bad": 7,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000018885,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000018885
+            },
+            {
+              "row": 5604,
+              "ratio": 1.0000000000001004
+            },
+            {
+              "row": 5906,
+              "ratio": 1.000000000000009
+            },
+            {
+              "row": 5602,
+              "ratio": 1.000000000000007
+            },
+            {
+              "row": 5851,
+              "ratio": 1.0000000000000067
+            },
+            {
+              "row": 6036,
+              "ratio": 1.0000000000000036
+            }
+          ]
+        },
+        {
+          "alpha": 0.000244140625,
+          "actual_merit": 0.003841630462648469,
+          "strict_nonworsening_bad": 9,
+          "original_violations": 285,
+          "max_bound_ratio": 1.0000000000004368,
+          "qualification_exits": 0,
+          "qualification_entries": 0,
+          "hard_screen_and_descent": false,
+          "worst_rows": [
+            {
+              "row": 3496,
+              "ratio": 1.0000000000004368
+            },
+            {
+              "row": 5906,
+              "ratio": 1.0000000000000062
+            },
+            {
+              "row": 5608,
+              "ratio": 1.0000000000000056
+            },
+            {
+              "row": 6026,
+              "ratio": 1.0000000000000056
+            },
+            {
+              "row": 6036,
+              "ratio": 1.0000000000000033
+            },
+            {
+              "row": 5898,
+              "ratio": 1.0000000000000029
+            }
+          ]
+        }
+      ],
+      "double_linear_screen_and_descent": true
+    }
+  ],
+  "production_changes": false,
+  "threshold_changes": false,
+  "independent_checks": 169,
+  "evidence_checks_pass": true,
+  "scope": {
+    "state": "rows285 first Newton event",
+    "btbt": false,
+    "nodes": 2600,
+    "triangles": 5020,
+    "inner_drain_V": 0.00524437249039996,
+    "temperature_K": 300,
+    "newton_backend": "UMFPACK",
+    "actual_assembly_runs": 6,
+    "accepted_candidate": false,
+    "exact_feasible_direction_achieved": false
+  },
+  "optimizer_metadata_note": "summary bounded optimizer fields remain those of original zero-return working set; use independent projection and affine KKT instead",
+  "exact_audit_method": "Exact rational arithmetic on exported binary64 operands; d denotes requested primary direction, not x+d writeback."
+}

@@ -1,0 +1,458 @@
+{
+  "schema": "vela.validation.bvmethods.normalized_actual.v1",
+  "date": "2026-10-17",
+  "scope": "installed-library original BVmethods; private fixed-state normalization and actual residual",
+  "configuration": {
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "Si_nodes": 2152,
+    "Si_cells": 4156,
+    "coordinates": "raw TDR um; normalized private geometry; source interface m; actual core um",
+    "population": "cm^-3 in actual core; m^-3 in source interface",
+    "current": "A/um",
+    "statistics": "original-default compatible Fermi",
+    "BGN": "OldSlotboom independent compatibility contract",
+    "BTBT": "NonLocalPath",
+    "avalanche": "GradQuasiFermi",
+    "backend": "fixed-state residual only; no linear solve"
+  },
+  "normalization": {
+    "reference": "fixed version-specific initialization reference, independent of device material parameters",
+    "expression": "L_ref_cm = sqrt((epsilon_relative_ref * epsilon0_ref_F_cm) * V_ref_V / (q_ref_C * N_ref_cm3))",
+    "conversion": "raw TDR coordinate_um / (1e4 * L_ref_cm)",
+    "reference_expression_matches_initialization_bitwise": true,
+    "internal_coordinate_components_exact": 5356,
+    "coordinate_components": 5356,
+    "edge_lengths_exact": 7619,
+    "edges": 7619,
+    "Si_representatives_exact": 4156,
+    "Si_cells": 4156,
+    "tied_representatives_exact": 150,
+    "tied_cells": 150,
+    "conversion_controls_exact_components": {
+      "divide_raw_um_by_scaled_length": 5356,
+      "multiply_raw_um_by_reciprocal": 5030,
+      "convert_cm_then_divide": 4362,
+      "convert_cm_then_multiply": 3511
+    },
+    "native_internal_coordinates_used_as_candidate_input": false,
+    "native_representatives_used_as_candidate_input": false
+  },
+  "actual_assembly": {
+    "arms": [
+      "historical identity replay",
+      "autonomous normalized selection plus index swap",
+      "autonomous selection plus normalized unit-direction control"
+    ],
+    "frozen_input_identity_preserved": true,
+    "legacy_replay_rows_bitwise_equal": {
+      "zero": true,
+      "first": true,
+      "before_BV": true,
+      "after_BV": true,
+      "last": true
+    },
+    "autonomous_selection_rows_bitwise_equal_to_historical_replay": {
+      "zero": true,
+      "first": true,
+      "before_BV": true,
+      "after_BV": true,
+      "last": true
+    },
+    "unchanged_actual_terms": [
+      "transport",
+      "SRH",
+      "NonLocalPath dual sources",
+      "Poisson",
+      "contacts"
+    ],
+    "strict_population_guard_unchanged": true
+  },
+  "verification": {
+    "cpp_cases": 7,
+    "cpp_assertions": 25,
+    "diagnostic_checks": 16,
+    "diagnostic_passed": true,
+    "actual_fixed_state_processes": 15,
+    "geometry_probe_processes": 1,
+    "new_native_sdevice_runs": 0,
+    "native_version_hash_checked": true,
+    "T470p_used": false,
+    "C560_used": false,
+    "full_CTest_run": false
+  },
+  "qualification": {
+    "autonomous_normalization_and_selection": true,
+    "private_actual_residual_integration": true,
+    "complete_RHS": false,
+    "N4_complete": false,
+    "N5_started": false,
+    "coupled_resistor_Newton": false
+  },
+  "states": {
+    "zero": {
+      "legacy_bound": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.26325641456051e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 0.1569757592768328,
+          "hole": 0.8692403699326685
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 0.13203080905622525,
+            "2515": 0.08213196103998097
+          },
+          "hole": {
+            "2156": 0.09145541267327545,
+            "2515": 0.7745845202187375
+          }
+        },
+        "load_RHS1_difference_V": -1.6781398262545582e-08
+      },
+      "normalized_selector_swap": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.26325641456051e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 0.1569757592768328,
+          "hole": 0.8692403699326685
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 0.13203080905622525,
+            "2515": 0.08213196103998097
+          },
+          "hole": {
+            "2156": 0.09145541267327545,
+            "2515": 0.7745845202187375
+          }
+        },
+        "load_RHS1_difference_V": -1.6781398262545582e-08
+      },
+      "normalized_directions": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.26325641456051e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 0.1569757592768328,
+          "hole": 0.8692403699326685
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 0.13203080905622525,
+            "2515": 0.08213196103998097
+          },
+          "hole": {
+            "2156": 0.09145541267327545,
+            "2515": 0.7745845202187375
+          }
+        },
+        "load_RHS1_difference_V": -1.6781398262545582e-08
+      }
+    },
+    "first": {
+      "legacy_bound": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.285460875053012e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 1.6889193320333936e-07,
+          "hole": 0.018757364967096228
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 3.6229507704542907e-06,
+            "2515": 1.8289405250765857e-12
+          },
+          "hole": {
+            "2156": 1.3710385995338e-09,
+            "2515": 0.21793359158063208
+          }
+        },
+        "load_RHS1_difference_V": -1.42705933977546e-08
+      },
+      "normalized_selector_swap": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.285460875053012e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 1.6889193320333936e-07,
+          "hole": 0.018757364967096228
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 3.6229507704542907e-06,
+            "2515": 1.8289405250765857e-12
+          },
+          "hole": {
+            "2156": 1.3710385995338e-09,
+            "2515": 0.21793359158063208
+          }
+        },
+        "load_RHS1_difference_V": -1.42705933977546e-08
+      },
+      "normalized_directions": {
+        "strict_state_accepted": true,
+        "population_max_abs_log_ratio": {
+          "electron": 4.984901380567077e-14,
+          "hole": 4.285460875053012e-14
+        },
+        "avalanche_source_relative_L1": 1.0,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 1.6889193320333936e-07,
+          "hole": 0.018757364967096228
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 3.6229507704542907e-06,
+            "2515": 1.8289405250765857e-12
+          },
+          "hole": {
+            "2156": 1.3710385995338e-09,
+            "2515": 0.21793359158063208
+          }
+        },
+        "load_RHS1_difference_V": -1.42705933977546e-08
+      }
+    },
+    "before_BV": {
+      "legacy_bound": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.382983113757564e-14,
+          "hole": 8.859579736508357e-14
+        },
+        "avalanche_source_relative_L1": 1.4530514226643194e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 3.847820650767571e-09,
+          "hole": 2.6156721301403338e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.2201357413280988e-08,
+            "2515": 2.181683508696529e-15
+          },
+          "hole": {
+            "2156": 1.1473400277195706e-12,
+            "2515": 2.484102808115039e-12
+          }
+        },
+        "load_RHS1_difference_V": 3.770932493798615e-08
+      },
+      "normalized_selector_swap": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.382983113757564e-14,
+          "hole": 8.859579736508357e-14
+        },
+        "avalanche_source_relative_L1": 1.4530514226643194e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 3.847820650767571e-09,
+          "hole": 2.6156721301403338e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.2201357413280988e-08,
+            "2515": 2.181683508696529e-15
+          },
+          "hole": {
+            "2156": 1.1473400277195706e-12,
+            "2515": 2.484102808115039e-12
+          }
+        },
+        "load_RHS1_difference_V": 3.770932493798615e-08
+      },
+      "normalized_directions": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.382983113757564e-14,
+          "hole": 8.859579736508357e-14
+        },
+        "avalanche_source_relative_L1": 1.4530514225816792e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 3.847820650699435e-09,
+          "hole": 2.61567213012117e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.2201357413280988e-08,
+            "2515": 2.181683508696529e-15
+          },
+          "hole": {
+            "2156": 1.1473400277195706e-12,
+            "2515": 2.484102808115039e-12
+          }
+        },
+        "load_RHS1_difference_V": 3.770932493798615e-08
+      }
+    },
+    "after_BV": {
+      "legacy_bound": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.438494264988825e-14,
+          "hole": 9.614531393253394e-14
+        },
+        "avalanche_source_relative_L1": 1.6285016088892897e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 4.338744059969389e-09,
+          "hole": 2.9574501935415417e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.034202036036585e-07,
+            "2515": 3.185867417627417e-15
+          },
+          "hole": {
+            "2156": 5.876622771201874e-13,
+            "2515": 1.7586965070580042e-12
+          }
+        },
+        "load_RHS1_difference_V": -7.647868673168702e-08
+      },
+      "normalized_selector_swap": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.438494264988825e-14,
+          "hole": 9.614531393253394e-14
+        },
+        "avalanche_source_relative_L1": 1.6285016088892897e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 4.338744059969389e-09,
+          "hole": 2.9574501935415417e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.034202036036585e-07,
+            "2515": 3.185867417627417e-15
+          },
+          "hole": {
+            "2156": 5.876622771201874e-13,
+            "2515": 1.7586965070580042e-12
+          }
+        },
+        "load_RHS1_difference_V": -7.647868673168702e-08
+      },
+      "normalized_directions": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.438494264988825e-14,
+          "hole": 9.614531393253394e-14
+        },
+        "avalanche_source_relative_L1": 1.6285016087588104e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 4.338744059883223e-09,
+          "hole": 2.9574501937542367e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 1.034202036036585e-07,
+            "2515": 3.185867417627417e-15
+          },
+          "hole": {
+            "2156": 5.876622771201874e-13,
+            "2515": 1.7586965070580042e-12
+          }
+        },
+        "load_RHS1_difference_V": -7.647868673168702e-08
+      }
+    },
+    "last": {
+      "legacy_bound": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.305267502033796e-14,
+          "hole": 8.903988657493359e-14
+        },
+        "avalanche_source_relative_L1": 3.598093606155401e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 9.956061172235098e-09,
+          "hole": 6.6273706182400805e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 6.707462971434423e-10,
+            "2515": 6.427187231429686e-14
+          },
+          "hole": {
+            "2156": 0.013691055832719057,
+            "2515": 1.4258346081212502e-13
+          }
+        },
+        "load_RHS1_difference_V": 4.002162642569176e-08
+      },
+      "normalized_selector_swap": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.305267502033796e-14,
+          "hole": 8.903988657493359e-14
+        },
+        "avalanche_source_relative_L1": 3.598093606155401e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 9.956061172235098e-09,
+          "hole": 6.6273706182400805e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 6.707462971434423e-10,
+            "2515": 6.427187231429686e-14
+          },
+          "hole": {
+            "2156": 0.013691055832719057,
+            "2515": 1.4258346081212502e-13
+          }
+        },
+        "load_RHS1_difference_V": 4.002162642569176e-08
+      },
+      "normalized_directions": {
+        "strict_state_accepted": false,
+        "population_max_abs_log_ratio": {
+          "electron": 7.305267502033796e-14,
+          "hole": 8.903988657493359e-14
+        },
+        "avalanche_source_relative_L1": 3.5980936061188024e-07,
+        "full_rhs_difference_over_Vela_absolute_terms": {
+          "electron": 9.956061172163476e-09,
+          "hole": 6.627370618308748e-09
+        },
+        "weak_difference_over_Vela_absolute_terms": {
+          "electron": {
+            "2156": 6.707462971434423e-10,
+            "2515": 6.427187231429686e-14
+          },
+          "hole": {
+            "2156": 0.013691055832719057,
+            "2515": 1.4258346081212502e-13
+          }
+        },
+        "load_RHS1_difference_V": 4.002162642569176e-08
+      }
+    }
+  },
+  "private_evidence_directory": "build-release/bvmethods_normalized_assembly_20261017",
+  "remaining": [
+    "local hole avalanche source at final-state node 2156",
+    "near-zero carrier weak rows including first-state hole 2515",
+    "strict population state identity in three BV states",
+    "native absolute weak-row support qualification",
+    "augmented load unknown and derivatives"
+  ]
+}

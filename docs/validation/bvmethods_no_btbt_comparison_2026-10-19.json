@@ -1,0 +1,351 @@
+{
+  "schema": "vela.bvmethods.no_btbt_comparison.v1",
+  "status": "failed_equivalence",
+  "profile": "installed-library original with complete Band2Band removed",
+  "date": "2026-10-19",
+  "configuration": {
+    "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "first_outer_voltage_V": 0.01,
+    "stop_current_A_per_um": 0.0013,
+    "units": {
+      "length": "um",
+      "density": "cm^-3",
+      "field": "V/cm",
+      "current": "A/um"
+    },
+    "vela": "Release C++20 UCRT64; UMFPACK; one thread; current production frontend defaults",
+    "mesh_volume": "barycentric; 26 obtuse cells retained",
+    "runner_sha256": "112c2fcb1e8ab7b43124624ff10293033d8dc998551321e67d9f5e157ebe104d"
+  },
+  "verification_checks": {
+    "strict_contract_unchanged": true,
+    "input_deck_identity": true,
+    "local_remote_runner_hash_equal": true,
+    "native_archive_and_per_file_hashes_verified": true,
+    "pc_archive_hash_verified": true,
+    "first_and_full_failure_traces_identical": true
+  },
+  "source_checks": {
+    "Electrode": true,
+    "Math": true,
+    "Solve": true,
+    "Plot": true,
+    "File": true,
+    "only_physics_removal": true,
+    "low_pp5_des.par_unchanged": true,
+    "low_n1_msh.tdr_unchanged": true,
+    "full_pp5_des.par_unchanged": true,
+    "full_n1_msh.tdr_unchanged": true
+  },
+  "native": {
+    "low": {
+      "exit_code": 0,
+      "rows": 4,
+      "first": {
+        "outer_voltage_V": 0.01,
+        "inner_voltage_V": 0.00524437249040924,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 4.75561534281984e-10,
+        "h_current_A_per_um": 4.73509390614797e-22,
+        "total_current_A_per_um": 4.75561534282458e-10,
+        "Charge": 1.85088486841361e-15
+      },
+      "last": {
+        "outer_voltage_V": 0.01,
+        "inner_voltage_V": 0.00524437249040924,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 4.75561534281984e-10,
+        "h_current_A_per_um": 4.73509390614797e-22,
+        "total_current_A_per_um": 4.75561534282458e-10,
+        "Charge": 1.85088486841361e-15
+      },
+      "BV_at_1e-4_A_per_um": null
+    },
+    "full": {
+      "exit_code": 0,
+      "rows": 65,
+      "first": {
+        "outer_voltage_V": 0.01,
+        "inner_voltage_V": 0.00524437249039996,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 4.75561534259954e-10,
+        "h_current_A_per_um": 4.73493934332908e-22,
+        "total_current_A_per_um": 4.75561534260427e-10,
+        "Charge": 1.8508848684136e-15
+      },
+      "last": {
+        "outer_voltage_V": 14540.4590049101,
+        "inner_voltage_V": 7.41273581274444,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 0.00145331678342468,
+        "h_current_A_per_um": -1.21565149393619e-08,
+        "total_current_A_per_um": 0.00145330462690974,
+        "Charge": 7.7472696866448e-15
+      },
+      "BV_at_1e-4_A_per_um": 6.673832544156856,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "pass",
+        "states_checked": 65,
+        "last": {
+          "outer_voltage_V": 14540.4590049101,
+          "inner_voltage_V": 7.41273581274444,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00145331678342468,
+          "h_current_A_per_um": -1.21565149393619e-08,
+          "total_current_A_per_um": 0.00145330462690974,
+          "Charge": 7.7472696866448e-15
+        },
+        "max_load_line_residual_V": 1.216699577026581e-08,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 5.2965211253114606e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "stop_record": {
+        "single_drain_stop_record": true,
+        "declared_stop_matches": true,
+        "reported_value_matches_last": true
+      }
+    }
+  },
+  "native_low_full_consistency": {
+    "zero_terminal_rows_exact": true,
+    "first_terminal_rows_exact": false,
+    "first_outer_voltage_V": 0.01,
+    "first_inner_voltage_difference_V": 9.27990323473793e-15,
+    "first_drain_current_difference_A_per_um": 2.203102503716077e-20
+  },
+  "zero_fields": {
+    "coordinate_max_error_um": 0.0,
+    "fields": {
+      "ElectrostaticPotential": {
+        "nodes": 2600,
+        "max_error": 0.008742078746091952,
+        "worst_node": 1140,
+        "reference_at_worst": [
+          -0.1623752730563431
+        ],
+        "candidate_at_worst": [
+          -0.15363319431025116
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.001,
+        "pass": false,
+        "failed_nodes": 573
+      },
+      "eDensity": {
+        "nodes": 2152,
+        "max_error": 0.3378936509874889,
+        "worst_node": 1140,
+        "reference_at_worst": [
+          68469990.66759634
+        ],
+        "candidate_at_worst": [
+          95994337.73692353
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.009950330853168092,
+        "pass": false,
+        "failed_nodes": 1017
+      },
+      "hDensity": {
+        "nodes": 2152,
+        "max_error": 0.3384258896141731,
+        "worst_node": 1140,
+        "reference_at_worst": [
+          19546553195539.223
+        ],
+        "candidate_at_worst": [
+          13934573779541.45
+        ],
+        "conflicting_region_duplicates": 0,
+        "limit": 0.009950330853168092,
+        "pass": false,
+        "failed_nodes": 1031
+      },
+      "ElectricField": {
+        "nodes": 2600,
+        "max_error": 445868.6844235809,
+        "worst_node": 1286,
+        "reference_at_worst": [
+          443636.0345897154,
+          5.125582981527711e-12
+        ],
+        "candidate_at_worst": [
+          889504.7190132963,
+          -7.86148825363363e-12,
+          0.0
+        ],
+        "conflicting_region_duplicates": 0,
+        "max_over_reference_peak": 0.3322229716240477,
+        "barycentric_weighted_L1_relative_error": 0.017819558744112295,
+        "pass": false,
+        "weighting": "same-mesh barycentric boxes used by this production deck"
+      }
+    },
+    "native_BTBT_all_zero": true,
+    "vela_BTBT_all_zero": true
+  },
+  "vela": {
+    "zero": {
+      "exit_code": 0,
+      "convergence_reason": "initial_stall_residual_floor",
+      "seconds": 10.698719501495361
+    },
+    "first": {
+      "runner_exit_code": 1,
+      "seconds": 62.558114528656006,
+      "accepted_outer_voltages_V": [
+        0.0
+      ],
+      "attempts": [
+        {
+          "outer_target_V": 0.01,
+          "inner_trial_V": 0.01,
+          "reason": "global_continuity_closure_line_search_rejected",
+          "carrier_row_violations": 819,
+          "carrier_row_max_ratio": 1.9887992455512546,
+          "global_continuity_satisfied": false
+        },
+        {
+          "outer_target_V": 0.005,
+          "inner_trial_V": 0.005,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 230,
+          "carrier_row_max_ratio": 1.7610474064109873,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.0025,
+          "inner_trial_V": 0.0025,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 222,
+          "carrier_row_max_ratio": 1.3698622359898849,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.00125,
+          "inner_trial_V": 0.00125,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 168,
+          "carrier_row_max_ratio": 1.8743387434973746,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.000625,
+          "inner_trial_V": 0.000625,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 176,
+          "carrier_row_max_ratio": 1.5163308936565403,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.0003125,
+          "inner_trial_V": 0.0003125,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 113,
+          "carrier_row_max_ratio": 1.4993320763302618,
+          "global_continuity_satisfied": true
+        }
+      ]
+    },
+    "full": {
+      "runner_exit_code": 1,
+      "seconds": 61.899736166000366,
+      "accepted_outer_voltages_V": [
+        0.0
+      ],
+      "attempts": [
+        {
+          "outer_target_V": 0.01,
+          "inner_trial_V": 0.01,
+          "reason": "global_continuity_closure_line_search_rejected",
+          "carrier_row_violations": 819,
+          "carrier_row_max_ratio": 1.9887992455512546,
+          "global_continuity_satisfied": false
+        },
+        {
+          "outer_target_V": 0.005,
+          "inner_trial_V": 0.005,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 230,
+          "carrier_row_max_ratio": 1.7610474064109873,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.0025,
+          "inner_trial_V": 0.0025,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 222,
+          "carrier_row_max_ratio": 1.3698622359898849,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.00125,
+          "inner_trial_V": 0.00125,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 168,
+          "carrier_row_max_ratio": 1.8743387434973746,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.000625,
+          "inner_trial_V": 0.000625,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 176,
+          "carrier_row_max_ratio": 1.5163308936565403,
+          "global_continuity_satisfied": true
+        },
+        {
+          "outer_target_V": 0.0003125,
+          "inner_trial_V": 0.0003125,
+          "reason": "carrier_row_convergence_line_search_rejected",
+          "carrier_row_violations": 113,
+          "carrier_row_max_ratio": 1.4993320763302618,
+          "global_continuity_satisfied": true
+        }
+      ]
+    }
+  },
+  "gate_contract": {
+    "path": "docs/validation/contracts/bvmethods_nonlocalpath_n0.v1.json",
+    "sha256": "ffb272b189e8f7d559d832101ff3a185454cf74f324ac4ae7653fb53074e536d",
+    "changes": false
+  },
+  "limitations": [
+    "Vela has no accepted nonzero state; first-point fields, I-V/BV equivalence and complete coupled qualification unavailable.",
+    "One native full sweep only; repeatability and BV interpolation-error qualification are not claimed.",
+    "Low native field acquisition rescales the normalized QS time to stop at 0.01 V; its terminal difference from the full scan is retained.",
+    "Frontend does not reproduce every native math control; W102/W201 remain. Current production geometry and physics implementations are used, not private N4 assembly.",
+    "Windows background launch initially produced no worker status; retry with explicit UCRT64 PATH and retained SSH session completed. Environment failure is distinct from solver failures."
+  ],
+  "tests": {
+    "original_reference_contract_unittest": {
+      "passed": 11,
+      "failed": 0
+    },
+    "release_runner_build": "pass"
+  }
+}

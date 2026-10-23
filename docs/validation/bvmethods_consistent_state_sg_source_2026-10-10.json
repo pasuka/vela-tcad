@@ -1,0 +1,787 @@
+{
+  "date": "2026-10-10",
+  "git_head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "scope": "constitutive/contact-consistent live source recompute and non-optimistic SG representative matching",
+  "configuration": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "obtuse_triangles": 26,
+    "temperature_K": 300,
+    "mesh_coordinate": "um",
+    "native_population": "cm^-3",
+    "state_population": "m^-3",
+    "current": "A/um",
+    "resistor": "1e7 ohm um",
+    "local_backend": "Release SparseLU/COLAMD single thread; HDF5 and UMFPACK available; no linear trajectory solve used",
+    "native": "T-2022.03; double precision; original VO + SRH(DopingDep)+BTBT(E2), Fermi/OldSlotboom; DensityIntegral(240) explicit diagnostic only"
+  },
+  "checks": {
+    "local_tests_passed": 21,
+    "private_exports_passed": 9,
+    "unmodified_constitutive_replay_files_bitwise_equal": 6,
+    "native_load_plot_exit0": 11,
+    "native_source_first_iteration_exit2_expected": 3,
+    "QS_trajectories": 0
+  },
+  "constitutive": {
+    "electron": {
+      "all_Si_max_relative_population_error": 3.4283687000424834e-13,
+      "max_inverse_QF_error_V": 3.597122599785507e-14
+    },
+    "hole": {
+      "all_Si_max_relative_population_error": 2.1516122217235534e-13,
+      "max_inverse_QF_error_V": 1.260561684095679e-14
+    }
+  },
+  "live_residual": {
+    "electron": {
+      "baseline_replay": {
+        "full_residual_difference_L2": 102361156.92454697,
+        "avalanche_difference_L2": 0.010099577614451127,
+        "avalanche_norm": 0.010099577882532044,
+        "transport_difference_L2": 102361156.92454693,
+        "other_source_difference_L2": 1.775805719537493e-08,
+        "internal_closure_relative": 2.3416597980550577e-20
+      },
+      "native_qf_replay": {
+        "full_residual_difference_L2": 0.015285123482192858,
+        "avalanche_difference_L2": 1.7034205872970575e-06,
+        "avalanche_norm": 1.7035643408271106e-06,
+        "transport_difference_L2": 0.015284566499570698,
+        "other_source_difference_L2": 1.4879801767821653e-10,
+        "internal_closure_relative": 2.2952197350070847e-17
+      },
+      "consistent_live": {
+        "full_residual_difference_L2": 0.015277036483827645,
+        "avalanche_difference_L2": 1.7038785940362845e-06,
+        "avalanche_norm": 1.7040223493881304e-06,
+        "transport_difference_L2": 0.015276478909752922,
+        "other_source_difference_L2": 1.4908701079064158e-10,
+        "internal_closure_relative": 2.2955415343530753e-17,
+        "worst_population_normalized_row": {
+          "node": 292,
+          "error": 6.954804848080615e-08
+        }
+      },
+      "native_avalanche_norm": 4.8877946710641985e-09,
+      "native_source_subtraction_resolved_64ulp_rows": 1077
+    },
+    "hole": {
+      "baseline_replay": {
+        "full_residual_difference_L2": 15149.632300656016,
+        "avalanche_difference_L2": 0.01225873533550935,
+        "avalanche_norm": 0.012258735642968003,
+        "transport_difference_L2": 15149.632300651052,
+        "other_source_difference_L2": 3.052769042624176e-08,
+        "internal_closure_relative": 3.3240821928866386e-17
+      },
+      "native_qf_replay": {
+        "full_residual_difference_L2": 1.0905569542108838e-05,
+        "avalanche_difference_L2": 3.2095384801466063e-06,
+        "avalanche_norm": 3.2099222282492006e-06,
+        "transport_difference_L2": 1.0421451573718125e-05,
+        "other_source_difference_L2": 2.9168570255886986e-10,
+        "internal_closure_relative": 1.9860422603908433e-17
+      },
+      "consistent_live": {
+        "full_residual_difference_L2": 1.090849900980681e-05,
+        "avalanche_difference_L2": 3.2104015135325687e-06,
+        "avalanche_norm": 3.21078526367021e-06,
+        "transport_difference_L2": 1.0424253784350308e-05,
+        "other_source_difference_L2": 2.921211072926443e-10,
+        "internal_closure_relative": 2.588544548460021e-17,
+        "worst_population_normalized_row": {
+          "node": 152,
+          "error": -4.453760612486669
+        }
+      },
+      "native_avalanche_norm": 7.257060330918983e-09,
+      "native_source_subtraction_resolved_64ulp_rows": 1201
+    }
+  },
+  "normalization": "Fixed left scales from preceding first baseline on BOTH sides; no new Jacobian transformed with old population data. All 2121 common free carrier rows retained. Native source RHS differences below 64 ULP remain recorded, not a gate.",
+  "observer_validation": {
+    "probe_default": {
+      "ElectrostaticPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eQuasiFermiPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hQuasiFermiPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eDensity": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hDensity": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eImpactIonization": {
+        "max_abs": 9.0,
+        "relative_l2": 9.06892270501116e-16
+      },
+      "hImpactIonization": {
+        "max_abs": 670367035791.375,
+        "relative_l2": 0.0007329398423901386
+      },
+      "eMobility": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hMobility": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      }
+    },
+    "probe_integral": {
+      "ElectrostaticPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eQuasiFermiPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hQuasiFermiPotential": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eDensity": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hDensity": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "eImpactIonization": {
+        "max_abs": 7.0,
+        "relative_l2": 7.020015985333054e-16
+      },
+      "hImpactIonization": {
+        "max_abs": 670367035764.6875,
+        "relative_l2": 0.0007329398441185643
+      },
+      "eMobility": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      },
+      "hMobility": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0
+      }
+    }
+  },
+  "SG_controls": {
+    "probe_default": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 0.0,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 0.0,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.0,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 0.011798298626562342,
+          "population_inverse_qf_error_max_V": 0.00030500956024646453,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 7.283707409509786e-05,
+              "major_count": 1213,
+              "major_unique": 169,
+              "major_ambiguous": 0,
+              "major_unmatched": 1044,
+              "major_force_max_relative_error": 2.0664355565567805,
+              "major_live_alpha_max_relative_error": 9.327849894333366e+62,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 7.283707410169458e-05,
+              "major_count": 1213,
+              "major_unique": 169,
+              "major_ambiguous": 0,
+              "major_unmatched": 1044,
+              "major_force_max_relative_error": 2.066435556556782,
+              "major_live_alpha_max_relative_error": 9.327849894335488e+62,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1969,
+          "peak_current_wo_mob": 0.0003515628946486758,
+          "logged_alpha_formula_max_relative_error": 3.1503394372164444e-16
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 2.984279490192421e-13,
+          "population_inverse_qf_error_max_V": 7.714957925432232e-15,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 0.038022956269989756,
+              "major_count": 2530,
+              "major_unique": 1303,
+              "major_ambiguous": 0,
+              "major_unmatched": 1227,
+              "major_force_max_relative_error": 129.27386053586963,
+              "major_live_alpha_max_relative_error": 5.034053639084442e+299,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.038022956269989756,
+              "major_count": 2530,
+              "major_unique": 1303,
+              "major_ambiguous": 0,
+              "major_unmatched": 1227,
+              "major_force_max_relative_error": 129.27386053586963,
+              "major_live_alpha_max_relative_error": 5.034053639084424e+299,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 2918,
+          "peak_current_wo_mob": 1.2927487536052614e-09,
+          "logged_alpha_formula_max_relative_error": 2.3697520165986696e-16
+        }
+      }
+    },
+    "probe_integral": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 0.0,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 0.0,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.00030500956028112203,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 1.3731238368563936e-12,
+          "population_inverse_qf_error_max_V": 3.5497990930709016e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 0.00010292663627561616,
+              "major_count": 1210,
+              "major_unique": 163,
+              "major_ambiguous": 0,
+              "major_unmatched": 1047,
+              "major_force_max_relative_error": 1.079495664206938,
+              "major_live_alpha_max_relative_error": 1.3857154465302138e+109,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.00010292663628062697,
+              "major_count": 1210,
+              "major_unique": 163,
+              "major_ambiguous": 0,
+              "major_unmatched": 1047,
+              "major_force_max_relative_error": 1.079495664206938,
+              "major_live_alpha_max_relative_error": 1.38571544653045e+109,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1964,
+          "peak_current_wo_mob": 0.0003515628946476637,
+          "logged_alpha_formula_max_relative_error": 2.9921329295082615e-16
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 4.334310688136611e-13,
+          "population_inverse_qf_error_max_V": 1.1205057939318241e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 0.03871117947851693,
+              "major_count": 2532,
+              "major_unique": 1319,
+              "major_ambiguous": 0,
+              "major_unmatched": 1213,
+              "major_force_max_relative_error": 3337.028805823924,
+              "major_live_alpha_max_relative_error": 1.4524054296280622e+248,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.03871117947851693,
+              "major_count": 2532,
+              "major_unique": 1319,
+              "major_ambiguous": 0,
+              "major_unmatched": 1213,
+              "major_force_max_relative_error": 3337.028805823924,
+              "major_live_alpha_max_relative_error": 1.4524054296280622e+248,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 2919,
+          "peak_current_wo_mob": 1.292748753605089e-09,
+          "logged_alpha_formula_max_relative_error": 2.6107227861603924e-16
+        }
+      }
+    },
+    "probe_x": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 3.469446951953614e-18,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 6.938893903907228e-18,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.00030500956028112203,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 1.3731238368563936e-12,
+          "population_inverse_qf_error_max_V": 3.5497990930709016e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 3.362463839849516e-13,
+              "major_count": 16,
+              "major_unique": 16,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 1.409105469625915e-10,
+              "major_live_alpha_max_relative_error": 1.2303188473857906e-09,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 9.202185284220821e-05,
+              "major_count": 16,
+              "major_unique": 6,
+              "major_ambiguous": 0,
+              "major_unmatched": 10,
+              "major_force_max_relative_error": 0.0015733941509340444,
+              "major_live_alpha_max_relative_error": 0.7123018521057359,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 45,
+          "peak_current_wo_mob": 15275.034038252405,
+          "logged_alpha_formula_max_relative_error": 0.0
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 4.121147867408581e-13,
+          "population_inverse_qf_error_max_V": 1.0653989516073082e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 4.831980035556828e-13,
+              "major_count": 368,
+              "major_unique": 368,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 6.855753836978326e-10,
+              "major_live_alpha_max_relative_error": 1.1849117949727717e-07,
+              "all_callbacks_unique": true
+            },
+            "log_Gg": {
+              "weighted_vector_error": 4.831745759923871e-13,
+              "major_count": 368,
+              "major_unique": 368,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 6.855767734127203e-10,
+              "major_live_alpha_max_relative_error": 1.1849140704588263e-07,
+              "all_callbacks_unique": true
+            }
+          },
+          "callback_count": 373,
+          "peak_current_wo_mob": 1.7886731818491504e-09,
+          "logged_alpha_formula_max_relative_error": 0.0
+        }
+      }
+    },
+    "probe_y": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 3.469446951953614e-18,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 1.3877787807814457e-17,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.00030500956028112203,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 1.3731238368563936e-12,
+          "population_inverse_qf_error_max_V": 3.5497990930709016e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 5.936712241075565e-13,
+              "major_count": 1014,
+              "major_unique": 946,
+              "major_ambiguous": 68,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 1.586876718072064e-08,
+              "major_live_alpha_max_relative_error": 8.000847316760984e-08,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.0002372338993012793,
+              "major_count": 1014,
+              "major_unique": 258,
+              "major_ambiguous": 8,
+              "major_unmatched": 748,
+              "major_force_max_relative_error": 0.0034763123479921755,
+              "major_live_alpha_max_relative_error": 0.1329351723086757,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1679,
+          "peak_current_wo_mob": 27776.94728874335,
+          "logged_alpha_formula_max_relative_error": 2.571805302331289e-16
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 4.298783551348606e-13,
+          "population_inverse_qf_error_max_V": 1.1113213202110714e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 7.158271512076152e-13,
+              "major_count": 504,
+              "major_unique": 420,
+              "major_ambiguous": 84,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 3.314293882727984e-07,
+              "major_live_alpha_max_relative_error": 6.038231772188138e-08,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 6.170806331686248e-06,
+              "major_count": 504,
+              "major_unique": 206,
+              "major_ambiguous": 36,
+              "major_unmatched": 262,
+              "major_force_max_relative_error": 3.8103801442795244e-05,
+              "major_live_alpha_max_relative_error": 0.006765791717720644,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1685,
+          "peak_current_wo_mob": 268.5736785704162,
+          "logged_alpha_formula_max_relative_error": 2.749619491108353e-16
+        }
+      }
+    },
+    "probe_code": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 1.0842021724855044e-19,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 6.938893903907228e-18,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.00030500956028112203,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 1.3731238368563936e-12,
+          "population_inverse_qf_error_max_V": 3.5497990930709016e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 6.878584703813986e-14,
+              "major_count": 1150,
+              "major_unique": 1150,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 1.2972567338157351e-11,
+              "major_live_alpha_max_relative_error": 1.332864564565655e-09,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.0003134214551244424,
+              "major_count": 1150,
+              "major_unique": 206,
+              "major_ambiguous": 0,
+              "major_unmatched": 944,
+              "major_force_max_relative_error": 0.016508429725784396,
+              "major_live_alpha_max_relative_error": 53624.18198460159,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1855,
+          "peak_current_wo_mob": 992708.6199613403,
+          "logged_alpha_formula_max_relative_error": 3.028790778461978e-16
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 4.298783551348606e-13,
+          "population_inverse_qf_error_max_V": 1.1113213202110714e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 2.9154707772801175e-13,
+              "major_count": 570,
+              "major_unique": 570,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 8.708613692111003e-11,
+              "major_live_alpha_max_relative_error": 4.9341566656181786e-08,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 1.1298381617373087e-05,
+              "major_count": 570,
+              "major_unique": 224,
+              "major_ambiguous": 0,
+              "major_unmatched": 346,
+              "major_force_max_relative_error": 0.000123765338728386,
+              "major_live_alpha_max_relative_error": 0.08804282630505961,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1952,
+          "peak_current_wo_mob": 384.65878492936605,
+          "logged_alpha_formula_max_relative_error": 2.623684788683954e-16
+        }
+      }
+    },
+    "probe_code_neg": {
+      "identity": {
+        "eQuasiFermiPotential": {
+          "max_free_error_V": 1.0842021724855044e-19,
+          "max_contact_error_V": 3.67378948830107e-16
+        },
+        "hQuasiFermiPotential": {
+          "max_free_error_V": 6.938893903907228e-18,
+          "max_contact_error_V": 0.0
+        },
+        "psi_max_change_V": 0.00030500956028112203,
+        "psi_free_max_change_V": 0.0
+      },
+      "carriers": {
+        "electron": {
+          "population_inverse_eta_error_max": 1.3731238368563936e-12,
+          "population_inverse_qf_error_max_V": 3.5497990930709016e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 3.915320643595478e-14,
+              "major_count": 1177,
+              "major_unique": 1169,
+              "major_ambiguous": 8,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 1.009824282562193e-11,
+              "major_live_alpha_max_relative_error": 4.2521712331274405e-10,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 0.00034399118587171454,
+              "major_count": 1177,
+              "major_unique": 212,
+              "major_ambiguous": 0,
+              "major_unmatched": 965,
+              "major_force_max_relative_error": 0.15959456920160317,
+              "major_live_alpha_max_relative_error": 0.999990227713132,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1890,
+          "peak_current_wo_mob": 989730.3937347872,
+          "logged_alpha_formula_max_relative_error": 2.802583120027582e-16
+        },
+        "hole": {
+          "population_inverse_eta_error_max": 4.085620730620576e-13,
+          "population_inverse_qf_error_max_V": 1.0562144778865555e-14,
+          "modes": {
+            "no_Gg": {
+              "weighted_vector_error": 2.5711273824344283e-13,
+              "major_count": 581,
+              "major_unique": 581,
+              "major_ambiguous": 0,
+              "major_unmatched": 0,
+              "major_force_max_relative_error": 3.183519677765132e-11,
+              "major_live_alpha_max_relative_error": 6.004768320302092e-09,
+              "all_callbacks_unique": false
+            },
+            "log_Gg": {
+              "weighted_vector_error": 9.689759128581927e-06,
+              "major_count": 581,
+              "major_unique": 257,
+              "major_ambiguous": 0,
+              "major_unmatched": 324,
+              "major_force_max_relative_error": 0.00016038566428807502,
+              "major_live_alpha_max_relative_error": 0.09951533358732816,
+              "all_callbacks_unique": false
+            }
+          },
+          "callback_count": 1991,
+          "peak_current_wo_mob": 454.69493436240066,
+          "logged_alpha_formula_max_relative_error": 2.769227506693384e-16
+        }
+      }
+    }
+  },
+  "coordinate_set_fingerprints": {
+    "electron": {
+      "common_coordinates": 5,
+      "singleton_intersections": 0,
+      "multiple_intersections": 1,
+      "empty_intersections": 4,
+      "note": "Intersection is a coordinate-set fingerprint only; an unmatched callback or differing multiplicity prevents a unique global support certificate."
+    },
+    "hole": {
+      "common_coordinates": 171,
+      "singleton_intersections": 34,
+      "multiple_intersections": 131,
+      "empty_intersections": 6,
+      "note": "Intersection is a coordinate-set fingerprint only; an unmatched callback or differing multiplicity prevents a unique global support certificate."
+    }
+  },
+  "local_state_tags": {
+    "probe_integral": {
+      "electron": {
+        "callbacks": 1964,
+        "callbacks_matching_local_state": 1964,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 1047
+      },
+      "hole": {
+        "callbacks": 2919,
+        "callbacks_matching_local_state": 2919,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 1213
+      }
+    },
+    "probe_code": {
+      "electron": {
+        "callbacks": 1855,
+        "callbacks_matching_local_state": 1855,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 0
+      },
+      "hole": {
+        "callbacks": 1952,
+        "callbacks_matching_local_state": 1952,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 0
+      }
+    },
+    "probe_code_neg": {
+      "electron": {
+        "callbacks": 1890,
+        "callbacks_matching_local_state": 1890,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 0
+      },
+      "hole": {
+        "callbacks": 1991,
+        "callbacks_matching_local_state": 1991,
+        "max_local_state_scaled_error": 0.0,
+        "note": "Local vertex tags cannot prove all neighbouring vertex states or unique element identity.",
+        "major_unmatched_count": 0
+      }
+    }
+  },
+  "platforms": {
+    "t470p": {
+      "platform": "win32",
+      "phase": "completed",
+      "nonlinear_solves": 0,
+      "verified_input_files": 324,
+      "core_sha256": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898",
+      "active_step": "analysis",
+      "runs": [
+        {
+          "label": "helper",
+          "rc": 0
+        },
+        {
+          "label": "tests",
+          "rc": 0
+        },
+        {
+          "label": "analysis",
+          "rc": 0
+        }
+      ],
+      "all_match_classifications_equal": true,
+      "max_abs_weighted_SG_metric_difference": 0.0
+    },
+    "c560": {
+      "platform": "linux",
+      "phase": "completed",
+      "nonlinear_solves": 0,
+      "verified_input_files": 324,
+      "core_sha256": "13e2610f6afb28ba642b3c2d2526ee1c8f8d7a9c4938c898409812cbb7b40e5d",
+      "active_step": "analysis",
+      "runs": [
+        {
+          "label": "helper",
+          "rc": 0
+        },
+        {
+          "label": "tests",
+          "rc": 0
+        },
+        {
+          "label": "analysis",
+          "rc": 0
+        }
+      ],
+      "all_match_classifications_equal": true,
+      "max_abs_weighted_SG_metric_difference": 9.965173217857393e-17
+    }
+  },
+  "findings": [
+    "Native ni/Nc/Nv, native VT and explicit integral statistics close population/QF including contacts in a private probe; production sources/defaults unmodified.",
+    "Finite excitation identifies classical two-edge effective-band SG at representative vertices; generalized-Einstein candidate differs. Contact vertices at insulating junctions must be exempt from tangential projection in this diagnostic reconstruction.",
+    "All three native source controls have bitwise equal primary variables; native carrier row J SOL closure <7e-15. Eleven native QF/circuit alias rows remain excluded and are not certified by that closure.",
+    "PMI observer electron impact rate agrees to ~1e-15; hole differs ~7.33e-4 relative L2 despite matching library coefficients. Full RHS source comparisons use original built-in native model, never substitute PMI rate for it.",
+    "All callback local tags match exported local values; they do not expose adjacent vertex state or an element ID.",
+    "First platform payload was uploaded before compression ended; incomplete gzip failed extraction, retained on remote. Reuploaded final archive after SHA256 verification. T470p first detached launch produced no completion; v2 foreground SSH completed. Earlier v1 and projection failures remain evidence."
+  ],
+  "qualification": {
+    "requested_investigation_executed": true,
+    "production_physics_changed": false,
+    "consistent_diagnostic_state_verified": true,
+    "unique_native_SG_global": false,
+    "complete_residual_aligned": false,
+    "all_cross_blocks": false,
+    "original_full_zero_QS_pass": false,
+    "Q4_entered": false
+  },
+  "next_steps": [
+    "Resolve remaining representative multiplicity and near-equilibrium cancellation in a matched DensityIntegral/ExtendedPrecision control.",
+    "Compare per-element source integration and contact-adjacent current support against original built-in native RHS; resolve PMI hole-source identity before using that observer as a source oracle.",
+    "After full residual and weak carrier rows align, certify cross blocks and Newton update; no transfer of old short trajectory qualification."
+  ],
+  "evidence_archive": {
+    "sha256": "505111644b239dbb5aea2f38fa5db345dcab49f50b9b24bf4f91929aa4e1cf32",
+    "bytes": 228898380,
+    "manifest_files": 3246,
+    "manifest_sha256": "ba197f72760bb3ddee5db7bcf2bc11faea34159ea4fb5eea0e11eb3120c717f0",
+    "remote": {
+      "verified": true,
+      "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+      "verified_files": 3246,
+      "archive_sha256": "505111644b239dbb5aea2f38fa5db345dcab49f50b9b24bf4f91929aa4e1cf32",
+      "manifest_sha256": "ba197f72760bb3ddee5db7bcf2bc11faea34159ea4fb5eea0e11eb3120c717f0"
+    }
+  },
+  "runtime_environment_verified_after_sealing": {
+    "c560": {
+      "os": "Ubuntu 26.04.1 LTS",
+      "version_id": "26.04",
+      "compiler": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "read_only_verified": true
+    }
+  }
+}

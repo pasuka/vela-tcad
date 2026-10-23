@@ -1,0 +1,194 @@
+{
+  "scope": "independent material geometry and frozen-SG mobility controls, no actual assembler or Newton qualification",
+  "platform": "vela VM Linux GCC16 environment; Python independent diagnostic",
+  "transferred_edges": 26,
+  "production_changed": false,
+  "actual_assembler_qualified": false,
+  "Jv_qualified": false,
+  "full_qs_qualified": false,
+  "independent_repeat_exact": true,
+  "checks_passed": 188,
+  "initial_diagnostic_failures": 2,
+  "points": [
+    {
+      "step": 1,
+      "summary": {
+        "baseline": {
+          "drain_e_flux": -1.7070785464192712e-05,
+          "relative_sum_difference": 0.07236202537061298,
+          "relative_L1": 0.07370692921649877
+        },
+        "geometry_only": {
+          "drain_e_flux": -1.6839569481248514e-05,
+          "relative_sum_difference": 0.05783737210915718,
+          "relative_L1": 0.059182275955043016
+        },
+        "bulk": {
+          "drain_e_flux": -1.699115643326889e-05,
+          "relative_sum_difference": 0.06735984494611613,
+          "relative_L1": 0.06736108442779587
+        },
+        "surface": {
+          "drain_e_flux": -1.69691774341948e-05,
+          "relative_sum_difference": 0.06597915604857563,
+          "relative_L1": 0.06598039553025548
+        },
+        "qf_hfs": {
+          "drain_e_flux": -1.69691774261195e-05,
+          "relative_sum_difference": 0.06597915554129696,
+          "relative_L1": 0.06598039502297666
+        },
+        "contact_psi_hfs": {
+          "drain_e_flux": -1.5919486184418328e-05,
+          "relative_sum_difference": 3.9071628602949104e-05,
+          "relative_L1": 4.6620192000565536e-05
+        }
+      },
+      "sg_rebuild_max_relative": 9.325993603510447e-15
+    },
+    {
+      "step": 2,
+      "summary": {
+        "baseline": {
+          "drain_e_flux": -3.6823852289055814e-05,
+          "relative_sum_difference": 0.07235825937730778,
+          "relative_L1": 0.0737123072754083
+        },
+        "geometry_only": {
+          "drain_e_flux": -3.6325085144617006e-05,
+          "relative_sum_difference": 0.057833514311350864,
+          "relative_L1": 0.05918756220945131
+        },
+        "bulk": {
+          "drain_e_flux": -3.665215121153039e-05,
+          "relative_sum_difference": 0.06735810167563527,
+          "relative_L1": 0.06736530828979936
+        },
+        "surface": {
+          "drain_e_flux": -3.6604731170443246e-05,
+          "relative_sum_difference": 0.06597716867816827,
+          "relative_L1": 0.06598437529233228
+        },
+        "qf_hfs": {
+          "drain_e_flux": -3.660473112956644e-05,
+          "relative_sum_difference": 0.0659771674877827,
+          "relative_L1": 0.06598437410194676
+        },
+        "contact_psi_hfs": {
+          "drain_e_flux": -3.433926049812038e-05,
+          "relative_sum_difference": 3.7292951160505794e-06,
+          "relative_L1": 2.2808940896533516e-05
+        }
+      },
+      "sg_rebuild_max_relative": 8.11559706710662e-15
+    },
+    {
+      "step": 3,
+      "summary": {
+        "baseline": {
+          "drain_e_flux": -5.677281297493398e-05,
+          "relative_sum_difference": 0.07241552478951285,
+          "relative_L1": 0.07376314382155254
+        },
+        "geometry_only": {
+          "drain_e_flux": -5.600388093766511e-05,
+          "relative_sum_difference": 0.05789070893021697,
+          "relative_L1": 0.05923832796225653
+        },
+        "bulk": {
+          "drain_e_flux": -5.650826416391232e-05,
+          "relative_sum_difference": 0.06741830451562048,
+          "relative_L1": 0.06741830451562059
+        },
+        "surface": {
+          "drain_e_flux": -5.643513806065701e-05,
+          "relative_sum_difference": 0.0660369819372768,
+          "relative_L1": 0.06603698193727692
+        },
+        "qf_hfs": {
+          "drain_e_flux": -5.6435137958749064e-05,
+          "relative_sum_difference": 0.06603698001227709,
+          "relative_L1": 0.06603698001227704
+        },
+        "contact_psi_hfs": {
+          "drain_e_flux": -5.293976629987522e-05,
+          "relative_sum_difference": 1.0820034250347277e-05,
+          "relative_L1": 1.2905308149522129e-05
+        }
+      },
+      "sg_rebuild_max_relative": 7.446907842101081e-15
+    },
+    {
+      "step": 4,
+      "summary": {
+        "baseline": {
+          "drain_e_flux": -7.188801618024418e-05,
+          "relative_sum_difference": 0.07249079886948762,
+          "relative_L1": 0.07383916562023905
+        },
+        "geometry_only": {
+          "drain_e_flux": -7.091442523486391e-05,
+          "relative_sum_difference": 0.05796588378259804,
+          "relative_L1": 0.059314250533349516
+        },
+        "bulk": {
+          "drain_e_flux": -7.155338454339953e-05,
+          "relative_sum_difference": 0.06749845980386793,
+          "relative_L1": 0.06749845980386793
+        },
+        "surface": {
+          "drain_e_flux": -7.14607531581535e-05,
+          "relative_sum_difference": 0.06611650056167928,
+          "relative_L1": 0.0661165005616793
+        },
+        "qf_hfs": {
+          "drain_e_flux": -7.146075299035778e-05,
+          "relative_sum_difference": 0.06611649805834996,
+          "relative_L1": 0.06611649805835006
+        },
+        "contact_psi_hfs": {
+          "drain_e_flux": -6.702935391599177e-05,
+          "relative_sum_difference": 4.856843212497353e-06,
+          "relative_L1": 1.219764532353164e-05
+        }
+      },
+      "sg_rebuild_max_relative": 8.101671708478142e-15
+    },
+    {
+      "step": 5,
+      "summary": {
+        "baseline": {
+          "drain_e_flux": -7.862525396732037e-05,
+          "relative_sum_difference": 0.07261485594891326,
+          "relative_L1": 0.07396305473014951
+        },
+        "geometry_only": {
+          "drain_e_flux": -7.756054940274966e-05,
+          "relative_sum_difference": 0.05809003249168354,
+          "relative_L1": 0.05943823127291991
+        },
+        "bulk": {
+          "drain_e_flux": -7.825987000283942e-05,
+          "relative_sum_difference": 0.06763024542427587,
+          "relative_L1": 0.06763113209313813
+        },
+        "surface": {
+          "drain_e_flux": -7.815849877790703e-05,
+          "relative_sum_difference": 0.06624732738787231,
+          "relative_L1": 0.06624821405673453
+        },
+        "qf_hfs": {
+          "drain_e_flux": -7.815849857496334e-05,
+          "relative_sum_difference": 0.06624732461929095,
+          "relative_L1": 0.06624821128815317
+        },
+        "contact_psi_hfs": {
+          "drain_e_flux": -7.330277088416692e-05,
+          "relative_sum_difference": 4.9229126393157685e-06,
+          "relative_L1": 1.0088083117901268e-05
+        }
+      },
+      "sg_rebuild_max_relative": 9.871770860807364e-15
+    }
+  ]
+}

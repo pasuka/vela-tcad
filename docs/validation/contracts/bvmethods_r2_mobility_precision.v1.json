@@ -1,0 +1,52 @@
+{
+  "schema": "r2-mobility-contract-v1",
+  "status": "registered before execution",
+  "states": [
+    1,
+    5
+  ],
+  "direction_names": [
+    "newton",
+    "deterministic_random",
+    "localized_qf"
+  ],
+  "directions": "fixed high/low; random seed 4729; homogeneous constraints for extra directions; no per-h normalization",
+  "h": [
+    0.001,
+    0.0005,
+    0.0003,
+    0.00015,
+    0.0001,
+    5e-05,
+    3e-05,
+    1.5e-05,
+    1e-05,
+    5e-06,
+    3e-06,
+    1.5e-06
+  ],
+  "arms": [
+    "baseline",
+    "full",
+    "surface",
+    "hfs",
+    "formula",
+    "average",
+    "coefficient_only"
+  ],
+  "J": "baseline frozen first; candidate separate",
+  "model_branch": "original Canali cutoff 100 V/m in both value and derivative; no smoothing",
+  "gate_Jv": 1e-05,
+  "gate_RHS": 1e-08,
+  "resolution_budget_each": 1e-06,
+  "resolution": "paired full-reference differences estimate representation contribution; Richardson 4/3 norm(FD(h)-FD(h/2)) estimates coarse-h truncation only in smooth regime; not certified upper bounds; 3 consecutive anchor points needed; no event flips; unresolved rows separate",
+  "events": [
+    "signed surface field",
+    "HFS norm and cutoff",
+    "contact flag",
+    "stencil identity"
+  ],
+  "scope": "actual complete residual with same non-mobility paths; these remain mixed precision and are not claimed fully high precision",
+  "update_gate": "only isolated diagnostic updates until actual direction gates pass; unchanged production acceptance",
+  "factorial_reference": "coefficient_only is common baseline for four single-stage arms; ordinary baseline retained separately"
+}

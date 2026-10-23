@@ -1,0 +1,256 @@
+{
+  "status": "diagnosis_completed_not_qualified",
+  "production_changed": false,
+  "acceptance_changed": false,
+  "configuration": {
+    "control": "no Band2Band rows285 first event",
+    "nodes": 2600,
+    "triangles": 5020,
+    "obtuse_triangles": 26,
+    "volumes": "barycentric",
+    "inner_drain_V": 0.00524437249039996,
+    "temperature_K": 300,
+    "backend": "UMFPACK",
+    "build": "UCRT64 Release",
+    "unknowns": 7800,
+    "carrier_statistics": "Fermi",
+    "BGN": "OldSlotboom",
+    "sources": [
+      "doping dependent SRH",
+      "vanOverstraeten avalanche"
+    ],
+    "full_QS": false
+  },
+  "runs": 8,
+  "per_primary_run_states": 89,
+  "primary_records": 2112,
+  "checks": {
+    "primary_remote_worker": "<private execution metadata; original preserved in ignored archive>",
+    "primary_remote_internal": "<private execution metadata; original preserved in ignored archive>",
+    "supplement_remote_worker": "<private execution metadata; original preserved in ignored archive>",
+    "supplement_remote_internal": "<private execution metadata; original preserved in ignored archive>",
+    "rational_component_checks": 540,
+    "independent_decimal": 6346,
+    "final_independent": 595
+  },
+  "component_sum_max_relative": 3.2242603576973297e-16,
+  "targets": [
+    {
+      "arm": "boundary",
+      "node": 722,
+      "full_positive_remainder": 5.4324949265562764e-21,
+      "SG_fraction_of_positive_remainder": 0.9984530956727788,
+      "full_J_requested": -5.982137520900316e-32,
+      "components": {
+        "full": {
+          "J_requested": -5.982137520900316e-32,
+          "positive_remainder": 5.4324949265562764e-21,
+          "quadratic_remainder": 5.406523022799873e-21
+        },
+        "sg": {
+          "J_requested": -1.3515176049771148e-19,
+          "positive_remainder": 5.4240913766467795e-21,
+          "quadratic_remainder": 5.398042550343137e-21
+        },
+        "srh": {
+          "J_requested": -3.2481159210568987e-21,
+          "positive_remainder": 2.978661572801282e-26,
+          "quadratic_remainder": 2.9786814624393956e-26
+        },
+        "av": {
+          "J_requested": 1.3839987641870857e-19,
+          "positive_remainder": 8.373762726774735e-24,
+          "quadratic_remainder": 8.450685537340735e-24
+        }
+      }
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "full_positive_remainder": 3.011144474289277e-22,
+      "SG_fraction_of_positive_remainder": 0.9969478691428542,
+      "full_J_requested": -6.782104905142791e-34,
+      "components": {
+        "full": {
+          "J_requested": -6.782104905142791e-34,
+          "positive_remainder": 3.011144474289277e-22,
+          "quadratic_remainder": 3.029795118077893e-22
+        },
+        "sg": {
+          "J_requested": 8.072744818693654e-20,
+          "positive_remainder": 3.0019540673239746e-22,
+          "quadratic_remainder": 3.020605614284101e-22
+        },
+        "srh": {
+          "J_requested": 2.2340598752282827e-21,
+          "positive_remainder": 8.630218993570989e-26,
+          "quadratic_remainder": 8.629976833151332e-26
+        },
+        "av": {
+          "J_requested": -8.296150806216551e-20,
+          "positive_remainder": 8.32739961056855e-25,
+          "quadratic_remainder": 8.326488977404066e-25
+        }
+      }
+    }
+  ],
+  "step_sensitivity": [
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 1e-09,
+      "Jv": -1.3515458365112442e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": 2.762579013231714e-24,
+      "relative_error": 2.0440142972603734e-05
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 3e-09,
+      "Jv": -1.3515504429610077e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": 3.2232239895840953e-24,
+      "relative_error": 2.384834399907844e-05
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 1e-08,
+      "Jv": -1.3515176015141922e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": -6.092069195531829e-26,
+      "relative_error": 4.507574627708023e-07
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 3e-08,
+      "Jv": -1.3515178205286558e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": -3.901924560007557e-26,
+      "relative_error": 2.887067691027011e-07
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 1e-07,
+      "Jv": -1.3515176867327437e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": -5.239883680410219e-26,
+      "relative_error": 3.8770352029621877e-07
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 3e-07,
+      "Jv": -1.351517887334093e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": -3.2338701877995304e-26,
+      "relative_error": 2.39276848964845e-07
+    },
+    {
+      "arm": "boundary",
+      "node": 722,
+      "k": 6,
+      "jacobian_step": 1e-06,
+      "Jv": -1.3515137576432808e-19,
+      "fd": -1.3515182107211118e-19,
+      "error": -4.453077830858115e-25,
+      "relative_error": 3.2948707575920452e-06
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 1e-09,
+      "Jv": 8.072654568073302e-20,
+      "fd": 8.072560712042896e-20,
+      "error": -9.385603040633355e-25,
+      "relative_error": 1.1626414782756415e-05
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 3e-09,
+      "Jv": 8.07262629636828e-20,
+      "fd": 8.072560712042896e-20,
+      "error": -6.5584325384833765e-25,
+      "relative_error": 8.124286072097614e-06
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 1e-08,
+      "Jv": 8.072744714339501e-20,
+      "fd": 8.072560712042896e-20,
+      "error": -1.8400229660442703e-24,
+      "relative_error": 2.27930280363736e-05
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 3e-08,
+      "Jv": 8.072562573153996e-20,
+      "fd": 8.072560712042896e-20,
+      "error": -1.861111100092884e-26,
+      "relative_error": 2.305477453073166e-07
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 1e-07,
+      "Jv": 8.072561935022747e-20,
+      "fd": 8.072560712042896e-20,
+      "error": -1.2229798513135018e-26,
+      "relative_error": 1.5149835469302667e-07
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 3e-07,
+      "Jv": 8.072559113061805e-20,
+      "fd": 8.072560712042896e-20,
+      "error": 1.5989810902675338e-26,
+      "relative_error": 1.9807606871040615e-07
+    },
+    {
+      "arm": "interior",
+      "node": 717,
+      "k": 6,
+      "jacobian_step": 1e-06,
+      "Jv": 8.072560564787163e-20,
+      "fd": 8.072560712042896e-20,
+      "error": 1.4725573279651935e-27,
+      "relative_error": 1.8241514440001508e-08
+    }
+  ],
+  "branch_limits": "50 selected process-probe records; three zero-current branches at 706/712 change; observer is not a complete actual source stencil certificate",
+  "limitations": [
+    "SG directional 1e-8 gate not passed",
+    "full Jv is strongly cancelling",
+    "weak psi/electron directions may be below representation resolution",
+    "no accepted candidate, load solve, QS or N4 closure"
+  ],
+  "evidence_root": "build-release/bvmethods_hole_direction_components_20261020/",
+  "evidence_manifest_sha256": "3fdd73b2a302d364355addd416a272b712d11a4bea87f549aca0a7912a873410",
+  "evidence_files": 549,
+  "threshold_clarification": {
+    "date": "2026-10-20",
+    "frozen_full_direction_gate": 1e-05,
+    "unchanged_RHS_gate": 1e-08,
+    "historical_direction_pass_fields": "extra 1e-8 diagnostic target; original recorded results retained",
+    "actual_full_Jv_followup": "bvmethods_full_jv_contract_2026-10-20.json"
+  }
+}

@@ -1,0 +1,432 @@
+{
+  "scope": "BVmethods no-Band2Band; archived first five accepted native states projected into fixed-inner-voltage private Vela assembly",
+  "qualification": {
+    "full_rhs": false,
+    "full_jv": false,
+    "newton_acceptance": false,
+    "full_qs": false,
+    "production_policy_changed": false
+  },
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_triangles": 4156
+  },
+  "execution": {
+    "platform": "T470p Windows UCRT64 Release private diagnostic",
+    "successful_runs": 25,
+    "rejected_configurations": 1,
+    "new_native_runs": 0,
+    "linear_solve_performed": false,
+    "backend_configured": "UMFPACK",
+    "archived_files_verified": 361,
+    "evidence_checks_passed": 166
+  },
+  "units": {
+    "terminal_current": "A/um",
+    "voltage": "V",
+    "residual": "current private Vela block-normalized units; not a physical error percentage",
+    "geometry_weight": "dimensionless coupling/length"
+  },
+  "points": [
+    {
+      "step": 1,
+      "poisson_l2": {
+        "baseline": 6.3529828461116296,
+        "cell_material": 6.352710309999018,
+        "signed_charge": 1.4795168272564059,
+        "transfer_material": 6.164997174015271,
+        "geometry_combo": 0.0015633743254048925
+      },
+      "poisson_offline_constants_l2": 3.794736692849053e-10,
+      "native_output_drain_current": 4.75561534260427e-10,
+      "vela_drain_current": 5.099712280136291e-10,
+      "relative_current_difference": 0.07235592299683069,
+      "load_residual_V": -0.00034408477053625083,
+      "top3_signed_flux_difference_share": 0.9883645059638275,
+      "top_edges": [
+        {
+          "edge": [
+            1287,
+            1308
+          ],
+          "vela": -4.447971394351832e-06,
+          "native": -4.010207379957128e-06,
+          "difference": -4.377640143947042e-07,
+          "vela_weight": 4.52000000000001,
+          "native_weight": 4.520000000000004,
+          "weight_ratio": 1.0000000000000013,
+          "electrical_ratio": 1.1091624379783018,
+          "geometry_only_flux": -4.447971394351826e-06
+        },
+        {
+          "edge": [
+            233,
+            791
+          ],
+          "vela": -3.498649615181396e-06,
+          "native": -3.122571837324813e-06,
+          "difference": -3.7607777785658266e-07,
+          "vela_weight": 5.9199999999999875,
+          "native_weight": 5.919999999999984,
+          "weight_ratio": 1.0000000000000007,
+          "electrical_ratio": 1.1204384710581314,
+          "geometry_only_flux": -3.498649615181394e-06
+        },
+        {
+          "edge": [
+            229,
+            1287
+          ],
+          "vela": -6.828096996320869e-07,
+          "native": -3.5813340905997694e-07,
+          "difference": -3.2467629057210994e-07,
+          "vela_weight": 0.12115384615384543,
+          "native_weight": 0.08012820512820452,
+          "weight_ratio": 1.5120000000000025,
+          "electrical_ratio": 1.2609650629167037,
+          "geometry_only_flux": -4.5159371668788744e-07
+        }
+      ],
+      "geometry_only_offline_drain_current": 5.030639009310261e-10,
+      "geometry_only_relative_current_difference": 0.05783135238927528,
+      "projected_vela_row_counts": {
+        "1": {
+          "qualified": 651,
+          "violations": 444
+        },
+        "2": {
+          "qualified": 651,
+          "violations": 515
+        }
+      }
+    },
+    {
+      "step": 2,
+      "poisson_l2": {
+        "baseline": 6.3742835920878465,
+        "cell_material": 6.374020879913618,
+        "signed_charge": 1.4802813340017509,
+        "transfer_material": 6.18668617882003,
+        "geometry_combo": 0.001568568477540629
+      },
+      "poisson_offline_constants_l2": 3.856559258041048e-10,
+      "native_output_drain_current": 1.0258544306807e-09,
+      "vela_drain_current": 1.1000727067558386e-09,
+      "relative_current_difference": 0.07234776577987923,
+      "load_residual_V": -0.0007421827607820841,
+      "top3_signed_flux_difference_share": 0.9888431307128047,
+      "top_edges": [
+        {
+          "edge": [
+            1287,
+            1308
+          ],
+          "vela": -9.597062245558739e-06,
+          "native": -8.651800651403105e-06,
+          "difference": -9.452615941556341e-07,
+          "vela_weight": 4.52000000000001,
+          "native_weight": 4.520000000000004,
+          "weight_ratio": 1.0000000000000013,
+          "electrical_ratio": 1.1092560534207783,
+          "geometry_only_flux": -9.597062245558725e-06
+        },
+        {
+          "edge": [
+            233,
+            791
+          ],
+          "vela": -7.548066308133699e-06,
+          "native": -6.736789770964636e-06,
+          "difference": -8.112765371690628e-07,
+          "vela_weight": 5.9199999999999875,
+          "native_weight": 5.919999999999984,
+          "weight_ratio": 1.0000000000000007,
+          "electrical_ratio": 1.1204247964907017,
+          "geometry_only_flux": -7.548066308133695e-06
+        },
+        {
+          "edge": [
+            229,
+            1287
+          ],
+          "vela": -1.4729217234208598e-06,
+          "native": -7.724616976518797e-07,
+          "difference": -7.004600257689801e-07,
+          "vela_weight": 0.12115384615384543,
+          "native_weight": 0.08012820512820452,
+          "weight_ratio": 1.5120000000000025,
+          "electrical_ratio": 1.2611040546648107,
+          "geometry_only_flux": -9.741545789820486e-07
+        }
+      ],
+      "geometry_only_offline_drain_current": 1.0851725784825862e-09,
+      "geometry_only_relative_current_difference": 0.05782316284633682,
+      "projected_vela_row_counts": {
+        "1": {
+          "qualified": 771,
+          "violations": 498
+        },
+        "2": {
+          "qualified": 771,
+          "violations": 587
+        }
+      }
+    },
+    {
+      "step": 3,
+      "poisson_l2": {
+        "baseline": 6.4093575515375045,
+        "cell_material": 6.409110424924054,
+        "signed_charge": 1.482624663976665,
+        "transfer_material": 6.222132713752917,
+        "geometry_combo": 0.0015768659674222805
+      },
+      "poisson_offline_constants_l2": 3.8337254727367854e-10,
+      "native_output_drain_current": 1.58151539792982e-09,
+      "vela_drain_current": 1.6960263024420943e-09,
+      "relative_current_difference": 0.07240581069407703,
+      "load_residual_V": -0.0011451090437026405,
+      "top3_signed_flux_difference_share": 0.988740827256724,
+      "top_edges": [
+        {
+          "edge": [
+            1287,
+            1308
+          ],
+          "vela": -1.480049611342408e-05,
+          "native": -1.33411089776351e-05,
+          "difference": -1.459387135788981e-06,
+          "vela_weight": 4.52000000000001,
+          "native_weight": 4.520000000000004,
+          "weight_ratio": 1.0000000000000013,
+          "electrical_ratio": 1.1093902417134485,
+          "geometry_only_flux": -1.480049611342406e-05
+        },
+        {
+          "edge": [
+            233,
+            791
+          ],
+          "vela": -1.1639176638391773e-05,
+          "native": -1.0388190799556541e-05,
+          "difference": -1.2509858388352313e-06,
+          "vela_weight": 5.9199999999999875,
+          "native_weight": 5.919999999999984,
+          "weight_ratio": 1.0000000000000007,
+          "electrical_ratio": 1.12042384116478,
+          "geometry_only_flux": -1.1639176638391766e-05
+        },
+        {
+          "edge": [
+            229,
+            1287
+          ],
+          "vela": -2.2707524225596376e-06,
+          "native": -1.190669302183716e-06,
+          "difference": -1.0800831203759215e-06,
+          "vela_weight": 0.12115384615384543,
+          "native_weight": 0.08012820512820452,
+          "weight_ratio": 1.5120000000000025,
+          "electrical_ratio": 1.2613245193576326,
+          "geometry_only_flux": -1.5018203852907632e-06
+        }
+      ],
+      "geometry_only_offline_drain_current": 1.6730552905852273e-09,
+      "geometry_only_relative_current_difference": 0.05788112640270948,
+      "projected_vela_row_counts": {
+        "1": {
+          "qualified": 839,
+          "violations": 544
+        },
+        "2": {
+          "qualified": 839,
+          "violations": 623
+        }
+      }
+    },
+    {
+      "step": 4,
+      "poisson_l2": {
+        "baseline": 6.468617533644626,
+        "cell_material": 6.468395409493235,
+        "signed_charge": 1.489315569598574,
+        "transfer_material": 6.281354575492608,
+        "geometry_combo": 0.0015903395852714707
+      },
+      "poisson_offline_constants_l2": 4.013159646993196e-10,
+      "native_output_drain_current": 2.00243964465106e-09,
+      "vela_drain_current": 2.1475766283752057e-09,
+      "relative_current_difference": 0.0724800790434994,
+      "load_residual_V": -0.0014513696587733493,
+      "top3_signed_flux_difference_share": 0.9888550426899714,
+      "top_edges": [
+        {
+          "edge": [
+            1287,
+            1308
+          ],
+          "vela": -1.8750226898508983e-05,
+          "native": -1.6897955668236866e-05,
+          "difference": -1.852271230272117e-06,
+          "vela_weight": 4.52000000000001,
+          "native_weight": 4.520000000000004,
+          "weight_ratio": 1.0000000000000013,
+          "electrical_ratio": 1.1096151076874825,
+          "geometry_only_flux": -1.8750226898508955e-05
+        },
+        {
+          "edge": [
+            233,
+            791
+          ],
+          "vela": -1.4742417721517467e-05,
+          "native": -1.3157838701422436e-05,
+          "difference": -1.584579020095031e-06,
+          "vela_weight": 5.9199999999999875,
+          "native_weight": 5.919999999999984,
+          "weight_ratio": 1.0000000000000007,
+          "electrical_ratio": 1.120428518395177,
+          "geometry_only_flux": -1.4742417721517458e-05
+        },
+        {
+          "edge": [
+            229,
+            1287
+          ],
+          "vela": -2.8751357605761102e-06,
+          "native": -1.5071514089633933e-06,
+          "difference": -1.367984351612717e-06,
+          "vela_weight": 0.12115384615384543,
+          "native_weight": 0.08012820512820452,
+          "weight_ratio": 1.5120000000000025,
+          "electrical_ratio": 1.2616813439491819,
+          "geometry_only_flux": -1.9015448151958372e-06
+        }
+      ],
+      "geometry_only_offline_drain_current": 2.1184916532849455e-09,
+      "geometry_only_relative_current_difference": 0.05795530913697444,
+      "projected_vela_row_counts": {
+        "1": {
+          "qualified": 913,
+          "violations": 583
+        },
+        "2": {
+          "qualified": 913,
+          "violations": 678
+        }
+      }
+    },
+    {
+      "step": 5,
+      "poisson_l2": {
+        "baseline": 6.564995446182113,
+        "cell_material": 6.564811344367893,
+        "signed_charge": 1.5065583806982705,
+        "transfer_material": 6.376124937086554,
+        "geometry_combo": 0.0016112648227027799
+      },
+      "poisson_offline_constants_l2": 3.686802254141604e-10,
+      "native_output_drain_current": 2.18985201580831e-09,
+      "vela_drain_current": 2.3488443108087154e-09,
+      "relative_current_difference": 0.07260412751759326,
+      "load_residual_V": -0.0015899219848380594,
+      "top3_signed_flux_difference_share": 0.9888485140150692,
+      "top_edges": [
+        {
+          "edge": [
+            1287,
+            1308
+          ],
+          "vela": -2.0522533951431255e-05,
+          "native": -1.8489534385691427e-05,
+          "difference": -2.0329995657398272e-06,
+          "vela_weight": 4.52000000000001,
+          "native_weight": 4.520000000000004,
+          "weight_ratio": 1.0000000000000013,
+          "electrical_ratio": 1.1099540704125619,
+          "geometry_only_flux": -2.0522533951431227e-05
+        },
+        {
+          "edge": [
+            233,
+            791
+          ],
+          "vela": -1.613106668794628e-05,
+          "native": -1.4397304124822005e-05,
+          "difference": -1.733762563124276e-06,
+          "vela_weight": 5.9199999999999875,
+          "native_weight": 5.919999999999984,
+          "weight_ratio": 1.0000000000000007,
+          "electrical_ratio": 1.1204227227606542,
+          "geometry_only_flux": -1.613106668794627e-05
+        },
+        {
+          "edge": [
+            229,
+            1287
+          ],
+          "vela": -3.1442056672478984e-06,
+          "native": -1.6474814712449822e-06,
+          "difference": -1.4967241960029162e-06,
+          "vela_weight": 0.12115384615384543,
+          "native_weight": 0.08012820512820452,
+          "weight_ratio": 1.5120000000000025,
+          "electrical_ratio": 1.2622303430858763,
+          "geometry_only_flux": -2.0795011026771784e-06
+        }
+      ],
+      "geometry_only_offline_drain_current": 2.3170374150215624e-09,
+      "geometry_only_relative_current_difference": 0.058079449339551115,
+      "projected_vela_row_counts": {
+        "1": {
+          "qualified": 949,
+          "violations": 643
+        },
+        "2": {
+          "qualified": 949,
+          "violations": 699
+        }
+      }
+    }
+  ],
+  "interface_geometry": {
+    "bound_to_native_cell_topology": true,
+    "edge": [
+      229,
+      1287
+    ],
+    "adjacent_cells": [
+      {
+        "cell": 216,
+        "region": 0,
+        "cot_half": 0.041025641025640776
+      },
+      {
+        "cell": 571,
+        "region": 3,
+        "cot_half": 0.08012820512820465
+      }
+    ],
+    "vela_weight": 0.12115384615384543,
+    "native_weight": 0.08012820512820452
+  },
+  "constants_control": {
+    "kind": "offline decomposition only",
+    "q_control_C": 1.602192e-19,
+    "eps0_control_F_m": 8.8542e-12,
+    "q_production_C": 1.602176634e-19,
+    "eps0_production_F_m": 8.8541878128e-12,
+    "fitted": false
+  },
+  "convergence_status": {
+    "native_update_error_print_intervals_matched": 412,
+    "native_update_error_print_intervals_total": 412,
+    "vela_update_error": "report only; acceptance unchanged",
+    "native_five_points_local_e_h_gate": "all fail",
+    "native_five_points_global_e_closure": "all fail",
+    "native_five_points_global_h_closure": "all pass",
+    "native_output_load_kcl": "all pass",
+    "relative_residual_and_process_equivalence": "not qualified"
+  }
+}

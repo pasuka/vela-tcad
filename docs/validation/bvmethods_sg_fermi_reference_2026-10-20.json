@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-20",
+  "scope": "independent NonLocalPath references and no-BTBT SG diagnostics; no acceptance or production change",
+  "math": {
+    "test_cases": 16,
+    "assertions": 212,
+    "new_test_cases": 5,
+    "local_pass": true,
+    "t470p_pass": true,
+    "ctest": "nonlocalpath_n3_phonon"
+  },
+  "sg": {
+    "runs": 4,
+    "remote_checks": 86,
+    "internal_checks": 872,
+    "independent_checks": {
+      "checks": 4002,
+      "all_pass": true,
+      "population_relative_max": 3.091141214245382e-16,
+      "population_derivative_relative_max": 2.47005808017243e-16,
+      "observed_branch_switches": 0,
+      "branch_scope": "SG secant/midpoint, QF sign, zero coefficient, positive mobility field only; not a certificate for all Lombardi/contact templates",
+      "all_three_scale_live_pass": false
+    },
+    "original_result_and_trajectory_unchanged": true,
+    "eta_range_selected_base": [
+      -77.39436037628656,
+      -27.484755748014372
+    ],
+    "targets": [
+      {
+        "arm": "boundary",
+        "node": "722",
+        "k": "4",
+        "live_fd": -1.3515172441450467e-19,
+        "frozen_fd": 9.198549828978257e-18,
+        "analytic_frozen": 9.198549828757006e-18,
+        "actual_fd": -1.3515172436042023e-19,
+        "Jlive": -1.3515176035594819e-19,
+        "Jfrozen": 9.198549828906127e-18,
+        "Jfeedback": -9.333701589262075e-18,
+        "mobility_fd": -9.33370155339276e-18,
+        "live_relative": 2.659339651510054e-07,
+        "frozen_J_relative": 1.6211412458245744e-11,
+        "frozen_FD_relative": 2.405276791354141e-11,
+        "feedback_relative": 3.842989202802246e-09,
+        "cancellation_amplification": 137.12182706091215,
+        "analytic_frozen_only_candidate_relative": 2.6703732137931883e-07
+      },
+      {
+        "arm": "boundary",
+        "node": "722",
+        "k": "6",
+        "live_fd": -1.3515181936722395e-19,
+        "frozen_fd": 9.198549829187787e-18,
+        "analytic_frozen": 9.198549829019341e-18,
+        "actual_fd": -1.351518210997625e-19,
+        "Jlive": -1.3515176015141922e-19,
+        "Jfrozen": 9.198549829168463e-18,
+        "Jfeedback": -9.333701589319882e-18,
+        "mobility_fd": -9.333701648555012e-18,
+        "live_relative": 4.38142860301033e-07,
+        "frozen_J_relative": 1.621141245774631e-11,
+        "frozen_FD_relative": 1.831225599502246e-11,
+        "feedback_relative": 6.346370567306032e-09,
+        "cancellation_amplification": 137.12173143019234,
+        "analytic_frozen_only_candidate_relative": 4.370394941297564e-07
+      },
+      {
+        "arm": "boundary",
+        "node": "722",
+        "k": "8",
+        "live_fd": -1.3515182307179765e-19,
+        "frozen_fd": 9.198549830857516e-18,
+        "analytic_frozen": 9.198549827653827e-18,
+        "actual_fd": -1.3515182253826572e-19,
+        "Jlive": -1.351517612855717e-19,
+        "Jfrozen": 9.19854982780295e-18,
+        "Jfeedback": -9.333701589088521e-18,
+        "mobility_fd": -9.333701653929314e-18,
+        "live_relative": 4.57161616703584e-07,
+        "frozen_J_relative": 1.6211412460359763e-11,
+        "frozen_FD_relative": 3.4828189120783357e-10,
+        "feedback_relative": 6.946953650999533e-09,
+        "cancellation_amplification": 137.12172770128396,
+        "analytic_frozen_only_candidate_relative": 4.560582510344183e-07
+      },
+      {
+        "arm": "interior",
+        "node": "717",
+        "k": "4",
+        "live_fd": 8.072559949849559e-20,
+        "frozen_fd": 4.568915002942855e-18,
+        "analytic_frozen": 4.5689150046834464e-18,
+        "actual_fd": 8.072560030995232e-20,
+        "Jlive": 8.072744863955538e-20,
+        "Jfrozen": 4.568917001342334e-18,
+        "Jfeedback": -4.488189552702778e-18,
+        "mobility_fd": -4.488189403444359e-18,
+        "live_relative": 2.290597672726909e-05,
+        "frozen_J_relative": 4.370092269978587e-07,
+        "frozen_FD_relative": 3.809639159306415e-10,
+        "feedback_relative": 3.325581889614639e-08,
+        "cancellation_amplification": 112.19618639433696,
+        "analytic_frozen_only_candidate_relative": 1.8273983497810068e-06
+      },
+      {
+        "arm": "interior",
+        "node": "717",
+        "k": "6",
+        "live_fd": 8.07256020293291e-20,
+        "frozen_fd": 4.568915004991654e-18,
+        "analytic_frozen": 4.568915003078027e-18,
+        "actual_fd": 8.072560698460731e-20,
+        "Jlive": 8.072744714339501e-20,
+        "Jfrozen": 4.5689169997369185e-18,
+        "Jfeedback": -4.488189552593523e-18,
+        "mobility_fd": -4.488189402962324e-18,
+        "live_relative": 2.2856093326373454e-05,
+        "frozen_J_relative": 4.370092281220324e-07,
+        "frozen_FD_relative": 4.188360658341032e-10,
+        "feedback_relative": 3.3338876925788534e-08,
+        "cancellation_amplification": 112.19618285100852,
+        "analytic_frozen_only_candidate_relative": 1.8772833134427462e-06
+      },
+      {
+        "arm": "interior",
+        "node": "717",
+        "k": "8",
+        "live_fd": 8.072559133750319e-20,
+        "frozen_fd": 4.568914994087488e-18,
+        "analytic_frozen": 4.568915004974963e-18,
+        "actual_fd": 8.072557829126287e-20,
+        "Jlive": 8.072744934228153e-20,
+        "Jfrozen": 4.568917001633857e-18,
+        "Jfeedback": -4.488189552291575e-18,
+        "mobility_fd": -4.488189402749984e-18,
+        "live_relative": 2.301577460307169e-05,
+        "frozen_J_relative": 4.370092284144627e-07,
+        "frozen_FD_relative": 2.3829454550920293e-09,
+        "feedback_relative": 3.3318911497476e-08,
+        "cancellation_amplification": 112.1961977318738,
+        "analytic_frozen_only_candidate_relative": 1.717598015233299e-06
+      }
+    ]
+  },
+  "limitations": [
+    "No nonlinear convergence or pure QS qualification",
+    "No NonLocalPath N4 full-Jv qualification",
+    "Airy is an independent reference, not the current phonon kernel",
+    "No certificate of every mobility/contact branch",
+    "Independent statistics verified only sampled nondegenerate endpoints",
+    "Local and T470p use the same Windows binary; no Linux run"
+  ],
+  "next": [
+    "Per-edge fixed-mobility stencil versus analytic Fermi SG chain",
+    "HFS and surface/contact mobility feedback with matching written directions",
+    "Combined strict row and closure validation after derivative gates pass",
+    "Heterojunction/TAT separate scope"
+  ],
+  "evidence": {
+    "files": 224,
+    "manifest_sha256": "adda7d65bb82ac8210574f3a72270423258b6dec844d21e6401694cc95a8aaf5",
+    "root": "build-release/bvmethods_sg_fermi_reference_20261020"
+  },
+  "threshold_clarification": {
+    "date": "2026-10-20",
+    "frozen_full_direction_gate": 1e-05,
+    "unchanged_RHS_gate": 1e-08,
+    "historical_direction_pass_fields": "extra 1e-8 diagnostic target; original recorded results retained",
+    "actual_full_Jv_followup": "bvmethods_full_jv_contract_2026-10-20.json"
+  }
+}

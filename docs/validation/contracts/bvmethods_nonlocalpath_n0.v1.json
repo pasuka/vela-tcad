@@ -1,0 +1,77 @@
+{
+  "contract_id": "bvmethods.nonlocalpath.n0.v1",
+  "frozen_on": "2026-10-15",
+  "purpose": "Engineering fidelity gates before evaluating a Vela NonLocalPath candidate; not a claim of experimental device accuracy",
+  "reference": {
+    "version": "T-2022.03-SP2",
+    "profile": "installed_library_BVmethods_resistor",
+    "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "source_rate_unit": "cm^-3 s^-1",
+    "geometry_unit": "um",
+    "terminal_current_unit": "A/um",
+    "primary_precision": "binary64",
+    "state_roles": ["zero", "first_nonzero", "before_BV", "after_BV", "terminal"],
+    "derivative_reference": "positive QS step with complete matching printed variables and RHS; initialization-only matrices are insufficient"
+  },
+  "identity_gates": {
+    "complete_variable_mapping_required": true,
+    "matched_native_debug_variables": "exact_at_printed_precision",
+    "immutable_source_controls": "Load then Plot with matching exported physical state; not Coupled Iterations=0",
+    "temperature_serialization_allowance_binary64_ulps": 4,
+    "hole_generation_alias": "exact_array_equality",
+    "operator_comparison_requires_explicit_units_scaling_and_support": true,
+    "post_newton_fields_cannot_bind_pre_newton_RHS": true
+  },
+  "kernel_and_source_gates": {
+    "independent_smooth_integral_relative_error_max": 1e-8,
+    "pair_ledger_imbalance_over_absolute_events_max": 1e-12,
+    "same_mesh_integrated_source_relative_error_max": 1e-6,
+    "same_mesh_source_weighted_L1_relative_error_max": 1e-5,
+    "tiny_source_current_per_carrier_A_per_um": 1e-40,
+    "tiny_source_rule": "If the reference absolute-event current is below the tiny-source floor, require both absolute-event currents below that floor; retain signed sources and all samples",
+    "zero_pair_events_rule": "all electron and hole integrals must be zero",
+    "source_support": "semiconductor region boxes with endpoint event accounting; preserve contact events and report each carrier separately"
+  },
+  "residual_and_derivative_gates": {
+    "same_state_block_L1_error_over_absolute_assembly_terms_max": 1e-8,
+    "same_state_each_weak_row_error_over_absolute_assembly_terms_max": 1e-8,
+    "residual_rule": "all free semiconductor rows plus boundary/load rows after explicit mapping; no denominator max(1,value), and no global norm replacing weak-row checks",
+    "smooth_directional_Jv_relative_error_max": 1e-5,
+    "directional_minimum_step_sizes": 3,
+    "directional_rule": "use resolvable nonzero directions and complete recomputed residual; report each block and weak rows; topology-changing points require separate one-sided/event analysis",
+    "linear_backward_error_componentwise_L1_max": 1e-10
+  },
+  "self_consistent_same_bias_gates": {
+    "potential_Linf_error_V_max": 1e-3,
+    "positive_density_max_absolute_log_ratio": 0.009950330853168092,
+    "density_rule": "all positive silicon electron and hole samples; equivalent to a factor 1.01; no empirical density floor to hide a failure; zero/underflow samples require explicit separate analysis",
+    "electric_field_volume_weighted_L1_relative_error_max": 0.01,
+    "electric_field_Linf_error_over_reference_peak_max": 0.01,
+    "field_rule": "same frozen mesh, outer bias, branch, contacts and physical model; report all samples and compare zero/first/BV-bracket/terminal states separately"
+  },
+  "trajectory_gates": {
+    "BV_current_A_per_um": 1e-4,
+    "BV_relative_voltage_error_max": 0.005,
+    "curve_current_relative_error_max": 0.02,
+    "curve_current_absolute_floor_A_per_um": 1e-12,
+    "curve_rule": "compare every native positive outer-voltage knot and full coverage of each Vela trajectory; align by outer voltage, report inner voltage separately and validate interpolation error before using interpolated samples",
+    "curve_interpolation_error_budget_fraction_max": 0.1,
+    "stop_current_A_per_um": 1.3e-3,
+    "load_voltage_error_V_max": 1e-6,
+    "terminal_KCL_relative_error_max": 1e-5,
+    "terminal_KCL_absolute_floor_A_per_um": 1e-12,
+    "displacement_fraction_max": 1e-6,
+    "component_closure_relative_error_max": 1e-8,
+    "existing_component_absolute_floors": "unchanged from installed-library alignment plan",
+    "required_runs_each_tool": 2,
+    "from_zero_pure_voltage_QS_required": true
+  },
+  "gate_policy": {
+    "same_mesh_fidelity_is_not_cross_mesh_physical_accuracy": true,
+    "no_Vela_model_candidate_evaluated_before_freeze": true,
+    "failed_identity_or_unresolved_reference_means_not_qualified": true,
+    "interpolation_without_error_evidence_is_not_qualified": true,
+    "no_implicit_E2_fallback": true,
+    "no_threshold_relaxation_to_pass_a_candidate": true
+  }
+}

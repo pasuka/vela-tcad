@@ -1,0 +1,434 @@
+{
+  "schema": "vela.validation.bvmethods.edge_increment_derivative_contracts.v1",
+  "date": "2026-10-17",
+  "target": "installed_library_BVmethods_resistor_T-2022.03-SP2",
+  "configuration": {
+    "temperature_K": 300,
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_elements": 4156,
+    "resistor_ohm_um": 10000000.0,
+    "augmented_dimension": 6843,
+    "candidate_environment": "Ubuntu 26.04.1 GCC15.2 C++20 Release O1 ffp-contract off",
+    "math_backend": "same private certified MPFR 4.2.2 binary64 controls",
+    "linear_backend_invoked": false
+  },
+  "edge_increment": {
+    "native_cases": 7,
+    "edge_products_per_case": 180,
+    "all_native_printed_identity": true,
+    "raw_primary_identity": true,
+    "max_native_RHS_support_closure": 4.0008241547001345e-15,
+    "candidate_target_SG_logs_all_bit_identical": true,
+    "direction_scope": "the original ten-node mixed perturbation; does not mean these row Jacobians are zero for arbitrary columns",
+    "directions": [
+      {
+        "h": 0.001,
+        "node": 744,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 7.951737423557223e-11,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 0.001,
+        "node": 746,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.689645867108783e-11,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 0.001,
+        "node": 921,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.1000411546398778e-11,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 744,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.6616744492050946e-09,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 746,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.4441537263416385e-09,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 921,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 6.038254953110502e-10,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 744,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 2.9194737814112544e-09,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 746,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.9510604312786144e-08,
+        "increment_gate_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 921,
+        "native_edge_terms_unchanged": true,
+        "native_exact_edge_FD": 0.0,
+        "increment_complete_relative_error": 1.395664229402432e-08,
+        "increment_gate_1e5_passed": true
+      }
+    ],
+    "raw_RHS_FD_failures_preserved": true,
+    "native_global_rounding_spurious_transport_FD_max": 2.328306436538696e-05
+  },
+  "same_side_avalanche": {
+    "center_h": 0.01,
+    "native_cases": 7,
+    "candidate_cases": 7,
+    "all_QF_guards_passed": true,
+    "max_source_weighted_L1": 5.695803109050386e-14,
+    "directions": [
+      {
+        "h": 0.001,
+        "node": 229,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.205376673915025e-13,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.001,
+        "node": 1308,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.1408985962632179e-13,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.001,
+        "node": 1546,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 5.0014471222464445e-14,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.001,
+        "node": 2587,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 5.3206408795511815e-14,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 229,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 6.50248643358376e-15,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 1308,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 6.421113142747201e-15,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 1546,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.578850159546537e-13,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 0.0001,
+        "node": 2587,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.5588962358968484e-13,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 229,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.3123527370901413e-11,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 1308,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 1.2637747811742368e-11,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 1546,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 4.835158320830514e-12,
+        "source_FD_1e5_passed": true
+      },
+      {
+        "h": 1e-05,
+        "node": 2587,
+        "same_sign_nonzero_one_sided_slopes": true,
+        "source_FD_relative_error": 4.969016588615078e-12,
+        "source_FD_1e5_passed": true
+      }
+    ],
+    "independent_current_direction_control": {
+      "same_native_state_comparison": false,
+      "coordinate_family": "independent log-density side control",
+      "details": [
+        {
+          "case": "side_0p01100000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        },
+        {
+          "case": "side_0p00900000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        },
+        {
+          "case": "side_0p01010000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        },
+        {
+          "case": "side_0p00990000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        },
+        {
+          "case": "side_0p01001000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        },
+        {
+          "case": "side_0p00999000",
+          "hole_cells": 14,
+          "current_direction_positive_dot_cells": 14,
+          "minimum_current_norm": 112502.92052633576
+        }
+      ]
+    }
+  },
+  "derivative_contract": {
+    "binding": {
+      "identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "matrix": false
+      },
+      "raw_primary_and_QF_identical": true,
+      "source_arrays_identical": true,
+      "captured_RHS_index": 2,
+      "positive_QS_system_index": 1,
+      "dimension": 6843,
+      "changed_entries": 71145,
+      "max_absolute_change": 6328.901024726918,
+      "changed_blocks": {
+        "hole_by_psi": 21375,
+        "electron_by_psi": 25555,
+        "hole_by_electron": 7740,
+        "electron_by_hole": 8217,
+        "electron_by_electron": 4069,
+        "hole_by_hole": 4189
+      },
+      "probe_potential_node": 437,
+      "one_ring_nodes": [
+        180,
+        437,
+        438,
+        439,
+        440,
+        1310,
+        1318
+      ],
+      "full_derivative_qualified": false,
+      "source_only_direction_control": true
+    },
+    "baseline_source": {
+      "electron": {
+        "weighted_L1": 3.682987635174872e-08,
+        "integral_error": 6.059272867799014e-09
+      },
+      "hole": {
+        "weighted_L1": 2.5970127514751892e-08,
+        "integral_error": 6.059272867799014e-09
+      }
+    },
+    "directions": [
+      {
+        "h": 0.001,
+        "max_pair_imbalance": 9.477173437829789e-17,
+        "source_resolved": true,
+        "coarse_disposition_collection_signature_matches": false,
+        "carriers": {
+          "electron": {
+            "nonzero_switch_rows": 10,
+            "far_zero_default_rows": 10,
+            "far_unresolved_rows": 2104,
+            "far_failed_1e5": 3,
+            "far_weighted_L1_relative_difference": 0.02517007628360789,
+            "far_max_relative_difference": 0.21777769527652924
+          },
+          "hole": {
+            "nonzero_switch_rows": 8,
+            "far_zero_default_rows": 1,
+            "far_unresolved_rows": 2113,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 3.994657158315981e-11,
+            "far_max_relative_difference": 3.994657158315981e-11
+          }
+        }
+      },
+      {
+        "h": 0.0001,
+        "max_pair_imbalance": 1.667504860237853e-17,
+        "source_resolved": true,
+        "coarse_disposition_collection_signature_matches": true,
+        "carriers": {
+          "electron": {
+            "nonzero_switch_rows": 10,
+            "far_zero_default_rows": 10,
+            "far_unresolved_rows": 2104,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 2.034284281489774e-08,
+            "far_max_relative_difference": 3.440851152442176e-07
+          },
+          "hole": {
+            "nonzero_switch_rows": 8,
+            "far_zero_default_rows": 1,
+            "far_unresolved_rows": 2113,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 3.1117419284910852e-09,
+            "far_max_relative_difference": 3.1117419284910852e-09
+          }
+        }
+      },
+      {
+        "h": 3e-05,
+        "max_pair_imbalance": 9.209997138436986e-17,
+        "source_resolved": true,
+        "coarse_disposition_collection_signature_matches": true,
+        "carriers": {
+          "electron": {
+            "nonzero_switch_rows": 10,
+            "far_zero_default_rows": 10,
+            "far_unresolved_rows": 2104,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 1.993533963994764e-09,
+            "far_max_relative_difference": 3.0854200724784894e-08
+          },
+          "hole": {
+            "nonzero_switch_rows": 8,
+            "far_zero_default_rows": 1,
+            "far_unresolved_rows": 2113,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 2.547025302820608e-10,
+            "far_max_relative_difference": 2.547025302820608e-10
+          }
+        }
+      },
+      {
+        "h": 1e-05,
+        "max_pair_imbalance": 3.918995002571086e-17,
+        "source_resolved": true,
+        "coarse_disposition_collection_signature_matches": true,
+        "carriers": {
+          "electron": {
+            "nonzero_switch_rows": 10,
+            "far_zero_default_rows": 10,
+            "far_unresolved_rows": 2104,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 1.7462551020114068e-10,
+            "far_max_relative_difference": 2.418511220433649e-08
+          },
+          "hole": {
+            "nonzero_switch_rows": 8,
+            "far_zero_default_rows": 1,
+            "far_unresolved_rows": 2113,
+            "far_failed_1e5": 0,
+            "far_weighted_L1_relative_difference": 1.7738363047935533e-08,
+            "far_max_relative_difference": 1.7738363047935533e-08
+          }
+        }
+      }
+    ],
+    "probe_scope": "potential column 437; nonlocal source at rows outside the one ring with exactly zero default matrix column entries",
+    "smooth_h": [
+      0.0001,
+      3e-05,
+      1e-05
+    ],
+    "all_QF_guards_passed": true,
+    "repeat_baseline_identical": true,
+    "coarse_signature_not_full_path_topology_proof": true,
+    "all_potential_density_cross_blocks_verified": false,
+    "full_source_derivative_qualified": false,
+    "full_Jv_qualified": false
+  },
+  "reference_contract": {
+    "native_initial_reference_preserved": true,
+    "current_primary_from_actual_positive_RHS": true,
+    "current_QF_increment_from_same_autonomous_JD_density_coordinate_contract": true,
+    "cached_QF_field_not_rebased_as_current_reference": true,
+    "QF_reference_fitted_from_current_population": false,
+    "initial_cached_QF_guard_failures": 3687,
+    "corrected_max_QF_error": 2.068722737494682e-14
+  },
+  "verification": {
+    "evidence_tests": 14,
+    "passed": true,
+    "complete_candidate_residual_evaluations": 15,
+    "same_native_state_continuity_component_evaluations": 7,
+    "corrected_source_direction_evaluations_including_repeat": 10,
+    "native_attempts": 22,
+    "native_completed": 19,
+    "observer_timeouts": 3,
+    "remote_active_jobs": "<private execution metadata; original preserved in ignored archive>",
+    "old_seals_files": [
+      593,
+      394,
+      305,
+      261
+    ],
+    "failed_archive_checksum_mismatch_preserved": true,
+    "final_failed_snapshot_verified": true
+  },
+  "qualification": {
+    "original_thresholds_unchanged": true,
+    "three_target_row_direction_diagnosis_complete": true,
+    "same_side_avalanche_controls_passed": true,
+    "positive_QS_nonlocal_switch_confirmed": true,
+    "limited_far_source_potential_direction_passed": true,
+    "full_Jacobian": false,
+    "augmented_Newton": false,
+    "zero_QS_trajectory": false,
+    "production_promoted": false,
+    "N4_complete": false,
+    "N5_started": false
+  }
+}

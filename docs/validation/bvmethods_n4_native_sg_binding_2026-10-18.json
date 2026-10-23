@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-18",
+  "status": "N4 ongoing; native pilot binding completed; original 41-row interval contract not requalified",
+  "configuration": {
+    "target": "installation-library BVmethods resistor",
+    "version": "T-2022.03-SP2",
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "free_semiconductor_nodes": 2121,
+    "linear_system_order": 6843,
+    "load_ohm_um": 10000000.0,
+    "statistics": "Fermi / default Joyce-Dixon with OldSlotboom",
+    "avalanche": "GradQuasiFermi",
+    "btbt": "NonLocalPath",
+    "units": "native normalized population and continuity; h is direction multiplier, not voltage"
+  },
+  "controls": {
+    "native_executed": 9,
+    "unique_states": 3,
+    "h": [
+      0,
+      3e-05,
+      -3e-05
+    ],
+    "base": "accepted_0053 Load first RHS; not previous positive-QS RHS2",
+    "prepared_unexecuted_h": [
+      0.0001,
+      -0.0001,
+      0.0003,
+      -0.0003
+    ]
+  },
+  "cases": {
+    "base": {
+      "state": "base",
+      "edges": 273,
+      "target_rows": 41,
+      "element_cells": 100,
+      "rhs_error_max": 6.213741271806967e-17,
+      "raw_sg_operand_mismatches": {
+        "a_exact": 0,
+        "bernoulli_exact": 0,
+        "raw_sg_exact": 0
+      },
+      "length_roundtrip_changes": 14,
+      "length_roundtrip_max_ulp": 1.0,
+      "intent_direction_failures": 0,
+      "zeroed_direction_nodes": [],
+      "relative_direction_error_range": null,
+      "electron_population_changed_nodes": 0,
+      "all_native_observer_identity_checks_passed": true
+    },
+    "p5": {
+      "state": "p5",
+      "edges": 273,
+      "target_rows": 41,
+      "element_cells": 100,
+      "rhs_error_max": 7.832921245862311e-17,
+      "raw_sg_operand_mismatches": {
+        "a_exact": 0,
+        "bernoulli_exact": 0,
+        "raw_sg_exact": 0
+      },
+      "length_roundtrip_changes": 11,
+      "length_roundtrip_max_ulp": 1.0,
+      "intent_direction_failures": 41,
+      "zeroed_direction_nodes": [],
+      "relative_direction_error_range": [
+        2.404992015767149e-05,
+        0.44643559915343
+      ],
+      "electron_population_changed_nodes": 2120,
+      "all_native_observer_identity_checks_passed": true
+    },
+    "m5": {
+      "state": "m5",
+      "edges": 273,
+      "target_rows": 41,
+      "element_cells": 100,
+      "rhs_error_max": 8.880988195885121e-17,
+      "raw_sg_operand_mismatches": {
+        "a_exact": 0,
+        "bernoulli_exact": 0,
+        "raw_sg_exact": 0
+      },
+      "length_roundtrip_changes": 20,
+      "length_roundtrip_max_ulp": 1.0,
+      "intent_direction_failures": 41,
+      "zeroed_direction_nodes": [
+        2156,
+        2157
+      ],
+      "relative_direction_error_range": [
+        0.00029626101434053573,
+        1.0
+      ],
+      "electron_population_changed_nodes": 2117,
+      "all_native_observer_identity_checks_passed": true
+    }
+  },
+  "limitations": {
+    "same_previous_QS_state": false,
+    "independent_mobility_reconstruction": false,
+    "original_Jv_interval_retest": false,
+    "complete_autonomous_RHS_qualified": false,
+    "production_changes": false,
+    "N5_started": false,
+    "old_baseline_95_failures_retained": true
+  },
+  "tests": {
+    "rhs_binding_windows": 7,
+    "rhs_binding_ubuntu_26_04": 7,
+    "release_ctest_selected": 2
+  },
+  "old_evidence": {
+    "bvmethods_n4_sg_current_contract_20261018": {
+      "files": 38,
+      "sha256": "e0744dd4957b5b0f7fb2dca7f68f131038c2b9ddeabefce9faadb55ae17db9ac"
+    },
+    "bvmethods_n4_paired_live_20261018": {
+      "files": 296,
+      "sha256": "d46b96368a469d8e123e3dca03f4d205a9dd31e4a851f0105bd3730fabf4e352"
+    }
+  },
+  "evidence_checks": 46,
+  "private_evidence": {
+    "files": 278,
+    "bytes": 180460572,
+    "manifest_sha256": "0d1bc2108aa1812616955d0bd83b86193543cf71a8891e53244fc5060d954893"
+  }
+}
