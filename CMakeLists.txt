@@ -18,34 +18,33 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Dependencies (installed system packages)
 # ---------------------------------------------------------------------------
 
-# Eigen 3 (header-only linear algebra)
-find_package(Eigen3 REQUIRED NO_MODULE)
+# Eigen keeps the Eigen3 package/target names in the 5.x series.
+find_package(Eigen3 5.0.1...<6 QUIET NO_MODULE)
+if(NOT TARGET Eigen3::Eigen)
+    include(FetchContent)
+    FetchContent_Declare(vela_eigen
+        URL https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+        URL_HASH SHA256=e9c326dc8c05cd1e044c71f30f1b2e34a6161a3b6ecf445d56b53ff1669e3dec
+        # The release includes Eigen/Version. Use headers only, without adding
+        # upstream tests, BLAS/LAPACK builds or installation rules.
+        SOURCE_SUBDIR Eigen)
+    FetchContent_MakeAvailable(vela_eigen)
+    add_library(vela_eigen_headers INTERFACE)
+    add_library(Eigen3::Eigen ALIAS vela_eigen_headers)
+    target_include_directories(vela_eigen_headers SYSTEM INTERFACE ${vela_eigen_SOURCE_DIR})
+    target_compile_features(vela_eigen_headers INTERFACE cxx_std_14)
+    message(STATUS "Eigen headers: pinned 5.0.1")
+else()
+    message(STATUS "Eigen headers: installed ${Eigen3_VERSION}")
+endif()
 
 # nlohmann/json (header-only JSON)
 find_package(nlohmann_json REQUIRED)
 
-# Boost.Multiprecision (header-only arbitrary-precision arithmetic)
-find_package(Boost CONFIG REQUIRED)
-
-# ExactValueBits uses PFR field-name reflection, introduced in Boost 1.84.
-# Older distribution Boost packages still suffice for Multiprecision. Fetch
-# only the standalone, dependency-free PFR headers when that component is old.
-find_package(boost_pfr 1.84 CONFIG QUIET)
-if(NOT TARGET Boost::pfr)
-    include(FetchContent)
-    FetchContent_Declare(boost_pfr
-        URL https://codeload.github.com/boostorg/pfr/tar.gz/refs/tags/boost-1.87.0
-        URL_HASH SHA256=0fef7062020959216582e80a23b5bbc091b6f1a5f8762f12fa5ce9458d6f1617
-        # Use headers only; do not register upstream tests via BUILD_TESTING.
-        SOURCE_SUBDIR include)
-    FetchContent_MakeAvailable(boost_pfr)
-    add_library(vela_pfr INTERFACE)
-    add_library(Boost::pfr ALIAS vela_pfr)
-    target_include_directories(vela_pfr SYSTEM INTERFACE ${boost_pfr_SOURCE_DIR}/include)
-    message(STATUS "Boost.PFR field-name reflection: pinned 1.87 headers")
-else()
-    message(STATUS "Boost.PFR field-name reflection: installed package")
-endif()
+# System Boost.Multiprecision and PFR; field-name reflection needs Boost >=1.84.
+# Ubuntu 26.04 supplies a sufficiently recent Boost; no separate PFR download.
+find_package(Boost 1.84 CONFIG REQUIRED COMPONENTS pfr)
+message(STATUS "Boost headers and PFR: installed ${Boost_VERSION}")
 
 # spdlog (logging): prefer system package, fallback to FetchContent
 find_package(spdlog CONFIG QUIET)

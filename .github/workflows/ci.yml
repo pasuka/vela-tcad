@@ -69,6 +69,8 @@ jobs:
           grep -F 'SuiteSparse UMFPACK bordered solver enabled' configure.log
           grep -F 'SuiteSparse SPQR bordered solver enabled' configure.log
           grep -F 'METIS ordering enabled' configure.log
+          grep -F 'Eigen headers:' configure.log
+          grep -F 'Boost headers and PFR:' configure.log
 
       - name: Build
         run: cmake --build build --parallel

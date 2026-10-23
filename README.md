@@ -94,14 +94,14 @@ Prerequisites:
 
 - CMake 3.21 or newer
 - C++20 compiler
-- Boost headers (Boost.Multiprecision and Boost.PFR). Exact diagnostic field
-  encoding requires PFR field-name reflection from Boost 1.84 or newer. CMake
-  uses an installed compatible `boost_pfr` package or downloads the standalone
-  PFR 1.87 headers with a pinned SHA-256; the system Boost installation is kept.
-  For offline builds, provide the extracted PFR source with
-  `-DFETCHCONTENT_SOURCE_DIR_BOOST_PFR=/path/to/pfr` when no compatible package
-  is installed.
-- Eigen3
+- System Boost 1.84 or newer, including Multiprecision and PFR headers.
+  PFR field-name reflection is required; CMake does not download a separate PFR.
+- Eigen 5.0.1 or newer within the 5.x series (the CMake package/target names
+  remain `Eigen3` / `Eigen3::Eigen`). CMake uses a compatible installed package
+  or downloads the official 5.0.1 headers with a pinned SHA-256. An older
+  distribution `libeigen3-dev` package is not used for Vela compilation.
+  For offline builds without a compatible installed package, provide extracted
+  Eigen 5.0.1 sources with `-DFETCHCONTENT_SOURCE_DIR_VELA_EIGEN=/path/to/eigen-5.0.1`.
 - nlohmann/json
 - Catch2 v3
 - Python 3 interpreter for CTest regression orchestration
