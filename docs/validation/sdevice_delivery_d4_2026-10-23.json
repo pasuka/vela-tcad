@@ -1,0 +1,450 @@
+{
+  "schema": "vela.sdevice.delivery_d4.v1",
+  "date": "2026-10-23",
+  "runtime_commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+  "D1_D3_evidence": "sdevice_delivery_revalidation_2026-10-22.json",
+  "D1_D3_evidence_sha256": "f53b26572c843423e36fa095c81b8d8cc9546b45c8bd261c68760e199f08eb79",
+  "support_matrix_sha256": "9dc1665bc0c33ea8e5e4904a89a8c93915490b24053ce622e6916d416618b231",
+  "runtime_archives_unchanged": true,
+  "nodes": {
+    "t470p": {
+      "os": "Windows 10 x86_64",
+      "result": {
+        "schema": "vela.sdevice.delivery_entry.v1",
+        "runtime_commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+        "platform": "Windows",
+        "checks": [
+          {
+            "name": "root-help",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "root-version",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "bin-help",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "unsupported-debug-option",
+            "exit_code": 2,
+            "expected_exit_code": 2
+          },
+          {
+            "name": "export-default-materials",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "check-and-emit",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "short-simulation",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "nonlocalpath-rejected",
+            "exit_code": 1,
+            "expected_exit_code": 1
+          }
+        ],
+        "package_manifest_sha256": "fc31a98578eb37140615b6ff8bed282f121179eb2826895eb115e093688c4ef0",
+        "emitted_decks": [
+          {
+            "file": "simulation_stage00.json",
+            "sha256": "5175f8d29056c6a994d49c10bb408c3a8ebdcc674a6b7941d324ef50e4e9ad39"
+          },
+          {
+            "file": "simulation_stage01.json",
+            "sha256": "3cd509c93e0f370f0eb4c3eabf004106ec607b18c45841be52dfc82bb94e267e"
+          }
+        ],
+        "stages": [
+          {
+            "index": 0,
+            "runner_exit_code": 0,
+            "goal_reached": true,
+            "accepted_points": 1,
+            "reached_voltages_V": {
+              "anode": 0.0,
+              "cathode": 0.0
+            }
+          },
+          {
+            "index": 1,
+            "runner_exit_code": 0,
+            "goal_reached": true,
+            "accepted_points": 6,
+            "reached_voltages_V": {
+              "anode": 1.0,
+              "cathode": 0.0
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "file": "current_des.plt",
+            "sha256": "2bb33600f3bd31de8ba9d34f5189733062ad272d58c1a503ed142bdc848b1e3c"
+          },
+          {
+            "file": "final_0000_des.vtu",
+            "sha256": "2f207581e76a80ac03241b94f16408b248172064d43d6b02c4979f45043853b2"
+          },
+          {
+            "file": "final_0001_des.vtu",
+            "sha256": "93cc3386f93e39a0d71d85b0764dfa9d37e3f1fb43e924d80cf8dd30a151d284"
+          },
+          {
+            "file": "final_0002_des.vtu",
+            "sha256": "dca55e36881194754431893f2aa40679f5bbd2cacdad9458790c89c8447cbc17"
+          },
+          {
+            "file": "final_0003_des.vtu",
+            "sha256": "b93dfd2423f106b5d336a88487060226253ee05e2f051193cfc9ee5e533d9a40"
+          },
+          {
+            "file": "final_0004_des.vtu",
+            "sha256": "9b789738c14a29acef35ee5a8535ce64262a225d02d4e7dc9584f366da848007"
+          },
+          {
+            "file": "final_0005_des.vtu",
+            "sha256": "c0adc05ba1de418caefc1462995c69726d6925ac2237b5e35244d78eb3a74ce7"
+          },
+          {
+            "file": "final_0006_des.vtu",
+            "sha256": "fcc5476c90dbf3659a54e7956bef4b34eefd02af7ba54f4e4302ac0b7f08329b"
+          },
+          {
+            "file": "final_des.pvd",
+            "sha256": "2a799b99e2bf7403e0348eb61e2972d0619afd280e095fc72905efdd10a60b3a"
+          },
+          {
+            "file": "final_des.vtu",
+            "sha256": "fcc5476c90dbf3659a54e7956bef4b34eefd02af7ba54f4e4302ac0b7f08329b"
+          }
+        ],
+        "fixture_parser": [
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_0v_sdevice.cmd",
+            "sha256_lf": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd",
+            "sha256_lf": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_bv_sdevice.cmd",
+            "sha256_lf": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/aba_poisson_sdevice.cmd",
+            "sha256_lf": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+            "exit_code": 0,
+            "fatal_ids": []
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/external_resistor_sdevice.cmd",
+            "sha256_lf": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+            "exit_code": 0,
+            "fatal_ids": []
+          },
+          {
+            "deck": "schottky_charon_sentaurus2018/schottky_n_des.cmd",
+            "sha256_lf": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "genius_bjt_sentaurus2022/bjt_m0_des.cmd",
+            "sha256_lf": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "singledevice_sentaurus2018/singledevice_sdevice.cmd",
+            "sha256_lf": "138da5df58a044caefc6cbacc5536a22ea0f4176f0585faacf440218bddfd1ab",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E101",
+              "E102"
+            ]
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/full_physics_ablation_sdevice.cmd",
+            "sha256_lf": "7a792768da51aefc49fd27e65250aaecc29eafee6bb7f91104bd4637a223d5cc",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E107"
+            ]
+          },
+          {
+            "deck": "transportmodels_sentaurus2022/pp6_des.cmd",
+            "sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E105",
+              "E109"
+            ]
+          }
+        ],
+        "status": "pass",
+        "package_unchanged": true,
+        "host_python_on_path": false
+      },
+      "summary_sha256": "317142d36875a822b28d20c570d77d240212843d3ed1b774b8ecbedde635cb11",
+      "download": {
+        "node": "t470p",
+        "sha256": "03a9d13a69187fa79d6f7a08fbc71158ad020c154e80c3b10ec726fa56a5e33e",
+        "path": "t470p_evidence.tgz"
+      }
+    },
+    "c560": {
+      "os": "Ubuntu 26.04.1 x86_64",
+      "result": {
+        "schema": "vela.sdevice.delivery_entry.v1",
+        "runtime_commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+        "platform": "Linux",
+        "checks": [
+          {
+            "name": "root-help",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "root-version",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "bin-help",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "unsupported-debug-option",
+            "exit_code": 2,
+            "expected_exit_code": 2
+          },
+          {
+            "name": "export-default-materials",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "check-and-emit",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "short-simulation",
+            "exit_code": 0,
+            "expected_exit_code": 0
+          },
+          {
+            "name": "nonlocalpath-rejected",
+            "exit_code": 1,
+            "expected_exit_code": 1
+          }
+        ],
+        "package_manifest_sha256": "36a240171d28e085a2bc04eab94cc4a8f4870b2624be56b18a5a7aafb7b9d2b0",
+        "emitted_decks": [
+          {
+            "file": "simulation_stage00.json",
+            "sha256": "fcb7860e6364f00b8705bab6f19c31b5d4a1fa8b7aed10a4e4cd7ffae3e01fda"
+          },
+          {
+            "file": "simulation_stage01.json",
+            "sha256": "a95e15a96ce3bcdf97907ca30dd75f14ceb38db19a62bfc8cfe0c4fa8ea2c9c2"
+          }
+        ],
+        "stages": [
+          {
+            "index": 0,
+            "runner_exit_code": 0,
+            "goal_reached": true,
+            "accepted_points": 1,
+            "reached_voltages_V": {
+              "anode": 0.0,
+              "cathode": 0.0
+            }
+          },
+          {
+            "index": 1,
+            "runner_exit_code": 0,
+            "goal_reached": true,
+            "accepted_points": 6,
+            "reached_voltages_V": {
+              "anode": 1.0,
+              "cathode": 0.0
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "file": "final_des.vtu",
+            "sha256": "fcc5476c90dbf3659a54e7956bef4b34eefd02af7ba54f4e4302ac0b7f08329b"
+          },
+          {
+            "file": "final_0006_des.vtu",
+            "sha256": "fcc5476c90dbf3659a54e7956bef4b34eefd02af7ba54f4e4302ac0b7f08329b"
+          },
+          {
+            "file": "final_0000_des.vtu",
+            "sha256": "2f207581e76a80ac03241b94f16408b248172064d43d6b02c4979f45043853b2"
+          },
+          {
+            "file": "final_0001_des.vtu",
+            "sha256": "93cc3386f93e39a0d71d85b0764dfa9d37e3f1fb43e924d80cf8dd30a151d284"
+          },
+          {
+            "file": "final_des.pvd",
+            "sha256": "2a799b99e2bf7403e0348eb61e2972d0619afd280e095fc72905efdd10a60b3a"
+          },
+          {
+            "file": "final_0004_des.vtu",
+            "sha256": "9b789738c14a29acef35ee5a8535ce64262a225d02d4e7dc9584f366da848007"
+          },
+          {
+            "file": "final_0002_des.vtu",
+            "sha256": "dca55e36881194754431893f2aa40679f5bbd2cacdad9458790c89c8447cbc17"
+          },
+          {
+            "file": "current_des.plt",
+            "sha256": "0690eaebe9c4b68e679f3011d58f87cabcc1f330dee7ed1a12bc02a7ea0ac720"
+          },
+          {
+            "file": "final_0005_des.vtu",
+            "sha256": "c0adc05ba1de418caefc1462995c69726d6925ac2237b5e35244d78eb3a74ce7"
+          },
+          {
+            "file": "final_0003_des.vtu",
+            "sha256": "b93dfd2423f106b5d336a88487060226253ee05e2f051193cfc9ee5e533d9a40"
+          }
+        ],
+        "fixture_parser": [
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_0v_sdevice.cmd",
+            "sha256_lf": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd",
+            "sha256_lf": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "pn2d_sentaurus2018/pn2d_bv_sdevice.cmd",
+            "sha256_lf": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/aba_poisson_sdevice.cmd",
+            "sha256_lf": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+            "exit_code": 0,
+            "fatal_ids": []
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/external_resistor_sdevice.cmd",
+            "sha256_lf": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+            "exit_code": 0,
+            "fatal_ids": []
+          },
+          {
+            "deck": "schottky_charon_sentaurus2018/schottky_n_des.cmd",
+            "sha256_lf": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "genius_bjt_sentaurus2022/bjt_m0_des.cmd",
+            "sha256_lf": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          },
+          {
+            "deck": "singledevice_sentaurus2018/singledevice_sdevice.cmd",
+            "sha256_lf": "138da5df58a044caefc6cbacc5536a22ea0f4176f0585faacf440218bddfd1ab",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E101",
+              "E102"
+            ]
+          },
+          {
+            "deck": "bvmethods_sentaurus2018/full_physics_ablation_sdevice.cmd",
+            "sha256_lf": "7a792768da51aefc49fd27e65250aaecc29eafee6bb7f91104bd4637a223d5cc",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E107"
+            ]
+          },
+          {
+            "deck": "transportmodels_sentaurus2022/pp6_des.cmd",
+            "sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+            "exit_code": 1,
+            "fatal_ids": [
+              "E105",
+              "E109"
+            ]
+          }
+        ],
+        "status": "pass",
+        "package_unchanged": true,
+        "host_python_on_path": false
+      },
+      "summary_sha256": "1c01d5a564be6c33a7bebc798ec238dc9eb9acb863a65ad024b90e488f8469ab",
+      "download": {
+        "node": "c560",
+        "sha256": "e68c2f1478292d320f72ae85e3fb41f2ab8ee3e34f08ec96d2bbe5853e88bc98",
+        "path": "c560_evidence.tgz"
+      }
+    }
+  },
+  "status": "pass",
+  "guide_rehearsal": {
+    "status": "pass",
+    "nodes": [
+      "t470p",
+      "c560"
+    ],
+    "scope": "Exact documented unpack/material/check/run command sequence; draft companion differs from final only by support-path redaction and final evidence documentation.",
+    "initial_windows_transport_issue": "PowerShell path backslashes were interpreted by the Python SSH wrapper; raw string corrected; guide commands unchanged.",
+    "receipt_sha256": "d015feabf8cb863b4029f5e819434c4e02a7d1a6488f895b8f2f2aef3a62aa8a"
+  }
+}

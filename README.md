@@ -9,6 +9,9 @@ The project is intentionally transparent and small. It is useful for solver
 development, regression experiments, and device-trend smoke tests. It is not a
 calibrated commercial TCAD replacement.
 
+For the qualified SDevice cmd frontend packages, installation commands and exact case
+support levels, see the [SDevice delivery guide](docs/sdevice_delivery.md).
+
 ## What Is Implemented
 
 Core solver capabilities:
