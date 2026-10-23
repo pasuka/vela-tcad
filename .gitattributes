@@ -1,4 +1,7 @@
 # Provenance-bound C++ replay fixtures are compared by exact byte hash.
+# Remote Bash entry points must survive Windows checkouts and source snapshots.
+scripts/remote-vm/*.sh text eol=lf
+
 tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 
 # The SimpleMOS delivery copies preserve the frozen Windows CRLF bytes.

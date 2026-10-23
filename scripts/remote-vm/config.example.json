@@ -1,0 +1,5 @@
+{
+  "SshHost": "vela-vm",
+  "RemoteBase": "/home/REMOTE_USER/vela-work",
+  "SentaurusRoot": "/path/to/sentaurus/RELEASE"
+}

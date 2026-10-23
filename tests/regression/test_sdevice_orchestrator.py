@@ -147,7 +147,7 @@ class OrchestratorTests(unittest.TestCase):
         for option in ("-h", "-v", "-P"):
             self.assert_exit(0, self.call(option))
         self.assertEqual((self.root / "models.par").read_bytes(), default_models_par_path().read_bytes())
-        self.assert_exit(0, self.call(str(self.cmd.with_suffix("")), "-n"))
+        self.assert_exit(0, self.call(str(self.cmd.with_suffix("")), "--check"))
         self.assert_exit(0, self.call(str(self.root / "device"), "--check"))
         for args in (("-d",), (str(self.cmd), "--threads", "0"), ()):
             command = [sys.executable, "-m", "vela_sdevice", "device", *args]
@@ -162,6 +162,57 @@ class OrchestratorTests(unittest.TestCase):
         (self.root / "mesh.grd").unlink()
         self.assert_exit(3, self.call())
         self.assert_exit(3, self.call(str(self.root / "missing.cmd")))
+
+    def test_reserved_debug_export_fails_before_any_side_effects(self):
+        before = {p.name: p.read_bytes() for p in self.root.iterdir() if p.is_file()}
+        for args in (("-d",), (str(self.cmd), "-d"), ("missing.cmd", "-d"),
+                     ("-d", "--check"), ("-d", "-P"), ("-d", "-v")):
+            with self.subTest(args=args):
+                done = self.call(*args)
+                self.assert_exit(2, done)
+                self.assertIn("E202: -d", done.stderr)
+                self.assertIn("not implemented yet", done.stderr)
+                self.assertEqual(done.stdout, "")
+                self.assertEqual(self.calls(), [])
+                self.assertFalse(self.work.exists())
+                self.assertEqual(set(p.name for p in self.root.iterdir()), set(before))
+                self.assertEqual({p.name: p.read_bytes() for p in self.root.iterdir()}, before)
+        help_output = self.call("-h")
+        self.assert_exit(0, help_output)
+        self.assertIn("not implemented", help_output.stdout)
+
+    def test_all_reserved_options_report_without_starting_or_writing(self):
+        from vela_sdevice.__main__ import RESERVED_OPTIONS
+        before = {p.name: p.read_bytes() for p in self.root.iterdir() if p.is_file()}
+        cases = [(flag,) for flag in RESERVED_OPTIONS]
+        cases += [("-P:Silicon",), ("-L:Silicon/Oxide",), ("-P:AlGaAs:0.3",),
+                  ("--max_threads=4",), ("-ver", "T-2022.03"),
+                  ("-rel", "T-2022.03-SP2"), ("-P", str(self.cmd))]
+        for args in cases:
+            with self.subTest(args=args):
+                done = self.call(*args)
+                self.assert_exit(2, done)
+                self.assertIn("not implemented yet", done.stderr)
+                self.assertIn("No simulation was started", done.stderr)
+                self.assertEqual(done.stdout, "")
+                self.assertEqual(set(p.name for p in self.root.iterdir()), set(before))
+                self.assertEqual({p.name: p.read_bytes() for p in self.root.iterdir()}, before)
+
+    def test_sd_sim_direct_zipapp_interface(self):
+        archive = build_archive(self.root / "direct.pyz")
+        for args, code, text in ((("-h",), 0, "usage: sd-sim"),
+                                 (("-v",), 0, "Vela"),
+                                 (("-d",), 2, "not implemented yet"),
+                                 (("-P:Silicon",), 2, "not implemented yet"),
+                                 (("--not-a-real-option",), 2, "E202"),
+                                 ((str(self.cmd), "--check"), 0, ""),
+                                 ((str(self.cmd),), 0, "")):
+            with self.subTest(args=args):
+                done = subprocess.run([sys.executable, "-I", "-S", str(archive), "sd-sim", *args],
+                                      cwd=self.root, env=self.env, capture_output=True,
+                                      text=True, encoding="utf-8", timeout=30)
+                self.assert_exit(code, done)
+                self.assertIn(text, done.stdout + done.stderr)
 
     def test_sidecar_and_runner_rejection_exit_4(self):
         self.cmd.with_suffix(".vela.json").write_text('{"schema":"vela.sdevice_sidecar.v1","contacts":[]}')
@@ -247,7 +298,7 @@ class OrchestratorTests(unittest.TestCase):
         self.assertEqual(len(self.calls()), 2)
 
     def test_threads_quiet_binary_and_final_only(self):
-        done = self.call(str(self.cmd), "-q", "--max_threads", "2", "--vtu-binary", "--plot-final-only", "--no-keep-intermediate")
+        done = self.call(str(self.cmd), "-q", "--threads", "2", "--vtu-binary", "--plot-final-only", "--no-keep-intermediate")
         self.assert_exit(0, done)
         self.assertEqual(done.stdout, "")
         self.assertTrue(all(c["threads"] == "2" and c["hdf5_locking"] == "FALSE" for c in self.calls()))
@@ -305,6 +356,7 @@ class OrchestratorTests(unittest.TestCase):
         archive = build_archive(self.root / "exit_codes.pyz")
         self.cmd.write_text(self.cmd.read_text() + '\nThermode {{Name="anode" Temperature=300}}\n')
         for arguments, expected, message in (([str(self.cmd),"--check"],1,"E105"),
+                                            (["-d"],2,"not implemented yet"),
                                             (["--unsupported-option"],2,"E202"),
                                             (["missing_des.cmd"],3,"E305")):
             done = subprocess.run([sys.executable,"-I","-S",str(archive),"device",*arguments],cwd=self.root,

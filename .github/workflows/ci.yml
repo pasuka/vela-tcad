@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -69,6 +69,9 @@ jobs:
           grep -F 'SuiteSparse UMFPACK bordered solver enabled' configure.log
           grep -F 'SuiteSparse SPQR bordered solver enabled' configure.log
           grep -F 'METIS ordering enabled' configure.log
+          grep -F 'Eigen headers:' configure.log
+          grep -F 'Boost headers and PFR:' configure.log
+          grep -F 'VELA_BOOST_PFR_HEADERS_WORK - Success' configure.log
 
       - name: Build
         run: cmake --build build --parallel

@@ -33,7 +33,7 @@ def tar_permissions(item):
         item.mode = 0o755
     elif item.isfile():
         name = PurePosixPath(item.name)
-        executable = (item.name in ("vela/vela", "vela/bin/vela", "vela/bin/vela_example_runner", "vela/bin/sentaurus_import")
+        executable = (item.name in ("vela/vela", "vela/bin/vela", "vela/sd-sim", "vela/bin/sd-sim", "vela/bin/vela_example_runner", "vela/bin/sentaurus_import")
                       or item.name.startswith("vela/bin/python/bin/") or ".so" in name.name)
         item.mode = 0o755 if executable else 0o644
     return item
@@ -240,7 +240,7 @@ def package(args):
         subprocess.run([args.cmake, "--install", str(build), "--prefix", str(stage),
                         "--config", args.config, "--component", "SDeviceRuntime"], check=True)
         suffix = ".exe" if system == "win64" else ""
-        for name in ("vela", "vela_example_runner", "sentaurus_import"):
+        for name in ("vela", "sd-sim", "vela_example_runner", "sentaurus_import"):
             if not (stage / "bin" / (name + suffix)).is_file():
                 raise ValueError(f"Missing required executable {name}; build with detected HDF5/TDR support")
         unpack_python(python_archive, stage / "bin/python", system)

@@ -1,5 +1,11 @@
 # Vela Documentation
 
+- [BVmethods 外接电阻法开发交接，2026-10-23](validation/bvmethods_external_resistor_handoff_2026-10-23.md)：
+  当前检出与历史私有证据位置、R0–R7 状态、两态 R2 进展及持续增广 Newton 的下一轮入口；尚无完整 BV 资格。
+
+- [sd-sim 入口与 CLI 更新计划](superpowers/plans/2026-10-23-sd-sim-cli-plan.md)：用户确定新名称，
+  保留旧入口；未实现参数具名预留，`-d` 数值导出延期。
+
 - [BVmethods 三组源码与诊断归档，2026-10-23](validation/bvmethods_worktree_organization_2026-10-23.md)：
   交付修复、实验依赖和诊断资料分别提交；原始执行记录保留 ignored，N4/R2/R3 未取得新资格。
 
@@ -670,6 +676,10 @@ evidence.
 - [SDevice WP4 stage/deck emitter, 2026-10-02](validation/sdevice_deck_emit_validation_2026-10-02.md):
   local main merged; seven fixture goldens, v2 decks, HDF5 chaining and real-runner smoke checks.
   WP4 acceptance passed with the confirmed current WP3 gate reference baseline; CLI orchestration is now delivered by WP5.
+
+- [Remote compute VM](office_vm_workflow.md): private SSH configuration,
+  Micromamba GCC 16 builds, isolated Sentaurus environment, file transfer and
+  detached job submission/status through `scripts/Invoke-VelaVm.ps1`.
 
 - [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
   complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,

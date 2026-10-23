@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.21)
 if(POLICY CMP0207)
     cmake_policy(SET CMP0207 NEW)
 endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 project(vela-tcad VERSION 0.1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
@@ -15,14 +18,62 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Dependencies (installed system packages)
 # ---------------------------------------------------------------------------
 
-# Eigen 3 (header-only linear algebra)
-find_package(Eigen3 REQUIRED NO_MODULE)
+# Eigen keeps the Eigen3 package/target names in the 5.x series.
+find_package(Eigen3 5.0.1...<6 QUIET NO_MODULE)
+if(NOT TARGET Eigen3::Eigen)
+    include(FetchContent)
+    FetchContent_Declare(vela_eigen
+        URL https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+        URL_HASH SHA256=e9c326dc8c05cd1e044c71f30f1b2e34a6161a3b6ecf445d56b53ff1669e3dec
+        # The release includes Eigen/Version. Use headers only, without adding
+        # upstream tests, BLAS/LAPACK builds or installation rules.
+        SOURCE_SUBDIR Eigen)
+    FetchContent_MakeAvailable(vela_eigen)
+    add_library(vela_eigen_headers INTERFACE)
+    add_library(Eigen3::Eigen ALIAS vela_eigen_headers)
+    target_include_directories(vela_eigen_headers SYSTEM INTERFACE ${vela_eigen_SOURCE_DIR})
+    target_compile_features(vela_eigen_headers INTERFACE cxx_std_14)
+    message(STATUS "Eigen headers: pinned 5.0.1")
+else()
+    message(STATUS "Eigen headers: installed ${Eigen3_VERSION}")
+endif()
 
 # nlohmann/json (header-only JSON)
 find_package(nlohmann_json REQUIRED)
 
-# Boost.Multiprecision (header-only arbitrary-precision arithmetic)
-find_package(Boost CONFIG REQUIRED)
+# System Boost.Multiprecision and PFR; field-name reflection needs Boost >=1.84.
+# Some distro packages ship PFR headers without a boost_pfr CMake component.
+# Neither PFR nor Multiprecision needs a separately linked library. Check the
+# actual reflection API instead of requiring that optional package metadata.
+find_package(Boost 1.84 CONFIG REQUIRED)
+include(CMakePushCheckState)
+include(CheckCXXSourceCompiles)
+cmake_push_check_state(RESET)
+set(CMAKE_REQUIRED_LIBRARIES Boost::headers)
+# Recheck after dependency/toolchain changes in an existing build directory.
+unset(VELA_BOOST_PFR_HEADERS_WORK CACHE)
+check_cxx_source_compiles([=[
+    #include <boost/pfr/core.hpp>
+    #include <boost/pfr/core_name.hpp>
+    #include <boost/multiprecision/cpp_dec_float.hpp>
+    struct Fields { double value; int count; };
+    static_assert(boost::pfr::get_name<0, Fields>() == "value");
+    int main() {
+        Fields fields{1.0, 2};
+        boost::pfr::for_each_field(fields, [](const auto&, auto) {});
+        boost::multiprecision::cpp_dec_float_50 value = fields.value;
+        return value == 1 ? 0 : 1;
+    }
+]=] VELA_BOOST_PFR_HEADERS_WORK)
+cmake_pop_check_state()
+if(NOT VELA_BOOST_PFR_HEADERS_WORK)
+    message(FATAL_ERROR
+        "System Boost must provide working PFR field-name reflection and Multiprecision headers. "
+        "Install Boost >=1.84 development headers (libboost-dev on Ubuntu 26.04), "
+        "including boost/pfr/core_name.hpp, and use a supported C++20 compiler. "
+        "See the CMake configure log for the compile error; no boost_pfr package config is required.")
+endif()
+message(STATUS "Boost headers and PFR: installed ${Boost_VERSION}")
 
 # spdlog (logging): prefer system package, fallback to FetchContent
 find_package(spdlog CONFIG QUIET)
@@ -341,7 +392,6 @@ target_link_libraries(vela_core
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
         spdlog::spdlog
-    PRIVATE
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
@@ -570,17 +620,21 @@ elseif(Git_FOUND)
     endif()
 endif()
 add_executable(vela src/tools/vela.cpp)
-add_dependencies(vela vela_sdevice_pyz)
-target_compile_definitions(vela PRIVATE
-    VELA_VERSION="${PROJECT_VERSION}"
-    VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
-if(MINGW)
-    # wmain entry point; fully static so the launcher also runs from the
-    # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
-    target_link_options(vela PRIVATE -municode -static)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_link_options(vela PRIVATE -static-libgcc -static-libstdc++)
-endif()
+add_executable(sd-sim src/tools/vela.cpp)
+target_compile_definitions(sd-sim PRIVATE VELA_DIRECT_DEVICE_CLI=1)
+foreach(_launcher IN ITEMS vela sd-sim)
+    add_dependencies(${_launcher} vela_sdevice_pyz)
+    target_compile_definitions(${_launcher} PRIVATE
+        VELA_VERSION="${PROJECT_VERSION}"
+        VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
+    if(MINGW)
+        # wmain entry point; fully static so the launcher also runs from the
+        # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
+        target_link_options(${_launcher} PRIVATE -municode -static)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(${_launcher} PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+endforeach()
 
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
@@ -618,7 +672,7 @@ endif()
 
 # WP11: install only the frontend's runtime closure, never reference fixtures.
 # Keep both the documented root launcher and the conventional bin/ entry point.
-set(_vela_distribution_targets vela vela_example_runner)
+set(_vela_distribution_targets vela sd-sim vela_example_runner)
 if(TARGET sentaurus_import)
     list(APPEND _vela_distribution_targets sentaurus_import)
 endif()
@@ -637,6 +691,7 @@ install(TARGETS ${_vela_distribution_targets}
     RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
     RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
 install(PROGRAMS "$<TARGET_FILE:vela>" DESTINATION . COMPONENT SDeviceRuntime)
+install(PROGRAMS "$<TARGET_FILE:sd-sim>" DESTINATION . COMPONENT SDeviceRuntime)
 if(WIN32)
     install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
         DIRECTORIES "${VELA_MINGW_RUNTIME_DIR}"
@@ -1585,7 +1640,7 @@ set_tests_properties(sdevice_vela_launcher PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_vela_launcher)
 set_property(TEST sdevice_vela_launcher APPEND PROPERTY
-    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>")
+    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>" "SD_SIM_LAUNCHER=$<TARGET_FILE:sd-sim>")
 
 add_test(NAME sdevice_materials
     COMMAND ${Python3_EXECUTABLE} -m unittest

@@ -1,5 +1,9 @@
 # `vela device`：SDevice 命令文件直跑工作流
 
+2026-10-23 CLI 更新：新首选入口为 `sd-sim [选项] <cmd>`；`vela device [选项] <cmd>`
+保留兼容。新源码不自动继承既有发行包的验收资格；后续安排见
+[CLI 更新计划](superpowers/plans/2026-10-23-sd-sim-cli-plan.md)。
+
 当前用户入口与资格见[交付指南和支持矩阵](sdevice_delivery.md)。D0–D4 已于 2026-10-23 收口：
 [D1–D3](validation/sdevice_delivery_revalidation_2026-10-22.md)完成发布差分、同输入 cmd/JSON
 数值对照、Windows/Ubuntu 26.04 新包验收；[D4](validation/sdevice_delivery_d4_2026-10-23.md)
@@ -37,15 +41,35 @@ NonLocalPath/R2/R3 独立研发范围以交付支持矩阵区分，历史报告�
 ### 2.1 调用形式
 
 ```text
+sd-sim [选项] <name_des.cmd | name_des | name>
 vela device [选项] <name_des.cmd | name_des | name>
 ```
 
 命令文件解析顺序：字面路径存在 → `<name>.cmd` → `<name>_des.cmd`。未给命令文件或要求从标准输入
 读取 → 用法错误（退出码 2）。工作目录 = 命令文件所在目录；`File{}` 内相对路径相对该目录。
 
-镜像的 `sdevice` 选项：`-h`、`-v`、`-q`、`-n`、`-i`、`-P`、`--exit-on-failure`、
-`--threads <int>`、`--max_threads <int>`、`--verbose`。拒绝（退出码 2，E202）：`-d -M -S -r -L*
--ver -rel -versions --tcl --xml --field-names --parameter-names --compiler-version`。
+已提供的入口：`-h/--help`、`-v/--version`、`-q`、`--exit-on-failure`、
+`--threads <int>`、`--verbose`。部分能力：`-i` 仅运行第一个发射阶段，尚未证明等同原生
+初始解保存；裸 `-P` 仅导出 Vela 随包 `models.par`，不是原生完整材料参数库。
+
+以下选项已注册为预留接口，帮助中标记尚未实现。调用时向 stderr 输出 E202、功能名称与
+`not implemented yet; reserved for future development. No simulation was started.`，
+退出码为 2，不读取命令文件、启动仿真或创建仿真输出：
+
+| 选项 | 尚未实现的功能 |
+| --- | --- |
+| `-d` | Jacobian/RHS 调试导出 |
+| `-n` | 隐藏 Newton 日志；不再作为 `--check` 的别名 |
+| `--max_threads` | 线程上限；不再作为 `--threads` 的别名 |
+| `-L`、`-L:<材料/界面>`、`-L:All` | 分材料参数库导出，含组分变体 |
+| `-P <cmd>`、`-P:<材料/界面>`、`-P:All` | 按输入或材料选择导出参数，含组分变体 |
+| `-M`、`-S`、`-r` | 区域组分参数、SiC 参数及从材料库读取的导出模式 |
+| `-ver`、`-rel`、`-versions` | 已安装版本／发行版选择与列举 |
+| `--tcl`、`--xml` | Tcl 执行、附加 XML 日志 |
+| `--field-names`、`--parameter-names`、`--compiler-version` | 字段及 PMI 索引、可扫描参数、编译器信息 |
+
+预留检查先于 `-v`、`-P`、`--check`；`-h` 仍正常显示帮助。未知选项仍拒绝，不能静默忽略。
+迁移旧命令：输入检查使用 `--check`；设置线程数使用 `--threads N`。
 Vela 自有选项：`--check`、`--allow-lossy`、`--keep-intermediate/--no-keep-intermediate`、
 `--vtu-binary`、`--plot-final-only`。
 
@@ -71,6 +95,8 @@ CLI 输出和用户日志均为 UTF-8，包括 Windows 本地化系统错误详�
 ### 2.3 启动器协议（C9，WP7）
 
 `vela device <args>` → 子进程 `<python> bin/vela_sdevice.pyz device <args>`，cwd 不变，退出码透传。
+`sd-sim <args>` → 子进程 `<python> bin/vela_sdevice.pyz sd-sim <args>`，使用直接运行解析器；
+用户无需写 `device` 子命令。两个启动器共用 Python 包、运行时及环境变量。
 `<python>` 查找顺序：`VELA_PYTHON` → `bin/python/` → PATH 中 `python3`/`python`（≥ 3.10，log 警告）。
 Windows 用宽字符 API 透传参数；`bin/` 前置到 `PATH`。
 

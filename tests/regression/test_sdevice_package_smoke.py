@@ -192,7 +192,8 @@ class OfflinePackageTests(unittest.TestCase):
             self.assertFalse(args.output_dir.exists())
 
     def test_linux_archive_modes_are_safe_and_executable(self):
-        for name, expected in (("vela/bin/vela", 0o755), ("vela/bin/python/bin/python3.12", 0o755),
+        for name, expected in (("vela/bin/vela", 0o755), ("vela/sd-sim", 0o755),
+                               ("vela/bin/sd-sim", 0o755), ("vela/bin/python/bin/python3.12", 0o755),
                                ("vela/share/vela/materials/models.par", 0o644)):
             entry = tarfile.TarInfo(name)
             entry.mode, entry.uid = 0o777, 1000
