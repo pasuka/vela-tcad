@@ -68,7 +68,7 @@
       {"key": "Mobility.DopingDependence", "parameters": {}, "status": "supported", "vela": "solver.mobility.model=masetti"},
       {"key": "Mobility.Enormal", "parameters": {}, "status": "supported", "vela": "solver.mobility.model+=_lombardi"},
       {"key": "Mobility.HighFieldSaturation", "parameters": {"driving_force": "GradQuasiFermi"}, "status": "supported", "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"},
-      {"key": "Recombination.Avalanche", "parameters": {"driving_force": "Eparallel"}, "status": "supported", "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=electric_field_parallel"},
+      {"key": "Recombination.Avalanche", "parameters": {"driving_force": "Eparallel"}, "status": "supported", "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=eparallel"},
       {"key": "Recombination.Band2Band", "parameters": {"model": "E2"}, "status": "supported", "vela": "solver.band_to_band.model=e2"},
       {"key": "Recombination.SRH", "parameters": {"doping_dependence": true}, "status": "supported", "vela": "solver.recombination+=srh; solver.srh_doping_dependence=true"}
     ],

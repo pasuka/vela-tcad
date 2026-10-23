@@ -249,10 +249,11 @@ _DEFAULT_VELA = {
     "Recombination.Auger": "solver.recombination+=auger",
     "EffectiveIntrinsicDensity.OldSlotboom": "solver.bandgap_narrowing=old_slotboom",
     "EffectiveIntrinsicDensity.NoBandGapNarrowing": "solver.bandgap_narrowing=none",
+    "EffectiveIntrinsicDensity.NoFermi": "solver.bandgap_narrowing.fermi_statistics_correction=false",
     "Fermi": "solver.carrier_statistics.model=fermi_dirac",
     "eQuantumPotential": "solver.electron_quantum_potential.enabled=true",
 }
-_DRIVING_FORCE_VELA = {"GradQuasiFermi": "quasi_fermi_gradient", "Eparallel": "electric_field_parallel",
+_DRIVING_FORCE_VELA = {"GradQuasiFermi": "quasi_fermi_gradient", "Eparallel": "eparallel",
                        "ElectricField": "electric_field"}
 
 
@@ -461,8 +462,6 @@ def _canonicalise_model(model: dict, scope: PhysicsScope, ctx: ParseContext, lin
             key = f"EffectiveIntrinsicDensity.{canonical}"
             if key in _DEFAULT_VELA:
                 _add_effective(scope, key, {}, vela=_DEFAULT_VELA[key])
-            elif canonical == "NoFermi":
-                continue
             else:
                 _add_effective(scope, key, {}, "unsupported", None, "E106")
                 ctx.error("E106", _line_of(arg, line), section, arg["name"], key=key)

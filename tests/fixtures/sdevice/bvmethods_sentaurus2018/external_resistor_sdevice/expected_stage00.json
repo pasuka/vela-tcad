@@ -40,7 +40,7 @@
     ],
     "impact_ionization": {
       "model": "van_overstraeten",
-      "driving_force": "electric_field_parallel",
+      "driving_force": "eparallel",
       "generation": "current_density",
       "current_approximation": "density_gradient",
       "electron_a_low_cm_inv": 703000.0,
@@ -59,7 +59,8 @@
       "model": "old_slotboom",
       "coefficient_eV": 0.009,
       "reference_doping_cm3": 1e+17,
-      "smoothing": 0.5
+      "smoothing": 0.5,
+      "fermi_statistics_correction": true
     },
     "carrier_statistics": {
       "model": "fermi_dirac"
@@ -85,8 +86,9 @@
     "tau_n_s": 1e-05,
     "tau_p_s": 3e-06,
     "temperature_K": 300.0,
-    "method": "gummel_newton",
-    "max_iter": 20
+    "method": "newton",
+    "max_iter": 20,
+    "warm_start": true
   },
   "output_csv": "stage00.csv",
   "contacts": [
@@ -153,7 +155,8 @@
     "write_state_file": "stage00_state.h5",
     "predictor": "linear",
     "initialization": {
-      "mode": "poisson_block"
+      "mode": "poisson_block",
+      "poisson_max_iter": 100
     },
     "bias_points": [
       0.0

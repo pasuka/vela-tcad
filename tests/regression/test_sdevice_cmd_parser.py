@@ -272,6 +272,22 @@ class NamingAndMappingTest(unittest.TestCase):
 
 
 class PropertyTest(unittest.TestCase):
+    def test_nofermi_is_preserved_without_disabling_fermi_statistics(self) -> None:
+        ir = parse_cmd_text(deck(physics="Fermi EffectiveIntrinsicDensity(OldSlotboom NoFermi)"),
+                            path_name="control.cmd")
+        self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+        models = {m["key"]: m for m in ir["physics"]["effective"]}
+        self.assertEqual(models["Fermi"]["vela"], "solver.carrier_statistics.model=fermi_dirac")
+        self.assertEqual(models["EffectiveIntrinsicDensity.NoFermi"]["vela"],
+                         "solver.bandgap_narrowing.fermi_statistics_correction=false")
+
+    def test_region_dependent_nofermi_is_rejected_by_global_solver_contract(self) -> None:
+        text = deck(physics="Fermi EffectiveIntrinsicDensity(OldSlotboom)")
+        text += '\nPhysics(Material="Silicon") {EffectiveIntrinsicDensity(NoFermi)}\n'
+        text += '\nPhysics(Material="PolySilicon") {}\n'
+        ir = parse_cmd_text(text, path_name="control.cmd")
+        self.assertIn("E113", [e["id"] for e in ir["errors"]])
+
     def test_comment_stripping_protects_quoted_text(self) -> None:
         text = 'File { Grid = "a*b#c.tdr" } * trailing\n# whole line\nPlot { eCurrent/Vector }\n'
         stripped = strip_comments(text)

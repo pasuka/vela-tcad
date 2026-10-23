@@ -213,6 +213,21 @@ def _physics(ir: dict, report: dict, decisions: list) -> dict:
             else:
                 _set(deck, path, value)
     solver["mobility"]["model"] += "".join(s for s in ("_field", "_lombardi") if s in suffixes)
+    # SDevice's Fermi correction belongs to the intrinsic-density law, not
+    # to carrier-statistics selection. Explicit NoFermi overrides the default
+    # without disabling Fermi populations, regardless of statement order.
+    bgn = solver.get("bandgap_narrowing", {})
+    if bgn.get("model") == "old_slotboom":
+        correction = (solver.get("carrier_statistics", {}).get("model") == "fermi_dirac")
+        # Keep the qualified Boltzmann deck encoding unchanged. The C++ default
+        # is false; explicit NoFermi remains explicit, including with Fermi.
+        if correction:
+            bgn.setdefault("fermi_statistics_correction", True)
+        _decision(decisions, "EffectiveIntrinsicDensity.FermiCorrection",
+                  "Fermi + OldSlotboom; explicit NoFermi overrides",
+                  "solver.bandgap_narrowing.fermi_statistics_correction",
+                  bgn.get("fermi_statistics_correction", False),
+                  "SDevice intrinsic-density correction; material dEg0 remains folded in ni")
     if "_field" in suffixes:
         solver["mobility"].setdefault("high_field_driving_force", "quasi_fermi_gradient")
     if solver["impact_ionization"]["model"] != "none":
@@ -571,7 +586,15 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         if input_state:
             sweep["initial_state_file"] = input_state
         elif method != "poisson_only" and any(s["equations"] == ["Poisson"] for s in group):
-            sweep["initialization"] = {"mode": "poisson_block"}
+            # Preserve the original nonlinear Poisson budget when coalescing
+            # equilibrium statements. A single block update is not a solve.
+            poisson_budget = sum(s["iterations"] or math_cfg["iterations"] or 100
+                                 for s in group if s["equations"] == ["Poisson"])
+            sweep["initialization"] = {"mode": "poisson_block",
+                                       "poisson_max_iter": poisson_budget}
+            # The preceding nonlinear Poisson solve supplies a converged
+            # state. Preserve it for Coupled instead of re-running Gummel.
+            deck["solver"].update(method="newton", warm_start=True)
         if entry["kind"] in ("equilibrium", "load") or current:
             sweep["bias_points"] = [v0]
         if kind == "sweep":
@@ -623,6 +646,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 if current:
                     raise DeckEmitError("E407", detail="current control and series resistance are mutually exclusive")
                 sweep["external_circuit"] = {"mode": "series_resistor", "resistance_ohm_um": resistance}
+                sweep.setdefault("boundary_control", {})["adaptive_outer_continuation"] = True
         if current:
             entry["sweep"] = {"contact": contact, "mode": "current", "start_V": v0, "stop_V": v0,
                 "stop_current_A_per_um": goal["current_A_per_um"], "step_V": 1.0,
