@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/physics/CarrierStatistics.h"
 #include "vela/core/UnitScaling.h"
 #include <memory>
 #include <string>
@@ -58,7 +59,8 @@ Real effectiveIntrinsicDensity(Real ni, Real thermalVoltage, Real deltaEg);
 /// carrier energies, evaluated at 300 K, unless NoFermi is requested.
 Real fermiStatisticsBandgapCorrection(Real donors, Real acceptors,
                                       Real Nc, Real Nv,
-                                      Real thermalVoltage);
+                                      Real thermalVoltage,
+                                      CarrierStatisticsModel model = CarrierStatisticsModel::FermiDirac);
 
 BandgapNarrowingConfig bandgapNarrowingConfig(
     std::string modelName,

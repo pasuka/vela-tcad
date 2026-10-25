@@ -213,6 +213,14 @@
               "default": 1e-07
             }
           }
+        },
+        "coupled_operator": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "bvmethods_tri3_qf"
+          ],
+          "description": "Explicit coupled DD operator; BVMethods requires its documented Joyce-Dixon, Tri3 and transport contract."
         }
       },
       "required": [

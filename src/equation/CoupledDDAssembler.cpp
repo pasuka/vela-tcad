@@ -3,6 +3,7 @@
 #include "vela/equation/experimental/PopulationCapture.h"
 #include "vela/equation/experimental/AssemblyAudit.h"
 #include "vela/equation/SplitDDRuntime.h"
+#include "vela/equation/BvMethodsCoupledRuntime.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/physics/NonlocalPathSourceAssembly.h"
 #include "vela/discretization/StableSGDerivative.h"
@@ -462,7 +463,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , compensatedEqualNiFlux_(
           bandgapNarrowingConfig.equalNiFluxEvaluation ==
               "compensated_log_expm1")
-    , carrierStatistics_(std::move(carrierStatistics))
+    , carrierStatistics_(carrierStatistics)
     , electronQuantumPotentialConfig_(electronQuantumPotential)
     , electronQuantumPotential_V_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
     , ni_(detail::buildValidatedEffectiveNodeNi(
@@ -471,7 +472,7 @@ CoupledDDAssembler::CoupledDDAssembler(
           matdb,
           doping,
           bandgapNarrowingConfig,
-          Vt))
+          Vt, carrierStatisticsModel(carrierStatistics)))
     , Nc_(detail::buildNodeDensityOfStates(
           mesh, matdb, Vt * constants::q / constants::kb, true))
     , Nv_(detail::buildNodeDensityOfStates(
@@ -1512,6 +1513,28 @@ VectorXd CoupledDDAssembler::holeDensity(const VectorXd& x) const
     return p;
 }
 
+std::pair<VectorXd, VectorXd> CoupledDDAssembler::carrierDensityTangent(
+    const VectorXd& x, const VectorXd& direction) const
+{
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (splitDDEnabled_ || x.size() != 3*N || direction.size() != x.size())
+        throw std::invalid_argument("carrierDensityTangent requires classical 3*N QF coordinates");
+    const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    VectorXd dn(N), dp(N);
+    for (int i = 0; i < N; ++i) {
+        const Real psi = x(psiOffset()+i)*scale;
+        const Real qn = x(phinOffset()+i)*scale;
+        const Real qp = x(phipOffset()+i)*scale;
+        dn(i) = electronDensityDerivativeEtaAt(i,
+            psi-electronQuasiFermiReferenceAt(i), qn) *
+            (direction(psiOffset()+i)-direction(phinOffset()+i))*scale/Vt_;
+        dp(i) = holeDensityDerivativeEta(ni_[i], Nv_[i],
+            psi-holeQuasiFermiReferenceAt(i), qp, Vt_, carrierStatisticsModel_) *
+            (direction(phipOffset()+i)-direction(psiOffset()+i))*scale/Vt_;
+    }
+    return {std::move(dn), std::move(dp)};
+}
+
 bool CoupledDDAssembler::hasPositiveFiniteCarriers(const VectorXd& x) const
 {
     const VectorXd n = electronDensity(x);
@@ -1811,6 +1834,10 @@ VectorXd CoupledDDAssembler::residualImpl(
     if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
         throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
 
+    if(auto runtime=bvMethodsRuntime()) {
+        if(substitution || nonlocal)throw std::invalid_argument("BVMethods feedback/nonlocal substitution unqualified");
+        return runtime->residual(x,bcs);
+    }
     if(auto split=splitRuntime()) {
         if(substitution || nonlocal)throw std::invalid_argument("Split DD feedback/nonlocal substitution is unqualified");
         return split->residual(x,bcs);
@@ -2137,8 +2164,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const Real driftPotential = electronDpsi + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    Nc_[idxI] * fermiDiracHalf(etaI),
-                    Nc_[idxJ] * fermiDiracHalf(etaJ),
+                    Nc_[idxI] * fermiDiracHalf(etaI, carrierStatisticsModel_),
+                    Nc_[idxJ] * fermiDiracHalf(etaJ, carrierStatisticsModel_),
                     etaI, etaJ, driftPotential,
                     phin_i, phin_j, Vt_, coef);
             } else {
@@ -2533,6 +2560,10 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
         throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
 
+    if(auto runtime=bvMethodsRuntime()) {
+        if(substitution)throw std::invalid_argument("BVMethods feedback substitution unqualified");
+        return runtime->terms(x,bcs,includeImpactIonization);
+    }
     if(auto split=splitRuntime()) {
         if(substitution)throw std::invalid_argument("Split DD feedback diagnostics are unqualified");
         return split->terms(x,bcs);
@@ -2764,8 +2795,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                 const Real drift = (electronPsi_j - electronPsi_i) + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    Nc_[idxI] * fermiDiracHalf(etaI),
-                    Nc_[idxJ] * fermiDiracHalf(etaJ),
+                    Nc_[idxI] * fermiDiracHalf(etaI, carrierStatisticsModel_),
+                    Nc_[idxJ] * fermiDiracHalf(etaJ, carrierStatisticsModel_),
                     etaI, etaJ, drift, phin_i, phin_j, Vt_, coef);
             } else {
                 nFlux = sgElectronBoltzmannContinuityFlux(
@@ -2988,6 +3019,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
+    if(bvMethodsRuntime())throw std::invalid_argument("BVMethods element transport requires carrier-term diagnostics; legacy SG-edge diagnostics are unqualified");
     if(auto runtime=splitRuntime()) {
         auto edges=runtime->edges(x);
         for(auto& d:edges) {
@@ -3129,8 +3161,8 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                 + std::log(ni_[idxJ] / Nc_[idxJ]);
             electronDriftPotential += Vt_ * std::log(
                 (ni_[idxJ] / Nc_[idxJ]) / (ni_[idxI] / Nc_[idxI]));
-            electronFermiDensityI = Nc_[idxI] * fermiDiracHalf(electronEtaI);
-            electronFermiDensityJ = Nc_[idxJ] * fermiDiracHalf(electronEtaJ);
+            electronFermiDensityI = Nc_[idxI] * fermiDiracHalf(electronEtaI, carrierStatisticsModel_);
+            electronFermiDensityJ = Nc_[idxJ] * fermiDiracHalf(electronEtaJ, carrierStatisticsModel_);
             electronGeneralizedEinsteinFactor = sgGeneralizedEinsteinFactor(
                 electronFermiDensityI, electronFermiDensityJ,
                 electronEtaI, electronEtaJ);
@@ -3882,6 +3914,7 @@ VectorXd CoupledDDAssembler::impactIonizationSourceResidual(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
+    if(auto runtime=bvMethodsRuntime())return runtime->avalancheResidual(x,bcs);
     const int N = static_cast<int>(mesh_.numNodes());
     if (x.size() != 3 * N) {
         throw std::invalid_argument(
@@ -3903,6 +3936,7 @@ SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
+    if(auto runtime=bvMethodsRuntime())return runtime->avalancheJacobian(x,bcs);
     const int N = static_cast<int>(mesh_.numNodes());
     if (x.size() != 3 * N) {
         throw std::invalid_argument(
@@ -4216,6 +4250,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
+    if(auto runtime=bvMethodsRuntime())return runtime->jacobian(x,bcs);
     ScopedPerformanceTimer timer("dd.jacobian");
     incrementPerformanceCounter("dd.jacobian_calls");
     const Index Nidx = mesh_.numNodes();
@@ -5552,7 +5587,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real psiRelative = electronPsi_i - electronReferenceI;
                 v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
                 v.density = electronDensityAt(idxI, psi_i - electronReferenceI, phin_i);
-                v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta);
+                v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxJ] : electronEndpoints[1],
@@ -5562,7 +5597,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real psiRelative = electronPsi_j - electronReferenceI;
                 v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
                 v.density = electronDensityAt(idxJ, psi_j - electronReferenceJ, phinJLocal);
-                v.fermiDensity = Nc_[idxJ] * fermiDiracHalf(v.eta);
+                v.fermiDensity = Nc_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
                 return v;
             });
             const Real driftPotential =
@@ -5662,7 +5697,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_i - holeReferenceI;
                 v.eta = (phip_i - psiRelative) / Vt_ + edgeKernel.holeLogNiNv0;
-                v.density = Nv_[idxI] * fermiDiracHalf(v.eta);
+                v.density = Nv_[idxI] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? holeNodes[idxJ] : holeEndpoints[1],
@@ -5671,7 +5706,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_j - holeReferenceI;
                 v.eta = (phip_j - psiRelative) / Vt_ + edgeKernel.holeLogNiNv1;
-                v.density = Nv_[idxJ] * fermiDiracHalf(v.eta);
+                v.density = Nv_[idxJ] * fermiDiracHalf(v.eta, carrierStatisticsModel_);
                 return v;
             });
             const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
@@ -7301,8 +7336,8 @@ SparseMatrixd CoupledDDAssembler::finiteDifferenceJacobian(
 
 std::string CoupledDDAssembler::impactIonizationConfigurationFingerprint() const
 {
-    return bvProcessConfigurationFingerprint(
-        mobilityConfig_, impactIonizationConfig_);
+    const auto base=bvProcessConfigurationFingerprint(mobilityConfig_, impactIonizationConfig_);
+    return scaling_.coupledOperator=="legacy" ? base : base+";coupled_operator="+scaling_.coupledOperator+";statistics="+carrierStatistics_.model;
 }
 
 std::string CoupledDDAssembler::impactIonizationActiveBranchFingerprint(

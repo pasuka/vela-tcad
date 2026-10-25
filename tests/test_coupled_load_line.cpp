@@ -5,6 +5,53 @@
 
 using namespace vela;
 
+TEST_CASE("Density update stopping keeps raw direction and requires load closure",
+          "[coupled_load_line][density_update_convergence]")
+{
+    // Constant row rescaling keeps the root but makes its raw residual large.
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x, Real){return VectorXd::Constant(1,1e12*(x(0)*x(0)-2.));};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    system.jacobian=[](const VectorXd& x,Real){SparseMatrixd J(1,1);J.insert(0,0)=2e12*x(0);return J;};
+    system.solveJacobian=[](const VectorXd& x,Real,const VectorXd& b,VectorXd& y){y=b/(2e12*x(0));return true;};
+    auto current=[](const VectorXd&,Real){return 0.;};
+    CoupledLoadLineConfig cfg; cfg.equationTolerance=1e-20; cfg.maxIterations=8;
+    DensityUpdateErrorEvaluator evaluator=[](const VectorXd&,const VectorXd& dx,const VectorXd& after,Real,Real){
+        DensityUpdateError e;e.valid=true;e.rms=1e5*std::abs(dx(0))/(std::abs(after(0))+1.);return e;};
+    ArclengthState seed{VectorXd::Constant(1,1.),0.};
+    const auto strict = CoupledLoadLineNewton(system,current,cfg).solve(seed,.1,1.);
+    REQUIRE_FALSE(strict.converged);
+    cfg.updateConvergence.mode="report";
+    const auto report = CoupledLoadLineNewton(system,current,cfg,{},evaluator).solve(seed,.1,1.);
+    REQUIRE(report.converged == strict.converged);
+    REQUIRE(report.state.x(0) == strict.state.x(0));
+    REQUIRE(report.iterations == strict.iterations);
+    cfg.updateConvergence.mode="enforce";
+    const auto update = CoupledLoadLineNewton(system,current,cfg,{},evaluator).solve(seed,.1,1.);
+    REQUIRE(update.converged); REQUIRE(update.convergenceReason=="coupled_density_update");
+    REQUIRE(update.updateError.valid); REQUIRE(update.updateError.rms<1.);
+    REQUIRE(update.equationResidualNorm>cfg.equationTolerance);
+    REQUIRE(update.state.x(0)==Catch::Approx(std::sqrt(2.)).epsilon(1e-9));
+    REQUIRE(std::abs(update.loadLineResidual_V)<=cfg.loadLineTolerance_V);
+    // A tiny damping factor cannot manufacture a small raw update metric.
+    cfg.dampingFactor=1e-8; cfg.maxIterations=1; cfg.equationTolerance=1e-20;
+    Real capturedRaw=0.,capturedApplied=0.;
+    auto observe=[&](const VectorXd& before,const VectorXd& dx,const VectorXd& after,Real,Real){
+        capturedRaw=dx(0);capturedApplied=after(0)-before(0);
+        DensityUpdateError e;e.valid=true;e.rms=1e5*std::abs(dx(0));return e;};
+    const auto damped=CoupledLoadLineNewton(system,current,cfg,{},observe).solve(seed,.1,1.);
+    REQUIRE_FALSE(damped.converged); REQUIRE(std::abs(capturedRaw)>.1);
+    REQUIRE(std::abs(capturedApplied)<1e-7);
+    // Even a small valid update never waives the external load equation.
+    auto tiny=[](const VectorXd&,const VectorXd&,const VectorXd&,Real,Real){
+        DensityUpdateError e;e.valid=true;e.rms=0.;return e;};
+    const auto openLoad=CoupledLoadLineNewton(system,current,cfg,{},tiny).solve(seed,.1,1.);
+    REQUIRE_FALSE(openLoad.converged);
+    REQUIRE_THROWS(CoupledLoadLineNewton(system,current,cfg));
+    cfg.updateConvergence.digits=16;
+    REQUIRE_THROWS(CoupledLoadLineNewton(system,current,cfg,{},tiny));
+}
+
 TEST_CASE("resistor analytic diode audits raw and representable applied directions",
           "[coupled_load_line][resistor_contract]")
 {

@@ -5894,7 +5894,8 @@ inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
                                               const MaterialDatabase& matdb,
                                               const DopingModel&      doping,
                                               const BandgapNarrowingConfig& config,
-                                              Real                    thermalVoltage)
+                                              Real                    thermalVoltage,
+                                              CarrierStatisticsModel statistics = CarrierStatisticsModel::FermiDirac)
 {
     const Real temperature_K = thermalVoltage * constants::q / constants::kb;
     std::vector<Real> ni_v = buildNodeNi(mesh, matdb, temperature_K);
@@ -5911,7 +5912,7 @@ inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
         if (config.fermiStatisticsCorrection && ni_v[i] > 0.0) {
             delta += fermiStatisticsBandgapCorrection(
                 doping.donors(i), doping.acceptors(i), Nc300[i], Nv300[i],
-                thermalVoltage300);
+                thermalVoltage300, statistics);
         }
         ni_v[i] = effectiveIntrinsicDensity(ni_v[i], thermalVoltage, delta);
     }
@@ -5925,7 +5926,8 @@ inline std::vector<Real> buildValidatedEffectiveNodeNi(
     const MaterialDatabase&        matdb,
     const DopingModel&             doping,
     const BandgapNarrowingConfig&  bandgapNarrowingConfig,
-    Real                           thermalVoltage)
+    Real                           thermalVoltage,
+    CarrierStatisticsModel statistics = CarrierStatisticsModel::FermiDirac)
 {
     validateDopingMeshSize(mesh, doping, context);
     return buildEffectiveNodeNi(
@@ -5933,7 +5935,7 @@ inline std::vector<Real> buildValidatedEffectiveNodeNi(
         matdb,
         doping,
         bandgapNarrowingConfig,
-        thermalVoltage);
+        thermalVoltage, statistics);
 }
 
 // ---------------------------------------------------------------------------

@@ -348,6 +348,7 @@ add_library(vela_core STATIC
     src/physics/SiliconThermalPhysics.cpp
     src/physics/IalInterfaceGeometry.cpp
     src/equation/IalElementMobility.cpp
+    src/equation/BvMethodsCoupledRuntime.cpp
     src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
@@ -612,6 +613,15 @@ endif()
 # ---------------------------------------------------------------------------
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
+
+# Explicit diagnostic build; not installed or included in normal builds.
+add_executable(vela_bvmethods_profile_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_profile_probe.cpp)
+target_link_libraries(vela_bvmethods_profile_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_full_sweep_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_full_sweep_probe.cpp)
+target_link_libraries(vela_bvmethods_full_sweep_probe PRIVATE vela_core)
 
 # ---------------------------------------------------------------------------
 # Native launcher `vela device ...` (sdevice front end, contract C9)
@@ -879,6 +889,12 @@ target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_carrier_statistics tests/test_carrier_statistics.cpp)
 target_link_libraries(test_carrier_statistics PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_joyce_dixon_contract tests/test_joyce_dixon_contract.cpp)
+target_link_libraries(test_joyce_dixon_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_bvmethods_av_contract tests/test_bvmethods_av_contract.cpp)
+target_link_libraries(test_bvmethods_av_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -1035,6 +1051,8 @@ vela_catch_discover_tests(test_split_dd_runtime)
 vela_catch_discover_tests(test_permittivity_assembly)
 vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
+vela_catch_discover_tests(test_joyce_dixon_contract)
+vela_catch_discover_tests(test_bvmethods_av_contract)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
 vela_catch_discover_tests(test_gummel_high_doping)
@@ -1122,6 +1140,11 @@ add_test(NAME pn2d_config_templates
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_config_templates.py)
 vela_set_windows_msys2_test_path(pn2d_config_templates)
+
+add_test(NAME pn2d_external_resistor_control
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_external_resistor_control.py)
+vela_set_windows_msys2_test_path(pn2d_external_resistor_control)
 
 add_test(NAME pn2d_variants
     COMMAND ${Python3_EXECUTABLE}
@@ -1813,6 +1836,12 @@ set_tests_properties(sentaurus_reference_workflows PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_reference_workflows)
 
+add_test(NAME bvmethods_stopping_control
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_stopping_control)
+set_tests_properties(bvmethods_stopping_control PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_stopping_control)
+
 add_test(NAME pn2d_bv_process_observability_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_pn2d_bv_process_contract
@@ -1889,3 +1918,8 @@ if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
             ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}")
     endif()
 endif()
+
+add_test(NAME bvmethods_profile_inputs
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_profile_inputs.py)
+vela_set_windows_msys2_test_path(bvmethods_profile_inputs)

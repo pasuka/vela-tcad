@@ -3,6 +3,7 @@
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/solver/LinearRefinement.h"
+#include "vela/solver/DensityUpdateConvergence.h"
 
 #include <Eigen/SparseLU>
 
@@ -63,6 +64,7 @@ struct CoupledLoadLineConfig {
     /// defect of the original unscaled system. Zero preserves the existing
     /// solve path. This is a linear accuracy control, not a nonlinear criterion.
     int directRefinementSteps = 0;
+    DensityUpdateConvergenceConfig updateConvergence;
 };
 
 inline Real coupledEffectiveEquationTolerance(
@@ -158,6 +160,8 @@ struct CoupledLoadLineResult {
     int iterations = 0;
     int lineSearchAttempts = 0;
     std::string failureReason;
+    std::string convergenceReason;
+    DensityUpdateError updateError;
     struct IterationTrace {
         struct TrialAudit {
             Real alpha = 0.0;
@@ -218,6 +222,7 @@ struct CoupledLoadLineResult {
         VectorXd rawPredictedDeviceResidual;
         Real componentwiseBackwardError = std::numeric_limits<Real>::quiet_NaN();
         std::vector<TrialAudit> trials;
+        DensityUpdateError updateError;
     };
     std::vector<IterationTrace> trace;
 };
@@ -237,12 +242,17 @@ public:
     CoupledLoadLineNewton(ArclengthSystem system,
                           CurrentFunctional current,
                           CoupledLoadLineConfig config,
-                          ArclengthScalarFunctional currentLinearization = {})
+                          ArclengthScalarFunctional currentLinearization = {},
+                          DensityUpdateErrorEvaluator updateErrorEvaluator = {})
         : system_(std::move(system))
         , current_(std::move(current))
         , config_(std::move(config))
         , currentLinearization_(std::move(currentLinearization))
+        , updateErrorEvaluator_(std::move(updateErrorEvaluator))
     {
+        validateDensityUpdateConvergence(config_.updateConvergence);
+        if (config_.updateConvergence.mode != "off" && !updateErrorEvaluator_)
+            throw std::invalid_argument("coupled update convergence requires a density evaluator");
         if (!system_.residual || !system_.parameterDerivative ||
             !system_.solveJacobian || !current_) {
             throw std::invalid_argument(
@@ -377,13 +387,18 @@ public:
                 result.failureReason = "non-finite coupled residual";
                 return result;
             }
-            if (result.equationResidualNorm <=
-                    result.effectiveEquationTolerance &&
+            result.trace.back().updateError = result.updateError;
+            const bool residualConverged = result.equationResidualNorm <=
+                result.effectiveEquationTolerance;
+            const bool updateConverged = config_.updateConvergence.mode == "enforce" &&
+                result.updateError.valid && result.updateError.rms < 1.;
+            if ((residualConverged || updateConverged) &&
                 std::abs(result.loadLineResidual_V) <=
                     config_.loadLineTolerance_V) {
                 result.inexactConvergenceUsed =
-                    result.equationResidualNorm > config_.equationTolerance;
+                    residualConverged && result.equationResidualNorm > config_.equationTolerance;
                 result.converged = true;
+                result.convergenceReason = residualConverged ? "coupled_residuals" : "coupled_density_update";
                 return result;
             }
             if (iter == config_.maxIterations)
@@ -574,6 +589,9 @@ public:
                 deltaState.cwiseAbs().maxCoeff(&rawStateUpdateIndex);
             result.trace.back().rawStateUpdateIndex = rawStateUpdateIndex;
             result.trace.back().rawVoltageUpdate_V = deltaVoltage;
+            VectorXd rawMetricDirection;
+            const Real rawMetricVoltageDirection = deltaVoltage;
+            if (config_.updateConvergence.mode != "off") rawMetricDirection = deltaState;
             if (std::abs(deltaVoltage) > config_.maxVoltageUpdate_V) {
                 const Real scale =
                     config_.maxVoltageUpdate_V / std::abs(deltaVoltage);
@@ -651,6 +669,15 @@ public:
                         }
                     }
                     if (std::isfinite(trialMerit) && acceptedByPolicy) {
+                        if (config_.updateConvergence.mode != "off") {
+                            try {
+                                result.updateError = updateErrorEvaluator_(result.state.x,
+                                    rawMetricDirection, trial.x, trial.lambda, rawMetricVoltageDirection);
+                            } catch (const std::exception&) {
+                                // Invalid reports never authorize update-based convergence.
+                                result.updateError = {};
+                            }
+                        }
                         result.state = std::move(trial);
                         result.trace.back().acceptedAlpha = alpha;
                         accepted = true;
@@ -1219,6 +1246,7 @@ private:
     CurrentFunctional current_;
     CoupledLoadLineConfig config_;
     ArclengthScalarFunctional currentLinearization_;
+    DensityUpdateErrorEvaluator updateErrorEvaluator_;
 };
 
 } // namespace vela

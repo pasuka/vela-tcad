@@ -1143,16 +1143,24 @@ NewtonGlobalContinuityClosureEvaluation evaluateGlobalContinuityClosure(
 
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i];
-        if (electronContact[i])
+        if (electronContact[i]) {
             evaluation.electron.contactFlux += row.electronFlux;
-        else
+            evaluation.electron.contactNodeFluxAbsSum += std::abs(row.electronFlux);
+        } else {
             evaluation.electron.integratedSource +=
                 row.electronRecombination + row.electronImpact;
-        if (holeContact[i])
+            evaluation.electron.integratedSourceAbsSum +=
+                std::abs(row.electronRecombination + row.electronImpact);
+        }
+        if (holeContact[i]) {
             evaluation.hole.contactFlux += row.holeFlux;
-        else
+            evaluation.hole.contactNodeFluxAbsSum += std::abs(row.holeFlux);
+        } else {
             evaluation.hole.integratedSource +=
                 row.holeRecombination + row.holeImpact;
+            evaluation.hole.integratedSourceAbsSum +=
+                std::abs(row.holeRecombination + row.holeImpact);
+        }
     }
 
     auto finishCarrier = [&](NewtonGlobalContinuityCarrierClosure& carrier) {
@@ -1161,6 +1169,7 @@ NewtonGlobalContinuityClosureEvaluation evaluateGlobalContinuityClosure(
         carrier.qualified = sourceMagnitude >= cfg.sourceFloor;
         const Real scale = std::max({
             std::abs(carrier.contactFlux), sourceMagnitude, cfg.sourceFloor});
+        carrier.netScale = scale;
         carrier.ratio = scale > 0.0 ? std::abs(carrier.mismatch) / scale : 0.0;
         if (carrier.qualified && carrier.ratio > cfg.tolerance)
             evaluation.satisfied = false;
@@ -1809,6 +1818,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.poissonResidualPrecision = json.value("poisson_residual_precision", cfg.poissonResidualPrecision);
     cfg.stableMeritComparison = json.value("stable_merit_comparison", cfg.stableMeritComparison);
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
+    cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
+    if(cfg.coupledOperator!="legacy" && cfg.coupledOperator!="bvmethods_tri3_qf")
+        throw std::invalid_argument("Unknown coupled_operator; expected legacy or bvmethods_tri3_qf");
     cfg.exactDirichletUpdates = json.value("exact_dirichlet_updates", cfg.exactDirichletUpdates);
     if (cfg.linearRefinementIterations < 0 || cfg.linearRefinementIterations > 10)
         throw std::invalid_argument("linear_refinement_iterations must be between 0 and 10.");
@@ -2816,6 +2828,14 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             "outer_relaxation_max].");
     }
     (void)usesFermiDirac(cfg.carrierStatistics);
+    if(cfg.coupledOperator=="bvmethods_tri3_qf") {
+        if(cfg.splitDDState || cfg.electronQuantumPotential.enabled)
+            throw std::invalid_argument("BVMethods profile requires ordinary classical QF coordinates");
+        if(cfg.carrierStatistics.model!="fermi_dirac_joyce_dixon")
+            throw std::invalid_argument("BVMethods profile requires explicit Joyce-Dixon statistics");
+    } else if(cfg.carrierStatistics.model=="fermi_dirac_joyce_dixon") {
+        throw std::invalid_argument("Joyce-Dixon Newton dispatch requires bvmethods_tri3_qf");
+    }
 
     validateNumericalPrecisionOptions(cfg);
     return cfg;
@@ -2995,6 +3015,7 @@ NewtonSolver::NewtonSolver(
 DDScalingSpec NewtonSolver::buildScalingSpec() const
 {
     DDScalingSpec scaling;
+    scaling.coupledOperator = cfg_.coupledOperator;
     scaling.regionResolvedInterfaceAssembly =
         cfg_.regionResolvedInterfaceAssembly;
     scaling.poissonChargeVolumePolicy = cfg_.poissonChargeVolumePolicy;
@@ -3630,6 +3651,81 @@ NewtonSolver::makeArclengthConvergenceEvaluator(const std::string& activeContact
     };
 }
 
+DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
+    const std::string& activeContact,
+    const DensityUpdateConvergenceConfig& config) const
+{
+    validateDensityUpdateConvergence(config);
+    if (cfg_.splitDDState || cfg_.electronQuantumPotential.enabled)
+        throw std::invalid_argument("density update stopping requires classical isothermal DD");
+    auto assembler = makeArclengthAssembler();
+    std::size_t aliases = 0;
+    bool foundContact = false;
+    for (const auto& contact : mesh_.contacts()) {
+        if (contact.name == activeContact) {
+            aliases = contact.node_ids.size();
+            foundContact = true;
+        }
+    }
+    if (!foundContact || aliases == 0)
+        throw std::invalid_argument("density update stopping requires a named nonempty contact");
+    const Real potentialScale = assembler->usesScaledState() ? assembler->potentialScale() : 1.;
+    const Real densityToCm3 = cfg_.inputScaling.unitSystem().concentrationM3PerInternal()*1e-6;
+    return [this, assembler, activeContact, config, aliases, potentialScale, densityToCm3](
+        const VectorXd& before, const VectorXd& direction, const VectorXd& after,
+        Real voltageAfter, Real rawVoltageDirection) {
+        DensityUpdateError result;
+        const int N = assembler->numNodes();
+        if (before.size() != 3*N || direction.size() != 3*N || after.size() != 3*N ||
+            !before.allFinite() || !direction.allFinite() || !after.allFinite()) return result;
+        // Some contact laws change the free-carrier mask with applied bias.
+        // Do not freeze a zero-bias mask for an entire continuation sweep.
+        auto biases = contactBiases_;
+        biases[activeContact] = voltageAfter;
+        const auto bcs = buildBoundaryConditions(*assembler, biases);
+        std::vector<bool> electronFree(N, true), holeFree(N, true);
+        for (const auto& [node, value] : bcs.phin) electronFree[node] = false;
+        for (const auto& [node, value] : bcs.phip) holeFree[node] = false;
+        const auto [dn, dp] = assembler->carrierDensityTangent(before, direction);
+        const auto n = assembler->electronDensity(after), p = assembler->holeDensity(after);
+        std::array<long double, 4> squares{};
+        bool valid = true;
+        const long double amplification = std::pow(10.L, config.digits);
+        auto add = [&](int block, Real state, Real delta, Real reference) {
+            const long double normalized = amplification * static_cast<long double>(delta) /
+                (std::abs(static_cast<long double>(state)) + reference);
+            valid = valid && std::isfinite(state) && std::isfinite(delta) &&
+                std::isfinite(normalized);
+            squares[block] += normalized*normalized;
+            ++result.counts[block];
+        };
+        for (int i=0; i<N; ++i) {
+            add(0, after(i)*potentialScale, direction(i)*potentialScale,
+                config.potentialReference_V);
+            if (assembler->intrinsicDensity()[i] > 0. && electronFree[i]) {
+                valid = valid && n(i)>0.;
+                add(1, n(i)*densityToCm3, dn(i)*densityToCm3, config.electronReference_cm3);
+            }
+            if (assembler->intrinsicDensity()[i] > 0. && holeFree[i]) {
+                valid = valid && p(i)>0.;
+                add(2, p(i)*densityToCm3, dp(i)*densityToCm3, config.holeReference_cm3);
+            }
+        }
+        for (std::size_t i=0; i<aliases; ++i)
+            add(3, voltageAfter, rawVoltageDirection, config.contactReference_V);
+        long double total = 0.;
+        std::size_t count = 0;
+        for (int k=0; k<4; ++k) {
+            count += result.counts[k]; total += squares[k];
+            result.blockRms[k] = result.counts[k] ?
+                static_cast<Real>(std::sqrt(squares[k]/result.counts[k])) : 0.;
+        }
+        result.rms = static_cast<Real>(std::sqrt(total/count));
+        result.valid = valid && std::isfinite(result.rms);
+        return result;
+    };
+}
+
 ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     const std::string& contactName,
     Real currentScale) const
@@ -3672,15 +3768,15 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     functional.value = [assembler, residualWeights, scale](
                            const VectorXd& x, Real) {
         const VectorXd residual =
-            assembler->residual(x, CoupledDDBoundaryConditions{});
+            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, CoupledDDBoundaryConditions{});
         return scale * residualWeights.dot(residual);
     };
     functional.linearize = [assembler, residualWeights, scale](
                                const VectorXd& x, Real) {
         const CoupledDDBoundaryConditions noBoundaryConditions;
-        const VectorXd residual = assembler->residual(x, noBoundaryConditions);
+        const VectorXd residual = assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, noBoundaryConditions);
         const SparseMatrixd jacobian =
-            assembler->assembleJacobian(x, noBoundaryConditions);
+            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportJacobian(x):assembler->assembleJacobian(x, noBoundaryConditions);
         ArclengthScalarLinearization result;
         result.value = scale * residualWeights.dot(residual);
         result.stateDerivative =
@@ -3699,7 +3795,7 @@ Real NewtonSolver::evaluateStateTerminalCurrent(const DDSolution& state,
     if(!contact)throw std::invalid_argument("Unknown terminal current contact");
     auto assembler=makeArclengthAssembler();
     const auto x=packReferencedSolution(*assembler,state,{});
-    const auto residual=assembler->residual(x,{});const int N=mesh_.numNodes();
+    const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x,{});const int N=mesh_.numNodes();
     long double sum=0;
     for(auto i:contact->node_ids)sum+=static_cast<long double>(residual(2*N+i))-static_cast<long double>(residual(N+i));
     return static_cast<Real>(sum*static_cast<long double>(constants::q)*assembler->continuityResidualScale()*currentScale);

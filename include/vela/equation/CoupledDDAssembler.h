@@ -30,6 +30,7 @@ struct NonlocalPairSources;
 }
 
 class SplitDDRuntime;
+class BvMethodsCoupledRuntime;
 
 struct CoupledDDState {
     VectorXd psi;
@@ -282,6 +283,9 @@ struct CarrierDiagonalFloorRegularizationConfig {
 };
 
 class CoupledDDAssembler {
+    friend class BvMethodsCoupledRuntime;
+    mutable std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime_;
+    std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime() const;
     struct FixedJacobianData;
 public:
     /// Single-owner sequential cache. Stores no numeric Jacobian or state.
@@ -294,6 +298,10 @@ public:
     void setStructureCache(std::shared_ptr<StructureCache> cache) {
         structureCache_ = std::move(cache);
     }
+    bool usesBvMethodsOperator() const { return scaling_.coupledOperator=="bvmethods_tri3_qf"; }
+    /// Source-free element transport for terminal totals and their derivative.
+    VectorXd bvMethodsTransportResidual(const VectorXd& x) const;
+    SparseMatrixd bvMethodsTransportJacobian(const VectorXd& x) const;
     void setFermiNodeCache(bool enabled) { fermiNodeCacheEnabled_ = enabled; }
     // Relative column perturbations for the legacy edge transport/source Jacobian.
     // These do not alter element-box derivatives or the physical residual.
@@ -448,6 +456,10 @@ public:
 
     VectorXd electronDensity(const VectorXd& x) const;
     VectorXd holeDensity(const VectorXd& x) const;
+    /// Analytic physical-population tangents in the same units as density().
+    /// Uses the actual statistics/quantum/reference mapping of the assembler.
+    std::pair<VectorXd, VectorXd> carrierDensityTangent(
+        const VectorXd& x, const VectorXd& direction) const;
     std::vector<CoupledDDCarrierTermDiagnostic> carrierContinuityTermDiagnostics(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;

@@ -7,7 +7,8 @@
 namespace vela {
 
 struct CarrierStatisticsConfig {
-    /// "boltzmann" or "fermi_dirac".  Boltzmann remains the compatibility default.
+    /// boltzmann, fermi_dirac (defining integral), or fermi_dirac_joyce_dixon.
+    /// Boltzmann remains the compatibility default.
     std::string model = "boltzmann";
 };
 
@@ -23,6 +24,7 @@ struct CarrierStatisticsConfig {
 enum class CarrierStatisticsModel : std::uint8_t {
     Boltzmann,
     FermiDirac,
+    FermiDiracJoyceDixon,
 };
 
 struct EquilibriumCarrierState {
@@ -57,7 +59,7 @@ bool usesFermiDirac(const CarrierStatisticsConfig& config);
 
 constexpr bool usesFermiDirac(CarrierStatisticsModel model) noexcept
 {
-    return model == CarrierStatisticsModel::FermiDirac;
+    return model != CarrierStatisticsModel::Boltzmann;
 }
 
 /**
@@ -74,6 +76,13 @@ Real fermiDiracHalfDerivative(Real eta);
 /// Second derivative of the same high-accuracy representation.
 Real fermiDiracHalfSecondDerivative(Real eta);
 Real inverseFermiDiracHalf(Real value);
+
+/// All four operations resolve the same explicitly selected approximation.
+Real fermiDiracHalf(Real eta, CarrierStatisticsModel model);
+Real fermiDiracHalfDerivative(Real eta, CarrierStatisticsModel model);
+Real fermiDiracHalfSecondDerivative(Real eta, CarrierStatisticsModel model);
+Real inverseFermiDiracHalf(Real value, CarrierStatisticsModel model);
+
 
 /**
  * @brief Boltzmann carrier statistics.

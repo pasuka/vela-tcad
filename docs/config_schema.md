@@ -29,6 +29,13 @@ built-ins match the library's no-BGN 300 K scalar snapshot as of WP13; see
 Decks without `materials_file`, and omitted fields in partial overrides, use
 these defaults. Explicit material fields still take precedence.
 
+For Formula-1 electron DOS masses, an active OldSlotboom constant bandgap
+offset enters both gaps in `mt = a*(Eg(0)+dEg0)/(Eg(T)+dEg0)`, as well as the
+intrinsic-density exponent. Without that model the offset is zero. The emitted
+`bandgap_eV` remains the unshifted Varshni gap; the material report records the
+two effective DOS gaps separately. Constants remain CODATA 2018. See the
+[native parameter audit](validation/bvmethods_material_export_2026-10-23.md).
+
 For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested
 `vtk_fields`, exact `vtk_bias_points`, `vtk_field_data` metadata and
 `csv_all_contacts`. Current-target/BreakCriteria termination uses the documented
@@ -1529,8 +1536,12 @@ The coupled Newton drift-diffusion solver accepts either form below:
 "carrier_statistics": { "model": "fermi_dirac" }
 ```
 
-Supported values are `boltzmann` (the compatibility default) and
-`fermi_dirac`. The Fermi-Dirac selection is one atomic physics path: carrier
+Supported values are `boltzmann` (the compatibility default),
+`fermi_dirac`, and the explicitly restricted `fermi_dirac_joyce_dixon`.
+The last option requires `solver.coupled_operator: "bvmethods_tri3_qf"`;
+see [the operator contract](bvmethods_operator_contract.md) for its supported
+models, coordinates and diagnostics. `solver.coupled_operator` otherwise
+defaults to `legacy`. The defining-integral Fermi-Dirac selection is one atomic physics path: carrier
 densities use the normalized complete integral `F_{1/2}`, ideal Ohmic contacts
 solve charge neutrality with the same statistics, continuity edges use the
 generalized Einstein/Scharfetter-Gummel operator, and terminal-current
@@ -2355,18 +2366,21 @@ and reverse operation:
   Masetti mobility, `cell_reconstructed_total_impurity`, SRH plus Old
   Slotboom, and impact ionization disabled.
 - `configs/templates/pn2d_bv.template.json`: reverse 0---20 V BV,
-  `masetti_field`, `net_doping`, SRH plus Old Slotboom, and
+  `masetti_field`, `total_impurity` (`Nd + Na`), SRH plus Old Slotboom, and
   Van Overstraeten impact ionization.
 
-The PN2D BV version 3 default is the qualified atomic
+PN2D BV version 4 corrects impurity scattering from net doping to total
+impurity. The external-resistor validation entry rejects a net-doping basis.
+Version 4 retains the version-3 atomic
 `element_edge_sg_gss_laux` profile. Rendering it binds element-edge
 SG/GSS-Laux current support, element-vertex box source mapping, Bernoulli
 midpoint density, mixed-Voronoi node volumes, and
 `mesh_geometry.require_non_obtuse=true`. Use the
 `legacy_cell_reconstructed` profile for the complete cell-reconstructed and
 barycentric rollback. The generator rejects partially mixed profiles. This
-template policy does not change the global barycentric parser default or the
-PN2D IV template.
+template policy does not change the global barycentric or mobility parser
+defaults, or the PN2D IV template. Version-3 curve qualification does not by
+itself qualify version 4; see the current PN2D validation reference.
 
 The Sentaurus BVmethods NMOS boundary-control equivalents are stored as
 separate templates because their sweep voltage has different semantics from a
@@ -2634,7 +2648,10 @@ load line. The supported mode is `series_resistor`. `resistance_ohm_um` uses
 OuterVoltage = InnerVoltage + current_direction * Iterminal * Rseries
 ```
 
-`bias_points` (or `start/stop/step`) are outer/source voltages. The nonlinear
+`bias_points` (or `start/stop/step`) are outer/source voltages. The
+targets may increase or decrease monotonically, including negative PN2D anode
+biases. A reversal of sweep direction within one target list is rejected.
+The nonlinear
 device boundary remains the inner voltage and is solved repeatedly until
 `load_line_residual_V` meets `residual_tolerance_V`. `current_direction` is
 `+1` for the BVmethods NMOS drain convention and may be `-1` for an oppositely
@@ -2698,6 +2715,66 @@ Global closure retains the standard source-floor qualification rule; the JSON
 records each carrier's `global_*_qualified` flag. An unqualified carrier does
 not establish a strict independent ratio pass. Commas and quotes in diagnostics
 are escaped as CSV fields so subsequent columns remain aligned.
+
+`sweep.external_circuit.coupled_update_convergence` is an opt-in classical
+isothermal DD stopping experiment for `solver: coupled_newton`:
+
+```json
+"coupled_update_convergence": {
+  "mode": "report",
+  "digits": 5,
+  "potential_reference_V": 0.025852,
+  "electron_reference_cm3": 1e10,
+  "hole_reference_cm3": 1e10,
+  "contact_reference_V": 0.025852,
+  "diagnostic_csv": "density_update.csv"
+}
+```
+
+Modes are `off` (default), `report` (observations without changing stopping),
+and `enforce` (device residual **or** normalized density-update RMS < 1).
+Both branches still require the original load-line and terminal KCL checks;
+configured enforced carrier-row/global-closure checks also still apply.
+No conservation mode is automatically changed. To study Newton stopping
+separately, explicitly configure the conservation checks as `report` in the
+experimental input; this does not qualify a formerly rejected state under
+the old enforced contract.
+
+The RMS numerator uses the **raw linear direction before all voltage/QF
+limits and backtracking**, transformed analytically from QF to density through
+the assembler's actual carrier statistics. Its denominator uses the accepted
+physical state plus the declared reference. Potential entries include every
+node, carrier entries include free semiconductor nodes, and the active
+contact contributes one voltage entry per contact-node alias. These are metric
+entries, not independent linear unknowns. Density references are always cm^-3;
+potential/contact references are always V. `digits` must be in [0,15], with
+finite positive references. Split DD and quantum formulations are unsupported.
+No accepted update, a failed evaluator or nonfinite operands cannot authorize
+the update branch; tiny applied steps do not shrink its raw numerator.
+
+This follows the observed BVmethods factor-one density/potential error
+composition, but does **not** implement the native concentration-primary
+iteration, protection scheme, general damping order or native RHS scaling.
+The residual branch remains Vela's device infinity norm and
+`coupled_equation_tolerance`, not Sentaurus `RhsMin`. Accepted points identify
+`coupled_density_update` versus `coupled_residuals`; the diagnostic CSV records
+per-block RMS, counts and residuals for all attempts. Relative CSV paths resolve
+from the config directory. See the [observed native contract](validation/contracts/bvmethods_update_error_s0.v1.json).
+In that CSV, `iteration=k` identifies the current accepted state (zero is the
+seed). For k>0 its RMS uses the raw direction computed at k-1 and the state at
+k; `accepted_alpha` describes the next transition k to k+1. It is not the alpha
+of the RMS numerator. `convergence_reason` is the final stopping reason of the
+whole attempt, repeated on its rows, not a per-row declaration of convergence.
+
+With global closure reporting enabled, the point CSV additionally records
+`global_{electron,hole}_{absolute_mismatch,net_scale,contact_node_flux_abs_sum,source_abs_sum}`.
+These retain the assembler's continuity-row units. The contact-node sum is not
+the sum of absolute terminal currents. Coupled `validation_diagnostics` separately
+records the latter as `terminal_{electron,hole}_current_abs_sum_A_per_um`.
+The original net-source-normalized ratio and its qualification remain unchanged.
+See the [BVMethods stopping control](validation/bvmethods_stopping_control_2026-10-24.md)
+for the same-state residual-floor test, physical continuity-unit reconstruction,
+and bounded Release scans. These do not establish full native RHS equivalence.
 With `newton_history.rejected_state_directory`, physically rejected coupled
 candidates are saved as `coupled_physical_<attempt>.h5`; these are never seeds
 for accepted continuation. Earlier CSVs without the checked flag do not prove
