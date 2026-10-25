@@ -81,7 +81,8 @@ def pn2d_silicon_closed_form(fold_old_slotboom: bool, T: float = 300.0) -> dict:
     eg0, alpha, beta, tpar = 1.16964, 4.73e-4, 636.0, 0.0
     eg_zero = eg0 + alpha * tpar ** 2 / (beta + tpar)
     eg = eg_zero - alpha * T * T / (beta + T)
-    me = ((6.0 * 0.1905 * eg_zero / eg) ** 2 * 0.9163) ** (1.0 / 3.0)
+    offset = -0.01595 if fold_old_slotboom else 0.0
+    me = ((6.0 * 0.1905 * (eg_zero + offset) / (eg + offset)) ** 2 * 0.9163) ** (1.0 / 3.0)
     num = 0.443587 + 0.003609528 * T + 0.0001173515 * T ** 2 + 1.263218e-6 * T ** 3 + 3.025581e-9 * T ** 4
     den = 1.0 + 0.004683382 * T + 0.0002286895 * T ** 2 + 7.469271e-7 * T ** 3 + 1.727481e-9 * T ** 4
     mh = (num / den) ** (2.0 / 3.0)
@@ -119,16 +120,20 @@ class Pn2dSiliconTest(unittest.TestCase):
         for key, field in (("bandgap_eV", "bandgap_eV"), ("Nc", "conduction_band_density_of_states_cm3"),
                            ("Nv", "valence_band_density_of_states_cm3"), ("ni", "intrinsic_carrier_density_cm3")):
             self.assertAlmostEqual(expected[key] / self.si[field], 1.0, delta=1e-12, msg=field)
-        # dEg0(OldSlotboom) lives in ni only; the gap stays the plain Varshni value.
+        # The public gap stays Varshni; dEg0 enters the DOS mass and ni separately.
         self.assertAlmostEqual(1.1241592307692307, self.si["bandgap_eV"], delta=1e-15)
-        self.assertIn("dEg0(OldSlotboom)=-0.01595 eV folded into ni", self.si["provenance"])
+        self.assertIn("dEg0(OldSlotboom)=-0.01595 eV applied to electron DOS mass and ni", self.si["provenance"])
 
-    def test_old_slotboom_fold_is_the_only_ni_difference(self) -> None:
+    def test_old_slotboom_changes_electron_dos_but_not_hole_dos(self) -> None:
         ir = _ir(IV_IR)
         without = mat.emit_materials(PN2D_PAR, active_models=["DopingDependence", "SRH"], temperature_K=300.0,
                                      mesh_materials=["Si"])
-        ratio = self.si["intrinsic_carrier_density_cm3"] / _material(without, "Si")["intrinsic_carrier_density_cm3"]
-        self.assertAlmostEqual(math.exp(0.01595 / (2.0 * KT300)), ratio, delta=1e-12)
+        plain = _material(without, "Si")
+        nc_ratio = self.si["conduction_band_density_of_states_cm3"] / plain["conduction_band_density_of_states_cm3"]
+        self.assertGreater(nc_ratio, 1.)
+        self.assertEqual(self.si["valence_band_density_of_states_cm3"], plain["valence_band_density_of_states_cm3"])
+        ratio = self.si["intrinsic_carrier_density_cm3"] / plain["intrinsic_carrier_density_cm3"]
+        self.assertAlmostEqual(math.sqrt(nc_ratio)*math.exp(0.01595 / (2.0 * KT300)), ratio, delta=1e-12)
         self.assertEqual(ir["physics"]["effective"], self.result.report["effective_models"])
 
     def test_library_dump_needs_no_lossy_flag(self) -> None:
@@ -179,10 +184,11 @@ class ReferenceNiTest(unittest.TestCase):
     2026-06-13, commit e2d9a1c8) but did not record the computation; it also
     equals the Sentaurus contact-edge ``ni_eff`` (~1.65562e10, doping 1e17)
     divided by the OldSlotboom factor at Nref, i.e. Sentaurus' internal value.
-    No evaluation of the documented laws with CODATA (1969-2018), rounded or
-    Sentaurus (q = 1.602192e-19) constants reproduces it closer than ~2.7e-4.
-    The emitter therefore pins the closed form at 1e-12 (``Pn2dSiliconTest``)
-    and checks the reference at 5e-4, freezing the observed deviation.
+    The 2026-10-23 native material export identified the missing dEg0 term in
+    the electron DOS mass. With that fixed and CODATA 2018 constants retained,
+    the deviation falls to about 5.32e-6. The historical literal stays frozen;
+    tighten its former 5e-4 guard to 1e-5. Fresh native-derived quantities are
+    checked independently below, rather than treating this old literal as exact.
     """
 
     def test_reference_ni_within_documented_tolerance(self) -> None:
@@ -190,8 +196,46 @@ class ReferenceNiTest(unittest.TestCase):
         ref_ni = next(m for m in reference["materials"] if m["name"] == "Si")["ni"]
         si = _material(_emit(PN2D_PAR, IV_IR), "Si")
         deviation = si["intrinsic_carrier_density_cm3"] / ref_ni - 1.0
-        self.assertLess(abs(deviation), 5e-4, f"ni deviates {deviation:.3e} from the IV reference")
-        self.assertAlmostEqual(-2.74e-4, deviation, delta=2e-6, msg="documented deviation changed")
+        self.assertLess(abs(deviation), 1e-5, f"ni deviates {deviation:.3e} from the IV reference")
+
+
+class NativeDosMassRegressionTest(unittest.TestCase):
+    """Fresh T-2022.03-SP2 300 K export and separate constant/mass controls.
+
+    Native Nc/Nv/BandGap are TDR fields, not the implementation's closed form.
+    The 1e-9 relative guard admits the independently observed ~1.96e-10
+    native prefactor discrepancy, not the former 5.5e-4 electron DOS error.
+    """
+
+    def test_old_slotboom_dos_matches_native_after_constant_conversion(self):
+        si = _material(_emit(PN2D_PAR, IV_IR), "Si")
+        old_kb, old_h, old_m0 = 1.380662e-23, 6.626176e-34, 9.109534e-31
+        prefactor_ratio = (old_m0*old_kb/M0/KB)**1.5 * (H/old_h)**3
+        nc = si["conduction_band_density_of_states_cm3"]*prefactor_ratio
+        nv = si["valence_band_density_of_states_cm3"]*prefactor_ratio
+        self.assertAlmostEqual(nc/2.8582520073866568e19, 1., delta=1e-9)
+        self.assertAlmostEqual(nv/3.104628932474839e19, 1., delta=1e-9)
+
+    def test_offset_follows_active_model_and_temperature(self):
+        for temperature in (250., 300., 350.):
+            for models in ([], ["OldSlotboom"]):
+                result = mat.emit_materials(mat.default_models_par_path(), active_models=models,
+                                           temperature_K=temperature, mesh_materials=["Si"])
+                report = next(row for row in result.report["materials"] if row["name"]=="Si")["derivation"]
+                offset = -.01595 if models else 0.
+                self.assertAlmostEqual(report["electron_dos_gap_0_eV"], report["Eg_0_eV"]+offset)
+                self.assertAlmostEqual(report["electron_dos_gap_T_eV"], report["Eg_T_eV"]+offset)
+                # Nc / (Eg(0)/Eg(T)) is temperature-independent apart
+                # from T^(3/2) for this Formula-1 material (mm=0).
+                si = _material(result, "Si")
+                invariant = si["conduction_band_density_of_states_cm3"] / temperature**1.5
+                invariant /= (report["electron_dos_gap_0_eV"]/report["electron_dos_gap_T_eV"])
+                self.assertAlmostEqual(invariant/(mat.dos_prefactor_cm3(300.)/300.**1.5
+                                                  *6*.1905*math.sqrt(.9163)),1.,delta=1e-12)
+
+    def test_nonpositive_effective_gap_is_rejected(self):
+        with self.assertRaises(ValueError):
+            mat.electron_dos_mass(.1905,.9163,0.,1.17,1.12,bandgap_offset_eV=-1.12)
 
 
 class DefaultLibraryTest(unittest.TestCase):

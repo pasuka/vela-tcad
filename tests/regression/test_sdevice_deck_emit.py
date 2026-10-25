@@ -275,13 +275,16 @@ class DeckEmitterTests(unittest.TestCase):
         ir = deepcopy(self.ir)
         ir["electrodes"][0]["attributes"] = {"barrier_V": .55}
         self.assertEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"], .55)
-        # Native WP14 controls: Eg(0) contact reference, DOS at 300 K.
-        reference_eV = 4.633743995291464
+        # Eg(0) contact reference, with the independently exported 300 K
+        # OldSlotboom DOS ratio (2026-10-23 native material audit).
+        vt = 1.380649e-23 * 300. / 1.602176634e-19
+        reference_eV = 4.05 + .5*1.16964 + .5*vt*math.log(
+            2.8582520073866568e19 / 3.104628932474839e19)
         ir["electrodes"][0]["attributes"] = {"workfunction_eV": reference_eV}
         self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"], 0, delta=1e-9)
         ir["electrodes"][0]["attributes"] = {"workfunction_eV": 4.611003610676079}
         self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"],
-                               -0.02274038461538463, delta=1e-9)
+                               4.611003610676079 - reference_eV, delta=1e-9)
         ir["electrodes"][0]["attributes"] = {"workfunction_eV": 4.6228018936}
         self.assertAlmostEqual(emit(ir).decks[0]["contacts"][0]["work_function_eV"],
                                4.6228018936 - reference_eV, delta=1e-9)

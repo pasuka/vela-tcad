@@ -1,12 +1,30 @@
 # PN2D BV Validation
 
-Last updated: 2026-08-02
+Last updated: 2026-10-23
 
 ## Current decision
 
-The qualified PN2D BV template policy is complete and implemented. Template
-version 3 defaults to the atomic `element_edge_sg_gss_laux` profile on the
-validated non-obtuse M0/M2 Tri3 mesh family.
+Template version 4 corrects the mobility impurity basis to `total_impurity`
+(`Nd + Na`). Net doping does not describe impurity scattering at compensated
+nodes. The user authorized this PN2D-specific correction; global mobility
+defaults remain unchanged. The IV template already uses reconstructed total
+impurity and remains unchanged.
+
+Version 4 retains the atomic `element_edge_sg_gss_laux` profile on the
+non-obtuse M0/M2 Tri3 mesh family. The historical full-curve acceptance below
+belongs to version 3; it does not qualify version 4 automatically. Current
+external-resistor controls and operator differences are recorded in the
+[native matrix comparison](pn2d_external_resistor_native_matrix_2026-10-23.md).
+The current investigation is restricted to zero bias. The
+[staged Poisson-to-coupled comparison](pn2d_staged_zero_2026-10-23.md) gives
+matching independent equilibrium fields with matched material inputs/constants.
+The OldSlotboom electron DOS-mass conversion is now corrected; see the
+[material conversion fix](sdevice_electron_dos_mass_fix_2026-10-23.md).
+Finite-update/continuation qualification remains open; the equilibrium result
+does not qualify a nonzero external-voltage sweep.
+The [HFS and debug-precision follow-up](pn2d_zero_hfs_followup_2026-10-23.md)
+aligns the finite RHS and one approximate Newton tangent, but later minority
+carrier states, weak-row closure and applied-state acceptance remain unqualified.
 
 The profile binds these settings as one unit:
 
@@ -25,7 +43,7 @@ This is a template policy, not a global solver-default change. Configurations
 that omit `mesh_geometry.node_volume_policy` still use barycentric volumes, and
 the PN2D IV template remains unchanged with impact ionization disabled.
 
-## Final acceptance
+## Historical version-3 acceptance
 
 The prospective atomic-default contract passed all M0, M2, forward-IV,
 determinism, compatibility, geometry, and Release-regression gates. Both final

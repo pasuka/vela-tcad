@@ -234,11 +234,19 @@ def dos_prefactor_cm3(temperature_K: float, mass_ratio: float = 1.0) -> float:
     return value_m3 / 1.0e6
 
 
-def electron_dos_mass(a: float, ml: float, mm: float, eg_zero: float, eg_T: float) -> float:
-    """Formula 1: ``me/m0 = [(6 mt)^2 ml]^{1/3} + mm`` with ``mt = a Eg(0)/Eg(T)``."""
-    if eg_T <= 0.0:
-        raise ValueError("Eg(T) must be positive for the electron mass law")
-    mt = a * eg_zero / eg_T
+def electron_dos_mass(a: float, ml: float, mm: float, eg_zero: float, eg_T: float,
+                      bandgap_offset_eV: float = 0.0) -> float:
+    """Formula 1 with the active BGN constant offset in both reference gaps.
+
+    ``me/m0 = [(6 mt)^2 ml]^{1/3} + mm`` where
+    ``mt = a (Eg(0)+dEg0)/(Eg(T)+dEg0)``. The offset is zero without BGN.
+    Doping-dependent narrowing is not part of this material-level mass law.
+    """
+    effective_zero = eg_zero + bandgap_offset_eV
+    effective_T = eg_T + bandgap_offset_eV
+    if effective_T <= 0.0 or effective_zero <= 0.0:
+        raise ValueError("effective reference gaps must be positive for the electron mass law")
+    mt = a * effective_zero / effective_T
     return ((6.0 * mt) ** 2 * ml) ** (1.0 / 3.0) + mm
 
 
@@ -278,14 +286,15 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
     for name in ("a", "ml", "mm"):
         if name not in e_dos:
             raise KeyError(f"eDOSMass.{name}")
-    me = electron_dos_mass(e_dos["a"][0], e_dos["ml"][0], e_dos["mm"][0], eg_zero, eg_T)
+    d_eg0 = bandgap.get("dEg0(OldSlotboom)", [0.0])[0] if fold_old_slotboom else 0.0
+    me = electron_dos_mass(e_dos["a"][0], e_dos["ml"][0], e_dos["mm"][0],
+                           eg_zero, eg_T, bandgap_offset_eV=d_eg0)
     h_coeff = {k: v[0] for k, v in h_dos.items() if k in ("a", "b", "c", "d", "e", "f", "g", "h", "i", "mm")}
     if "a" not in h_coeff:
         raise KeyError("hDOSMass.a")
     mh = hole_dos_mass(h_coeff, temperature_K)
     nc = dos_prefactor_cm3(temperature_K, me)
     nv = dos_prefactor_cm3(temperature_K, mh)
-    d_eg0 = bandgap.get("dEg0(OldSlotboom)", [0.0])[0] if fold_old_slotboom else 0.0
     effective_gap = eg_T + d_eg0
     ni = intrinsic_density_cm3(nc, nv, effective_gap, temperature_K)
     result: Dict[str, Any] = {
@@ -297,6 +306,7 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
         "temperature_K": temperature_K,
         "derivation": {
             "Eg_T_eV": eg_T, "Eg_0_eV": eg_zero, "dEg0_OldSlotboom_folded_eV": d_eg0,
+            "electron_dos_gap_T_eV": effective_gap, "electron_dos_gap_0_eV": eg_zero + d_eg0,
             "effective_gap_eV": effective_gap, "electron_dos_mass_ratio": me, "hole_dos_mass_ratio": mh,
             "kT_eV": KB_EV_PER_K * temperature_K,
             "dos_prefactor_cm3": dos_prefactor_cm3(temperature_K),
@@ -792,7 +802,7 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
     entry["provenance"] = (provenance + "; Epsilon/Bandgap/eDOSMass Formula 1/hDOSMass Formula 1"
                            + ("/ConstantMobility" if "electron_mobility_cm2_per_V_s" in entry else "")
                            + f"; {derivation['law']}"
-                           + (f"; dEg0(OldSlotboom)={derivation['dEg0_OldSlotboom_folded_eV']:g} eV folded into ni"
+                           + (f"; dEg0(OldSlotboom)={derivation['dEg0_OldSlotboom_folded_eV']:g} eV applied to electron DOS mass and ni"
                               if derivation["dEg0_OldSlotboom_folded_eV"] else "; no bandgap narrowing folded")
                            + "; CODATA 2018 constants")
     material_report["derivation"] = derivation
