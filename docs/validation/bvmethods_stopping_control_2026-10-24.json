@@ -1,0 +1,727 @@
+{
+  "schema": "vela.bvmethods.stopping-control.v1",
+  "scope": "Explicit experimental coupled stopping; no global default or physics changes; full Band2Band disabled",
+  "build": {
+    "type": "Release",
+    "preset": "windows-ucrt64-release",
+    "runner_sha256": "5eaf1b48c59f0ad63cd94eca7a8153a2c55eadc738a2fd3a7b63491ee1c006ef",
+    "HDF5_state_available": true,
+    "UMFPACK_available": true,
+    "SPQR_available": true,
+    "coupled_linear_solver": "direct_bordered (Eigen SparseLU first; documented fallback policy)",
+    "threads_per_arm": 1
+  },
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "device_vector_dimension": 7800,
+    "bordered_dimension": 7801,
+    "native_independent_dimension": 6843,
+    "observed_metric_entry_counts": [
+      2600,
+      2121,
+      2121,
+      11
+    ],
+    "temperature_K": 300
+  },
+  "unchanged_thresholds": {
+    "resistance_ohm_um": 10000000.0,
+    "device_residual_inf": 1e-08,
+    "load_V": 1e-06,
+    "KCL_A_per_um": "max(1e-12,1e-5*abs(Id))",
+    "carrier_row_ratio": 0.001,
+    "global_ratio": 0.01,
+    "source_floor_internal": 1e-14,
+    "current_stop_A_per_um": 0.0013,
+    "BV_criterion_A_per_um": 0.0001
+  },
+  "native_replay": {
+    "scope": "archived native raw concentration updates; report only; no new native run",
+    "references": {
+      "ElectrostaticPotential": 0.025852,
+      "QuasiFermiPotential": 0.025852,
+      "eDensity": 10000000000.0,
+      "hDensity": 10000000000.0
+    },
+    "normalizations": {
+      "ElectrostaticPotential": 0.025851995266484913,
+      "QuasiFermiPotential": 0.025851995266484913,
+      "eDensity": 14824351000.0,
+      "hDensity": 14824351000.0
+    },
+    "records": [
+      {
+        "point": 1,
+        "iteration": 1,
+        "rms": 2750.966724332346,
+        "printed": "2.75e+03",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "43e27e451fd925e6a02aa306463b05c4654ad0fd561c82a4d3d6581bd8836cf5"
+      },
+      {
+        "point": 1,
+        "iteration": 2,
+        "rms": 80.2377817152327,
+        "printed": "8.02e+01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "107710339c796dcb5269264ab55f84de7cf0a7fa8d60429751439cbf0651f0c9"
+      },
+      {
+        "point": 1,
+        "iteration": 3,
+        "rms": 0.24996383298923913,
+        "printed": "2.50e-01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "bad0b10ce0916758225ce6d5e7cad8e4ec9d16a77dc68cd19cb51fbf8c425827"
+      },
+      {
+        "point": 2,
+        "iteration": 1,
+        "rms": 472.8243441688018,
+        "printed": "4.73e+02",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "bec1352231825c536f66bdf6e2bb219ee51cb218c9125f94d0db38dec423aff9"
+      },
+      {
+        "point": 2,
+        "iteration": 2,
+        "rms": 2.758941438236631,
+        "printed": "2.76e+00",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "40ec57c15fbdd2c3694be7d6d7604efa42e85a601be13133e4409cba1905f7f1"
+      },
+      {
+        "point": 2,
+        "iteration": 3,
+        "rms": 0.00012196976660162426,
+        "printed": "1.22e-04",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "e302949d09b49064803690e16b82d050a636116706c139bc9cb36cba9ae89422"
+      },
+      {
+        "point": 3,
+        "iteration": 1,
+        "rms": 958.1370680330915,
+        "printed": "9.58e+02",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "3c6fd243fa737afd9d5e3b53db3dda1d021a15c6e39c730295485c14027975a3"
+      },
+      {
+        "point": 3,
+        "iteration": 2,
+        "rms": 13.023665958331668,
+        "printed": "1.30e+01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "28296496a3012ad28b06069eef821d59bb249e2f4f6b2026d07d23449fad599d"
+      },
+      {
+        "point": 3,
+        "iteration": 3,
+        "rms": 0.004048684258245953,
+        "printed": "4.05e-03",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "d6920be6ee71c3a1ed0a5225a50f3d27da8926a61f56807441619f9e4623ff43"
+      },
+      {
+        "point": 4,
+        "iteration": 1,
+        "rms": 1736.0812313263718,
+        "printed": "1.74e+03",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "5b22938a6b721d6b40e1ebf1eb7c0731a90bae288cfb67fcb526799d0816bae1"
+      },
+      {
+        "point": 4,
+        "iteration": 2,
+        "rms": 53.029311478228955,
+        "printed": "5.30e+01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "18f07c060edab8e4b491904ad2f20c7db0e0bf3521fb83f8f1a77c38d7b8b08d"
+      },
+      {
+        "point": 4,
+        "iteration": 3,
+        "rms": 0.07552691034421846,
+        "printed": "7.55e-02",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "3d5c94f7d7cffb4e5f6f51336159d8db1840f3a40e54ccb92f828b8d6f2fd47f"
+      },
+      {
+        "point": 5,
+        "iteration": 1,
+        "rms": 2356.922833413222,
+        "printed": "2.36e+03",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "d0ead6aace54d717bcfdd809dac2da8169017541d42365e5481ce9b05d93bf8a"
+      },
+      {
+        "point": 5,
+        "iteration": 2,
+        "rms": 96.91897197577504,
+        "printed": "9.69e+01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "3b33f69d1abd1a16d600a5acf78645b134b6c1c5c4227770ec89e8c779ac2d5b"
+      },
+      {
+        "point": 5,
+        "iteration": 3,
+        "rms": 0.3068861002018585,
+        "printed": "3.07e-01",
+        "within_printed_interval": true,
+        "metric_entries": 6853,
+        "sha256": "91fb773f48c584fee6e7f10418a2ad65bb4f87dc3427f169ca28aa1b56baeb91"
+      }
+    ],
+    "terminal_update_branch_replay": [
+      {
+        "point": 1,
+        "rms": 0.24996383298923913,
+        "update_branch_pass": true
+      },
+      {
+        "point": 2,
+        "rms": 0.00012196976660162426,
+        "update_branch_pass": true
+      },
+      {
+        "point": 3,
+        "rms": 0.004048684258245953,
+        "update_branch_pass": true
+      },
+      {
+        "point": 4,
+        "rms": 0.07552691034421846,
+        "update_branch_pass": true
+      },
+      {
+        "point": 5,
+        "rms": 0.3068861002018585,
+        "update_branch_pass": true
+      }
+    ],
+    "load_kcl_provenance": "Prior native actual-operand audit documented in docs/validation/bvmethods_native_convergence_2026-10-21.md; not re-simulated in this control"
+  },
+  "tests": {
+    "newton": {
+      "cases": 150,
+      "assertions": 3852,
+      "pass": true
+    },
+    "coupled_load_line": {
+      "cases": 11,
+      "assertions": 134,
+      "pass": true
+    },
+    "carrier_statistics": {
+      "cases": 20,
+      "assertions": 989,
+      "pass": true
+    },
+    "dc_sweep": {
+      "cases": 122,
+      "pass": true,
+      "initial_failures": "two Windows MAX_PATH HDF5 paths of length 263/264; both passed using build/t temporary root"
+    },
+    "python_ctest": [
+      "bvmethods_stopping_control",
+      "pn2d_config_templates"
+    ],
+    "native_error_reconstruction": "15/15 within printed intervals; final update branch 5/5 pass",
+    "default_short_curve": "2/2 points identical CSV values in outer/inner voltage, current, iterations and all residual blocks"
+  },
+  "default_comparison": {
+    "rows_per_arm": 2,
+    "identical_csv_values": {
+      "outer_voltage_V": true,
+      "inner_voltage_V": true,
+      "contact_drain_total_A_per_um": true,
+      "newton_iterations": true,
+      "final_psi_residual_norm": true,
+      "final_electron_continuity_residual_norm": true,
+      "final_hole_continuity_residual_norm": true
+    },
+    "last_accepted": {
+      "outer_voltage_V": "0.001",
+      "inner_voltage_V": "0.00041964076052795717",
+      "contact_drain_total_A_per_um": "5.803592340524141e-11",
+      "newton_iterations": "3",
+      "final_psi_residual_norm": "9.38784733218177e-11",
+      "final_electron_continuity_residual_norm": "4.627544755858769e-13",
+      "final_hole_continuity_residual_norm": "1.8027784219256216e-17"
+    }
+  },
+  "source_sha256": {
+    "include/vela/solver/DensityUpdateConvergence.h": "f79e6c1a56e2a144cb5d3ec25f68bd205ede7d2ee022655d8a4051197e89ebd0",
+    "include/vela/solver/NewtonSolver.h": "b17041b5250250f45ca71bbf30dd170752da438b242ffc2802551428bbc72860",
+    "include/vela/simulation/CoupledLoadLine.h": "f4e27123c13a78971269af26219f0ecd61e4f5a2bb659ec0414fd97d9d5e38b8",
+    "include/vela/simulation/DCSweep.h": "bc8e721083a1d3429fc4fe580b0a9e703df00bcbb316cd1bd315bf55eb2ea059",
+    "include/vela/equation/CoupledDDAssembler.h": "528fcbe0175c01c19d95b92ee6f7635327baf15c060c8c0c0d73f370135d8d20",
+    "src/solver/NewtonSolver.cpp": "58046e9284e05e2cd972e04d076accecb06a4355db97419418fce0c3c9682f3c",
+    "src/simulation/DCSweep.cpp": "f78edc5b9ebe0ce3dd90bf53b73967b2671d0afc62f3da30d781d7490ed9e9f1",
+    "src/equation/CoupledDDAssembler.cpp": "26a82d99cb990b13023ce403b483244863e8257e150504de6bdec9f3f89bbdd7",
+    "scripts/run_bvmethods_stopping_control.py": "30cca8d2686071523cb2b10d72a1d9035e968beaf865735c80d758c1c3ab0468",
+    "tests/test_newton_solver.cpp": "819276375ffaaf2894203e44bdc6b5313aad1342d855d37bbbdbaf6d2f69ae56",
+    "tests/test_coupled_load_line.cpp": "4fe1e26fa8342c77dce820b2c16eeff70a4dce14d2d23c2f70e1d28e2c7be182",
+    "tests/test_dc_sweep.cpp": "8a98b4238710ff30ba0298ce0c57c09ac21fc9264f5579d0096b7e6ed7b5205a"
+  },
+  "input_sha256": {
+    "mesh_file": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+    "node_doping_file": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+    "materials_file": "736f559ffd54b52beacb80c217836c0089804462eb874d446aeb468175ae1047"
+  },
+  "arms": {
+    "closure_report": {
+      "arm": "closure_report",
+      "accepted_points": 22,
+      "last_accepted": {
+        "outer_V": 0.1565642630024221,
+        "inner_V": 0.12545716953696084,
+        "current_A_per_um": 3.1107099518819094e-09,
+        "load_V": 6.053357842761287e-09,
+        "kcl_A_per_um": 6.053343728249605e-16,
+        "carrier_row_max": 5.981547835375588e-08,
+        "global_electron_ratio": 0.039092984524346897,
+        "global_hole_ratio": 1.3203215825985874e-10,
+        "global_electron_absolute_mismatch": 2.026297310081917e-11,
+        "global_electron_net_scale": 5.183276065351189e-10,
+        "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+        "global_electron_source_abs_sum": 4.980646435240034e-10,
+        "global_electron_mismatch_A_per_um": 6.053343765042269e-16,
+        "global_electron_net_scale_A_per_um": 1.5484475894318787e-14,
+        "global_electron_source_abs_sum_A_per_um": 1.487914181923353e-14,
+        "global_electron_contact_node_flux_abs_sum_A_per_um": 6.221404419273577e-09,
+        "global_electron_mismatch_over_terminal_abs_sum": 9.729867015700409e-08,
+        "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+        "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+        "stop_reason": "coupled_residuals",
+        "diagnostic": {
+          "actual_load_line_residual_V": 6.053357842761287e-09,
+          "actual_load_line_satisfied": true,
+          "carrier_row_enforced": true,
+          "carrier_row_max_ratio": 5.981547835375588e-08,
+          "carrier_row_satisfied": true,
+          "coupled_acceptance_checked": true,
+          "density_update_mode": "report",
+          "density_update_rms": 0.0940812793201602,
+          "density_update_valid": true,
+          "device_residual_identity": "vela_device_infinity_norm_not_native_RhsMin",
+          "global_continuity_enforced": false,
+          "global_continuity_satisfied": false,
+          "global_electron_absolute_mismatch": 2.026297310081917e-11,
+          "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+          "global_electron_net_scale": 5.183276065351189e-10,
+          "global_electron_qualified": true,
+          "global_electron_ratio": 0.039092984524346897,
+          "global_electron_source_abs_sum": 4.980646435240034e-10,
+          "global_hole_absolute_mismatch": 6.576054850523599e-20,
+          "global_hole_contact_node_flux_abs_sum": 4.980651139645053e-10,
+          "global_hole_net_scale": 4.980646334342997e-10,
+          "global_hole_qualified": true,
+          "global_hole_ratio": 1.3203215825985874e-10,
+          "global_hole_source_abs_sum": 4.980646435240034e-10,
+          "newton_stopping_reason": "coupled_residuals",
+          "physical_residuals_finite": true,
+          "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+          "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+          "terminal_kcl_A_per_um": 6.053343728249826e-16,
+          "terminal_kcl_limit_A_per_um": 1e-12,
+          "terminal_kcl_satisfied": true
+        }
+      },
+      "BV_at_1e_minus4_A_per_um_V": null,
+      "stop_current_reached": false,
+      "old_electron_global_gate_rejections": 12,
+      "old_carrier_row_ratio_exceeds_1e_minus3": 0,
+      "stopping_branches": {
+        "coupled_residuals": 22
+      },
+      "metric_records": 777,
+      "valid_metric_records": 751,
+      "failed_completed_attempts": [
+        {
+          "outer_V": "0.054734489800000008",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.3837098555177696e-05",
+          "load_residual_V": "-0.00084025740752671774",
+          "update_rms": "591.71348628845533"
+        },
+        {
+          "outer_V": "0.087524924488011011",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.5776239900689119e-05",
+          "load_residual_V": "-0.002844490465215635",
+          "update_rms": "1268.9345070841355"
+        },
+        {
+          "outer_V": "0.15204147814147417",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "2.4612773787167456e-05",
+          "load_residual_V": "-0.00035145751186130281",
+          "update_rms": "302.42467438544048"
+        }
+      ],
+      "metric_entry_counts": [
+        [
+          2600,
+          2121,
+          2121,
+          11
+        ]
+      ],
+      "all_accepted_load_and_kcl_pass": true,
+      "exit_code": 124,
+      "seconds": 3600.4057240486145,
+      "maximum_electron_global_ratio": 0.039092984524346897,
+      "maximum_carrier_row_ratio": 2.1290077058701294e-07
+    },
+    "conservation_report": {
+      "arm": "conservation_report",
+      "accepted_points": 22,
+      "last_accepted": {
+        "outer_V": 0.1565642630024221,
+        "inner_V": 0.12545716953696084,
+        "current_A_per_um": 3.1107099518819094e-09,
+        "load_V": 6.053357842761287e-09,
+        "kcl_A_per_um": 6.053343728249605e-16,
+        "carrier_row_max": 5.981547835375588e-08,
+        "global_electron_ratio": 0.039092984524346897,
+        "global_hole_ratio": 1.3203215825985874e-10,
+        "global_electron_absolute_mismatch": 2.026297310081917e-11,
+        "global_electron_net_scale": 5.183276065351189e-10,
+        "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+        "global_electron_source_abs_sum": 4.980646435240034e-10,
+        "global_electron_mismatch_A_per_um": 6.053343765042269e-16,
+        "global_electron_net_scale_A_per_um": 1.5484475894318787e-14,
+        "global_electron_source_abs_sum_A_per_um": 1.487914181923353e-14,
+        "global_electron_contact_node_flux_abs_sum_A_per_um": 6.221404419273577e-09,
+        "global_electron_mismatch_over_terminal_abs_sum": 9.729867015700409e-08,
+        "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+        "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+        "stop_reason": "coupled_residuals",
+        "diagnostic": {
+          "actual_load_line_residual_V": 6.053357842761287e-09,
+          "actual_load_line_satisfied": true,
+          "carrier_row_enforced": false,
+          "carrier_row_max_ratio": 5.981547835375588e-08,
+          "carrier_row_satisfied": true,
+          "coupled_acceptance_checked": true,
+          "density_update_mode": "report",
+          "density_update_rms": 0.0940812793201602,
+          "density_update_valid": true,
+          "device_residual_identity": "vela_device_infinity_norm_not_native_RhsMin",
+          "global_continuity_enforced": false,
+          "global_continuity_satisfied": false,
+          "global_electron_absolute_mismatch": 2.026297310081917e-11,
+          "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+          "global_electron_net_scale": 5.183276065351189e-10,
+          "global_electron_qualified": true,
+          "global_electron_ratio": 0.039092984524346897,
+          "global_electron_source_abs_sum": 4.980646435240034e-10,
+          "global_hole_absolute_mismatch": 6.576054850523599e-20,
+          "global_hole_contact_node_flux_abs_sum": 4.980651139645053e-10,
+          "global_hole_net_scale": 4.980646334342997e-10,
+          "global_hole_qualified": true,
+          "global_hole_ratio": 1.3203215825985874e-10,
+          "global_hole_source_abs_sum": 4.980646435240034e-10,
+          "newton_stopping_reason": "coupled_residuals",
+          "physical_residuals_finite": true,
+          "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+          "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+          "terminal_kcl_A_per_um": 6.053343728249826e-16,
+          "terminal_kcl_limit_A_per_um": 1e-12,
+          "terminal_kcl_satisfied": true
+        }
+      },
+      "BV_at_1e_minus4_A_per_um_V": null,
+      "stop_current_reached": false,
+      "old_electron_global_gate_rejections": 12,
+      "old_carrier_row_ratio_exceeds_1e_minus3": 0,
+      "stopping_branches": {
+        "coupled_residuals": 22
+      },
+      "metric_records": 777,
+      "valid_metric_records": 751,
+      "failed_completed_attempts": [
+        {
+          "outer_V": "0.054734489800000008",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.3837098555177696e-05",
+          "load_residual_V": "-0.00084025740752671774",
+          "update_rms": "591.71348628845533"
+        },
+        {
+          "outer_V": "0.087524924488011011",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.5776239900689119e-05",
+          "load_residual_V": "-0.002844490465215635",
+          "update_rms": "1268.9345070841355"
+        },
+        {
+          "outer_V": "0.15204147814147417",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "2.4612773787167456e-05",
+          "load_residual_V": "-0.00035145751186130281",
+          "update_rms": "302.42467438544048"
+        }
+      ],
+      "metric_entry_counts": [
+        [
+          2600,
+          2121,
+          2121,
+          11
+        ]
+      ],
+      "all_accepted_load_and_kcl_pass": true,
+      "exit_code": 124,
+      "seconds": 3600.4469277858734,
+      "maximum_electron_global_ratio": 0.039092984524346897,
+      "maximum_carrier_row_ratio": 2.1290077058701294e-07
+    },
+    "density_update": {
+      "arm": "density_update",
+      "accepted_points": 22,
+      "last_accepted": {
+        "outer_V": 0.1565642630024221,
+        "inner_V": 0.12545716953696084,
+        "current_A_per_um": 3.1107099518819094e-09,
+        "load_V": 6.053357842761287e-09,
+        "kcl_A_per_um": 6.053343728249605e-16,
+        "carrier_row_max": 5.981547835375588e-08,
+        "global_electron_ratio": 0.039092984524346897,
+        "global_hole_ratio": 1.3203215825985874e-10,
+        "global_electron_absolute_mismatch": 2.026297310081917e-11,
+        "global_electron_net_scale": 5.183276065351189e-10,
+        "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+        "global_electron_source_abs_sum": 4.980646435240034e-10,
+        "global_electron_mismatch_A_per_um": 6.053343765042269e-16,
+        "global_electron_net_scale_A_per_um": 1.5484475894318787e-14,
+        "global_electron_source_abs_sum_A_per_um": 1.487914181923353e-14,
+        "global_electron_contact_node_flux_abs_sum_A_per_um": 6.221404419273577e-09,
+        "global_electron_mismatch_over_terminal_abs_sum": 9.729867015700409e-08,
+        "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+        "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+        "stop_reason": "coupled_residuals",
+        "diagnostic": {
+          "actual_load_line_residual_V": 6.053357842761287e-09,
+          "actual_load_line_satisfied": true,
+          "carrier_row_enforced": false,
+          "carrier_row_max_ratio": 5.981547835375588e-08,
+          "carrier_row_satisfied": true,
+          "coupled_acceptance_checked": true,
+          "density_update_mode": "enforce",
+          "density_update_rms": 0.0940812793201602,
+          "density_update_valid": true,
+          "device_residual_identity": "vela_device_infinity_norm_not_native_RhsMin",
+          "global_continuity_enforced": false,
+          "global_continuity_satisfied": false,
+          "global_electron_absolute_mismatch": 2.026297310081917e-11,
+          "global_electron_contact_node_flux_abs_sum": 0.00020825539617470862,
+          "global_electron_net_scale": 5.183276065351189e-10,
+          "global_electron_qualified": true,
+          "global_electron_ratio": 0.039092984524346897,
+          "global_electron_source_abs_sum": 4.980646435240034e-10,
+          "global_hole_absolute_mismatch": 6.576054850523599e-20,
+          "global_hole_contact_node_flux_abs_sum": 4.980651139645053e-10,
+          "global_hole_net_scale": 4.980646334342997e-10,
+          "global_hole_qualified": true,
+          "global_hole_ratio": 1.3203215825985874e-10,
+          "global_hole_source_abs_sum": 4.980646435240034e-10,
+          "newton_stopping_reason": "coupled_residuals",
+          "physical_residuals_finite": true,
+          "terminal_electron_current_abs_sum_A_per_um": 6.221404419273573e-09,
+          "terminal_hole_current_abs_sum_A_per_um": 1.4879155873134032e-14,
+          "terminal_kcl_A_per_um": 6.053343728249826e-16,
+          "terminal_kcl_limit_A_per_um": 1e-12,
+          "terminal_kcl_satisfied": true
+        }
+      },
+      "BV_at_1e_minus4_A_per_um_V": null,
+      "stop_current_reached": false,
+      "old_electron_global_gate_rejections": 12,
+      "old_carrier_row_ratio_exceeds_1e_minus3": 0,
+      "stopping_branches": {
+        "coupled_residuals": 22
+      },
+      "metric_records": 777,
+      "valid_metric_records": 751,
+      "failed_completed_attempts": [
+        {
+          "outer_V": "0.054734489800000008",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.3837098555177696e-05",
+          "load_residual_V": "-0.00084025740752671774",
+          "update_rms": "591.71348628845533"
+        },
+        {
+          "outer_V": "0.087524924488011011",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "6.5776239900689119e-05",
+          "load_residual_V": "-0.002844490465215635",
+          "update_rms": "1268.9345070841355"
+        },
+        {
+          "outer_V": "0.15204147814147417",
+          "retry": "0",
+          "iteration": "40",
+          "device_residual_inf": "2.4612773787167456e-05",
+          "load_residual_V": "-0.00035145751186130281",
+          "update_rms": "302.42467438544048"
+        }
+      ],
+      "metric_entry_counts": [
+        [
+          2600,
+          2121,
+          2121,
+          11
+        ]
+      ],
+      "all_accepted_load_and_kcl_pass": true,
+      "exit_code": 124,
+      "seconds": 3600.3504452705383,
+      "maximum_electron_global_ratio": 0.039092984524346897,
+      "maximum_carrier_row_ratio": 2.1290077058701294e-07
+    }
+  },
+  "status": "implemented_verified; full scans timed out before BV",
+  "qualified_BV_V": null,
+  "guard_decision": "Keep global net-source closure and local carrier-row ratios observable in these explicit experiments; do not promote the existing net-source 1% ratio to a universal stopping contract. Global defaults remain unchanged.",
+  "strict_restart_comparison": {
+    "strict_residual_restart": {
+      "exit_code": 1,
+      "accepted_points": 0,
+      "initial_state_sha256": "a4a9dad3d6fa90de879cef77997c83f3f01d1387820588e6120278766f94218e",
+      "device_tolerance": 1e-18,
+      "final_device_residual_inf": 1.23546828943484e-11,
+      "final_load_residual_V": -1.4803666972817986e-11,
+      "final_rms": 5.553690034528991e-11,
+      "stopping_branches": {},
+      "accepted_load_kcl_pass": false,
+      "last_accepted": null
+    },
+    "strict_update_restart": {
+      "exit_code": 0,
+      "accepted_points": 1,
+      "initial_state_sha256": "a4a9dad3d6fa90de879cef77997c83f3f01d1387820588e6120278766f94218e",
+      "device_tolerance": 1e-18,
+      "final_device_residual_inf": 3.9534985261914876e-11,
+      "final_load_residual_V": -3.329087873427117e-11,
+      "final_rms": 8.87973395424507e-05,
+      "stopping_branches": {
+        "coupled_density_update": 1
+      },
+      "accepted_load_kcl_pass": true,
+      "last_accepted": {
+        "outer_V": 0.01,
+        "inner_V": 0.004396688440553555,
+        "current_A_per_um": 5.60331152615557e-10,
+        "load_V": -3.3290875264824216e-11,
+        "kcl_A_per_um": -3.3289495285164625e-18,
+        "carrier_row_max": 1.24168819213659e-07,
+        "global_electron_ratio": 0.004513591028154806,
+        "global_hole_ratio": 1.796957666874398e-13,
+        "global_electron_absolute_mismatch": 1.1143337347779824e-13,
+        "global_electron_net_scale": 2.4688407253271494e-11,
+        "global_electron_contact_node_flux_abs_sum": 3.751304427777832e-05,
+        "global_electron_source_abs_sum": 2.468840906690948e-11,
+        "global_electron_mismatch_A_per_um": 3.3289513498499717e-18,
+        "global_electron_net_scale_A_per_um": 7.375394290454524e-16,
+        "global_electron_source_abs_sum_A_per_um": 7.375394832259231e-16,
+        "global_electron_contact_node_flux_abs_sum_A_per_um": 1.1206615710182423e-09,
+        "global_electron_mismatch_over_terminal_abs_sum": 2.9705233372330777e-09,
+        "terminal_electron_current_abs_sum_A_per_um": 1.1206615710182419e-09,
+        "terminal_hole_current_abs_sum_A_per_um": 7.375418217385367e-16,
+        "stop_reason": "coupled_density_update",
+        "diagnostic": {
+          "actual_load_line_residual_V": -3.3290875264824216e-11,
+          "actual_load_line_satisfied": true,
+          "carrier_row_enforced": false,
+          "carrier_row_max_ratio": 1.24168819213659e-07,
+          "carrier_row_satisfied": true,
+          "coupled_acceptance_checked": true,
+          "density_update_mode": "enforce",
+          "density_update_rms": 8.87973395424507e-05,
+          "density_update_valid": true,
+          "device_residual_identity": "vela_device_infinity_norm_not_native_RhsMin",
+          "global_continuity_enforced": false,
+          "global_continuity_satisfied": true,
+          "global_electron_absolute_mismatch": 1.1143337347779824e-13,
+          "global_electron_contact_node_flux_abs_sum": 3.751304427777832e-05,
+          "global_electron_net_scale": 2.4688407253271494e-11,
+          "global_electron_qualified": true,
+          "global_electron_ratio": 0.004513591028154806,
+          "global_electron_source_abs_sum": 2.468840906690948e-11,
+          "global_hole_absolute_mismatch": 4.436402269669168e-24,
+          "global_hole_contact_node_flux_abs_sum": 2.4688487346320017e-11,
+          "global_hole_net_scale": 2.468840725327593e-11,
+          "global_hole_qualified": true,
+          "global_hole_ratio": 1.796957666874398e-13,
+          "global_hole_source_abs_sum": 2.468840906690948e-11,
+          "newton_stopping_reason": "coupled_density_update",
+          "physical_residuals_finite": true,
+          "terminal_electron_current_abs_sum_A_per_um": 1.1206615710182419e-09,
+          "terminal_hole_current_abs_sum_A_per_um": 7.375418217385367e-16,
+          "terminal_kcl_A_per_um": -3.3289495285279996e-18,
+          "terminal_kcl_limit_A_per_um": 1e-12,
+          "terminal_kcl_satisfied": true
+        }
+      }
+    }
+  },
+  "continuity_units": {
+    "source": "UnitScalingSystem::autoInputsFrom/fromInputs; format_version 2, no explicit normalization; material mobilities and CSV net doping",
+    "C0_cm3": 5.089999999999982e+20,
+    "mu0_cm2_V_s": 1417.0,
+    "D0_cm2_s": 36.63228369737915,
+    "V0_V": 0.025851999786435535,
+    "q_C": 1.602176634e-19,
+    "line_factor_to_A_per_um": 1e-08,
+    "continuity_row_to_A_per_um": 2.9873916995909897e-05,
+    "formula": "q*C0*D0*(1e4 A/m2)*(1e-6 m)*(1e-6 m/um)",
+    "length_internal_m": 1e-06,
+    "current_density_A_m2_per_internal": 10000.0,
+    "maximum_reconstructed_KCL_error_over_terminal_absolute_sum": 4.1201854987915586e-15,
+    "observed_complete_points_checked": 67,
+    "checked_points_per_arm": {
+      "closure_report": 22,
+      "conservation_report": 22,
+      "density_update": 22,
+      "strict_update_restart": 1
+    }
+  },
+  "globalization_observation": {
+    "outer_V": 0.05473448980000001,
+    "observed_accepted_transitions": 40,
+    "alpha_min": 0.015625,
+    "alpha_max": 0.5,
+    "alpha_median": 0.03125,
+    "poisson_1136_dominant_states": 40,
+    "uniform_voltage_limit_observed": false,
+    "scope": "One failed finite-step attempt; not a Jacobian qualification or unique-cause proof"
+  },
+  "BV_completed_arms": []
+}

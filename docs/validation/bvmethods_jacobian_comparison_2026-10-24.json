@@ -1,0 +1,1959 @@
+{
+  "date": "2026-10-24",
+  "scope": "Same frozen first quasistationary Newton state as the matched statistics/material/VT report; structural and numerical Jacobian comparison, not a production repair",
+  "configuration": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "outer_target_V": 0.01,
+    "inner_prestate_V": -3.8202999347345123e-19,
+    "common_dimension": 6765,
+    "build": "UCRT64 Release private native-VT comparison binary, tested Joyce-Dixon statistics and FD-BGN; direct_bordered Eigen SparseLU",
+    "normalization": "Physical psi/fn/fp/inner volts; exact carrier/contact-psi constraint elimination; own signed diagonal left scaling before shape comparison"
+  },
+  "comparison": {
+    "dimension": 6765,
+    "raw_nnz": {
+      "vela": 83489,
+      "native": 71515
+    },
+    "row_groups": {
+      "psi": {
+        "rows": 2522,
+        "native_frobenius": 61.13799299217084,
+        "vela_frobenius": 61.13798588898662,
+        "difference_frobenius": 4.708371713043413e-05,
+        "relative_frobenius": 7.70122060376819e-07,
+        "row_relative_L2": {
+          "min": 1.7723787621935207e-19,
+          "median": 3.807383052689919e-08,
+          "p90": 1.6221823979602778e-06,
+          "p95": 1.9590259624476867e-06,
+          "p99": 2.0366199066943376e-06,
+          "max": 2.14490710498256e-06
+        },
+        "row_cosine": {
+          "min": 0.9999999999977435,
+          "median": 0.9999999999999994,
+          "p90": 1.0,
+          "p95": 1.0,
+          "p99": 1.0,
+          "max": 1.0
+        },
+        "best_row_proportional_fit_residual_ratio": {
+          "min": 0.0,
+          "median": 3.332000937312528e-08,
+          "p90": 1.5581513759100211e-06,
+          "p95": 1.892095442943162e-06,
+          "p99": 1.9988440059793654e-06,
+          "max": 2.124395583478101e-06
+        },
+        "difference_squared_share": 9.706760021095407e-22
+      },
+      "electron": {
+        "rows": 2121,
+        "native_frobenius": 55.65794130234404,
+        "vela_frobenius": 55.62916637594225,
+        "difference_frobenius": 0.46130121043606137,
+        "relative_frobenius": 0.00828814720131651,
+        "row_relative_L2": {
+          "min": 1.1505304617132602e-08,
+          "median": 0.0004641423962153952,
+          "p90": 0.006313499353581559,
+          "p95": 0.011543027676287098,
+          "p99": 0.045162420095920204,
+          "max": 0.1075531596511589
+        },
+        "row_cosine": {
+          "min": 0.9942007800359975,
+          "median": 0.9999999029724095,
+          "p90": 0.9999999999386135,
+          "p95": 0.9999999999999558,
+          "p99": 0.9999999999999998,
+          "max": 1.0
+        },
+        "best_row_proportional_fit_residual_ratio": {
+          "min": 0.0,
+          "median": 0.00044051693678952736,
+          "p90": 0.006186365145060677,
+          "p95": 0.011244675429764924,
+          "p99": 0.041489193690977005,
+          "max": 0.10753980182153035
+        },
+        "difference_squared_share": 9.31755569395328e-14
+      },
+      "hole": {
+        "rows": 2121,
+        "native_frobenius": 1511240.381005712,
+        "vela_frobenius": 55.519831316214685,
+        "difference_frobenius": 1511240.54072458,
+        "relative_frobenius": 1.0000001056872685,
+        "row_relative_L2": {
+          "min": 1.977483134776012e-09,
+          "median": 0.0003346110857921159,
+          "p90": 0.004515229182342261,
+          "p95": 0.007642487019984377,
+          "p99": 0.04678563957081862,
+          "max": 1.0000427201761657
+        },
+        "row_cosine": {
+          "min": -0.3230927807692086,
+          "median": 0.9999999479982666,
+          "p90": 0.9999999999999881,
+          "p95": 0.9999999999999997,
+          "p99": 1.0,
+          "max": 1.0
+        },
+        "best_row_proportional_fit_residual_ratio": {
+          "min": 0.0,
+          "median": 0.0003224956806891224,
+          "p90": 0.004323585749371931,
+          "p95": 0.007601483741484297,
+          "p99": 0.04176309884894567,
+          "max": 0.9999999963226277
+        },
+        "difference_squared_share": 0.999999999999907
+      },
+      "circuit": {
+        "rows": 1,
+        "native_frobenius": 1.052060759453251,
+        "vela_frobenius": 1.0515639174701947,
+        "difference_frobenius": 0.0053425694789958145,
+        "relative_frobenius": 0.005078194801003996,
+        "row_relative_L2": {
+          "min": 0.005078194801003996,
+          "median": 0.005078194801003996,
+          "p90": 0.005078194801003996,
+          "p95": 0.005078194801003996,
+          "p99": 0.005078194801003996,
+          "max": 0.005078194801003996
+        },
+        "row_cosine": {
+          "min": 0.9999872114421631,
+          "median": 0.9999872114421631,
+          "p90": 0.9999872114421631,
+          "p95": 0.9999872114421631,
+          "p99": 0.9999872114421631,
+          "max": 0.9999872114421631
+        },
+        "best_row_proportional_fit_residual_ratio": {
+          "min": 0.0050573661254335175,
+          "median": 0.0050573661254335175,
+          "p90": 0.0050573661254335175,
+          "p95": 0.0050573661254335175,
+          "p99": 0.0050573661254335175,
+          "max": 0.0050573661254335175
+        },
+        "difference_squared_share": 1.2497788376771947e-17
+      }
+    },
+    "cross_blocks": [
+      {
+        "row": "psi",
+        "column": "psi",
+        "native_frobenius": 56.13475361280413,
+        "vela_frobenius": 56.13475705329224,
+        "difference_frobenius": 2.3622315230701123e-05,
+        "relative_to_native_block": 4.2081444578235325e-07,
+        "share_of_row_difference_squared": 0.25171172020312804
+      },
+      {
+        "row": "psi",
+        "column": "electron",
+        "native_frobenius": 17.58262057819822,
+        "vela_frobenius": 17.582601996966623,
+        "difference_frobenius": 3.198880413270146e-05,
+        "relative_to_native_block": 1.8193422300408596e-06,
+        "share_of_row_difference_squared": 0.4615880168844031
+      },
+      {
+        "row": "psi",
+        "column": "hole",
+        "native_frobenius": 16.651557072019504,
+        "vela_frobenius": 16.65153898820522,
+        "difference_frobenius": 2.516194715454302e-05,
+        "relative_to_native_block": 1.511086743763079e-06,
+        "share_of_row_difference_squared": 0.2855926380169517
+      },
+      {
+        "row": "psi",
+        "column": "circuit",
+        "native_frobenius": 0.5663255432180179,
+        "vela_frobenius": 0.5663262931664329,
+        "difference_frobenius": 1.5669931434975247e-06,
+        "relative_to_native_block": 2.7669476721700345e-06,
+        "share_of_row_difference_squared": 0.0011076248955170227
+      },
+      {
+        "row": "electron",
+        "column": "psi",
+        "native_frobenius": 1.0335892009493491e-13,
+        "vela_frobenius": 8.347604079425224e-13,
+        "difference_frobenius": 8.436492692285545e-13,
+        "relative_to_native_block": 8.162326661827201,
+        "share_of_row_difference_squared": 3.344680829469103e-24
+      },
+      {
+        "row": "electron",
+        "column": "electron",
+        "native_frobenius": 55.63430795373062,
+        "vela_frobenius": 55.60498674198901,
+        "difference_frobenius": 0.4593689098413076,
+        "relative_to_native_block": 0.008256935814198514,
+        "share_of_row_difference_squared": 0.9916399370459071
+      },
+      {
+        "row": "electron",
+        "column": "hole",
+        "native_frobenius": 0.03819918839542761,
+        "vela_frobenius": 0.03839356735916095,
+        "difference_frobenius": 0.0024820711590615545,
+        "relative_to_native_block": 0.06497706530745703,
+        "share_of_row_difference_squared": 2.895071327110095e-05
+      },
+      {
+        "row": "electron",
+        "column": "circuit",
+        "native_frobenius": 1.6213418352234732,
+        "vela_frobenius": 1.6395508651686634,
+        "difference_frobenius": 0.042105234160913114,
+        "relative_to_native_block": 0.025969375023934822,
+        "share_of_row_difference_squared": 0.008331112240821793
+      },
+      {
+        "row": "hole",
+        "column": "psi",
+        "native_frobenius": 8.83712088795921e-08,
+        "vela_frobenius": 1.5773742023831303e-07,
+        "difference_frobenius": 1.196450631598566e-07,
+        "relative_to_native_block": 1.353891891677932,
+        "share_of_row_difference_squared": 6.267904569160978e-27
+      },
+      {
+        "row": "hole",
+        "column": "electron",
+        "native_frobenius": 1231335.3833420428,
+        "vela_frobenius": 1.251882795661885,
+        "difference_frobenius": 1231335.3848558692,
+        "relative_to_native_block": 1.0000000012294183,
+        "share_of_row_difference_squared": 0.6638737992341903
+      },
+      {
+        "row": "hole",
+        "column": "hole",
+        "native_frobenius": 55.51012937746925,
+        "vela_frobenius": 55.48293718030436,
+        "difference_frobenius": 0.4071540110933936,
+        "relative_to_native_block": 0.007334769629606583,
+        "share_of_row_difference_squared": 7.258556208072988e-14
+      },
+      {
+        "row": "hole",
+        "column": "circuit",
+        "native_frobenius": 876162.4620073719,
+        "vela_frobenius": 1.5900127965708128,
+        "difference_frobenius": 876162.7371277575,
+        "relative_to_native_block": 1.0000003140061318,
+        "share_of_row_difference_squared": 0.3361262007657372
+      },
+      {
+        "row": "circuit",
+        "column": "psi",
+        "native_frobenius": 5.81594216264221e-16,
+        "vela_frobenius": 8.530895377067397e-16,
+        "difference_frobenius": 9.40969777415438e-16,
+        "relative_to_native_block": 1.6179146062689713,
+        "share_of_row_difference_squared": 3.1020657016771865e-26
+      },
+      {
+        "row": "circuit",
+        "column": "electron",
+        "native_frobenius": 0.32685140596508233,
+        "vela_frobenius": 0.32524863185763364,
+        "difference_frobenius": 0.005342569478995814,
+        "relative_to_native_block": 0.01634556064772309,
+        "share_of_row_difference_squared": 0.9999999999999998
+      },
+      {
+        "row": "circuit",
+        "column": "hole",
+        "native_frobenius": 1.439499887171615e-19,
+        "vela_frobenius": 1.4424620248775217e-19,
+        "difference_frobenius": 4.399094969624476e-21,
+        "relative_to_native_block": 0.030559884087715965,
+        "share_of_row_difference_squared": 6.7799472990004975e-37
+      },
+      {
+        "row": "circuit",
+        "column": "circuit",
+        "native_frobenius": 0.9999999999999999,
+        "vela_frobenius": 1.0,
+        "difference_frobenius": 1.1102230246251565e-16,
+        "relative_to_native_block": 1.1102230246251568e-16,
+        "share_of_row_difference_squared": 4.318372504790085e-28
+      }
+    ],
+    "top_difference_rows": [
+      {
+        "index": 4669,
+        "block": "hole",
+        "node": 229,
+        "difference_L2": 918863.4698383627,
+        "native_L2": 918863.5112015093,
+        "relative": 0.9999999549844497,
+        "cosine": 0.029893103790240533,
+        "difference_squared_share": 0.3696875127331691
+      },
+      {
+        "index": 5713,
+        "block": "hole",
+        "node": 1308,
+        "difference_L2": 824401.0141440502,
+        "native_L2": 824400.6785661206,
+        "relative": 1.0000004070568334,
+        "cosine": -0.2789434099677229,
+        "difference_squared_share": 0.2975841826929838
+      },
+      {
+        "index": 5748,
+        "block": "hole",
+        "node": 1546,
+        "difference_L2": 648864.3386701988,
+        "native_L2": 648864.3385501655,
+        "relative": 1.0000000001849898,
+        "cosine": -8.575980723439123e-05,
+        "difference_squared_share": 0.1843489300394063
+      },
+      {
+        "index": 6755,
+        "block": "hole",
+        "node": 2587,
+        "difference_L2": 582021.1067596213,
+        "native_L2": 582021.105712151,
+        "relative": 1.0000000017997117,
+        "cosine": -0.0009455681210955107,
+        "difference_squared_share": 0.14832360685876542
+      },
+      {
+        "index": 5218,
+        "block": "hole",
+        "node": 791,
+        "difference_L2": 9145.475588824951,
+        "native_L2": 9145.08490918658,
+        "relative": 1.0000427201761657,
+        "cosine": -0.3230927807692086,
+        "difference_squared_share": 3.6622281681526224e-05
+      },
+      {
+        "index": 6273,
+        "block": "hole",
+        "node": 2084,
+        "difference_L2": 6612.500954159224,
+        "native_L2": 6612.49981689148,
+        "relative": 1.0000001719875653,
+        "cosine": -0.0009407711759484419,
+        "difference_squared_share": 1.9145393829262263e-05
+      },
+      {
+        "index": 4205,
+        "block": "electron",
+        "node": 2137,
+        "difference_L2": 0.11802744716098322,
+        "native_L2": 1.097387073925089,
+        "relative": 0.1075531596511589,
+        "cosine": 0.9942007800359978,
+        "difference_squared_share": 6.099564618378758e-15
+      },
+      {
+        "index": 3150,
+        "block": "electron",
+        "node": 844,
+        "difference_L2": 0.11802744716098319,
+        "native_L2": 1.0973870739250893,
+        "relative": 0.10755315965115886,
+        "cosine": 0.9942007800359975,
+        "difference_squared_share": 6.099564618378756e-15
+      },
+      {
+        "index": 6331,
+        "block": "hole",
+        "node": 2142,
+        "difference_L2": 0.08929467208598942,
+        "native_L2": 1.1748614188592157,
+        "relative": 0.0760044296736666,
+        "cosine": 0.997217249150575,
+        "difference_squared_share": 3.4912737454267372e-15
+      },
+      {
+        "index": 5276,
+        "block": "hole",
+        "node": 849,
+        "difference_L2": 0.08929467208598939,
+        "native_L2": 1.1748614188592157,
+        "relative": 0.07600442967366658,
+        "cosine": 0.997217249150575,
+        "difference_squared_share": 3.491273745426735e-15
+      },
+      {
+        "index": 6489,
+        "block": "hole",
+        "node": 2300,
+        "difference_L2": 0.08491136630560021,
+        "native_L2": 1.1548347227472051,
+        "relative": 0.07352685595009376,
+        "cosine": 0.9973582067219211,
+        "difference_squared_share": 3.1569264751855587e-15
+      },
+      {
+        "index": 5434,
+        "block": "hole",
+        "node": 1007,
+        "difference_L2": 0.0849113663056,
+        "native_L2": 1.1548347227472053,
+        "relative": 0.07352685595009356,
+        "cosine": 0.9973582067219212,
+        "difference_squared_share": 3.156926475185543e-15
+      },
+      {
+        "index": 6377,
+        "block": "hole",
+        "node": 2188,
+        "difference_L2": 0.07998249231189414,
+        "native_L2": 1.164780196934194,
+        "relative": 0.06866745547564702,
+        "cosine": 0.9977108531445323,
+        "difference_squared_share": 2.8010616972096013e-15
+      },
+      {
+        "index": 5322,
+        "block": "hole",
+        "node": 895,
+        "difference_L2": 0.07998249231189411,
+        "native_L2": 1.164780196934194,
+        "relative": 0.068667455475647,
+        "cosine": 0.9977108531445323,
+        "difference_squared_share": 2.8010616972095993e-15
+      },
+      {
+        "index": 3342,
+        "block": "electron",
+        "node": 1036,
+        "difference_L2": 0.07850538004737175,
+        "native_L2": 1.105961368644925,
+        "relative": 0.07098383566829297,
+        "cosine": 0.9974935400473735,
+        "difference_squared_share": 2.6985573348714526e-15
+      },
+      {
+        "index": 4397,
+        "block": "electron",
+        "node": 2329,
+        "difference_L2": 0.07850538004737162,
+        "native_L2": 1.105961368644925,
+        "relative": 0.07098383566829286,
+        "cosine": 0.9974935400473737,
+        "difference_squared_share": 2.698557334871444e-15
+      },
+      {
+        "index": 5362,
+        "block": "hole",
+        "node": 935,
+        "difference_L2": 0.07694543169847905,
+        "native_L2": 1.1631323696629585,
+        "relative": 0.06615363281547702,
+        "cosine": 0.9978764948185859,
+        "difference_squared_share": 2.5923789726961135e-15
+      },
+      {
+        "index": 6417,
+        "block": "hole",
+        "node": 2228,
+        "difference_L2": 0.07694543169847844,
+        "native_L2": 1.1631323696629587,
+        "relative": 0.06615363281547648,
+        "cosine": 0.9978764948185855,
+        "difference_squared_share": 2.5923789726960725e-15
+      },
+      {
+        "index": 4923,
+        "block": "hole",
+        "node": 496,
+        "difference_L2": 0.07489418800969602,
+        "native_L2": 1.1550162971402527,
+        "relative": 0.06484253788897118,
+        "cosine": 0.9979553207436967,
+        "difference_squared_share": 2.456003843763849e-15
+      },
+      {
+        "index": 5984,
+        "block": "hole",
+        "node": 1795,
+        "difference_L2": 0.07489418800969327,
+        "native_L2": 1.155016297140252,
+        "relative": 0.06484253788896883,
+        "cosine": 0.997955320743697,
+        "difference_squared_share": 2.456003843763668e-15
+      }
+    ],
+    "critical_rows": {
+      "hole:1546": {
+        "row": {
+          "index": 5748,
+          "block": "hole",
+          "node": 1546
+        },
+        "raw_diagonal_vela": 3.851340896147365e-14,
+        "raw_diagonal_native": 4.71492405139766e-06,
+        "native_normalized_rhs_V": 2.7485800632985532e-11,
+        "vela_normalized_rhs_V": 1.5004424435298932e-10,
+        "row_relative_L2": 1.0000000001849898,
+        "row_cosine": -8.575980723439123e-05,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 4634,
+              "block": "electron",
+              "node": 2587
+            },
+            "vela": 0.0,
+            "sentaurus": -648863.9703072599,
+            "difference": 648863.9703072599
+          },
+          {
+            "column": {
+              "index": 3627,
+              "block": "electron",
+              "node": 1546
+            },
+            "vela": 0.11405675169454943,
+            "sentaurus": -691.2867049568231,
+            "difference": 691.4007617085176
+          },
+          {
+            "column": {
+              "index": 6262,
+              "block": "hole",
+              "node": 2073
+            },
+            "vela": -0.947127664304323,
+            "sentaurus": -0.9664660071102297,
+            "difference": 0.019338342805906628
+          },
+          {
+            "column": {
+              "index": 5747,
+              "block": "hole",
+              "node": 1544
+            },
+            "vela": -0.03423630842411751,
+            "sentaurus": -0.022977874600702053,
+            "difference": -0.011258433823415459
+          },
+          {
+            "column": {
+              "index": 1485,
+              "block": "psi",
+              "node": 1546
+            },
+            "vela": 1.0712000951776854e-07,
+            "sentaurus": 2.080746938620808e-08,
+            "difference": 8.631254013156047e-08
+          },
+          {
+            "column": {
+              "index": 2509,
+              "block": "psi",
+              "node": 2587
+            },
+            "vela": 6.738034286727759e-12,
+            "sentaurus": 1.2244438439369296e-09,
+            "difference": -1.217705809650202e-09
+          },
+          {
+            "column": {
+              "index": 1483,
+              "block": "psi",
+              "node": 1544
+            },
+            "vela": -3.783947823384115e-12,
+            "sentaurus": -2.539118719145994e-12,
+            "difference": -1.2448291042381212e-12
+          },
+          {
+            "column": {
+              "index": 2002,
+              "block": "psi",
+              "node": 2073
+            },
+            "vela": -8.214794294885157e-11,
+            "sentaurus": -8.129922643581532e-11,
+            "difference": -8.487165130362578e-13
+          },
+          {
+            "column": {
+              "index": 6755,
+              "block": "hole",
+              "node": 2587
+            },
+            "vela": 0.0,
+            "sentaurus": -2.7852371010509836e-19,
+            "difference": 2.7852371010509836e-19
+          },
+          {
+            "column": {
+              "index": 4141,
+              "block": "electron",
+              "node": 2073
+            },
+            "vela": 7.470618967178712e-295,
+            "sentaurus": 0.0,
+            "difference": 7.470618967178712e-295
+          },
+          {
+            "column": {
+              "index": 3626,
+              "block": "electron",
+              "node": 1544
+            },
+            "vela": 1.06493115038232e-295,
+            "sentaurus": 0.0,
+            "difference": 1.06493115038232e-295
+          }
+        ]
+      },
+      "hole:229": {
+        "row": {
+          "index": 4669,
+          "block": "hole",
+          "node": 229
+        },
+        "raw_diagonal_vela": 3.851340896147402e-14,
+        "raw_diagonal_native": 4.71492405139766e-06,
+        "native_normalized_rhs_V": 8.633535913125526e-11,
+        "vela_normalized_rhs_V": 1.500441274826151e-10,
+        "row_relative_L2": 0.9999999549844497,
+        "row_cosine": 0.029893103790240533,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 2522,
+              "block": "circuit",
+              "node": 0
+            },
+            "vela": 0.05912384969722616,
+            "sentaurus": 652134.8625718056,
+            "difference": -652134.8034479559
+          },
+          {
+            "column": {
+              "index": 3592,
+              "block": "electron",
+              "node": 1308
+            },
+            "vela": 0.0,
+            "sentaurus": -647307.476766998,
+            "difference": 647307.476766998
+          },
+          {
+            "column": {
+              "index": 2548,
+              "block": "electron",
+              "node": 229
+            },
+            "vela": 0.11405675169454835,
+            "sentaurus": -4827.39636099279,
+            "difference": 4827.510417744485
+          },
+          {
+            "column": {
+              "index": 5207,
+              "block": "hole",
+              "node": 780
+            },
+            "vela": -0.9471276643043173,
+            "sentaurus": -0.9664660071102293,
+            "difference": 0.019338342805912068
+          },
+          {
+            "column": {
+              "index": 4668,
+              "block": "hole",
+              "node": 227
+            },
+            "vela": -0.034236308424117116,
+            "sentaurus": -0.022977874600702053,
+            "difference": -0.011258433823415064
+          },
+          {
+            "column": {
+              "index": 207,
+              "block": "psi",
+              "node": 229
+            },
+            "vela": 1.0712001055332686e-07,
+            "sentaurus": 6.254222204563918e-08,
+            "difference": 4.4577788507687675e-08
+          },
+          {
+            "column": {
+              "index": 1268,
+              "block": "psi",
+              "node": 1308
+            },
+            "vela": 6.738187788440626e-12,
+            "sentaurus": 4.332647447069806e-09,
+            "difference": -4.325909259281365e-09
+          },
+          {
+            "column": {
+              "index": 205,
+              "block": "psi",
+              "node": 227
+            },
+            "vela": -3.784089417003994e-12,
+            "sentaurus": -2.5391243331875596e-12,
+            "difference": -1.2449650838164344e-12
+          },
+          {
+            "column": {
+              "index": 748,
+              "block": "psi",
+              "node": 780
+            },
+            "vela": -8.215327813790931e-11,
+            "sentaurus": -8.12995857344755e-11,
+            "difference": -8.536924034338088e-13
+          },
+          {
+            "column": {
+              "index": 5713,
+              "block": "hole",
+              "node": 1308
+            },
+            "vela": 0.0,
+            "sentaurus": -2.7852369633473306e-19,
+            "difference": 2.7852369633473306e-19
+          },
+          {
+            "column": {
+              "index": 3086,
+              "block": "electron",
+              "node": 780
+            },
+            "vela": 7.470618967178641e-295,
+            "sentaurus": 0.0,
+            "difference": 7.470618967178641e-295
+          },
+          {
+            "column": {
+              "index": 2547,
+              "block": "electron",
+              "node": 227
+            },
+            "vela": 1.06493115038231e-295,
+            "sentaurus": 0.0,
+            "difference": 1.06493115038231e-295
+          }
+        ]
+      },
+      "hole:863": {
+        "row": {
+          "index": 5290,
+          "block": "hole",
+          "node": 863
+        },
+        "raw_diagonal_vela": 8.564932574720191e-14,
+        "raw_diagonal_native": 1.0742393115701133e-05,
+        "native_normalized_rhs_V": -5.3084320068008355e-17,
+        "vela_normalized_rhs_V": -8.789308932997912e-17,
+        "row_relative_L2": 0.002371949200811647,
+        "row_cosine": 0.9999974630636806,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 3169,
+              "block": "electron",
+              "node": 863
+            },
+            "vela": -0.012962234673279434,
+            "sentaurus": -0.01064636266944874,
+            "difference": -0.0023158720038306928
+          },
+          {
+            "column": {
+              "index": 5291,
+              "block": "hole",
+              "node": 864
+            },
+            "vela": -0.49146834275937124,
+            "sentaurus": -0.4930281724445659,
+            "difference": 0.0015598296851946913
+          },
+          {
+            "column": {
+              "index": 2522,
+              "block": "circuit",
+              "node": 0
+            },
+            "vela": -0.49056823759805357,
+            "sentaurus": -0.49131396476553063,
+            "difference": 0.0007457271674770616
+          },
+          {
+            "column": {
+              "index": 5288,
+              "block": "hole",
+              "node": 861
+            },
+            "vela": -0.003998801566881632,
+            "sentaurus": -0.004009384863170658,
+            "difference": 1.0583296289026073e-05
+          },
+          {
+            "column": {
+              "index": 5307,
+              "block": "hole",
+              "node": 880
+            },
+            "vela": -0.0010023834024524595,
+            "sentaurus": -0.001002115257316526,
+            "difference": -2.6814513593353614e-07
+          },
+          {
+            "column": {
+              "index": 832,
+              "block": "psi",
+              "node": 864
+            },
+            "vela": 2.8303463236291553e-14,
+            "sentaurus": 2.4995309833444704e-14,
+            "difference": 3.3081534028468492e-15
+          },
+          {
+            "column": {
+              "index": 831,
+              "block": "psi",
+              "node": 863
+            },
+            "vela": 8.344972708985332e-15,
+            "sentaurus": 6.623362858073676e-15,
+            "difference": 1.7216098509116566e-15
+          },
+          {
+            "column": {
+              "index": 829,
+              "block": "psi",
+              "node": 861
+            },
+            "vela": 1.2226061262876818e-15,
+            "sentaurus": 1.0490687264973465e-15,
+            "difference": 1.735373997903353e-16
+          },
+          {
+            "column": {
+              "index": 848,
+              "block": "psi",
+              "node": 880
+            },
+            "vela": -7.098179263136286e-17,
+            "sentaurus": -3.819275457594567e-17,
+            "difference": -3.278903805541719e-17
+          },
+          {
+            "column": {
+              "index": 3186,
+              "block": "electron",
+              "node": 880
+            },
+            "vela": 5.149013074794341e-296,
+            "sentaurus": 2.64648274768703e-265,
+            "difference": -2.64648274768703e-265
+          },
+          {
+            "column": {
+              "index": 3170,
+              "block": "electron",
+              "node": 864
+            },
+            "vela": 1.3303290969704003e-294,
+            "sentaurus": 0.0,
+            "difference": 1.3303290969704003e-294
+          },
+          {
+            "column": {
+              "index": 3167,
+              "block": "electron",
+              "node": 861
+            },
+            "vela": 9.960770422484455e-296,
+            "sentaurus": 0.0,
+            "difference": 9.960770422484455e-296
+          }
+        ]
+      },
+      "electron:1546": {
+        "row": {
+          "index": 3627,
+          "block": "electron",
+          "node": 1546
+        },
+        "raw_diagonal_vela": -20979.870039583166,
+        "raw_diagonal_native": -2537911593288.296,
+        "native_normalized_rhs_V": 2.653158473606082e-17,
+        "vela_normalized_rhs_V": -2.4806031740451024e-15,
+        "row_relative_L2": 0.0146183683545181,
+        "row_cosine": 0.9999370348227012,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 4141,
+              "block": "electron",
+              "node": 2073
+            },
+            "vela": -0.9522598514423308,
+            "sentaurus": -0.9713618874046618,
+            "difference": 0.019102035962330954
+          },
+          {
+            "column": {
+              "index": 3626,
+              "block": "electron",
+              "node": 1544
+            },
+            "vela": -0.021350798464701882,
+            "sentaurus": -0.014245554127098204,
+            "difference": -0.007105244337603678
+          },
+          {
+            "column": {
+              "index": 4634,
+              "block": "electron",
+              "node": 2587
+            },
+            "vela": 0.0,
+            "sentaurus": 1.205457411431411e-12,
+            "difference": -1.205457411431411e-12
+          },
+          {
+            "column": {
+              "index": 1485,
+              "block": "psi",
+              "node": 1546
+            },
+            "vela": 2.997154798387924e-14,
+            "sentaurus": -2.6935277541317164e-15,
+            "difference": 3.2665075738010955e-14
+          },
+          {
+            "column": {
+              "index": 2002,
+              "block": "psi",
+              "node": 2073
+            },
+            "vela": 1.0725716443622823e-14,
+            "sentaurus": 1.5391592088275972e-15,
+            "difference": 9.186557234795226e-15
+          },
+          {
+            "column": {
+              "index": 1483,
+              "block": "psi",
+              "node": 1544
+            },
+            "vela": 3.713719608335578e-16,
+            "sentaurus": 3.0061703297414007e-18,
+            "difference": 3.683657905038164e-16
+          },
+          {
+            "column": {
+              "index": 2509,
+              "block": "psi",
+              "node": 2587
+            },
+            "vela": 1.8618390851109556e-16,
+            "sentaurus": 3.3818443305374916e-19,
+            "difference": 1.858457240780418e-16
+          },
+          {
+            "column": {
+              "index": 3627,
+              "block": "electron",
+              "node": 1546
+            },
+            "vela": 0.9999999999999999,
+            "sentaurus": 1.0,
+            "difference": -1.1102230246251565e-16
+          },
+          {
+            "column": {
+              "index": 5748,
+              "block": "hole",
+              "node": 1546
+            },
+            "vela": -1.27405309431328e-21,
+            "sentaurus": -8.613165787517684e-22,
+            "difference": -4.1273651556151156e-22
+          },
+          {
+            "column": {
+              "index": 6755,
+              "block": "hole",
+              "node": 2587
+            },
+            "vela": 0.0,
+            "sentaurus": 5.1744045897104725e-37,
+            "difference": -5.1744045897104725e-37
+          }
+        ]
+      },
+      "electron:229": {
+        "row": {
+          "index": 2548,
+          "block": "electron",
+          "node": 229
+        },
+        "raw_diagonal_vela": -20979.870039583166,
+        "raw_diagonal_native": -2537911593288.316,
+        "native_normalized_rhs_V": 2.5306948776132653e-17,
+        "vela_normalized_rhs_V": -2.480613255568346e-15,
+        "row_relative_L2": 0.016962020628531527,
+        "row_cosine": 0.9998984780365372,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 3086,
+              "block": "electron",
+              "node": 780
+            },
+            "vela": -0.9522598514423308,
+            "sentaurus": -0.9713618874046541,
+            "difference": 0.019102035962323294
+          },
+          {
+            "column": {
+              "index": 2522,
+              "block": "circuit",
+              "node": 0
+            },
+            "vela": -0.026389350093276275,
+            "sentaurus": -0.014392558469449267,
+            "difference": -0.011996791623827007
+          },
+          {
+            "column": {
+              "index": 2547,
+              "block": "electron",
+              "node": 227
+            },
+            "vela": -0.021350798464701882,
+            "sentaurus": -0.014245554127098091,
+            "difference": -0.0071052443376037906
+          },
+          {
+            "column": {
+              "index": 3592,
+              "block": "electron",
+              "node": 1308
+            },
+            "vela": 0.0,
+            "sentaurus": 1.2025657627040642e-12,
+            "difference": -1.2025657627040642e-12
+          },
+          {
+            "column": {
+              "index": 207,
+              "block": "psi",
+              "node": 229
+            },
+            "vela": 2.997154798387924e-14,
+            "sentaurus": -2.6935277541316947e-15,
+            "difference": 3.2665075738010936e-14
+          },
+          {
+            "column": {
+              "index": 748,
+              "block": "psi",
+              "node": 780
+            },
+            "vela": 1.0725716443622823e-14,
+            "sentaurus": 1.539159208827585e-15,
+            "difference": 9.186557234795239e-15
+          },
+          {
+            "column": {
+              "index": 205,
+              "block": "psi",
+              "node": 227
+            },
+            "vela": 3.713719608335578e-16,
+            "sentaurus": 3.006170329741377e-18,
+            "difference": 3.6836579050381645e-16
+          },
+          {
+            "column": {
+              "index": 1268,
+              "block": "psi",
+              "node": 1308
+            },
+            "vela": 1.8618390851109556e-16,
+            "sentaurus": 7.101873138399158e-18,
+            "difference": 1.790820353726964e-16
+          },
+          {
+            "column": {
+              "index": 2548,
+              "block": "electron",
+              "node": 229
+            },
+            "vela": 0.9999999999999999,
+            "sentaurus": 1.0,
+            "difference": -1.1102230246251565e-16
+          },
+          {
+            "column": {
+              "index": 4669,
+              "block": "hole",
+              "node": 229
+            },
+            "vela": -1.2740530943132905e-21,
+            "sentaurus": -8.613165787517614e-22,
+            "difference": -4.1273651556152905e-22
+          },
+          {
+            "column": {
+              "index": 5713,
+              "block": "hole",
+              "node": 1308
+            },
+            "vela": 0.0,
+            "sentaurus": 5.174404333885025e-37,
+            "difference": -5.174404333885025e-37
+          }
+        ]
+      },
+      "psi:740": {
+        "row": {
+          "index": 708,
+          "block": "psi",
+          "node": 740
+        },
+        "raw_diagonal_vela": 221.3768443179461,
+        "raw_diagonal_native": 217.6567231802447,
+        "native_normalized_rhs_V": -2.4483831421957363e-17,
+        "vela_normalized_rhs_V": 3.6898257997934685e-07,
+        "row_relative_L2": 1.671992908100373e-06,
+        "row_cosine": 0.9999999999986152,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 5167,
+              "block": "hole",
+              "node": 740
+            },
+            "vela": -0.27859437054106206,
+            "sentaurus": -0.27859602143516216,
+            "difference": 1.650894100091449e-06
+          },
+          {
+            "column": {
+              "index": 710,
+              "block": "psi",
+              "node": 742
+            },
+            "vela": -0.2319458227546442,
+            "sentaurus": -0.23194529196035185,
+            "difference": -5.307942923526987e-07
+          },
+          {
+            "column": {
+              "index": 705,
+              "block": "psi",
+              "node": 737
+            },
+            "vela": -0.15463054850309624,
+            "sentaurus": -0.1546301946402351,
+            "difference": -3.538628611243766e-07
+          },
+          {
+            "column": {
+              "index": 709,
+              "block": "psi",
+              "node": 741
+            },
+            "vela": -0.1480858105377027,
+            "sentaurus": -0.14808547165208694,
+            "difference": -3.388856157637843e-07
+          },
+          {
+            "column": {
+              "index": 671,
+              "block": "psi",
+              "node": 703
+            },
+            "vela": -0.10942817341192869,
+            "sentaurus": -0.10942792299202846,
+            "difference": -2.5041990023288996e-07
+          },
+          {
+            "column": {
+              "index": 711,
+              "block": "psi",
+              "node": 743
+            },
+            "vela": -0.07731527425154806,
+            "sentaurus": -0.07731509732011732,
+            "difference": -1.7693143074259954e-07
+          },
+          {
+            "column": {
+              "index": 708,
+              "block": "psi",
+              "node": 740
+            },
+            "vela": 1.0,
+            "sentaurus": 0.9999999999999999,
+            "difference": 1.1102230246251565e-16
+          },
+          {
+            "column": {
+              "index": 3046,
+              "block": "electron",
+              "node": 740
+            },
+            "vela": -1.7945153533063183e-14,
+            "sentaurus": -1.7945259872426856e-14,
+            "difference": 1.0633936367302649e-19
+          }
+        ]
+      },
+      "circuit:0": {
+        "row": {
+          "index": 2522,
+          "block": "circuit",
+          "node": 0
+        },
+        "raw_diagonal_vela": 280548065.11617637,
+        "raw_diagonal_native": 117018343927832.89,
+        "native_normalized_rhs_V": 3.597937122406295e-11,
+        "vela_normalized_rhs_V": 3.564424637801739e-11,
+        "row_relative_L2": 0.005078194801003996,
+        "row_cosine": 0.9999872114421631,
+        "largest_difference_entries": [
+          {
+            "column": {
+              "index": 3097,
+              "block": "electron",
+              "node": 791
+            },
+            "vela": -0.04059794844963617,
+            "sentaurus": -0.03657575447900856,
+            "difference": -0.004022193970627613
+          },
+          {
+            "column": {
+              "index": 3592,
+              "block": "electron",
+              "node": 1308
+            },
+            "vela": -0.02845478713904548,
+            "sentaurus": -0.02589722328675644,
+            "difference": -0.0025575638522890402
+          },
+          {
+            "column": {
+              "index": 3167,
+              "block": "electron",
+              "node": 861
+            },
+            "vela": -0.0689388036202595,
+            "sentaurus": -0.06994781179041122,
+            "difference": 0.0010090081701517178
+          },
+          {
+            "column": {
+              "index": 3377,
+              "block": "electron",
+              "node": 1071
+            },
+            "vela": -0.1379998115046835,
+            "sentaurus": -0.1389731576344874,
+            "difference": 0.0009733461298039037
+          },
+          {
+            "column": {
+              "index": 3378,
+              "block": "electron",
+              "node": 1072
+            },
+            "vela": -0.13799981150771184,
+            "sentaurus": -0.13897315763593177,
+            "difference": 0.0009733461282199207
+          },
+          {
+            "column": {
+              "index": 3413,
+              "block": "electron",
+              "node": 1107
+            },
+            "vela": -0.13799981150771481,
+            "sentaurus": -0.13897315763593268,
+            "difference": 0.0009733461282178668
+          },
+          {
+            "column": {
+              "index": 3169,
+              "block": "electron",
+              "node": 863
+            },
+            "vela": -0.10378378650316097,
+            "sentaurus": -0.10458915130554976,
+            "difference": 0.0008053648023887833
+          },
+          {
+            "column": {
+              "index": 3187,
+              "block": "electron",
+              "node": 881
+            },
+            "vela": -0.10349985779688427,
+            "sentaurus": -0.10429691809582149,
+            "difference": 0.0007970602989372244
+          },
+          {
+            "column": {
+              "index": 3186,
+              "block": "electron",
+              "node": 880
+            },
+            "vela": -0.06889434523953827,
+            "sentaurus": -0.06943050437929489,
+            "difference": 0.0005361591397566173
+          },
+          {
+            "column": {
+              "index": 3103,
+              "block": "electron",
+              "node": 797
+            },
+            "vela": -0.10224158330333581,
+            "sentaurus": -0.10267853318523931,
+            "difference": 0.0004369498819035006
+          },
+          {
+            "column": {
+              "index": 3414,
+              "block": "electron",
+              "node": 1108
+            },
+            "vela": -0.06899990575385728,
+            "sentaurus": -0.06935247898238618,
+            "difference": 0.00035257322852889905
+          },
+          {
+            "column": {
+              "index": 2548,
+              "block": "electron",
+              "node": 229
+            },
+            "vela": -0.0005895441097103354,
+            "sentaurus": -0.000312147991225609,
+            "difference": -0.00027739611848472644
+          },
+          {
+            "column": {
+              "index": 1268,
+              "block": "psi",
+              "node": 1308
+            },
+            "vela": 3.615329301490655e-16,
+            "sentaurus": -6.674315770560297e-17,
+            "difference": 4.282760878546685e-16
+          },
+          {
+            "column": {
+              "index": 765,
+              "block": "psi",
+              "node": 797
+            },
+            "vela": 1.0675994658424274e-16,
+            "sentaurus": -2.503148151784772e-16,
+            "difference": 3.5707476176271993e-16
+          },
+          {
+            "column": {
+              "index": 1039,
+              "block": "psi",
+              "node": 1071
+            },
+            "vela": -1.0735970222581912e-16,
+            "sentaurus": 2.337307468922058e-16,
+            "difference": -3.410904491180249e-16
+          }
+        ]
+      }
+    },
+    "direction_decomposition": {
+      "identity": "dv-ds=Av^-1[(rv-rs)-(Av-Bs)ds]",
+      "reference": "Vela diagonal-normalized operator",
+      "reconstruction_max_abs_V": 1.8840470438104273e-10,
+      "independent_backward_errors": {
+        "vela": 2.6293620975272537e-16,
+        "native": 7.453925310242418e-15,
+        "rhs_effect": 2.0124628870468726e-16,
+        "jac_effect": 2.9709805138869673e-16
+      },
+      "by_variable": {
+        "psi": {
+          "total_difference_L2_V": 0.019704747876370967,
+          "rhs_effect_L2_V": 0.0009648692452655297,
+          "jacobian_effect_L2_V": 0.018740220553857625,
+          "total_difference_Linf_V": 0.0007995623809301687
+        },
+        "electron": {
+          "total_difference_L2_V": 0.024971205013638306,
+          "rhs_effect_L2_V": 0.0012254388048701706,
+          "jacobian_effect_L2_V": 0.023745776792949397,
+          "total_difference_Linf_V": 0.0007995973896907536
+        },
+        "hole": {
+          "total_difference_L2_V": 0.008624933328843672,
+          "rhs_effect_L2_V": 0.0002507271389690806,
+          "jacobian_effect_L2_V": 0.008476412906649017,
+          "total_difference_Linf_V": 0.003431062306854091
+        },
+        "circuit": {
+          "total_difference_L2_V": 0.0007995610120069474,
+          "rhs_effect_L2_V": 3.925024241512648e-05,
+          "jacobian_effect_L2_V": 0.0007603109579965143,
+          "total_difference_Linf_V": 0.0007995610120069474
+        }
+      },
+      "same_node": {
+        "1546": {
+          "native_dfp_V": 0.0006096012131955617,
+          "vela_dfp_V": 3.261337047205961e-10,
+          "total_difference_V": -0.000609600887061857,
+          "rhs_effect_V": 5.708977987833309e-10,
+          "jacobian_effect_V": -0.000609601457959638,
+          "reconstruction_defect_V": -1.7780915628762273e-17
+        },
+        "229": {
+          "native_dfp_V": 0.0018105721307455646,
+          "vela_dfp_V": -0.0016204901761085265,
+          "total_difference_V": -0.003431062306854091,
+          "rhs_effect_V": 1.5231983617870007e-05,
+          "jacobian_effect_V": -0.003446294216490434,
+          "reconstruction_defect_V": -7.398152706769578e-11
+        }
+      }
+    },
+    "sparsity_sensitivity": [
+      {
+        "diagnostic_relative_row_threshold": 0.0,
+        "vela_entries": 83453,
+        "native_entries": 71515,
+        "shared_entries": 70318,
+        "only_vela": 13135,
+        "only_native": 1197
+      },
+      {
+        "diagnostic_relative_row_threshold": 1e-14,
+        "vela_entries": 45413,
+        "native_entries": 42783,
+        "shared_entries": 42659,
+        "only_vela": 2754,
+        "only_native": 124
+      },
+      {
+        "diagnostic_relative_row_threshold": 1e-12,
+        "vela_entries": 40753,
+        "native_entries": 40725,
+        "shared_entries": 40711,
+        "only_vela": 42,
+        "only_native": 14
+      },
+      {
+        "diagnostic_relative_row_threshold": 1e-10,
+        "vela_entries": 40096,
+        "native_entries": 40094,
+        "shared_entries": 40086,
+        "only_vela": 10,
+        "only_native": 8
+      }
+    ]
+  },
+  "source_jacobian_controls": {
+    "frozen_source_J": {
+      "raw_RHS_identical": true,
+      "packed_state_identical": true,
+      "fixed_base_scale_matrix_change_frobenius": 0.17972292958788239,
+      "hole_matrix_change_frobenius": 0.17972292958788239,
+      "relative_hole_difference_to_native_after_own_diagonal_scaling": 1.0000001263337925,
+      "local_rows": {
+        "1546": {
+          "normalized_coefficients": {
+            "4146": -0.0006940301846269457,
+            "5187": 0.0,
+            "7800": 0.0
+          },
+          "native_coefficients": {
+            "4146": -691.2867049568231,
+            "5187": -648863.9703072599,
+            "7800": 0.0
+          }
+        },
+        "229": {
+          "normalized_coefficients": {
+            "2829": -0.000694030184626939,
+            "3908": 0.0,
+            "7800": -0.017941997021795365
+          },
+          "native_coefficients": {
+            "2829": -4827.39636099279,
+            "3908": -647307.476766998,
+            "7800": 652134.8625718056
+          }
+        }
+      },
+      "raw_dfp1546_V": 1.0925921162016693e-09,
+      "raw_dfp229_V": 0.0021392788833123483,
+      "identity": {
+        "accepted_alpha": 1.0,
+        "applied_dinner_V": 0.004175804258499394,
+        "componentwise_backward_error": 7.0578158998335525e-09,
+        "current_A_per_um": 9.34644191719708e-15,
+        "dimension": 7801,
+        "failure": "coupled Newton iteration budget exhausted",
+        "inner_V": -3.8202999347345123e-19,
+        "label": "p01_i01",
+        "nodes": 2600,
+        "outer_V": 0.01,
+        "potential_scale_V": 0.025851995266484913,
+        "raw_dinner_V": 0.004175804258499394
+      }
+    },
+    "fd_1e9": {
+      "raw_RHS_identical": true,
+      "packed_state_identical": true,
+      "fixed_base_scale_matrix_change_frobenius": 0.38366864523387034,
+      "hole_matrix_change_frobenius": 0.38366864523387034,
+      "relative_hole_difference_to_native_after_own_diagonal_scaling": 1.0000000861989748,
+      "local_rows": {
+        "1546": {
+          "normalized_coefficients": {
+            "4146": -0.15152495965310986,
+            "5187": 0.0,
+            "7800": 0.0
+          },
+          "native_coefficients": {
+            "4146": -691.2867049568231,
+            "5187": -648863.9703072599,
+            "7800": 0.0
+          }
+        },
+        "229": {
+          "normalized_coefficients": {
+            "2829": -0.15152495965310842,
+            "3908": 0.0,
+            "7800": 0.13480699068327212
+          },
+          "native_coefficients": {
+            "2829": -4827.39636099279,
+            "3908": -647307.476766998,
+            "7800": 652134.8625718056
+          }
+        }
+      },
+      "raw_dfp1546_V": 2.0993298930832104e-09,
+      "raw_dfp229_V": 0.0021016802253838534,
+      "identity": {
+        "accepted_alpha": 1.0,
+        "applied_dinner_V": 0.004175804259814609,
+        "componentwise_backward_error": 7.753053905842565e-08,
+        "current_A_per_um": 9.34644191719708e-15,
+        "dimension": 7801,
+        "failure": "coupled Newton iteration budget exhausted",
+        "inner_V": -3.8202999347345123e-19,
+        "label": "p01_i01",
+        "nodes": 2600,
+        "outer_V": 0.01,
+        "potential_scale_V": 0.025851995266484913,
+        "raw_dinner_V": 0.004175804259814609
+      }
+    },
+    "fd_1e13": {
+      "raw_RHS_identical": true,
+      "packed_state_identical": true,
+      "fixed_base_scale_matrix_change_frobenius": 2640.351061971274,
+      "hole_matrix_change_frobenius": 2640.351061971274,
+      "relative_hole_difference_to_native_after_own_diagonal_scaling": 0.9996022494227791,
+      "local_rows": {
+        "1546": {
+          "normalized_coefficients": {
+            "4146": -1519.937060551229,
+            "5187": 0.0,
+            "7800": 0.0
+          },
+          "native_coefficients": {
+            "4146": -691.2867049568231,
+            "5187": -648863.9703072599,
+            "7800": 0.0
+          }
+        },
+        "229": {
+          "normalized_coefficients": {
+            "2829": -1519.9370605512147,
+            "3908": 0.0,
+            "7800": 1519.9184246073546
+          },
+          "native_coefficients": {
+            "2829": -4827.39636099279,
+            "3908": -647307.476766998,
+            "7800": 652134.8625718056
+          }
+        }
+      },
+      "raw_dfp1546_V": 1.0146123828914778e-05,
+      "raw_dfp229_V": 0.002129130050020705,
+      "identity": {
+        "accepted_alpha": 1.0,
+        "applied_dinner_V": 0.0041758042719995045,
+        "componentwise_backward_error": 9.23789508052447e-09,
+        "current_A_per_um": 9.34644191719708e-15,
+        "dimension": 7801,
+        "failure": "coupled Newton iteration budget exhausted",
+        "inner_V": -3.8202999347345123e-19,
+        "label": "p01_i01",
+        "nodes": 2600,
+        "outer_V": 0.01,
+        "potential_scale_V": 0.025851995266484913,
+        "raw_dinner_V": 0.0041758042719995045
+      }
+    },
+    "fd_1e17": {
+      "raw_RHS_identical": true,
+      "packed_state_identical": true,
+      "fixed_base_scale_matrix_change_frobenius": 237337.30690437354,
+      "hole_matrix_change_frobenius": 237337.30690437354,
+      "relative_hole_difference_to_native_after_own_diagonal_scaling": 0.9745038048046605,
+      "local_rows": {
+        "1546": {
+          "normalized_coefficients": {
+            "4146": -136903.69778228182,
+            "5187": 0.0,
+            "7800": 0.0
+          },
+          "native_coefficients": {
+            "4146": -691.2867049568231,
+            "5187": -648863.9703072599,
+            "7800": 0.0
+          }
+        },
+        "229": {
+          "normalized_coefficients": {
+            "2829": -136903.69778228053,
+            "3908": 0.0,
+            "7800": 136903.67914625333
+          },
+          "native_coefficients": {
+            "2829": -4827.39636099279,
+            "3908": -647307.476766998,
+            "7800": 652134.8625718056
+          }
+        }
+      },
+      "raw_dfp1546_V": 0.0009139101970866947,
+      "raw_dfp229_V": 0.0012253625008347502,
+      "identity": {
+        "accepted_alpha": 1.0,
+        "applied_dinner_V": 0.004175804281687435,
+        "componentwise_backward_error": 3.9477251256328105e-08,
+        "current_A_per_um": 9.34644191719708e-15,
+        "dimension": 7801,
+        "failure": "coupled Newton iteration budget exhausted",
+        "inner_V": -3.8202999347345123e-19,
+        "label": "p01_i01",
+        "nodes": 2600,
+        "outer_V": 0.01,
+        "potential_scale_V": 0.025851995266484913,
+        "raw_dinner_V": 0.004175804281687435
+      }
+    }
+  },
+  "topology": {
+    "positions_um": [
+      {
+        "id": 229,
+        "x": 0.0,
+        "y": 0.15890624999999997
+      },
+      {
+        "id": 1308,
+        "x": 0.0009765625,
+        "y": 0.165
+      },
+      {
+        "id": 1546,
+        "x": 0.0,
+        "y": -0.15890624999999997
+      },
+      {
+        "id": 2587,
+        "x": 0.0009765625,
+        "y": -0.165
+      },
+      {
+        "id": 1287,
+        "x": -0.0,
+        "y": 0.165
+      },
+      {
+        "id": 2567,
+        "x": -0.0,
+        "y": -0.165
+      }
+    ],
+    "contact_membership": {
+      "gate": [],
+      "substrate": [],
+      "drain": [
+        1287
+      ],
+      "source": [
+        2567
+      ]
+    },
+    "zero_direct_transport_coupling_edges": [
+      {
+        "edge": "946",
+        "node0": "229",
+        "node1": "1308",
+        "length": "0.0061715041423389396",
+        "couple": "0",
+        "fn0": "7.7715611723760958e-16",
+        "fn1": "-1.5543122344752192e-15",
+        "fp0": "9.7469810000916368e-12",
+        "fp1": "3.5527136788005013e-12",
+        "mu_n": "49.565162294255998",
+        "mu_p": "45.503846875652165",
+        "h_flux": "0",
+        "ni0": "359908327018.48962",
+        "ni1": "969543312942.69812",
+        "p0": "265.73068114561016",
+        "p1": "204.90253692595064"
+      },
+      {
+        "edge": "5748",
+        "node0": "1546",
+        "node1": "2587",
+        "length": "0.0061715041423389396",
+        "couple": "0",
+        "fn0": "7.7715611723760958e-16",
+        "fn1": "-1.5543122344752192e-15",
+        "fp0": "9.7467589554867118e-12",
+        "fp1": "3.5527136788005013e-12",
+        "mu_n": "49.565162294255998",
+        "mu_p": "45.503846875652165",
+        "h_flux": "0",
+        "ni0": "359908327018.48962",
+        "ni1": "969543312942.69812",
+        "p0": "265.73068114560829",
+        "p1": "204.90253692595064"
+      }
+    ],
+    "contact_triangle": {
+      "id": 4683,
+      "region_id": 3,
+      "node_ids": [
+        2567,
+        2587,
+        1546
+      ]
+    },
+    "triangle_affine_electric_field_V_cm": [
+      758.135812072851,
+      53190.45841711524
+    ],
+    "triangle_field_norm_V_cm": 53195.861084603304,
+    "candidate_alpha_using_triangle_E_cm_inv": 6.266008499223752e-05,
+    "horizontal_source_edge": {
+      "edge": "7140",
+      "node0": "2567",
+      "node1": "2587",
+      "length": "0.0009765625",
+      "couple": "0.00441406250000001",
+      "area": "2.1553039550778995e-06",
+      "electric_field": "758.13581206148228",
+      "qf_n": "1.1368683772161603e-09",
+      "qf_p": "3.6390019886312075e-05",
+      "drive_n": "758.13581206148228",
+      "drive_p": "758.13581206148228",
+      "alpha_n": "6.931352610263119e-299",
+      "alpha_p": "1.5598008292227958e-298",
+      "flux_n": "12532256639048.85",
+      "flux_p": "0.32173120697440405",
+      "source_n": "1.8722153365579774e-291",
+      "source_p": "1.0816104161658965e-304",
+      "node0_source": "9.3610766827904284e-292",
+      "node1_source": "9.3610766827904284e-292",
+      "contact_cell": "1"
+    },
+    "native_nodal_outputs_not_edge_values": {
+      "eAlphaAvalanche": [
+        {
+          "node_id": "1546",
+          "component0": "1.8169095276572949e-05"
+        },
+        {
+          "node_id": "2567",
+          "component0": "4.3619708248298371e-05"
+        },
+        {
+          "node_id": "2587",
+          "component0": "1.0990341675076866e-05"
+        }
+      ],
+      "ElectricField": [
+        {
+          "node_id": "1546",
+          "component0": "-4425.5330364539413",
+          "component1": "51901.005730561978"
+        },
+        {
+          "node_id": "2567",
+          "component0": "1361.3797278380443",
+          "component1": "50172.766451732197"
+        },
+        {
+          "node_id": "2587",
+          "component0": "1029.2859345085537",
+          "component1": "50478.888514497899"
+        }
+      ],
+      "eCurrentDensity": [
+        {
+          "node_id": "1546",
+          "component0": "-4.3966018587272339e-07",
+          "component1": "1.5816956328634878e-08"
+        },
+        {
+          "node_id": "2567",
+          "component0": "-7.0478004787595875e-07",
+          "component1": "1.7679437517319363e-08"
+        },
+        {
+          "node_id": "2587",
+          "component0": "-2.8464195476105141e-07",
+          "component1": "1.887800893193738e-08"
+        }
+      ]
+    },
+    "interpretation": "Zero diagonal transport coupling does not imply zero element-source coupling through the other two triangle edges. Native cell/current reconstruction is a hypothesis to test; nodal alpha and edge alpha are not the same sampling location."
+  },
+  "verification": {
+    "dimension": 6765,
+    "diagonal_unit_normalization": true,
+    "signed_row_unit_invariance_relative_Frobenius": {
+      "vela": 7.79003700958326e-17,
+      "native": 1.3343047548071194e-16
+    },
+    "top4_squared_difference_fraction": 0.9999442323243247,
+    "exact_direction_identity_global_max_abs_defect_V": 1.8840470438104273e-10,
+    "source_controls_raw_RHS_and_state_identical": true,
+    "control_processes": 4,
+    "controls_exit_zero": true,
+    "production_code_modified": false
+  },
+  "qualification": {
+    "Jacobian_agreement": false,
+    "production_repair": false,
+    "native_AV_component_separately_exported": false,
+    "unique_physical_origin_of_native_cross_terms_confirmed": false
+  },
+  "production_sources_modified": false,
+  "evidence_sha256": {
+    "build-release/bv_jacobian_compare_20261024/analyze.py": "b6870396203ce26ae59e828eb8645d83ec0d69c6b5df17dfb8df3441f9e2a669",
+    "build-release/bv_jacobian_compare_20261024/analyze_controls.py": "02f81c5e2486c32ee96bb3db5f06c530822a6eed9c3955f1417b9bcd31c9fe82",
+    "build-release/bv_jacobian_compare_20261024/compare.py": "99e5bacb324a40fc711e517ba49c9d8dc8d83db086b0c0b6e301f3dcd81bda8d",
+    "build-release/bv_jacobian_compare_20261024/run_controls.py": "f3d6f55e9e68b44fc149ca1d67c25eb37f36cc8fa08167a37f62472f56c85a96",
+    "build-release/bv_jacobian_compare_20261024/topology.py": "f1915b3f6c0fbe921309a98c96bf50a08929b644d2231cd126b8a20fdc520ff1",
+    "build-release/bv_jacobian_compare_20261024/verify.py": "4d623235403ff2bf8d2d36a89fbc745bf92190c1e1ec70cdd5c4c7bbb8c54df3",
+    "build-release/bv_jacobian_compare_20261024/write_report.py": "a07da513c0627e7b2216e0a9dd390d70a4947f5f97f74d65d2c0e354285b1762",
+    "build-release/bv_jacobian_compare_20261024/comparison.json": "2da11070f942a73a06f8b8b4bf4b5ec39850c806c8c32078337dd5adf1d4be95",
+    "build-release/bv_jacobian_compare_20261024/controls_comparison.json": "ca4cbf190e1028cea14552f4bfabdbc3f6992ada50f288059caa2e19c839f184",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13_analysis.json": "59f3fed31c3ba4c6c167ec5aee9199948957992e1745235db9ab24c977f5a2c1",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13_config.json": "2b5ce31315388f93b2f48317da72b3381437126f0b0bb2bfcc909dc367faf06e",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13_manifest.json": "43a6128e5685dbf2fb0f3231849d5d7c9c444d6746410bd7a68d3ecff7cb811f",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17_analysis.json": "e489c853bd560a0b1e79cb92aadb197310775dee6db8e0d0f3a9f7768a4907dc",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17_config.json": "25fbed3976296e348ca94319cb644e58d27aa8c9f86a3c16209614252f3846ad",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17_manifest.json": "9b8eea65e1bcd48b34856b70f777064590ad6033753a1b9664800ad2da14fa27",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9_analysis.json": "04e0f5efaa231775a7aa82faea8538c131695f82317ef93c7de06743be008c82",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9_config.json": "e60143018b09d93e27e534edaf071aa1901fdb92e7546ee36b18b0d5665c91eb",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9_manifest.json": "49733fc29c50fbfee6ec629c0e39306b1fe96983855964e7fdcd8d1e51695c53",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J_analysis.json": "85787773422b315fe1aa708deb41d576b3a7454522944bad5d4cdb19467ab4e6",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J_config.json": "47126d1d1070649fdddd54f7818ea6bc1db6871154aecba9a954ef653a143303",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J_manifest.json": "1e2692882c8a57da3258abed4a1e9f0dece872cf615120dcb768efe1795479b3",
+    "build-release/bv_jacobian_compare_20261024/jobs.json": "b3262667d63f56ad2b177754351b18c036a2736c3e19cbb036304ae6d3bed94c",
+    "build-release/bv_jacobian_compare_20261024/topology.json": "1379d235bbe478575ffd42aee34379ba6ffad885dfd3f7b038b7c83f5fb5883c",
+    "build-release/bv_jacobian_compare_20261024/verification.json": "2337912d8b46444c49682e292d0b05ef0d277886b6a532d458c67341abee6b63",
+    "build-release/bv_jacobian_compare_20261024/row_comparison.csv": "398ce233a64f3761fcf0adf2a0fed465ac83cc9dd89ce8be94491011b5e36d5a",
+    "build-release/bv_jacobian_compare_20261024/normalized_matrix_difference.npz": "f94e24ab578a48ae6bee77a92e9e8a2772eba2d3169b1654059a7833d2d3c7b6",
+    "build-release/bv_jacobian_compare_20261024/removed_AV_J_in_fixed_row_scale.npz": "d404665f89c3d1c978693d28ffb123f69d97e12e0095ac9eb9781805049d7b66",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/edges.csv": "305e6dce60852c539789680e6f59eef640595fb3a22f476e371ede8123c82fa6",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/fields.csv": "43fb2695e48e39ef3d77e340dd55ed44b1894bad0150d06001a8a87fc03adc66",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/matrix.csv": "ae37a33702d15c2cdac08a06c877ad41d686ce434e06eea5e7470bef58805aac",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/native_conversion.csv": "fa14f22dfcc2e3b18270cfb57fea32dab49eaac02dae04c5c11bac554e378031",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/qf_comparison.csv": "d521feae7b1b113f85992bbe80369fafa095243d19aaaf64e9707f2bdf7fd5d4",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/rhs.csv": "d6b2b30e10b2e70eb51d1f6bfce3e54daffb3d5974389136e114d6125a4eec10",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/terms.csv": "fc1df151a1209dc8d9c7699b95ba4b705aa232a83e19212aaf1849670b2b6ab7",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/canonical_rhs.npz": "35f026e4dcfba3372c6948a17955afb7e9f13a18c47fde2d165d7d90a024e9d1",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/native_qf_physical_matrix.npz": "e85767c04494e7da54c414c96a371b44f0f6d356a7a8114679dbf6d538282867",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/vela_qf_physical_matrix.npz": "37ef0d9e8a87a782b1f7cdeadccc041a15fd375e8fd8b92cd51f408445534704",
+    "build-release/bv_jacobian_compare_20261024/frozen_source_J/p01_i01/identity.json": "f1f1551e493c9285fa5440aa3c4a19ef172139a8cda890e742f3d8102b175e10",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/edges.csv": "305e6dce60852c539789680e6f59eef640595fb3a22f476e371ede8123c82fa6",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/fields.csv": "ba42d798a8e94cf9f3d1e1035077b683e452c1a0c88b8faaf0a564d3d28374c1",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/matrix.csv": "282c5797ad459a7d28dab93db1993a20a8d6b91c679e349b216e3005f8f6ce31",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/native_conversion.csv": "fa14f22dfcc2e3b18270cfb57fea32dab49eaac02dae04c5c11bac554e378031",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/qf_comparison.csv": "a4edc4ac796e25110be29e0945c8e7e5c60005b8de1dd536e65723e59e75dfa6",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/rhs.csv": "d6b2b30e10b2e70eb51d1f6bfce3e54daffb3d5974389136e114d6125a4eec10",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/terms.csv": "fc1df151a1209dc8d9c7699b95ba4b705aa232a83e19212aaf1849670b2b6ab7",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/canonical_rhs.npz": "54db6e19a13632580bca0ce97206cef112406b147f93a5f5398d0ebea0395694",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/native_qf_physical_matrix.npz": "e85767c04494e7da54c414c96a371b44f0f6d356a7a8114679dbf6d538282867",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/vela_qf_physical_matrix.npz": "2ec5f4bdeb565cb77890adc67ea5a9bf367d85bb215cb6449d4e9f39365e4e04",
+    "build-release/bv_jacobian_compare_20261024/fd_1e9/p01_i01/identity.json": "8b18e9f95d1c5c46c947035ecf3e5c350e324def41723f481b425bd231abb0f2",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/edges.csv": "305e6dce60852c539789680e6f59eef640595fb3a22f476e371ede8123c82fa6",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/fields.csv": "969cf735772dc9f2582593952ecb6c7d8d2b6f4f7bb0f0d220c544365d9657e0",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/matrix.csv": "4c813fbe99221c3b86b237a184e333a852a10c626502072b5e922e4d78f18568",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/native_conversion.csv": "fa14f22dfcc2e3b18270cfb57fea32dab49eaac02dae04c5c11bac554e378031",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/qf_comparison.csv": "ce1797a0eceb1000327dd155d3411891562e0625ffe53912fa6ca6cfc8d810d2",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/rhs.csv": "d6b2b30e10b2e70eb51d1f6bfce3e54daffb3d5974389136e114d6125a4eec10",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/terms.csv": "fc1df151a1209dc8d9c7699b95ba4b705aa232a83e19212aaf1849670b2b6ab7",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/canonical_rhs.npz": "1a3618d0432c12745ac8be1c56db83482ee26e5c3414a67d5fcf4bd412d9f2d8",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/native_qf_physical_matrix.npz": "e85767c04494e7da54c414c96a371b44f0f6d356a7a8114679dbf6d538282867",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/vela_qf_physical_matrix.npz": "6efc8d8df6e82e63eb0f4346764e7f2ffbb829eb2db7f135cb8bf90ed6997fc6",
+    "build-release/bv_jacobian_compare_20261024/fd_1e13/p01_i01/identity.json": "aade31442280cdd923cafe3b6bc395b7538e790b1915bd582c0579a16a1762cb",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/edges.csv": "305e6dce60852c539789680e6f59eef640595fb3a22f476e371ede8123c82fa6",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/fields.csv": "e94621be3e122d9b268989f06063d5dcdfdde1fcb5a2b60ae985ada13728692d",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/matrix.csv": "5648dc5a6b5f96853f42027ec93c7802cfa1a7e8f3a2b1ef35772937371949db",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/native_conversion.csv": "fa14f22dfcc2e3b18270cfb57fea32dab49eaac02dae04c5c11bac554e378031",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/qf_comparison.csv": "5c4e3ad2f571129e1d26a7891eadba6ac8c901523c7a23e2c02f034527996a44",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/rhs.csv": "d6b2b30e10b2e70eb51d1f6bfce3e54daffb3d5974389136e114d6125a4eec10",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/terms.csv": "fc1df151a1209dc8d9c7699b95ba4b705aa232a83e19212aaf1849670b2b6ab7",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/canonical_rhs.npz": "36c582694fbb77c0b3c4a37cc6abfdd31beb642f822851a33ad66e43c139d235",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/native_qf_physical_matrix.npz": "e85767c04494e7da54c414c96a371b44f0f6d356a7a8114679dbf6d538282867",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/vela_qf_physical_matrix.npz": "c2aa75be836fe53210d5a6bd6052da0e3c6537d469215e6a8858381d077aa013",
+    "build-release/bv_jacobian_compare_20261024/fd_1e17/p01_i01/identity.json": "9b868c8be0928a1373f80a7e62ad996c50cc44e731407f427b9d7133a5109518",
+    "build-release/bv_rhs_updates_20261024/matched/p01_i01/native_qf_physical_matrix.npz": "e85767c04494e7da54c414c96a371b44f0f6d356a7a8114679dbf6d538282867",
+    "build-release/bv_rhs_updates_20261024/matched/p01_i01/vela_qf_physical_matrix.npz": "abe42d4125999d151d7b85f2509bc46aa5580a12559021d8bfab31ff3f680d94",
+    "build-release/bv_rhs_updates_20261024/matched/p01_i01/canonical_rhs.npz": "afe9e689520ca17ec95c8491664c73ef5838b5df760388cadd4b12dfc00b6c0a",
+    "build-release/bv_rhs_updates_20261024/probe.exe": "f95ae29930912e78f33a2c4ecf2f6779fd888c79f40407367972e1f7ffd31ee3",
+    "build-release/bv_rhs_updates_20261024/matched_core.a": "5d8563287fbb864fbcb4612d7b9bf8cae559d40915dd86ecc4fd109af99bb958",
+    "build-release/bv_rhs_updates_20261024/direction_verification.json": "ac7c5a9a7757bf1506a6a7b880747e42758195b71510aaa25013dc676115c07b",
+    "src/equation/CoupledDDAssembler.cpp": "26a82d99cb990b13023ce403b483244863e8257e150504de6bdec9f3f89bbdd7",
+    "include/vela/equation/AssemblerUtils.h": "643b984b59d238c2fb502baaf2c01315b5fe355d1030eff5c7658ec9b1c45cee",
+    "include/vela/physics/ImpactIonizationModel.h": "0b51c2db1fbfc6cdb3ef601a4b04b919bdae88002992c9712d5cea885a8458be",
+    "src/solver/NewtonSolver.cpp": "58046e9284e05e2cd972e04d076accecb06a4355db97419418fce0c3c9682f3c"
+  }
+}
