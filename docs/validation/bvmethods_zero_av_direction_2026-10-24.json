@@ -1,0 +1,964 @@
+{
+  "scope": "BVMethods zero-bias AV direction and same-state operators; diagnostic controls only",
+  "date": "2026-10-24",
+  "status": {
+    "common_primitive_source_and_tangent_contract_closed": true,
+    "autonomous_QF_zero_relative_J_consistency_passed": false,
+    "full_RHS_bitwise_equal": false,
+    "production_integration": false,
+    "complete_BV_curve": false
+  },
+  "configuration": {
+    "temperature_K": 300,
+    "external_resistance_ohm_um": 10000000.0,
+    "VT_V": 0.025851995266484913,
+    "Nref_per_cm3": 14824351000.0,
+    "length_ref_cm": 0.0033864920021441317,
+    "mesh_nodes": 2600,
+    "mesh_triangles": 5020,
+    "Si_nodes": 2152,
+    "Si_triangles": 4156,
+    "statistics": "explicit experimental matched Fermi/Joyce-Dixon and FD-BGN contract",
+    "models": [
+      "OldSlotboom",
+      "Masetti",
+      "Enhanced Lombardi",
+      "Canali",
+      "Avalanche GradQuasiFermi"
+    ],
+    "BTBT": false,
+    "build": "UCRT64 -O3 -DNDEBUG private matched Release core",
+    "independent_linear_backend": "SciPy SuperLU"
+  },
+  "dimensions": {
+    "Vela_raw": 7801,
+    "Sentaurus_raw": 6843,
+    "common_after_constraints": 6765
+  },
+  "normalization": {
+    "matrix": "diag(J)^-1 J, physical V columns; relative Frobenius difference",
+    "RHS": "diag(J)^-1 b; Linf difference in V",
+    "AV_source": "common q 1.602176634e-19 C, A/um",
+    "AV_J": "physical QF columns; common current units; fixed native diagonal scale; paired native hole source reference",
+    "Poisson_q_over_epsilon_algebraic_ratio": 1.000008214258119,
+    "native_circuit_charge_C": 1.602192e-19
+  },
+  "arms": {
+    "independent": {
+      "source_and_tangent": {
+        "actual_source": {
+          "relative_L2": 0.16722667523740387,
+          "Linf_A_per_um": 8.076140669571481e-29,
+          "native_peak_A_per_um": 5.312294712071623e-28
+        },
+        "AV_J_native_fixed_scale": {
+          "electron": {
+            "relative_Frobenius": 0.002938454222983064,
+            "difference_Frobenius": 6.493440546929453e-15,
+            "reference_Frobenius": 2.209815111680533e-12
+          },
+          "hole": {
+            "relative_Frobenius": 0.003049643070190857,
+            "difference_Frobenius": 4565.802096025962,
+            "reference_Frobenius": 1497159.500616647
+          }
+        },
+        "paired_source_J": {
+          "candidate_e_h_exact_matrix_equal": true,
+          "candidate_e_vs_native_h_relative_Frobenius": 0.003049643070190887,
+          "candidate_h_vs_native_h_relative_Frobenius": 0.003049643070190887,
+          "native_e_vs_h_subtraction_relative_Frobenius": 0.0007091566541501831
+        },
+        "state_import": {
+          "psi_V_Linf": 0.0,
+          "n_relative_Linf": 4.984901380566953e-14,
+          "p_relative_Linf": 4.263256414560601e-14
+        }
+      },
+      "full_system": {
+        "q_epsilon_ratio_control": 1.000008214258119,
+        "poisson_only": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 0.003049643417200452,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738422487046e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 0.0030496434218513172,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 1.0770096741210355e-14,
+            "rhs_own_diagonal_difference_Linf_V": 1.599569461871414e-16
+          }
+        },
+        "poisson_and_native_circuit_charge": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 0.003049643417200452,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738422487046e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 0.0030496434218513172,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "zero_outer_increment_correction_updates": {
+          "psi": {
+            "candidate_correction_peak_V": 1.3285778297778396e-13,
+            "native_correction_peak_V": 3.9481149366572483e-16,
+            "difference_Linf_V": 1.3312387329487832e-13
+          },
+          "fn": {
+            "candidate_correction_peak_V": 1.3246730341712327e-13,
+            "native_correction_peak_V": 1.0571429411613882e-15,
+            "difference_Linf_V": 1.3283675295226608e-13
+          },
+          "fp": {
+            "candidate_correction_peak_V": 9.79603170354021e-12,
+            "native_correction_peak_V": 5.0694562374240186e-11,
+            "difference_Linf_V": 6.04905940777804e-11
+          },
+          "inner": {
+            "candidate_correction_peak_V": 1.3206258673702378e-13,
+            "native_correction_peak_V": 9.137172935324917e-18,
+            "difference_Linf_V": 1.320717239099591e-13
+          }
+        },
+        "backward_error_candidate": 2.456502190245932e-16,
+        "backward_error_native": 2.5030024004729754e-16,
+        "without_AV_after_constant_controls": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 3.519945965208421e-12,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419453578e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 5.9286027831582445e-12,
+            "rhs_own_diagonal_difference_Linf_V": 3.6045247896812674e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "outer_increment_001V_updates": {
+          "psi": {
+            "candidate_peak_V": 0.0004975365414274448,
+            "native_peak_V": 0.0004975365673636411,
+            "difference_Linf_V": 2.5937572510799367e-11
+          },
+          "fn": {
+            "candidate_peak_V": 0.0004975365414270173,
+            "native_peak_V": 0.0004975365673637871,
+            "difference_Linf_V": 2.593679221049583e-11
+          },
+          "fp": {
+            "candidate_peak_V": 0.0004912731097667289,
+            "native_peak_V": 0.000491273298173718,
+            "difference_Linf_V": 1.3606214113574369e-06
+          },
+          "inner": {
+            "candidate_peak_V": 0.0004975365414274012,
+            "native_peak_V": 0.0004975365673639216,
+            "difference_Linf_V": 2.5936520401011187e-11
+          }
+        }
+      }
+    },
+    "cached": {
+      "source_and_tangent": {
+        "actual_source": {
+          "relative_L2": 8.446105475667413e-13,
+          "Linf_A_per_um": 4.048489969498824e-40,
+          "native_peak_A_per_um": 5.312294712071623e-28
+        },
+        "AV_J_native_fixed_scale": {
+          "electron": {
+            "relative_Frobenius": 0.00039763140330703703,
+            "difference_Frobenius": 8.786918839066271e-16,
+            "reference_Frobenius": 2.209815111680533e-12
+          },
+          "hole": {
+            "relative_Frobenius": 1.0109875333997807e-12,
+            "difference_Frobenius": 1.5136095906344716e-06,
+            "reference_Frobenius": 1497159.500616647
+          }
+        },
+        "paired_source_J": {
+          "candidate_e_h_exact_matrix_equal": true,
+          "candidate_e_vs_native_h_relative_Frobenius": 1.0110514310064507e-12,
+          "candidate_h_vs_native_h_relative_Frobenius": 1.0110514310064507e-12,
+          "native_e_vs_h_subtraction_relative_Frobenius": 0.0007091566541501831
+        },
+        "state_import": {
+          "psi_V_Linf": 0.0,
+          "n_relative_Linf": 4.984901380566953e-14,
+          "p_relative_Linf": 4.263256414560601e-14
+        }
+      },
+      "full_system": {
+        "q_epsilon_ratio_control": 1.000008214258119,
+        "poisson_only": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 1.0002013758804058e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419374861e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 1.0002013741742277e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 1.0770096741210355e-14,
+            "rhs_own_diagonal_difference_Linf_V": 1.599569461871414e-16
+          }
+        },
+        "poisson_and_native_circuit_charge": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 1.0002013758804058e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419374861e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 1.0002013741742277e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "zero_outer_increment_correction_updates": {
+          "psi": {
+            "candidate_correction_peak_V": 1.3285778344728828e-13,
+            "native_correction_peak_V": 3.9481149366572483e-16,
+            "difference_Linf_V": 1.3312387376438264e-13
+          },
+          "fn": {
+            "candidate_correction_peak_V": 1.324673038866126e-13,
+            "native_correction_peak_V": 1.0571429411613882e-15,
+            "difference_Linf_V": 1.3283675342174119e-13
+          },
+          "fp": {
+            "candidate_correction_peak_V": 2.0042898820738122e-10,
+            "native_correction_peak_V": 5.0694562374240186e-11,
+            "difference_Linf_V": 2.381602899194015e-10
+          },
+          "inner": {
+            "candidate_correction_peak_V": 1.320625872065282e-13,
+            "native_correction_peak_V": 9.137172935324917e-18,
+            "difference_Linf_V": 1.320717243794635e-13
+          }
+        },
+        "backward_error_candidate": 3.042270271281601e-16,
+        "backward_error_native": 2.5030024004729754e-16,
+        "without_AV_after_constant_controls": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 3.519945965208421e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419453578e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 5.9286027831582445e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756607e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "outer_increment_001V_updates": {
+          "psi": {
+            "candidate_peak_V": 0.0004975365620991866,
+            "native_peak_V": 0.0004975365673636411,
+            "difference_Linf_V": 5.265831715985103e-12
+          },
+          "fn": {
+            "candidate_peak_V": 0.0004975365620987594,
+            "native_peak_V": 0.0004975365673637871,
+            "difference_Linf_V": 5.265242777365009e-12
+          },
+          "fp": {
+            "candidate_peak_V": 0.0004912732929044121,
+            "native_peak_V": 0.000491273298173718,
+            "difference_Linf_V": 2.40681452822215e-10
+          },
+          "inner": {
+            "candidate_peak_V": 0.0004975365620991432,
+            "native_peak_V": 0.0004975365673639216,
+            "difference_Linf_V": 5.2647784135745335e-12
+          }
+        }
+      }
+    },
+    "primitive_replay": {
+      "source_and_tangent": {
+        "actual_source": {
+          "relative_L2": 8.4456994055724e-13,
+          "Linf_A_per_um": 4.049032808057352e-40,
+          "native_peak_A_per_um": 5.312294712071623e-28
+        },
+        "AV_J_native_fixed_scale": {
+          "electron": {
+            "relative_Frobenius": 0.00039763140330703703,
+            "difference_Frobenius": 8.786918839066271e-16,
+            "reference_Frobenius": 2.209815111680533e-12
+          },
+          "hole": {
+            "relative_Frobenius": 1.0109873214971868e-12,
+            "difference_Frobenius": 1.5136092733824899e-06,
+            "reference_Frobenius": 1497159.500616647
+          }
+        },
+        "paired_source_J": {
+          "candidate_e_h_exact_matrix_equal": true,
+          "candidate_e_vs_native_h_relative_Frobenius": 1.0110512200955564e-12,
+          "candidate_h_vs_native_h_relative_Frobenius": 1.0110512200955564e-12,
+          "native_e_vs_h_subtraction_relative_Frobenius": 0.0007091566541501831
+        },
+        "state_import": {
+          "psi_V_Linf": 0.0,
+          "n_relative_Linf": 4.984901380566953e-14,
+          "p_relative_Linf": 4.263256414560601e-14
+        }
+      },
+      "full_system": {
+        "q_epsilon_ratio_control": 1.000008214258119,
+        "poisson_only": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 1.000201173465189e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419374861e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 1.0002011717590098e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 1.0770096741210355e-14,
+            "rhs_own_diagonal_difference_Linf_V": 1.599569461871414e-16
+          }
+        },
+        "poisson_and_native_circuit_charge": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 1.000201173465189e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419374861e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 1.0002011717590098e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "zero_outer_increment_correction_updates": {
+          "psi": {
+            "candidate_correction_peak_V": 1.3285778746307806e-13,
+            "native_correction_peak_V": 3.9481149366572483e-16,
+            "difference_Linf_V": 1.3312387778017242e-13
+          },
+          "fn": {
+            "candidate_correction_peak_V": 1.3246730790231882e-13,
+            "native_correction_peak_V": 1.0571429411613882e-15,
+            "difference_Linf_V": 1.328367574373067e-13
+          },
+          "fp": {
+            "candidate_correction_peak_V": 2.0042898820780882e-10,
+            "native_correction_peak_V": 5.0694562374240186e-11,
+            "difference_Linf_V": 2.381602899209658e-10
+          },
+          "inner": {
+            "candidate_correction_peak_V": 1.3206259122231816e-13,
+            "native_correction_peak_V": 9.137172935324917e-18,
+            "difference_Linf_V": 1.3207172839525347e-13
+          }
+        },
+        "backward_error_candidate": 3.1381920788215433e-16,
+        "backward_error_native": 2.5030024004729754e-16,
+        "without_AV_after_constant_controls": {
+          "all": {
+            "J_own_diagonal_relative_Frobenius": 3.519945965208421e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "psi": {
+            "J_own_diagonal_relative_Frobenius": 2.0260820681828364e-15,
+            "rhs_own_diagonal_difference_Linf_V": 4.987752087729534e-15
+          },
+          "electron": {
+            "J_own_diagonal_relative_Frobenius": 2.162738419453578e-12,
+            "rhs_own_diagonal_difference_Linf_V": 7.753023271817445e-16
+          },
+          "hole": {
+            "J_own_diagonal_relative_Frobenius": 5.9286027831582445e-12,
+            "rhs_own_diagonal_difference_Linf_V": 5.888742438756599e-11
+          },
+          "circuit": {
+            "J_own_diagonal_relative_Frobenius": 4.056446363147553e-16,
+            "rhs_own_diagonal_difference_Linf_V": 1.599559911711845e-16
+          }
+        },
+        "outer_increment_001V_updates": {
+          "psi": {
+            "candidate_peak_V": 0.0004975365333353851,
+            "native_peak_V": 0.0004975365673636411,
+            "difference_Linf_V": 3.402963176003804e-11
+          },
+          "fn": {
+            "candidate_peak_V": 0.0004975365333349578,
+            "native_peak_V": 0.0004975365673637871,
+            "difference_Linf_V": 3.4028851568154717e-11
+          },
+          "fp": {
+            "candidate_peak_V": 0.0004912732645027894,
+            "native_peak_V": 0.000491273298173718,
+            "difference_Linf_V": 2.5134592291590346e-10
+          },
+          "inner": {
+            "candidate_peak_V": 0.0004975365333353417,
+            "native_peak_V": 0.0004975365673639216,
+            "difference_Linf_V": 3.402857986709029e-11
+          }
+        }
+      }
+    }
+  },
+  "direction_analysis": [
+    {
+      "cell": 571,
+      "nodes": [
+        229,
+        1308,
+        1287
+      ],
+      "native_e_vector_q_C": [
+        -1.5350563575271498e-07,
+        -1.2492320617896631e-08
+      ],
+      "candidate_e_vector_q_C": [
+        -1.7552893560583596e-07,
+        -1.2447045760296497e-08
+      ],
+      "vector_relative_error": 0.1429965688211937,
+      "angle_difference_degrees": 0.5963414055162929,
+      "characteristic_QF_linear_window_V": 2.5498682854392385e-16,
+      "edges": [
+        {
+          "from": 1287,
+          "to": 229,
+          "exported_delta_fn_over_VT": -1.0658141036401503e-14,
+          "current_effective_delta_fn_over_VT_linearized": -1.069690893578884e-14,
+          "difference_over_VT": -3.876789938733751e-17,
+          "difference_V": -1.0022275514530127e-18
+        },
+        {
+          "from": 1287,
+          "to": 1308,
+          "exported_delta_fn_over_VT": 1.5987211554602254e-14,
+          "current_effective_delta_fn_over_VT_linearized": 1.3981324874625213e-14,
+          "difference_over_VT": -2.0058866799770407e-15,
+          "difference_V": -5.18561729558716e-17
+        }
+      ]
+    },
+    {
+      "cell": 1819,
+      "nodes": [
+        861,
+        235,
+        797
+      ],
+      "native_e_vector_q_C": [
+        1.4990784741476074e-07,
+        7.495392370738026e-09
+      ],
+      "candidate_e_vector_q_C": [
+        1.5318215877362417e-07,
+        1.0884569226318005e-08
+      ],
+      "vector_relative_error": 0.03139674264842886,
+      "angle_difference_degrees": 1.2019940743524529,
+      "characteristic_QF_linear_window_V": 2.534663265440914e-16,
+      "edges": [
+        {
+          "from": 861,
+          "to": 235,
+          "exported_delta_fn_over_VT": 1.4210854715202004e-14,
+          "current_effective_delta_fn_over_VT_linearized": 1.3907093732946165e-14,
+          "difference_over_VT": -3.0376098225583833e-16,
+          "difference_V": -7.85282747542074e-18
+        },
+        {
+          "from": 861,
+          "to": 797,
+          "exported_delta_fn_over_VT": 1.687538997430238e-14,
+          "current_effective_delta_fn_over_VT_linearized": 1.3762834775872128e-14,
+          "difference_over_VT": -3.1125551984302515e-15,
+          "difference_V": -8.046576225649187e-17
+        }
+      ]
+    },
+    {
+      "cell": 4683,
+      "nodes": [
+        2567,
+        2587,
+        1546
+      ],
+      "native_e_vector_q_C": [
+        -1.1273070125590007e-07,
+        1.6528301125217083e-08
+      ],
+      "candidate_e_vector_q_C": [
+        -1.3652250547120563e-07,
+        1.659606101372865e-08
+      ],
+      "vector_relative_error": 0.2088182461323313,
+      "angle_difference_degrees": 1.410108585077749,
+      "characteristic_QF_linear_window_V": 1.886343367641543e-16,
+      "edges": [
+        {
+          "from": 2567,
+          "to": 2587,
+          "exported_delta_fn_over_VT": 1.2434497875801753e-14,
+          "current_effective_delta_fn_over_VT_linearized": 1.0267535454802898e-14,
+          "difference_over_VT": -2.1669624209988553e-15,
+          "difference_V": -5.602030225031309e-17
+        },
+        {
+          "from": 2567,
+          "to": 1546,
+          "exported_delta_fn_over_VT": -1.4210854715202004e-14,
+          "current_effective_delta_fn_over_VT_linearized": -1.4152833361197549e-14,
+          "difference_over_VT": 5.802135400445503e-17,
+          "difference_V": 1.4999677690782168e-18
+        }
+      ]
+    }
+  ],
+  "primitive_SG": {
+    "global_edge_errors": {
+      "True": {
+        "relative_L2": 7.772207473474518e-08,
+        "difference_Linf_particle_flux_without_mobility": 228428.27551409788
+      },
+      "False": {
+        "relative_L2": 9.719073695612719e-07,
+        "difference_Linf_particle_flux_without_mobility": 892.2979512268453
+      }
+    },
+    "anchors": [
+      {
+        "cell": 571,
+        "edges": [
+          {
+            "electron": {
+              "from": 229,
+              "to": 1308,
+              "argument": 0.7703975584934872,
+              "Bplus": 0.6637781540617842,
+              "Bminus": 1.4341757125552714,
+              "raw_SG_difference": -0.000286102294921875,
+              "candidate_flux": -177664260961.18576,
+              "native_flux": -177664260961.18622
+            },
+            "hole": {
+              "from": 229,
+              "to": 1308,
+              "argument": -0.259948882288624,
+              "Bplus": 1.1355992278817872,
+              "Bminus": 0.8756503455931631,
+              "raw_SG_difference": 3.759439931102455e-18,
+              "candidate_flux": 0.002334543024793544,
+              "native_flux": 0.0023345430247935506
+            }
+          },
+          {
+            "electron": {
+              "from": 229,
+              "to": 1287,
+              "argument": 0.7714674741680752,
+              "Bplus": 0.6633780015471503,
+              "Bminus": 1.4348454757152256,
+              "raw_SG_difference": -0.0001239776611328125,
+              "candidate_flux": -77970184708.80267,
+              "native_flux": -77970184708.80289
+            },
+            "hole": {
+              "from": 229,
+              "to": 1287,
+              "argument": -0.2618128845473713,
+              "Bplus": 1.1366120926817067,
+              "Bminus": 0.8747992081343354,
+              "raw_SG_difference": 5.9114660999449136e-18,
+              "candidate_flux": 0.0037177512424497704,
+              "native_flux": 0.003717751242449781
+            }
+          },
+          {
+            "electron": {
+              "from": 1287,
+              "to": 1308,
+              "argument": -0.001069915674587918,
+              "Bplus": 1.0005350532305881,
+              "Bminus": 0.9994651375560001,
+              "raw_SG_difference": -0.000244140625,
+              "candidate_flux": -958097629701.7773,
+              "native_flux": -958097629701.7771
+            },
+            "hole": {
+              "from": 1287,
+              "to": 1308,
+              "argument": 0.001864002258747277,
+              "Bplus": 0.9990682884126448,
+              "Bminus": 1.000932290671392,
+              "raw_SG_difference": -1.8983513816683717e-18,
+              "candidate_flux": -0.007449829208545529,
+              "native_flux": -0.007449829208545528
+            }
+          }
+        ]
+      },
+      {
+        "cell": 1819,
+        "edges": [
+          {
+            "electron": {
+              "from": 235,
+              "to": 861,
+              "argument": -0.002535400186105541,
+              "Bplus": 1.0012682357808373,
+              "Bminus": 0.9987328355947318,
+              "raw_SG_difference": 0.000476837158203125,
+              "candidate_flux": 935642216505.6418,
+              "native_flux": 935642216505.6418
+            },
+            "hole": {
+              "from": 235,
+              "to": 861,
+              "argument": 0.00150649823528326,
+              "Bplus": 0.9992469400104291,
+              "Bminus": 1.0007534382457124,
+              "raw_SG_difference": -8.549738811348094e-21,
+              "candidate_flux": -1.677616023495045e-05,
+              "native_flux": -1.6776160234950447e-05
+            }
+          },
+          {
+            "electron": {
+              "from": 797,
+              "to": 861,
+              "argument": 0.07452832573173485,
+              "Bplus": 0.9631986669009522,
+              "Bminus": 1.037726992632687,
+              "raw_SG_difference": 0.000453948974609375,
+              "candidate_flux": 98381865067.94778,
+              "native_flux": 98381865067.94771
+            },
+            "hole": {
+              "from": 797,
+              "to": 861,
+              "argument": -0.023946919932839705,
+              "Bplus": 1.0120212474242114,
+              "Bminus": 0.9880743274913717,
+              "raw_SG_difference": 2.811586902067741e-20,
+              "candidate_flux": 6.093397687792139e-06,
+              "native_flux": 6.093397687792135e-06
+            }
+          },
+          {
+            "electron": {
+              "from": 235,
+              "to": 797,
+              "argument": -0.07706372591784039,
+              "Bplus": 1.0390267154680441,
+              "Bminus": 0.9619629895502038,
+              "raw_SG_difference": 3.814697265625e-06,
+              "candidate_flux": 826738361.9155276,
+              "native_flux": 826738361.9155271
+            },
+            "hole": {
+              "from": 235,
+              "to": 797,
+              "argument": 0.025453418168122965,
+              "Bplus": 0.9873272800410066,
+              "Bminus": 1.0127806982091294,
+              "raw_SG_difference": -3.67466715320557e-20,
+              "candidate_flux": -7.963904056560106e-06,
+              "native_flux": -7.963904056560101e-06
+            }
+          }
+        ]
+      },
+      {
+        "cell": 4683,
+        "edges": [
+          {
+            "electron": {
+              "from": 2567,
+              "to": 2587,
+              "argument": -0.0010699156745905825,
+              "Bplus": 1.0005350532305894,
+              "Bminus": 0.9994651375559988,
+              "raw_SG_difference": -0.000179290771484375,
+              "candidate_flux": -703602946812.2428,
+              "native_flux": -703602946812.2426
+            },
+            "hole": {
+              "from": 2567,
+              "to": 2587,
+              "argument": 0.001864002258747277,
+              "Bplus": 0.9990682884126448,
+              "Bminus": 1.000932290671392,
+              "raw_SG_difference": -1.8983513816683717e-18,
+              "candidate_flux": -0.007449829208545529,
+              "native_flux": -0.007449829208545528
+            }
+          },
+          {
+            "electron": {
+              "from": 1546,
+              "to": 2567,
+              "argument": 0.7714674741680778,
+              "Bplus": 0.6633780015471493,
+              "Bminus": 1.4348454757152271,
+              "raw_SG_difference": -0.000164031982421875,
+              "candidate_flux": -103160552076.262,
+              "native_flux": -103160552076.26228
+            },
+            "hole": {
+              "from": 1546,
+              "to": 2567,
+              "argument": -0.2618128845473713,
+              "Bplus": 1.1366120926817067,
+              "Bminus": 0.8747992081343354,
+              "raw_SG_difference": 5.9113569121040566e-18,
+              "candidate_flux": 0.00371768257365862,
+              "native_flux": 0.0037176825736586305
+            }
+          },
+          {
+            "electron": {
+              "from": 1546,
+              "to": 2587,
+              "argument": 0.7703975584934872,
+              "Bplus": 0.6637781540617842,
+              "Bminus": 1.4341757125552714,
+              "raw_SG_difference": -0.000286102294921875,
+              "candidate_flux": -177664260961.18576,
+              "native_flux": -177664260961.18622
+            },
+            "hole": {
+              "from": 1546,
+              "to": 2587,
+              "argument": -0.259948882288624,
+              "Bplus": 1.1355992278817872,
+              "Bminus": 0.8756503455931631,
+              "raw_SG_difference": 3.759330743261598e-18,
+              "candidate_flux": 0.002334475221153391,
+              "native_flux": 0.002334475221153397
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "verification": {
+    "native_electron_edge_checks": [
+      {
+        "cell": 571,
+        "native": [
+          -0.000286102294921875,
+          -0.0001239776611328125,
+          -0.000244140625
+        ],
+        "independent": [
+          -0.000286102294921875,
+          -0.0001239776611328125,
+          -0.000244140625
+        ],
+        "bitwise_equal": true
+      },
+      {
+        "cell": 1819,
+        "native": [
+          0.000476837158203125,
+          0.000453948974609375,
+          3.814697265625e-06
+        ],
+        "independent": [
+          0.000476837158203125,
+          0.000453948974609375,
+          3.814697265625e-06
+        ],
+        "bitwise_equal": true
+      },
+      {
+        "cell": 4683,
+        "native": [
+          -0.000179290771484375,
+          -0.000164031982421875,
+          -0.000286102294921875
+        ],
+        "independent": [
+          -0.000179290771484375,
+          -0.000164031982421875,
+          -0.000286102294921875
+        ],
+        "bitwise_equal": true
+      }
+    ],
+    "all_nine_native_electron_edge_values_bitwise_identical": true,
+    "independent_candidate_replay_six_files_byte_identical_prior": true,
+    "release_CTest": {
+      "selected": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "python_regression": {
+      "constraint_elimination": 3,
+      "native_debug_precision": 4,
+      "failed": 0
+    },
+    "private_release_compile_exit": 0,
+    "private_release_link_exit": 0,
+    "private_replays_exit_codes": {
+      "independent": 0,
+      "native_current_control": 0,
+      "primitive_recomputation_control": 0
+    },
+    "production_model_changes": false
+  },
+  "native_observer_identity": {
+    "on": {
+      "state_bitwise_equal_prior": true,
+      "rhs_bitwise_equal_prior": true,
+      "matrix_bitwise_equal_prior": true,
+      "raw_dimension": 6843,
+      "closure": {
+        "dimension": 6843,
+        "nonzero_entries": 72611,
+        "linear_componentwise_l1_backward_error": 3.578446598703898e-15,
+        "linear_global_l1_backward_error": 3.578446598703898e-15,
+        "linear_componentwise_max_backward_error": 1.7385249459026764e-13,
+        "linear_componentwise_worst_row": 4893
+      }
+    },
+    "off": {
+      "state_bitwise_equal_prior": true,
+      "rhs_bitwise_equal_prior": true,
+      "matrix_bitwise_equal_prior": true,
+      "raw_dimension": 6843,
+      "closure": {
+        "dimension": 6843,
+        "nonzero_entries": 72547,
+        "linear_componentwise_l1_backward_error": 3.898779272659677e-15,
+        "linear_global_l1_backward_error": 3.898779272659677e-15,
+        "linear_componentwise_max_backward_error": 1.8459846811773143e-13,
+        "linear_componentwise_worst_row": 3514
+      }
+    },
+    "full_cache_on": {
+      "state_bitwise_equal_prior": true,
+      "rhs_bitwise_equal_prior": true,
+      "matrix_bitwise_equal_prior": true,
+      "raw_dimension": 6843,
+      "closure": {
+        "dimension": 6843,
+        "nonzero_entries": 72611,
+        "linear_componentwise_l1_backward_error": 3.578446598703898e-15,
+        "linear_global_l1_backward_error": 3.578446598703898e-15,
+        "linear_componentwise_max_backward_error": 1.7385249459026764e-13,
+        "linear_componentwise_worst_row": 4893
+      }
+    },
+    "primitive_on": {
+      "state_bitwise_equal_prior": true,
+      "rhs_bitwise_equal_prior": true,
+      "matrix_bitwise_equal_prior": true,
+      "raw_dimension": 6843,
+      "closure": {
+        "dimension": 6843,
+        "nonzero_entries": 72611,
+        "linear_componentwise_l1_backward_error": 3.578446598703898e-15,
+        "linear_global_l1_backward_error": 3.578446598703898e-15,
+        "linear_componentwise_max_backward_error": 1.7385249459026764e-13,
+        "linear_componentwise_worst_row": 4893
+      }
+    }
+  },
+  "evidence": {
+    "private_root": "build-release/bv_zero_av_direction_20261024",
+    "manifest": "evidence_manifest.json",
+    "manifest_sha256": "9d7a4984e5fb808590cf080a0d8ac5b92b7400a5c88d6c9a66e8e1f0247fbb56"
+  },
+  "limitations": [
+    "Common-current control uses native SG current values; common-primitive control recomputes values from captured normalized potentials, populations, band offsets and statistics. Neither proves autonomous reconstruction of all primitive inputs.",
+    "AV current tangents remain the independent Vela analytical constitutive tangents. These controls are not a full nonlinear residual implementation for multistep Newton qualification.",
+    "Native electron on-minus-off AV subtraction loses weak source precision against the large transport matrix. Paired source comparisons use native hole rows.",
+    "The existing autonomous QF arm remains unchanged and retains its zero-bias direction sensitivity."
+  ]
+}

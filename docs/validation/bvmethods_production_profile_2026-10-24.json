@@ -1,0 +1,846 @@
+{
+  "date": "2026-10-24",
+  "scope": "Explicit autonomous BVMethods QF operator integration; no global default promotion",
+  "status": {
+    "explicit_profile_available": true,
+    "autonomous_state_only_input": true,
+    "native_zero_relative_J_consistency": false,
+    "complete_BV_curve": false,
+    "global_electron_relative_closure_gate_passed": false,
+    "CLI_from_own_Poisson_through_0p1V": true,
+    "checkpoint_replay_through_0p05V": true
+  },
+  "configuration": {
+    "profile": "bvmethods_tri3_qf",
+    "statistics": "fermi_dirac_joyce_dixon",
+    "temperature_K": 300.0,
+    "resistance_ohm_um": 10000000.0,
+    "nodes": 2600,
+    "vela_raw_dimension": 7801,
+    "native_raw_dimension": 6843,
+    "common_dimension": 6765,
+    "constants": "unmodified public CODATA",
+    "mesh_units": "format_version=2: um, cm^-3, cm^2/(V s), V; physical comparison columns V",
+    "geometry": {
+      "node_volume_policy": "barycentric",
+      "cell_box_policy": "delaunay_transfer",
+      "poisson_permittivity_policy": "cell_material"
+    },
+    "linear_method": "production direct_bordered; UMFPACK and SPQR enabled",
+    "max_iterations_per_attempt": 40,
+    "equation_tolerance": 1e-08,
+    "load_tolerance_V": 1e-06,
+    "density_update_mode": "enforce: update OR device residual; Digits=5",
+    "device_update_limit": false
+  },
+  "native_comparison": {
+    "base": {
+      "dimension": 6765,
+      "constants_control": "none; current public CODATA library",
+      "physical_QF_columns": true,
+      "full": {
+        "all": {
+          "J_own_diagonal_relative_Frobenius": 0.0030463408135236736,
+          "rhs_own_diagonal_difference_Linf_V": 3.488094364929867e-07
+        },
+        "psi": {
+          "J_own_diagonal_relative_Frobenius": 1.0576991518862608e-06,
+          "rhs_own_diagonal_difference_Linf_V": 3.488094364929867e-07
+        },
+        "electron": {
+          "J_own_diagonal_relative_Frobenius": 3.2260121430373544e-08,
+          "rhs_own_diagonal_difference_Linf_V": 7.753023241058624e-16
+        },
+        "hole": {
+          "J_own_diagonal_relative_Frobenius": 0.0030463408181695024,
+          "rhs_own_diagonal_difference_Linf_V": 3.6062679685753153e-11
+        },
+        "circuit": {
+          "J_own_diagonal_relative_Frobenius": 1.2712787042602059e-08,
+          "rhs_own_diagonal_difference_Linf_V": 1.599569630392556e-16
+        }
+      }
+    },
+    "finite001": {
+      "dimension": 6765,
+      "constants_control": "none; current public CODATA library",
+      "physical_QF_columns": true,
+      "full": {
+        "all": {
+          "J_own_diagonal_relative_Frobenius": 4.507280919497452e-06,
+          "rhs_own_diagonal_difference_Linf_V": 3.553302942731425e-07
+        },
+        "psi": {
+          "J_own_diagonal_relative_Frobenius": 1.0572651995692395e-06,
+          "rhs_own_diagonal_difference_Linf_V": 3.553302942731425e-07
+        },
+        "electron": {
+          "J_own_diagonal_relative_Frobenius": 3.227741620838823e-08,
+          "rhs_own_diagonal_difference_Linf_V": 2.01953612085631e-10
+        },
+        "hole": {
+          "J_own_diagonal_relative_Frobenius": 4.507280928769094e-06,
+          "rhs_own_diagonal_difference_Linf_V": 1.254827396084348e-08
+        },
+        "circuit": {
+          "J_own_diagonal_relative_Frobenius": 1.2712304365095433e-08,
+          "rhs_own_diagonal_difference_Linf_V": 3.9470919249886247e-16
+        }
+      }
+    },
+    "finite010": {
+      "dimension": 6765,
+      "constants_control": "none; current public CODATA library",
+      "physical_QF_columns": true,
+      "full": {
+        "all": {
+          "J_own_diagonal_relative_Frobenius": 4.47123921282598e-06,
+          "rhs_own_diagonal_difference_Linf_V": 4.4135404283234075e-07
+        },
+        "psi": {
+          "J_own_diagonal_relative_Frobenius": 1.051512578300098e-06,
+          "rhs_own_diagonal_difference_Linf_V": 4.4135404283234075e-07
+        },
+        "electron": {
+          "J_own_diagonal_relative_Frobenius": 3.4504428428878966e-08,
+          "rhs_own_diagonal_difference_Linf_V": 1.1158393615336654e-09
+        },
+        "hole": {
+          "J_own_diagonal_relative_Frobenius": 4.471239217651216e-06,
+          "rhs_own_diagonal_difference_Linf_V": 9.451106418836147e-08
+        },
+        "circuit": {
+          "J_own_diagonal_relative_Frobenius": 1.270733614040971e-08,
+          "rhs_own_diagonal_difference_Linf_V": 1.7102036828386822e-15
+        }
+      }
+    }
+  },
+  "checkpoint_operator_checks": [
+    {
+      "Jv": [
+        {
+          "direction": 0,
+          "epsilon": 0.001,
+          "relative_L2": 1.0000053938740492
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-05,
+          "relative_L2": 1.0000000207167574
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-07,
+          "relative_L2": 0.9999967632378879
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-09,
+          "relative_L2": 0.999676355933703
+        },
+        {
+          "direction": 1,
+          "epsilon": 0.001,
+          "relative_L2": 3.7338781843080888e-06
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-05,
+          "relative_L2": 2.4937679210122152e-14
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-07,
+          "relative_L2": 3.632924525446703e-15
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-09,
+          "relative_L2": 1.1394427987626633e-14
+        },
+        {
+          "direction": 2,
+          "epsilon": 0.001,
+          "relative_L2": 1.0002242124708418
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-05,
+          "relative_L2": 1.0000017460013706
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-07,
+          "relative_L2": 0.9999882715102925
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-09,
+          "relative_L2": 0.9988631787649341
+        }
+      ],
+      "current_A_per_um": 3.715368864344753e-15,
+      "dimension": 7801,
+      "label": "base",
+      "ledger_residual_difference_Linf": 0.0,
+      "potential_scale_V": 0.025851999786435535,
+      "thermal_voltage_V": 0.025851999786435535
+    },
+    {
+      "Jv": [
+        {
+          "direction": 0,
+          "epsilon": 0.001,
+          "relative_L2": 0.9997954426673491
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-05,
+          "relative_L2": 0.9788658329792304
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-07,
+          "relative_L2": 0.04514468435198756
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-09,
+          "relative_L2": 4.23230311927432e-06
+        },
+        {
+          "direction": 1,
+          "epsilon": 0.001,
+          "relative_L2": 8.55401610397976e-08
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-05,
+          "relative_L2": 1.3614619004013864e-11
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-07,
+          "relative_L2": 4.5006432226788435e-10
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-09,
+          "relative_L2": 1.6909503111983287e-07
+        },
+        {
+          "direction": 2,
+          "epsilon": 0.001,
+          "relative_L2": 0.9991525265324864
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-05,
+          "relative_L2": 0.9385461572040165
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-07,
+          "relative_L2": 0.006316285305679987
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-09,
+          "relative_L2": 2.722300450182705e-07
+        }
+      ],
+      "current_A_per_um": 4.755555605588548e-10,
+      "dimension": 7801,
+      "label": "finite001",
+      "ledger_residual_difference_Linf": 0.0,
+      "potential_scale_V": 0.025851999786435535,
+      "thermal_voltage_V": 0.025851999786435535
+    },
+    {
+      "Jv": [
+        {
+          "direction": 0,
+          "epsilon": 0.001,
+          "relative_L2": 0.9990342689777612
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-05,
+          "relative_L2": 0.9029232277501651
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-07,
+          "relative_L2": 0.002004607758846542
+        },
+        {
+          "direction": 0,
+          "epsilon": 1e-09,
+          "relative_L2": 1.9976568014935837e-07
+        },
+        {
+          "direction": 1,
+          "epsilon": 0.001,
+          "relative_L2": 2.6302265945987374e-08
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-05,
+          "relative_L2": 1.7364588983830566e-11
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-07,
+          "relative_L2": 6.823504236507576e-10
+        },
+        {
+          "direction": 1,
+          "epsilon": 1e-09,
+          "relative_L2": 6.468978010540895e-08
+        },
+        {
+          "direction": 2,
+          "epsilon": 0.001,
+          "relative_L2": 0.9971276180437466
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-05,
+          "relative_L2": 0.7466664681819717
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-07,
+          "relative_L2": 0.00031091334799433057
+        },
+        {
+          "direction": 2,
+          "epsilon": 1e-09,
+          "relative_L2": 1.4936609672635477e-05
+        }
+      ],
+      "current_A_per_um": 2.188485241423238e-09,
+      "dimension": 7801,
+      "label": "finite010",
+      "ledger_residual_difference_Linf": 0.0,
+      "potential_scale_V": 0.025851999786435535,
+      "thermal_voltage_V": 0.025851999786435535
+    }
+  ],
+  "continuation": {
+    "requested_targets": [
+      {
+        "converged": true,
+        "current_A_per_um": -2.9767852456941238e-21,
+        "equation_inf": 5.082321609746976e-09,
+        "failure": "",
+        "from_outer_V": 0.0,
+        "inner_V": 1.3478631314465365e-16,
+        "iterations": 1,
+        "load_V": -2.963306614379659e-14,
+        "outer_V": 0.0,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.0
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 4.75570956570895e-10,
+        "equation_inf": 5.050514213772497e-10,
+        "failure": "",
+        "from_outer_V": 0.0,
+        "inner_V": 0.005244290322384001,
+        "iterations": 15,
+        "load_V": -1.1190704786445682e-10,
+        "outer_V": 0.01,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.01
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 8.927506735621694e-10,
+        "equation_inf": 3.7978810446146e-10,
+        "failure": "",
+        "from_outer_V": 0.01,
+        "inner_V": 0.011072493518022907,
+        "iterations": 18,
+        "load_V": 2.5364460184973403e-10,
+        "outer_V": 0.02,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.02
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 1.7565164296954957e-09,
+        "equation_inf": 1.0256986351753507e-10,
+        "failure": "",
+        "from_outer_V": 0.042050000000000004,
+        "inner_V": 0.03243483441384652,
+        "iterations": 25,
+        "load_V": -1.2891985257112992e-09,
+        "outer_V": 0.05,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.05
+      }
+    ],
+    "accepted_intermediate_points": [
+      {
+        "converged": true,
+        "current_A_per_um": -2.9767852456941238e-21,
+        "equation_inf": 5.082321609746976e-09,
+        "failure": "",
+        "from_outer_V": 0.0,
+        "inner_V": 1.3478631314465365e-16,
+        "iterations": 1,
+        "load_V": -2.963306614379659e-14,
+        "outer_V": 0.0,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.0
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 4.75570956570895e-10,
+        "equation_inf": 5.050514213772497e-10,
+        "failure": "",
+        "from_outer_V": 0.0,
+        "inner_V": 0.005244290322384001,
+        "iterations": 15,
+        "load_V": -1.1190704786445682e-10,
+        "outer_V": 0.01,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.01
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 8.927506735621694e-10,
+        "equation_inf": 3.7978810446146e-10,
+        "failure": "",
+        "from_outer_V": 0.01,
+        "inner_V": 0.011072493518022907,
+        "iterations": 18,
+        "load_V": 2.5364460184973403e-10,
+        "outer_V": 0.02,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.02
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 1.3722237452537146e-09,
+        "equation_inf": 5.195855360686546e-10,
+        "failure": "",
+        "from_outer_V": 0.02,
+        "inner_V": 0.020377763119592118,
+        "iterations": 31,
+        "load_V": 5.721292675731071e-10,
+        "outer_V": 0.0341,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.05
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 1.5846309636186386e-09,
+        "equation_inf": 1.0961516259834839e-10,
+        "failure": "",
+        "from_outer_V": 0.0341,
+        "inner_V": 0.02620369024219343,
+        "iterations": 24,
+        "load_V": -1.2162018614425563e-10,
+        "outer_V": 0.042050000000000004,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.05
+      },
+      {
+        "converged": true,
+        "current_A_per_um": 1.7565164296954957e-09,
+        "equation_inf": 1.0256986351753507e-10,
+        "failure": "",
+        "from_outer_V": 0.042050000000000004,
+        "inner_V": 0.03243483441384652,
+        "iterations": 25,
+        "load_V": -1.2891985257112992e-09,
+        "outer_V": 0.05,
+        "reason": "coupled_residuals",
+        "requested_goal_V": 0.05
+      }
+    ],
+    "failed_attempts": [
+      {
+        "converged": false,
+        "current_A_per_um": 1.66192620928397e-09,
+        "equation_inf": 0.00010102158312642595,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.0341,
+        "inner_V": 0.028741054321953063,
+        "iterations": 40,
+        "load_V": -0.0046396835852072355,
+        "outer_V": 0.05,
+        "reason": "",
+        "requested_goal_V": 0.05
+      }
+    ],
+    "accepted_newton_updates": 114
+  },
+  "actual_CLI_from_own_Poisson": {
+    "points": [
+      {
+        "outer_voltage_V": 0.0,
+        "inner_voltage_V": 0.0,
+        "current_total_A_per_um": 0.0,
+        "iterations": 0.0,
+        "load_line_residual_V": 0.0,
+        "final_psi_residual_norm": 1.0759622254729109e-10,
+        "final_electron_continuity_residual_norm": 0.0,
+        "final_hole_continuity_residual_norm": 0.0,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.01,
+        "inner_voltage_V": 0.00524429032233162,
+        "current_total_A_per_um": 4.755709790646546e-10,
+        "iterations": 15.0,
+        "load_line_residual_V": 1.1297816675248651e-10,
+        "final_psi_residual_norm": 1.353362633815422e-09,
+        "final_electron_continuity_residual_norm": 7.603210882055825e-13,
+        "final_hole_continuity_residual_norm": 9.205562937685826e-17,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.02,
+        "inner_voltage_V": 0.011072493518038557,
+        "current_total_A_per_um": 8.927506285986727e-10,
+        "iterations": 18.0,
+        "load_line_residual_V": -1.959747156221603e-10,
+        "final_psi_residual_norm": 1.0101870384004813e-09,
+        "final_electron_continuity_residual_norm": 1.1430346858998754e-12,
+        "final_hole_continuity_residual_norm": 1.841099342755604e-16,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.03,
+        "inner_voltage_V": 0.01753661978473155,
+        "current_total_A_per_um": 1.2463380414688033e-09,
+        "iterations": 22.0,
+        "load_line_residual_V": 1.9941958501190626e-10,
+        "final_psi_residual_norm": 7.994239634055478e-10,
+        "final_electron_continuity_residual_norm": 1.667062426222716e-12,
+        "final_hole_continuity_residual_norm": 3.682194561259993e-16,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.039999999999999994,
+        "inner_voltage_V": 0.024661788347996837,
+        "current_total_A_per_um": 1.5338211002674446e-09,
+        "iterations": 26.0,
+        "load_line_residual_V": -6.493287157960381e-10,
+        "final_psi_residual_norm": 6.442868938103008e-10,
+        "final_electron_continuity_residual_norm": 1.7912593925872606e-12,
+        "final_hole_continuity_residual_norm": 2.6560982665495525e-19,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.049999999999999996,
+        "inner_voltage_V": 0.032434834412315615,
+        "current_total_A_per_um": 1.756516589296414e-09,
+        "iterations": 32.0,
+        "load_line_residual_V": 3.0527975980465527e-10,
+        "final_psi_residual_norm": 3.2548078181353777e-10,
+        "final_electron_continuity_residual_norm": 2.4250661663261927e-12,
+        "final_hole_continuity_residual_norm": 1.5598909112803482e-19,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.06,
+        "inner_voltage_V": 0.04079888694916716,
+        "current_total_A_per_um": 1.9201111437568968e-09,
+        "iterations": 38.0,
+        "load_line_residual_V": -1.6132638697152757e-09,
+        "final_psi_residual_norm": 2.2484795511663654e-10,
+        "final_electron_continuity_residual_norm": 3.8405696082361144e-12,
+        "final_hole_continuity_residual_norm": 1.254429378871786e-19,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.065,
+        "inner_voltage_V": 0.045174164377089494,
+        "current_total_A_per_um": 1.9825835029289025e-09,
+        "iterations": 21.0,
+        "load_line_residual_V": -5.936214853008437e-10,
+        "final_psi_residual_norm": 7.288216663697137e-11,
+        "final_electron_continuity_residual_norm": 3.804734408073053e-12,
+        "final_hole_continuity_residual_norm": 2.371086561134363e-20,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.07,
+        "inner_voltage_V": 0.049659886330755146,
+        "current_total_A_per_um": 2.0340113592617764e-09,
+        "iterations": 23.0,
+        "load_line_residual_V": -7.662709355926722e-11,
+        "final_psi_residual_norm": 6.83826419566493e-11,
+        "final_electron_continuity_residual_norm": 3.4598649447651344e-12,
+        "final_hole_continuity_residual_norm": 7.364386415430289e-16,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.07554666666666668,
+        "inner_voltage_V": 0.05474752376113233,
+        "current_total_A_per_um": 2.079914359522134e-09,
+        "iterations": 24.0,
+        "load_line_residual_V": 6.896869880756995e-10,
+        "final_psi_residual_norm": 8.87138763851987e-11,
+        "final_electron_continuity_residual_norm": 4.274167076280885e-12,
+        "final_hole_continuity_residual_norm": 2.9618388345385086e-20,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.08,
+        "inner_voltage_V": 0.058904301648910695,
+        "current_total_A_per_um": 2.1095697981349883e-09,
+        "iterations": 22.0,
+        "load_line_residual_V": -3.697394196366943e-10,
+        "final_psi_residual_norm": 5.751112784649002e-11,
+        "final_electron_continuity_residual_norm": 3.637543888841226e-12,
+        "final_hole_continuity_residual_norm": 1.472877285006248e-15,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.08500109333333332,
+        "inner_voltage_V": 0.06363585713508518,
+        "current_total_A_per_um": 2.1365236811415393e-09,
+        "iterations": 24.0,
+        "load_line_residual_V": 6.131672530829135e-10,
+        "final_psi_residual_norm": 6.464686370722489e-11,
+        "final_electron_continuity_residual_norm": 7.161279907835167e-12,
+        "final_hole_continuity_residual_norm": 1.4728772825928198e-15,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.09,
+        "inner_voltage_V": 0.06842044294233039,
+        "current_total_A_per_um": 2.157955811134149e-09,
+        "iterations": 24.0,
+        "load_line_residual_V": 1.053671885853369e-09,
+        "final_psi_residual_norm": 6.077607547825418e-11,
+        "final_electron_continuity_residual_norm": 1.0268814836442484e-11,
+        "final_hole_continuity_residual_norm": 1.3107123733036706e-20,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.09547713540444445,
+        "inner_voltage_V": 0.07371293116057254,
+        "current_total_A_per_um": 2.176420367964633e-09,
+        "iterations": 30.0,
+        "load_line_residual_V": -5.642255829219067e-10,
+        "final_psi_residual_norm": 5.226179162936979e-11,
+        "final_electron_continuity_residual_norm": 5.4884425382732465e-12,
+        "final_hole_continuity_residual_norm": 3.182515699360575e-20,
+        "newton_convergence_reason": "coupled_residuals"
+      },
+      {
+        "outer_voltage_V": 0.09999999999999999,
+        "inner_voltage_V": 0.07811428730506774,
+        "current_total_A_per_um": 2.1885711093540098e-09,
+        "iterations": 24.0,
+        "load_line_residual_V": -1.6013921577684442e-09,
+        "final_psi_residual_norm": 5.719334630199846e-11,
+        "final_electron_continuity_residual_norm": 7.117596520944235e-12,
+        "final_hole_continuity_residual_norm": 5.5032168059907795e-21,
+        "newton_convergence_reason": "coupled_residuals"
+      }
+    ],
+    "maximum_terminal_KCL_A_per_um": 1.6133271719892148e-16,
+    "baseline_global_closure_mode": "report",
+    "baseline_global_closure_tolerance": 0.01,
+    "maximum_electron_global_closure_ratio": 0.02758287688330186,
+    "maximum_hole_global_closure_ratio": 5.832274558950664e-09
+  },
+  "superseded_final_target_retry_stress_test": {
+    "status": "interrupted, not qualified; raw data and old binary retained",
+    "failed_attempts": [
+      {
+        "converged": false,
+        "current_A_per_um": 1.4161597163780294e-09,
+        "equation_inf": 0.0002092766485724931,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.02,
+        "inner_V": 0.02136758426322542,
+        "iterations": 40,
+        "load_V": -0.014470818572994287,
+        "outer_V": 0.05,
+        "reason": "",
+        "requested_goal_V": 0.05
+      },
+      {
+        "converged": false,
+        "current_A_per_um": 1.687044456150762e-09,
+        "equation_inf": 8.93308935927933e-05,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.035,
+        "inner_V": 0.029656572602682892,
+        "iterations": 40,
+        "load_V": -0.0034729828358094905,
+        "outer_V": 0.05,
+        "reason": "",
+        "requested_goal_V": 0.05
+      },
+      {
+        "converged": false,
+        "current_A_per_um": 1.926236887453925e-09,
+        "equation_inf": 0.00045157252449373124,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.05,
+        "inner_V": 0.04097180034823968,
+        "iterations": 40,
+        "load_V": -0.039765830777221074,
+        "outer_V": 0.1,
+        "reason": "",
+        "requested_goal_V": 0.1
+      },
+      {
+        "converged": false,
+        "current_A_per_um": 1.9084176718472594e-09,
+        "equation_inf": 0.00019330355721358238,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.05,
+        "inner_V": 0.039988391597638506,
+        "iterations": 40,
+        "load_V": -0.01592743168388891,
+        "outer_V": 0.07500000000000001,
+        "reason": "",
+        "requested_goal_V": 0.1
+      },
+      {
+        "converged": false,
+        "current_A_per_um": 1.9037158620543745e-09,
+        "equation_inf": 8.148241135360781e-05,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.05,
+        "inner_V": 0.03975645987904056,
+        "iterations": 40,
+        "load_V": -0.0037063815004157036,
+        "outer_V": 0.0625,
+        "reason": "",
+        "requested_goal_V": 0.1
+      },
+      {
+        "converged": false,
+        "current_A_per_um": 1.9899636012073437e-09,
+        "equation_inf": 0.0003829574014235401,
+        "failure": "coupled Newton iteration budget exhausted",
+        "from_outer_V": 0.05625,
+        "inner_V": 0.04557763084634362,
+        "iterations": 40,
+        "load_V": -0.03452273314158294,
+        "outer_V": 0.1,
+        "reason": "",
+        "requested_goal_V": 0.1
+      }
+    ]
+  },
+  "checks": {
+    "release_build_exit": 0,
+    "AV_transport_profile_cpp": {
+      "cases": 10,
+      "assertions": 141,
+      "exit": 0
+    },
+    "statistics_cpp": {
+      "cases": 4,
+      "assertions": 1979,
+      "exit": 0
+    },
+    "manifest_input_tests": 3,
+    "constraint_tests": 3,
+    "native_precision_tests": 4,
+    "PN2D_template_tests": 14,
+    "material_tests": 35,
+    "deck_emitter_tests": {
+      "total": 31,
+      "skipped": 2
+    },
+    "full_release_ctest": {
+      "total": 1104,
+      "passed": 1092,
+      "skipped": 4,
+      "failed": 8,
+      "exit": 8,
+      "failure_cause": "UCRT Python 3.14 h5py defs DLL import failure, independently reproducible without repository modules",
+      "failed_names": [
+        "state_archive_python_interop",
+        "state_archive_dc_worker",
+        "reference_tcad_regression",
+        "simplemos_engineering_codespaces",
+        "simplemos_engineering_matrix_contract",
+        "templates_ldmos_electrothermal_input_regression",
+        "templates_ldmos_joint_local_fields_regression",
+        "electrothermal_dc_runner_regression"
+      ]
+    },
+    "independent_h5py_import_exit": 1,
+    "initial_temp_cleanup_error": "PN2D template test passed after using workspace TEMP; no assertion changed",
+    "diagnostic_probe_compile_exit": 0,
+    "diagnostic_probe_link_exit": 0,
+    "diagnostic_replay_exit": 0,
+    "CMake_diagnostic_target_configure_exit": 0,
+    "actual_CLI_0p1_exit": 0
+  },
+  "evidence_directory": "build-release/bvmethods_profile_20261024",
+  "input_sha256": {
+    "source_config": {
+      "name": "jd_native_material_config.json",
+      "sha256": "4f95d1eaba1306b2511a51ce9d38cda59c5980970db3db949e9598a5357c5608"
+    },
+    "mesh_file": {
+      "name": "mesh.json",
+      "sha256": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714"
+    },
+    "node_doping_file": {
+      "name": "doping.csv",
+      "sha256": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b"
+    },
+    "materials_file": {
+      "name": "materials_combined.json",
+      "sha256": "86f16a21b5ad0b44c495ccc07ccdea6e64b1cfe7f824854dec21e8a636d0704c"
+    }
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "abd5e50034ba54f249e2056e92d8065ace37cf2b2e35c50d1f03dd5af7a7b918",
+    "configs/schema/vela-simulation.schema.json": "3880c47e94d2f7e150f7ac9f02d4ed0357bce98e7e1204f1f37d27c50b5b4b15",
+    "include/vela/equation/DDAssembler.h": "fc25b5bb01c9c8c7eb2b25defea9e8bcb1ed9da12fac950e6646b13bf4aa3b6d",
+    "include/vela/equation/AssemblerUtils.h": "fc79e5f9a3162bc7539833d8390cdee7ec7c1dbff57e938419f12482060ca8fd",
+    "include/vela/equation/CoupledDDAssembler.h": "b425220fd7c05a69660992b6813f7378bfa6796cd5fdf0b2bcc3a65f495998bc",
+    "include/vela/solver/NewtonSolver.h": "ae70b9cab162570981fb33086e0453f7d1b7cef0a13c8cb3d450fc8e93d6f988",
+    "include/vela/physics/BandgapNarrowing.h": "b26ad46de91dadf407963e153d8aeae35c73dda18a910f11cdc89b7056972d3a",
+    "include/vela/equation/BvMethodsTri3Operator.h": "4ee79ece87d961c54bf10ff1381e5db513a5bf4568f04f4fcb8b3eea111024e6",
+    "include/vela/equation/BvMethodsCoupledRuntime.h": "b1abc016eb7cd25a31fb945fb9413f299204c84064b00444a8236f52bd8ed433",
+    "src/equation/BvMethodsCoupledRuntime.cpp": "194e2c2a583ede9aee293c28405fd02fa742f2dbe6d5ed37381561f8ebe342e5",
+    "include/vela/physics/experimental/JoyceDixonStatistics.h": "ee22ad60cedb4ddc0f6b7db70b8e83f0ab2684c62612a178d5a584173ca179ba",
+    "include/vela/physics/experimental/BvMethodsTri3Avalanche.h": "e87bbb2f683f6408213f7f01b1fac61a79fdf332c05f11a62d2871cd26a0040f",
+    "include/vela/physics/experimental/BvMethodsTri3Transport.h": "19ff1c319b4c7b8879cb9e509c96461834941763f93768ab20a10960fce3d32d",
+    "include/vela/physics/CarrierStatistics.h": "b6c96c9e50258469bb4acc84992d9c218b625b1104faf401cfea7cc7826753ae",
+    "src/physics/CarrierStatistics.cpp": "d25c4bf7ee829fcb7f56668ab53e337466a0fdd0a3ff1a339c0ebf656e5f4636",
+    "src/physics/BandgapNarrowing.cpp": "864d25dec52a4df3f6bd8a5cfebc35a73ab82ab591a9735618de044f3074a9e9",
+    "src/equation/CoupledDDAssembler.cpp": "e12009674799feeab20a1f715079b16fa82b65a886c36078218fec1745e75ab8",
+    "src/equation/DDAssembler.cpp": "cf457ae948d72ade6fa7823233a09dcf9c979b1ef9997e990238253d82775f2c",
+    "src/solver/NewtonSolver.cpp": "ad13525ae3a9ec72747d1bff918da5e14c1ec381100aa354a1eaaf3e42dbfe77",
+    "src/post/ContactCurrent.cpp": "5088b9f4f5fab6fce121e39e2d598362d5a5cb59d1f51a60746c506275a6b693",
+    "src/simulation/DCSweep.cpp": "dd963e410942aba13a7183c16b61b10be1559e01b3c5ab9eddeaa8ba4b30e43e",
+    "scripts/diagnostics/bvmethods_profile_probe.cpp": "2fecef604cbf1cb1207e693d3008e18750252158e49f6431f2a7e1a57d093f9e",
+    "scripts/run_bvmethods_profile_regression.py": "d2b5607c61bbc17d0edcf32e69d932d80dc265b2b791f7ecca9cc66216dd2949",
+    "tests/test_bvmethods_av_contract.cpp": "a00c9ce82c6def1cd4828295d5518e1182b59653112dd50d314436e99f2ce977",
+    "tests/test_joyce_dixon_contract.cpp": "8d179868a35bb212da629be0c1c668962dfe8eb0f0c60d67384aa0b6a11774d2"
+  },
+  "artifact_sha256": {
+    "build-release\\bvmethods_profile_20261024\\manifest_qualified.json": "204c05cdfe70828ef6642a4d22a82a7d9e270a6c32604c2a629c020f6a09c0ef",
+    "build-release\\bvmethods_profile_20261024\\build_receipt.json": "d7a93950fe5f620d7d7a670c20d78d617fb40ab6d69e92655be60fb756a9f85a",
+    "build-release\\bvmethods_profile_20261024\\probe.exe": "9dbe51db8e737348d43cae44b5b0cd9d846e014568b507e31f4cc4e1470d48a6",
+    "build-release\\libvela_core.a": "1b296cd51587f95fff0a63dfdd8544a3d1026ac44c3d6543613925763557e75c",
+    "build-release\\bvmethods_profile_20261024\\cli_0p1.json": "8685bbf4921c31b3f2d476c18ed1d03877e4d5281633ea6e98a9d17c1439f6ee",
+    "build-release\\bvmethods_profile_20261024\\cli_0p1\\iv.csv": "31b9fca87316610c8bf314792a2fda9b2809bc3b2aaaddd42a499aa5c1a9c78b",
+    "build-release\\bvmethods_profile_20261024\\replay_qualified\\summary.json": "e8f4bd818b688433ec11c84c231a8d77d93caef5fbd3b0a96c96f9660013ed85",
+    "build-release\\bvmethods_profile_20261024\\replay_qualified\\native_comparison.json": "0990fde4752eb212f221617b4407e2c941800981bfaebde255c5eea830d16bc8",
+    "build-release\\bv_native_avsplit_20261024\\on_qf.npz": "f6620e0511daaa063a938ce77f0f12a3a4cab62acd48c3a93a4799b39dba80d7",
+    "build-release\\bv_finite_operator_20261024\\finite001_on_qf.npz": "5cc651632688e80ccd5f51b6d564faa67b0bf0c0f7c9c9185e9c9416c59d7fd7",
+    "build-release\\bv_finite_operator_20261024\\finite010_on_qf.npz": "2771ab5f8cf1d6dc9af332866b5083af52f62580b4bb371d40b3a32156c427ec"
+  }
+}

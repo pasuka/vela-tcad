@@ -1,5 +1,81 @@
 # Vela Documentation
 
+- [BVMethods Release 完整 BV 扫描，2026-10-25](validation/bvmethods_full_profile_2026-10-25.md)：
+  自主 Poisson 起步及严格残差续算达到停扫电流；BV 约 6.67049 V，内压步长控制仍为私有驱动。
+- [BVMethods 显式算子契约](bvmethods_operator_contract.md)：
+  自主 QF 状态、统一统计／FD-BGN、SG 算术、残差／矩阵／端口入口及适用边界。
+- [BVMethods 显式算子接入验证，2026-10-24](validation/bvmethods_production_profile_2026-10-24.md)：
+  Release 同态检查点、有限电流对照及多步负载线回归；零偏原生方向与完整 BV 资格单列。
+
+- [BVMethods 零偏 AV 电流方向与同态 RHS／Jacobian 核验，2026-10-24](validation/bvmethods_zero_av_direction_2026-10-24.md)：
+  共同原始量复算定位 SG 舍入路径；AV 源及完整矩阵差闭合至约 1e-12，自主 QF 原臂及完整 RHS 精度边界单列。
+
+- [BVMethods 有限电流完整算子及非 AV 差异定位，2026-10-24](validation/bvmethods_finite_transport_operator_2026-10-24.md)：
+  闭合输运平均权重及 SRH 体积；原生有限检查点完整矩阵差降至约 1e-8，Poisson 常数组合控制与零偏微小电流资格单列。
+
+- [BVMethods AV 单元材料、源残差与完整方向导数契约，2026-10-24](validation/bvmethods_av_material_contract_2026-10-24.md)：
+  逐顶点迁移率独立闭合，有限激励完整 Jv 与首个有限 Newton 步完成；零偏敏感性及约 0.8 mV 的原生首步差仍未消除。
+
+- [BVMethods 原生实际 AV 源项单侧扰动，2026-10-24](validation/bvmethods_native_av_source_response_2026-10-24.md)：
+  代表点两邻边恢复及盒体积分配通过直接源核验；非直角单元区分三边候选，原生 AV 大矩阵项可重建，迁移率支撑仍待闭合。
+
+- [BVMethods 原生 AV 导数分离与单侧残差核验，2026-10-24](validation/bvmethods_native_av_derivative_split_2026-10-24.md)：
+  同检查点显式开关确认异常交叉项来自 AV；实际残差区分源支撑缺失与近零绝对电流分支抵消，原生单元权重尚待确定。
+
+- [BVMethods 同态 Jacobian 对比，2026-10-24](validation/bvmethods_jacobian_comparison_2026-10-24.md)：
+  差异集中于四个空穴行的电子／内压交叉项；方向分解及源 Jacobian 控制完成，原生 AV 分项仍待分离。
+
+- [BVMethods 匹配基准后的 RHS 与首步更新，2026-10-24](validation/bvmethods_rhs_first_update_2026-10-24.md)：
+  补齐同统计／材料／热电压的完整系统；6765 维 RHS 差主要在 Poisson，首步仍未一致，独立线性复核完成。
+
+- [BVMethods 一致统计契约与零偏回放，2026-10-24](validation/bvmethods_statistics_contract_2026-10-24.md)：
+  实验解析契约通过独立原生状态与 FD-BGN 控制；同输入源项显著降低，生产零偏及极小电流资格仍单列。
+
+- [BVMethods 能带与费米统计直接核验，2026-10-24](validation/bvmethods_energy_statistics_2026-10-24.md)：
+  新原生 Poisson／联立能带确认默认电子统计差约 0.2186%；能量参考与 ni 带隙闭合，FD-BGN 差异单列。
+
+- [BVMethods 碰撞电离公式与代码核查，2026-10-24](validation/bvmethods_avalanche_formula_audit_2026-10-24.md)：
+  全边源公式与成对装配复现；定位费米／FD-BGN 本构不一致及接触驱动场激活，低场指数底值另列。
+
+- [BVMethods QF 更新上限依据与取消对照，2026-10-24](validation/bvmethods_qf_update_limit_control_2026-10-24.md)：
+  0.1 V 是可调稳定化控制；异常导入态取消后回溯失败，自身短扫已保存轨迹相同，尚无完整 BV。
+
+- [BVMethods 首轮空穴大方向的碰撞电离源定位，2026-10-24](validation/bvmethods_fp_avalanche_cause_2026-10-24.md)：
+  十组单步控制确认电子碰撞电离空穴源主导；导入态非零电流与接触邻域电场替代共同触发，修复资格仍待验证。
+
+- [BVMethods 共同 RHS 范数与前五轮更新对照，2026-10-24](validation/bvmethods_common_norm_updates_2026-10-24.md)：
+  原生日志 RHS 的无穷范数复现；完整物理场匹配、6765 维共同归一化与 QF 增量对照，定位空穴少子方向及实际限幅差异。
+
+- [BVMethods 停止准则与守恒诊断分离，2026-10-24](validation/bvmethods_stopping_control_2026-10-24.md)：
+  增加可选浓度 RMS 或残差停止；同态严格残差对照通过，三组扫描各保留 22 条完整记录后超时，尚无 BV。
+
+- [BVMethods 本地 Release 完整碰撞电离扫描尝试，2026-10-23](validation/bvmethods_full_impact_release_2026-10-23.md)：
+  修复材料后实际运行三组严格控制；30 个接受偏压点，电子全局闭合阻断，尚无合格 BV。
+
+- [SDevice 电子 DOS 有效质量修复，2026-10-23](validation/sdevice_electron_dos_mass_fix_2026-10-23.md)：
+  OldSlotboom 常数偏移进入电子质量带隙比；保留 CODATA 常数，材料/前端回归与零偏冒烟通过。
+
+- [BVMethods 原生材料参数新导出，2026-10-23](validation/bvmethods_material_export_2026-10-23.md)：
+  `sdevice -P` 与新 TDR 复现 Nc/Nv/ni 诊断值；确认活动系数一致，差异位于 BGN 质量换算和常数。
+
+- [BVMethods 分阶段零偏对照，2026-10-23](validation/bvmethods_staged_zero_2026-10-23.md)：
+  独立 Poisson→联立对照定位几何/电荷体积差异；7801→6843 等价消元通过，场量控制通过，算子仍未一致。
+
+- [PN2D 分阶段零偏对照，2026-10-23](validation/pn2d_staged_zero_2026-10-23.md)：
+  按 Poisson→联立顺序独立求解；匹配材料/常数后终态吻合，有限更新和生产材料修复仍单独记账。
+
+- [PN2D 零偏高场与 debug 精度跟进，2026-10-23](validation/pn2d_zero_hfs_followup_2026-10-23.md)：
+  有限 RHS 和首个有限 RHS 状态的近似切线已对齐；较后少子高场、弱行闭合与写回资格仍未通过。
+
+- [PN2D 零偏 Jacobian/RHS 对照，2026-10-23](validation/pn2d_zero_operator_2026-10-23.md)：
+  当前先完成零偏；材料 DOS 质量换算及迁移率平均差异已分离，全模型一致性尚未通过。
+
+- [PN2D 原生外电阻矩阵对照，2026-10-23](validation/pn2d_external_resistor_native_matrix_2026-10-23.md)：
+  Sentaurus 调试轨迹成功；5762 维等价消元、人口/QF 变换与结区迁移率、接触/RHS、停止语义定位。
+
+- [PN2D 外接电阻法起步验证，2026-10-23](validation/pn2d_external_resistor_start_2026-10-23.md)：
+  本地 main 合并、负向外压入口修复及旧 v3 净掺杂配置证据；当前总杂质修正与重跑见原生矩阵对照。
+
 - [BVmethods 外接电阻法开发交接，2026-10-23](validation/bvmethods_external_resistor_handoff_2026-10-23.md)：
   当前检出与历史私有证据位置、R0–R7 状态、两态 R2 进展及持续增广 Newton 的下一轮入口；尚无完整 BV 资格。
 

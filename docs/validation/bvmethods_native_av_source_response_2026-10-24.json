@@ -1,0 +1,2256 @@
+{
+  "scope": "Same BVMethods zero-bias saved checkpoint; original full GradQuasiFermi avalanche, BTBT off; actual first-RHS arrays and independent fixed-state current observers.",
+  "configuration": {
+    "nodes": 2600,
+    "Si_nodes": 2152,
+    "temperature_K": 300,
+    "series_resistance_ohm_um": 10000000.0,
+    "thermal_voltage_V": 0.025851995266484913,
+    "native_current_charge_C": 1.602192e-19,
+    "common_generation_current_charge_C": 1.602176634e-19,
+    "build": "private matched UCRT64 Release, O3 DNDEBUG"
+  },
+  "verification": {
+    "actual_source_captures": 27,
+    "unchanged_baseline_operator": true,
+    "native_exit_counts": {
+      "0": 25,
+      "2": 2
+    },
+    "PMI_Load_Plot_controls": 12,
+    "matched_Si_nodes": 2152,
+    "maximum_replay_state_difference": {
+      "n": 4.984901380566953e-14,
+      "p": 4.263256414560601e-14,
+      "psi_V": 0.0
+    },
+    "nonright_current_rep_two_edge_max_relative_error": 1.0756826966351403e-11,
+    "all_excited_rep_two_edge_max_relative_error": 5.2766730319409605e-08,
+    "Vela_SG_vector_without_mobility_max_relative_error": 1.6177863267674978e-07,
+    "baseline_source_factor_constancy": {
+      "base": 7.2039089422457205e-09,
+      "e2587_p7": 7.20390894224572e-09,
+      "e2587_m7": 7.2039089422457205e-09,
+      "e1546_p7": 7.2039089422457205e-09,
+      "e1546_m7": 7.20390894224572e-09,
+      "e2587_p9": 7.20390894224572e-09,
+      "e2587_m9": 7.2039089422457205e-09
+    },
+    "producer_source_sha256": {
+      "src/physics/CarrierStatistics.cpp": "0205ae78880e309a340c757caf69487c5aff0698226b39604b75891d577b3e8a",
+      "src/physics/BandgapNarrowing.cpp": "06666a89dcc9634874ce8b37a1589651aa95af8f43f197572e19e2bdf47aa5dc",
+      "include/vela/core/PhysicalConstants.h": "ae0d7660a15d5df591cea9b985d5ca278aef8b137583bd4dde506c19023b1f74",
+      "include/vela/physics/experimental/JoyceDixonStatistics.h": "b3a845f9300168f20af12c4056539901ccba0b9b73ec2efec31e8037ba8594f9",
+      "src/equation/CoupledDDAssembler.cpp": "26a82d99cb990b13023ce403b483244863e8257e150504de6bdec9f3f89bbdd7",
+      "include/vela/equation/AssemblerUtils.h": "643b984b59d238c2fb502baaf2c01315b5fe355d1030eff5c7658ec9b1c45cee",
+      "include/vela/physics/ImpactIonizationModel.h": "0b51c2db1fbfc6cdb3ef601a4b04b919bdae88002992c9712d5cea885a8458be",
+      "src/solver/NewtonSolver.cpp": "58046e9284e05e2cd972e04d076accecb06a4355db97419418fce0c3c9682f3c"
+    },
+    "regressions": {
+      "constraint_elimination": 3,
+      "native_debug_precision": 4
+    },
+    "production_physics_changed": false,
+    "nonlinear_or_BV_qualified": false,
+    "partial_element_scalar_export_not_used_as_AV_mobility_reference": true
+  },
+  "unit_conversion": {
+    "native_rate_to_cm3_s": 1292634017428833.0,
+    "native_area_reference_cm2": 1.1468328080586169e-05,
+    "physical_generation_current_A_per_um_per_native_integral": 2.375122878641453e-13,
+    "native_volume_conversion_max_rel_error": 4.440892098500626e-16,
+    "rate_conversion_max_rel_error": 0.0,
+    "common_charge_C": 1.602176634e-19
+  },
+  "source_response": {
+    "base": {
+      "actual_step_V": 0.0,
+      "requested_step_V": 0.0,
+      "changed_nodes": [],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": null,
+          "vela_single_sided_A_per_um_V": null
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": null,
+          "vela_single_sided_A_per_um_V": null
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": null,
+          "vela_single_sided_A_per_um_V": null
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": null,
+          "vela_single_sided_A_per_um_V": null
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": null,
+          "vela_single_sided_A_per_um_V": null
+        }
+      }
+    },
+    "e2587_p7": {
+      "actual_step_V": 1e-07,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.266679342617325e-20,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 7.266679323122696e-13,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 7.397452497844635e-20,
+          "vela_A_per_um": 5.115472194051494e-22,
+          "native_single_sided_A_per_um_V": 7.397452478027309e-13,
+          "vela_single_sided_A_per_um_V": 5.115472189353199e-15
+        },
+        "2084": {
+          "native_A_per_um": 6.538657781161091e-22,
+          "vela_A_per_um": 5.115472194051494e-22,
+          "native_single_sided_A_per_um_V": 6.5386577452306464e-15,
+          "vela_single_sided_A_per_um_V": 5.115472189353199e-15
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e2587_m7": {
+      "actual_step_V": -1e-07,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.266687077681504e-20,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -7.266687058186875e-13,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 7.39746037031181e-20,
+          "vela_A_per_um": 5.115477680578349e-22,
+          "native_single_sided_A_per_um_V": -7.397460350494483e-13,
+          "vela_single_sided_A_per_um_V": -5.115477675880054e-15
+        },
+        "2084": {
+          "native_A_per_um": 6.538664651310871e-22,
+          "vela_A_per_um": 5.115477680578349e-22,
+          "native_single_sided_A_per_um_V": -6.538664615380426e-15,
+          "vela_single_sided_A_per_um_V": -5.115477675880054e-15
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e2587_p9": {
+      "actual_step_V": 1e-09,
+      "requested_step_V": 1e-09,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.266685770583706e-22,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 7.266683821120724e-13,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 7.397459035100047e-22,
+          "vela_A_per_um": 5.1154768026557264e-24,
+          "native_single_sided_A_per_um_V": 7.397457053367341e-13,
+          "vela_single_sided_A_per_um_V": 5.115476332826144e-15
+        },
+        "2084": {
+          "native_A_per_um": 6.538665205375347e-24,
+          "vela_A_per_um": 5.1154768026557286e-24,
+          "native_single_sided_A_per_um_V": 6.53866161233081e-15,
+          "vela_single_sided_A_per_um_V": 5.115476332826144e-15
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e2587_m9": {
+      "actual_step_V": -1e-09,
+      "requested_step_V": -1e-09,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.266681174195825e-22,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -7.266679224732843e-13,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 7.397454366918467e-22,
+          "vela_A_per_um": 5.115475917955848e-24,
+          "native_single_sided_A_per_um_V": -7.397452385185762e-13,
+          "vela_single_sided_A_per_um_V": -5.1154754481262645e-15
+        },
+        "2084": {
+          "native_A_per_um": 6.538661615690487e-24,
+          "vela_A_per_um": 5.11547591795585e-24,
+          "native_single_sided_A_per_um_V": -6.53865802264595e-15,
+          "vela_single_sided_A_per_um_V": -5.1154754481262645e-15
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e1546_p7": {
+      "actual_step_V": 1e-07,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        1546
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.729381674209458e-21,
+          "vela_A_per_um": 1.5751386829041546e-20,
+          "native_single_sided_A_per_um_V": 7.729381479263161e-14,
+          "vela_single_sided_A_per_um_V": 1.575138677117421e-13
+        },
+        "2587": {
+          "native_A_per_um": 7.729381677436431e-21,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 7.729381479263161e-14,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e1546_m7": {
+      "actual_step_V": -1e-07,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        1546
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.729392360508752e-21,
+          "vela_A_per_um": 1.5751413699742237e-20,
+          "native_single_sided_A_per_um_V": -7.729392165562454e-14,
+          "vela_single_sided_A_per_um_V": -1.5751413641874902e-13
+        },
+        "2587": {
+          "native_A_per_um": 7.729392363735726e-21,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -7.729392165562457e-14,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e1546_p9": {
+      "actual_step_V": 1e-09,
+      "requested_step_V": 1e-09,
+      "changed_nodes": [
+        1546
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.729384035630429e-23,
+          "vela_A_per_um": 1.5751396655645394e-22,
+          "native_single_sided_A_per_um_V": 7.729364541000617e-14,
+          "vela_single_sided_A_per_um_V": 1.5751390868911666e-13
+        },
+        "2587": {
+          "native_A_per_um": 7.729384358327661e-23,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 7.729364541000617e-14,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e1546_m9": {
+      "actual_step_V": -1e-09,
+      "requested_step_V": -1e-09,
+      "changed_nodes": [
+        1546
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 7.729389790322791e-23,
+          "vela_A_per_um": 1.5751408496662463e-22,
+          "native_single_sided_A_per_um_V": -7.729370295692981e-14,
+          "vela_single_sided_A_per_um_V": -1.5751402709928736e-13
+        },
+        "2587": {
+          "native_A_per_um": 7.729390113020025e-23,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -7.729370295692981e-14,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e1308_p7": {
+      "actual_step_V": 1e-07,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        1308
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 7.266679349183594e-20,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 7.266679322831691e-13,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 7.397452504512818e-20,
+          "vela_A_per_um": 5.115472194051494e-22,
+          "native_single_sided_A_per_um_V": 7.397452477721708e-13,
+          "vela_single_sided_A_per_um_V": 5.115472189353199e-15
+        }
+      }
+    },
+    "e1308_m7": {
+      "actual_step_V": -1e-07,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        1308
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 7.266687071115238e-20,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -7.266687044763336e-13,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 7.397460363643631e-20,
+          "vela_A_per_um": 5.115477680578349e-22,
+          "native_single_sided_A_per_um_V": -7.39746033685252e-13,
+          "vela_single_sided_A_per_um_V": -5.115477675880054e-15
+        }
+      }
+    },
+    "e1308_p9": {
+      "actual_step_V": 1e-09,
+      "requested_step_V": 1e-09,
+      "changed_nodes": [
+        1308
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 7.266686427210544e-22,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 7.266683792020198e-13,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 7.397459701918233e-22,
+          "vela_A_per_um": 5.1154768026557264e-24,
+          "native_single_sided_A_per_um_V": 7.397457022807139e-13,
+          "vela_single_sided_A_per_um_V": 5.115476332826144e-15
+        }
+      }
+    },
+    "e1308_m9": {
+      "actual_step_V": -1e-09,
+      "requested_step_V": -1e-09,
+      "changed_nodes": [
+        1308
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 7.266680517568983e-22,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -7.266677882378638e-13,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 7.397453700100276e-22,
+          "vela_A_per_um": 5.115475917955848e-24,
+          "native_single_sided_A_per_um_V": -7.397451020989181e-13,
+          "vela_single_sided_A_per_um_V": -5.1154754481262645e-15
+        }
+      }
+    },
+    "e229_p7": {
+      "actual_step_V": 1e-07,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        229
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 7.72938168144393e-21,
+          "vela_A_per_um": 1.575138684350848e-20,
+          "native_single_sided_A_per_um_V": 7.729381417924898e-14,
+          "vela_single_sided_A_per_um_V": 1.5751386800107976e-13
+        },
+        "1308": {
+          "native_A_per_um": 7.729381685836006e-21,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 7.729381417924898e-14,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e229_m7": {
+      "actual_step_V": -1e-07,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        229
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 7.729392353603125e-21,
+          "vela_A_per_um": 1.575141368527561e-20,
+          "native_single_sided_A_per_um_V": -7.729392090084092e-14,
+          "vela_single_sided_A_per_um_V": -1.5751413641875109e-13
+        },
+        "1308": {
+          "native_A_per_um": 7.729392357995198e-21,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -7.72939209008409e-14,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e229_p9": {
+      "actual_step_V": 1e-09,
+      "requested_step_V": 1e-09,
+      "changed_nodes": [
+        229
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 7.729384726214069e-23,
+          "vela_A_per_um": 1.575139810232895e-22,
+          "native_single_sided_A_per_um_V": 7.729358374310621e-14,
+          "vela_single_sided_A_per_um_V": 1.5751393762278654e-13
+        },
+        "1308": {
+          "native_A_per_um": 7.729385165421563e-23,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 7.729358374310624e-14,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e229_m9": {
+      "actual_step_V": -1e-09,
+      "requested_step_V": -1e-09,
+      "changed_nodes": [
+        229
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 7.72938913266422e-23,
+          "vela_A_per_um": 1.5751407049979184e-22,
+          "native_single_sided_A_per_um_V": -7.729362780760773e-14,
+          "vela_single_sided_A_per_um_V": -1.5751402709928888e-13
+        },
+        "1308": {
+          "native_A_per_um": 7.729389571871713e-23,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -7.729362780760774e-14,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "h2587_p7": {
+      "actual_step_V": 1e-07,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.949462981007544e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 2.34205198007029e-37,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959556e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 2.34205198007029e-37,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "h2587_m7": {
+      "actual_step_V": -1e-07,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.949462981007544e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -2.34205198007029e-37,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959556e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -2.34205198007029e-37,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "psi2587_p7": {
+      "actual_step_V": 9.999999990526873e-08,
+      "requested_step_V": 1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 2.071343083763223e-28,
+          "vela_A_per_um": 5.786737404217739e-29,
+          "native_single_sided_A_per_um_V": 1.2188010287113816e-22,
+          "vela_single_sided_A_per_um_V": 3.6780181024299553e-28
+        },
+        "2587": {
+          "native_A_per_um": 2.1056509913754055e-28,
+          "vela_A_per_um": 4.697270968079129e-31,
+          "native_single_sided_A_per_um_V": 1.239182871968395e-22,
+          "vela_single_sided_A_per_um_V": -1.0248599175547711e-27
+        },
+        "2084": {
+          "native_A_per_um": 3.6949537522063556e-30,
+          "vela_A_per_um": 4.697270986509029e-31,
+          "native_single_sided_A_per_um_V": 1.0190921628506016e-24,
+          "vela_single_sided_A_per_um_V": -1.0248599175556287e-27
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "psi2587_m7": {
+      "actual_step_V": -9.999999999711347e-08,
+      "requested_step_V": -1e-07,
+      "changed_nodes": [
+        2587
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 2.7641460336834377e-28,
+          "vela_A_per_um": 5.786730049551314e-29,
+          "native_single_sided_A_per_um_V": -8.146830526994103e-22,
+          "vela_single_sided_A_per_um_V": 3.67664832611953e-28
+        },
+        "2587": {
+          "native_A_per_um": 2.810238111799393e-28,
+          "vela_A_per_um": 4.699320895335846e-31,
+          "native_single_sided_A_per_um_V": -8.285054075273528e-22,
+          "vela_single_sided_A_per_um_V": -1.0250673401622869e-27
+        },
+        "2084": {
+          "native_A_per_um": 4.284162277395027e-30,
+          "vela_A_per_um": 4.699320913765746e-31,
+          "native_single_sided_A_per_um_V": -6.91117741397141e-24,
+          "vela_single_sided_A_per_um_V": -1.0250673401614297e-27
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e861_p5": {
+      "actual_step_V": 1e-05,
+      "requested_step_V": 1e-05,
+      "changed_nodes": [
+        861
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e861_m5": {
+      "actual_step_V": -1e-05,
+      "requested_step_V": -1e-05,
+      "changed_nodes": [
+        861
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e797_p5": {
+      "actual_step_V": 1e-05,
+      "requested_step_V": 1e-05,
+      "changed_nodes": [
+        797
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e797_m5": {
+      "actual_step_V": -1e-05,
+      "requested_step_V": -1e-05,
+      "changed_nodes": [
+        797
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    },
+    "e968_p005": {
+      "actual_step_V": 0.05,
+      "requested_step_V": 0.05,
+      "changed_nodes": [
+        968
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": 0.0,
+          "vela_single_sided_A_per_um_V": -0.0
+        }
+      }
+    },
+    "e968_m005": {
+      "actual_step_V": -0.049999999999999996,
+      "requested_step_V": -0.05,
+      "changed_nodes": [
+        968
+      ],
+      "paired_AV_identical": true,
+      "source_return_closure": {
+        "electron": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        },
+        "hole": {
+          "max_absolute_defect": 0.0,
+          "source_kernel_closure_with_roundoff_bound": true
+        }
+      },
+      "generation_current": {
+        "1546": {
+          "native_A_per_um": 1.9494629810075437e-28,
+          "vela_A_per_um": 5.78673372619964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2587": {
+          "native_A_per_um": 1.9817327042959554e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "2084": {
+          "native_A_per_um": 3.5930445360178356e-30,
+          "vela_A_per_um": 4.698295846425614e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "229": {
+          "native_A_per_um": 2.635190344546846e-28,
+          "vela_A_per_um": 4.3400502946497964e-29,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        },
+        "1308": {
+          "native_A_per_um": 2.679111093825991e-28,
+          "vela_A_per_um": 4.698295827995713e-31,
+          "native_single_sided_A_per_um_V": -0.0,
+          "vela_single_sided_A_per_um_V": 0.0
+        }
+      }
+    }
+  },
+  "right_triangle_source_allocation": [
+    {
+      "case": "e2587_p7",
+      "box_weight_prediction_relative_L2": 5.48577155161934e-19,
+      "uniform_thirds_prediction_relative_L2": 0.4058213207221562,
+      "native_shared_node_prediction": [
+        3.05949615848051e-07,
+        2.7529766160859414e-09,
+        3.114555690802229e-07,
+        6.146522083121879e-07
+      ],
+      "native_observed": [
+        3.05949615848051e-07,
+        2.752976616085941e-09,
+        3.114555690802229e-07,
+        6.146522083121879e-07
+      ]
+    },
+    {
+      "case": "e2587_m7",
+      "box_weight_prediction_relative_L2": 0.0,
+      "uniform_thirds_prediction_relative_L2": 0.4058213207552469,
+      "native_shared_node_prediction": [
+        3.059499415181142e-07,
+        2.7529795086309295e-09,
+        3.1145590053537603e-07,
+        6.146528625448593e-07
+      ],
+      "native_observed": [
+        3.059499415181142e-07,
+        2.7529795086309295e-09,
+        3.1145590053537603e-07,
+        6.146528625448593e-07
+      ]
+    },
+    {
+      "case": "e2587_p9",
+      "box_weight_prediction_relative_L2": 5.485768156895067e-17,
+      "uniform_thirds_prediction_relative_L2": 0.4058213207884576,
+      "native_shared_node_prediction": [
+        3.059498052276435e-09,
+        2.7529782442544033e-11,
+        3.1145576171615233e-09,
+        6.1465258869954145e-09
+      ],
+      "native_observed": [
+        3.059498052276435e-09,
+        2.7529782442544033e-11,
+        3.1145576171615237e-09,
+        6.1465258869954145e-09
+      ]
+    },
+    {
+      "case": "e2587_m9",
+      "box_weight_prediction_relative_L2": 1.0971543248103232e-16,
+      "uniform_thirds_prediction_relative_L2": 0.405821320587557,
+      "native_shared_node_prediction": [
+        3.059496117055347e-09,
+        2.752976732886342e-11,
+        3.114555651713074e-09,
+        6.1465220014395575e-09
+      ],
+      "native_observed": [
+        3.059496117055347e-09,
+        2.752976732886342e-11,
+        3.114555651713074e-09,
+        6.146522001439557e-09
+      ]
+    },
+    {
+      "case": "e1546_p7",
+      "box_weight_prediction_relative_L2": 0.0,
+      "uniform_thirds_prediction_relative_L2": 0.408248290463863,
+      "native_shared_node_prediction": [
+        3.2543080397104724e-08,
+        0.0,
+        3.2543080397104724e-08,
+        6.508616079420945e-08
+      ],
+      "native_observed": [
+        3.2543080397104724e-08,
+        0.0,
+        3.2543080397104724e-08,
+        6.508616079420945e-08
+      ]
+    },
+    {
+      "case": "e1546_m7",
+      "box_weight_prediction_relative_L2": 1.8562670311083462e-16,
+      "uniform_thirds_prediction_relative_L2": 0.4082482904638631,
+      "native_shared_node_prediction": [
+        3.2543125389721274e-08,
+        0.0,
+        3.2543125389721274e-08,
+        6.508625077944255e-08
+      ],
+      "native_observed": [
+        3.2543125389721274e-08,
+        0.0,
+        3.254312538972128e-08,
+        6.508625077944256e-08
+      ]
+    },
+    {
+      "case": "e1546_p9",
+      "box_weight_prediction_relative_L2": 6.485553282174497e-17,
+      "uniform_thirds_prediction_relative_L2": 0.4082482904638631,
+      "native_shared_node_prediction": [
+        3.2543009081794284e-10,
+        0.0,
+        3.2543009081794284e-10,
+        6.508601816358857e-10
+      ],
+      "native_observed": [
+        3.2543009081794284e-10,
+        0.0,
+        3.254300908179428e-10,
+        6.508601816358857e-10
+      ]
+    },
+    {
+      "case": "e1546_m9",
+      "box_weight_prediction_relative_L2": 1.29710969070645e-16,
+      "uniform_thirds_prediction_relative_L2": 0.4082482904638631,
+      "native_shared_node_prediction": [
+        3.2543033310824345e-10,
+        0.0,
+        3.2543033310824345e-10,
+        6.508606662164869e-10
+      ],
+      "native_observed": [
+        3.2543033310824345e-10,
+        0.0,
+        3.2543033310824345e-10,
+        6.50860666216487e-10
+      ]
+    }
+  ],
+  "nonright_source_allocation": [
+    {
+      "case": "e861_p5",
+      "cells": [
+        1819,
+        1824
+      ],
+      "nodes": [
+        235,
+        797,
+        861,
+        863
+      ],
+      "observable_nodes": [
+        235,
+        861,
+        863
+      ],
+      "rank": 2,
+      "qualified_allocation_test": false,
+      "box_weight_fixed_map_relative_defect": 5.026805007985076e-16,
+      "uniform_thirds_best_fit_relative_defect": 3.090951008833975e-16
+    },
+    {
+      "case": "e861_m5",
+      "cells": [
+        1819,
+        1824
+      ],
+      "nodes": [
+        235,
+        797,
+        861,
+        863
+      ],
+      "observable_nodes": [
+        235,
+        861,
+        863
+      ],
+      "rank": 2,
+      "qualified_allocation_test": false,
+      "box_weight_fixed_map_relative_defect": 5.026805007985076e-16,
+      "uniform_thirds_best_fit_relative_defect": 3.090951008833975e-16
+    },
+    {
+      "case": "e797_p5",
+      "cells": [
+        572,
+        1691,
+        1692,
+        1819
+      ],
+      "nodes": [
+        233,
+        234,
+        235,
+        791,
+        797,
+        861
+      ],
+      "observable_nodes": [
+        233,
+        234,
+        235,
+        791,
+        797,
+        861
+      ],
+      "rank": 4,
+      "qualified_allocation_test": false,
+      "box_weight_fixed_map_relative_defect": 1.1133317195832498e-16,
+      "uniform_thirds_best_fit_relative_defect": 0.22865757331375586
+    },
+    {
+      "case": "e797_m5",
+      "cells": [
+        572,
+        1691,
+        1692,
+        1819
+      ],
+      "nodes": [
+        233,
+        234,
+        235,
+        791,
+        797,
+        861
+      ],
+      "observable_nodes": [
+        233,
+        234,
+        235,
+        791,
+        797,
+        861
+      ],
+      "rank": 4,
+      "qualified_allocation_test": false,
+      "box_weight_fixed_map_relative_defect": 6.684233610250437e-16,
+      "uniform_thirds_best_fit_relative_defect": 0.22865783291918945
+    },
+    {
+      "case": "e968_p005",
+      "cells": [
+        2026,
+        2035,
+        2036,
+        2037,
+        2038,
+        2126
+      ],
+      "nodes": [
+        960,
+        962,
+        967,
+        968,
+        969,
+        1012,
+        1013
+      ],
+      "observable_nodes": [
+        960,
+        962,
+        967,
+        968,
+        969,
+        1012,
+        1013
+      ],
+      "rank": 6,
+      "qualified_allocation_test": true,
+      "box_weight_fixed_map_relative_defect": 2.3513571992415876e-16,
+      "uniform_thirds_best_fit_relative_defect": 0.15738388417270036
+    },
+    {
+      "case": "e968_m005",
+      "cells": [
+        2026,
+        2035,
+        2036,
+        2037,
+        2038,
+        2126
+      ],
+      "nodes": [
+        960,
+        962,
+        967,
+        968,
+        969,
+        1012,
+        1013
+      ],
+      "observable_nodes": [
+        960,
+        962,
+        967,
+        968,
+        969,
+        1012,
+        1013
+      ],
+      "rank": 6,
+      "qualified_allocation_test": true,
+      "box_weight_fixed_map_relative_defect": 2.378077996414666e-16,
+      "uniform_thirds_best_fit_relative_defect": 0.15738387917089458
+    }
+  ],
+  "excited_current_model_comparison": [
+    {
+      "case": "e1308_p7",
+      "cell": 571,
+      "density_SG__three_edge_unweighted_LS": 0.026629521925474395,
+      "density_SG__three_edge_box_area_weighted_LS": 4.729284900444885e-10,
+      "density_SG__three_edge_couple_weighted_LS": 4.729281553674864e-10,
+      "density_SG__three_edge_transport_weighted_LS": 4.729283226045838e-10,
+      "density_SG__GSS_Laux_pair_volume": 4.729304974181614e-10,
+      "density_SG__representative_vertex_two_edge": 4.729283173347697e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.026629513473022164,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 7.225597766785811e-10,
+      "generalized_Gg__three_edge_couple_weighted_LS": 7.225594420246445e-10,
+      "generalized_Gg__three_edge_transport_weighted_LS": 7.225596092852422e-10,
+      "generalized_Gg__GSS_Laux_pair_volume": 7.225617841516693e-10,
+      "generalized_Gg__representative_vertex_two_edge": 7.225594385313971e-10
+    },
+    {
+      "case": "e1308_p7",
+      "cell": 2667,
+      "density_SG__three_edge_unweighted_LS": 0.018465648287387205,
+      "density_SG__three_edge_box_area_weighted_LS": 4.4815953974582425e-10,
+      "density_SG__three_edge_couple_weighted_LS": 4.4816162740895186e-10,
+      "density_SG__three_edge_transport_weighted_LS": 4.48162466037175e-10,
+      "density_SG__GSS_Laux_pair_volume": 4.481547600713452e-10,
+      "density_SG__representative_vertex_two_edge": 4.481642704116452e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.018465657809031012,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 2.0226074991801247e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 2.022607451015317e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 2.0226074152864085e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 2.0226074438636305e-08,
+      "generalized_Gg__representative_vertex_two_edge": 2.0226066631762885e-08
+    },
+    {
+      "case": "e1546_m7",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.00023045144535007188,
+      "density_SG__three_edge_box_area_weighted_LS": 5.266797362070713e-09,
+      "density_SG__three_edge_couple_weighted_LS": 5.266797366220198e-09,
+      "density_SG__three_edge_transport_weighted_LS": 5.266797365309354e-09,
+      "density_SG__GSS_Laux_pair_volume": 5.266797345734254e-09,
+      "density_SG__representative_vertex_two_edge": 5.266797365392528e-09,
+      "generalized_Gg__three_edge_unweighted_LS": 0.00023029198591771014,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 1.6177864087224372e-07,
+      "generalized_Gg__three_edge_couple_weighted_LS": 1.6177864106884216e-07,
+      "generalized_Gg__three_edge_transport_weighted_LS": 1.6177864087234917e-07,
+      "generalized_Gg__GSS_Laux_pair_volume": 1.617786408717119e-07,
+      "generalized_Gg__representative_vertex_two_edge": 1.6177864087235185e-07
+    },
+    {
+      "case": "e1546_p7",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.00023045174690518736,
+      "density_SG__three_edge_box_area_weighted_LS": 5.266717371825338e-09,
+      "density_SG__three_edge_couple_weighted_LS": 5.26671736828732e-09,
+      "density_SG__three_edge_transport_weighted_LS": 5.2667173685866675e-09,
+      "density_SG__GSS_Laux_pair_volume": 5.2667173889037826e-09,
+      "density_SG__representative_vertex_two_edge": 5.266717368503487e-09,
+      "generalized_Gg__three_edge_unweighted_LS": 0.0002306112086282887,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 1.6176288237604752e-07,
+      "generalized_Gg__three_edge_couple_weighted_LS": 1.6176288217944884e-07,
+      "generalized_Gg__three_edge_transport_weighted_LS": 1.6176288257244973e-07,
+      "generalized_Gg__GSS_Laux_pair_volume": 1.6176288237657943e-07,
+      "generalized_Gg__representative_vertex_two_edge": 1.617628823759394e-07
+    },
+    {
+      "case": "e2587_m7",
+      "cell": 4682,
+      "density_SG__three_edge_unweighted_LS": 0.018465630523595875,
+      "density_SG__three_edge_box_area_weighted_LS": 5.450516560574633e-10,
+      "density_SG__three_edge_couple_weighted_LS": 5.450524037130019e-10,
+      "density_SG__three_edge_transport_weighted_LS": 5.450525288283547e-10,
+      "density_SG__GSS_Laux_pair_volume": 5.450481339342889e-10,
+      "density_SG__representative_vertex_two_edge": 5.450469201089737e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.018465621001964735,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 1.9880085756172498e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 1.9880086310369446e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 1.9880086703128393e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 1.9880086193675047e-08,
+      "generalized_Gg__representative_vertex_two_edge": 1.9880094240295727e-08
+    },
+    {
+      "case": "e2587_m7",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.026629503221374383,
+      "density_SG__three_edge_box_area_weighted_LS": 3.6857764155044507e-10,
+      "density_SG__three_edge_couple_weighted_LS": 3.6857730681343956e-10,
+      "density_SG__three_edge_transport_weighted_LS": 3.685773066842642e-10,
+      "density_SG__GSS_Laux_pair_volume": 3.6857964865159047e-10,
+      "density_SG__representative_vertex_two_edge": 3.685772965680237e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.0266295116738954,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 1.1945299907923063e-10,
+      "generalized_Gg__three_edge_couple_weighted_LS": 1.1945266409617394e-10,
+      "generalized_Gg__three_edge_transport_weighted_LS": 1.194526636975967e-10,
+      "generalized_Gg__GSS_Laux_pair_volume": 1.1945500490192758e-10,
+      "generalized_Gg__representative_vertex_two_edge": 1.194526324834054e-10
+    },
+    {
+      "case": "e2587_m9",
+      "cell": 4682,
+      "density_SG__three_edge_unweighted_LS": 0.01846566466781442,
+      "density_SG__three_edge_box_area_weighted_LS": 5.276673486134589e-08,
+      "density_SG__three_edge_couple_weighted_LS": 5.276673565314172e-08,
+      "density_SG__three_edge_transport_weighted_LS": 5.276673587027605e-08,
+      "density_SG__GSS_Laux_pair_volume": 5.276673147495441e-08,
+      "density_SG__representative_vertex_two_edge": 5.2766730319409605e-08,
+      "generalized_Gg__three_edge_unweighted_LS": 0.018465664572597938,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 5.2609365940704764e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 5.26093667366628e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 5.260936695604888e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 5.2609362499253535e-08,
+      "generalized_Gg__representative_vertex_two_edge": 5.260936141760748e-08
+    },
+    {
+      "case": "e2587_m9",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.026629517356263333,
+      "density_SG__three_edge_box_area_weighted_LS": 3.6353886132592055e-08,
+      "density_SG__three_edge_couple_weighted_LS": 3.635388574034277e-08,
+      "density_SG__three_edge_transport_weighted_LS": 3.6353885740211997e-08,
+      "density_SG__GSS_Laux_pair_volume": 3.635388822333931e-08,
+      "density_SG__representative_vertex_two_edge": 3.635388572996296e-08,
+      "generalized_Gg__three_edge_unweighted_LS": 0.026629517440788085,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 3.635139213876298e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 3.635139174651369e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 3.6351391877088516e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 3.6351394229510193e-08,
+      "generalized_Gg__representative_vertex_two_edge": 3.635139186683878e-08
+    },
+    {
+      "case": "e2587_p7",
+      "cell": 4682,
+      "density_SG__three_edge_unweighted_LS": 0.01846564828009535,
+      "density_SG__three_edge_box_area_weighted_LS": 4.6166894327785507e-10,
+      "density_SG__three_edge_couple_weighted_LS": 4.6167087768169565e-10,
+      "density_SG__three_edge_transport_weighted_LS": 4.616718824068647e-10,
+      "density_SG__GSS_Laux_pair_volume": 4.616641400881191e-10,
+      "density_SG__representative_vertex_two_edge": 4.616736282470385e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.01846565780173909,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 2.0226536683934716e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 2.022653620356759e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 2.0226535764019636e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 2.02265360444939e-08,
+      "generalized_Gg__representative_vertex_two_edge": 2.022652832094342e-08
+    },
+    {
+      "case": "e2587_p7",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.02662952192482128,
+      "density_SG__three_edge_box_area_weighted_LS": 4.87764470703053e-10,
+      "density_SG__three_edge_couple_weighted_LS": 4.877641361937215e-10,
+      "density_SG__three_edge_transport_weighted_LS": 4.877641362910454e-10,
+      "density_SG__GSS_Laux_pair_volume": 4.877666460581665e-10,
+      "density_SG__representative_vertex_two_edge": 4.877641439241806e-10,
+      "generalized_Gg__three_edge_unweighted_LS": 0.026629513472369075,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 7.373956284195836e-10,
+      "generalized_Gg__three_edge_couple_weighted_LS": 7.373952938758814e-10,
+      "generalized_Gg__three_edge_transport_weighted_LS": 7.373952939402582e-10,
+      "generalized_Gg__GSS_Laux_pair_volume": 7.373979709489753e-10,
+      "generalized_Gg__representative_vertex_two_edge": 7.37395298989339e-10
+    },
+    {
+      "case": "e2587_p9",
+      "cell": 4682,
+      "density_SG__three_edge_unweighted_LS": 0.018465614363603725,
+      "density_SG__three_edge_box_area_weighted_LS": 3.7072500414876774e-08,
+      "density_SG__three_edge_couple_weighted_LS": 3.707250227947305e-08,
+      "density_SG__three_edge_transport_weighted_LS": 3.707250322786221e-08,
+      "density_SG__GSS_Laux_pair_volume": 3.7072496009737195e-08,
+      "density_SG__representative_vertex_two_edge": 3.707250642101361e-08,
+      "generalized_Gg__three_edge_unweighted_LS": 0.018465614458820195,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 3.699497257076928e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 3.699497443672222e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 3.699497538482034e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 3.699496826552817e-08,
+      "generalized_Gg__representative_vertex_two_edge": 3.6994978655147554e-08
+    },
+    {
+      "case": "e2587_p9",
+      "cell": 4683,
+      "density_SG__three_edge_unweighted_LS": 0.02662951728899267,
+      "density_SG__three_edge_box_area_weighted_LS": 3.667974510415792e-08,
+      "density_SG__three_edge_couple_weighted_LS": 3.667974471217252e-08,
+      "density_SG__three_edge_transport_weighted_LS": 3.6679744712302126e-08,
+      "density_SG__GSS_Laux_pair_volume": 3.6679747065278973e-08,
+      "density_SG__representative_vertex_two_edge": 3.6679744722459957e-08,
+      "generalized_Gg__three_edge_unweighted_LS": 0.026629517204467688,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 3.668223844331128e-08,
+      "generalized_Gg__three_edge_couple_weighted_LS": 3.668223818203143e-08,
+      "generalized_Gg__three_edge_transport_weighted_LS": 3.6682238182161027e-08,
+      "generalized_Gg__GSS_Laux_pair_volume": 3.66822404044323e-08,
+      "generalized_Gg__representative_vertex_two_edge": 3.668223819231816e-08
+    },
+    {
+      "case": "e797_m5",
+      "cell": 1819,
+      "density_SG__three_edge_unweighted_LS": 0.0006299529727859032,
+      "density_SG__three_edge_box_area_weighted_LS": 0.0006271593553222755,
+      "density_SG__three_edge_couple_weighted_LS": 0.000626214006437847,
+      "density_SG__three_edge_transport_weighted_LS": 0.0006262024011818006,
+      "density_SG__GSS_Laux_pair_volume": 0.000693879107172815,
+      "density_SG__representative_vertex_two_edge": 8.878429980323525e-12,
+      "generalized_Gg__three_edge_unweighted_LS": 0.0006319335831408245,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 0.0006291484502689,
+      "generalized_Gg__three_edge_couple_weighted_LS": 0.0006282059899114072,
+      "generalized_Gg__three_edge_transport_weighted_LS": 0.000628194420170431,
+      "generalized_Gg__GSS_Laux_pair_volume": 0.0006956844979332152,
+      "generalized_Gg__representative_vertex_two_edge": 1.957238789607135e-06
+    },
+    {
+      "case": "e797_p5",
+      "cell": 1819,
+      "density_SG__three_edge_unweighted_LS": 0.0006300197314380907,
+      "density_SG__three_edge_box_area_weighted_LS": 0.0006272258188222274,
+      "density_SG__three_edge_couple_weighted_LS": 0.0006262803705160712,
+      "density_SG__three_edge_transport_weighted_LS": 0.0006262687641109046,
+      "density_SG__GSS_Laux_pair_volume": 0.0006939526332916958,
+      "density_SG__representative_vertex_two_edge": 1.0756826966351403e-11,
+      "generalized_Gg__three_edge_unweighted_LS": 0.0006280353928691877,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 0.0006252329250859416,
+      "generalized_Gg__three_edge_couple_weighted_LS": 0.0006242845640650909,
+      "generalized_Gg__three_edge_transport_weighted_LS": 0.0006242729218475568,
+      "generalized_Gg__GSS_Laux_pair_volume": 0.0006921448180017679,
+      "generalized_Gg__representative_vertex_two_edge": 1.9610566890324427e-06
+    },
+    {
+      "case": "e861_m5",
+      "cell": 1819,
+      "density_SG__three_edge_unweighted_LS": 0.0021126806074981126,
+      "density_SG__three_edge_box_area_weighted_LS": 0.002103311621138915,
+      "density_SG__three_edge_couple_weighted_LS": 0.002100141194430643,
+      "density_SG__three_edge_transport_weighted_LS": 0.0021001022738363876,
+      "density_SG__GSS_Laux_pair_volume": 0.002327070419250968,
+      "density_SG__representative_vertex_two_edge": 8.741087966289188e-12,
+      "generalized_Gg__three_edge_unweighted_LS": 0.002112571220025703,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 0.0021032043124849503,
+      "generalized_Gg__three_edge_couple_weighted_LS": 0.0021000366001933442,
+      "generalized_Gg__three_edge_transport_weighted_LS": 0.00209999802842591,
+      "generalized_Gg__GSS_Laux_pair_volume": 0.002326970502795428,
+      "generalized_Gg__representative_vertex_two_edge": 2.2177280302917045e-07
+    },
+    {
+      "case": "e861_p5",
+      "cell": 1819,
+      "density_SG__three_edge_unweighted_LS": 0.0021128984006998494,
+      "density_SG__three_edge_box_area_weighted_LS": 0.0021035284490332857,
+      "density_SG__three_edge_couple_weighted_LS": 0.0021003576959807676,
+      "density_SG__three_edge_transport_weighted_LS": 0.0021003187714291353,
+      "density_SG__GSS_Laux_pair_volume": 0.0023273103106563023,
+      "density_SG__representative_vertex_two_edge": 1.5268968454922713e-12,
+      "generalized_Gg__three_edge_unweighted_LS": 0.0021130079947643513,
+      "generalized_Gg__three_edge_box_area_weighted_LS": 0.0021036357664647484,
+      "generalized_Gg__three_edge_couple_weighted_LS": 0.0021004621188085715,
+      "generalized_Gg__three_edge_transport_weighted_LS": 0.002100422825466791,
+      "generalized_Gg__GSS_Laux_pair_volume": 0.0023274116328719356,
+      "generalized_Gg__representative_vertex_two_edge": 2.227021352820548e-07
+    }
+  ],
+  "native_AV_J_reconstruction": [
+    {
+      "row_hole_node": 1546,
+      "column_fn_node": 2587,
+      "baseline_vector_without_mobility": [
+        -1.1273070125590007e-07,
+        1.6528301125217083e-08
+      ],
+      "norm_direction_projection_cosine": 0.9894218882318658,
+      "predicted_native_source_J": -3.0271340854083877,
+      "native_AV_on_off_J": -3.027134084111478,
+      "relative_error": 4.2842818182009523e-10,
+      "coefficient_beta_from_baseline_source_and_vector": 7.2039089422457205e-09
+    },
+    {
+      "row_hole_node": 1546,
+      "column_fn_node": 1546,
+      "baseline_vector_without_mobility": [
+        -1.1273070125590007e-07,
+        1.6528301125217083e-08
+      ],
+      "norm_direction_projection_cosine": -0.14506662982122856,
+      "predicted_native_source_J": 0.0472091837974127,
+      "native_AV_on_off_J": 0.04720918379778706,
+      "relative_error": 7.92976795338518e-12,
+      "coefficient_beta_from_baseline_source_and_vector": 7.2039089422457205e-09
+    },
+    {
+      "row_hole_node": 229,
+      "column_fn_node": 1308,
+      "baseline_vector_without_mobility": [
+        -1.5350563575271498e-07,
+        -1.2492320617896631e-08
+      ],
+      "norm_direction_projection_cosine": 0.9967049883429572,
+      "predicted_native_source_J": -3.0494150828879576,
+      "native_AV_on_off_J": -3.0494167128328598,
+      "relative_error": 5.345103852860689e-07,
+      "coefficient_beta_from_baseline_source_and_vector": 7.2039089422457205e-09
+    }
+  ],
+  "Vela_current_and_source_counterfactual": [
+    {
+      "case": "e1308_p7",
+      "cell": 571,
+      "production_SG_without_mobility_common_charge": [
+        -42.469537709777875,
+        -1.2446926385524363e-08
+      ],
+      "native_without_mobility_common_charge": [
+        -42.46953774046464,
+        -1.2492200808910806e-08
+      ],
+      "relative_vector_error_after_mobility_removed": 7.225601780374667e-10,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -1808.5428389497224,
+        -6.172741616721258e-07
+      ]
+    },
+    {
+      "case": "e1308_p7",
+      "cell": 2667,
+      "production_SG_without_mobility_common_charge": [
+        -42.469537709777875,
+        16.961082038102553
+      ],
+      "native_without_mobility_common_charge": [
+        -42.46953774046464,
+        16.96108296255504
+      ],
+      "relative_vector_error_after_mobility_removed": 2.0226065691699614e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -1808.5428389497224,
+        671.8022128795268
+      ]
+    },
+    {
+      "case": "e1546_m7",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        -1.3652119613698162e-07,
+        4.517383496222009
+      ],
+      "native_without_mobility_common_charge": [
+        -1.1272962009961199e-07,
+        4.51738276579337
+      ],
+      "relative_vector_error_after_mobility_removed": 1.6177863267674978e-07,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -5.813688575943367e-06,
+        224.02829521688253
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 1.0442116713327896e-20,
+      "native_source_A_per_um": 7.729392360508752e-21,
+      "remaining_source_relative_difference": 0.35096217481196557
+    },
+    {
+      "case": "e1546_p7",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        -1.3652119613698162e-07,
+        -4.517375789913056
+      ],
+      "native_without_mobility_common_charge": [
+        -1.1272962009961199e-07,
+        -4.517376520269528
+      ],
+      "relative_vector_error_after_mobility_removed": 1.617628893547902e-07,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -5.813688575943367e-06,
+        -224.0279130418342
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 1.0442098899879575e-20,
+      "native_source_A_per_um": 7.729381674209458e-21,
+      "remaining_source_relative_difference": 0.3509617379513823
+    },
+    {
+      "case": "e2587_m7",
+      "cell": 4682,
+      "production_SG_without_mobility_common_charge": [
+        42.469582903992126,
+        16.961100229469302
+      ],
+      "native_without_mobility_common_charge": [
+        42.46958290906476,
+        16.96109932034247
+      ],
+      "relative_vector_error_after_mobility_removed": 1.9880095267689206e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        1808.5447635214878,
+        671.8029334114138
+      ]
+    },
+    {
+      "case": "e2587_m7",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        42.469582903992126,
+        1.6595901847365563e-08
+      ],
+      "native_without_mobility_common_charge": [
+        42.46958290906476,
+        1.6528142608712763e-08
+      ],
+      "relative_vector_error_after_mobility_removed": 1.194522722916478e-10,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        1808.5447635214878,
+        8.230322155628218e-07
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 8.429754591350481e-20,
+      "native_source_A_per_um": 7.266687077681504e-20,
+      "remaining_source_relative_difference": 0.1600547128609897
+    },
+    {
+      "case": "e2587_m9",
+      "cell": 4682,
+      "production_SG_without_mobility_common_charge": [
+        0.42469546862793156,
+        0.16961089667111298
+      ],
+      "native_without_mobility_common_charge": [
+        0.4246954840660551,
+        0.1696109151236004
+      ],
+      "relative_vector_error_after_mobility_removed": 5.260936434531734e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        18.08544936524158,
+        6.718027019305941
+      ]
+    },
+    {
+      "case": "e2587_m9",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        0.42469546862793156,
+        1.6595901847365563e-08
+      ],
+      "native_without_mobility_common_charge": [
+        0.4246954840660551,
+        1.6528142608712763e-08
+      ],
+      "relative_vector_error_after_mobility_removed": 3.6351392553837646e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        18.08544936524158,
+        8.230322155628218e-07
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 8.429755397728126e-22,
+      "native_source_A_per_um": 7.266681174195825e-22,
+      "remaining_source_relative_difference": 0.1600557662640283
+    },
+    {
+      "case": "e2587_p7",
+      "cell": 4682,
+      "production_SG_without_mobility_common_charge": [
+        -42.46953767077179,
+        -16.961082038102553
+      ],
+      "native_without_mobility_common_charge": [
+        -42.46953770208861,
+        -16.96108296255504
+      ],
+      "relative_vector_error_after_mobility_removed": 2.0226527474005356e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -1808.5428372886709,
+        -671.8022128795268
+      ]
+    },
+    {
+      "case": "e2587_p7",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        -42.46953767077179,
+        1.6595901847365563e-08
+      ],
+      "native_without_mobility_common_charge": [
+        -42.46953770208861,
+        1.6528142608712763e-08
+      ],
+      "relative_vector_error_after_mobility_removed": 7.37396515383567e-10,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -1808.5428372886709,
+        8.230322155628218e-07
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 8.42974561304358e-20,
+      "native_source_A_per_um": 7.266679342617325e-20,
+      "remaining_source_relative_difference": 0.16005471214412226
+    },
+    {
+      "case": "e2587_p9",
+      "cell": 4682,
+      "production_SG_without_mobility_common_charge": [
+        -0.4246957371196962,
+        -0.1696109260046012
+      ],
+      "native_without_mobility_common_charge": [
+        -0.42469575269834126,
+        -0.16961091940664066
+      ],
+      "relative_vector_error_after_mobility_removed": 3.6994981834819465e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -18.085460798832337,
+        -6.718028181160336
+      ]
+    },
+    {
+      "case": "e2587_p9",
+      "cell": 4683,
+      "production_SG_without_mobility_common_charge": [
+        -0.4246957371196962,
+        1.6595901847365563e-08
+      ],
+      "native_without_mobility_common_charge": [
+        -0.42469575269834126,
+        1.6528142608712763e-08
+      ],
+      "relative_vector_error_after_mobility_removed": 3.668224205258631e-08,
+      "counterfactual_rep_vector_using_actual_Vela_edge_mobilities_A_cm2": [
+        -18.085460798832337,
+        8.230322155628218e-07
+      ],
+      "counterfactual_cell_field_box_source_A_per_um": 8.429760727005351e-22,
+      "native_source_A_per_um": 7.266685770583706e-22,
+      "remaining_source_relative_difference": 0.1600557658802162
+    }
+  ],
+  "boundaries": [
+    "Representative-two-edge is an observed equivalent on tested cells; internal implementation and global tie handling are not uniquely reverse engineered.",
+    "PMI alpha=1 Load/Plot runs observe current only; genuine AV sources come exclusively from original unmodified model first-RHS runs.",
+    "Small-amplitude nonright contact-cell source is below accumulated background resolution at some vertices; bulk finite excitation supplies a separate, resolved allocation test.",
+    "Baseline scalar AV source factor is measured from native source/current; the complete AV mobility/material prefactor is not independently reproduced.",
+    "Two finite 50mV controls end with native exit 2 after the one-iteration budget; captures are valid, nonlinear convergence is not claimed.",
+    "Partial auxiliary element-scalar exporters failed and are not used as an AV mobility reference.",
+    "Production physics, PN2D atomic profile, acceptance thresholds and full BV qualification unchanged."
+  ],
+  "private_evidence": "build-release/bv_native_av_source_20261024"
+}

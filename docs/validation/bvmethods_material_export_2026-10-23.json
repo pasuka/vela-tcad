@@ -1,0 +1,128 @@
+{
+  "scope": "Fresh sdevice -P parameter audit and BVMethods derived 300 K zero-bias material fields; Band2Band disabled. No production change.",
+  "version": "T-2022.03-SP2",
+  "temperature_K": 300.0,
+  "parameter_export_exit_codes": {
+    "silicon": 0,
+    "case": 0
+  },
+  "derived_run_exit_code": 0,
+  "audited_sections": [
+    "Epsilon",
+    "Bandgap",
+    "eDOSMass",
+    "hDOSMass",
+    "OldSlotboom"
+  ],
+  "audited_numeric_assignments": 35,
+  "matching_numeric_assignments": 33,
+  "silicon_default_vs_case_selected_sections_equal": true,
+  "vela_default_parameter_differences": [
+    {
+      "section": "Bandgap",
+      "parameter": "FermiVelocity",
+      "native": [
+        -1.0
+      ],
+      "vela": null,
+      "active_for_this_case": false
+    },
+    {
+      "section": "Bandgap",
+      "parameter": "CNTdiameter",
+      "native": [
+        -1.0
+      ],
+      "vela": null,
+      "active_for_this_case": false
+    }
+  ],
+  "user_parameter_sections": [
+    "Scharfetter"
+  ],
+  "native_derived_fields": {
+    "eEffectiveStateDensity": {
+      "nodes": 2152,
+      "minimum": 2.8582520073866568e+19,
+      "maximum": 2.8582520073866568e+19
+    },
+    "hEffectiveStateDensity": {
+      "nodes": 2152,
+      "minimum": 3.104628932474839e+19,
+      "maximum": 3.104628932474839e+19
+    },
+    "BandGap": {
+      "nodes": 2152,
+      "minimum": 1.1082092307692308,
+      "maximum": 1.1082092307692308
+    }
+  },
+  "native_base_material": {
+    "Nc_cm3": 2.8582520073866568e+19,
+    "Nv_cm3": 3.104628932474839e+19,
+    "ni_base_cm3": 14638805412.559162,
+    "BandGap_eV": 1.1082092307692308
+  },
+  "evaluation_controls": {
+    "current_emitter_from_fresh_export": {
+      "Nc_cm3": 2.8566791451911786e+19,
+      "Nv_cm3": 3.104657033455896e+19,
+      "ni_base_cm3": 14634898153.235409,
+      "BandGap_eV": 1.1082092307692308,
+      "relative_errors": {
+        "Nc_cm3": -0.0005502881451366903,
+        "Nv_cm3": 9.051317135799763e-06,
+        "ni_base_cm3": -0.0002669110773479977,
+        "BandGap_eV": 0.0
+      }
+    },
+    "mass_offset_only": {
+      "Nc_cm3": 2.858277878332031e+19,
+      "Nv_cm3": 3.1046570334558958e+19,
+      "ni_base_cm3": 14638992771.996922,
+      "BandGap_eV": 1.1082092307692308,
+      "relative_errors": {
+        "Nc_cm3": 9.051317136243853e-06,
+        "Nv_cm3": 9.051317135799763e-06,
+        "ni_base_cm3": 1.2798820155035529e-05,
+        "BandGap_eV": 0.0
+      }
+    },
+    "mass_offset_and_native_constants": {
+      "Nc_cm3": 2.8582520068268417e+19,
+      "Nv_cm3": 3.1046289318667674e+19,
+      "ni_base_cm3": 14638805409.692015,
+      "BandGap_eV": 1.1082092307692308,
+      "relative_errors": {
+        "Nc_cm3": -1.9585921773312975e-10,
+        "Nv_cm3": -1.958596618223396e-10,
+        "ni_base_cm3": -1.9585943977773468e-10,
+        "BandGap_eV": 0.0
+      }
+    },
+    "previous_diagnostic_material": {
+      "Nc_cm3": 2.8582520073866568e+19,
+      "Nv_cm3": 3.104628932474839e+19,
+      "ni_base_cm3": 14638805412.559162,
+      "BandGap_eV": 1.1082092307692308,
+      "relative_errors": {
+        "Nc_cm3": 0.0,
+        "Nv_cm3": 0.0,
+        "ni_base_cm3": 0.0,
+        "BandGap_eV": 0.0
+      }
+    }
+  },
+  "native_fields_are_not_all_literal_par_parameters": true,
+  "case_user_parameter_note": "-P case export prints defaults. Original case user Scharfetter overrides remain separate (taumax=1e-7 s for both carriers). No DOS/Bandgap override in case user .par.",
+  "input_hashes": {
+    "build-release/bvmethods_material_export_20261023/export/silicon/models.par": "aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f",
+    "build-release/bvmethods_material_export_20261023/export/case/models.par": "a71fa3fc1770cc37ff0afa3c10c0063249344edba02a3c00ba54469fcfef4121",
+    "build-release/bvmethods_material_export_20261023/export/case/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "share/vela/materials/models.par": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+    "build-release/bvmethods_material_export_20261023/derived/derived/pp5_des.cmd": "3bce8d8450236eee96d8dbea4c14355ec20dac9fbbeb97efaccf7479ed8ddd66",
+    "build-release/bvmethods_material_export_20261023/derived/derived/coupled_des.tdr": "284230b0b6af5c0c8fb589635bdc58d01574ad0eef24541304ae281c4b214c69"
+  },
+  "raw_parameter_exports_kept_ignored": true,
+  "production_material_emitter_changed": false
+}
