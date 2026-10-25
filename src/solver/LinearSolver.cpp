@@ -286,7 +286,7 @@ LinearSolver::LinearSolver(const std::string& backend)
         else if (*flag && std::strcmp(flag, "1") != 0)
             throw std::invalid_argument("VELA_LINEAR_FACTOR_STATISTICS must be 0 or 1");
     }
-    if (backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
+    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
     if (backend_ == "umfpack" || backend_ == "umfpack_metis") {
 #if defined(VELA_HAS_UMFPACK)
         umfpack_ = std::make_unique<UmfPackState>();
@@ -301,7 +301,16 @@ LinearSolver::LinearSolver(const std::string& backend)
 LinearSolver::~LinearSolver() = default;
 
 void LinearSolver::createDirectBackend() {
-    if (backend_ == "sparselu_metis") direct_ = detail::makeMetisSparseLU();
+    if (backend_ == "pardiso_mkl") {
+#ifdef VELA_HAS_MKL_PARDISO
+        direct_ = detail::makeMklPardiso();
+#else
+        throw std::invalid_argument(
+            "LinearSolver: pardiso_mkl was not enabled in this build; "
+            "configure with VELA_ENABLE_MKL_PARDISO=ON");
+#endif
+    }
+    else if (backend_ == "sparselu_metis") direct_ = detail::makeMetisSparseLU();
     else if (backend_ == "mumps" || backend_ == "mumps_metis") direct_ = detail::makeMumps(backend_ == "mumps_metis");
     else if (backend_ == "superlu_mt" || backend_ == "superlu_mt_metis") direct_ = detail::makeSuperLuMt(backend_ == "superlu_mt_metis");
     else if (backend_ == "strumpack") direct_ = detail::makeStrumpack();
@@ -543,7 +552,7 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
     };
     if (backend_ == "umfpack" || backend_ == "umfpack_metis")
         return finish(solveUmfPack(*matrix, b));
-    if (backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
+    if (backend_ == "pardiso_mkl" || backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
     if (backend_ != "sparselu")
         return finish(solveWithAlternateBackend(backend_, *matrix, b));
 

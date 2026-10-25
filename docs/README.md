@@ -76,6 +76,12 @@
 - [PN2D 外接电阻法起步验证，2026-10-23](validation/pn2d_external_resistor_start_2026-10-23.md)：
   本地 main 合并、负向外压入口修复及旧 v3 净掺杂配置证据；当前总杂质修正与重跑见原生矩阵对照。
 
+- [PARDISO 编译开关与 HFS 测试耗时分析，2026-10-23](validation/pardiso_build_option_hfs_audit_2026-10-23.md)：
+  PARDISO 默认编译关闭、GitHub CI 显式关闭；HFS 高精度 Jacobian 检查的工作量与双机 OFF／ON 验证。
+
+- [PARDISO main 接入与双机验证，2026-10-23](validation/pardiso_cross_host_validation_2026-10-23.md)：
+  T470p／C560 完成匹配源码的 Debug 构建、全套回归失败项复核、MKL 多线程契约与四组数值回归；默认后端不变。
+
 - [BVmethods 外接电阻法开发交接，2026-10-23](validation/bvmethods_external_resistor_handoff_2026-10-23.md)：
   当前检出与历史私有证据位置、R0–R7 状态、两态 R2 进展及持续增广 Newton 的下一轮入口；尚无完整 BV 资格。
 
