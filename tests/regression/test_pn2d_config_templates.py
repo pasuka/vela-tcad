@@ -65,7 +65,7 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
         self.assertEqual(config["solver"]["mobility"]["model"], "masetti_field")
         self.assertEqual(
             config["solver"]["mobility"]["doping_concentration_basis"],
-            "net_doping",
+            "total_impurity",
         )
         self.assertEqual(
             config["solver"]["impact_ionization"]["model"], "van_overstraeten"
@@ -83,7 +83,7 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
             manifest["parameters"]["avalanche_current_support_profile"],
             "element_edge_sg_gss_laux",
         )
-        self.assertEqual(manifest["template_version"], 3)
+        self.assertEqual(manifest["template_version"], 4)
         self.assertEqual(manifest["overrides"], {})
         self.assertEqual(
             manifest["resolved_profile"],
