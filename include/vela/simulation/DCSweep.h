@@ -278,6 +278,7 @@ struct ExternalResistorControlConfig {
     Real coupledInexactLoadActivationRatio = 10.0;
     bool coupledInexactZeroConvergedResidual = false;
     bool coupledLinearizationAudit = false;
+    DensityUpdateConvergenceConfig coupledUpdateConvergence;
 };
 
 struct VoltageToCurrentControlConfig {
@@ -399,6 +400,12 @@ struct DCSweepPoint {
     Real globalHoleContactFlux = 0.0;
     Real globalElectronIntegratedSource = 0.0;
     Real globalHoleIntegratedSource = 0.0;
+    // Additional diagnostic scales retain assembler units, independently of
+    // the physical terminal-current scales recorded in validationDiagnostics.
+    std::array<Real, 2> globalAbsoluteMismatch{};
+    std::array<Real, 2> globalNetScale{};
+    std::array<Real, 2> globalContactNodeFluxAbsSum{};
+    std::array<Real, 2> globalSourceAbsSum{};
     bool carrierRowRecoveryAttempted = false;
     int carrierRowRecoveryElectronRows = 0;
     int carrierRowRecoveryHoleRows = 0;

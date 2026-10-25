@@ -1,0 +1,106 @@
+--- a/src/equation/CoupledDDAssembler.cpp
++++ b/src/equation/CoupledDDAssembler.cpp
+@@ -616,6 +616,18 @@
+         mobilityDopingBasis_ =
+             MobilityDopingBasis::CellReconstructedTotalImpurity;
+     }
++    // Isolated PN2D constitutive investigation; no production default change.
++    if(mobilityConfig_.model=="masetti_field") {
++        auto geometry=mobilityConfig_;
++        geometry.model="phumob_field_lombardi";
++        geometry.edgeAveraging="element_box_phumob";
++        geometry.surface.discretization="element_distance_gradient";
++        geometry.highFieldGradientDiscretization="element_vertex_partial_layer";
++        geometry.jacobianFieldDerivatives=true;
++        detail::updateElementHighFieldGeometry(geometry,mesh_,edgeCells_,cellMaterials_);
++        mobilityConfig_.highFieldCells=geometry.highFieldCells;
++    }
++    if(mobilityConfig_.model=="masetti_field")transportMobilityDerivativeEnabled_=false;
+     buildEdgeAssemblyKernels();
+     buildNodalCurrentReconstructionKernels();
+ }
+@@ -810,6 +822,28 @@
+ {
+     if (mobilityConfig_.model == "ialmob")
+         return ialEdgeMobility(mobilityConfig_,edgeId,carrier);
++    if(mobilityConfig_.model=="masetti_field" && psi && phin && phip) {
++        long double weighted=0.,weight=0.;
++        const auto& fieldParameters=carrier==CarrierType::Electron?mobilityConfig_.electronField:mobilityConfig_.holeField;
++        for(Index cid:edgeCells_[edgeId]) {
++            const auto& material=cellMaterials_[cid];
++            if(!detail::isTransportMaterial(material))continue;
++            const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,edgeId);
++            if(g==0.)continue;
++            const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);
++            const auto drive=detail::elementHighFieldDrive(mobilityConfig_,mesh_,cid,*psi,carrier==CarrierType::Electron?phin:phip);
++            long double sum=0.,volume=0.;
++            for(int k=0;k<3;++k) {
++                auto node=mesh_.getCell(cid).node_ids[k];
++                Real low=carrier==CarrierType::Electron?mobility_->electronMobility(material,doping_.totalImpurity(node),0.,0.,0.):mobility_->holeMobility(material,doping_.totalImpurity(node),0.,0.,0.);
++                Real mu=evaluateElementCanali(low,drive.field,fieldParameters,100./mobilityConfig_.internalFieldToVPerM).mobility;
++                sum+=(long double)measures[k]*mu;volume+=measures[k];
++            }
++            weighted+=(long double)g*sum/volume;weight+=g;
++        }
++        return weight>0.?static_cast<Real>(weighted/weight):0.;
++    }
++
+     if (mobilityConfig_.edgeAveraging=="element_box" || mobilityConfig_.edgeAveraging=="element_box_phumob") {
+         const detail::EdgeMobilityCarrierState state{electron0,electron1,hole0,hole1,electrons,holes,phin,phip};
+         return detail::elementBoxEdgeMobility(edgeCells_,mesh_,doping_,*mobility_,cellMaterials_,edgeId,carrier,mobilityConfig_,&state,psi);
+@@ -4402,8 +4436,9 @@
+     // Field/surface models with deliberately disabled chain derivatives keep
+     // their existing approximate-Jacobian protocol until separately qualified.
+     const bool stableBgnPsiDerivative = bgnEnabled_ &&
+-        !highFieldMobilityEnabled_ && !surfaceMobilityEnabled_ &&
+-        !isPhuMobModel(mobilityConfig_);
++        (mobilityConfig_.model=="masetti_field" ||
++        (!highFieldMobilityEnabled_ && !surfaceMobilityEnabled_ &&
++        !isPhuMobModel(mobilityConfig_)));
+     const bool sgCurrentAvalanche = impactIonizationCoupled_ &&
+         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
+     const bool triangleGssAvalanche = sgCurrentAvalanche &&
+@@ -5871,10 +5906,35 @@
+                 }
+             }
+         };
++        auto addPn2dFieldChain = [&](CarrierType carrier,Real flux,Real mobility) {
++            if(mobilityConfig_.model!="masetti_field" || !mobilityConfig_.jacobianFieldDerivatives || mobility<=0.)return;
++            const auto& parameters=carrier==CarrierType::Electron?mobilityConfig_.electronField:mobilityConfig_.holeField;
++            long double geometry=0.;for(Index cid:edgeCells_[e])if(detail::isTransportMaterial(cellMaterials_[cid]))geometry+=detail::cellBoxEdgeCoefficient(mesh_,cid,e);
++            if(geometry<=0.)return;
++            for(Index cid:edgeCells_[e]) {
++                const auto& material=cellMaterials_[cid];if(!detail::isTransportMaterial(material))continue;
++                const auto& cell=mesh_.getCell(cid);const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);
++                const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);long double volume=0.;for(Real a:measures)volume+=a;
++                const auto drive=detail::elementHighFieldDrive(mobilityConfig_,mesh_,cid,psi,carrier==CarrierType::Electron?&phinState:&phipState);
++                long double slope=0.;
++                for(int k=0;k<3;++k) {
++                    Index node=cell.node_ids[k];
++                    Real low=carrier==CarrierType::Electron?mobility_->electronMobility(material,doping_.totalImpurity(node),0.,0.,0.):mobility_->holeMobility(material,doping_.totalImpurity(node),0.,0.,0.);
++                    slope+=(long double)measures[k]/volume*evaluateElementCanali(low,drive.field,parameters,100./mobilityConfig_.internalFieldToVPerM).fieldDerivative;
++                }
++                int offset=drive.contact?psiOffset():(carrier==CarrierType::Electron?phinOffset():phipOffset());
++                int row=carrier==CarrierType::Electron?phinOffset():phipOffset();
++                for(int k=0;k<3;++k) {
++                    Real value=static_cast<Real>((long double)flux/mobility*g/geometry*slope*drive.derivative[k]);
++                    add(row+i,offset+cell.node_ids[k],value);add(row+j,offset+cell.node_ids[k],-value);
++                }
++            }
++        };
+         const Real mun = elementQfCurrent ? 0.0 : cachedEdgeMobility(
+             e, CarrierType::Electron, electronMobilityField, &psi,
+             n(i), n(j), p(i), p(j), &n, &p, &phinState, &phipState);
+         if (mun > 0.0) {
++            addPn2dFieldChain(CarrierType::Electron,edgeElectronTransportFlux(e,i,j,h,psi_i,psi_j,phin_i,phin_j,phip_i,phip_j,mun,noPerturbedNode,0.),mun);
+             if (mobilityConfig_.model == "ialmob") {
+                 addIalFeedback(e, CarrierType::Electron, mun, edgeElectronTransportFlux(
+                     e, i, j, h, psi_i, psi_j, phin_i, phin_j, phip_i, phip_j,
+@@ -6048,6 +6108,7 @@
+             e, CarrierType::Hole, holeMobilityField, &psi,
+             n(i), n(j), p(i), p(j), &n, &p, &phinState, &phipState);
+         if (mup > 0.0) {
++            addPn2dFieldChain(CarrierType::Hole,edgeHoleTransportFlux(e,i,j,h,psi_i,psi_j,phip_i,phip_j,phin_i,phin_j,mup,noPerturbedNode,0.),mup);
+             if (mobilityConfig_.model == "ialmob") {
+                 addIalFeedback(e, CarrierType::Hole, mup, edgeHoleTransportFlux(
+                     e, i, j, h, psi_i, psi_j, phip_i, phip_j, phin_i, phin_j,

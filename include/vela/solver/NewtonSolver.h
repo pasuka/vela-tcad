@@ -15,6 +15,7 @@
 #include "vela/physics/MobilityModel.h"
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/DensityUpdateConvergence.h"
 #include <functional>
 #include <limits>
 #include <memory>
@@ -78,6 +79,9 @@ struct NewtonGlobalContinuityCarrierClosure {
     Real integratedSource = 0.0;
     Real mismatch = 0.0;
     Real ratio = 0.0;
+    Real netScale = 0.0;
+    Real contactNodeFluxAbsSum = 0.0;
+    Real integratedSourceAbsSum = 0.0;
 };
 
 struct NewtonGlobalContinuityClosureEvaluation {
@@ -235,6 +239,7 @@ struct NewtonConfig {
     BandToBandTunnelingConfig bandToBand{}; ///< Local pair generation, including Sentaurus E2.
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
+    std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
     ///< Optional Sentaurus eQuantumPotential outer iteration.
@@ -864,6 +869,9 @@ public:
     /// and contact bias, without running Newton or altering the physical state.
     std::function<NewtonStateConvergenceEvaluation(const VectorXd&, Real)>
     makeArclengthConvergenceEvaluator(const std::string& activeContact) const;
+    DensityUpdateErrorEvaluator makeArclengthUpdateErrorEvaluator(
+        const std::string& activeContact,
+        const DensityUpdateConvergenceConfig& config) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the

@@ -26,6 +26,12 @@ decks and reference-case workflows. Optional pybind11 bindings expose a thin Pyt
 
 ## Solver Paths
 
+The explicit `solver.coupled_operator: "bvmethods_tri3_qf"` profile routes
+coupled carrier residuals, Jacobians, ledgers and terminal totals through
+`BvMethodsCoupledRuntime`, retaining existing Poisson and constraint rows.
+Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
+the default and PN2D operators retain their existing paths.
+
 The experimental `vela::experimental` NonLocalPath contracts in
 `physics/NonlocalPathBandToBand.h` define SI configuration, actual band-state
 dependencies, path records, separate signed pair-source integrals and versioned

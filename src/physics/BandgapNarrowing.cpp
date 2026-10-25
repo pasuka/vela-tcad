@@ -61,7 +61,7 @@ Real effectiveIntrinsicDensity(Real ni, Real thermalVoltage, Real deltaEg)
 
 Real fermiStatisticsBandgapCorrection(Real donors, Real acceptors,
                                       Real Nc, Real Nv,
-                                      Real thermalVoltage)
+                                      Real thermalVoltage, CarrierStatisticsModel model)
 {
     if (!(thermalVoltage > 0.0) || !std::isfinite(thermalVoltage))
         throw std::invalid_argument(
@@ -70,14 +70,14 @@ Real fermiStatisticsBandgapCorrection(Real donors, Real acceptors,
         throw std::invalid_argument(
             "fermiStatisticsBandgapCorrection: density of states must be positive and finite.");
 
-    auto speciesCorrection = [](Real concentration, Real densityOfStates) {
+    auto speciesCorrection = [model](Real concentration, Real densityOfStates) {
         if (!(concentration > 0.0) || !std::isfinite(concentration))
             return Real{0.0};
         const Real ratio = concentration / densityOfStates;
         if (!(ratio > 0.0) || !std::isfinite(ratio))
             return Real{0.0};
         return std::max<Real>(
-            0.0, inverseFermiDiracHalf(ratio) - std::log(ratio));
+            0.0, inverseFermiDiracHalf(ratio, model) - std::log(ratio));
     };
 
     return thermalVoltage * (

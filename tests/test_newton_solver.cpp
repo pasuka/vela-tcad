@@ -985,6 +985,64 @@ TEST_CASE("NewtonSolver: accepts a qualified initial numerical-floor restart",
     REQUIRE(guarded.convergenceReason != "max_iter_stall_residual_floor");
 }
 
+TEST_CASE("Density update RMS follows physical populations and includes contact aliases",
+          "[newton][density_update_convergence]")
+{
+    auto mesh = makePNMesh(); MaterialDatabase materials; auto doping = makePNDoping(mesh);
+    auto cfg = newtonConfig();
+    cfg.carrierStatistics.model = GENERATE("boltzmann", "fermi_dirac");
+    auto seed = runNewton(mesh, materials, doping, zeroBias(), cfg).solution;
+    NewtonSolver solver(mesh, materials, doping, zeroBias(), cfg);
+    const auto x = solver.packArclengthState(seed);
+    VectorXd direction = VectorXd::Zero(x.size());
+    const int N = mesh.numNodes();
+    direction(4) = 1e-5; direction(N+4) = -2e-5; direction(2*N+4) = 4e-5;
+    DensityUpdateConvergenceConfig metric; metric.mode = "report";
+    const auto evaluate = solver.makeArclengthUpdateErrorEvaluator("anode", metric);
+    const Real rawVoltage = 2e-5, afterVoltage = .001;
+    const auto after = x + .2*direction;
+    const auto report = evaluate(x, direction, after, afterVoltage, rawVoltage);
+    REQUIRE(report.valid);
+    REQUIRE(report.counts[0] == N);
+    std::size_t aliases = 0;
+    for (const auto& contact : mesh.contacts()) if (contact.name == "anode") aliases = contact.node_ids.size();
+    REQUIRE(report.counts[3] == aliases);
+    REQUIRE(report.counts[1] > 0); REQUIRE(report.counts[2] > 0);
+    // Independent central difference of the production populations, including
+    // both psi and QF directions; the metric numerator is never alpha*dx.
+    constexpr Real h = .001;
+    const auto plus = solver.unpackArclengthState(x+h*direction);
+    const auto minus = solver.unpackArclengthState(x-h*direction);
+    const auto accepted = solver.unpackArclengthState(after);
+    const Real dn = (plus.n(4)-minus.n(4))/(2*h)*1e-6;
+    const Real dp = (plus.p(4)-minus.p(4))/(2*h)*1e-6;
+    REQUIRE(report.blockRms[1] == Catch::Approx(
+        1e5*std::abs(dn)/(accepted.n(4)*1e-6+1e10)/std::sqrt(report.counts[1])).epsilon(1e-6));
+    REQUIRE(report.blockRms[2] == Catch::Approx(
+        1e5*std::abs(dp)/(accepted.p(4)*1e-6+1e10)/std::sqrt(report.counts[2])).epsilon(1e-6));
+    REQUIRE(report.blockRms[3] == Catch::Approx(1e5*rawVoltage/(afterVoltage+.025852)));
+    const auto shrunk = evaluate(x, direction*.01, after, afterVoltage, rawVoltage*.01);
+    REQUIRE(shrunk.rms == Catch::Approx(report.rms*.01).epsilon(1e-12));
+    REQUIRE_THROWS(solver.makeArclengthUpdateErrorEvaluator("missing", metric));
+    REQUIRE_FALSE(evaluate(x, VectorXd::Zero(1), after, afterVoltage, 0).valid);
+}
+
+TEST_CASE("Closure report separates absolute mismatch from cancelling net scale",
+          "[newton][global_continuity_closure]")
+{
+    std::vector<CoupledDDCarrierTermDiagnostic> rows(4);
+    rows[0].electronFlux = 1.; rows[1].electronFlux = -1.+2e-10;
+    rows[2].electronRecombination = 1.; rows[3].electronImpact = -1.+1e-10;
+    NewtonGlobalContinuityClosureConfig cfg; cfg.mode="report"; cfg.sourceFloor=1e-14;
+    auto report = evaluateGlobalContinuityClosure(rows, {0,1}, {}, cfg);
+    REQUIRE_FALSE(report.enforced); REQUIRE_FALSE(report.satisfied);
+    REQUIRE(report.electron.ratio == Catch::Approx(.5));
+    REQUIRE(std::abs(report.electron.mismatch) < 2e-10);
+    REQUIRE(report.electron.contactNodeFluxAbsSum == Catch::Approx(2.));
+    REQUIRE(report.electron.integratedSourceAbsSum == Catch::Approx(2.));
+    REQUIRE(report.electron.netScale < 3e-10);
+}
+
 TEST_CASE("Packed coupled acceptance evaluates actual carrier and global closure gates",
           "[newton][coupled_acceptance][carrier_row_convergence]")
 {

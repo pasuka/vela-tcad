@@ -1,5 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/io/DDSolutionCsv.h"
@@ -1091,6 +1092,91 @@ TEST_CASE("DCSweep: failed nested device trial preserves Newton trace and state 
     const auto accepted = readStateArchive((dir / "accepted.h5").string(), mesh.numNodes(),
         stateMeshIdentity(mesh, UnitScalingConfig{UnitScalingMode::UnitScaling}));
     REQUIRE(accepted.metadata.at("bias_V").get<Real>() == Catch::Approx(0.0));
+}
+
+TEST_CASE("DCSweep: density update policy is explicit and report preserves the curve",
+          "[dc_sweep][external_circuit][density_update_convergence][integration]")
+{
+    const auto dir = makeUniqueSweepDir(); const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto mesh = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, mesh, dir/"points.csv",
+        {{"start",0.}, {"stop",.01}, {"step",.01}, {"write_vtk",false},
+         {"external_circuit", {{"mode","series_resistor"},{"solver","coupled_newton"},
+             {"resistance_ohm_um",1e3},{"coupled_equation_tolerance",1e-5}}}},
+        {{"method","newton"},{"warm_start",true},{"line_search",true},
+         {"global_continuity_closure",{{"mode","report"}}}});
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    DCSweep sweep;
+    const auto baseline = sweep.runWithResult(cfgPath.string());
+    auto& metric = cfg["sweep"]["external_circuit"]["coupled_update_convergence"];
+    metric={{"mode","report"},{"diagnostic_csv","observations/update.csv"}};
+    std::ofstream(cfgPath)<<cfg.dump(2);
+    const auto report = sweep.runWithResult(cfgPath.string());
+    REQUIRE(report.points.size()==baseline.points.size());
+    for (std::size_t i=0;i<report.points.size();++i) {
+        REQUIRE(report.points[i].totalCurrent==baseline.points[i].totalCurrent);
+        REQUIRE(report.points[i].innerVoltage_V==baseline.points[i].innerVoltage_V);
+        REQUIRE(report.points[i].newtonIterations==baseline.points[i].newtonIterations);
+    }
+    REQUIRE(std::filesystem::exists(dir/"observations/update.csv"));
+    const auto observations=readCsvRows(dir/"observations/update.csv");
+    REQUIRE(observations.size()>1);
+    const auto cols=readCsvRows(dir/"points.csv");
+    const auto mismatch=csvColumnIndex(cols[0],"global_electron_absolute_mismatch");
+    for (std::size_t i=1;i<cols.size();++i) {
+        REQUIRE(cols[i].size()==cols[0].size());
+        REQUIRE(csvReal(cols[i],mismatch)>=0.);
+        const auto acceptance=nlohmann::json::parse(report.points[i-1].validationDiagnostics);
+        REQUIRE(acceptance.at("terminal_electron_current_abs_sum_A_per_um").get<Real>()>=0.);
+    }
+    metric["mode"]="enforce";
+    std::ofstream(cfgPath)<<cfg.dump(2);
+    const auto enforced=sweep.runWithResult(cfgPath.string());
+    REQUIRE(enforced.points.back().converged);
+    for (const auto& point:enforced.points)
+        REQUIRE(std::abs(point.loadLineResidual_V)<=1e-6);
+    metric["electron_reference_cm3"]=-1.; std::ofstream(cfgPath)<<cfg.dump(2);
+    REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    metric.erase("electron_reference_cm3"); metric["mode"]="unknown";
+    std::ofstream(cfgPath)<<cfg.dump(2); REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    metric["mode"]="enforce"; cfg["sweep"]["external_circuit"]["solver"]="nested_scalar";
+    std::ofstream(cfgPath)<<cfg.dump(2); REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+}
+
+TEST_CASE("DCSweep: external resistor follows decreasing reverse-bias targets",
+          "[dc_sweep][external_circuit][reverse][integration]")
+{
+    const std::string solver = GENERATE("nested_scalar", "coupled_newton");
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(
+        dir, meshPath, dir / "reverse.csv",
+        {{"start", 0.0}, {"stop", -0.01}, {"step", -0.005},
+         {"bias_points", {0.0, -0.005, -0.01}}, {"write_vtk", false},
+         {"external_circuit", {{"mode", "series_resistor"}, {"solver", solver},
+             {"resistance_ohm_um", 1e3}, {"residual_tolerance_V", 1e-7},
+             {"coupled_equation_tolerance", 1e-5}}}},
+        {{"method", "newton"}, {"warm_start", true}, {"line_search", true}});
+    DCSweep sweep;
+    const auto result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() >= 3);
+    REQUIRE(result.points.back().outerVoltage_V == Catch::Approx(-0.01));
+    Real previous = 0.0;
+    for (const auto& point : result.points) {
+        REQUIRE(point.converged);
+        REQUIRE(point.outerVoltage_V <= previous);
+        REQUIRE(std::abs(point.loadLineResidual_V) <= 1e-7);
+        previous = point.outerVoltage_V;
+    }
+    // Reversing direction inside a sweep remains unsupported.
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    cfg["sweep"]["bias_points"] = {0.0, -0.005, 0.01};
+    std::ofstream(cfgPath) << cfg.dump(2);
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("must be monotone"));
 }
 
 TEST_CASE("DCSweep: coupled external resistor closes device and circuit residuals",

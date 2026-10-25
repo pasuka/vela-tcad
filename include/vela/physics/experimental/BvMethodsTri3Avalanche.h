@@ -1,0 +1,146 @@
+#pragma once
+
+#include "vela/equation/Tri3LocalForwardAD.h"
+#include <array>
+#include <cmath>
+#include <stdexcept>
+
+namespace vela::experimental {
+
+// Local contract for the explicit bvmethods_tri3_qf profile and diagnostics.
+// Units: cm, cm^-3, V, cm^2/(V s); outputs are particle rates, without q.
+// Local derivative order is psi[0:3], fn[0:3], fp[0:3]. Density, mobility
+// and driving-field jets must come from the caller's same material/state law.
+using AvJet = detail::Tri3LocalForwardDual;
+
+inline AvJet avLog(const AvJet& x)
+{
+    if (!(x.value > 0.)) throw std::domain_error("AV log requires positive density");
+    AvJet y(std::log(x.value));
+    for (std::size_t k=0;k<y.derivative.size();++k) y.derivative[k]=x.derivative[k]/x.value;
+    return y;
+}
+
+inline AvJet avNorm(const std::array<AvJet,2>& v)
+{
+    AvJet y(std::hypot(v[0].value,v[1].value));
+    // Zero is an explicit generalized-derivative convention, NOT a claim
+    // that the Euclidean norm has a Frechet derivative at the origin.
+    if (y.value>0.) for(std::size_t k=0;k<y.derivative.size();++k)
+        y.derivative[k]=(v[0].value/y.value)*v[0].derivative[k]
+                       +(v[1].value/y.value)*v[1].derivative[k];
+    return y;
+}
+
+inline double avNormDirectional(const std::array<double,2>& v,
+                                const std::array<double,2>& direction)
+{
+    const double n=std::hypot(v[0],v[1]);
+    return n>0. ? v[0]/n*direction[0]+v[1]/n*direction[1]
+                : std::hypot(direction[0],direction[1]);
+}
+
+inline AvJet avBernoulli(const AvJet& x)
+{
+    if(std::abs(x.value)<1e-5) {
+        const auto z=x*x;
+        return AvJet(1)-x/AvJet(2)+z/AvJet(12)-z*z/AvJet(720)+z*z*z/AvJet(30240);
+    }
+    if(x.value>50.) {
+        const auto e=detail::dualExp(-x);
+        return x*e/(AvJet(1)-e);
+    }
+    if(x.value<-50.) return -x/(AvJet(1)-detail::dualExp(x));
+    return x/detail::dualExpm1(x);
+}
+
+struct AvCoefficient {
+    double lowA=0.,lowB=1.,highA=0.,highB=1.,switchField=4e5;
+};
+
+inline AvJet avCoefficient(const AvJet& field,const AvCoefficient& p)
+{
+    if(field.value<=0.) return {};
+    const auto low=AvJet(p.lowA)*detail::dualExp(-AvJet(p.lowB)/field);
+    if(field.value<=.95*p.switchField) return low;
+    const auto high=AvJet(p.highA)*detail::dualExp(-AvJet(p.highB)/field);
+    if(field.value>=1.05*p.switchField) return high;
+    const auto t=(field/AvJet(p.switchField)-AvJet(.95))/AvJet(.1);
+    AvJet weight(.5*(1-std::cos(std::acos(-1.)*t.value)));
+    for(std::size_t k=0;k<weight.derivative.size();++k)
+        weight.derivative[k]=.5*std::acos(-1.)*std::sin(std::acos(-1.)*t.value)*t.derivative[k];
+    return (AvJet(1)-weight)*low+weight*high;
+}
+
+struct AvTri3Geometry {
+    std::array<std::array<double,2>,3> points_cm{};
+    std::array<double,3> boxAreas_cm2{};
+    std::size_t representative=0;
+    std::array<double,4> currentProjection{1.,0.,0.,1.};
+};
+
+inline std::array<AvJet,2> avParticleCurrentWithoutMobility(
+    const AvTri3Geometry& g,const std::array<AvJet,3>& density,
+    const std::array<AvJet,3>& qf,double thermalVoltage,bool electron)
+{
+    if(g.representative>=3 || !(thermalVoltage>0.))
+        throw std::invalid_argument("Invalid AV representative or thermal voltage");
+    for(const auto& n:density) if(!(n.value>0.) || !std::isfinite(n.value))
+        throw std::domain_error("AV requires finite positive populations");
+    const auto r=g.representative;
+    std::array<std::array<double,2>,2> t{};
+    std::array<AvJet,2> j{};std::size_t edge=0;
+    const double sign=electron?1.:-1.;
+    for(std::size_t i=0;i<3;++i)if(i!=r){
+        const double dx=g.points_cm[i][0]-g.points_cm[r][0];
+        const double dy=g.points_cm[i][1]-g.points_cm[r][1];
+        const double length=std::hypot(dx,dy);
+        if(!(length>0.))throw std::invalid_argument("Degenerate AV edge");
+        t[edge]={dx/length,dy/length};
+        const auto delta=AvJet(sign/thermalVoltage)*(qf[i]-qf[r]);
+        const auto argument=avLog(density[i]/density[r])+delta;
+        j[edge]=AvJet(-sign*thermalVoltage/length)*density[i]
+                 *avBernoulli(argument)*detail::dualExpm1(delta);
+        ++edge;
+    }
+    const double determinant=t[0][0]*t[1][1]-t[0][1]*t[1][0];
+    if(std::abs(determinant)<1e-14)throw std::invalid_argument("Degenerate AV triangle");
+    const auto x=(j[0]*AvJet(t[1][1])-AvJet(t[0][1])*j[1])/AvJet(determinant);
+    const auto y=(AvJet(t[0][0])*j[1]-j[0]*AvJet(t[1][0]))/AvJet(determinant);
+    return {AvJet(g.currentProjection[0])*x+AvJet(g.currentProjection[1])*y,
+            AvJet(g.currentProjection[2])*x+AvJet(g.currentProjection[3])*y};
+}
+
+struct AvTri3Result {
+    AvJet generation_cm3_s;
+    std::array<AvJet,3> nodeGeneration_per_cm_s;
+    std::array<AvJet,2> electronParticleCurrentWithoutMobility;
+    std::array<AvJet,2> holeParticleCurrentWithoutMobility;
+    bool electronZeroNorm=false,holeZeroNorm=false;
+};
+
+inline AvTri3Result evaluateBvMethodsTri3Avalanche(
+    const AvTri3Geometry& geometry,const std::array<AvJet,3>& n,
+    const std::array<AvJet,3>& p,const std::array<AvJet,3>& fn,
+    const std::array<AvJet,3>& fp,const AvJet& mun,const AvJet& mup,
+    const AvJet& electronField,const AvJet& holeField,double thermalVoltage,
+    const AvCoefficient& electron,const AvCoefficient& hole)
+{
+    AvTri3Result out;
+    out.electronParticleCurrentWithoutMobility=
+        avParticleCurrentWithoutMobility(geometry,n,fn,thermalVoltage,true);
+    out.holeParticleCurrentWithoutMobility=
+        avParticleCurrentWithoutMobility(geometry,p,fp,thermalVoltage,false);
+    const auto jn=avNorm(out.electronParticleCurrentWithoutMobility);
+    const auto jp=avNorm(out.holeParticleCurrentWithoutMobility);
+    out.electronZeroNorm=jn.value==0.;out.holeZeroNorm=jp.value==0.;
+    out.generation_cm3_s=avCoefficient(electronField,electron)*mun*jn
+                       +avCoefficient(holeField,hole)*mup*jp;
+    for(std::size_t k=0;k<3;++k){
+        if(!(geometry.boxAreas_cm2[k]>=0.))throw std::invalid_argument("Negative AV box measure");
+        out.nodeGeneration_per_cm_s[k]=AvJet(geometry.boxAreas_cm2[k])*out.generation_cm3_s;
+    }
+    return out;
+}
+
+} // namespace vela::experimental
