@@ -1,0 +1,162 @@
+{
+  "schema": "vela.h5py_ros3_dll_repair.v1",
+  "date": "2026-10-25",
+  "root_cause": "h5py imports ROS3 symbols absent from the installed non-ROS3 HDF5 DLL; package files were intact",
+  "missing_imports_before": [
+    {
+      "module": "defs.cp314-mingw_x86_64_ucrt_gnu.pyd",
+      "dll": "libhdf5-320.dll",
+      "missing": [
+        "H5Pget_fapl_ros3",
+        "H5Pget_fapl_ros3_token",
+        "H5Pset_fapl_ros3",
+        "H5Pset_fapl_ros3_token"
+      ]
+    },
+    {
+      "module": "h5fd.cp314-mingw_x86_64_ucrt_gnu.pyd",
+      "dll": "libhdf5-320.dll",
+      "missing": [
+        "H5FD_ROS3_id_g"
+      ]
+    }
+  ],
+  "missing_imports_after": [],
+  "package_before": "mingw-w64-ucrt-x86_64-python-h5py 3.16.0-2",
+  "package_after": "mingw-w64-ucrt-x86_64-python-h5py 3.16.0-2.1 (local rebuild)",
+  "python": "3.14.9",
+  "hdf5_library_unchanged": true,
+  "installed_smoke": {
+    "mode": "installed",
+    "h5py": "3.16.0",
+    "numpy": "2.5.4",
+    "HDF5_runtime": "2.2.0",
+    "HDF5_built": [
+      2,
+      2,
+      0
+    ],
+    "ros3": false,
+    "roundtrip_gzip_lzf": true,
+    "hdf5_dll_sha256": "173410346aa46b4d6d6d5c77e107151d02e3e2085ef182f1f24cc16f681a7abb"
+  },
+  "official_recipe_and_source": [
+    {
+      "file": "PKGBUILD",
+      "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-python-h5py/PKGBUILD",
+      "sha256": "6e0c1b5c62bd09515ade530e6bddee776a47a0068dc70f5f9726c3bc35b6d2b4"
+    },
+    {
+      "file": "0001-multi-digit-SOVERSION.patch",
+      "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-python-h5py/0001-multi-digit-SOVERSION.patch",
+      "sha256": "b393b8cb1efbd4f52d40e14a5c6e736039f3dadc11589b4b9b39edef0eb32a68"
+    },
+    {
+      "file": "lzf_c.c.patch",
+      "url": "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-python-h5py/lzf_c.c.patch",
+      "sha256": "6d0126b881b5dcd637146d151341b72aa68eef760092272279072ec0bc4ceca9"
+    },
+    {
+      "file": "h5py-3.16.0.tar.gz",
+      "url": "https://pypi.org/packages/source/h/h5py/h5py-3.16.0.tar.gz",
+      "sha256": "a0dbaad796840ccaa67a4c144a0d0c8080073c34c76d5a6941d6818678ef2738"
+    }
+  ],
+  "recipe_change": "local pkgrel 2 -> 2.1 only; official MinGW patches retained; actual HDF5 feature autodetection",
+  "original_package_sha256": "b4953deb3034b87667b2528c32c0f04b283d7a2514bd3ffc47756cd4c6c50a6f",
+  "rebuilt_package_sha256": "58fdc6403078b2d97cd8e5b4ca44d555729fce66c120249fc55749a87a53e34b",
+  "integrity_after": "242 files, 0 altered files",
+  "affected": {
+    "status": "finished",
+    "mode": "affected",
+    "exit_code": 0,
+    "seconds": 80.40600000000268,
+    "selected": 8,
+    "failed": [],
+    "skipped": [],
+    "passed": 8
+  },
+  "full": {
+    "status": "finished",
+    "mode": "full",
+    "exit_code": 0,
+    "seconds": 216.625,
+    "selected": 1113,
+    "failed": [],
+    "skipped": [
+      {
+        "name": "sdevice_e2e_pn2d_0v",
+        "reason": "SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.\n"
+      },
+      {
+        "name": "sdevice_e2e_pn2d_iv",
+        "reason": "SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.\n"
+      },
+      {
+        "name": "sdevice_e2e_pn2d_bv",
+        "reason": "SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.\n"
+      },
+      {
+        "name": "sdevice_e2e_gates",
+        "reason": "SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.\n"
+      }
+    ],
+    "passed": 1109
+  },
+  "affected_cases": [
+    {
+      "name": "state_archive_python_interop",
+      "seconds": 4.15718,
+      "status": "run"
+    },
+    {
+      "name": "state_archive_dc_worker",
+      "seconds": 2.46463,
+      "status": "run"
+    },
+    {
+      "name": "reference_tcad_regression",
+      "seconds": 80.1149,
+      "status": "run"
+    },
+    {
+      "name": "simplemos_engineering_codespaces",
+      "seconds": 1.19613,
+      "status": "run"
+    },
+    {
+      "name": "simplemos_engineering_matrix_contract",
+      "seconds": 1.77148,
+      "status": "run"
+    },
+    {
+      "name": "templates_ldmos_electrothermal_input_regression",
+      "seconds": 18.7119,
+      "status": "run"
+    },
+    {
+      "name": "templates_ldmos_joint_local_fields_regression",
+      "seconds": 1.77235,
+      "status": "run"
+    },
+    {
+      "name": "electrothermal_dc_runner_regression",
+      "seconds": 78.215,
+      "status": "run"
+    }
+  ],
+  "new_tests_since_original_run": [
+    "BV bad explicit inner controls fail rather than selecting a default",
+    "BV device-voltage sweep steps retain their converted volt units",
+    "BV normalized inner steps scale with the actual device span",
+    "BV outer controls use script values and preserve restart overrides",
+    "BV predictor reads explicit device volts without borrowing parser defaults",
+    "BV secant guard permits large source steps and reversed device motion",
+    "DCSweep state step cap limits accepted advances and respects the minimum",
+    "bvmethods_cmd_profile"
+  ],
+  "temporary_drive_mapping_removed": true,
+  "original_package_backed_up": true,
+  "solver_and_acceptance_criteria_changes": false,
+  "evidence_directory": "build-release/h5py_dll_repair_20261025"
+}

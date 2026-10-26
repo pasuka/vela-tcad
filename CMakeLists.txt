@@ -623,6 +623,34 @@ add_executable(vela_bvmethods_full_sweep_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_full_sweep_probe.cpp)
 target_link_libraries(vela_bvmethods_full_sweep_probe PRIVATE vela_core)
 
+add_executable(vela_bvmethods_qf_direction_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_qf_direction_probe.cpp)
+target_link_libraries(vela_bvmethods_qf_direction_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_probe.cpp)
+target_link_libraries(vela_bvmethods_population_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_weak_row_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_weak_row_probe.cpp)
+target_link_libraries(vela_bvmethods_weak_row_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_linearization_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_linearization_probe.cpp)
+target_link_libraries(vela_bvmethods_linearization_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_newton_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_newton_probe.cpp)
+target_link_libraries(vela_bvmethods_population_newton_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_adaptive_bv_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp)
+target_link_libraries(vela_bvmethods_adaptive_bv_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_backend_comparison_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_backend_comparison_probe.cpp)
+target_link_libraries(vela_bvmethods_backend_comparison_probe PRIVATE vela_core)
+
 # ---------------------------------------------------------------------------
 # Native launcher `vela device ...` (sdevice front end, contract C9)
 # ---------------------------------------------------------------------------
@@ -895,6 +923,9 @@ target_link_libraries(test_joyce_dixon_contract PRIVATE vela_core Catch2::Catch2
 add_executable(test_bvmethods_av_contract tests/test_bvmethods_av_contract.cpp)
 target_link_libraries(test_bvmethods_av_contract PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_bvmethods_population_newton tests/test_bvmethods_population_newton.cpp)
+target_link_libraries(test_bvmethods_population_newton PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -988,6 +1019,10 @@ target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2With
 add_executable(test_coupled_load_line tests/test_coupled_load_line.cpp)
 target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2WithMain)
 
+# Header-only policy test: no solver rebuild or commercial inputs are needed.
+add_executable(test_bvmethods_step_control tests/test_bvmethods_step_control.cpp)
+target_link_libraries(test_bvmethods_step_control PRIVATE Catch2::Catch2WithMain nlohmann_json::nlohmann_json)
+
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
 add_executable(test_stored_charge tests/test_stored_charge.cpp)
 target_link_libraries(test_stored_charge PRIVATE vela_core Catch2::Catch2WithMain)
@@ -1053,6 +1088,7 @@ vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_joyce_dixon_contract)
 vela_catch_discover_tests(test_bvmethods_av_contract)
+vela_catch_discover_tests(test_bvmethods_population_newton)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
 vela_catch_discover_tests(test_gummel_high_doping)
@@ -1083,6 +1119,7 @@ vela_catch_discover_tests(test_pseudo_arclength)
 add_test(NAME pseudo_arclength COMMAND test_pseudo_arclength [arclength])
 vela_set_windows_msys2_test_path(pseudo_arclength)
 vela_catch_discover_tests(test_coupled_load_line)
+vela_catch_discover_tests(test_bvmethods_step_control)
 add_test(NAME coupled_load_line COMMAND test_coupled_load_line [coupled_load_line])
 vela_set_windows_msys2_test_path(coupled_load_line)
 vela_catch_discover_tests(test_solution_validation)
@@ -1923,3 +1960,8 @@ add_test(NAME bvmethods_profile_inputs
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_profile_inputs.py)
 vela_set_windows_msys2_test_path(bvmethods_profile_inputs)
+
+add_test(NAME bvmethods_cmd_profile
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_cmd_profile)
+set_tests_properties(bvmethods_cmd_profile PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(bvmethods_cmd_profile)

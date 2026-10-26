@@ -1,0 +1,202 @@
+{
+  "schema": "vela.validation.t470p_adaptive_bv.v1",
+  "date": "2026-10-26",
+  "complete": false,
+  "rerun_status": "paused_not_started",
+  "host_label": "T470p",
+  "build_type": "Release",
+  "backend": "pardiso_mkl",
+  "linear_threads": 1,
+  "temperature_K": 300,
+  "resistance_ohm_um": 10000000.0,
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "system_dimension": 7801
+  },
+  "from_cold_poisson": true,
+  "imported_checkpoint": false,
+  "core_sha256": "bf999efb298061952edcc16075c121574d1f25c47d107e3d3cc1679edaa63820",
+  "binary_sha256": "8accebbea8ff2d03946d473509be17e95ea490f0453d32752f8beb5e4bf914b5",
+  "verified_source_files": 6026,
+  "poisson": {
+    "converged": true,
+    "iterations": 7,
+    "residual": 1.0785652699733497e-10,
+    "trace": [
+      {
+        "alpha": 1.0,
+        "iteration": 1,
+        "residual": 279.9932780940603
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 2,
+        "residual": 52.062137498847655
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 3,
+        "residual": 9.214742518884693
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 4,
+        "residual": 0.9223646486015864
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 5,
+        "residual": 0.03172720309744293
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 6,
+        "residual": 4.894384314844077e-05
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 7,
+        "residual": 1.0785652699733497e-10
+      }
+    ]
+  },
+  "accepted_points_including_zero": 277,
+  "accepted_updates": 1431,
+  "max_accepted_updates": 14,
+  "last_point": {
+    "outer_V": 5.798770745335408,
+    "inner_V": 5.487691822303808,
+    "current_A_per_um": 3.1107890754850267e-08,
+    "updates": 5,
+    "electron_closure": 9.004784831670752e-09,
+    "hole_closure": 3.7161379616563386e-11
+  },
+  "stop_current_A_per_um": 0.0013,
+  "breakdown_voltage_V": null,
+  "step_bounds_actual": {
+    "outer_V": {
+      "min": 0.01,
+      "max": 0.026172091751111112
+    },
+    "inner_V": {
+      "min": 0.005244252806359568,
+      "max": 0.02241945057401344
+    }
+  },
+  "closure_report": {
+    "electron_closure": {
+      "max_ratio": 0.5926141717144042,
+      "points_above_1_percent": 16
+    },
+    "hole_closure": {
+      "max_ratio": 0.0012794277886131634,
+      "points_above_1_percent": 0
+    }
+  },
+  "sweep_exit": 1,
+  "sweep_seconds": 7622.103028400001,
+  "rejected_outer_targets_V": [
+    5.823907532324283,
+    5.811339138829845,
+    5.805054942082626,
+    5.801912843709017,
+    5.800341794522213,
+    5.79955626992881
+  ],
+  "final_error": "std::bad_alloc",
+  "resource_interference": {
+    "verified_hung_own_log_query_private_bytes": 41560473600,
+    "physical_memory_load_percent": 96,
+    "available_system_commit_bytes": 429387776,
+    "verified_own_query_terminated": true
+  },
+  "iteration_journal_complete": false,
+  "summary_file_bytes": 0,
+  "remote_recovery_archive_downloaded": false,
+  "ctest": {
+    "passed": 10,
+    "failed": 0
+  },
+  "iv_sha256": "2d61faf3ebcf628c942d21ec2ed6d6e0cc0d247ff075011632be002d803b78a3",
+  "selected_points": [
+    {
+      "outer_V": 0.0,
+      "inner_V": 0.0,
+      "current_A_per_um": 0.0,
+      "updates": 0,
+      "electron_closure": 0.0,
+      "hole_closure": 0.0
+    },
+    {
+      "outer_V": 0.01,
+      "inner_V": 0.005244252806359568,
+      "current_A_per_um": 4.755746783506173e-10,
+      "updates": 4,
+      "electron_closure": 0.5926141717144042,
+      "hole_closure": 0.0012794277886131634
+    },
+    {
+      "outer_V": 0.023690000000000003,
+      "inner_V": 0.013381587649698443,
+      "current_A_per_um": 1.030842040640768e-09,
+      "updates": 3,
+      "electron_closure": 0.4547949426397471,
+      "hole_closure": 0.0003765615960998583
+    },
+    {
+      "outer_V": 0.04261870666666667,
+      "inner_V": 0.02663607403458036,
+      "current_A_per_um": 1.5982620923192188e-09,
+      "updates": 3,
+      "electron_closure": 0.037737845005012746,
+      "hole_closure": 0.00018379910597639344
+    },
+    {
+      "outer_V": 0.06879079841777778,
+      "inner_V": 0.04856545483707192,
+      "current_A_per_um": 2.0225341558083003e-09,
+      "updates": 6,
+      "electron_closure": 0.1978252787147944,
+      "hole_closure": 0.0001595585363740701
+    },
+    {
+      "outer_V": 0.0926602291024212,
+      "inner_V": 0.07098490541108536,
+      "current_A_per_um": 2.1675307573835094e-09,
+      "updates": 4,
+      "electron_closure": 0.022825347862140948,
+      "hole_closure": 5.4184213984344826e-05
+    },
+    {
+      "outer_V": 5.798770745335408,
+      "inner_V": 5.487691822303808,
+      "current_A_per_um": 3.1107890754850267e-08,
+      "updates": 5,
+      "electron_closure": 9.004784831670752e-09,
+      "hole_closure": 3.7161379616563386e-11
+    }
+  ],
+  "evidence": "build-release/bvmethods_t470p_adaptive_bv_20261026/",
+  "branch_checkpoint_validation": {
+    "build_preset": "windows-ucrt64-release",
+    "default_build_passed": true,
+    "ctest_total": 1130,
+    "passed_after_environment_repairs": 1126,
+    "skipped": 4,
+    "remaining_failures": 0,
+    "retested_after_oneapi_runtime_path_fix": 2,
+    "first_sandbox_temp_run_interrupted": true,
+    "test_temp": "workspace_build_directory",
+    "python_utf8": true,
+    "skip_reason": "VELA_REFERENCE_ARTIFACTS_DIR not set",
+    "skipped_tests": [
+      "sdevice_e2e_pn2d_0v",
+      "sdevice_e2e_pn2d_iv",
+      "sdevice_e2e_pn2d_bv",
+      "sdevice_e2e_gates"
+    ],
+    "full_BV_rerun_started": false
+  }
+}
