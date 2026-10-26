@@ -80,7 +80,7 @@ struct BvMethodsCoupledRuntime::Impl {
         s.phin=x.segment(n,n)*scale+owner.electronQuasiFermiReferenceField();
         s.phip=x.tail(n)*scale+owner.holeQuasiFermiReferenceField();
         s.n=owner.electronDensity(x);s.p=owner.holeDensity(x);
-        for(int i=0;i<n;++i)if(active[i] && (!(s.n[i]/owner.Nc_[i]>0.) || !(s.p[i]/owner.Nv_[i]>0.) || !std::isfinite(s.n[i]) || !std::isfinite(s.p[i])))
+        for(int i=0;i<n;++i)if(active[i] && (!(s.n[i]>0.) || !(s.p[i]>0.) || !std::isfinite(s.n[i]) || !std::isfinite(s.p[i])))
             throw std::domain_error("BVMethods trial state outside positive finite carrier domain");
         return s;
     }
@@ -97,11 +97,12 @@ struct BvMethodsCoupledRuntime::Impl {
             const auto model=owner.carrierStatisticsModel_;const double vt=owner.Vt_;
             auto population=[&](bool electron){
                 const double v=electron?s.n[i]:s.p[i],dos=electron?owner.Nc_[i]:owner.Nv_[i];
-                AvJet a(v);const double eta=inverseFermiDiracHalf(v/dos,model),d=dos*fermiDiracHalfDerivative(eta,model)/vt;
+                AvJet a(v);const double d=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(v,dos)/vt;
                 a.derivative[0]=electron?d:-d;a.derivative[electron?1:2]=electron?-d:d;return a;
             };
             const auto nj=population(true),pj=population(false);
             auto gamma=[&](const AvJet& p,double dos){
+                if(p.value/dos<std::numeric_limits<double>::min())return AvJet(1.);
                 const double eta=inverseFermiDiracHalf(p.value/dos,model),slope=dos*fermiDiracHalfDerivative(eta,model);
                 AvJet g(std::exp(std::log(p.value/dos)-eta));
                 for(int k=0;k<3;++k)g.derivative[k]=g.value*(1/p.value-1/slope)*p.derivative[k];return g;

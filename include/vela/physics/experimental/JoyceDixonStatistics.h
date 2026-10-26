@@ -57,6 +57,34 @@ public:
                                     : highInverse(ratio) - join().shift;
     }
 
+    // Scale before the nondegenerate exponential reaches the subnormal
+    // range. DOS*exp(eta) can be normal although exp(eta) has lost digits
+    // or underflowed. These are the same low-density JD law, without a floor.
+    static double density(double eta,double dos)
+    {
+        if(eta<std::log(std::numeric_limits<double>::min()))
+            return std::exp(std::log(dos)+eta);
+        return dos*evaluate(eta).value;
+    }
+    static double densityDerivativeEta(double eta,double dos)
+    {
+        if(eta<std::log(std::numeric_limits<double>::min()))return density(eta,dos);
+        return dos*evaluate(eta).first;
+    }
+    static double inverseDensity(double population,double dos)
+    {
+        if(!(population>0.) || !(dos>0.) || !std::isfinite(population) || !std::isfinite(dos))
+            throw std::invalid_argument("Joyce-Dixon density inverse requires positive finite population and DOS");
+        const double ratio=population/dos;
+        if(ratio<std::numeric_limits<double>::min())return std::log(population)-std::log(dos);
+        return inverse(ratio);
+    }
+    static double densitySlopeFromPopulation(double population,double dos)
+    {
+        if(population/dos<std::numeric_limits<double>::min())return population;
+        return dos*evaluate(inverseDensity(population,dos)).first;
+    }
+
     static JoyceDixonJet evaluate(double eta)
     {
         if (std::isnan(eta)) return {eta, eta, eta};

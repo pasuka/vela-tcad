@@ -6,6 +6,76 @@
 using namespace vela::experimental;
 using Catch::Approx;
 
+TEST_CASE("Tri3 SG retains diffusion and both endpoint derivatives beyond exponential range",
+          "[av_contract][tri3_ad]")
+{
+    AvJet left(1e20),right(1e-303);left.derivative[0]=left.value;right.derivative[1]=right.value;
+    AvJet delta(std::log(left.value)-std::log(right.value));delta.derivative[0]=1.;delta.derivative[1]=-1.;
+    const auto argument=avLogRatio(right,left)+delta;
+    REQUIRE(argument.value==Approx(0.).margin(1e-12));
+    const auto forward=avSgFlux(AvJet(1),left,right,delta,argument);
+    const auto reverse=avSgFlux(AvJet(1),right,left,-delta,-argument);
+    REQUIRE(forward.value==Approx(left.value));
+    REQUIRE(forward.derivative[0]/left.value==Approx(1.));
+    REQUIRE(forward.derivative[1]/right.value==Approx(-1.));
+    REQUIRE(reverse.value==-forward.value);
+    for(int k=0;k<9;++k){
+        REQUIRE(std::isfinite(forward.derivative[k]));
+        REQUIRE(reverse.derivative[k]==-forward.derivative[k]);
+    }
+}
+
+TEST_CASE("Tri3 dual quotient preserves finite derivatives across density scales",
+          "[av_contract][tri3_ad]")
+{
+    for(double scale:{1e-200,1.,1e200}){
+        const auto a=AvJet::variable(5.*scale,0);
+        const auto b=AvJet::variable(2.*scale,1);
+        const auto ratio=a/b;
+        REQUIRE(ratio.value==Approx(2.5));
+        REQUIRE(ratio.derivative[0]*scale==Approx(.5));
+        REQUIRE(ratio.derivative[1]*scale==Approx(-1.25));
+        for(int k=2;k<9;++k)REQUIRE(ratio.derivative[k]==0.);
+        const auto unity=a/a;
+        REQUIRE(unity.value==1.);
+        for(double d:unity.derivative)REQUIRE(d==0.);
+    }
+}
+
+TEST_CASE("Tri3 SG transport and AV remain homogeneous at extreme positive populations",
+          "[av_contract][tri3_ad]")
+{
+    const AvTri3Geometry geometry{{{{0.,0.},{2.,0.},{.5,1.}}},{.25,.4,.35},0};
+    auto evaluate=[&](double scale,bool electron){
+        std::array<AvJet,3> density,qf;
+        for(int k=0;k<3;++k){
+            qf[k]=AvJet::variable(.01*k,3+k);
+            density[k]=AvJet(scale*(2.+k))*vela::detail::dualExp(qf[k]/AvJet(.02585));
+        }
+        const auto transport=evaluateBvMethodsTri3Transport({.25,.4,.35},{.2,.7,.3},
+            density,qf,{AvJet(50.),AvJet(80.),AvJet(100.)},.02585,electron);
+        const auto av=evaluateBvMethodsTri3Avalanche(geometry,density,density,qf,qf,
+            AvJet(50.),AvJet(80.),AvJet(5e4),AvJet(6e4),.02585,
+            {7e5,1.2e6,7e5,1.2e6,4e5},{1.6e6,2e6,1.6e6,2e6,4e5});
+        return std::array<AvJet,4>{transport.nodeFlux_per_cm_s[0],transport.nodeFlux_per_cm_s[1],
+            transport.nodeFlux_per_cm_s[2],av.generation_cm3_s};
+    };
+    for(bool electron:{true,false}){
+        const auto normal=evaluate(1.,electron);
+        for(double scale:{1e-200,1e200}){
+            const auto scaled=evaluate(scale,electron);
+            for(int k=0;k<4;++k){
+                REQUIRE(std::isfinite(scaled[k].value));
+                REQUIRE(scaled[k].value/scale==Approx(normal[k].value).epsilon(1e-12));
+                for(int j=0;j<9;++j){
+                    REQUIRE(std::isfinite(scaled[k].derivative[j]));
+                    REQUIRE(scaled[k].derivative[j]/scale==Approx(normal[k].derivative[j]).epsilon(1e-11).margin(1e-25));
+                }
+            }
+        }
+    }
+}
+
 TEST_CASE("Experimental transport preserves uniform-density Ohm law and paired edge flux",
           "[av_contract]")
 {
@@ -224,6 +294,39 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
 }
 
 #include "vela/post/ContactCurrent.h"
+#include "vela/equation/BvMethodsTri3Operator.h"
+TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conservation", "[bvmethods_profile]") {
+    using namespace vela;ProfileFixture f;auto a=f.assembler();const auto x=f.point();
+    detail::BvMethodsQfState s{x.head(6),x.segment(6,6),x.tail(6),a->electronDensity(x),a->holeDensity(x)};
+    std::vector<double> nc(6),nv(6);
+    for(const auto& t:a->poissonTermDiagnostics(x,{})){nc[t.nodeId]=t.electronDensityOfStates;nv[t.nodeId]=t.holeDensityOfStates;}
+    detail::BvMethodsTri3Context context{f.mesh,f.materials,f.doping,
+        {f.mobility,f.avalanche,{},CarrierStatisticsModel::FermiDiracJoyceDixon}};
+    detail::BvMethodsTri3Operator element(context,s,nc,nv,1.,1.,constants::Vt_300);
+    const auto live=element.transport(s,true,true,true);
+    const auto frozen=element.transport(s,true,true,true,true);
+    REQUIRE((live.source.array()==frozen.source.array()).all());
+    REQUIRE((live.absoluteSource.array()==frozen.absoluteSource.array()).all());
+    const SparseMatrixd removed=live.jacobian-frozen.jacobian;
+    REQUIRE(removed.norm()>0.);
+    // Dropping mobility derivatives must retain edge-pair conservation and
+    // invariance under a common electrostatic/QF reference shift.
+    for(const auto* matrix:{&live.jacobian,&frozen.jacobian}) {
+        for(int col=0;col<18;++col)for(int block:{1,2}){
+            double sum=0.,magnitude=0.;for(int i=0;i<6;++i){double v=matrix->coeff(block*6+i,col);sum+=v;magnitude+=std::abs(v);}
+            REQUIRE(std::abs(sum)<=1e-13*magnitude+1e-30);
+        }
+        const VectorXd gauge=(*matrix)*VectorXd::Ones(18);
+        REQUIRE(gauge.norm()<1e-12*matrix->norm());
+    }
+    // A new state must recompute the live mobility even in the frozen-tangent
+    // arm; this control freezes a derivative, never a value between iterations.
+    s.phin[1]+=.002;s.n=a->electronDensity((VectorXd(18)<<s.psi,s.phin,s.phip).finished());
+    const auto changed=element.transport(s,true,true,true,true);
+    const auto changedLive=element.transport(s,true,true,true);
+    REQUIRE((changed.source.array()==changedLive.source.array()).all());
+    REQUIRE((changed.source-live.source).norm()>0.);
+}
 TEST_CASE("BVMethods profile terminal extraction follows its element residual", "[bvmethods_profile]") {
     using namespace vela;ProfileFixture f;auto a=f.assembler();auto x=f.point();DDSolution state;
     state.psi=x.head(6);state.phin=x.segment(6,6);state.phip=x.tail(6);state.n=a->electronDensity(x);state.p=a->holeDensity(x);

@@ -101,8 +101,8 @@ public:
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
     const double nd=units.internalConcentrationToM3(state.n[i])/1e6,pd=units.internalConcentrationToM3(state.p[i])/1e6;
     ns[k]=AvJet(nd);ps[k]=AvJet(pd);
-    const double dn=nc_[i]*fermiDiracHalfDerivative(inverseFermiDiracHalf(nd/nc_[i],problem_.newton.statistics),problem_.newton.statistics)/vt_;
-    const double dp=nv_[i]*fermiDiracHalfDerivative(inverseFermiDiracHalf(pd/nv_[i],problem_.newton.statistics),problem_.newton.statistics)/vt_;
+    const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
+    const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
@@ -132,7 +132,9 @@ public:
   }
   out.jacobian.resize(3*n,3*n);if(derivatives)out.jacobian.setFromTriplets(entries.begin(),entries.end());return out;
  }
- BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false) const {
+ // Diagnostic approximate linearization only: retain the live mobility value,
+ // but omit its tangent. Production calls retain the full derivative default.
+ BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
@@ -140,8 +142,8 @@ public:
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
     const double nd=units.internalConcentrationToM3(state.n[i])/1e6,pd=units.internalConcentrationToM3(state.p[i])/1e6;
     ns[k]=AvJet(nd);ps[k]=AvJet(pd);
-    const double dn=nc_[i]*fermiDiracHalfDerivative(inverseFermiDiracHalf(nd/nc_[i],problem_.newton.statistics),problem_.newton.statistics)/vt_;
-    const double dp=nv_[i]*fermiDiracHalfDerivative(inverseFermiDiracHalf(pd/nv_[i],problem_.newton.statistics),problem_.newton.statistics)/vt_;
+    const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
+    const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
@@ -161,12 +163,13 @@ public:
    std::array<AvJet,3> mn,mp,etaN,etaP,gn{AvJet(1),AvJet(1),AvJet(1)},gp=gn;
    for(int k=0;k<3;++k){
     mn[k]=mobility(true,en,k);mp[k]=mobility(false,hp,k);
-    const auto i=a.nodes[k];etaN[k]=AvJet(inverseFermiDiracHalf(ns[k].value/nc_[i],problem_.newton.statistics));etaP[k]=AvJet(inverseFermiDiracHalf(ps[k].value/nv_[i],problem_.newton.statistics));
+    if(freezeMobilityDerivatives){mn[k].derivative.fill(0.);mp[k].derivative.fill(0.);}
+    const auto i=a.nodes[k];etaN[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ns[k].value,nc_[i]));etaP[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ps[k].value,nv_[i]));
     etaN[k].derivative[k]=1/vt_;etaN[k].derivative[3+k]=-1/vt_;
     etaP[k].derivative[k]=-1/vt_;etaP[k].derivative[6+k]=1/vt_;
    }
    auto einstein=[&](const std::array<AvJet,3>& population,const std::array<AvJet,3>& eta,int k){
-    const int j=(k+1)%3;auto log=experimental::avLog(population[j]/population[k]);
+    const int j=(k+1)%3;auto log=experimental::avLogRatio(population[j],population[k]);
     if(std::abs(log.value)>1e-10)return (eta[j]-eta[k])/log;
     const auto mid=(eta[j]+eta[k])/AvJet(2);const auto jet=experimental::JoyceDixonStatistics::evaluate(mid.value);
     AvJet value(std::max(1.,jet.value/jet.first));

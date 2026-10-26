@@ -202,7 +202,8 @@ Real electronDensity(Real ni, Real Nc, Real psi, Real phin, Real Vt,
     if (!usesFermiDirac(model))
         return ni * limitedExp((psi - phin) / Vt);
     const Real eta = (psi - phin) / Vt + std::log(ni / Nc);
-    return Nc * fermiDiracHalf(eta, model);
+    return model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::density(eta,Nc) : Nc * fermiDiracHalf(eta, model);
 }
 
 Real holeDensity(Real ni, Real Nv, Real psi, Real phip, Real Vt,
@@ -214,7 +215,8 @@ Real holeDensity(Real ni, Real Nv, Real psi, Real phip, Real Vt,
     if (!usesFermiDirac(model))
         return ni * limitedExp((phip - psi) / Vt);
     const Real eta = (phip - psi) / Vt + std::log(ni / Nv);
-    return Nv * fermiDiracHalf(eta, model);
+    return model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::density(eta,Nv) : Nv * fermiDiracHalf(eta, model);
 }
 
 Real electronDensityDerivativeEta(Real ni, Real Nc, Real psi, Real phin, Real Vt,
@@ -224,7 +226,8 @@ Real electronDensityDerivativeEta(Real ni, Real Nc, Real psi, Real phin, Real Vt
     if (!usesFermiDirac(model) || n == 0.0)
         return n;
     const Real eta = (psi - phin) / Vt + std::log(ni / Nc);
-    return Nc * fermiDiracHalfDerivative(eta, model);
+    return model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::densityDerivativeEta(eta,Nc) : Nc * fermiDiracHalfDerivative(eta, model);
 }
 
 Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
@@ -234,7 +237,8 @@ Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
     if (!usesFermiDirac(model) || p == 0.0)
         return p;
     const Real eta = (phip - psi) / Vt + std::log(ni / Nv);
-    return Nv * fermiDiracHalfDerivative(eta, model);
+    return model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::densityDerivativeEta(eta,Nv) : Nv * fermiDiracHalfDerivative(eta, model);
 }
 
 Real electronDensity(Real ni, Real Nc, Real psi, Real phin, Real Vt,
@@ -272,7 +276,9 @@ Real electronQuasiFermiPotential(Real ni, Real Nc, Real psi, Real n, Real Vt,
         throw std::invalid_argument("electronQuasiFermiPotential: densities must be positive.");
     if (!usesFermiDirac(model))
         return psi - Vt * std::log(n / ni);
-    return psi - Vt * (inverseFermiDiracHalf(n / Nc, model) - std::log(ni / Nc));
+    const Real eta=model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::inverseDensity(n,Nc) : inverseFermiDiracHalf(n / Nc, model);
+    return psi - Vt * (eta - std::log(ni / Nc));
 }
 
 Real holeQuasiFermiPotential(Real ni, Real Nv, Real psi, Real p, Real Vt,
@@ -284,7 +290,9 @@ Real holeQuasiFermiPotential(Real ni, Real Nv, Real psi, Real p, Real Vt,
         throw std::invalid_argument("holeQuasiFermiPotential: densities must be positive.");
     if (!usesFermiDirac(model))
         return psi + Vt * std::log(p / ni);
-    return psi + Vt * (inverseFermiDiracHalf(p / Nv, model) - std::log(ni / Nv));
+    const Real eta=model==CarrierStatisticsModel::FermiDiracJoyceDixon
+        ? experimental::JoyceDixonStatistics::inverseDensity(p,Nv) : inverseFermiDiracHalf(p / Nv, model);
+    return psi + Vt * (eta - std::log(ni / Nv));
 }
 
 EquilibriumCarrierState equilibriumCarrierState(
