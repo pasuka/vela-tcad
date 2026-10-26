@@ -53,6 +53,27 @@ def inputs(root, *, multistage=False, fixture=False):
 
 
 class OrchestratorTests(unittest.TestCase):
+    def test_current_stop_completes_stage_before_voltage_goal(self):
+        text = self.cmd.read_text().replace('Solve {',
+            'Math {BreakCriteria {Current(Contact="anode" AbsVal=4e-8)}} Solve {')
+        self.cmd.write_text(text)
+        done = self.call(str(self.cmd), '--exit-on-failure', mode='partial')
+        self.assert_exit(0, done)
+        runtime = json.loads((self.work/'run_manifest.json').read_text())['stages'][1]
+        self.assertFalse(runtime['goal_reached'])
+        self.assertEqual(runtime['stop_criterion_reached'], 'current')
+        self.assertAlmostEqual(runtime['reached_voltages_V']['anode'], .5)
+
+    def test_unmet_current_stop_does_not_hide_incomplete_stage(self):
+        text = self.cmd.read_text().replace('Solve {',
+            'Math {BreakCriteria {Current(Contact="anode" AbsVal=9e-8)}} Solve {')
+        self.cmd.write_text(text)
+        done = self.call(str(self.cmd), '--exit-on-failure', mode='partial')
+        self.assert_exit(5, done)
+        runtime = json.loads((self.work/'run_manifest.json').read_text())['stages'][1]
+        self.assertFalse(runtime['goal_reached'])
+        self.assertNotIn('stop_criterion_reached', runtime)
+
     def test_slow_background_publisher_finishes_before_final_publication(self):
         from vela_sdevice.__main__ import main
         from vela_sdevice.orchestrator.outputs import OutputPublisher

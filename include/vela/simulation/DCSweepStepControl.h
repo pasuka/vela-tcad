@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,9 @@ struct DCSweepStepControlConfig {
     int maxRetries = 5;
     bool stopOnFailure = true;
     std::function<bool()> stopRequested;
+    /// Optional state-dependent cap on the proposed step magnitude. Empty
+    /// means no representable step respecting both state and minimum limits.
+    std::function<std::optional<Real>(Real proposed, Real remaining)> stepLimit;
     /// Biases strictly between start and stop that the controller must land
     /// on exactly (merged into the nominal target sequence).  Points outside
     /// the swept interval or coinciding with a nominal target are ignored.

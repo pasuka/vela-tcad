@@ -22,16 +22,7 @@
       "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
     }
   ],
-  "warnings": [
-    {
-      "id": "W102",
-      "severity": "warning",
-      "line": 78,
-      "section": "Math",
-      "text": "NotDamped=100",
-      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
-    }
-  ],
+  "warnings": [],
   "files": {
     "grid": {"raw": "pn2d_msh.tdr", "resolved": "pn2d_msh.tdr", "kind": "tdr", "line": 2},
     "parameter": null,
@@ -81,6 +72,7 @@
   },
   "current_plot": {"entries": []},
   "math": {
+    "not_damped": 100,
     "iterations": 50,
     "digits": 5,
     "rel_err_control": true,
@@ -94,9 +86,7 @@
     "break_criteria": [],
     "exit_on_failure": false,
     "number_of_threads": 1,
-    "ignored": [
-      {"keyword": "NotDamped", "value": "100", "line": 78, "finding_id": "W102"}
-    ]
+    "ignored": []
   },
   "solve": {
     "statements": [

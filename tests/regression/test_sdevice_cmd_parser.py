@@ -303,7 +303,7 @@ class PropertyTest(unittest.TestCase):
         self.assertEqual(a["physics"]["effective"], b["physics"]["effective"])
         lower = parse_cmd_text(deck().replace("Iterations=20", "iterations=20 notdamped=5"), path_name="c_des.cmd")
         self.assertEqual(20, lower["math"]["iterations"])
-        self.assertEqual("notdamped", lower["math"]["ignored"][0]["keyword"])
+        self.assertEqual(5, lower["math"]["not_damped"])
 
     def test_bom_and_crlf_variants_are_invariant(self) -> None:
         path = FIXTURES / "pn2d_sentaurus2018" / "pn2d_iv_sdevice.cmd"

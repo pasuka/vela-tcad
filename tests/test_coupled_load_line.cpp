@@ -5,6 +5,56 @@
 
 using namespace vela;
 
+TEST_CASE("Report-only backtracking records damping but applies the full Newton step",
+          "[coupled_load_line][report_only]")
+{
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x(0)*x(0)-2.);};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.solveJacobian=[](const VectorXd& x,Real,const VectorXd& b,VectorXd& y){y=b/(2*x(0));return true;};
+    auto current=[](const VectorXd&,Real){return 0.;};
+    ArclengthState seed{VectorXd::Constant(1,.1),0.};
+    CoupledLoadLineConfig c;c.maxIterations=1;c.equationTolerance=1e-10;
+    const auto damped=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE(damped.trace.front().acceptedAlpha<1.);
+    c.lineSearchMode="report_only";c.dampingFactor=.01;
+    const auto full=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE_FALSE(full.converged);
+    REQUIRE(full.state.x(0)==Catch::Approx(10.05));
+    REQUIRE(full.trace.front().acceptedAlpha==1.);
+    REQUIRE(full.trace.front().reportedAlpha==damped.trace.front().acceptedAlpha);
+    REQUIRE(full.trace.front().fullStepMerit>full.trace.front().merit);
+    REQUIRE(seed.x(0)==.1);
+    c.lineSearchMode="full_step";
+    const auto undamped=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE(undamped.state.x(0)==full.state.x(0));
+    REQUIRE(undamped.lineSearchAttempts==1);
+    REQUIRE(undamped.trace.front().acceptedAlpha==1.);
+    REQUIRE(undamped.trace.front().reportedAlpha==0.);
+    c.lineSearchMode="report_only";
+    c.maxLineSearchSteps=0;
+    const auto noSuggestion=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE(noSuggestion.trace.front().reportedAlpha==0.);
+    REQUIRE(noSuggestion.state.x(0)==full.state.x(0));
+    c.maxIterations=20;
+    const auto root=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE(root.converged);
+    REQUIRE(root.state.x(0)==Catch::Approx(std::sqrt(2.)).margin(1e-10));
+    REQUIRE(root.equationResidualNorm<c.equationTolerance);
+
+    // Domain failures must not silently select a smaller trial in report mode.
+    s.residual=[](const VectorXd& x,Real){
+        if(x(0)>3.)throw std::domain_error("model domain");
+        return VectorXd::Constant(1,x(0)*x(0)-2.);};
+    const auto invalid=CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.);
+    REQUIRE_FALSE(invalid.converged);
+    REQUIRE(invalid.state.x(0)==seed.x(0));
+    REQUIRE(invalid.trace.front().acceptedAlpha==0.);
+    REQUIRE(invalid.failureReason.find("full step invalid")!=std::string::npos);
+    s.residual=[](const VectorXd&,Real){return VectorXd::Constant(1,std::numeric_limits<Real>::infinity());};
+    REQUIRE_FALSE(CoupledLoadLineNewton(s,current,c).solve(seed,0.,1.).converged);
+}
+
 TEST_CASE("Density update stopping keeps raw direction and requires load closure",
           "[coupled_load_line][density_update_convergence]")
 {

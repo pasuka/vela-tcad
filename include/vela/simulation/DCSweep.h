@@ -279,6 +279,11 @@ struct ExternalResistorControlConfig {
     bool coupledInexactZeroConvergedResidual = false;
     bool coupledLinearizationAudit = false;
     DensityUpdateConvergenceConfig coupledUpdateConvergence;
+    bool coupledContinuationEnabled = false;
+    bool coupledRetryAcceptedSeed = true;
+    Real coupledPredictedInnerStep_V = 0.0;
+    std::string coupledInnerStepSource;
+    std::string coupledInnerStepReason;
 };
 
 struct VoltageToCurrentControlConfig {

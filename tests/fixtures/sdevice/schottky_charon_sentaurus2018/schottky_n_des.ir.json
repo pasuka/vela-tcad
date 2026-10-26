@@ -22,24 +22,7 @@
       "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
     }
   ],
-  "warnings": [
-    {
-      "id": "W102",
-      "severity": "warning",
-      "line": 42,
-      "section": "Math",
-      "text": "NotDamped=50",
-      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
-    },
-    {
-      "id": "W103",
-      "severity": "warning",
-      "line": 48,
-      "section": "Solve",
-      "text": "LineSearchDamping=1.0e-3",
-      "message": "Coupled option 'LineSearchDamping' is recorded and ignored"
-    }
-  ],
+  "warnings": [],
   "files": {
     "grid": {"raw": "schottky_n_msh.tdr", "resolved": "schottky_n_msh.tdr", "kind": "tdr", "line": 16},
     "parameter": null,
@@ -98,6 +81,7 @@
   },
   "current_plot": {"entries": []},
   "math": {
+    "not_damped": 50,
     "iterations": 25,
     "digits": 6,
     "rel_err_control": true,
@@ -111,13 +95,11 @@
     "break_criteria": [],
     "exit_on_failure": true,
     "number_of_threads": 4,
-    "ignored": [
-      {"keyword": "NotDamped", "value": "50", "line": 42, "finding_id": "W102"}
-    ]
+    "ignored": []
   },
   "solve": {
     "statements": [
-      {"kind": "coupled", "line": 48, "equations": ["Poisson"], "iterations": 100, "options": {"LineSearchDamping": "1.0e-3"}},
+      {"kind": "coupled", "line": 48, "equations": ["Poisson"], "iterations": 100, "line_search_damping": 0.001},
       {"kind": "coupled", "line": 49, "equations": ["Poisson", "Electron", "Hole"], "iterations": 100},
       {"kind": "new_current_prefix", "line": 51, "prefix": "forward_"},
       {
@@ -133,6 +115,7 @@
   },
   "stages": [
     {
+      "line_search_damping": 0.001,
       "index": 0,
       "kind": "initial",
       "statement_index": 0,

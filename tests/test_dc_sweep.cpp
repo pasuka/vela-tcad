@@ -6907,3 +6907,27 @@ TEST_CASE("DCSweep step control rejects unrepresentable progress", "[dc_sweep][s
     REQUIRE(events.size()==1);
     REQUIRE(events[0].failureReason=="step_not_representable");
 }
+
+TEST_CASE("DCSweep state step cap limits accepted advances and respects the minimum",
+          "[dc_sweep][coupled_continuation]")
+{
+    detail::DCSweepStepControlConfig c;
+    c.start=0.; c.stop=.1; c.step=.1; c.initialStep=.1;
+    c.minStep=1e-4; c.maxStep=.1; c.growthFactor=2.;
+    c.stepLimit=[](Real proposed,Real){return std::optional<Real>(std::min(proposed,Real{.02}));};
+    std::vector<Real> accepted;
+    detail::runDCSweepStepControl(c,[&](Real v,Real step,int){
+        REQUIRE(step<=.02*(1.+1e-12)); accepted.push_back(v); return true;
+    },[](const auto&){});
+    REQUIRE(accepted.size()==5);
+    REQUIRE(accepted.back()==Catch::Approx(.1));
+    c.stepLimit=[](Real,Real){return std::optional<Real>{};};
+    accepted.clear();
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){accepted.push_back(v);return true;},
+        [&](const auto& e){events.push_back(e);});
+    REQUIRE(accepted.empty());
+    REQUIRE(events.size()==1);
+    REQUIRE_FALSE(events.front().converged);
+    REQUIRE(events.front().failureReason=="state_step_limit_below_minimum_or_invalid");
+}

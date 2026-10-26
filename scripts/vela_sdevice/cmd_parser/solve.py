@@ -114,6 +114,16 @@ def _parse_coupled(head: Token, stream: TokenStream, ctx: ParseContext) -> dict:
                 value = option_stream.take_value()
             if key.value.lower() == "iterations" and value is not None:
                 statement["iterations"] = parse_int(value, "Iterations")
+            elif key.value.lower() == "linesearchdamping" and value is not None:
+                damping = parse_number(value, "LineSearchDamping")
+                if not 0 < damping <= 1:
+                    raise SyntaxIssue("LineSearchDamping must be in (0,1]", key.line, key.value)
+                statement["line_search_damping"] = damping
+            elif key.value.lower() == "notdamped" and value is not None:
+                count = parse_int(value, "NotDamped")
+                if count < 0:
+                    raise SyntaxIssue("NotDamped must be nonnegative", key.line, key.value)
+                statement["not_damped"] = count
             else:
                 options[key.value] = value.value if value is not None else ""
                 ctx.warn("W103", key.line, SECTION, assignment_text(key, value), kw=key.value)
@@ -293,6 +303,9 @@ def build_stages(statements: List[dict], current_resolved: str) -> List[dict]:
     def new_stage(kind: str, index: int, statement: dict, equations: List[str], iterations: Optional[int]) -> dict:
         stage: dict = {"index": len(stages), "kind": kind, "statement_index": index, "equations": equations,
                        "iterations": iterations}
+        for key in ("line_search_damping", "not_damped"):
+            if key in statement:
+                stage[key] = statement[key]
         return stage
 
     for index, statement in enumerate(statements):
@@ -305,6 +318,9 @@ def build_stages(statements: List[dict], current_resolved: str) -> List[dict]:
             equations = list(inner[0]["equations"]) if inner else []
             iterations = inner[0]["iterations"] if inner else None
             stage = new_stage("sweep", index, statement, equations, iterations)
+            for key in ("line_search_damping", "not_damped"):
+                if inner and key in inner[0]:
+                    stage[key] = inner[0][key]
             if statement.get("goal") is not None:
                 stage["goal"] = statement["goal"]
             stage["t_control"] = statement["t_control"]

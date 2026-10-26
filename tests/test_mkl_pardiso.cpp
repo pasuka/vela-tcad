@@ -1,4 +1,5 @@
 #include "vela/solver/LinearSolver.h"
+#include "vela/simulation/CoupledLoadLine.h"
 #include "vela/core/PerformanceProfiler.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -28,6 +29,30 @@ struct Environment {
 };
 }
 
+TEST_CASE("Bordered coupling honors explicit PARDISO without fallback", "[coupled_load_line][pardiso]") {
+    Environment selection("VELA_LINEAR_SOLVER"), library("VELA_MKL_RT_LIBRARY");
+    selection.set("pardiso_mkl");
+    library.set("relative-runtime-must-not-be-ignored");
+    ArclengthSystem system;
+    system.residual = [](const VectorXd& x, Real v) { return VectorXd::Constant(1, x(0)-v); };
+    system.jacobian = [](const VectorXd&, Real) { SparseMatrixd a(1,1); a.insert(0,0)=1.; return a; };
+    system.parameterDerivative = [](const VectorXd&, Real) { return VectorXd::Constant(1,-1.); };
+    system.solveJacobian = [](const VectorXd&,Real,const VectorXd& b,VectorXd& x) { x=b;return true; };
+    ArclengthScalarFunctional port;
+    port.value = [](const VectorXd& x, Real) { return 2.*x(0); };
+    port.linearize = [](const VectorXd& x, Real) {
+        ArclengthScalarLinearization p; p.value=2.*x(0);
+        p.stateDerivative=VectorXd::Constant(1,2.); p.parameterDerivative=0.; return p;
+    };
+    for (const std::string mode : {"direct_bordered", "auto"}) {
+        CoupledLoadLineConfig config; config.linearSolver=mode;
+        const auto result=CoupledLoadLineNewton(system,port.value,config,port)
+            .solve({VectorXd::Zero(1),0.},.1,1.);
+        REQUIRE_FALSE(result.converged);
+        REQUIRE_THAT(result.failureReason,ContainsSubstring("PARDISO failed"));
+    }
+}
+
 #ifndef VELA_HAS_MKL_PARDISO
 TEST_CASE("PARDISO disabled builds reject explicit selection", "[linear_solver][pardiso]") {
     const auto defaults = LinearSolver::availableDirectBackends();
@@ -43,6 +68,34 @@ TEST_CASE("PARDISO disabled builds reject explicit selection", "[linear_solver][
     REQUIRE((a*solver.solve(a,b)-b).norm()<1e-13);
 }
 #else
+TEST_CASE("Bordered PARDISO solves a nonsymmetric load equation", "[coupled_load_line][pardiso][mkl_runtime]") {
+    if (!std::getenv("VELA_MKL_RT_LIBRARY") && !std::getenv("VELA_MKL_RT_DLL"))
+        SKIP("Set VELA_MKL_RT_LIBRARY to test installed oneMKL");
+    Environment selection("VELA_LINEAR_SOLVER"); selection.set("pardiso_mkl");
+    ArclengthSystem system;
+    system.residual = [](const VectorXd& x,Real v) { return VectorXd::Constant(1,3.*x(0)-v); };
+    system.jacobian = [](const VectorXd&,Real) { SparseMatrixd a(1,1);a.insert(0,0)=3.;return a; };
+    system.parameterDerivative = [](const VectorXd&,Real) { return VectorXd::Constant(1,-1.); };
+    system.solveJacobian = [](const VectorXd&,Real,const VectorXd& b,VectorXd& x) { x=b/3.;return true; };
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd& x,Real) { return 2.*x(0); };
+    port.linearize=[](const VectorXd& x,Real) {
+        ArclengthScalarLinearization p;p.value=2.*x(0);
+        p.stateDerivative=VectorXd::Constant(1,2.);p.parameterDerivative=0.;return p;
+    };
+    for (int refinement : {0,2}) {
+        CoupledLoadLineConfig config; config.linearSolver="direct_bordered";
+        config.maxVoltageUpdate_V=1.;config.directRefinementSteps=refinement;
+        config.equationTolerance=1e-12;config.loadLineTolerance_V=1e-12;
+        const auto result=CoupledLoadLineNewton(system,port.value,config,port)
+            .solve({VectorXd::Zero(1),0.},.7,2.);
+        REQUIRE(result.converged);
+        REQUIRE(std::abs(3.*result.state.x(0)-result.state.lambda)<1e-12);
+        REQUIRE(std::abs(result.state.lambda+4.*result.state.x(0)-.7)<1e-12);
+        REQUIRE(std::abs(result.state.x(0)-.1)<1e-12);
+    }
+}
+
 TEST_CASE("PARDISO requires explicit runtime selection", "[linear_solver][pardiso]") {
     Environment library("VELA_MKL_RT_LIBRARY"), legacy("VELA_MKL_RT_DLL");
     library.set(nullptr); legacy.set(nullptr);

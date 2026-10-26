@@ -26,14 +26,6 @@
     {
       "id": "W102",
       "severity": "warning",
-      "line": 80,
-      "section": "Math",
-      "text": "NotDamped=100",
-      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
-    },
-    {
-      "id": "W102",
-      "severity": "warning",
       "line": 81,
       "section": "Math",
       "text": "Method=Blocked",
@@ -99,6 +91,7 @@
   },
   "current_plot": {"entries": []},
   "math": {
+    "not_damped": 100,
     "iterations": 80,
     "digits": 5,
     "rel_err_control": true,
@@ -113,7 +106,6 @@
     "exit_on_failure": false,
     "number_of_threads": 1,
     "ignored": [
-      {"keyword": "NotDamped", "value": "100", "line": 80, "finding_id": "W102"},
       {"keyword": "Method", "value": "Blocked", "line": 81, "finding_id": "W102"}
     ]
   },
