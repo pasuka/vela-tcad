@@ -18,6 +18,13 @@ MSYS2 shell. Check imports with `/ucrt64/bin/python.exe` as well: an unpinned
 CMake search can select the hosted runner's separate Python installation even
 when the shell's `python` is UCRT64.
 
+On Windows, a `h5py.defs` DLL "procedure not found" error can also indicate a
+feature mismatch within the same HDF5 DLL name. The
+[ROS3 import repair record](../../docs/validation/h5py_ros3_dll_repair_2026-10-25.md)
+documents an h5py package importing ROS3 symbols from an HDF5 build without
+ROS3. Rebuild/install the binding against the actual HDF5 feature set; preserve
+the import failure as a failure until repaired. Do not turn it into a test skip.
+
 Sentaurus frontend tests require full JSON Schema validation, including nested
 properties. Missing `jsonschema` is an environment failure, not a reason to
 silently fall back to top-level structural checks.

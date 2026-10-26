@@ -1,0 +1,753 @@
+{
+  "schema": "vela.bvmethods_cmd_e2e_results.v1",
+  "baseline": {
+    "accepted_points_including_zero": 13,
+    "attempts": 39,
+    "failed_attempts": 26,
+    "last_accepted": {
+      "outer_voltage_V": 0.21426249670046663,
+      "inner_voltage_V": 0.19119787157253917,
+      "current_total_A_per_um": 2.306462799848334e-09
+    },
+    "max_accepted_device_residual_inf": 9.75253410562833e-09,
+    "max_accepted_actual_load_line_residual_V": 5.262287605667382e-09,
+    "max_accepted_terminal_kcl_A_per_um": 5.262047233687395e-16,
+    "max_accepted_electron_global_closure_ratio": 0.05097021612622675,
+    "last_attempt": {
+      "outer_V": 0.21427249670046664,
+      "attempted_outer_step_V": 1.0000000000010001e-05,
+      "converged": 0.0,
+      "retries": 11.0,
+      "inner_V": 0.19120361070684805,
+      "equation_residual": 3.3098918929843413e-10,
+      "load_line_residual_V": -4.213848441875223e-06
+    },
+    "BV_at_1e_minus4_A_per_um": null,
+    "reached_stop_current": false
+  },
+  "cmd": {
+    "accepted_points_including_zero": 13,
+    "attempts": 39,
+    "failed_attempts": 26,
+    "last_accepted": {
+      "outer_voltage_V": 0.21426249670046663,
+      "inner_voltage_V": 0.19119787157253917,
+      "current_total_A_per_um": 2.306462799848334e-09
+    },
+    "max_accepted_device_residual_inf": 9.75253410562833e-09,
+    "max_accepted_actual_load_line_residual_V": 5.262287605667382e-09,
+    "max_accepted_terminal_kcl_A_per_um": 5.262047233687395e-16,
+    "max_accepted_electron_global_closure_ratio": 0.05097021612622675,
+    "last_attempt": {
+      "outer_V": 0.21427249670046664,
+      "attempted_outer_step_V": 1.0000000000010001e-05,
+      "converged": 0.0,
+      "retries": 11.0,
+      "inner_V": 0.19120361070684805,
+      "equation_residual": 3.3098918929843413e-10,
+      "load_line_residual_V": -4.213848441875223e-06
+    },
+    "BV_at_1e_minus4_A_per_um": null,
+    "reached_stop_current": false
+  },
+  "cmd_execution_finished": true,
+  "cmd_exit_code": 5,
+  "runner_sha256": "c9bf5d0d786595304563b178975a5597de0d5661d120342cf261cb8b1a0a6372",
+  "same_frontend_for_check_and_run": true,
+  "generated_deck_bytes_equal_between_check_and_run": {
+    "0": true,
+    "1": true
+  },
+  "compared_complete_accepted_prefix_rows": 13,
+  "accepted_row_differences_excluding_output_vtk": [],
+  "accepted_point_counts_equal": true,
+  "compared_completed_attempt_prefix": 39,
+  "attempt_summary_differences": [],
+  "attempt_counts_equal": true,
+  "source": {
+    "head": "927ed2a1e5a4a3c3d22e7eefce0ffc537255991d",
+    "local_main": "87fc8f56e25ef39d1db8ddf09aee41d02631e71e",
+    "dirty": true,
+    "configuration": "windows-ucrt64-release",
+    "threads": 1
+  },
+  "inputs": {
+    "device.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "device_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+  },
+  "deck_comparison": {
+    "schema": "vela.bvmethods_cmd_deck_comparison.v1",
+    "excluded_output_only": [
+      "output_csv",
+      "runtime_log",
+      "sweep.vtk_prefix",
+      "sweep.vtk_field_data",
+      "sweep.write_state_file",
+      "sweep.initialization.diagnostic_csv"
+    ],
+    "documented_defaults": {
+      "sweep.vtk_bias_points": {
+        "value": [],
+        "reference": "src/simulation/DCSweep.cpp vtk_bias_points parser"
+      },
+      "sweep.external_circuit.current_direction": {
+        "value": 1.0,
+        "reference": "src/simulation/DCSweep.cpp:1768"
+      },
+      "sweep.external_circuit.initial_inner_voltage_V": {
+        "value": "sweep.start",
+        "reference": "src/simulation/DCSweep.cpp:1770"
+      }
+    },
+    "inactive_zero_stage_difference": {
+      "cmd_only_current_stop_A_per_um": 0.0013,
+      "baseline_measured_current_A_per_um": 0.0,
+      "singleton_bias_V": 0.0,
+      "reason": "The extra CMD current stop cannot change this one-point zero-current stage."
+    },
+    "state_chain": "Each stage01 must reference its own stage00 output, checked separately.",
+    "inputs": [
+      {
+        "field": "mesh_file",
+        "baseline_sha256": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+        "cmd_sha256": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+        "content_equal": true
+      },
+      {
+        "field": "node_doping_file",
+        "baseline_sha256": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+        "cmd_sha256": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+        "content_equal": true
+      },
+      {
+        "field": "materials_file",
+        "baseline_sha256": "df56400163e2441075c6b145078d8d05ba4d9f3e113f92ee157260b21869e971",
+        "cmd_sha256": "df56400163e2441075c6b145078d8d05ba4d9f3e113f92ee157260b21869e971",
+        "content_equal": true
+      }
+    ],
+    "stages": [
+      {
+        "index": 0,
+        "baseline_sha256": "7e27cfb613f4bf10a0be955ce3ac32024d181210019bed904ff0d4b38860de08",
+        "cmd_sha256": "f53a19056ce8d9c5295cb577cb33afe97e6575c75fb0544bbd3e50c7422a9700",
+        "differences": []
+      },
+      {
+        "index": 1,
+        "baseline_sha256": "7b32ae17d84b708d8e0f26f93ac6d88b9099d4e753ae9308a146b8793fa5e196",
+        "cmd_sha256": "8149dc2586b91a841e7134c3639370b56314b009ea3daa462991efb2988a2649",
+        "differences": []
+      }
+    ],
+    "equal": true
+  },
+  "zero_state_comparison": {
+    "h5_byte_equal": false,
+    "fields": {
+      "ElectrostaticPotential": {
+        "count": 2600,
+        "exact_equal": true
+      },
+      "eDensity": {
+        "count": 2600,
+        "exact_equal": true
+      },
+      "hDensity": {
+        "count": 2600,
+        "exact_equal": true
+      },
+      "DopingConcentration": {
+        "count": 2600,
+        "exact_equal": true
+      },
+      "SpaceCharge": {
+        "count": 2600,
+        "exact_equal": true
+      }
+    },
+    "hdf5_fields_exact_equal": true,
+    "hdf5_dataset_count": 10
+  },
+  "vtk_trajectory_comparison": {
+    "matched_accepted_state_files": 13,
+    "all_fields_exact_equal": true,
+    "points": [
+      {
+        "file": "stage01_0000_0V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0001_0.00524425V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0002_0.0124302V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0003_0.0240698V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0004_0.0431744V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0005_0.0658897V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0006_0.0869804V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0007_0.107285V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0008_0.127354V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0009_0.147368V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0010_0.167369V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0011_0.17737V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      },
+      {
+        "file": "stage01_0012_0.191198V.vtu",
+        "fields": {
+          "ElectrostaticPotential": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "eDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "hDensity": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "DopingConcentration": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          },
+          "SpaceCharge": {
+            "count": 2600,
+            "max_abs_difference": 0.0,
+            "exact_equal": true
+          }
+        }
+      }
+    ]
+  },
+  "last_failed_attempt_direction_analysis": {
+    "outer_V": 0.21427249670046664,
+    "iter": 39.0,
+    "inner_V": 0.19120359366222822,
+    "equation_residual": 3.323790911240273e-10,
+    "load_line_residual_V": -4.231969335410923e-06,
+    "raw_state_update_inf": 951.9342459760037,
+    "raw_state_update_index": 5542.0,
+    "raw_delta_inner_V": 4.194579338424419e-06,
+    "proposed_delta_inner_V": 1.7044619818644055e-08,
+    "accepted_alpha": 1.0,
+    "uniform_direction_scale": 0.0040634872876302314,
+    "dominant_packed_component": "hole QF at mesh node 342",
+    "doping": {
+      "node_id": "342",
+      "donors_cm3": "1.0458510945266877e+18",
+      "acceptors_cm3": "9.999999999999986e+17"
+    }
+  },
+  "final_state_comparison": {
+    "hdf5_fields_exact_equal": true,
+    "evidence": "final_state_h5diff.log"
+  },
+  "sidecar": {
+    "schema": "vela.sdevice_sidecar.v1",
+    "description": "Explicit qualified BVMethods numerical operator; physical laws and adaptive outer steps remain cmd/par inputs.",
+    "bvmethods_operator_profile": "bvmethods_tri3_qf",
+    "solver": {
+      "max_iter": 40,
+      "abstol": 1e-08,
+      "reltol": 0.0,
+      "line_search": true,
+      "warm_start": true,
+      "quasi_fermi_update_limit_V": 0.1,
+      "diagnostic_history": true,
+      "verbose": true,
+      "carrier_row_convergence": {
+        "mode": "report",
+        "eps_row": 0.001,
+        "min_source_scale": 1e-14,
+        "recovery": {
+          "mode": "off"
+        }
+      },
+      "global_continuity_closure": {
+        "mode": "report",
+        "source_floor": 1e-14,
+        "tolerance": 0.01
+      },
+      "continuity_row_scaling": {
+        "enabled": false
+      }
+    },
+    "sweep": {
+      "external_circuit": {
+        "solver": "coupled_newton",
+        "max_iterations": 40,
+        "residual_tolerance_V": 1e-06,
+        "coupled_equation_tolerance": 1e-08,
+        "coupled_filter_envelope_factor": 1000000000000.0,
+        "coupled_max_step_retries": 20,
+        "coupled_linear_solver": "direct_bordered",
+        "coupled_line_search_mode": "merit",
+        "coupled_continuation": {
+          "enabled": true,
+          "retry_from_accepted": true
+        }
+      }
+    }
+  },
+  "raw_cmd_sha256": "9ed13ba31d1465e305a323a84e7a882617c801c724eb9a81e895554b7fe86361",
+  "control_cmd_sha256": "998a7d2de76fef9388d6b6fed494ecf6fbc434351d9698ccf28a94cfbec96114",
+  "control_changes": [
+    "input/output path relocation",
+    "explicit basic-state Plot fields only"
+  ],
+  "configuration_scope": {
+    "temperature_K": 300,
+    "nodes": 2600,
+    "triangles": 5020,
+    "semiconductor_nodes": 2152,
+    "resistor_ohm_um": 10000000.0,
+    "outer_goal_V": 100000.0,
+    "stop_abs_current_A_per_um": 0.0013,
+    "BV_definition_abs_current_A_per_um": 0.0001,
+    "BTBT": "off",
+    "operator": "bvmethods_tri3_qf",
+    "statistics": "fermi_dirac_joyce_dixon",
+    "avalanche": "self_consistent_van_overstraeten_GradQF_local_ad",
+    "conservation_diagnostics": "carrier row and global closure report; not enforced",
+    "device_residual_inf_tolerance": 1e-08,
+    "load_line_residual_tolerance_V": 1e-06
+  },
+  "execution": {
+    "json": [
+      {
+        "index": 0,
+        "exit_code": 0,
+        "seconds": 9.515999999999622,
+        "config_sha256": "7e27cfb613f4bf10a0be955ce3ac32024d181210019bed904ff0d4b38860de08"
+      },
+      {
+        "index": 1,
+        "exit_code": 1,
+        "seconds": 1422.1409999999996,
+        "config_sha256": "7b32ae17d84b708d8e0f26f93ac6d88b9099d4e753ae9308a146b8793fa5e196"
+      }
+    ],
+    "check": {
+      "exit_code": 0,
+      "seconds": 0.7960000000002765,
+      "frontend_sha256": "47067ff281434dac4e141c0576ade2fc0b39e6f295c2f661b189b62dd1fcf02c"
+    },
+    "cmd": {
+      "exit_code": 5,
+      "seconds": 1574.8749999999982,
+      "frontend_sha256": "47067ff281434dac4e141c0576ade2fc0b39e6f295c2f661b189b62dd1fcf02c"
+    },
+    "cmd_stages": [
+      {
+        "index": 0,
+        "runner_exit_code": 0,
+        "goal_reached": true,
+        "accepted_points": 1,
+        "reached_voltages_V": {
+          "drain": 0.0,
+          "source": 0.0,
+          "gate": 0.0,
+          "substrate": 0.0
+        }
+      },
+      {
+        "index": 1,
+        "runner_exit_code": 1,
+        "goal_reached": false,
+        "accepted_points": 13,
+        "reached_voltages_V": {
+          "drain": 0.19119787157253917,
+          "source": 0.0,
+          "gate": 0.0,
+          "substrate": 0.0
+        }
+      }
+    ]
+  },
+  "tests": {
+    "cpp_dc_sweep": {
+      "cases": 120,
+      "assertions": 4477,
+      "passed": true
+    },
+    "cpp_step_policy": {
+      "cases": 6,
+      "assertions": 87,
+      "passed": true
+    },
+    "frontend_core": {
+      "cases": 83,
+      "skipped": 2,
+      "passed": true
+    },
+    "frontend_orchestrator": {
+      "cases": 29,
+      "skipped": 5,
+      "passed": true
+    },
+    "frontend_related": {
+      "cases": 70,
+      "skipped": 4,
+      "passed": true
+    },
+    "registered_bvmethods_cmd_profile": {
+      "ctest_selected": 1,
+      "passed": true
+    }
+  },
+  "qualification": "two entry paths agree; autonomous full BV not achieved",
+  "evidence_root": "build-release/bvmethods_cmd_e2e_20261025",
+  "limitations": [
+    "no new breakdown voltage: neither path reached 1e-4 A/um",
+    "current/vector/avalanche Plot fields and native NewtonPlot debug export are not qualified",
+    "source of low-bias Newton stagnation is not uniquely identified by matched entry paths",
+    "no new Sentaurus simulation in this run",
+    "no breakdown step-convergence qualification"
+  ]
+}

@@ -1,7 +1,33 @@
 # Vela Documentation
 
+- [BVMethods T470p 从零启动的自适应导数恢复试算，2026-10-26](validation/bvmethods_t470p_adaptive_bv_2026-10-26.md)：
+  277 个接受点推进至外压 5.79877 V；挂起日志查询造成内存压力，完整 BV 未完成，重跑已暂停。
+- [BVMethods 人口坐标、到边界步长与导数恢复试验，2026-10-26](validation/bvmethods_population_newton_trials_2026-10-26.md)：
+  人口列通过物理差分核验；直接全局正值缩步未通过，分阶段恢复完整导数后续算五点；电子闭合量与方程残差之和吻合，完整 BV 尚未通过验证。
+- [BVMethods 完整 RHS 下的线性化与人口更新控制，2026-10-26](validation/bvmethods_linearization_population_control_2026-10-26.md)：
+  两个检查点的六组 Release 控制；近似矩阵配人口候选达到原停止门与报告 RMS＜1，守恒报告仍有超线项，尚不构成完整 BV 资格。
+- [BVMethods 连续阶段 RHS 方向导数与有效线性系统，2026-10-26](validation/bvmethods_continuous_rhs_jv_2026-10-26.md)：
+  17 组人口扰动支持完整导数；该步连续有效矩阵与冻结迁移率／AV 导数控制相符，不能将两类矩阵混为同一基准。
+- [BVMethods 弱空穴线性化与人口保护联合核验，2026-10-26](validation/bvmethods_weak_hole_joint_2026-10-26.md)：
+  固定输运尺度解释行 311 RHS 放大；原生同态阶段重启改变矩阵，差异关联受保护人口列；40 轮人口控制仍未收敛。
+- [BVMethods 原生人口有限更新与弱空穴接受尺度，2026-10-26](validation/bvmethods_population_acceptance_2026-10-26.md)：
+  原生四步及 1% 正值保护、RMS 停止量实测；Vela 八步人口控制仍未收敛，四态同人口矩阵差异保留。
+- [BVMethods 原生阻尼配置对齐与失败归因，2026-10-26](validation/bvmethods_damping_failure_cause_2026-10-26.md)：
+  CMD 默认直接完整步；空穴 RHS／AV 源分解与 T470p、C560 同检查点复现，完整 BV 仍未通过。
+- [BVMethods 线搜索仅报告与完整步扫描，2026-10-26](validation/bvmethods_line_search_report_only_2026-10-26.md)：
+  同 Jacobian/RHS 的首点从 15 轮降至 3 轮；自主完整步扫描在 0.216002 V 外压停止，原验收门保持。
+- [BVMethods PARDISO、Poisson 与前五个联立点，2026-10-25](validation/bvmethods_pardiso_first5_2026-10-25.md)：
+  显式原生 PARDISO 新运行；Vela 后端切换、七轮 Poisson、五点迭代及 15 套同态 Jacobian/RHS 对照。
+- [BVMethods 历史完整扫描核对、极低人口修复与重新扫描，2026-10-25](validation/bvmethods_full_recovery_2026-10-25.md)：
+  区分旧检查点路径和当前自主入口；修正极端 SG 比值/指数中间量以及 DOS 缩放统计精度，分别记录自主和重启验证。
+- [BVMethods 关闭 QF 限幅与同态原始方向核验，2026-10-25](validation/bvmethods_qf_direction_2026-10-25.md)：
+  对照历史测试，保留线搜索和验收门；记录弱少子方向、独立线性复算和极低浓度自动微分失效定位。
+- [Windows h5py ROS3 DLL 修复，2026-10-25](validation/h5py_ros3_dll_repair_2026-10-25.md)：
+  修复 h5py / HDF5 功能不匹配；原 8 项失败全部通过，完整 Release 为 1109 通过 / 0 失败 / 4 项参考数据跳过。
+- [BVMethods JSON / CMD 三步一致性验证，2026-10-25](validation/bvmethods_cmd_e2e_2026-10-25.md)：
+  最新 Release、实际 CMD check 与自主执行；13 个接受点 / 39 次尝试和基础场精确一致，完整 BV 仍在低偏最小步长处失败。
 - [BVMethods Release 完整 BV 扫描，2026-10-25](validation/bvmethods_full_profile_2026-10-25.md)：
-  自主 Poisson 起步及严格残差续算达到停扫电流；BV 约 6.67049 V，内压步长控制仍为私有驱动。
+  当轮自主 Poisson 起步及严格残差续算达到停扫电流；BV 约 6.67049 V，采用私有续算驱动。
 - [BVMethods 显式算子契约](bvmethods_operator_contract.md)：
   自主 QF 状态、统一统计／FD-BGN、SG 算术、残差／矩阵／端口入口及适用边界。
 - [BVMethods 显式算子接入验证，2026-10-24](validation/bvmethods_production_profile_2026-10-24.md)：

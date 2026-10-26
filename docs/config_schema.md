@@ -510,6 +510,10 @@ Selection applies to shared auxiliary solves too; it does not select the
 separate electrothermal backend or change assembly, nonlinear updates or
 acceptance criteria. This is not extended-precision solving or a guarantee of
 Sentaurus-equivalent results. Constraint-elimination variants are not included.
+An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
+`direct_bordered` load-line matrix and its refinement corrections, including
+the direct path of `auto`; a PARDISO error is returned without backend fallback.
+The explicitly selected `direct_bordered_qr` policy retains its QR preference.
 In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate
 qualification. Runtime paths belong in local environment configuration.
@@ -1341,6 +1345,15 @@ Notes:
   latter preserves the linearized Newton direction and is intended for strongly
   nonlinear avalanche branch correction; it does not relax convergence or
   forcing tolerances.
+- The explicit BVMethods CMD sidecar profile defaults both QF cap fields to
+  `0`, overriding any implicit cap inherited from warm-start emission. Explicit
+  sidecar cap values remain available for comparisons. This profile rule does
+  not alter the separate load-line inner-voltage update control or the
+  residual-based line search. See the [operator contract](bvmethods_operator_contract.md).
+- In the coupled external-resistor corrector, an active QF cap uniformly
+  scales the full device/inner-voltage direction before residual line search.
+  Setting both caps to zero removes that scaling but retains raw-update
+  diagnostics, line search and the circuit's separate voltage-update control.
 - For `uniform_trust_region`, `quasi_fermi_trust_region_growth_factor` and
   `quasi_fermi_trust_region_max_multiplier` optionally expand the physical
   update radius after a boundary-limited step. Expansion occurs only when the
@@ -2700,6 +2713,26 @@ load-line convergence tolerances. The filter controls are
 applied independently to the device-equation and load-line residual blocks;
 a large load-line residual cannot authorize growth of the device residual.
 
+The opt-in `report_only` mode evaluates the `merit` backtracking sequence
+starting at alpha=1 and records `reported_alpha` (zero if no trial qualifies),
+but applies the full alpha=1 step even when merit increases. It ignores
+`coupled_damping_factor`; separate voltage and device update limits still
+apply. A nonfinite or model-invalid full step fails the corrector without
+substituting a damped trial. Final residual, load and physical acceptance
+gates are unchanged. The coupled update diagnostic CSV also records the full
+step merit and raw/limited update sizes. Shadow trial evaluations add cost;
+this mode is intended for controlled nonlinear investigations, not a new default.
+
+`full_step` evaluates and applies only alpha=1, without shadow backtracking.
+It retains the same independent update limits and invalid-state/terminal gates.
+The BVMethods CMD profile now defaults to this mode for Sentaurus
+`LineSearchDamping=1` (also the vendor default) and a `NotDamped` threshold
+at least as large as the effective iteration budget. Math settings are parsed
+and local Coupled settings take precedence. Enabled vendor line search or
+Bank–Rose damping is rejected by this profile because those algorithms are
+not implemented; it is not silently mapped to Vela's merit rule. Explicit
+sidecar modes remain diagnostic overrides. The global C++ default is unchanged.
+
 Scalar coupled convergence is followed by a physical acceptance check at the
 actual packed state and inner bias. The configured `carrier_row_convergence`
 and `global_continuity_closure` modes apply here as in the standard Newton path;
@@ -2715,6 +2748,32 @@ Global closure retains the standard source-floor qualification rule; the JSON
 records each carrier's `global_*_qualified` flag. An unqualified carrier does
 not establish a strict independent ratio pass. Commas and quotes in diagnostics
 are escaped as CSV fields so subsequent columns remain aligned.
+
+`sweep.external_circuit.coupled_continuation` explicitly enables a numerical
+continuation option for `solver: coupled_newton`:
+
+```json
+"coupled_continuation": {
+  "enabled": true,
+  "retry_from_accepted": true,
+  "inner_step_control": {"max_step_V": 0.02}
+}
+```
+
+After a failed secant seed, `retry_from_accepted` retries the same external
+voltage from the last accepted state before shrinking the external step.
+Every attempt retains the same Newton, load-line and physical acceptance gates.
+The accepted inner/outer voltage secant bounds the predicted inner increment.
+The cap is resolved from `inner_step_control.max_step_V`, or a normalized
+`max_step_fraction` with explicit device-voltage endpoints, then an explicitly
+provided `max_inner_voltage_step_V`. A resistor sweep's external `MaxStep`
+does not uniquely specify a device-voltage cap. When no applicable value is
+available, the fallback is 0.02 V; this is an empirical default, not a universal
+device scale. Its source and fallback reason are recorded in each accepted
+point's `validation_diagnostics`. See the
+[resolution contract](bvmethods_operator_contract.md) for details. A cap
+requiring a step below the configured external minimum terminates the advance;
+it is not silently exceeded. This option is disabled by default.
 
 `sweep.external_circuit.coupled_update_convergence` is an opt-in classical
 isothermal DD stopping experiment for `solver: coupled_newton`:
