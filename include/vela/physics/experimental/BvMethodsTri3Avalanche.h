@@ -3,6 +3,7 @@
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include <array>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace vela::experimental {
@@ -19,6 +20,18 @@ inline AvJet avLog(const AvJet& x)
     AvJet y(std::log(x.value));
     for (std::size_t k=0;k<y.derivative.size();++k) y.derivative[k]=x.derivative[k]/x.value;
     return y;
+}
+
+inline AvJet avLogRatio(const AvJet& numerator,const AvJet& denominator)
+{
+    // Keep the qualified near-equilibrium arithmetic. Outside the safe
+    // ratio range, logs and their derivatives remain representable even
+    // when forming the density quotient (or its derivative) does not.
+    const double ratio=numerator.value/denominator.value;
+    if(ratio>=std::sqrt(std::numeric_limits<double>::min()) &&
+       ratio<=std::sqrt(std::numeric_limits<double>::max()))
+        return avLog(numerator/denominator);
+    return avLog(numerator)-avLog(denominator);
 }
 
 inline AvJet avNorm(const std::array<AvJet,2>& v)
@@ -52,6 +65,17 @@ inline AvJet avBernoulli(const AvJet& x)
     }
     if(x.value<-50.) return -x/(AvJet(1)-detail::dualExp(x));
     return x/detail::dualExpm1(x);
+}
+
+inline AvJet avSgFlux(const AvJet& coefficient,const AvJet& from,const AvJet& to,
+                     const AvJet& delta,const AvJet& argument)
+{
+    // B(-a)=exp(a)B(a), a=log(to/from)+delta. The two Bernoulli
+    // terms cannot nearly cancel for |delta|>50, and avoid both an
+    // overflowing expm1(delta) and loss of the tiny endpoint derivative.
+    if(std::abs(delta.value)>50.)
+        return coefficient*(from*avBernoulli(-argument)-to*avBernoulli(argument));
+    return coefficient*to*avBernoulli(argument)*detail::dualExpm1(delta);
 }
 
 struct AvCoefficient {
@@ -98,9 +122,8 @@ inline std::array<AvJet,2> avParticleCurrentWithoutMobility(
         if(!(length>0.))throw std::invalid_argument("Degenerate AV edge");
         t[edge]={dx/length,dy/length};
         const auto delta=AvJet(sign/thermalVoltage)*(qf[i]-qf[r]);
-        const auto argument=avLog(density[i]/density[r])+delta;
-        j[edge]=AvJet(-sign*thermalVoltage/length)*density[i]
-                 *avBernoulli(argument)*detail::dualExpm1(delta);
+        const auto argument=avLogRatio(density[i],density[r])+delta;
+        j[edge]=avSgFlux(AvJet(-sign*thermalVoltage/length),density[r],density[i],delta,argument);
         ++edge;
     }
     const double determinant=t[0][0]*t[1][1]-t[0][1]*t[1][0];

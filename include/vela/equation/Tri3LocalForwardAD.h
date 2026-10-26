@@ -70,11 +70,12 @@ inline Tri3LocalForwardDual operator/(
     const Tri3LocalForwardDual& rhs)
 {
     Tri3LocalForwardDual result(lhs.value / rhs.value);
-    const Real denominator = rhs.value * rhs.value;
     for (std::size_t i = 0; i < result.derivative.size(); ++i) {
+        // d(a/b) = (da - (a/b) db)/b. Squaring b can underflow or
+        // overflow even when the quotient and all derivatives are finite
+        // (notably for depleted carrier-density ratios).
         result.derivative[i] =
-            (lhs.derivative[i] * rhs.value -
-             lhs.value * rhs.derivative[i]) / denominator;
+            (lhs.derivative[i] - result.value * rhs.derivative[i]) / rhs.value;
     }
     return result;
 }

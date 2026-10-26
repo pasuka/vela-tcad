@@ -41,9 +41,9 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
         const auto j=(k+1)%3;
         const auto thermal=AvJet(thermalVoltage_V)*einsteinFactor[k];
         const auto delta=AvJet(electron?1.:-1.)*(quasiFermi_V[j]-quasiFermi_V[k])/thermal;
-        const auto argument=avLog(density_cm3[j]/density_cm3[k])+delta;
-        const auto flux=AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
-            *thermal*density_cm3[j]*avBernoulli(argument)*detail::dualExpm1(delta);
+        const auto argument=avLogRatio(density_cm3[j],density_cm3[k])+delta;
+        const auto flux=avSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
+            *thermal,density_cm3[k],density_cm3[j],delta,argument);
         out.edgeFlux_per_cm_s[k]=flux;
         out.nodeFlux_per_cm_s[k]=out.nodeFlux_per_cm_s[k]+flux;
         out.nodeFlux_per_cm_s[j]=out.nodeFlux_per_cm_s[j]-flux;

@@ -7,6 +7,24 @@
 using vela::experimental::JoyceDixonStatistics;
 using Catch::Approx;
 
+TEST_CASE("Joyce-Dixon DOS-scaled dilute density keeps a smooth inverse and slope",
+          "[carrier_statistics][joyce_dixon]")
+{
+    const double dos=3.104657033455896e19;
+    for(double eta:{-700.,-731.,-750.}){
+        const double value=JoyceDixonStatistics::density(eta,dos);
+        REQUIRE(std::isnormal(value));
+        REQUIRE(JoyceDixonStatistics::inverseDensity(value,dos)==Approx(eta).margin(2e-12));
+        const double slope=JoyceDixonStatistics::densityDerivativeEta(eta,dos);
+        const double h=1e-3;
+        const double fd=(JoyceDixonStatistics::density(eta+h,dos)-JoyceDixonStatistics::density(eta-h,dos))/(2*h);
+        REQUIRE(fd/slope==Approx(1.).epsilon(2e-7));
+        REQUIRE(JoyceDixonStatistics::densitySlopeFromPopulation(value,dos)/value==Approx(1.));
+    }
+    REQUIRE(std::exp(-750.)==0.); // The dimensionless intermediate underflows.
+    REQUIRE(JoyceDixonStatistics::density(-750.,dos)>0.); // The physical population does not.
+}
+
 TEST_CASE("Experimental Joyce-Dixon contract is monotone and invertible",
           "[carrier_statistics][joyce_dixon]")
 {
@@ -69,7 +87,24 @@ TEST_CASE("Experimental statistics and FD-BGN recover measured reference states"
 }
 
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/core/PhysicalConstants.h"
 #include "vela/physics/BandgapNarrowing.h"
+TEST_CASE("Joyce-Dixon public QF mapping remains differentiable beyond normalized underflow", "[bvmethods_profile]")
+{
+    using namespace vela;
+    const CarrierStatisticsConfig cfg{"fermi_dirac_joyce_dixon"};
+    const double dos=3.104657033455896e19,ni=1.46e10,vt=constants::Vt_300,psi=.313;
+    for(double eta:{-731.,-750.}){
+        const double fp=psi+vt*(eta-std::log(ni/dos));
+        const double p=holeDensity(ni,dos,psi,fp,vt,cfg);
+        REQUIRE(std::isnormal(p));
+        REQUIRE(holeQuasiFermiPotential(ni,dos,psi,p,vt,cfg)==Approx(fp).margin(2e-13));
+        const double h=1e-6;
+        const double fd=(holeDensity(ni,dos,psi,fp+h,vt,cfg)-holeDensity(ni,dos,psi,fp-h,vt,cfg))/(2*h);
+        REQUIRE(fd/(holeDensityDerivativeEta(ni,dos,psi,fp,vt,cfg)/vt)==Approx(1.).epsilon(2e-7));
+    }
+}
+
 TEST_CASE("Joyce-Dixon public density and FD-BGN dispatch use one inverse", "[bvmethods_profile]")
 {
     using namespace vela;
