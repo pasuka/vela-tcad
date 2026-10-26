@@ -25,14 +25,6 @@
     {
       "id": "W102",
       "severity": "warning",
-      "line": 38,
-      "section": "Math",
-      "text": "Notdamped=100",
-      "message": "Math keyword 'Notdamped' is recorded and ignored (no Vela equivalent)"
-    },
-    {
-      "id": "W102",
-      "severity": "warning",
       "line": 44,
       "section": "Math",
       "text": "Transient=BE",
@@ -100,6 +92,7 @@
   },
   "current_plot": {"entries": []},
   "math": {
+    "not_damped": 100,
     "iterations": 20,
     "digits": 5,
     "rel_err_control": true,
@@ -116,7 +109,6 @@
     "exit_on_failure": false,
     "number_of_threads": 1,
     "ignored": [
-      {"keyword": "Notdamped", "value": "100", "line": 38, "finding_id": "W102"},
       {"keyword": "Transient", "value": "BE", "line": 44, "finding_id": "W102"}
     ]
   },

@@ -35,6 +35,8 @@ struct CoupledLoadLineConfig {
     Real maxVoltageUpdate_V = 1.0;
     bool applyDeviceUpdateLimit = true;
     std::string lineSearchMode = "merit";
+    // report_only evaluates the merit backtracking policy for diagnostics,
+    // but applies alpha=1. Separate device/voltage limits remain explicit.
     Real filterGamma = 1.0e-4;
     /// Maximum growth of each residual block relative to its solve-entry
     /// scale. A large circuit residual must never relax the device-PDE cap,
@@ -186,6 +188,8 @@ struct CoupledLoadLineResult {
         Real rawVoltageUpdate_V = 0.0;
         Real limitedStateUpdateNorm = 0.0;
         Real acceptedAlpha = 0.0;
+        Real reportedAlpha = 0.0;
+        Real fullStepMerit = std::numeric_limits<Real>::infinity();
         Real bestTrialMerit = std::numeric_limits<Real>::infinity();
         Real bestTrialEquationResidualNorm =
             std::numeric_limits<Real>::infinity();
@@ -285,10 +289,12 @@ public:
                 "CoupledLoadLineNewton: dampingFactor must not exceed 1.");
         }
         if (config_.lineSearchMode != "merit" &&
+            config_.lineSearchMode != "full_step" &&
+            config_.lineSearchMode != "report_only" &&
             config_.lineSearchMode != "residual_filter") {
             throw std::invalid_argument(
                 "CoupledLoadLineNewton: lineSearchMode must be 'merit' or "
-                "'residual_filter'.");
+                "'residual_filter', 'full_step', or 'report_only'.");
         }
         if (config_.linearSolver != "schur" &&
             config_.linearSolver != "direct_bordered" &&
@@ -439,7 +445,8 @@ public:
                     result.failureReason);
                 if (!updateSolved &&
                     (config_.linearSolver == "direct_bordered" ||
-                     config_.linearSolver == "direct_bordered_qr")) {
+                     config_.linearSolver == "direct_bordered_qr" ||
+                     LinearSolver::selectedBackend() == "pardiso_mkl")) {
                     if (result.failureReason.empty()) {
                         result.failureReason =
                             "direct bordered coupled Jacobian solve failed";
@@ -604,7 +611,11 @@ public:
             result.trace.back().proposedVoltageUpdate_V = deltaVoltage;
 
             bool accepted = false;
-            Real alpha = config_.dampingFactor;
+            const bool reportOnly = config_.lineSearchMode == "report_only";
+            const bool fullStepMode = reportOnly || config_.lineSearchMode == "full_step";
+            ArclengthState fullStep;
+            bool fullStepValid = false;
+            Real alpha = fullStepMode ? 1.0 : config_.dampingFactor;
             for (int lineSearch = 0;
                  lineSearch <= config_.maxLineSearchSteps;
                  ++lineSearch) {
@@ -622,6 +633,14 @@ public:
                     const Real trialMerit = normalizedMerit(
                         infinityNorm(trialF), trialLoadResidual);
                     const Real trialEquationResidual = infinityNorm(trialF);
+                    if (fullStepMode && lineSearch == 0) {
+                        result.trace.back().fullStepMerit = trialMerit;
+                        fullStepValid = trial.x.allFinite() &&
+                            std::isfinite(trial.lambda) && trialF.allFinite() &&
+                            std::isfinite(trialMerit);
+                        if (!fullStepValid) break;
+                        fullStep = trial;
+                    }
                     if (trialMerit < result.trace.back().bestTrialMerit) {
                         Eigen::Index trialResidualIndex = -1;
                         if (trialF.size() > 0)
@@ -652,7 +671,8 @@ public:
                         try {
                             CoupledLoadLineResult::IterationTrace::TrialAudit audit;
                             audit.alpha = alpha;
-                            audit.accepted = std::isfinite(trialMerit) && acceptedByPolicy;
+                            audit.accepted = std::isfinite(trialMerit) &&
+                                (fullStepMode ? lineSearch == 0 : acceptedByPolicy);
                             audit.appliedStateUpdate = trial.x - result.state.x;
                             audit.appliedVoltageUpdate_V = trial.lambda - result.state.lambda;
                             audit.predictedDeviceResidual = f + auditJacobian * audit.appliedStateUpdate +
@@ -668,7 +688,10 @@ public:
                             // Audit allocation must not reject a valid trial.
                         }
                     }
-                    if (std::isfinite(trialMerit) && acceptedByPolicy) {
+                    if (std::isfinite(trialMerit) &&
+                        (acceptedByPolicy || (fullStepMode && !reportOnly))) {
+                        if (acceptedByPolicy) result.trace.back().reportedAlpha = alpha;
+                        if (fullStepMode) break;
                         if (config_.updateConvergence.mode != "off") {
                             try {
                                 result.updateError = updateErrorEvaluator_(result.state.x,
@@ -684,14 +707,28 @@ public:
                         break;
                     }
                 } catch (const std::exception&) {
+                    if (fullStepMode && lineSearch == 0) break;
                     // Backtracking will try a smaller finite state.
                 }
                 alpha *= 0.5;
             }
+            if (fullStepMode && fullStepValid) {
+                if (config_.updateConvergence.mode != "off") {
+                    try {
+                        result.updateError = updateErrorEvaluator_(result.state.x,
+                            rawMetricDirection, fullStep.x, fullStep.lambda,
+                            rawMetricVoltageDirection);
+                    } catch (const std::exception&) { result.updateError = {}; }
+                }
+                result.state = std::move(fullStep);
+                result.trace.back().acceptedAlpha = 1.0;
+                accepted = true;
+            }
             if (!accepted) {
                 const auto& trace = result.trace.back();
                 result.failureReason =
-                    "coupled line search rejected update; proposed_delta_inner_V=" +
+                    std::string(fullStepMode ? "coupled full step invalid; proposed_delta_inner_V=" :
+                    "coupled line search rejected update; proposed_delta_inner_V=") +
                     diagnosticReal(trace.proposedVoltageUpdate_V) +
                     "; best_trial_equation_residual=" +
                     diagnosticReal(trace.bestTrialEquationResidualNorm) +
@@ -1036,6 +1073,21 @@ private:
                 backendDiagnostics.emplace_back("spqr_failed");
             }
         }
+        // An explicit PARDISO selection must reach the full bordered matrix,
+        // including refinement solves, rather than only auxiliary device solves.
+        // Keep the historical default and the explicit QR policy unchanged.
+        std::unique_ptr<LinearSolver> pardiso;
+        if (config_.linearSolver != "direct_bordered_qr" &&
+            LinearSolver::selectedBackend() == "pardiso_mkl") {
+            try {
+                pardiso = std::make_unique<LinearSolver>("pardiso_mkl");
+                scaledUpdate = pardiso->solve(augmented, rhs);
+                recordCandidate("pardiso_mkl", augmented, scaledUpdate);
+            } catch (const std::exception& error) {
+                failureReason = std::string("direct bordered PARDISO failed: ") + error.what();
+                return false;
+            }
+        }
         Eigen::SparseLU<SparseMatrixd> lu;
         if (scaledUpdate.size() != n + 1)
             lu.compute(augmented);
@@ -1165,16 +1217,23 @@ private:
             constexpr Real backwardTolerance = 1.0e-10;
             if (defect.backwardMax > backwardTolerance) {
                 Eigen::SparseLU<SparseMatrixd> correctionLu;
-                correctionLu.compute(augmented);
-                if (correctionLu.info() != Eigen::Success) {
+                if (!pardiso) correctionLu.compute(augmented);
+                if (!pardiso && correctionLu.info() != Eigen::Success) {
                     failureReason = "direct bordered refinement factorization failed";
                     return false;
                 }
                 for (int k = 0; k < config_.directRefinementSteps &&
                      defect.backwardMax > backwardTolerance; ++k) {
-                    const VectorXd correction = correctionLu.solve(
-                        (-defect.values.cwiseProduct(rowScale)).eval());
-                    if (correctionLu.info() != Eigen::Success || !correction.allFinite()) {
+                    const VectorXd correctionRhs = -defect.values.cwiseProduct(rowScale);
+                    VectorXd correction;
+                    try {
+                        correction = pardiso ? pardiso->solve(augmented, correctionRhs)
+                                             : VectorXd(correctionLu.solve(correctionRhs));
+                    } catch (const std::exception& error) {
+                        failureReason = std::string("direct bordered refinement failed: ") + error.what();
+                        return false;
+                    }
+                    if ((!pardiso && correctionLu.info() != Eigen::Success) || !correction.allFinite()) {
                         failureReason = "direct bordered refinement correction failed";
                         return false;
                     }

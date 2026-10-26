@@ -703,7 +703,7 @@ def parse_current_plot_block(block: Block, ctx: ParseContext) -> dict:
 
 # --- Math ----------------------------------------------------------------------------
 
-_MATH_RECORDED = {"notdamped", "transient", "method", "submethod", "cnormprint", "wallclock",
+_MATH_RECORDED = {"transient", "method", "submethod", "cnormprint", "wallclock",
                   "checkundefinedmodels", "parameterinheritance", "cylindrical", "rhsmin", "rhsfactor",
                   "rhsandupdateconvergence", "extendedprecision", "digits_dg", "errref_dg",
                   "numberofsolverthreads", "acmethod", "acsubmethod", "iterations_dg", "damped",
@@ -738,6 +738,14 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
             text = assignment_text(key, value)
             if base == "iterations":
                 math["iterations"] = parse_int(value, "Iterations")
+            elif base == "linesearchdamping":
+                math["line_search_damping"] = parse_number(value, "LineSearchDamping")
+                if not 0 < math["line_search_damping"] <= 1:
+                    raise SyntaxIssue("LineSearchDamping must be in (0,1]", key.line, text)
+            elif base == "notdamped":
+                math["not_damped"] = parse_int(value, "NotDamped")
+                if math["not_damped"] < 0:
+                    raise SyntaxIssue("NotDamped must be nonnegative", key.line, text)
             elif base == "digits":
                 math["digits"] = coerce_value(value)
             elif base == "relerrcontrol":

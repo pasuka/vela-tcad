@@ -14,6 +14,7 @@ import re
 
 from .. import schema_validator as sv
 from ..resources import resource_root
+from .bvmethods import apply_bvmethods_profile
 
 REPO = resource_root()
 SCHEMA_ID = "vela.stage_plan.v1"
@@ -455,6 +456,11 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
     for ignored in math_cfg["ignored"]:
         _decision(decisions, ignored["keyword"], ignored["value"], None, None,
                   "Recorded and ignored", ignored["finding_id"])
+    if not (sidecar or {}).get("bvmethods_operator_profile"):
+        for key in ("line_search_damping", "not_damped"):
+            if key in math_cfg:
+                _decision(decisions, key, math_cfg[key], None, None,
+                          "Vendor damping is not implemented by the legacy emitter", "W201")
     threads = options.threads if options.threads is not None else math_cfg["number_of_threads"]
     plan = {"schema": SCHEMA_ID, "cmd": {"path": cmd_name, "sha256": sha, "execution_ir": "execution_ir.json"},
             "work_dir": work_dir, "exit_on_failure": options.exit_on_failure or math_cfg["exit_on_failure"],
@@ -676,7 +682,10 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
         deck["sweep"] = sweep
         if sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
-            _merge(deck, {k: v for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization")},
+            overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile")}
+            if "external_circuit" not in sweep and "sweep" in overrides:
+                overrides["sweep"].pop("external_circuit", None)
+            _merge(deck, overrides,
                    "", entry["sidecar_overrides"], decisions, index)
             if gradient := sidecar.get("high_field_gradient_discretization"):
                 mobility = deck["solver"]["mobility"]
@@ -703,6 +712,15 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 _decision(decisions, "avalanche_current_support_profile", profile,
                           "solver.impact_ionization + mesh_geometry", bundle,
                           "Explicit atomic discretization; coefficients and physical models unchanged", "W207", index)
+            if sidecar.get("bvmethods_operator_profile"):
+                try:
+                    bundle = apply_bvmethods_profile(deck, ir, entry, sidecar, source_stage=source)
+                except ValueError as error:
+                    raise DeckEmitError("E409", file="sidecar", detail=str(error)) from error
+                entry["sidecar_overrides"].append("bvmethods_operator_profile")
+                _decision(decisions, "bvmethods_operator_profile", sidecar["bvmethods_operator_profile"],
+                          "solver.coupled_operator", bundle,
+                          "Explicit qualified operator/coordinate profile; physical coefficients unchanged", "W207", index)
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]

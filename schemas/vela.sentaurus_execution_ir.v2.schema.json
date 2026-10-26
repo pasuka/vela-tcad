@@ -301,6 +301,8 @@
       "description": "Math{} with Table 211 defaults filled in. Values are kept in Sentaurus semantics; the deck emitter maps them.",
       "properties": {
         "iterations": {"type": "integer", "minimum": 1, "default": 50},
+        "line_search_damping": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "not_damped": {"type": "integer", "minimum": 0},
         "digits": {"type": "number", "default": 5},
         "rel_err_control": {"type": "boolean", "default": true},
         "err_ref_electron_cm3": {"type": ["number", "null"]},
@@ -373,6 +375,8 @@
           "statement_index": {"type": "integer", "minimum": 0},
           "equations": {"type": "array", "items": {"type": "string"}},
           "iterations": {"type": ["integer", "null"]},
+          "line_search_damping": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "not_damped": {"type": "integer", "minimum": 0},
           "goal": {"$ref": "#/definitions/goal"},
           "t_control": {"$ref": "#/definitions/t_control"},
           "current_mode_contacts": {
@@ -535,6 +539,8 @@
         "line": {"$ref": "#/definitions/line"},
         "equations": {"type": "array", "items": {"type": "string"}, "description": "coupled: equation names as written (Poisson, Electron, Hole, eQuantumPotential, ...)."},
         "iterations": {"type": ["integer", "null"]},
+        "line_search_damping": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "not_damped": {"type": "integer", "minimum": 0},
         "options": {"type": "object", "description": "Other Coupled(...) options recorded verbatim, e.g. LineSearchDamping."},
         "goal": {"$ref": "#/definitions/goal"},
         "t_control": {"$ref": "#/definitions/t_control"},

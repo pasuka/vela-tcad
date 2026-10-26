@@ -1,6 +1,7 @@
 """SDevice frontend gates and stage execution (WP5)."""
 from __future__ import annotations
 import json
+import math
 import os
 from pathlib import Path
 import queue
@@ -192,8 +193,11 @@ class DeviceRun:
                     self.log("STAGE", f"Begin stage {index}: {stage['kind']}")
                     status, records, stderr = self._execute(index, runner)
                     reached, voltages = self._reached(index, records)
+                    stopped = self._current_break_reached(index, records)
                     runtime = {"index": index, "runner_exit_code": status, "goal_reached": reached,
                                "accepted_points": len(records), "reached_voltages_V": voltages}
+                    if stopped:
+                        runtime["stop_criterion_reached"] = "current"
                     self.manifest["stages"].append(runtime)
                     self.log("STAGE", json.dumps(runtime))
                     if self.interrupted:
@@ -204,7 +208,7 @@ class DeviceRun:
                         raise RunError("E503", f"Solver terminated abnormally (exit code {status})", stderr=stderr)
                     if index == 0 and (status != 0 or not records):
                         raise RunError("E501", "Equilibrium stage failed", stderr=stderr)
-                    if (status != 0 or not reached) and self.result.stage_plan["exit_on_failure"]:
+                    if (status != 0 or not (reached or stopped)) and self.result.stage_plan["exit_on_failure"]:
                         raise RunError("E502", f"Stage {index} failed with ExitOnFailure", stderr=stderr)
                     if not records or not (self.work / stage["output_state"]).is_file():
                         raise RunError("E503", f"Stage {index} produced no accepted state for the next stage", stderr=stderr)
@@ -384,3 +388,22 @@ class DeviceRun:
             return abs(float(last["current_total_A_per_um"]) - sweep["stop_current_A_per_um"]) <= 1e-10, voltages
         outer = float(last.get("outer_voltage_V") or last["bias_V"])
         return abs(outer - stage["electrode_voltages_goal_V"][contact]) <= 1e-12, voltages
+
+    def _current_break_reached(self, index, records):
+        """A configured current stop completes a stage without reaching its goal."""
+        if not records:
+            return False
+        last = records[-1]
+        for criterion in self.result.stage_plan["stages"][index].get("break", {}).get("current", []):
+            contact = criterion["contact"]
+            value = last.get(f"contact_{contact}_total_A_per_um")
+            if value in (None, "") and last.get("current_contact") == contact:
+                value = last.get("current_total_A_per_um")
+            if value in (None, "") or not math.isfinite(float(value)):
+                continue
+            value = float(value)
+            if ("abs_val_A_per_um" in criterion and abs(value) >= criterion["abs_val_A_per_um"] or
+                    "min_val_A_per_um" in criterion and value <= criterion["min_val_A_per_um"] or
+                    "max_val_A_per_um" in criterion and value >= criterion["max_val_A_per_um"]):
+                return True
+        return False

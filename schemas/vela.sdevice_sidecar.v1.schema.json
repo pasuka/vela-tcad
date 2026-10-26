@@ -16,6 +16,12 @@
       "enum": ["element_edge_sg_gss_laux", "legacy_cell_reconstructed"],
       "description": "Explicit atomic PN2D BV current/source/node-volume discretization bundle; does not change avalanche coefficients or model. Requires current-density GradQF avalanche. The element-edge profile requires a qualified non-obtuse mesh."
     },
+    "bvmethods_operator_profile": {
+      "enum": [
+        "bvmethods_tri3_qf"
+      ],
+      "description": "Explicit qualified 300 K Tri3 numerical operator and Fermi approximation; cmd/par retain physical laws and coefficients. Basic state Plot fields only."
+    },
     "description": {"type": "string"},
     "apply_to": {
       "type": "array",
@@ -51,11 +57,133 @@
     },
     "sweep": {
       "type": "object",
-      "description": "Only sweep.diagnostics may be overridden; contact, start/stop/step, goals and output names belong to the cmd.",
-      "required": ["diagnostics"],
+      "description": "Numerical diagnostics and external-circuit solver controls only; physical resistance, electrodes, goals, step schedule and output names remain owned by cmd.",
+      "anyOf": [{"required": ["diagnostics"]}, {"required": ["external_circuit"]}],
       "additionalProperties": false,
       "properties": {
-        "diagnostics": {"type": "object", "additionalProperties": true}
+        "diagnostics": {"type": "object", "additionalProperties": true},
+        "external_circuit": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "solver": {
+              "enum": [
+                "nested_scalar",
+                "coupled_newton"
+              ]
+            },
+            "max_iterations": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "residual_tolerance_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "max_inner_voltage_step_V": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "coupled_equation_tolerance": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "coupled_filter_envelope_factor": {
+              "type": "number",
+              "minimum": 1
+            },
+            "coupled_linear_solver": {
+              "enum": [
+                "direct_bordered",
+                "direct_bordered_qr",
+                "schur",
+                "full_fd"
+              ]
+            },
+            "coupled_line_search_mode": {
+              "enum": [
+                "merit",
+                "residual_filter",
+                "report_only",
+                "full_step"
+              ]
+            },
+            "coupled_update_convergence": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "off",
+                    "report",
+                    "enforce"
+                  ]
+                },
+                "digits": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                "potential_reference_V": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "electron_reference_cm3": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "hole_reference_cm3": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "contact_reference_V": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "diagnostic_csv": {
+                  "type": "string"
+                }
+              }
+            },
+            "coupled_max_step_retries": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "coupled_continuation": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "retry_from_accepted": {
+                  "type": "boolean"
+                },
+                "inner_step_control": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_step_V": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "max_step_fraction": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1
+                    },
+                    "initial_voltage_V": {
+                      "type": "number"
+                    },
+                    "goal_voltage_V": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "runtime_log": {
