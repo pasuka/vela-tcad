@@ -1,0 +1,198 @@
+{
+  "schema": "vela.four_switch_full_bv.completed.v1",
+  "date": "2026-10-27",
+  "complete_BV": true,
+  "simulation_exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 6781.928073301999,
+  "accepted_points": 103,
+  "completed_attempts": 156,
+  "population_protection": "fraction_to_boundary",
+  "derivative_restoration_mode": "automatic",
+  "inner_predictor_mode": "report_only",
+  "evaluation_optimization": {
+    "boundary_parameter": true,
+    "candidate_diagnostics": true,
+    "physical_reuse": true,
+    "shared_ports": true
+  },
+  "tests": {
+    "tests": "24",
+    "failures": "0",
+    "skipped": "0",
+    "disabled": "0"
+  },
+  "backend": "pardiso_mkl",
+  "resistance_ohm_um": 10000000.0,
+  "stop_current_A_per_um": 0.0013,
+  "last_accepted": {
+    "diagnostics": {
+      "KCL_A_per_um": 3.1165074551894433e-14,
+      "current_A_per_um": 0.00142419873917855,
+      "electron": {
+        "contact_flux_A_per_um": -0.0014234780700674962,
+        "gross_contact_scale_A_per_um": 0.0014249431326171147,
+        "gross_source_scale_A_per_um": 0.0014237487987195324,
+        "net_denominator_A_per_um": 0.0014234780700674962,
+        "qualified": true,
+        "ratio": 2.1893134167577568e-11,
+        "signed_mismatch_A_per_um": -3.1164396372592076e-14,
+        "source_A_per_um": -0.001423478070036332
+      },
+      "electron_mp_ledger": {
+        "all_node_transport_sum_A_per_um": 6.414720139613461e-21,
+        "ledger_rounding_defect_A_per_um": 6.828927247706402e-26,
+        "ratio": 2.189276733861458e-11,
+        "signed_mismatch_A_per_um": -3.11638741996078e-14,
+        "sum_free_equations_A_per_um": 3.1163880614396224e-14
+      },
+      "equation_inf": 6.548730340548976e-10,
+      "fixed_scaled_residual_inf": 9.729679339529359e-09,
+      "global_enforced": false,
+      "global_satisfied": true,
+      "hole": {
+        "contact_flux_A_per_um": -0.0014234780700363313,
+        "gross_contact_scale_A_per_um": 0.0014234780700363313,
+        "gross_source_scale_A_per_um": 0.0014237487987195324,
+        "net_denominator_A_per_um": 0.001423478070036332,
+        "qualified": true,
+        "ratio": 4.473555685252432e-16,
+        "signed_mismatch_A_per_um": 6.368008413043192e-19,
+        "source_A_per_um": -0.001423478070036332
+      },
+      "hole_mp_ledger": {
+        "all_node_transport_sum_A_per_um": 1.451463020928001e-19,
+        "ledger_rounding_defect_A_per_um": 6.828942733091332e-26,
+        "ratio": 8.338470198802714e-16,
+        "signed_mismatch_A_per_um": 1.186962946564716e-18,
+        "sum_free_equations_A_per_um": -1.0418165761824885e-18
+      },
+      "inner_V": 7.39821569132222,
+      "load_V": 3.1497074814978987e-07,
+      "original_gates_pass": true,
+      "row_max_ratio": 4.9629639065769894e-08,
+      "row_worst_carrier": "electron",
+      "row_worst_node": 2390,
+      "rows_enforced": false,
+      "rows_satisfied": true
+    },
+    "fallback_used": false,
+    "inner_V": 7.39821569132222,
+    "outer_V": 14249.385607161852,
+    "updates": 4
+  },
+  "last_update": {
+    "iteration": 7,
+    "alpha": 1.0,
+    "raw_RMS": 0.1497014327793227,
+    "theta": 1.0,
+    "switch": {
+      "actual_decrease": 9.90370690534199e-09,
+      "after": "full",
+      "bad_steps": 0,
+      "before": "full",
+      "candidate_physical_gates": true,
+      "entry_reason": "full_step_retained",
+      "full_candidate_applied": true,
+      "predicted_decrease": 9.903706950338576e-09,
+      "ratio_reliable": true,
+      "reason": "full_step_retained",
+      "requested_full": true,
+      "rho": 0.9999999954565916,
+      "trial_steps": 0
+    }
+  },
+  "poisson": {
+    "converged": true,
+    "iterations": 7,
+    "residual": 1.0880595728802832e-10,
+    "trace": [
+      {
+        "alpha": 1.0,
+        "iteration": 1,
+        "residual": 279.9932780940603
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 2,
+        "residual": 52.06213749884762
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 3,
+        "residual": 9.214742518884702
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 4,
+        "residual": 0.9223646486015843
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 5,
+        "residual": 0.031727203097445575
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 6,
+        "residual": 4.894384314925629e-05
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 7,
+        "residual": 1.0880595728802832e-10
+      }
+    ]
+  },
+  "BV_at_1e_4": {
+    "current_A_per_um": 0.0001,
+    "inner_V": 6.670377456651173,
+    "bracket": [
+      {
+        "outer_V": 963.692866652553,
+        "inner_V": 6.668202070500356,
+        "current_A_per_um": 9.570246643563771e-05,
+        "updates": 3
+      },
+      {
+        "outer_V": 1328.6606078227742,
+        "inner_V": 6.686675587240587,
+        "current_A_per_um": 0.00013219739319294472,
+        "updates": 3
+      }
+    ],
+    "method": "accepted-point linear interpolation in current"
+  },
+  "stop_threshold_interpolation": {
+    "current_A_per_um": 0.0013,
+    "inner_V": 7.332406940193412,
+    "bracket": [
+      {
+        "outer_V": 12265.530889457574,
+        "inner_V": 7.293103445434317,
+        "current_A_per_um": 0.0012258237785908476,
+        "updates": 7
+      },
+      {
+        "outer_V": 14249.385607161852,
+        "inner_V": 7.39821569132222,
+        "current_A_per_um": 0.00142419873917855,
+        "updates": 4
+      }
+    ],
+    "method": "accepted-point linear interpolation in current"
+  },
+  "electron_closure_report_above_1pct_points": 7,
+  "source_sha256": {
+    "scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp": "64dc2275b9b9d85cc7ea8478c0a7aae026e593a20a9169e617364d0ae7e443ad",
+    "scripts/diagnostics/BvMethodsDerivativeSwitch.h": "109f35101b1048762165d2b47fe714ec6779d161f96200657df1da602139dc79"
+  },
+  "source_manifest_sha256": "e0aafd76f6700ef6c3a108d4df6252afab486cac731d499b37199170fcb5c5ee",
+  "binary_sha256": "cc0448a3c1c9c69b6fc4d1c659750ab550e05641a6a3b4dc36abcd891db664bc",
+  "core_sha256": "fbbda6362a9eded303b988dc76ca9a79bee8caab096e4580278763908b23a5a6",
+  "runtime_sha256": "a85532b3965b4901eced61ee6d3d5b606e2d54e8de2cb357e6b5cfcce2b1e03a",
+  "manifest_sha256": "4c68057c86e9744fb9987c40953f4933de6c4a34421bf88f3b60b55f16fcac24",
+  "config_sha256": "eaf6faf3a6934e43ed99d0949f22c5b36e11dcd305d7cf7928f7819992e02775",
+  "summary_sha256": "dff7dd8611ac3bc7792de93159f1fb04fb6ec7f3f740b7d266c7796353982bc1",
+  "iv_sha256": "2a31fc6c21657c399e76bdc3ff64cf5d6ad408f30c03b670c25b2b9353684456"
+}

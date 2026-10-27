@@ -1,5 +1,25 @@
 # Vela Documentation
 
+- [BVMethods 四项求值优化 VM 完整扫描完成，2026-10-27](validation/bvmethods_vm_four_switch_full_2026-10-27.md)：
+  冷 Poisson、全局缩步与自动导数恢复，103 个接受点达到停止电流，正常退出；与后续新候选策略分开记账。
+- [BVMethods T470p／C560 候选选择与迭代内复用，2026-10-27](validation/bvmethods_candidate_selection_2026-10-27.md)：
+  按原验收尺度选取人口候选，两类起点均通过；普通 Release 配对验证共享计算收益及逐位一致性。
+- [BVMethods T470p／C560 人口保护策略对照，2026-10-27](validation/bvmethods_population_protection_comparison_2026-10-27.md)：
+  同态首轮算子一致；局部保护在预测态七轮通过，在接受态失败，保留原验收门及守恒报告。
+- [BVMethods T470p／C560 同态求值复用优化，2026-10-27](validation/bvmethods_evaluation_reuse_2026-10-27.md)：
+  冷启动前五点普通 Release 配对分别加速1.77×／2.26×；状态、轨迹、30个算子文件一致，显式开关启用。
+- [BVMethods gprof 热点与诊断驱动成本，2026-10-27](validation/bvmethods_gprof_hotspots_2026-10-27.md)：
+  C560 Release／gprof 前五点状态逐位一致；状态检查占55.48%，联立线性求解占1.15%，T470p复核进行中。
+- [BVMethods vela VM 自动恢复策略完整扫描启动，2026-10-27](validation/bvmethods_vm_automatic_full_start_2026-10-27.md)：
+  独立 Release／PARDISO 冷启动，22 项测试通过，首五个非零点接受；后台完整扫描启动快照，未宣称完成。
+- [BVMethods vela VM 自动导数恢复切换验证，2026-10-27](validation/bvmethods_vm_derivative_switch_2026-10-27.md)：
+  同态矩阵／RHS 保持一致，自动恢复及故障注入回退验证通过，随后五点各两次更新；仍为未安装诊断。
+- [BVMethods vela VM 同检查点导数恢复验证，2026-10-26](validation/bvmethods_vm_restoration_verification_2026-10-26.md)：
+  同态矩阵／RHS 一致；完整导数第 2 轮通过并复核至第 8 轮，原恢复选择持续返回近似阶段；未接入生产或完成 BV。
+- [BVMethods vela VM 三小时对照结果分析，2026-10-26](validation/bvmethods_vm_predictor_analysis_2026-10-26.md)：
+  两组按时限停止；仅报告版本推进更远，但导数恢复反复返回近似阶段，完整 BV 未完成。
+- [BVMethods vela VM 预测内压限制双臂对照启动，2026-10-26](validation/bvmethods_vm_predictor_comparison_2026-10-26.md)：
+  enforce／report_only 冷启动控制、独立三小时时限和启动时一致性核验。
 - [BVMethods T470p 从零启动的自适应导数恢复试算，2026-10-26](validation/bvmethods_t470p_adaptive_bv_2026-10-26.md)：
   277 个接受点推进至外压 5.79877 V；挂起日志查询造成内存压力，完整 BV 未完成，重跑已暂停。
 - [BVMethods 人口坐标、到边界步长与导数恢复试验，2026-10-26](validation/bvmethods_population_newton_trials_2026-10-26.md)：

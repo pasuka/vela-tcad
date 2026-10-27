@@ -24,7 +24,56 @@ accepted 277 points on T470p before interruption under independently confirmed
 system memory pressure from a hung log query. Its last inner voltage was
 5.487691822 V; it did not reach the breakdown current. Low-bias conservation
 reports and missing final iteration diagnostics remain qualification gaps.
-The rerun is paused, and the experiment does not change production defaults.
+The T470p rerun remains paused. A separately authorized
+[vela VM comparison](validation/bvmethods_vm_predictor_comparison_2026-10-26.md)
+completed its three-hour cold-start enforce/report-only predictor controls.
+The [postprocessing analysis](validation/bvmethods_vm_predictor_analysis_2026-10-26.md)
+records 240/49 accepted points and time-limit termination of both arms, without
+complete BV qualification. Report-only advances farther but repeatedly returns
+to bootstrap during AV-derivative restoration; residual, update and restoration
+conditions remain distinct. Neither experiment changes production defaults.
+The [same-checkpoint restoration control](validation/bvmethods_vm_restoration_verification_2026-10-26.md)
+replays the original ten-update prefix and exports identical RHS and full
+matrices for the competing choices. Holding full derivatives reaches the same
+joint gates in two updates and remains settled through eight, while the current
+selection returns to bootstrap. Six selected-column finite differences are
+recorded separately from the unresolved, roundoff-sensitive near-null Newton
+direction check. This is a local diagnostic result, without a production
+restoration-policy or full-BV qualification.
+The [automatic derivative-switch control](validation/bvmethods_vm_derivative_switch_2026-10-27.md)
+keeps restoration selection separate from the final raw-update RMS. A diagnostic
+bootstrap/trial/full state machine uses physical residual model quality and the
+original physical gates, confirms restoration, and checks explicit injected
+rejection and cooldown. It restores the same checkpoint in two updates, remains
+settled through eight, and carries full mode through five additional points with
+two updates each. The matched-target baseline and finite-state differences are
+recorded separately. This uninstalled diagnostic does not change production
+defaults or establish complete cold-start BV convergence.
+A separately authorized [automatic cold-start full-sweep task](validation/bvmethods_vm_automatic_full_start_2026-10-27.md)
+uses `bvmethods_adaptive_bv_probe` with explicit
+`derivative_restoration_mode: "automatic"`. It inherits full mode only from an
+accepted point and preserves independent corrector budgets on failed predictors
+and accepted-state retries. The linked record is a startup snapshot, with the
+first five nonzero points accepted; it is not a complete-BV qualification.
+The [evaluation-reuse optimization](validation/bvmethods_evaluation_reuse_2026-10-27.md)
+adds explicit diagnostic switches for candidate diagnostics, physical evaluations,
+shared terminal assemblers, and boundary-only parameter differences. On T470p
+and C560, two Release pairs in the cold first-five-point window preserve field
+bits, complete attempt records and sampled operator files, with measured
+speedups of 1.77 and 2.26 respectively. The bounded, single-owner physical cache
+requires frozen mesh, doping and material inputs, compares full state/reference
+bits, separates derivative modes and reapplies boundaries on every call.
+All switches default off; stopping criteria, production/CMD defaults and the
+currently frozen VM sweep remain unchanged. This does not qualify complete-BV
+speedup or alter the outstanding nonlinear-convergence evidence.
+The separately frozen [four-switch VM full sweep](validation/bvmethods_vm_four_switch_full_2026-10-27.md)
+subsequently completed its cold start with 103 accepted points and exit code 0,
+reaching the configured stop current in about 113 minutes. It used global
+fraction-to-boundary updates and automatic derivative restoration, without the
+later adaptive population-candidate selector or iteration-local reuse. Low-bias
+conservation report violations and native-operator consistency remain separate
+qualifications; the completed baseline does not qualify the later selector's
+complete-BV performance.
 
 ## State and statistics
 
@@ -88,6 +137,32 @@ closure ratios: changing global summation alone does not remove the remaining
 free-equation imbalance. Local state/operator precision and stopping scales
 remain unqualified. These trials add no production coordinate, feasibility,
 derivative-restoration, or full-CMD default.
+The [population-protection comparison](validation/bvmethods_population_protection_comparison_2026-10-27.md)
+adds explicit `population_protection: "local_nonpositive"` to the uninstalled
+adaptive probe; its default remains `"fraction_to_boundary"`. The local policy
+replaces only nonpositive finite population candidates with 1% of their old
+population, retaining positive candidates and the existing circuit update cap.
+An explicit `protection_checkpoint` mode replays common imported initial states
+without qualifying autonomous cold start or full BV. On T470p and C560, both
+policies have identical first-step operators: local protection passes the
+predictor checkpoint in seven updates, whereas the fraction policy fails;
+starting from the prior accepted state reverses the pass/fail outcome. These
+results retain the original residual, raw-update and conservation controls,
+and establish no universally preferred policy or production default change.
+The [candidate-selection and iteration-reuse control](validation/bvmethods_candidate_selection_2026-10-27.md)
+adds opt-in `population_protection: "adaptive"` to the diagnostic probe. It
+prefers candidates satisfying the original joint gates, otherwise comparing
+device and load residuals normalized by their existing stopping tolerances.
+The earlier fixed-row L2 candidate control remains available explicitly and its
+failed predictor replay is retained. On both hosts the tolerance-based selector
+passes the predictor and prior-accepted-state checks, followed by five matched
+points. Optional `direction_reuse` and `iteration_linearization_reuse` avoid
+duplicate directions, initial-state linearizations and same-state residuals.
+Their bounded scopes preserve sampled matrices, iteration records and physical
+state bits, including reversed ordinary-Release timing pairs without matrix
+output. The fraction policy remains the default and both new reuse switches
+default off;
+this is not a complete-BV or native-operator qualification.
 
 In the explicitly selected Joyce-Dixon dilute limit, DOS-weighted populations
 and derivatives are evaluated in logarithmic scale before the normalized

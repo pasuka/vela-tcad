@@ -647,6 +647,14 @@ add_executable(vela_bvmethods_adaptive_bv_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp)
 target_link_libraries(vela_bvmethods_adaptive_bv_probe PRIVATE vela_core)
 
+add_executable(vela_bvmethods_restoration_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_restoration_probe.cpp)
+target_link_libraries(vela_bvmethods_restoration_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_switch_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_switch_probe.cpp)
+target_link_libraries(vela_bvmethods_switch_probe PRIVATE vela_core)
+
 add_executable(vela_bvmethods_backend_comparison_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_backend_comparison_probe.cpp)
 target_link_libraries(vela_bvmethods_backend_comparison_probe PRIVATE vela_core)
@@ -926,6 +934,9 @@ target_link_libraries(test_bvmethods_av_contract PRIVATE vela_core Catch2::Catch
 add_executable(test_bvmethods_population_newton tests/test_bvmethods_population_newton.cpp)
 target_link_libraries(test_bvmethods_population_newton PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_bvmethods_derivative_switch tests/test_bvmethods_derivative_switch.cpp)
+target_link_libraries(test_bvmethods_derivative_switch PRIVATE Catch2::Catch2WithMain)
+
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -1089,6 +1100,7 @@ vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_joyce_dixon_contract)
 vela_catch_discover_tests(test_bvmethods_av_contract)
 vela_catch_discover_tests(test_bvmethods_population_newton)
+vela_catch_discover_tests(test_bvmethods_derivative_switch)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
 vela_catch_discover_tests(test_gummel_high_doping)

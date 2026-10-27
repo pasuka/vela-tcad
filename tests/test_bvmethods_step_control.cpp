@@ -127,3 +127,19 @@ TEST_CASE("BV outer controls use script values and preserve restart overrides", 
     REQUIRE(resolveOuterStepControl(config, json::object()).maximum == Catch::Approx(2500.));
     REQUIRE_THROWS_AS(resolveOuterStepControl(config, {{"initial_step_V", 1e-6}}), std::invalid_argument);
 }
+
+TEST_CASE("BV report-only predictor preserves outer advances even when its shadow guard rejects", "[bvmethods_step_control]")
+{
+    OuterStepControl control;control.minimum=.01;control.maximum=2500.;
+    const auto enforced=predictorStepDecision(1.,control,.02,1.,1.,false);
+    const auto report=predictorStepDecision(1.,control,.02,1.,1.,true);
+    REQUIRE(*enforced.applied==Catch::Approx(.02));
+    REQUIRE(report.guarded==enforced.guarded);
+    REQUIRE(*report.applied==1.);
+    const auto impossible=predictorStepDecision(1.,control,.001,1.,1.,false);
+    const auto shadow=predictorStepDecision(1.,control,.001,1.,1.,true);
+    REQUIRE_FALSE(impossible.applied.has_value());
+    REQUIRE_FALSE(shadow.guarded.has_value());
+    REQUIRE(*shadow.applied==1.);
+    REQUIRE(*predictorStepDecision(4000.,control,.02,-1e-6,1.,true).applied==2500.);
+}

@@ -285,6 +285,7 @@ struct CarrierDiagonalFloorRegularizationConfig {
 class CoupledDDAssembler {
     friend class BvMethodsCoupledRuntime;
     mutable std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime_;
+    bool bvMethodsEvaluationReuse_ = false;
     std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime() const;
     struct FixedJacobianData;
 public:
@@ -299,6 +300,13 @@ public:
         structureCache_ = std::move(cache);
     }
     bool usesBvMethodsOperator() const { return scaling_.coupledOperator=="bvmethods_tri3_qf"; }
+    /// Opt-in single-owner sequential reuse of immutable BVMethods kernels.
+    /// State keys are bit-exact; boundary replacement is evaluated on every call.
+    void setBvMethodsEvaluationReuse(bool enabled) {
+        if (enabled != bvMethodsEvaluationReuse_) {
+            bvMethodsRuntime_.reset(); bvMethodsEvaluationReuse_ = enabled;
+        }
+    }
     /// Source-free element transport for terminal totals and their derivative.
     VectorXd bvMethodsTransportResidual(const VectorXd& x) const;
     SparseMatrixd bvMethodsTransportJacobian(const VectorXd& x) const;
