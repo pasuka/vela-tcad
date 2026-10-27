@@ -295,6 +295,7 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
 
 #include "vela/post/ContactCurrent.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
+#include "vela/solver/experimental/ExactValueBits.h"
 TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conservation", "[bvmethods_profile]") {
     using namespace vela;ProfileFixture f;auto a=f.assembler();const auto x=f.point();
     detail::BvMethodsQfState s{x.head(6),x.segment(6,6),x.tail(6),a->electronDensity(x),a->holeDensity(x)};
@@ -338,4 +339,69 @@ TEST_CASE("BVMethods profile terminal extraction follows its element residual", 
     REQUIRE(std::abs(sum)<1e-14*absolute);
     VectorXd invalid=x;invalid.segment(6,6).setConstant(1000.);REQUIRE_FALSE(a->residual(invalid,{}).allFinite());
     a->setQuasiFermiReferences(1.,1.);REQUIRE_THROWS_AS(a->residual(x,{}),std::invalid_argument);
+}
+
+TEST_CASE("BVMethods profile evaluation reuse preserves state and boundary sensitivity", "[bvmethods_profile]") {
+    using namespace vela;using experimental::exactValueBits;
+    ProfileFixture fixture;auto fresh=fixture.assembler(),reused=fixture.assembler();
+    reused->setBvMethodsEvaluationReuse(true);
+    auto x=fixture.point();CoupledDDBoundaryConditions bc;
+    bc.psi[0]=.12;bc.phin[0]=.02;bc.phip[0]=-.03;
+    for(int trial=0;trial<4;++trial) {
+        if(trial==1)x[7]+=1e-13;
+        if(trial==2)x[1]=std::nextafter(x[1],1.);
+        if(trial==3){x.segment(6,12).setZero();bc.psi[0]=.2;}
+        for(const auto& boundary:{CoupledDDBoundaryConditions{},bc}) {
+            const auto expected=fresh->residual(x,boundary);
+            REQUIRE(exactValueBits(reused->residual(x,boundary))==exactValueBits(expected));
+            REQUIRE(exactValueBits(reused->residual(x,boundary))==exactValueBits(expected));
+            REQUIRE(exactValueBits(reused->assembleJacobian(x,boundary))==exactValueBits(fresh->assembleJacobian(x,boundary)));
+            REQUIRE(exactValueBits(reused->carrierContinuityEquationTermDiagnostics(x,boundary))==
+                    exactValueBits(fresh->carrierContinuityEquationTermDiagnostics(x,boundary)));
+            REQUIRE(exactValueBits(reused->bvMethodsTransportResidual(x))==exactValueBits(fresh->bvMethodsTransportResidual(x)));
+            REQUIRE(exactValueBits(reused->bvMethodsTransportJacobian(x))==exactValueBits(fresh->bvMethodsTransportJacobian(x)));
+        }
+    }
+    fresh->setQuasiFermiReferences(-0.,-0.);reused->setQuasiFermiReferences(-0.,-0.);
+    REQUIRE(exactValueBits(reused->residual(x,bc))==exactValueBits(fresh->residual(x,bc)));
+    fresh->setQuasiFermiReferences(0.,0.);reused->setQuasiFermiReferences(0.,0.);
+    auto invalid=x;invalid.segment(6,6).setConstant(1000.);
+    REQUIRE_FALSE(reused->residual(invalid,{}).allFinite());
+    REQUIRE(exactValueBits(reused->residual(x,bc))==exactValueBits(fresh->residual(x,bc)));
+    reused->setQuasiFermiReferences(1.,1.);
+    REQUIRE_THROWS_AS(reused->residual(x,bc),std::invalid_argument);
+    reused->setQuasiFermiReferences(0.,0.);reused->setBvMethodsEvaluationReuse(false);
+    REQUIRE(exactValueBits(reused->residual(x,bc))==exactValueBits(fresh->residual(x,bc)));
+}
+
+TEST_CASE("BVMethods profile shared ports and boundary derivative preserve the full operator", "[bvmethods_profile]") {
+    using namespace vela;using experimental::exactValueBits;
+    ProfileFixture f;NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";
+    cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
+    NewtonSolver baseline(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",0.}},cfg);
+    cfg.diagnosticBvMethodsEvaluationReuse=true;cfg.diagnosticBvMethodsSharedPorts=true;
+    NewtonSolver optimized(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",0.}},cfg);
+    auto a=f.assembler();const auto physical=f.point();DDSolution state;
+    state.psi=physical.head(6);state.phin=physical.segment(6,6);state.phip=physical.tail(6);
+    state.n=a->electronDensity(physical);state.p=a->holeDensity(physical);
+    auto x=baseline.packArclengthState(state);
+    const auto original=baseline.makeArclengthSystem("drain");
+    const auto reduced=optimized.makeArclengthSystem("drain",1e-4,true);
+    auto source=optimized.makeArclengthContactCurrentFunctional("source",1.);
+    auto drain=optimized.makeArclengthContactCurrentFunctional("drain",1.);
+    auto oldSource=baseline.makeArclengthContactCurrentFunctional("source",1.);
+    auto oldDrain=baseline.makeArclengthContactCurrentFunctional("drain",1.);
+    for(double bias:{0.,1e-5,.2}) {
+        REQUIRE(exactValueBits(reduced.residual(x,bias))==exactValueBits(original.residual(x,bias)));
+        REQUIRE(exactValueBits(reduced.jacobian(x,bias))==exactValueBits(original.jacobian(x,bias)));
+        REQUIRE(exactValueBits(reduced.parameterDerivative(x,bias))==exactValueBits(original.parameterDerivative(x,bias)));
+        REQUIRE(exactValueBits(source.value(x,bias))==exactValueBits(oldSource.value(x,bias)));
+        REQUIRE(exactValueBits(drain.value(x,bias))==exactValueBits(oldDrain.value(x,bias)));
+        REQUIRE(exactValueBits(source.linearize(x,bias))==exactValueBits(oldSource.linearize(x,bias)));
+        REQUIRE(exactValueBits(drain.linearize(x,bias))==exactValueBits(oldDrain.linearize(x,bias)));
+        x[7]+=1e-13;
+    }
+    x.segment(6,6).setConstant(1e6);
+    REQUIRE_FALSE(original.parameterDerivative(x,.1).allFinite());
+    REQUIRE_FALSE(reduced.parameterDerivative(x,.1).allFinite());
 }

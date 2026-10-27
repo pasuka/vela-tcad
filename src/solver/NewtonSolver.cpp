@@ -3057,6 +3057,7 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
 void NewtonSolver::configureAssemblerNumerics(
     CoupledDDAssembler& assembler) const
 {
+    assembler.setBvMethodsEvaluationReuse(cfg_.diagnosticBvMethodsEvaluationReuse);
     assembler.enableSplitDDState(cfg_.splitDDState);
     assembler.setExtendedPoissonResidual(cfg_.poissonResidualPrecision == "binary128");
     assembler.setLegacyEdgeJacobianSteps(
@@ -3492,7 +3493,8 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
 }
 
 ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeContact,
-                                                  Real biasFiniteDifferenceStep_V) const
+                                                  Real biasFiniteDifferenceStep_V,
+                                                  bool boundaryOnlyParameterDerivative) const
 {
     if(cfg_.splitDDState)throw std::invalid_argument("Split DD arclength updates are not qualified");
     if (!(biasFiniteDifferenceStep_V > 0.0) ||
@@ -3529,11 +3531,38 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
         return assembler->residual(x, bcs);
     };
     system.parameterDerivative =
-        [self, assembler, biasesAt, h](const VectorXd& x, Real lambda) {
+        [self, assembler, biasesAt, h, boundaryOnlyParameterDerivative, nodeCount](const VectorXd& x, Real lambda) {
             const CoupledDDBoundaryConditions bcsPlus =
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda + h));
             const CoupledDDBoundaryConditions bcsMinus =
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda - h));
+            if(boundaryOnlyParameterDerivative && assembler->usesBvMethodsOperator() &&
+               bcsPlus.thermionic.empty() && bcsMinus.thermionic.empty() &&
+               assembler->electronQuasiFermiReferenceField().isZero(0.) &&
+               assembler->holeQuasiFermiReferenceField().isZero(0.)) {
+                const auto sameKeys=[](const auto& a,const auto& b){
+                    if(a.size()!=b.size())return false;
+                    for(const auto& [node,value]:a)if(!b.contains(node))return false;
+                    return true;
+                };
+                if(sameKeys(bcsPlus.psi,bcsMinus.psi)&&sameKeys(bcsPlus.phin,bcsMinus.phin)&&sameKeys(bcsPlus.phip,bcsMinus.phip)) {
+                    // Keep one full finite-state check. Only the Dirichlet
+                    // replacements depend on bias in this explicit profile.
+                    // Subtract the original x-value expressions, rather than
+                    // changing rounding by differentiating boundary values.
+                    const auto base=assembler->residual(x,self->buildBoundaryConditions(*assembler,biasesAt(lambda)));
+                    if(base.allFinite()) {
+                        VectorXd plus=base,minus=base;
+                        const auto replace=[&](const auto& a,const auto& b,int offset){
+                            for(const auto& [node,value]:a)plus[offset+node]=x[offset+node]-value;
+                            for(const auto& [node,value]:b)minus[offset+node]=x[offset+node]-value;
+                        };
+                        replace(bcsPlus.psi,bcsMinus.psi,0);replace(bcsPlus.phin,bcsMinus.phin,nodeCount);
+                        replace(bcsPlus.phip,bcsMinus.phip,2*nodeCount);
+                        return VectorXd((plus-minus)/(2.0*h));
+                    }
+                }
+            }
             const VectorXd fPlus = assembler->residual(x, bcsPlus);
             const VectorXd fMinus = assembler->residual(x, bcsMinus);
             return VectorXd((fPlus - fMinus) / (2.0 * h));
@@ -3749,7 +3778,13 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
             contactName + "'.");
     }
 
-    auto assembler = makeArclengthAssembler();
+    auto assembler = cfg_.diagnosticBvMethodsSharedPorts && cfg_.coupledOperator=="bvmethods_tri3_qf"
+        ? bvMethodsTerminalAssembler_.lock() : std::shared_ptr<CoupledDDAssembler>{};
+    if(!assembler) {
+        assembler=makeArclengthAssembler();
+        if(cfg_.diagnosticBvMethodsSharedPorts && assembler->usesBvMethodsOperator())
+            bvMethodsTerminalAssembler_=assembler;
+    }
     const int nodeCount = static_cast<int>(assembler->numNodes());
     VectorXd residualWeights = VectorXd::Zero(3 * nodeCount);
     for (Index node : contact->node_ids) {

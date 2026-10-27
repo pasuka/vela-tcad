@@ -154,6 +154,8 @@ struct NewtonConfig {
     std::shared_ptr<LinearSolver> sequentialLinearSolver;
     std::shared_ptr<CoupledDDAssembler::StructureCache> sequentialJacobianStructure;
     bool diagnosticFermiNodeCache = false;
+    bool diagnosticBvMethodsEvaluationReuse = false;
+    bool diagnosticBvMethodsSharedPorts = false;
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;
@@ -853,7 +855,8 @@ public:
     /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
     /// finite difference used to estimate dF/dV.
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
-                                        Real biasFiniteDifferenceStep_V = 1.0e-4) const;
+                                        Real biasFiniteDifferenceStep_V = 1.0e-4,
+                                        bool boundaryOnlyParameterDerivative = false) const;
 
     /// Convert a physical-unit DDSolution into the scaled packed state vector and
     /// back, consistent with makeArclengthSystem. These help drive the continuation
@@ -915,6 +918,7 @@ private:
     std::unordered_map<std::string, Real> contactBiases_;
     ContactSpecsMap contactSpecs_;
     NewtonConfig cfg_;
+    mutable std::weak_ptr<CoupledDDAssembler> bvMethodsTerminalAssembler_;
     std::vector<RegionFixedChargeSpec> fixedCharges_;
     std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 };

@@ -53,6 +53,48 @@ struct FractionToBoundary {
     double alpha=1.;
     int limitingNode=-1, limitingCarrier=-1;
 };
+struct LocalPopulationCandidate {
+    double value;
+    bool protectedNonpositive;
+};
+struct PopulationCandidateQuality {
+    bool valid=false;
+    bool joint=false;
+    double merit=std::numeric_limits<double>::infinity();
+};
+enum class PopulationChoice { None, Fraction, Local };
+inline double populationTargetMerit(double equationInf,double loadResidual,
+                                    double equationTolerance,double loadTolerance) {
+    if(!(equationTolerance>0.)||!std::isfinite(equationTolerance)||
+       !(loadTolerance>0.)||!std::isfinite(loadTolerance))
+        throw std::invalid_argument("positive finite population selection tolerances required");
+    if(!(equationInf>=0.)||!std::isfinite(equationInf)||!std::isfinite(loadResidual))
+        return std::numeric_limits<double>::infinity();
+    return std::max(equationInf/equationTolerance,std::abs(loadResidual)/loadTolerance);
+}
+inline PopulationChoice selectPopulationCandidate(
+    const PopulationCandidateQuality& fraction,const PopulationCandidateQuality& local) {
+    const auto usable=[](const auto& q){return q.valid && (q.joint || (std::isfinite(q.merit)&&q.merit>=0.));};
+    const bool a=usable(fraction),b=usable(local);
+    if(!a&&!b)return PopulationChoice::None;
+    if(!a)return PopulationChoice::Local;
+    if(!b)return PopulationChoice::Fraction;
+    if(fraction.joint!=local.joint)return local.joint?PopulationChoice::Local:PopulationChoice::Fraction;
+    return local.merit<fraction.merit?PopulationChoice::Local:PopulationChoice::Fraction;
+}
+inline LocalPopulationCandidate localNonpositivePopulation(
+    double population, double increment, double alpha, double retainedFraction=.01) {
+    if (!(population>0.) || !std::isfinite(population) || !std::isfinite(increment) ||
+        !(alpha>0. && alpha<=1.) || !(retainedFraction>0. && retainedFraction<1.))
+        throw std::domain_error("invalid local population update inputs");
+    const double raw=population+alpha*increment;
+    if (!std::isfinite(raw)) throw std::domain_error("nonfinite local population candidate");
+    const bool protectedNonpositive=raw<=0.;
+    const double value=protectedNonpositive?retainedFraction*population:raw;
+    if (!(value>0.) || !std::isfinite(value))
+        throw std::domain_error("unrepresentable positive local population candidate");
+    return {value,protectedNonpositive};
+}
 inline FractionToBoundary populationFractionToBoundary(
     const VectorXd& n,const VectorXd& p,const VectorXd& dn,const VectorXd& dp,
     const std::vector<bool>& active,double tau) {

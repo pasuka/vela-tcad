@@ -2,6 +2,8 @@
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include <algorithm>
 #include <stdexcept>
+#include <cstring>
+#include <optional>
 
 namespace vela {
 struct BvMethodsCoupledRuntime::Impl {
@@ -18,6 +20,17 @@ struct BvMethodsCoupledRuntime::Impl {
         SparseMatrixd srhJacobian;
         detail::BvMethodsQfState state;
     };
+    template<class T> struct Entry {
+        VectorXd state;
+        std::optional<T> value;
+        bool matches(const VectorXd& x) const {
+            return value.has_value() && state.size()==x.size() &&
+                (x.size()==0 || std::memcmp(state.data(),x.data(),sizeof(Real)*x.size())==0);
+        }
+    };
+    mutable std::array<Entry<Evaluation>,2> evaluations;
+    mutable std::array<Entry<detail::BvMethodsTri3Evaluation>,2> transports;
+    mutable VectorXd electronReference,holeReference;
     explicit Impl(const CoupledDDAssembler& a)
     :owner(a),context{a.mesh_,a.matdb_,a.doping_,{a.mobilityConfig_,a.impactIonizationConfig_,{},a.carrierStatisticsModel_}},
      scale(a.scaling_.enabled?a.scaling_.V0:1.),continuity(a.scaling_.enabled?a.scaling_.C0*a.scaling_.D0:1.) {
@@ -69,9 +82,18 @@ struct BvMethodsCoupledRuntime::Impl {
         element=std::make_unique<detail::BvMethodsTri3Operator>(context,state,a.Nc_,a.Nv_,scale,line,a.Vt_);
     }
     void sync()const {
-        if(!owner.electronQuasiFermiReferenceField().isZero(0.) || !owner.holeQuasiFermiReferenceField().isZero(0.))
+        const auto en=owner.electronQuasiFermiReferenceField(),hp=owner.holeQuasiFermiReferenceField();
+        if(!en.isZero(0.) || !hp.isZero(0.))
             throw std::invalid_argument("bvmethods_tri3_qf v1 requires zero-reference ordinary QF coordinates");
-        poisson->setQuasiFermiReferenceFields(owner.electronQuasiFermiReferenceField(),owner.holeQuasiFermiReferenceField());
+        if(owner.bvMethodsEvaluationReuse_) {
+            const auto same=[](const VectorXd& a,const VectorXd& b){return a.size()==b.size() &&
+                (a.size()==0 || std::memcmp(a.data(),b.data(),sizeof(Real)*a.size())==0);};
+            if(!same(en,electronReference)||!same(hp,holeReference)) {
+                for(auto& e:evaluations)e.value.reset();for(auto& t:transports)t.value.reset();
+                electronReference=en;holeReference=hp;
+            }
+        }
+        poisson->setQuasiFermiReferenceFields(en,hp);
     }
     detail::BvMethodsQfState makeState(const VectorXd& x) const {
         const int n=owner.mesh_.numNodes();if(x.size()!=3*n || !x.allFinite())
@@ -84,7 +106,23 @@ struct BvMethodsCoupledRuntime::Impl {
             throw std::domain_error("BVMethods trial state outside positive finite carrier domain");
         return s;
     }
+    detail::BvMethodsTri3Evaluation transport(const VectorXd& x,bool jac)const {
+        if(!owner.bvMethodsEvaluationReuse_)return element->transport(makeState(x),jac,true,true);
+        sync();auto& cached=transports[jac?1:0];
+        if(owner.bvMethodsEvaluationReuse_&&cached.matches(x))return *cached.value;
+        auto result=element->transport(makeState(x),jac,true,true);
+        if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
+        return result;
+    }
     Evaluation evaluate(const VectorXd& x,bool jac)const {
+        if(!owner.bvMethodsEvaluationReuse_)return compute(x,jac);
+        sync();auto& cached=evaluations[jac?1:0];
+        if(owner.bvMethodsEvaluationReuse_&&cached.matches(x))return *cached.value;
+        auto result=compute(x,jac);
+        if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
+        return result;
+    }
+    Evaluation compute(const VectorXd& x,bool jac)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
         out.transport=element->transport(s,jac,true,true);
         if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac);
@@ -182,11 +220,11 @@ SparseMatrixd BvMethodsCoupledRuntime::avalancheJacobian(const VectorXd& x,const
 }
 VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x)const {
     auto& p=*impl_;p.sync();
-    try{return p.element->transport(p.makeState(x),false,true,true).source;}
+    try{return p.transport(x,false).source;}
     catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
 }
 SparseMatrixd BvMethodsCoupledRuntime::transportJacobian(const VectorXd& x)const {
-    auto& p=*impl_;p.sync();return p.element->transport(p.makeState(x),true,true,true).jacobian;
+    auto& p=*impl_;p.sync();return p.transport(x,true).jacobian;
 }
 VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const {
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);

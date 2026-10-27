@@ -1,0 +1,1081 @@
+{
+  "schema": "vela.bvmethods_gprof.review.v1",
+  "host_label": "C560",
+  "completed": true,
+  "scope": "Cold Poisson plus first five nonzero automatic-restoration BV points; normal exit at outer-attempt budget.",
+  "production_files_verified": 243,
+  "tests": {
+    "tests": "22",
+    "failures": "0",
+    "skipped": "0",
+    "disabled": "0"
+  },
+  "runs": [
+    {
+      "label": "release_off",
+      "binary_sha256": "22a1fa9c505669acd5882e365c631a91fa7322856c0a8d3896ae314d4729747e",
+      "points": 6,
+      "updates": 16,
+      "wall_seconds": 128.553364641999
+    },
+    {
+      "label": "release_on",
+      "binary_sha256": "22a1fa9c505669acd5882e365c631a91fa7322856c0a8d3896ae314d4729747e",
+      "points": 6,
+      "updates": 16,
+      "wall_seconds": 128.70714057500118
+    },
+    {
+      "label": "gprof_on",
+      "binary_sha256": "c91014b568dc1a01a174a3381131ee2e93f390065bc913cdc831687ebeff9865",
+      "points": 6,
+      "updates": 16,
+      "wall_seconds": 148.97199753999848
+    }
+  ],
+  "fields_comparison": [
+    {
+      "label": "release_on",
+      "fields_bitwise_equal": true,
+      "maxima": {
+        "psi": 0.0,
+        "phin": 0.0,
+        "phip": 0.0,
+        "electrons_m3": 0.0,
+        "holes_m3": 0.0
+      }
+    },
+    {
+      "label": "gprof_on",
+      "fields_bitwise_equal": true,
+      "maxima": {
+        "psi": 0.0,
+        "phin": 0.0,
+        "phip": 0.0,
+        "electrons_m3": 0.0,
+        "holes_m3": 0.0
+      }
+    }
+  ],
+  "trajectory_comparison": [
+    {
+      "label": "release_off",
+      "outer_point_table_equal": true,
+      "update_counts_equal": true,
+      "all_original_gates_pass": true
+    },
+    {
+      "label": "release_on",
+      "outer_point_table_equal": true,
+      "update_counts_equal": true,
+      "all_original_gates_pass": true
+    },
+    {
+      "label": "gprof_on",
+      "outer_point_table_equal": true,
+      "update_counts_equal": true,
+      "all_original_gates_pass": true
+    }
+  ],
+  "configuration": {
+    "release": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "VELA_ENABLE_GPROF": "OFF",
+      "VELA_ENABLE_LTO": "OFF",
+      "VELA_ENABLE_MKL_PARDISO": "ON",
+      "pg_flag_in_ninja": false
+    },
+    "gprof": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "VELA_ENABLE_GPROF": "ON",
+      "VELA_ENABLE_LTO": "OFF",
+      "VELA_ENABLE_MKL_PARDISO": "ON",
+      "pg_flag_in_ninja": true
+    }
+  },
+  "backend": "pardiso_mkl",
+  "poisson": {
+    "converged": true,
+    "iterations": 7,
+    "residual": 1.0879696107406589e-10,
+    "trace": [
+      {
+        "alpha": 1.0,
+        "iteration": 1,
+        "residual": 279.9932780940603
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 2,
+        "residual": 52.06213749884765
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 3,
+        "residual": 9.214742518884703
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 4,
+        "residual": 0.9223646486015835
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 5,
+        "residual": 0.03172720309744646
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 6,
+        "residual": 4.894384314853682e-05
+      },
+      {
+        "alpha": 1.0,
+        "iteration": 7,
+        "residual": 1.0879696107406589e-10
+      }
+    ]
+  },
+  "points": [
+    {
+      "diagnostics": {
+        "KCL_A_per_um": 0.0,
+        "current_A_per_um": 0.0,
+        "electron": {
+          "contact_flux_A_per_um": 0.0,
+          "gross_contact_scale_A_per_um": 0.0,
+          "gross_source_scale_A_per_um": 0.0,
+          "net_denominator_A_per_um": 2.98739169959099e-19,
+          "qualified": false,
+          "ratio": 0.0,
+          "signed_mismatch_A_per_um": 0.0,
+          "source_A_per_um": 0.0
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 0.0,
+          "ledger_rounding_defect_A_per_um": 0.0,
+          "ratio": 0.0,
+          "signed_mismatch_A_per_um": 0.0,
+          "sum_free_equations_A_per_um": 0.0
+        },
+        "equation_inf": 6.295825298780019e-11,
+        "fixed_scaled_residual_inf": 4.789006012352978e-13,
+        "global_enforced": false,
+        "global_satisfied": true,
+        "hole": {
+          "contact_flux_A_per_um": 0.0,
+          "gross_contact_scale_A_per_um": 0.0,
+          "gross_source_scale_A_per_um": 0.0,
+          "net_denominator_A_per_um": 2.98739169959099e-19,
+          "qualified": false,
+          "ratio": 0.0,
+          "signed_mismatch_A_per_um": 0.0,
+          "source_A_per_um": 0.0
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 0.0,
+          "ledger_rounding_defect_A_per_um": 0.0,
+          "ratio": 0.0,
+          "signed_mismatch_A_per_um": 0.0,
+          "sum_free_equations_A_per_um": 0.0
+        },
+        "inner_V": 0.0,
+        "load_V": 0.0,
+        "original_gates_pass": true,
+        "row_max_ratio": 0.0,
+        "row_worst_carrier": "",
+        "row_worst_node": 18446744073709551615,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "inner_V": 0.0,
+      "outer_V": 0.0,
+      "updates": 0
+    },
+    {
+      "diagnostics": {
+        "KCL_A_per_um": -2.8921092392703917e-16,
+        "current_A_per_um": 4.755750744490315e-10,
+        "electron": {
+          "contact_flux_A_per_um": -5.870905151603564e-16,
+          "gross_contact_scale_A_per_um": 9.511495618049512e-10,
+          "gross_source_scale_A_per_um": 8.751803267655686e-16,
+          "net_denominator_A_per_um": 8.751802745156651e-16,
+          "qualified": true,
+          "ratio": 0.3291776194507365,
+          "signed_mismatch_A_per_um": 2.880897593553087e-16,
+          "source_A_per_um": -8.751802745156651e-16
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -6.468613546151924e-26,
+          "ledger_rounding_defect_A_per_um": -1.02697576863226e-31,
+          "ratio": 0.3291776195357613,
+          "signed_mismatch_A_per_um": 2.8808975942972023e-16,
+          "sum_free_equations_A_per_um": -2.880897594944065e-16
+        },
+        "equation_inf": 3.117512982939915e-11,
+        "fixed_scaled_residual_inf": 3.925290037226112e-15,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -8.763014389277357e-16,
+          "gross_contact_scale_A_per_um": 8.763040360078372e-16,
+          "gross_source_scale_A_per_um": 8.751803267655686e-16,
+          "net_denominator_A_per_um": 8.763014389277357e-16,
+          "qualified": true,
+          "ratio": 0.0012794277885043311,
+          "signed_mismatch_A_per_um": -1.121164412070476e-18,
+          "source_A_per_um": -8.751802745156651e-16
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 5.298206086948155e-32,
+          "ledger_rounding_defect_A_per_um": -1.3232237050159771e-33,
+          "ratio": 0.0012794277885059217,
+          "signed_mismatch_A_per_um": -1.1211644120718695e-18,
+          "sum_free_equations_A_per_um": 1.1211644120719211e-18
+        },
+        "inner_V": 0.005244252806361371,
+        "load_V": 3.550851687336709e-09,
+        "original_gates_pass": true,
+        "row_max_ratio": 7.358099123589599e-06,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1095,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "fallback_used": false,
+      "inner_V": 0.005244252806361371,
+      "outer_V": 0.01,
+      "updates": 4
+    },
+    {
+      "diagnostics": {
+        "KCL_A_per_um": 6.654379217878235e-17,
+        "current_A_per_um": 1.0308424920287745e-09,
+        "electron": {
+          "contact_flux_A_per_um": -2.209446679164937e-15,
+          "gross_contact_scale_A_per_um": 2.0616827746051812e-09,
+          "gross_source_scale_A_per_um": 2.1420960657927403e-15,
+          "net_denominator_A_per_um": 2.209446679164937e-15,
+          "qualified": true,
+          "ratio": 0.030483074004706488,
+          "signed_mismatch_A_per_um": -6.735072663043775e-17,
+          "source_A_per_um": -2.142095952534499e-15
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -3.7822134933075336e-25,
+          "ledger_rounding_defect_A_per_um": -3.496936907156543e-32,
+          "ratio": 0.03048307412505886,
+          "signed_mismatch_A_per_um": -6.735072690471075e-17,
+          "sum_free_equations_A_per_um": 6.735072652648937e-17
+        },
+        "equation_inf": 3.249692404459324e-11,
+        "fixed_scaled_residual_inf": 3.5978927721322785e-15,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -2.1429028871583184e-15,
+          "gross_contact_scale_A_per_um": 2.1429085744532245e-15,
+          "gross_source_scale_A_per_um": 2.1420960657927403e-15,
+          "net_denominator_A_per_um": 2.1429028871583184e-15,
+          "qualified": true,
+          "ratio": 0.00037656145253020615,
+          "signed_mismatch_A_per_um": -8.069346238195088e-19,
+          "source_A_per_um": -2.142095952534499e-15
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 1.490818384996683e-31,
+          "ledger_rounding_defect_A_per_um": 9.715311883509161e-34,
+          "ratio": 0.00037656145252785024,
+          "signed_mismatch_A_per_um": -8.069346238144604e-19,
+          "sum_free_equations_A_per_um": 8.069346238146104e-19
+        },
+        "inner_V": 0.013381587651933806,
+        "load_V": 1.2572221548545759e-08,
+        "original_gates_pass": true,
+        "row_max_ratio": 3.5283149772853093e-06,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1028,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "fallback_used": false,
+      "inner_V": 0.013381587651933806,
+      "outer_V": 0.023690000000000003,
+      "updates": 3
+    },
+    {
+      "diagnostics": {
+        "KCL_A_per_um": 1.8204781296685012e-16,
+        "current_A_per_um": 1.5982644630949827e-09,
+        "electron": {
+          "contact_flux_A_per_um": -4.2039488130231424e-15,
+          "gross_contact_scale_A_per_um": 3.196524722232174e-09,
+          "gross_source_scale_A_per_um": 4.021161978671736e-15,
+          "net_denominator_A_per_um": 4.2039488130231424e-15,
+          "qualified": true,
+          "ratio": 0.043479837192930165,
+          "signed_mismatch_A_per_um": -1.8278700995765826e-16,
+          "source_A_per_um": -4.021161803065485e-15
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -2.5380947914050576e-25,
+          "ledger_rounding_defect_A_per_um": 1.3684205485184805e-32,
+          "ratio": 0.04347983720973084,
+          "signed_mismatch_A_per_um": -1.8278701003149863e-16,
+          "sum_free_equations_A_per_um": 1.8278700977768916e-16
+        },
+        "equation_inf": 2.832003553686176e-11,
+        "fixed_scaled_residual_inf": 9.940625903009812e-13,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -4.02190100037788e-15,
+          "gross_contact_scale_A_per_um": 4.0219099770846485e-15,
+          "gross_source_scale_A_per_um": 4.021161978671736e-15,
+          "net_denominator_A_per_um": 4.02190100037788e-15,
+          "qualified": true,
+          "ratio": 0.00018379301537417363,
+          "signed_mismatch_A_per_um": -7.391973123958561e-19,
+          "source_A_per_um": -4.021161803065485e-15
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 4.869802765124593e-31,
+          "ledger_rounding_defect_A_per_um": -1.0039142884432664e-33,
+          "ratio": 0.00018379301537056327,
+          "signed_mismatch_A_per_um": -7.391973123813356e-19,
+          "sum_free_equations_A_per_um": 7.391973123818215e-19
+        },
+        "inner_V": 0.026636074215838135,
+        "load_V": 1.2180121286564649e-08,
+        "original_gates_pass": true,
+        "row_max_ratio": 2.5143954997819574e-06,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1041,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "fallback_used": false,
+      "inner_V": 0.026636074215838135,
+      "outer_V": 0.04261870666666667,
+      "updates": 3
+    },
+    {
+      "diagnostics": {
+        "KCL_A_per_um": -2.5250983273507213e-16,
+        "current_A_per_um": 2.0225349087546355e-09,
+        "electron": {
+          "contact_flux_A_per_um": -6.5434619251912685e-15,
+          "gross_contact_scale_A_per_um": 4.04506327403568e-09,
+          "gross_source_scale_A_per_um": 6.7950487131513834e-15,
+          "net_denominator_A_per_um": 6.795048490919633e-15,
+          "qualified": true,
+          "ratio": 0.0370249845993836,
+          "signed_mismatch_A_per_um": 2.515865657283642e-16,
+          "source_A_per_um": -6.795048490919633e-15
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -8.587493378118744e-25,
+          "ledger_rounding_defect_A_per_um": -3.8020278026059404e-32,
+          "ratio": 0.037024984720323215,
+          "signed_mismatch_A_per_um": 2.51586566550155e-16,
+          "sum_free_equations_A_per_um": -2.5158656740890435e-16
+        },
+        "equation_inf": 2.2373846840264567e-11,
+        "fixed_scaled_residual_inf": 1.148712409317688e-11,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -6.795971757291371e-15,
+          "gross_contact_scale_A_per_um": 6.795983423605585e-15,
+          "gross_source_scale_A_per_um": 6.7950487131513834e-15,
+          "net_denominator_A_per_um": 6.795971757291371e-15,
+          "qualified": true,
+          "ratio": 0.00013585494535755952,
+          "signed_mismatch_A_per_um": -9.232663717383369e-19,
+          "source_A_per_um": -6.795048490919633e-15
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -1.2553291935103525e-31,
+          "ledger_rounding_defect_A_per_um": 6.673354489885171e-34,
+          "ratio": 0.00013585494535636568,
+          "signed_mismatch_A_per_um": -9.232663717302237e-19,
+          "sum_free_equations_A_per_um": 9.232663717300987e-19
+        },
+        "inner_V": 0.04856545483703074,
+        "load_V": 5.506799308219179e-09,
+        "original_gates_pass": true,
+        "row_max_ratio": 2.4859847500952565e-05,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1095,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "fallback_used": false,
+      "inner_V": 0.04856545483703074,
+      "outer_V": 0.06879079841777778,
+      "updates": 3
+    },
+    {
+      "diagnostics": {
+        "KCL_A_per_um": -2.6765956409397244e-15,
+        "current_A_per_um": 2.1994890945562797e-09,
+        "electron": {
+          "contact_flux_A_per_um": -7.989993743275804e-15,
+          "gross_contact_scale_A_per_um": 4.398970199105874e-09,
+          "gross_source_scale_A_per_um": 1.0665423615319492e-14,
+          "net_denominator_A_per_um": 1.0665423373630165e-14,
+          "qualified": true,
+          "ratio": 0.2508507666905427,
+          "signed_mismatch_A_per_um": 2.675429630354361e-15,
+          "source_A_per_um": -1.0665423373630165e-14
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -1.0581601293328928e-25,
+          "ledger_rounding_defect_A_per_um": 4.536715823583105e-31,
+          "ratio": 0.25085076669336415,
+          "signed_mismatch_A_per_um": 2.6754296303844575e-15,
+          "sum_free_equations_A_per_um": -2.675429630490273e-15
+        },
+        "equation_inf": 3.6403707659616154e-10,
+        "fixed_scaled_residual_inf": 2.93734327834256e-11,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -1.0666589384263011e-14,
+          "gross_contact_scale_A_per_um": 1.0666602326732137e-14,
+          "gross_source_scale_A_per_um": 1.0665423615319492e-14,
+          "net_denominator_A_per_um": 1.0666589384263011e-14,
+          "qualified": true,
+          "ratio": 0.00010931428883595482,
+          "signed_mismatch_A_per_um": -1.1660106328458563e-18,
+          "source_A_per_um": -1.0665423373630165e-14
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -7.93221280700597e-31,
+          "ledger_rounding_defect_A_per_um": 1.8124476166935144e-33,
+          "ratio": 0.0001093142888342644,
+          "signed_mismatch_A_per_um": -1.1660106328278252e-18,
+          "sum_free_equations_A_per_um": 1.1660106328270338e-18
+        },
+        "inner_V": 0.08298316661000318,
+        "load_V": -1.9723414776406933e-08,
+        "original_gates_pass": true,
+        "row_max_ratio": 0.00013407092087850433,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1030,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "fallback_used": false,
+      "inner_V": 0.08298316661000318,
+      "outer_V": 0.10497807727898076,
+      "updates": 3
+    }
+  ],
+  "stage_timings": [
+    {
+      "average_ns": 454482540.3,
+      "calls": 30,
+      "max_ns": 524453046,
+      "min_ns": 411609140,
+      "name": "dd.jacobian",
+      "p50_ns": 453553761,
+      "p95_ns": 513687868,
+      "total_ns": 13634476209,
+      "seconds": 13.634476209,
+      "percent_of_driver_total": 10.599119086964928
+    },
+    {
+      "average_ns": 30582025.201863352,
+      "calls": 322,
+      "max_ns": 52737823,
+      "min_ns": 21806273,
+      "name": "dd.residual",
+      "p50_ns": 26987816,
+      "p95_ns": 45241016,
+      "total_ns": 9847412115,
+      "seconds": 9.847412115,
+      "percent_of_driver_total": 7.655145097279928
+    },
+    {
+      "average_ns": 37693082.125,
+      "calls": 16,
+      "max_ns": 44042701,
+      "min_ns": 27548889,
+      "name": "driver.av_jacobian",
+      "p50_ns": 37525507,
+      "p95_ns": 44042701,
+      "total_ns": 603089314,
+      "seconds": 0.603089314,
+      "percent_of_driver_total": 0.4688273580280656
+    },
+    {
+      "average_ns": 5877830521.0,
+      "calls": 1,
+      "max_ns": 5877830521,
+      "min_ns": 5877830521,
+      "name": "driver.cold_poisson",
+      "p50_ns": 5877830521,
+      "p95_ns": 5877830521,
+      "total_ns": 5877830521,
+      "seconds": 5.877830521,
+      "percent_of_driver_total": 4.569286323148412
+    },
+    {
+      "average_ns": 598742368.75,
+      "calls": 16,
+      "max_ns": 643973472,
+      "min_ns": 518049219,
+      "name": "driver.device_jacobian",
+      "p50_ns": 600596138,
+      "p95_ns": 643973472,
+      "total_ns": 9579877900,
+      "seconds": 9.5798779,
+      "percent_of_driver_total": 7.447170330874828
+    },
+    {
+      "average_ns": 157512349.0,
+      "calls": 68,
+      "max_ns": 180886239,
+      "min_ns": 116803261,
+      "name": "driver.device_residual",
+      "p50_ns": 156855560,
+      "p95_ns": 172052303,
+      "total_ns": 10710839732,
+      "seconds": 10.710839732,
+      "percent_of_driver_total": 8.32635329004618
+    },
+    {
+      "average_ns": 757762.0,
+      "calls": 16,
+      "max_ns": 837981,
+      "min_ns": 642412,
+      "name": "driver.equilibration",
+      "p50_ns": 769174,
+      "p95_ns": 837981,
+      "total_ns": 12124192,
+      "seconds": 0.012124192,
+      "percent_of_driver_total": 0.00942505989019233
+    },
+    {
+      "average_ns": 90566306.4375,
+      "calls": 16,
+      "max_ns": 103908544,
+      "min_ns": 65414238,
+      "name": "driver.frozen_transport",
+      "p50_ns": 91150545,
+      "p95_ns": 103908544,
+      "total_ns": 1449060903,
+      "seconds": 1.449060903,
+      "percent_of_driver_total": 1.1264656477983177
+    },
+    {
+      "average_ns": 249150070.67647058,
+      "calls": 68,
+      "max_ns": 276407323,
+      "min_ns": 182784068,
+      "name": "driver.full_residual",
+      "p50_ns": 248172147,
+      "p95_ns": 271373152,
+      "total_ns": 16942204806,
+      "seconds": 16.942204806,
+      "percent_of_driver_total": 13.170469006796852
+    },
+    {
+      "average_ns": 1982380384.0555556,
+      "calls": 36,
+      "max_ns": 2130626123,
+      "min_ns": 1489465197,
+      "name": "driver.inspect",
+      "p50_ns": 2013393420,
+      "p95_ns": 2121907233,
+      "total_ns": 71365693826,
+      "seconds": 71.365693826,
+      "percent_of_driver_total": 55.47800120743544
+    },
+    {
+      "average_ns": 734811868.5555556,
+      "calls": 36,
+      "max_ns": 785252160,
+      "min_ns": 560643570,
+      "name": "driver.inspect.gates",
+      "p50_ns": 743005989,
+      "p95_ns": 784818491,
+      "total_ns": 26453227268,
+      "seconds": 26.453227268,
+      "percent_of_driver_total": 20.56411274992749
+    },
+    {
+      "average_ns": 537988443.5555556,
+      "calls": 36,
+      "max_ns": 577428559,
+      "min_ns": 395950968,
+      "name": "driver.inspect.mp_ledger",
+      "p50_ns": 546507208,
+      "p95_ns": 577025667,
+      "total_ns": 19367583968,
+      "seconds": 19.367583968,
+      "percent_of_driver_total": 15.055901360414685
+    },
+    {
+      "average_ns": 92142953.3125,
+      "calls": 16,
+      "max_ns": 101430590,
+      "min_ns": 84959671,
+      "name": "driver.linear_solve",
+      "p50_ns": 90932543,
+      "p95_ns": 101430590,
+      "total_ns": 1474287253,
+      "seconds": 1.474287253,
+      "percent_of_driver_total": 1.1460760151993743
+    },
+    {
+      "average_ns": 92503815.4375,
+      "calls": 16,
+      "max_ns": 104038330,
+      "min_ns": 72694997,
+      "name": "driver.live_transport",
+      "p50_ns": 92755058,
+      "p95_ns": 104038330,
+      "total_ns": 1480061047,
+      "seconds": 1.480061047,
+      "percent_of_driver_total": 1.1505644259935646
+    },
+    {
+      "average_ns": 317926522.9375,
+      "calls": 16,
+      "max_ns": 343636783,
+      "min_ns": 244126879,
+      "name": "driver.parameter_derivative",
+      "p50_ns": 322884769,
+      "p95_ns": 343636783,
+      "total_ns": 5086824367,
+      "seconds": 5.086824367,
+      "percent_of_driver_total": 3.9543768615561925
+    },
+    {
+      "average_ns": 237565632.3125,
+      "calls": 16,
+      "max_ns": 264857962,
+      "min_ns": 203214451,
+      "name": "driver.population_defect",
+      "p50_ns": 239888368,
+      "p95_ns": 264857962,
+      "total_ns": 3801050117,
+      "seconds": 3.801050117,
+      "percent_of_driver_total": 2.9548463929264375
+    },
+    {
+      "average_ns": 186148910.0,
+      "calls": 16,
+      "max_ns": 215929456,
+      "min_ns": 133579074,
+      "name": "driver.port_linearize",
+      "p50_ns": 184927808,
+      "p95_ns": 215929456,
+      "total_ns": 2978382560,
+      "seconds": 2.97838256,
+      "percent_of_driver_total": 2.3153241060438794
+    },
+    {
+      "average_ns": 92124089.05241935,
+      "calls": 248,
+      "max_ns": 112179844,
+      "min_ns": 65967028,
+      "name": "driver.port_value",
+      "p50_ns": 91204730,
+      "p95_ns": 105173473,
+      "total_ns": 22846774085,
+      "seconds": 22.846774085,
+      "percent_of_driver_total": 17.76054140752795
+    },
+    {
+      "average_ns": 242355035.0,
+      "calls": 16,
+      "max_ns": 278619452,
+      "min_ns": 145241797,
+      "name": "driver.qf_defect",
+      "p50_ns": 245181167,
+      "p95_ns": 278619452,
+      "total_ns": 3877680560,
+      "seconds": 3.87768056,
+      "percent_of_driver_total": 3.014417085529043
+    },
+    {
+      "average_ns": 3963580.25,
+      "calls": 12,
+      "max_ns": 4909607,
+      "min_ns": 3691975,
+      "name": "driver.state_write",
+      "p50_ns": 3898547,
+      "p95_ns": 4909607,
+      "total_ns": 47562963,
+      "seconds": 0.047562963,
+      "percent_of_driver_total": 0.036974321656239185
+    },
+    {
+      "average_ns": 128637824494.0,
+      "calls": 1,
+      "max_ns": 128637824494,
+      "min_ns": 128637824494,
+      "name": "driver.total",
+      "p50_ns": 128637824494,
+      "p95_ns": 128637824494,
+      "total_ns": 128637824494,
+      "seconds": 128.637824494,
+      "percent_of_driver_total": 100.0
+    },
+    {
+      "average_ns": 2350520.9375,
+      "calls": 16,
+      "max_ns": 3674256,
+      "min_ns": 2134590,
+      "name": "driver.update_error",
+      "p50_ns": 2167088,
+      "p95_ns": 3674256,
+      "total_ns": 37608335,
+      "seconds": 0.037608335,
+      "percent_of_driver_total": 0.029235829467680517
+    },
+    {
+      "average_ns": 45165.566666666666,
+      "calls": 30,
+      "max_ns": 55731,
+      "min_ns": 35966,
+      "name": "jacobian.boundary_rows",
+      "p50_ns": 45261,
+      "p95_ns": 50148,
+      "total_ns": 1354967,
+      "seconds": 0.001354967,
+      "percent_of_driver_total": 0.0010533192747388224
+    },
+    {
+      "average_ns": 260.1333333333333,
+      "calls": 30,
+      "max_ns": 412,
+      "min_ns": 180,
+      "name": "jacobian.cell_physics",
+      "p50_ns": 257,
+      "p95_ns": 299,
+      "total_ns": 7804,
+      "seconds": 7.804e-06,
+      "percent_of_driver_total": 6.06664488512397e-06
+    },
+    {
+      "average_ns": 438056522.56666666,
+      "calls": 30,
+      "max_ns": 477925756,
+      "min_ns": 405662726,
+      "name": "jacobian.edge_physics",
+      "p50_ns": 441478282,
+      "p95_ns": 475321278,
+      "total_ns": 13141695677,
+      "seconds": 13.141695677,
+      "percent_of_driver_total": 10.216043165136831
+    },
+    {
+      "average_ns": 41.5,
+      "calls": 30,
+      "max_ns": 45,
+      "min_ns": 37,
+      "name": "jacobian.finalize_triplets",
+      "p50_ns": 42,
+      "p95_ns": 44,
+      "total_ns": 1245,
+      "seconds": 1.245e-06,
+      "percent_of_driver_total": 9.67833531775928e-07
+    },
+    {
+      "average_ns": 231490.53333333333,
+      "calls": 30,
+      "max_ns": 442865,
+      "min_ns": 206713,
+      "name": "jacobian.initialize_values",
+      "p50_ns": 217333,
+      "p95_ns": 274352,
+      "total_ns": 6944716,
+      "seconds": 0.006944716,
+      "percent_of_driver_total": 0.005398657842137185
+    },
+    {
+      "average_ns": 4696817.433333334,
+      "calls": 30,
+      "max_ns": 6985143,
+      "min_ns": 4262717,
+      "name": "jacobian.node_sources",
+      "p50_ns": 4669499,
+      "p95_ns": 4994961,
+      "total_ns": 140904523,
+      "seconds": 0.140904523,
+      "percent_of_driver_total": 0.10953584107493372
+    },
+    {
+      "average_ns": 102162480.33333333,
+      "calls": 3,
+      "max_ns": 106507555,
+      "min_ns": 99188771,
+      "name": "jacobian.pattern_build",
+      "p50_ns": 100791115,
+      "p95_ns": 106507555,
+      "total_ns": 306487441,
+      "seconds": 0.306487441,
+      "percent_of_driver_total": 0.23825608230361153
+    },
+    {
+      "average_ns": 152.66666666666666,
+      "calls": 30,
+      "max_ns": 692,
+      "min_ns": 57,
+      "name": "jacobian.topology",
+      "p50_ns": 137,
+      "p95_ns": 207,
+      "total_ns": 4580,
+      "seconds": 4.58e-06,
+      "percent_of_driver_total": 3.5603835948062253e-06
+    },
+    {
+      "average_ns": 38344324.666666664,
+      "calls": 24,
+      "max_ns": 65124341,
+      "min_ns": 1264,
+      "name": "linear.analyze",
+      "p50_ns": 54918909,
+      "p95_ns": 60585407,
+      "total_ns": 920263792,
+      "seconds": 0.920263792,
+      "percent_of_driver_total": 0.7153912899412594
+    },
+    {
+      "average_ns": 261.625,
+      "calls": 24,
+      "max_ns": 582,
+      "min_ns": 135,
+      "name": "linear.factor_statistics",
+      "p50_ns": 247,
+      "p95_ns": 383,
+      "total_ns": 6279,
+      "seconds": 6.279e-06,
+      "percent_of_driver_total": 4.881145980739801e-06
+    },
+    {
+      "average_ns": 22465617.625,
+      "calls": 24,
+      "max_ns": 36256825,
+      "min_ns": 4382768,
+      "name": "linear.factorize",
+      "p50_ns": 30321565,
+      "p95_ns": 31805383,
+      "total_ns": 539174823,
+      "seconds": 0.539174823,
+      "percent_of_driver_total": 0.4191417455331332
+    },
+    {
+      "average_ns": 3128401.2916666665,
+      "calls": 24,
+      "max_ns": 4702590,
+      "min_ns": 809462,
+      "name": "linear.solve",
+      "p50_ns": 4206965,
+      "p95_ns": 4414935,
+      "total_ns": 75081631,
+      "seconds": 0.075081631,
+      "percent_of_driver_total": 0.058366682813033734
+    },
+    {
+      "average_ns": 64188108.833333336,
+      "calls": 24,
+      "max_ns": 101411655,
+      "min_ns": 5373954,
+      "name": "linear.total",
+      "p50_ns": 89687806,
+      "p95_ns": 100025400,
+      "total_ns": 1540514612,
+      "seconds": 1.540514612,
+      "percent_of_driver_total": 1.1975595965336412
+    },
+    {
+      "average_ns": 117901042.28571428,
+      "calls": 7,
+      "max_ns": 118402307,
+      "min_ns": 117524356,
+      "name": "newton.line_search",
+      "p50_ns": 117656588,
+      "p95_ns": 118402307,
+      "total_ns": 825307296,
+      "seconds": 0.825307296,
+      "percent_of_driver_total": 0.641574357500499
+    }
+  ],
+  "stage_nesting_warning": "Stage timers are inclusive; inspect contains residual/gates/port/ledger timers. Do not sum parents with children.",
+  "gprof_sample_period_seconds": 0.01,
+  "gprof_attributable_self_seconds": 42.57,
+  "gprof_top_self": [
+    {
+      "percent": 11.79,
+      "self_seconds": 5.02,
+      "calls": 753,
+      "name": "vela::detail::BvMethodsTri3Operator::transport(vela::detail::BvMethodsQfState const&, bool, bool, bool, bool) const"
+    },
+    {
+      "percent": 11.6,
+      "self_seconds": 4.94,
+      "calls": 18492196,
+      "name": "boost::multiprecision::backends::cpp_dec_float<100u, int, void>::eval_multiply_n_by_n_to_2n(unsigned int*, unsigned int const*, unsigned int const*, unsigned int)"
+    },
+    {
+      "percent": 8.88,
+      "self_seconds": 3.78,
+      "calls": 64578390,
+      "name": "vela::experimental::JoyceDixonStatistics::evaluate(double)"
+    },
+    {
+      "percent": 8.43,
+      "self_seconds": 3.59,
+      "calls": 6624664,
+      "name": "vela::experimental::evaluateBvMethodsTri3Transport(std::array<double, 3ul> const&, std::array<double, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, double, bool, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&)"
+    },
+    {
+      "percent": 8.41,
+      "self_seconds": 3.58,
+      "calls": 3254562,
+      "name": "void Eigen::internal::call_dense_assignment_loop<Eigen::Matrix<double, -1, 1, 0, -1, 1>, Eigen::Matrix<double, -1, 1, 0, -1, 1>, Eigen::internal::assign_op<double, double> >(Eigen::Matrix<double, -1, 1, 0, -1, 1>&, Eigen::Matrix<double, -1, 1, 0, -1, 1> const&, Eigen::internal::assign_op<double, double> const&)"
+    },
+    {
+      "percent": 3.81,
+      "self_seconds": 1.62,
+      "calls": 19873992,
+      "name": "vela::detail::BvMethodsTri3Operator::transport(vela::detail::BvMethodsQfState const&, bool, bool, bool, bool) const::{lambda(std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, int)#1}::operator()(std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, int) const"
+    },
+    {
+      "percent": 3.76,
+      "self_seconds": 1.6,
+      "calls": 18777415,
+      "name": "vela::evaluateIalElementMobility(vela::IalElementGeometry const&, std::array<vela::IalElementVertexState, 3ul> const&, std::array<vela::IalMobility const*, 3ul> const&, std::array<vela::IalMobility const*, 3ul> const&, vela::IalElementMobilityOptions const&)"
+    },
+    {
+      "percent": 3.41,
+      "self_seconds": 1.45,
+      "calls": 483,
+      "name": "vela::detail::BvMethodsTri3Operator::evaluate(vela::detail::BvMethodsQfState const&, bool) const"
+    },
+    {
+      "percent": 3.08,
+      "self_seconds": 1.31,
+      "calls": 27903384,
+      "name": "vela::experimental::avBernoulli(vela::detail::Tri3LocalForwardDual const&)"
+    },
+    {
+      "percent": 3.08,
+      "self_seconds": 1.31,
+      "calls": 4014696,
+      "name": "vela::experimental::avParticleCurrentWithoutMobility(vela::experimental::AvTri3Geometry const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, std::array<vela::detail::Tri3LocalForwardDual, 3ul> const&, double, bool)"
+    },
+    {
+      "percent": 2.18,
+      "self_seconds": 0.93,
+      "calls": 8618176,
+      "name": "vela::detail::edgeMobility(std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > > const&, vela::DeviceMesh const&, vela::DopingModel const&, vela::MobilityModel const&, std::vector<vela::Material, std::allocator<vela::Material> > const&, unsigned long, vela::CarrierType, double, vela::MobilityModelConfig const*, Eigen::Matrix<double, -1, 1, 0, -1, 1> const*, vela::detail::EdgeMobilityCarrierState const*)"
+    },
+    {
+      "percent": 2.04,
+      "self_seconds": 0.87,
+      "calls": 18320388,
+      "name": "boost::multiprecision::backends::cpp_dec_float<100u, int, void>::operator+=(boost::multiprecision::backends::cpp_dec_float<100u, int, void> const&)"
+    },
+    {
+      "percent": 1.93,
+      "self_seconds": 0.82,
+      "calls": null,
+      "name": "_init"
+    },
+    {
+      "percent": 1.69,
+      "self_seconds": 0.72,
+      "calls": 15191952,
+      "name": "vela::DopingDependentMobility::lombardiLimit(double, double, double, double, double, double, double, vela::CarrierType, vela::LombardiParameters const&) const"
+    },
+    {
+      "percent": 1.53,
+      "self_seconds": 0.65,
+      "calls": 53939768,
+      "name": "vela::experimental::JoyceDixonStatistics::inverseDensity(double, double)"
+    },
+    {
+      "percent": 1.41,
+      "self_seconds": 0.6,
+      "calls": 212871506,
+      "name": "bool std::operator==<char, std::char_traits<char>, std::allocator<char> >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, char const*)"
+    },
+    {
+      "percent": 1.27,
+      "self_seconds": 0.54,
+      "calls": 4014696,
+      "name": "vela::evaluateElementLombardi(double, double, double, double, double, vela::LombardiParameters const&, vela::MobilityModelConfig const&)"
+    },
+    {
+      "percent": 1.13,
+      "self_seconds": 0.48,
+      "calls": 21998647,
+      "name": "boost::multiprecision::backends::cpp_dec_float<100u, int, void>::operator*=(boost::multiprecision::backends::cpp_dec_float<100u, int, void> const&)"
+    },
+    {
+      "percent": 0.82,
+      "self_seconds": 0.35,
+      "calls": 535,
+      "name": "vela::CoupledDDAssembler::residualImpl(Eigen::Matrix<double, -1, 1, 0, -1, 1> const&, vela::CoupledDDBoundaryConditions const&, vela::CoupledDDFeedbackStateSubstitution const*, vela::experimental::NonlocalPairSources const*) const"
+    },
+    {
+      "percent": 0.82,
+      "self_seconds": 0.35,
+      "calls": 417,
+      "name": "vela::detail::updateSurfaceMobilityCellGeometry(vela::MobilityModelConfig&, vela::DeviceMesh const&, std::vector<std::vector<unsigned long, std::allocator<unsigned long> >, std::allocator<std::vector<unsigned long, std::allocator<unsigned long> > > > const&, Eigen::Matrix<double, -1, 1, 0, -1, 1> const&, double, std::vector<vela::Material, std::allocator<vela::Material> > const*)"
+    },
+    {
+      "percent": 0.8,
+      "self_seconds": 0.34,
+      "calls": 5687301,
+      "name": "frame_dummy"
+    },
+    {
+      "percent": 0.78,
+      "self_seconds": 0.33,
+      "calls": 15191952,
+      "name": "vela::detail::liveSurfaceNormalFieldForCell(vela::MobilityModelConfig const&, vela::DeviceMesh const&, Eigen::Matrix<double, -1, 1, 0, -1, 1> const&, unsigned long)"
+    },
+    {
+      "percent": 0.73,
+      "self_seconds": 0.31,
+      "calls": 16812792,
+      "name": "vela::DopingDependentMobility::masetti(double, vela::MasettiParameters const&)"
+    },
+    {
+      "percent": 0.68,
+      "self_seconds": 0.29,
+      "calls": 148,
+      "name": "vela::CoupledDDAssembler::buildEdgeAssemblyKernels()"
+    },
+    {
+      "percent": 0.66,
+      "self_seconds": 0.28,
+      "calls": 96733300,
+      "name": "vela::DeviceMesh::getNode(unsigned long) const"
+    }
+  ],
+  "gprof_self_groups_percent": {
+    "transport": 24.029999999999998,
+    "multiprecision": 15.39,
+    "statistics": 10.41,
+    "eigen_vector_copy": 8.41,
+    "mobility": 13.669999999999998,
+    "av_and_sg_helpers": 9.57,
+    "other": 18.44000000000001
+  },
+  "gprof_coverage_warning": "External MKL and runtime libraries are not instrumented. Self-sample percentages are not end-to-end wall percentages.",
+  "runtime_sha256": "3cc6ea8cf75c994cf9cc084f17326e4a3610292b64fc2c0d7b23e2e34e5c87c7",
+  "source_sha256": "4cf1bfb57f3797d04c8cd0847dfa1f3b6bbf2583597f16218fcadd3d57c84718",
+  "timing_overhead_observed_percent": 0.11962030976817584,
+  "gprof_overhead_observed_percent": 15.744936041981617,
+  "full_BV_qualified": false,
+  "sentaurus_same_host_speedup_qualified": false
+}

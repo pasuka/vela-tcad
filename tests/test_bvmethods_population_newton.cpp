@@ -35,6 +35,48 @@ TEST_CASE("Population equilibration preserves the original linear system", "[pop
     REQUIRE((lhs-rhs).norm()<1e-14*lhs.norm());
     REQUIRE((e.rowWeights.array()>0.).all());REQUIRE((e.columnWeights.array()>0.).all());
 }
+TEST_CASE("Population local protection preserves unrelated finite updates", "[population_newton]") {
+    VectorXd c(4),dc(4);c<<100.,4.,100.,1e-200;dc<<-120.,3.,-99.5,-1e-200;
+    std::vector<diagnostics::LocalPopulationCandidate> candidates;
+    for(int i=0;i<c.size();++i)candidates.push_back(diagnostics::localNonpositivePopulation(c[i],dc[i],1.));
+    REQUIRE(candidates[0].protectedNonpositive);
+    REQUIRE(candidates[0].value==Approx(.01*c[0]));
+    REQUIRE_FALSE(candidates[1].protectedNonpositive);
+    REQUIRE(candidates[1].value==c[1]+dc[1]);
+    REQUIRE_FALSE(candidates[2].protectedNonpositive);
+    REQUIRE(candidates[2].value==Approx(.005*c[2]));
+    REQUIRE(candidates[3].protectedNonpositive);
+    REQUIRE(candidates[3].value/c[3]==Approx(.01));
+    for(const auto& a:candidates)REQUIRE(a.value>0.);
+    const auto feasible=diagnostics::localNonpositivePopulation(100.,-120.,.5);
+    REQUIRE_FALSE(feasible.protectedNonpositive);
+    REQUIRE(feasible.value==40.);
+    REQUIRE_THROWS_AS(diagnostics::localNonpositivePopulation(0.,1.,1.),std::domain_error);
+    REQUIRE_THROWS_AS(diagnostics::localNonpositivePopulation(1.,std::numeric_limits<double>::infinity(),1.),std::domain_error);
+    REQUIRE_THROWS_AS(diagnostics::localNonpositivePopulation(std::numeric_limits<double>::denorm_min(),-1.,1.),std::domain_error);
+}
+TEST_CASE("Population candidate selection uses physical quality and original joint gates", "[population_newton]") {
+    using diagnostics::PopulationChoice;
+    using diagnostics::selectPopulationCandidate;
+    REQUIRE(selectPopulationCandidate({true,false,10.},{true,false,1.})==PopulationChoice::Local);
+    REQUIRE(selectPopulationCandidate({true,false,1.},{true,false,10.})==PopulationChoice::Fraction);
+    REQUIRE(selectPopulationCandidate({true,true,10.},{true,false,1.})==PopulationChoice::Fraction);
+    REQUIRE(selectPopulationCandidate({true,false,1.},{true,true,10.})==PopulationChoice::Local);
+    REQUIRE(selectPopulationCandidate({false,true,0.},{true,false,2.})==PopulationChoice::Local);
+    REQUIRE(selectPopulationCandidate({true,false,2.},{true,false,2.})==PopulationChoice::Fraction);
+    REQUIRE(selectPopulationCandidate({true,false,std::numeric_limits<double>::infinity()},{})==PopulationChoice::None);
+    REQUIRE(selectPopulationCandidate({},{true,false,std::numeric_limits<double>::quiet_NaN()})==PopulationChoice::None);
+    REQUIRE(selectPopulationCandidate({true,true,std::numeric_limits<double>::infinity()},{true,false,1.})==PopulationChoice::Fraction);
+}
+TEST_CASE("Population target merit preserves tolerance and unit scaling", "[population_newton]") {
+    const auto merit=diagnostics::populationTargetMerit;
+    REQUIRE(merit(2e-8,5e-7,1e-8,1e-6)==Approx(2.));
+    REQUIRE(merit(2e-5,5e-4,1e-5,1e-3)==Approx(2.));
+    REQUIRE(merit(1e-8,-3e-6,1e-8,1e-6)==Approx(3.));
+    REQUIRE(merit(1e-8,1e-6,1e-8,1e-6)==Approx(1.));
+    REQUIRE(std::isinf(merit(std::numeric_limits<double>::quiet_NaN(),0.,1e-8,1e-6)));
+    REQUIRE_THROWS_AS(merit(1.,1.,0.,1.),std::invalid_argument);
+}
 TEST_CASE("Population derivative restoration requires both residual and raw update improvement", "[population_newton]") {
     REQUIRE(diagnostics::restorationNoWorse(.5,.8,1.,1.));
     REQUIRE_FALSE(diagnostics::restorationNoWorse(.5,2.,1.,1.));
