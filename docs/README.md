@@ -6,6 +6,8 @@ evidence.
 
 ## Current References
 
+- [SLOT actual SRH/Auger branches and local chain checks, 2026-10-27](validation/slot_ldmos_srh_auger_branch_chain_2026-10-27.md): live source operands and partials, fixed-branch directional checks, high-precision replay and separate native-consumer limits; production acceptance unchanged.
+
 - [SLOT local-origin low-voltage completion, 2026-09-24](validation/slot_ldmos_local_origin_low_voltage_2026-09-24.md):
   36 qualified points from local equilibrium to 2.125 V including restart recovery,
   six-point path comparison, serial 92-test tool verification; high-voltage/BVDS remains open.
