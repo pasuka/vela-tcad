@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/solver/ConstraintElimination.h"
 
 #include <Eigen/OrderingMethods>
 #include <Eigen/SparseLU>
@@ -57,7 +58,9 @@ public:
     /**
      * @brief Solve the linear system A * x = b.
      *
-     * Reuses Eigen's symbolic analysis when consecutive solves have the same
+     * Prescribed diagonal rows are eliminated by default, with the full RHS
+     * correction and back-substitution. The returned vector retains A.rows().
+     * Reuses Eigen's symbolic analysis when consecutive reduced solves have the same
      * sparse structure. Numerical factorisation is repeated when coefficient
      * values change; an identical matrix reuses its factors for a new RHS.
      *
@@ -65,6 +68,14 @@ public:
      * @throws std::runtime_error if the analysis, factorisation, or solve fails.
      */
     VectorXd solve(const SparseMatrixd& A, const VectorXd& b);
+    /// Prescribed rows identified before a coordinate transformation or border.
+    /// Preserves their affine coupling, RHS correction and full back-substitution.
+    VectorXd solve(const SparseMatrixd& A, const VectorXd& b,
+                   const std::vector<int>& constraintRows);
+    /// Enabled by default; VELA_CONSTRAINT_ELIMINATION=0 selects the full solve.
+    bool constraintEliminationEnabled() const noexcept { return eliminateConstraints_; }
+    void setConstraintElimination(bool enabled) noexcept { eliminateConstraints_ = enabled; }
+    Eigen::Index lastReducedDimension() const noexcept { return lastReducedDimension_; }
 
     /**
      * @brief Clear the cached sparse pattern and force re-analysis next solve.
@@ -76,13 +87,16 @@ public:
     /**
      * @brief Number of symbolic pattern analyses performed by this instance.
      *
-     * This is primarily useful for tests and lightweight performance
-     * diagnostics; it does not count numerical factorisations.
+     * Counts backend analyses of the reduced matrix. An all-prescribed system
+     * needs no factorization. This does not count numerical factorisations.
      */
     std::size_t patternAnalysisCount() const noexcept;
 
 private:
     struct UmfPackState;
+    bool eliminateConstraints_ = true;
+    Eigen::Index lastReducedDimension_ = 0;
+    VectorXd solveUnreduced(const SparseMatrixd& A, const VectorXd& b);
     std::string backend_;
     std::string captureDirectory_;
     /// VELA_LINEAR_FACTOR_STATISTICS=0 disables optional factor diagnostics.

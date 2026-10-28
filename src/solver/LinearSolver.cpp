@@ -35,6 +35,15 @@ namespace vela {
 
 namespace {
 
+bool sparseAllFinite(const SparseMatrixd& matrix) {
+    // Uncompressed Eigen matrices can contain unused capacity between columns.
+    // Only logical entries belong to the input system.
+    for (int col=0; col<matrix.outerSize(); ++col)
+        for (SparseMatrixd::InnerIterator entry(matrix,col); entry; ++entry)
+            if (!std::isfinite(entry.value())) return false;
+    return true;
+}
+
 int requestedBlasThreads() {
     const char* value=std::getenv("VELA_BLAS_THREADS");
     if(!value || !*value) return 0;
@@ -280,6 +289,11 @@ LinearSolver::LinearSolver(const std::string& backend)
     : backend_(backend.empty() ? selectedBackend() : backend)
 {
     configureBlasThreads();
+    if (const char* flag = std::getenv("VELA_CONSTRAINT_ELIMINATION")) {
+        if (std::strcmp(flag, "0") == 0) eliminateConstraints_ = false;
+        else if (*flag && std::strcmp(flag, "1") != 0)
+            throw std::invalid_argument("VELA_CONSTRAINT_ELIMINATION must be 0 or 1");
+    }
     if(const char* directory=std::getenv("VELA_LINEAR_CAPTURE_DIR")) captureDirectory_=directory;
     if (const char* flag = std::getenv("VELA_LINEAR_FACTOR_STATISTICS")) {
         if (std::strcmp(flag, "0") == 0) factorStatistics_ = false;
@@ -527,6 +541,38 @@ bool solveSpqrSystem(const SparseMatrixd& A,
 }
 
 VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
+{
+    if (!b.allFinite() || !sparseAllFinite(A))
+        return solveUnreduced(A,b);
+    return solve(A,b,eliminateConstraints_ ? diagonalConstraintRows(A) : std::vector<int>{});
+}
+
+VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b,
+                             const std::vector<int>& constraints)
+{
+    if (A.rows() != A.cols() || A.rows() != b.size())
+        throw std::invalid_argument("LinearSolver: invalid system dimensions");
+    if (!b.allFinite() || !sparseAllFinite(A))
+        return solveUnreduced(A,b);
+    lastReducedDimension_ = A.rows();
+    if (!eliminateConstraints_ || constraints.empty()) return solveUnreduced(A,b);
+    ScopedPerformanceTimer timer("linear.constraint_elimination");
+    const auto reduced = eliminateLinearConstraints(A,b,constraints);
+    lastReducedDimension_ = reduced.matrix.rows();
+    observePerformanceValue("linear.original_rows",static_cast<double>(A.rows()));
+    observePerformanceValue("linear.eliminated_rows",static_cast<double>(constraints.size()));
+    observePerformanceValue("linear.reduced_rows",static_cast<double>(reduced.matrix.rows()));
+    VectorXd direction;
+    try {
+        if (reduced.matrix.rows()) direction=solveUnreduced(reduced.matrix,reduced.rhs);
+    } catch (const std::exception& error) {
+        throw std::runtime_error(std::string(error.what())+"; original system"+sparseMatrixDiagnostics(A,b));
+    }
+    verifyBlasThreads();
+    return reduced.recover(direction);
+}
+
+VectorXd LinearSolver::solveUnreduced(const SparseMatrixd& A, const VectorXd& b)
 {
     ScopedPerformanceTimer totalTimer("linear.total");
     incrementPerformanceCounter("linear.solve_calls");

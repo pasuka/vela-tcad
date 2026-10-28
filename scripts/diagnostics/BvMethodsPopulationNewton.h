@@ -17,26 +17,32 @@ inline PopulationCoordinates populationCoordinates(
     const VectorXd& psi, const VectorXd& electrons, const VectorXd& holes,
     const VectorXd& electronSlope, const VectorXd& holeSlope,
     const std::vector<bool>& active, double potentialScale, double thermalVoltage,
-    double voltage, double densityReference=1e10) {
+    double voltage) {
     const int n=psi.size();
     if(n==0||electrons.size()!=n||holes.size()!=n||electronSlope.size()!=n||holeSlope.size()!=n||
-       active.size()!=static_cast<std::size_t>(n)||!(potentialScale>0.)||!(thermalVoltage>0.)||!(densityReference>0.))
+       active.size()!=static_cast<std::size_t>(n)||!(potentialScale>0.)||!std::isfinite(potentialScale)||
+       !(thermalVoltage>0.)||!std::isfinite(thermalVoltage)||!std::isfinite(voltage)||!psi.allFinite())
         throw std::invalid_argument("invalid population coordinate inputs");
     PopulationCoordinates out;
     out.psiScale_V=psi.cwiseAbs().array()+thermalVoltage;
-    out.electronScale_cm3=electrons.cwiseAbs().array()+densityReference;
-    out.holeScale_cm3=holes.cwiseAbs().array()+densityReference;
+    // Relative population columns: dc = c*z. This changes coordinates only,
+    // never the physical population. An additive reference makes the inverse
+    // map proportional to reference/c and can overflow for positive tails.
+    out.electronScale_cm3=electrons;
+    out.holeScale_cm3=holes;
     out.voltageScale_V=std::abs(voltage)+thermalVoltage;
     std::vector<Eigen::Triplet<double>> t;
     for(int i=0;i<n;++i) {
         const double a=out.psiScale_V[i]/potentialScale;
         t.emplace_back(i,i,a);
         if(active[i]) {
-            if(!(electrons[i]>0.)||!(holes[i]>0.)||!(electronSlope[i]>0.)||!(holeSlope[i]>0.))
+            if(!(electrons[i]>0.)||!(holes[i]>0.)||!(electronSlope[i]>0.)||!(holeSlope[i]>0.)||
+               !std::isfinite(electrons[i])||!std::isfinite(holes[i])||
+               !std::isfinite(electronSlope[i])||!std::isfinite(holeSlope[i]))
                 throw std::domain_error("population coordinates require positive densities and slopes");
             const double b=out.electronScale_cm3[i]/electronSlope[i]/potentialScale;
             const double c=out.holeScale_cm3[i]/holeSlope[i]/potentialScale;
-            if(!std::isfinite(b)||!std::isfinite(c))throw std::domain_error("nonfinite population coordinate derivative");
+            if(!(b>0.)||!(c>0.)||!std::isfinite(b)||!std::isfinite(c))throw std::domain_error("unrepresentable population coordinate derivative");
             t.emplace_back(n+i,i,a);t.emplace_back(n+i,n+i,-b);
             t.emplace_back(2*n+i,i,a);t.emplace_back(2*n+i,2*n+i,c);
         } else {

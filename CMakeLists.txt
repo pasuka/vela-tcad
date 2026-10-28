@@ -364,6 +364,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
     src/post/ContactCurrent.cpp
@@ -634,6 +635,10 @@ target_link_libraries(vela_bvmethods_population_probe PRIVATE vela_core)
 add_executable(vela_bvmethods_weak_row_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_weak_row_probe.cpp)
 target_link_libraries(vela_bvmethods_weak_row_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_jv_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_jv_probe.cpp)
+target_link_libraries(vela_bvmethods_population_jv_probe PRIVATE vela_core)
 
 add_executable(vela_bvmethods_linearization_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_linearization_probe.cpp)
@@ -1972,6 +1977,12 @@ add_test(NAME bvmethods_profile_inputs
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_profile_inputs.py)
 vela_set_windows_msys2_test_path(bvmethods_profile_inputs)
+
+add_test(NAME linear_constraint_support
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_matrix_support)
+set_tests_properties(linear_constraint_support PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(linear_constraint_support)
 
 add_test(NAME bvmethods_cmd_profile
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_cmd_profile)
