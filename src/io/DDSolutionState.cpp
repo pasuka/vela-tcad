@@ -16,6 +16,12 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
     StateArchive s;
     s.nodeCount = solution.psi.size();
     s.metadata = std::move(metadata);
+    if(solution.stateVariables=="potential_density") {
+        if(solution.packedState.size() || solution.packedLow.size() || solution.phinIncrement.size() || solution.phipIncrement.size())
+            throw std::invalid_argument("population archive cannot carry QF packed coordinates");
+        s.metadata["state_variables"]="potential_density";
+        s.metadata["authoritative_fields"]={"psi","electrons_m3","holes_m3"};
+    }
     if (s.metadata.at("mode") != "dd") throw std::invalid_argument("DDSolution requires dd archive mode");
     auto field = [&](const char* name, const VectorXd& values) {
         if (values.size() != solution.psi.size()) throw std::invalid_argument("Incomplete DD field");
@@ -63,7 +69,7 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
         // They must not inherit physical-output normalization.
         if (name.starts_with("packed_") && name.ends_with("_low")) continue;
         for (auto& v : values)
-            if (v != 0. && std::abs(v) < std::numeric_limits<double>::min()) v = 0.;
+            if (solution.stateVariables!="potential_density" && v != 0. && std::abs(v) < std::numeric_limits<double>::min()) v = 0.;
     }
     validateStateArchive(s);
     return s;
@@ -73,6 +79,11 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
     validateStateArchive(archive);
     if (archive.metadata.at("mode") != "dd") throw std::invalid_argument("DDSolution requires dd archive mode");
     DDSolution s;
+    s.stateVariables=archive.metadata.value("state_variables",std::string{"potential_quasi_fermi"});
+    if(s.stateVariables!="potential_density" && s.stateVariables!="potential_quasi_fermi")
+        throw std::invalid_argument("unknown archived state_variables");
+    if(s.stateVariables=="potential_density" && (archive.fields.contains("packed_psi") || archive.fields.contains("electron_qf_increment_V")))
+        throw std::invalid_argument("population archive has incompatible QF coordinates");
     auto field = [&](const char* name, VectorXd& target) {
         const auto& values = archive.fields.at(name);
         target = Eigen::Map<const VectorXd>(values.data(), static_cast<Eigen::Index>(values.size()));

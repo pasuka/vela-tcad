@@ -4,6 +4,17 @@
 
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/solver/LinearSolver.h"
+
+TEST_CASE("Selected backend handles a scalar left by exact constraint substitution", "[linear_solver][constraints]") {
+    using namespace vela;
+    SparseMatrixd a(2,2);a.insert(0,0)=2.;a.insert(0,1)=1.;a.insert(1,0)=3.;a.insert(1,1)=4.;
+    VectorXd exact(2);exact<<-3.,5.;
+    LinearSolver solver;
+    REQUIRE((solver.solve(a,a*exact,{0})-exact).norm()<1e-13);
+    REQUIRE(solver.lastReducedDimension()==1);
+    SparseMatrixd scalar(1,1);scalar.insert(0,0)=0.;
+    REQUIRE_THROWS(solver.solve(scalar,VectorXd::Ones(1),{}));
+}
 #include "vela/solver/ElectrothermalPredictorQuality.h"
 #include "vela/solver/ElectrothermalStepControl.h"
 #include "vela/solver/ElectrothermalLocalPrediction.h"

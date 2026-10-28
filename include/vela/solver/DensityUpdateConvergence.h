@@ -13,7 +13,7 @@ namespace vela {
 // Opt-in stopping experiment. Concentration references are always physical
 // cm^-3, independently of the device's internal unit/scaling choices.
 struct DensityUpdateConvergenceConfig {
-    std::string mode = "off"; // off, report, enforce (update OR device residual)
+    std::string mode = "off"; // off, report, enforce (OR), enforce_joint (AND)
     int digits = 5;
     Real potentialReference_V = 0.025852;
     Real electronReference_cm3 = 1e10;
@@ -24,8 +24,8 @@ struct DensityUpdateConvergenceConfig {
 
 inline void validateDensityUpdateConvergence(const DensityUpdateConvergenceConfig& c)
 {
-    if (c.mode != "off" && c.mode != "report" && c.mode != "enforce")
-        throw std::invalid_argument("density update convergence mode must be off, report or enforce");
+    if (c.mode != "off" && c.mode != "report" && c.mode != "enforce" && c.mode != "enforce_joint")
+        throw std::invalid_argument("density update convergence mode must be off, report, enforce or enforce_joint");
     if (c.digits < 0 || c.digits > 15)
         throw std::invalid_argument("density update convergence digits must be in [0,15]");
     for (Real reference : {c.potentialReference_V, c.electronReference_cm3,

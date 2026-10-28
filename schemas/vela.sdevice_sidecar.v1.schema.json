@@ -116,7 +116,8 @@
                   "enum": [
                     "off",
                     "report",
-                    "enforce"
+                    "enforce",
+                    "enforce_joint"
                   ]
                 },
                 "digits": {

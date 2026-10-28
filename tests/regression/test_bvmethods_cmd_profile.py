@@ -9,6 +9,56 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class BVMethodsCmdProfileTests(unittest.TestCase):
+    def test_joint_density_stop_is_valid_through_real_sidecar_schema(self):
+        schema = sv.load_schema(REPO / "schemas/vela.sdevice_sidecar.v1.schema.json")
+        sidecar = {"schema": "vela.sdevice_sidecar.v1", "solver": {
+            "state_variables": "potential_density", "population_derivative_recovery": "automatic"},
+            "sweep": {"external_circuit": {"coupled_update_convergence": {"mode": "enforce_joint"}}}}
+        sv.validate(schema, sidecar)
+        sidecar["sweep"]["external_circuit"]["coupled_update_convergence"]["mode"] = "invalid"
+        with self.assertRaises(sv.ValidationError):
+            sv.validate(schema, sidecar)
+
+    def test_population_mode_is_explicit_and_emits_independent_protection(self):
+        d, ir, stage, _ = self.inputs()
+        sidecar = {"solver": {"state_variables": "potential_density",
+            "population_update": {"protection": "local_nonpositive", "local_retained_fraction": .5}}}
+        sidecar["solver"]["population_derivative_recovery"] = "automatic"
+        metadata = apply_bvmethods_profile(d, ir, stage, sidecar)
+        self.assertEqual(metadata["coordinates"], "potential_density")
+        self.assertEqual(d["solver"]["population_derivative_recovery"], "automatic")
+        self.assertEqual(d["solver"]["state_variables"], "potential_density")
+        self.assertEqual(d["solver"]["population_update"]["local_retained_fraction"], .5)
+        d["solver"]["mobility"]["doping_concentration_basis"] = "total_impurity"
+        schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
+        sv.validate({**schema, "required": []}, {"solver": d["solver"]})
+        d["solver"]["population_update"]["local_retained_fraction"] = 0.
+        with self.assertRaises(sv.ValidationError):
+            sv.validate({**schema, "required": []}, {"solver": d["solver"]})
+
+    def test_population_mode_rejects_unknown_coordinates_and_qf_caps(self):
+        for values in ({"state_variables": "bad"},
+                       {"population_derivative_recovery": "automatic"},
+                       {"state_variables": "potential_density", "method": "gummel"},
+                       {"state_variables": "potential_density", "quasi_fermi_update_limit_V": .1}):
+            d, ir, stage, _ = self.inputs()
+            with self.assertRaises(ValueError):
+                apply_bvmethods_profile(d, ir, stage, {"solver": values})
+
+    def test_population_only_controls_and_gummel_are_rejected_before_execution(self):
+        schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
+        schema = {**schema, "required": []}
+        for solver in ({"population_update": {"protection": "local_nonpositive"}},
+                       {"population_derivative_recovery": "automatic"}):
+            with self.assertRaises(sv.ValidationError):
+                sv.validate(schema, {"solver": solver})
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {"solver": {"state_variables": "potential_density"}})
+        d["solver"]["mobility"]["doping_concentration_basis"] = "total_impurity"
+        d["solver"]["method"] = "gummel"
+        with self.assertRaises(sv.ValidationError):
+            sv.validate(schema, {"solver": d["solver"]})
+
     def inputs(self):
         deck = {'solver': {'mobility': {'model': 'masetti_field_lombardi',
             'high_field_driving_force': 'quasi_fermi_gradient', 'electron_cr_cm3': 9.68e16},

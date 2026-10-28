@@ -40,6 +40,18 @@ coupled carrier residuals, Jacobians, ledgers and terminal totals through
 Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
 the default and PN2D operators retain their existing paths.
 
+The explicit `solver.state_variables: "potential_density"` mode stores physical
+n/p as primary state alongside scaled potential. `BvMethodsCoupledRuntime`
+directly seeds population derivatives in the shared Tri3 jets, uses a fixed-n/p
+Poisson block and derives QF only for physical fields. `PopulationNewtonSolver`
+uses the core load-line Newton service with a fixed-voltage scalar row for a
+device-only solve; external-resistor sweeps use the same state and trial callbacks.
+`PopulationState` owns per-trial positivity, while `DerivativeRecovery` optionally
+chooses directly assembled approximate/full Jacobians without changing RHS.
+Equilibrium Poisson initialization remains a separate scalar statistical problem.
+The [implementation record](validation/potential_density_development_2026-10-28.md)
+separates implemented interfaces from passed numerical qualifications.
+
 The experimental `vela::experimental` NonLocalPath contracts in
 `physics/NonlocalPathBandToBand.h` define SI configuration, actual band-state
 dependencies, path records, separate signed pair-source integrals and versioned

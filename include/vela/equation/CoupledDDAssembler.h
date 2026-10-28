@@ -36,6 +36,8 @@ struct CoupledDDState {
     VectorXd psi;
     VectorXd phin;
     VectorXd phip;
+    VectorXd n;
+    VectorXd p;
 };
 
 struct CoupledDDThermionicBoundary {
@@ -300,6 +302,7 @@ public:
         structureCache_ = std::move(cache);
     }
     bool usesBvMethodsOperator() const { return scaling_.coupledOperator=="bvmethods_tri3_qf"; }
+    SparseMatrixd populationBootstrapJacobian(const VectorXd&,const CoupledDDBoundaryConditions&) const;
     /// Opt-in single-owner sequential reuse of immutable BVMethods kernels.
     /// State keys are bit-exact; boundary replacement is evaluated on every call.
     void setBvMethodsEvaluationReuse(bool enabled) {
@@ -351,6 +354,9 @@ public:
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
+    bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
+    /// Physical internal densities; potential fields keep the existing scaled pack contract.
+    VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
 
     /// Store quasi-Fermi unknowns as contact-referenced increments.  The
     /// public CoupledDDState and boundary-condition values remain scaled

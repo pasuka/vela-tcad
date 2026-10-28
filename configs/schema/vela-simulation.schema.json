@@ -89,7 +89,30 @@
     },
     "solver": {
       "additionalProperties": true,
+      "allOf": [
+        {"anyOf": [
+          {"not": {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}},
+          {"required": ["coupled_operator", "carrier_statistics"], "properties": {
+            "coupled_operator": {"const": "bvmethods_tri3_qf"},
+            "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]},
+            "method": {"enum": ["newton", "poisson_only"]},
+            "quasi_fermi_reference": {"const": "none"}, "split_dd_state": {"const": false},
+            "quasi_fermi_update_limit_V": {"const": 0}, "quasi_fermi_update_limit_minority_V": {"const": 0}, "max_update": {"const": 0}
+          }}
+        ]},
+        {"anyOf": [
+          {"not": {"required": ["population_update"]}},
+          {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}
+        ]},
+        {"anyOf": [
+          {"not": {"required": ["population_derivative_recovery"], "properties": {"population_derivative_recovery": {"const": "automatic"}}}},
+          {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}
+        ]}
+      ],
       "properties": {
+        "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode requires explicit BVMethods physics."},
+        "population_derivative_recovery": {"enum": ["full", "automatic"], "description": "Population only, automatic full-step bootstrap/trial/full derivative recovery; default full."},
+        "population_update": {"type": "object", "additionalProperties": false, "properties": {"protection": {"enum": ["local_nonpositive", "fraction_to_boundary"]}, "local_retained_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "fraction_tau": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}}},
         "block_absolute_convergence": {
           "additionalProperties": false,
           "properties": {
@@ -399,7 +422,7 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "mode": {"enum": ["off", "report", "enforce"]},
+                "mode": {"enum": ["off", "report", "enforce", "enforce_joint"]},
                 "digits": {"type": "integer", "minimum": 0, "maximum": 15},
                 "potential_reference_V": {"type": "number", "exclusiveMinimum": 0},
                 "electron_reference_cm3": {"type": "number", "exclusiveMinimum": 0},

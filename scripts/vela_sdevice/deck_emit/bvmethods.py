@@ -33,6 +33,24 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     # qualified with this operator, retaining all cmd/par model coefficients.
     solver["carrier_statistics"]["model"] = "fermi_dirac_joyce_dixon"
     solver["coupled_operator"] = "bvmethods_tri3_qf"
+    variables = requested.get("state_variables", "potential_quasi_fermi")
+    if variables not in ("potential_quasi_fermi", "potential_density"):
+        raise ValueError("unknown state_variables")
+    recovery = requested.get("population_derivative_recovery", "full")
+    if recovery not in ("full", "automatic") or (recovery != "full" and variables != "potential_density"):
+        raise ValueError("invalid population_derivative_recovery")
+    if variables == "potential_density":
+        if requested.get("method", "newton") not in ("newton", "poisson_only"):
+            raise ValueError("potential_density does not support Gummel, hybrid or frozen-state solver paths")
+        solver["state_variables"] = variables
+        if "population_derivative_recovery" in requested:
+            solver["population_derivative_recovery"] = recovery
+        if "population_update" in requested:
+            solver["population_update"] = dict(requested["population_update"])
+        for key in ("quasi_fermi_update_limit_V", "quasi_fermi_update_limit_minority_V", "max_update"):
+            if requested.get(key, 0) != 0:
+                raise ValueError("potential_density does not support QF or packed update caps")
+
     solver["quasi_fermi_reference"] = "none"
     solver["continuity_row_scaling"] = {"enabled": False}
     # Do not inherit the legacy warm-start emitter's implicit 0.1 V cap.
@@ -90,5 +108,5 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
             sweep["step"] = delta
             stage["sweep"]["step_V"] = delta
     return {"operator": "bvmethods_tri3_qf", "statistics_approximation": "fermi_dirac_joyce_dixon",
-            "coordinates": "zero_reference", "geometry": GEOMETRY,
+            "coordinates": "potential_density" if variables == "potential_density" else "zero_reference", "geometry": GEOMETRY,
             "scope": "explicit numerical profile; cmd/par retain physical laws and coefficients"}

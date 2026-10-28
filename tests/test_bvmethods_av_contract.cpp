@@ -294,6 +294,8 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
 }
 
 #include "vela/post/ContactCurrent.h"
+#include "vela/io/DDSolutionState.h"
+#include "vela/simulation/CoupledLoadLine.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/solver/experimental/ExactValueBits.h"
 TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conservation", "[bvmethods_profile]") {
@@ -404,4 +406,170 @@ TEST_CASE("BVMethods profile shared ports and boundary derivative preserve the f
     x.segment(6,6).setConstant(1e6);
     REQUIRE_FALSE(original.parameterDerivative(x,.1).allFinite());
     REQUIRE_FALSE(reduced.parameterDerivative(x,.1).allFinite());
+}
+
+
+#include "vela/solver/PopulationState.h"
+TEST_CASE("Direct population BVMethods operator matches the physical QF residual and chain rule", "[population_core]") {
+    using namespace vela;
+    ProfileFixture f;auto q=f.assembler();const VectorXd x=f.point();
+    const VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);
+    f.scaling.stateVariables="potential_density";auto a=f.assembler();
+    const VectorXd y=a->packPopulation(x.head(6),en,hp);
+    const auto state=a->unpack(y);
+    REQUIRE((state.n-en).norm()==0.);REQUIRE((state.p-hp).norm()==0.);
+    REQUIRE((state.phin-x.segment(6,6)).head(4).norm()<2e-16);
+    Eigen::MatrixXd T=Eigen::MatrixXd::Zero(18,18);
+    for(int i=0;i<6;++i){T(i,i)=1.;if(i<4){
+        T(6+i,i)=T(12+i,i)=1.;
+        T(6+i,6+i)=-constants::Vt_300/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(en[i],q->electronDensityOfStates()[i]);
+        T(12+i,12+i)=constants::Vt_300/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(hp[i],q->holeDensityOfStates()[i]);
+    }else {T(6+i,6+i)=T(12+i,12+i)=1.;}}
+    CoupledDDBoundaryConditions bc;bc.psi[0]=.04;bc.phin[0]=.003;bc.phip[0]=-.004;
+    for(const auto& b:std::vector<CoupledDDBoundaryConditions>{{},bc}){
+        const VectorXd old=q->residual(x,b),now=a->residual(y,b);
+        for(int block=0;block<3;++block)
+            REQUIRE((old-now).segment(block*6,6).norm()<1e-11*std::max(old.segment(block*6,6).norm(),1e-25));
+        const Eigen::MatrixXd expected=Eigen::MatrixXd(q->assembleJacobian(x,b))*T;
+        const Eigen::MatrixXd actual=a->assembleJacobian(y,b);
+        const VectorXd beforeBootstrap=a->residual(y,b);
+        const Eigen::MatrixXd bootstrap=a->populationBootstrapJacobian(y,b);
+        REQUIRE((beforeBootstrap-a->residual(y,b)).norm()==0.);
+        REQUIRE((bootstrap.topRows(6)-actual.topRows(6)).norm()==0.);
+        REQUIRE(bootstrap.allFinite());
+        VectorXd scale=VectorXd::Ones(18);scale.segment(6,6)=en;scale.tail(6)=hp;
+        for(int i=4;i<6;++i)scale[6+i]=scale[12+i]=1.;
+        const Eigen::MatrixXd es=expected*scale.asDiagonal(),as=actual*scale.asDiagonal();
+        for(int block=0;block<3;++block)
+            REQUIRE((es-as).middleRows(block*6,6).norm()<2e-11*std::max(es.middleRows(block*6,6).norm(),1e-25));
+        VectorXd v=VectorXd::Zero(18);
+        for(int i=0;i<6;++i)v[i]=.01*std::sin(i+.1);
+        for(int i=0;i<4;++i){v[6+i]=en[i]*.03*std::sin(i+.4);v[12+i]=hp[i]*.03*std::cos(i+.8);}
+        const VectorXd an=actual*v;
+        const double h=1e-5;
+        const VectorXd fd=(a->residual(y+h*v,b)-a->residual(y-h*v,b))/(2*h);
+        for(int block=0;block<3;++block)
+            REQUIRE((an-fd).segment(block*6,6).norm()<2e-6*std::max(an.segment(block*6,6).norm(),1e-25));
+    }
+    VectorXd broken=y;broken[6]=0.;REQUIRE_THROWS_AS(a->unpack(broken),std::domain_error);
+    broken=y;broken[10]=1.;REQUIRE_THROWS_AS(a->unpack(broken),std::domain_error);
+}
+TEST_CASE("Core population protection repeats on each new candidate and separates global scaling", "[population_core]") {
+    using namespace vela;
+    VectorXd before(6),raw(6);before<<.2,.3,100.,200.,300.,400.;raw<<.01,.02,-120.,10.,20.,-500.;
+    PopulationUpdateConfig c;c.localRetainedFraction=.5;
+    const auto first=makePopulationTrial(before,raw,1.,{true,true},{true,true},c);
+    REQUIRE(first.state[2]==50.);REQUIRE(first.state[3]==210.);
+    REQUIRE(first.state[4]==320.);REQUIRE(first.state[5]==200.);
+    REQUIRE(first.protectedElectrons==std::vector<int>{0});
+    REQUIRE(first.protectedHoles==std::vector<int>{1});
+    const auto second=makePopulationTrial(first.state,raw,1.,{true,true},{true,true},c);
+    REQUIRE(second.state[2]==25.);REQUIRE(second.state[5]==100.);
+    const auto shorter=makePopulationTrial(before,raw,.1,{true,true},{true,true},c);
+    REQUIRE(shorter.protectedElectrons.empty());REQUIRE(shorter.protectedHoles.empty());
+    c.protection="fraction_to_boundary";
+    const auto global=makePopulationTrial(before,raw,1.,{true,true},{true,true},c);
+    REQUIRE(global.alpha<1.);REQUIRE(global.protectedElectrons.empty());
+    REQUIRE(global.state[0]-before[0]==Approx(global.alpha*raw[0]));
+}
+
+TEST_CASE("Population configuration rejects solver paths that would revert to QF coordinates", "[population_core]") {
+    using namespace vela;
+    nlohmann::json c={{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}}};
+    for(const auto* method:{"gummel","gummel_newton","frozen_state"}) {
+        c["method"]=method;REQUIRE_THROWS_AS(newtonConfigFromJson(c),std::invalid_argument);
+    }
+    c["method"]="newton";
+    REQUIRE(newtonConfigFromJson(c).stateVariables=="potential_density");
+}
+
+TEST_CASE("Population core callbacks preserve authoritative density and project each finite candidate", "[population_core]") {
+    using namespace vela;
+    ProfileFixture f;auto old=f.assembler();const auto x=f.point();
+    DDSolution s;s.psi=x.head(6);s.phin=VectorXd::Constant(6,99.);s.phip=VectorXd::Constant(6,-99.);
+    s.n=old->electronDensity(x);s.p=old->holeDensity(x);
+    NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";cfg.stateVariables="potential_density";
+    cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
+    cfg.populationUpdate.localRetainedFraction=.5;cfg.warmStart=true;
+    NewtonSolver solver(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    const auto y=solver.packArclengthState(s);const auto restored=solver.unpackArclengthState(y);
+    REQUIRE((restored.n-s.n).norm()==0.);REQUIRE((restored.p-s.p).norm()==0.);
+    REQUIRE(restored.stateVariables=="potential_density");REQUIRE(restored.phinIncrement.size()==0);
+    REQUIRE((restored.phin.head(4)-x.segment(6,4)).norm()<2e-16);
+    const auto sys=solver.makeArclengthSystem("drain");
+    REQUIRE(sys.prescribedRows(y,.01).size()==10);
+    VectorXd raw=VectorXd::Zero(18);raw[7]=-2*y[7];raw[13]=-3*y[13];raw[1]=.001;
+    const auto trial=sys.makeTrial({y,.01},raw,0.,1.);
+    REQUIRE(trial.state.x[7]==.5*y[7]);REQUIRE(trial.state.x[13]==.5*y[13]);
+    REQUIRE(trial.protectedElectrons==1);REQUIRE(trial.protectedHoles==1);
+    const auto reduced=sys.makeTrial({y,.01},raw,0.,.1);
+    REQUIRE(reduced.protectedElectrons==0);REQUIRE(reduced.protectedHoles==0);
+    DensityUpdateConvergenceConfig errorConfig;
+    const auto error=solver.makeArclengthUpdateErrorEvaluator("drain",errorConfig)(y,raw,trial.state.x,.01,0.);
+    REQUIRE(error.valid);REQUIRE(error.counts[1]==2);REQUIRE(error.counts[2]==2);
+    const auto port=solver.makeArclengthContactCurrentFunctional("drain",1.);
+    const auto derivative=port.linearize(y,.01);
+    // The postprocessing path must consume the same primary populations even
+    // when a caller supplies stale derived QF vectors.
+    auto stale=restored;stale.phin.setConstant(99.);stale.phip.setConstant(-99.);
+    auto scaling=f.scaling;scaling.stateVariables="potential_density";
+    ContactCurrent post(f.mesh,f.materials,f.doping,f.mobility,300.,scaling,{},f.statistics);
+    const auto terminal=post.compute(stale,"drain");
+    REQUIRE(terminal.totalCurrent==Approx(derivative.value).epsilon(1e-13));
+    VectorXd v=VectorXd::Zero(18);v[1]=.003;v[7]=.01*y[7];v[13]=-.02*y[13];
+    const double h=1e-5;
+    const double fd=(port.value(y+h*v,.01)-port.value(y-h*v,.01))/(2*h);
+    REQUIRE(derivative.stateDerivative.dot(v)==Approx(fd).epsilon(2e-6));
+    auto reportConfig=cfg;reportConfig.globalContinuityClosure.mode="report";
+    reportConfig.globalContinuityClosure.tolerance=1e-12;
+    NewtonSolver reported(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},reportConfig);
+    const auto reportGates=reported.makeArclengthConvergenceEvaluator("drain")(y,.01);
+    REQUIRE_FALSE(reportGates.globalContinuity.satisfied);
+    REQUIRE(reported.makeArclengthSystem("drain").convergenceSatisfied(y,.01));
+    reportConfig.globalContinuityClosure.mode="enforce";
+    NewtonSolver enforced(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},reportConfig);
+    REQUIRE_FALSE(enforced.makeArclengthSystem("drain").convergenceSatisfied(y,.01));
+}
+
+TEST_CASE("Population continuation restart preserves the physical predictor and next coupled solution", "[population_core][state_archive]") {
+    using namespace vela;
+    ProfileFixture f;
+    NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";cfg.stateVariables="potential_density";
+    cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.maxIter=100;cfg.verbose=false;
+    // Normalize equations while retaining this fixture's physical SI mesh and
+    // population units. Coordinate scaling is independent of input units.
+    cfg.inputScaling.mode=UnitScalingMode::UnitScaling;
+    NewtonSolver owner(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",0.}},cfg);
+    const auto poisson=owner.solvePoissonOnly(owner.buildPoissonBlockInitialization().coldInitial);
+    INFO(poisson.failureDiagnostics.failureReason);REQUIRE(poisson.converged);
+    const auto sys=owner.makeArclengthSystem("drain");
+    const auto port=owner.makeArclengthContactCurrentFunctional("drain",1e-6);
+    CoupledLoadLineConfig control;control.linearSolver="direct_bordered";control.lineSearchMode="full_step";
+    control.updateConvergence.mode="enforce_joint";control.maxIterations=40;
+    CoupledLoadLineNewton newton(sys,port.value,control,port,owner.makeArclengthUpdateErrorEvaluator("drain",control.updateConvergence));
+    const ArclengthState previous{owner.packArclengthState(poisson.solution),0.};
+    const auto first=newton.solve(previous,.001,1e3);
+    INFO(first.failureReason);REQUIRE(first.converged);
+    const auto metadata=nlohmann::json{{"mode","dd"},{"mesh_sha256",std::string(64,'a')},{"potential_origin_V",0.}};
+    auto roundtrip=[&](const ArclengthState& state){
+        const auto physical=owner.unpackArclengthState(state.x);
+        const auto disk=restoreDDSolution(archiveDDSolution(physical,metadata,cfg.inputScaling),cfg.inputScaling);
+        return ArclengthState{owner.packArclengthState(disk),state.lambda};
+    };
+    const auto originalPredictor=newton.secantPredict(previous,first.state,.002,1e3);
+    const auto restoredPredictor=newton.secantPredict(roundtrip(previous),roundtrip(first.state),.002,1e3);
+    // SI physical archives do not promise bitwise identity of the normalized
+    // psi/V0 packing. Fix the restart budget before comparing solve paths.
+    const VectorXd predictorScale=sys.columnScales(originalPredictor).head(originalPredictor.x.size());
+    REQUIRE((originalPredictor.x-restoredPredictor.x).cwiseQuotient(predictorScale).lpNorm<Eigen::Infinity>()<1e-10);
+    REQUIRE(std::abs(originalPredictor.lambda-restoredPredictor.lambda)<1e-11);
+    const auto uninterrupted=newton.solve(originalPredictor,.002,1e3);
+    const auto restarted=newton.solve(restoredPredictor,.002,1e3);
+    INFO(restarted.failureReason);REQUIRE(uninterrupted.converged);REQUIRE(restarted.converged);
+    const VectorXd finalScale=sys.columnScales(uninterrupted.state).head(uninterrupted.state.x.size());
+    REQUIRE((uninterrupted.state.x-restarted.state.x).cwiseQuotient(finalScale).lpNorm<Eigen::Infinity>()<1e-10);
+    REQUIRE(std::abs(uninterrupted.state.lambda-restarted.state.lambda)<1e-11);
+    REQUIRE(uninterrupted.iterations==restarted.iterations);
+    REQUIRE(restarted.updateError.valid);REQUIRE(restarted.updateError.rms<1.);
 }

@@ -148,6 +148,40 @@ independent. Existing decks and global defaults are unchanged.
 
 Newton numerical and geometry controls added for explicit validation profiles:
 
+- `solver.state_variables`: `potential_quasi_fermi` (default) or explicitly
+  `potential_density`. The latter currently requires the qualified 300 K
+  `bvmethods_tri3_qf` physics and Joyce–Dixon statistics; the profile name
+  identifies its physical discretization, while this option selects coordinates.
+  Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
+  semiconductor n/p are authoritative; derived QF fields never overwrite them.
+  Inactive oxide slots are zero and eliminated as constraints. QF caps,
+  references, split coordinates, legacy row scaling and quantum/Gummel recovery
+  combinations are rejected. PN2D and pseudo-arclength are not qualified for
+  this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
+  for actual validation status.
+- `solver.population_update`: population-mode-only object. `protection` is
+  `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
+  only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
+  The latter uniformly scales the coupled update using `fraction_tau` (default
+  0.99). Both fractions must be finite and strictly between zero and one.
+  Every Newton trial repeats the check; invalid predictions fall back to the
+  last accepted state. This policy does not change the configured residual,
+  load-line, KCL or report/enforce gates. RMS diagnostics retain the raw direction.
+- `solver.population_derivative_recovery`: `full` (default) or explicit
+  `automatic`. Automatic mode requires population coordinates, a direct bordered
+  solve and `full_step` acceptance. Its bootstrap directly assembles transport
+  with mobility derivatives frozen and omits AV derivatives, retaining full SRH
+  derivatives and the complete physical RHS. A bounded trial/full controller
+  uses the model response to the actual applied step; invalid candidates or
+  confirmed model failure return to bootstrap with cooldown. Traces distinguish
+  bootstrap, trial and full. This is an approximate Newton policy, not a
+  replacement of the physical equations or a guarantee of BV convergence.
+  The population direct solve audits the original system at componentwise
+  backward error 1e-10 and scaled linear residual 1e-8·max(1,‖b_scaled‖∞), using
+  up to at least three correction solves when needed. Legacy QF defaults remain.
+  CMD selects these options through its Vela sidecar; no Sentaurus keyword is
+  invented. Population HDF5 archives identify their authoritative SI fields,
+  retain mesh identity and reject mixed QF packed buffers.
 - `solver.linear_refinement_iterations`: integer 0--10, default 0. After the
   direct Newton solve, recompute the linear defect in 100-digit arithmetic and
   solve each correction with the same row weights, configured L2 row/column
@@ -2803,7 +2837,12 @@ isothermal DD stopping experiment for `solver: coupled_newton`:
 ```
 
 Modes are `off` (default), `report` (observations without changing stopping),
-and `enforce` (device residual **or** normalized density-update RMS < 1).
+`enforce` (device residual **or** normalized density-update RMS < 1), and
+`enforce_joint` (device residual **and** normalized density-update RMS < 1).
+Joint mode permits a residual-only zero-voltage initial anchor before any update;
+all nonzero accepted points require a valid raw-update report. This additional
+explicit mode retains the historical `enforce` semantics. In particular, a
+residual-only pass with a large reported RMS is not a joint qualification pass.
 Both branches still require the original load-line and terminal KCL checks;
 configured enforced carrier-row/global-closure checks also still apply.
 No conservation mode is automatically changed. To study Newton stopping

@@ -509,6 +509,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
     // terminal current.
     vela::DDScalingSpec ddScaling;
+    ddScaling.coupledOperator=problem.newton.coupledOperator;
+    ddScaling.stateVariables=problem.newton.stateVariables;
     ddScaling.regionResolvedInterfaceAssembly =
         problem.newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy =

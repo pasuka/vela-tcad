@@ -335,6 +335,18 @@ VectorXd LinearSolver::solveDirect(const SparseMatrixd& a, const VectorXd& b) {
         if(a.rows()==0) throw std::invalid_argument("empty system");
         if (!b.allFinite() || !Eigen::Map<const VectorXd>(a.valuePtr(),a.nonZeros()).allFinite())
             throw std::runtime_error("nonfinite input");
+        // Exact constraint substitution can leave one scalar. Avoid invoking
+        // vendor graph analysis for that degenerate graph (MKL's Linux
+        // analysis path can reject it); this is an exact division, not a
+        // change of backend or a regularized fallback.
+        if(a.rows()==1) {
+            const Real pivot=a.coeff(0,0);
+            if(pivot==0.)throw std::runtime_error("singular scalar system");
+            VectorXd x(1);x[0]=b[0]/pivot;
+            if(!x.allFinite())throw std::runtime_error("nonfinite scalar solution");
+            incrementPerformanceCounter("linear.scalar_solve_calls");
+            return x;
+        }
         if (!direct_) createDirectBackend();
         const bool same=patternMatches(a), reuse=same && valuesMatchFactorization(a);
         if(!reuse) {

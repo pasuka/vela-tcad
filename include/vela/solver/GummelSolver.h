@@ -44,6 +44,7 @@ using ContactSpecsMap = std::unordered_map<std::string, ContactBoundarySpec>;
  * @brief Result of a Gummel iteration.
  */
 struct DDSolution {
+    std::string stateVariables = "potential_quasi_fermi";
     VectorXd psi;   ///< Electrostatic potential [V]
     VectorXd phin;  ///< Electron quasi-Fermi potential [V]
     VectorXd phip;  ///< Hole quasi-Fermi potential [V]

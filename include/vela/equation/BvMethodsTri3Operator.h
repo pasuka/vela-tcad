@@ -11,7 +11,10 @@
 #include "vela/physics/experimental/JoyceDixonStatistics.h"
 
 namespace vela::detail {
-struct BvMethodsQfState { VectorXd psi,phin,phip,n,p; };
+struct BvMethodsQfState {
+ VectorXd psi,phin,phip,n,p;
+ bool populationCoordinates=false;
+};
 struct BvMethodsTri3Context {
  const DeviceMesh& mesh;
  const MaterialDatabase& matdb;
@@ -104,6 +107,16 @@ public:
     const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
     const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
+    if(state.populationCoordinates){
+     // Jets retain the historical final V0 scatter; concentration columns
+     // therefore carry their physical internal-unit factor divided by V0.
+     const double dc=units.internalConcentrationToM3(1.)/1e6/potentialScale_;
+     ns[k].derivative.fill(0.);ps[k].derivative.fill(0.);
+     ns[k].derivative[3+k]=dc;ps[k].derivative[6+k]=dc;
+     fn[k].derivative.fill(0.);fp[k].derivative.fill(0.);
+     fn[k].derivative[k]=1.;fp[k].derivative[k]=1.;
+     fn[k].derivative[3+k]=-dc/dn;fp[k].derivative[6+k]=dc/dp;
+    }
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
    auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
@@ -145,6 +158,16 @@ public:
     const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
     const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
+    if(state.populationCoordinates){
+     // Jets retain the historical final V0 scatter; concentration columns
+     // therefore carry their physical internal-unit factor divided by V0.
+     const double dc=units.internalConcentrationToM3(1.)/1e6/potentialScale_;
+     ns[k].derivative.fill(0.);ps[k].derivative.fill(0.);
+     ns[k].derivative[3+k]=dc;ps[k].derivative[6+k]=dc;
+     fn[k].derivative.fill(0.);fp[k].derivative.fill(0.);
+     fn[k].derivative[k]=1.;fp[k].derivative[k]=1.;
+     fn[k].derivative[3+k]=-dc/dn;fp[k].derivative[6+k]=dc/dp;
+    }
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
    auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
@@ -167,6 +190,11 @@ public:
     const auto i=a.nodes[k];etaN[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ns[k].value,nc_[i]));etaP[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ps[k].value,nv_[i]));
     etaN[k].derivative[k]=1/vt_;etaN[k].derivative[3+k]=-1/vt_;
     etaP[k].derivative[k]=-1/vt_;etaP[k].derivative[6+k]=1/vt_;
+    if(state.populationCoordinates){
+     etaN[k].derivative.fill(0.);etaP[k].derivative.fill(0.);
+     etaN[k].derivative[3+k]=-fn[k].derivative[3+k]/vt_;
+     etaP[k].derivative[6+k]=fp[k].derivative[6+k]/vt_;
+    }
    }
    auto einstein=[&](const std::array<AvJet,3>& population,const std::array<AvJet,3>& eta,int k){
     const int j=(k+1)%3;auto log=experimental::avLogRatio(population[j],population[k]);
