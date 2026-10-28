@@ -245,3 +245,21 @@ TEST_CASE("State provenance detects changed model bytes at the same path", "[sta
     REQUIRE(before.at("materials_file")!=after.at("materials_file"));
     REQUIRE_THROWS(vela::stateInputProvenance(config,w.root/"missing"));
 }
+
+TEST_CASE("Population restart keeps physical carrier bits without QF packed authority", "[state_archive][population_core]") {
+    using namespace vela;
+    DDSolution s;s.stateVariables="potential_density";
+    s.psi=VectorXd::Zero(3);s.phin=VectorXd::Zero(3);s.phip=VectorXd::Zero(3);
+    s.n.resize(3);s.p.resize(3);s.n<<1e20,1e-300,0.;s.p<<1e-200,2e23,0.;
+    auto metadata=example().metadata;
+    const auto archive=archiveDDSolution(s,metadata);
+    REQUIRE(archive.metadata.at("state_variables")=="potential_density");
+    const auto out=restoreDDSolution(archive);
+    REQUIRE(out.stateVariables=="potential_density");
+    for(int i=0;i<3;++i){
+        REQUIRE(std::bit_cast<std::uint64_t>(out.n[i])==std::bit_cast<std::uint64_t>(s.n[i]));
+        REQUIRE(std::bit_cast<std::uint64_t>(out.p[i])==std::bit_cast<std::uint64_t>(s.p[i]));
+    }
+    s.packedState=VectorXd::Zero(9);
+    REQUIRE_THROWS_AS(archiveDDSolution(s,metadata),std::invalid_argument);
+}

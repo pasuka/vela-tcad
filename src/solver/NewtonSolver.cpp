@@ -44,6 +44,10 @@ VectorXd packReferencedSolution(
     const CoupledDDBoundaryConditions& bcs)
 {
     (void)bcs;
+    if(assembler.usesPopulationState()) {
+        if(state.packedLow.size())throw std::invalid_argument("population state cannot import split packed coordinates");
+        return assembler.packPopulation(state.psi,state.n,state.p);
+    }
     if(state.packedLow.size()!=0) {
         auto runtime=assembler.splitRuntime();
         if(!runtime)throw std::invalid_argument("Split checkpoint requires split_dd_state");
@@ -1819,6 +1823,34 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.stableMeritComparison = json.value("stable_merit_comparison", cfg.stableMeritComparison);
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
     cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
+    cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
+    if(json.contains("population_update")) {
+        const auto& p=json.at("population_update");
+        if(!p.is_object())throw std::invalid_argument("population_update must be an object");
+        for(auto it=p.begin();it!=p.end();++it)
+            if(it.key()!="protection" && it.key()!="local_retained_fraction" && it.key()!="fraction_tau")
+                throw std::invalid_argument("unknown population_update field: "+it.key());
+        cfg.populationUpdate.protection=p.value("protection",cfg.populationUpdate.protection);
+        cfg.populationUpdate.localRetainedFraction=p.value("local_retained_fraction",cfg.populationUpdate.localRetainedFraction);
+        cfg.populationUpdate.fractionTau=p.value("fraction_tau",cfg.populationUpdate.fractionTau);
+    }
+    validatePopulationUpdate(cfg.populationUpdate);
+    cfg.populationDerivativeRecovery=json.value("population_derivative_recovery",std::string{"full"});
+    if(cfg.populationDerivativeRecovery!="full" && cfg.populationDerivativeRecovery!="automatic")
+        throw std::invalid_argument("population_derivative_recovery must be full or automatic");
+    if(cfg.populationDerivativeRecovery!="full" && cfg.stateVariables!="potential_density")
+        throw std::invalid_argument("automatic population derivative recovery requires potential_density");
+    if(cfg.stateVariables!="potential_quasi_fermi" && cfg.stateVariables!="potential_density")
+        throw std::invalid_argument("unknown state_variables");
+    if(cfg.stateVariables=="potential_density" && cfg.coupledOperator!="bvmethods_tri3_qf")
+        throw std::invalid_argument("potential_density requires explicit BVMethods physics");
+    if(cfg.stateVariables=="potential_density") {
+        const auto method=json.value("method",std::string{"newton"});
+        if(method!="newton"&&method!="poisson_only")
+            throw std::invalid_argument("potential_density requires Newton or Poisson initialization");
+    }
+    if(json.contains("population_update") && cfg.stateVariables!="potential_density")
+        throw std::invalid_argument("population_update requires potential_density state_variables");
     if(cfg.coupledOperator!="legacy" && cfg.coupledOperator!="bvmethods_tri3_qf")
         throw std::invalid_argument("Unknown coupled_operator; expected legacy or bvmethods_tri3_qf");
     cfg.exactDirichletUpdates = json.value("exact_dirichlet_updates", cfg.exactDirichletUpdates);
@@ -2860,6 +2892,19 @@ NewtonSolver::NewtonSolver(
     , sheetCharges_(std::move(sheetCharges))
 {
     validateNumericalPrecisionOptions(cfg_);
+    if(cfg_.stateVariables!="potential_quasi_fermi" && cfg_.stateVariables!="potential_density")
+        throw std::invalid_argument("unknown state_variables");
+    if((cfg_.populationDerivativeRecovery!="full"&&cfg_.populationDerivativeRecovery!="automatic") ||
+       (cfg_.populationDerivativeRecovery!="full"&&cfg_.stateVariables!="potential_density"))
+        throw std::invalid_argument("invalid population derivative recovery mode");
+    if(cfg_.stateVariables=="potential_density") {
+        validatePopulationUpdate(cfg_.populationUpdate);
+        if(cfg_.coupledOperator!="bvmethods_tri3_qf" || cfg_.splitDDState || cfg_.electronQuantumPotential.enabled ||
+           cfg_.quasiFermiReference!="none" || cfg_.quasiFermiUpdateLimit_V!=0. || cfg_.quasiFermiUpdateLimitMinority_V!=0. ||
+           cfg_.maxUpdate!=0. || cfg_.carrierRowRecovery.mode!="off" || cfg_.continuityRowScaling.enabled ||
+           cfg_.carrierRegularizationScale!=0. || cfg_.contactMajorityQfBranchDropLimit_V!=0. || cfg_.quasiFermiRecenterOnStall)
+            throw std::invalid_argument("potential_density requires ordinary BVMethods without QF caps/references, split, quantum or Gummel recovery");
+    }
     if (!std::isfinite(cfg_.legacyTransportJacobianStep) || cfg_.legacyTransportJacobianStep <= 0.0 ||
         !std::isfinite(cfg_.legacyAvalancheJacobianStep) || cfg_.legacyAvalancheJacobianStep <= 0.0)
         throw std::invalid_argument("NewtonSolver: legacy edge Jacobian steps must be finite and positive");
@@ -3016,6 +3061,7 @@ DDScalingSpec NewtonSolver::buildScalingSpec() const
 {
     DDScalingSpec scaling;
     scaling.coupledOperator = cfg_.coupledOperator;
+    scaling.stateVariables = cfg_.stateVariables;
     scaling.regionResolvedInterfaceAssembly =
         cfg_.regionResolvedInterfaceAssembly;
     scaling.poissonChargeVolumePolicy = cfg_.poissonChargeVolumePolicy;
@@ -3449,8 +3495,13 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
     sol.holeQfReference_V = assembler.holeQuasiFermiReference();
     sol.electronQfReference = assembler.electronQuasiFermiReferenceField();
     sol.holeQfReference = assembler.holeQuasiFermiReferenceField();
-    sol.n = assembler.electronDensity(x);
-    sol.p = assembler.holeDensity(x);
+    sol.n = assembler.usesPopulationState()?state.n:assembler.electronDensity(x);
+    sol.p = assembler.usesPopulationState()?state.p:assembler.holeDensity(x);
+    if(assembler.usesPopulationState()) {
+        sol.stateVariables="potential_density";
+        sol.phinIncrement.resize(0);sol.phipIncrement.resize(0);
+        sol.electronQfReference.resize(0);sol.holeQfReference.resize(0);
+    }
     sol.iters = iters;
     if(assembler.usesExtendedPoissonResidual()) {
         sol.packedState=x;
@@ -3536,7 +3587,7 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda + h));
             const CoupledDDBoundaryConditions bcsMinus =
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda - h));
-            if(boundaryOnlyParameterDerivative && assembler->usesBvMethodsOperator() &&
+            if(boundaryOnlyParameterDerivative && assembler->usesBvMethodsOperator() && !assembler->usesPopulationState() &&
                bcsPlus.thermionic.empty() && bcsMinus.thermionic.empty() &&
                assembler->electronQuasiFermiReferenceField().isZero(0.) &&
                assembler->holeQuasiFermiReferenceField().isZero(0.)) {
@@ -3602,6 +3653,57 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 return y1.allFinite() && y2.allFinite();
             } catch (const std::exception&) { return false; }
         };
+    if(assembler->usesPopulationState()) {
+        system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
+        system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+            return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+        };
+        const double vt=thermalVoltage(cfg_.temperature_K);
+        system.columnScales=[assembler,nodeCount,potentialScale,vt](const ArclengthState& state) {
+            (void)assembler->unpack(state.x);VectorXd scale=VectorXd::Ones(3*nodeCount+1);
+            scale.head(nodeCount)=state.x.head(nodeCount).cwiseAbs().array()+vt/potentialScale;
+            for(int i=0;i<nodeCount;++i)if(assembler->intrinsicDensity()[i]>0.) {
+                scale[nodeCount+i]=state.x[nodeCount+i];scale[2*nodeCount+i]=state.x[2*nodeCount+i];
+            }
+            scale[3*nodeCount]=std::abs(state.lambda)+vt;return scale;
+        };
+        system.prescribedRows=[self,assembler,biasesAt,nodeCount](const VectorXd&,Real bias) {
+            const auto b=self->buildBoundaryConditions(*assembler,biasesAt(bias));std::vector<int> rows;
+            for(const auto& [i,v]:b.psi)rows.push_back(i);
+            for(int i=0;i<nodeCount;++i) {
+                if(assembler->intrinsicDensity()[i]<=0. || b.phin.contains(i))rows.push_back(nodeCount+i);
+                if(assembler->intrinsicDensity()[i]<=0. || b.phip.contains(i))rows.push_back(2*nodeCount+i);
+            }
+            return rows;
+        };
+        system.makeTrial=[self,assembler,biasesAt,nodeCount](const ArclengthState& before,const VectorXd& raw,Real dv,Real alpha) {
+            const auto b=self->buildBoundaryConditions(*assembler,biasesAt(before.lambda));
+            std::vector<bool> en(nodeCount),hp(nodeCount);
+            for(int i=0;i<nodeCount;++i) {
+                en[i]=assembler->intrinsicDensity()[i]>0. && !b.phin.contains(i);
+                hp[i]=assembler->intrinsicDensity()[i]>0. && !b.phip.contains(i);
+            }
+            const auto c=makePopulationTrial(before.x,raw,alpha,en,hp,self->cfg_.populationUpdate);
+            (void)assembler->unpack(c.state);
+            return ArclengthTrial{{c.state,before.lambda+c.alpha*dv},c.alpha,
+                static_cast<int>(c.protectedElectrons.size()),static_cast<int>(c.protectedHoles.size())};
+        };
+        const auto matrix=system.jacobian;
+        const auto rows=system.prescribedRows;
+        system.solveJacobian=[matrix,rows](const VectorXd& x,Real v,const VectorXd& b,VectorXd& dx) {
+            try{LinearSolver linear;dx=linear.solve(matrix(x,v),b,rows(x,v));return dx.allFinite();}
+            catch(const std::exception&){return false;}
+        };
+        const auto evaluate=makeArclengthConvergenceEvaluator(activeContact);
+        const auto block=cfg_.blockAbsoluteConvergence;
+        system.convergenceSatisfied=[evaluate,block](const VectorXd& x,Real v) {
+            const auto g=evaluate(x,v);
+            const bool ceilings=block.mode!="enforce" || (g.blockNorms.psi<=block.psiResidualCeiling &&
+                g.blockNorms.phin<=block.electronResidualCeiling && g.blockNorms.phip<=block.holeResidualCeiling);
+            return ceilings && (!g.carrierRows.enforced || g.carrierRows.satisfied) &&
+                (!g.globalContinuity.enforced || g.globalContinuity.satisfied);
+        };
+    }
     if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
         cfg_.quasiFermiUpdateLimitMinority_V > 0.0) {
         system.limitUpdate = [self, nodeCount, potentialScale](
@@ -4063,6 +4165,8 @@ NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
 NewtonStepEvaluation NewtonSolver::evaluateStep(
     const DDSolution& state, Real directionalAuditScale) const
 {
+    if(cfg_.stateVariables=="potential_density")
+        throw std::invalid_argument("legacy QF step probe does not support population coordinates; use population core traces and operator probe");
     if (!std::isfinite(directionalAuditScale) || directionalAuditScale < 0.0)
         throw std::invalid_argument("Newton step audit scale must be finite and nonnegative");
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -6237,6 +6341,10 @@ NewtonResult NewtonSolver::solve() const
 
 NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization() const
 {
+    if(cfg_.stateVariables=="potential_density") {
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";
+        return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
+    }
     const double Vt = thermalVoltage(cfg_.temperature_K);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
@@ -6280,6 +6388,10 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 
 NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
+    if(cfg_.stateVariables=="potential_density") {
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";
+        return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
+    }
     const double Vt = thermalVoltage(cfg_.temperature_K);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
@@ -6489,6 +6601,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 
 NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 {
+    if(cfg_.stateVariables=="potential_density")return solvePopulation(initial);
     if(initial.packedLow.size()!=0 && !cfg_.splitDDState)throw std::invalid_argument("Split checkpoint requires split_dd_state");
     if(cfg_.splitDDState && (!cfg_.warmStart || cfg_.electronQuantumPotential.enabled || cfg_.carrierRowRecovery.mode!="off" || cfg_.temperature_K!=300.))throw std::invalid_argument("Split DD requires a 300 K classical warm start without Gummel recovery");
     if (cfg_.electronQuantumPotential.enabled) {

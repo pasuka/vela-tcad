@@ -5,6 +5,31 @@
 
 using namespace vela;
 
+TEST_CASE("Automatic derivative recovery rejects an invalid full direction then restores Newton", "[coupled_load_line][population_core]") {
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x[0]*x[0]-2.);};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.solveJacobian=[](const VectorXd& x,Real,const VectorXd& b,VectorXd& y){y=b/(2*x[0]);return true;};
+    int fullCalls=0;
+    s.jacobian=[&](const VectorXd& x,Real){SparseMatrixd j(1,1);j.insert(0,0)=++fullCalls==1?0.:2*x[0];return j;};
+    s.bootstrapJacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=2.;return j;};
+    s.automaticDerivativeRecovery=true;
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd& x,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(x.size());return p;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.equationTolerance=1e-12;c.maxIterations=25;
+    const ArclengthState initial{VectorXd::Constant(1,.5),0.};
+    const auto result=CoupledLoadLineNewton(s,port.value,c,port).solve(initial,0.,1.);
+    INFO(result.failureReason);REQUIRE(result.converged);
+    REQUIRE(result.state.x[0]==Catch::Approx(std::sqrt(2.)).margin(1e-12));
+    REQUIRE(initial.x[0]==.5);
+    bool bootstrap=false,trial=false,rejected=false;
+    for(const auto& t:result.trace){bootstrap|=t.derivativeMode=="bootstrap";trial|=t.derivativeMode=="trial";rejected|=t.iteration>0&&t.acceptedAlpha==0.;}
+    REQUIRE(bootstrap);REQUIRE(trial);REQUIRE(rejected);REQUIRE(fullCalls>1);
+    c.lineSearchMode="merit";REQUIRE_THROWS(CoupledLoadLineNewton(s,port.value,c,port));
+}
+
 TEST_CASE("Report-only backtracking records damping but applies the full Newton step",
           "[coupled_load_line][report_only]")
 {
@@ -83,6 +108,10 @@ TEST_CASE("Density update stopping keeps raw direction and requires load closure
     REQUIRE(update.equationResidualNorm>cfg.equationTolerance);
     REQUIRE(update.state.x(0)==Catch::Approx(std::sqrt(2.)).epsilon(1e-9));
     REQUIRE(std::abs(update.loadLineResidual_V)<=cfg.loadLineTolerance_V);
+    cfg.updateConvergence.mode="enforce_joint";
+    const auto joint=CoupledLoadLineNewton(system,current,cfg,{},evaluator).solve(seed,.1,1.);
+    REQUIRE_FALSE(joint.converged);
+    cfg.updateConvergence.mode="enforce";
     // A tiny damping factor cannot manufacture a small raw update metric.
     cfg.dampingFactor=1e-8; cfg.maxIterations=1; cfg.equationTolerance=1e-20;
     Real capturedRaw=0.,capturedApplied=0.;
@@ -132,6 +161,7 @@ TEST_CASE("resistor analytic diode audits raw and representable applied directio
     const auto baseline=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
     cfg.linearizationAuditEnabled=true;
     const auto report=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
+    INFO(baseline.failureReason);
     REQUIRE(baseline.converged); REQUIRE(report.converged);
     REQUIRE(report.state.x(0)==baseline.state.x(0));
     REQUIRE(report.state.lambda==baseline.state.lambda);
@@ -297,7 +327,8 @@ TEST_CASE("CoupledLoadLineNewton crosses a voltage-controlled fold",
     state.lambda = 0.0;
     for (Real outer = 0.25; outer <= 3.0; outer += 0.25) {
         const CoupledLoadLineResult result = solver.solve(state, outer, 3.0);
-        REQUIRE(result.converged);
+        INFO(result.failureReason);
+    REQUIRE(result.converged);
         REQUIRE(std::abs(result.loadLineResidual_V) <= 1.0e-11);
         state = result.state;
     }
@@ -352,6 +383,7 @@ TEST_CASE("direct bordered load-line solve remains regular at a device fold",
         foldedDeviceSystem(), currentValue, directConfig, std::move(current));
     const CoupledLoadLineResult direct =
         directSolver.solve(initial, targetOuter, resistance);
+    INFO(direct.failureReason);
     REQUIRE(direct.converged);
     REQUIRE(direct.equationResidualNorm <= directConfig.equationTolerance);
     REQUIRE(std::abs(direct.loadLineResidual_V) <=
@@ -377,6 +409,7 @@ TEST_CASE("direct bordered scalar row supports current control",
     initial.lambda = 0.0;
     const CoupledLoadLineResult result = solver.solve(initial, 0.5, 1.0);
 
+    INFO(result.failureReason);
     REQUIRE(result.converged);
     REQUIRE(result.state.x(0) == Catch::Approx(0.5).margin(1.0e-10));
     REQUIRE(result.state.lambda == Catch::Approx(-0.375).margin(1.0e-10));
@@ -405,6 +438,7 @@ TEST_CASE("load-closed state can use configured inexact device forcing",
     initial.lambda = -2.0e-6;
     const CoupledLoadLineResult result = solver.solve(initial, 0.0, 1.0);
 
+    INFO(result.failureReason);
     REQUIRE(result.converged);
     REQUIRE(result.iterations == 0);
     REQUIRE(result.inexactConvergenceUsed);
@@ -443,6 +477,7 @@ TEST_CASE("inexact forcing can follow the device tangent without polishing its r
     const CoupledLoadLineResult result =
         solver.solve(initial, targetCurrent, 1.0);
 
+    INFO(result.failureReason);
     REQUIRE(result.converged);
     REQUIRE(result.iterations == 1);
     REQUIRE(result.trace.front().deviceResidualZeroed);

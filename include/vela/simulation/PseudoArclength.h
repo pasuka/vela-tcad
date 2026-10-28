@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace vela {
 
@@ -58,6 +59,12 @@ struct PseudoArclengthConfig {
 struct ArclengthState {
     VectorXd x;
     Real lambda = 0.0;
+};
+
+struct ArclengthTrial {
+    ArclengthState state;
+    Real effectiveAlpha = 1.;
+    int protectedElectrons = 0, protectedHoles = 0;
 };
 
 /// Unit tangent direction in (x, lambda) space (already scaled by parameterScale).
@@ -135,6 +142,15 @@ struct ArclengthSystem {
     /// Optional in-place limiter for the bordered-Newton update before line search.
     std::function<void(const VectorXd& x, VectorXd& deltaX, Real& deltaLambda)>
         limitUpdate;
+    /// Coordinate-aware finite update, evaluated independently for every alpha.
+    std::function<ArclengthTrial(const ArclengthState&, const VectorXd&, Real, Real)> makeTrial;
+    std::function<std::vector<int>(const VectorXd&, Real)> prescribedRows;
+    std::function<bool(const VectorXd&, Real)> convergenceSatisfied;
+    /// Positive physical column scales, including the final parameter column.
+    std::function<VectorXd(const ArclengthState&)> columnScales;
+    std::function<Real(const VectorXd&)> equationNorm;
+    std::function<SparseMatrixd(const VectorXd&,Real)> bootstrapJacobian;
+    bool automaticDerivativeRecovery=false;
 };
 
 /// Pseudo-arclength (Keller) continuation engine.
@@ -150,6 +166,8 @@ public:
     PseudoArclengthContinuation(ArclengthSystem system, PseudoArclengthConfig config)
         : system_(std::move(system)), config_(std::move(config))
     {
+        if(system_.makeTrial)
+            throw std::invalid_argument("PseudoArclengthContinuation: coordinate-aware finite updates are currently qualified only for coupled load-line Newton");
         if (!system_.residual || !system_.parameterDerivative || !system_.solveJacobian) {
             throw std::invalid_argument(
                 "PseudoArclengthContinuation: residual, parameterDerivative, and "

@@ -3397,6 +3397,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         parsePoissonChargeVolumePolicy(cfg);
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    if(cfg.value("solver",nlohmann::json::object()).value("state_variables",std::string{"potential_quasi_fermi"})=="potential_density" &&
+       solverMethod!=SolverMethod::Newton && solverMethod!=SolverMethod::PoissonOnly)
+        throw std::invalid_argument("DCSweep: population coordinates require Newton or Poisson initialization");
     if (solverMethod == SolverMethod::FrozenState && sweep.initialStateFile.empty()) {
         throw std::invalid_argument(
             "DCSweep: solver.method='frozen_state' requires sweep.initial_state_file.");
@@ -3673,6 +3676,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
     ddScaling.coupledOperator = newton.coupledOperator;
+    ddScaling.stateVariables = newton.stateVariables;
     ddScaling.regionResolvedInterfaceAssembly =
         newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
@@ -8338,7 +8342,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 coupledUpdateCsv.open(coupledConfig.updateConvergence.diagnosticCsv);
                 if (!coupledUpdateCsv)
                     throw std::runtime_error("Cannot open coupled update convergence diagnostic CSV");
-                coupledUpdateCsv << "outer_V,attempted_step_V,retry,iteration,device_residual_inf,load_residual_V,update_valid,update_rms,poisson_rms,electron_rms,hole_rms,contact_rms,poisson_count,electron_count,hole_count,contact_count,accepted_alpha,convergence_reason,reported_alpha,full_step_merit,raw_state_update_inf,raw_inner_update_V,limited_state_update_inf,proposed_inner_update_V\n";
+                coupledUpdateCsv << "outer_V,attempted_step_V,retry,iteration,device_residual_inf,load_residual_V,update_valid,update_rms,poisson_rms,electron_rms,hole_rms,contact_rms,poisson_count,electron_count,hole_count,contact_count,accepted_alpha,convergence_reason,reported_alpha,full_step_merit,raw_state_update_inf,raw_inner_update_V,limited_state_update_inf,proposed_inner_update_V,protected_electrons,protected_holes,population_effective_alpha,derivative_mode,derivative_reason\n";
                 coupledUpdateCsv << std::setprecision(17);
             }
 
@@ -8373,7 +8377,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             coupledUpdateCsv << ',' << trace.acceptedAlpha << ',' << pendingCoupled.convergenceReason
                                 << ',' << trace.reportedAlpha << ',' << trace.fullStepMerit
                                 << ',' << trace.rawStateUpdateNorm << ',' << trace.rawVoltageUpdate_V
-                                << ',' << trace.limitedStateUpdateNorm << ',' << trace.proposedVoltageUpdate_V << '\n';
+                                << ',' << trace.limitedStateUpdateNorm << ',' << trace.proposedVoltageUpdate_V
+                                << ',' << trace.protectedElectrons << ',' << trace.protectedHoles
+                                << ',' << trace.populationEffectiveAlpha << ',' << trace.derivativeMode
+                                << ',' << trace.derivativeReason << '\n';
                         }
                         coupledUpdateCsv.flush();
                     }

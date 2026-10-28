@@ -51,7 +51,7 @@ int main(int argc,char**argv){try{
         entries.emplace_back(d,d,1+1e7*p.parameterDerivative);SparseMatrixd a(d+1,d+1);a.setFromTriplets(entries.begin(),entries.end());
         matrixFile(folder/"matrix.csv",a);const VectorXd f=sys.residual(x,inner);
         VectorXd fullRhs(d+1);fullRhs.head(d)=-f;fullRhs[d]=-(inner+1e7*p.value-outer);
-        const auto constraints=diagonalConstraintRows(device);
+        const auto constraints=sys.prescribedRows?sys.prescribedRows(x,inner):diagonalConstraintRows(device);
         std::vector<int> carriers;for(int row:constraints)if(row>=n)carriers.push_back(row);
         const auto reduced=eliminateLinearConstraints(a,fullRhs,constraints);
         const auto carrierReduced=eliminateLinearConstraints(a,fullRhs,carriers);
@@ -73,11 +73,12 @@ int main(int argc,char**argv){try{
         std::ofstream r(folder/"rhs.csv");r<<std::setprecision(17)<<"row,rhs\n";for(int i=0;i<d;++i)r<<i<<','<<-f[i]<<'\n';
         r<<d<<','<<-(inner+1e7*p.value-outer)<<'\n';
         const double scale=owner.evaluateResidual(unpack(x)).potentialScale;
-        jsonFile(folder/"identity.json",{{"inner_V",inner},{"outer_V",outer},{"dimension",d+1},{"potential_scale_V",scale},{"current_A_per_um",p.value},{"backend",LinearSolver::selectedBackend()}});
+        jsonFile(folder/"identity.json",{{"inner_V",inner},{"outer_V",outer},{"dimension",d+1},{"potential_scale_V",scale},{"current_A_per_um",p.value},{"backend",LinearSolver::selectedBackend()},{"state_variables",problem.newton.stateVariables}});
     };
     CoupledLoadLineConfig c;c.maxIterations=m.value("max_iterations",40);c.equationTolerance=1e-8;c.loadLineTolerance_V=1e-6;
     c.linearSolver="direct_bordered";c.lineSearchMode=m.value("line_search_mode",std::string{"merit"});c.filterEnvelopeFactor=1e12;
-    c.maxVoltageUpdate_V=.1;c.updateConvergence.mode="off";
+    c.maxVoltageUpdate_V=.1;c.updateConvergence.mode=m.value("density_update_mode",std::string{"off"});
+    auto updateError=owner.makeArclengthUpdateErrorEvaluator("drain",c.updateConvergence);
     if(m.contains("frames")){
         for(const auto& frame:m.at("frames")){
             auto s=owner.buildPoissonBlockInitialization().coldInitial;
@@ -90,12 +91,12 @@ int main(int argc,char**argv){try{
             const auto folder=out/frame.at("label").get<std::string>();exportOperator(folder,x,v,u,sys.jacobian(x,v));
             // Force one direction for audit only, never count this as a converged trajectory.
             auto cc=c;cc.maxIterations=1;cc.equationTolerance=1e-30;cc.loadLineTolerance_V=1e-30;cc.linearizationAuditEnabled=true;
-            auto result=CoupledLoadLineNewton(sys,port.value,cc,port).solve({x,v},u,1e7);
+            auto result=CoupledLoadLineNewton(sys,port.value,cc,port,updateError).solve({x,v},u,1e7);
             Json direction={{"converged",result.converged},{"failure",result.failureReason}};
             if(!result.trace.empty()&&result.trace.front().rawStateUpdate.size()==d){
                 const auto&t=result.trace.front();const double scale=owner.evaluateResidual(unpack(x)).potentialScale;
-                std::ofstream f(folder/"direction.csv");f<<std::setprecision(17)<<"node,dpsi_V,dfn_V,dfp_V\n";
-                for(int i=0;i<n;++i)f<<i<<','<<t.rawStateUpdate[i]*scale<<','<<t.rawStateUpdate[n+i]*scale<<','<<t.rawStateUpdate[2*n+i]*scale<<'\n';
+                std::ofstream f(folder/"direction.csv");f<<std::setprecision(17)<<(problem.newton.stateVariables=="potential_density"?"node,dpsi_V,dn_internal,dp_internal\n":"node,dpsi_V,dfn_V,dfp_V\n");
+                for(int i=0;i<n;++i)f<<i<<','<<t.rawStateUpdate[i]*scale<<','<<t.rawStateUpdate[n+i]*(problem.newton.stateVariables=="potential_density"?1.:scale)<<','<<t.rawStateUpdate[2*n+i]*(problem.newton.stateVariables=="potential_density"?1.:scale)<<'\n';
                 direction["raw_inner_V"]=t.rawVoltageUpdate_V;direction["backward_error"]=t.componentwiseBackwardError;
             }
             jsonFile(folder/"direction.json",direction);std::cout<<frame.at("label")<<" exported"<<std::endl;
@@ -112,11 +113,18 @@ int main(int argc,char**argv){try{
             const auto folder=out/("point"+std::to_string(point));int jacCalls=0;
             auto traced=sys;const auto jac=sys.jacobian;
             traced.jacobian=[&](const VectorXd& z,double v){auto a=jac(z,v);exportOperator(folder/("linearization"+std::to_string(jacCalls++)),z,v,outer,a);return a;};
-            CoupledLoadLineNewton corrector(traced,port.value,c,port);
+            CoupledLoadLineNewton corrector(traced,port.value,c,port,updateError);
             auto seed=hasPrevious&&m.value("extrapolate",true)?corrector.secantPredict(previous,current,outer,1e7):current;
             auto result=corrector.solve(seed,outer,1e7);Json trace=Json::array();
             for(const auto&t:result.trace){Json row={{"iteration",t.iteration},{"equation_inf",t.equationResidualNorm},{"load_V",t.loadLineResidual_V},{"alpha",t.acceptedAlpha},{"reported_alpha",t.reportedAlpha},{"full_step_merit",t.fullStepMerit},{"raw_inner_V",t.rawVoltageUpdate_V}};
-                if(t.rawStateUpdate.size()==d){const double scale=owner.evaluateResidual(unpack(seed.x)).potentialScale;row["raw_psi_inf_V"]=t.rawStateUpdate.head(n).lpNorm<Eigen::Infinity>()*scale;row["raw_fn_inf_V"]=t.rawStateUpdate.segment(n,n).lpNorm<Eigen::Infinity>()*scale;row["raw_fp_inf_V"]=t.rawStateUpdate.tail(n).lpNorm<Eigen::Infinity>()*scale;}
+                if(t.rawStateUpdate.size()==d){const double scale=owner.evaluateResidual(unpack(seed.x)).potentialScale;row["raw_psi_inf_V"]=t.rawStateUpdate.head(n).lpNorm<Eigen::Infinity>()*scale;if(problem.newton.stateVariables=="potential_density"){
+                    row["raw_n_inf_cm3"]=units.internalConcentrationToM3(t.rawStateUpdate.segment(n,n).lpNorm<Eigen::Infinity>())*1e-6;
+                    row["raw_p_inf_cm3"]=units.internalConcentrationToM3(t.rawStateUpdate.tail(n).lpNorm<Eigen::Infinity>())*1e-6;
+                }else {row["raw_fn_inf_V"]=t.rawStateUpdate.segment(n,n).lpNorm<Eigen::Infinity>()*scale;row["raw_fp_inf_V"]=t.rawStateUpdate.tail(n).lpNorm<Eigen::Infinity>()*scale;}}
+                row["protected_electrons"]=t.protectedElectrons;row["protected_holes"]=t.protectedHoles;
+                row["population_effective_alpha"]=t.populationEffectiveAlpha;
+                row["raw_population_rms"]=t.updateError.rms;row["raw_population_rms_valid"]=t.updateError.valid;
+                row["derivative_mode"]=t.derivativeMode;row["derivative_reason"]=t.derivativeReason;
                 trace.push_back(row);}
             Json rec={{"outer_V",outer},{"inner_V",result.state.lambda},{"current_A_per_um",result.directedCurrent_A_per_um},{"converged",result.converged},{"iterations",result.iterations},{"failure",result.failureReason},{"equation_inf",result.equationResidualNorm},{"load_V",result.loadLineResidual_V},{"trace",trace},{"jacobian_calls",jacCalls}};
             report["points"].push_back(rec);jsonFile(out/"summary.json",report);
@@ -126,5 +134,7 @@ int main(int argc,char**argv){try{
             previous=current;current=result.state;hasPrevious=true;++point;
         }
     }
-    profiler.writeJson();jsonFile(out/"summary.json",report);return 0;
+    profiler.writeJson();jsonFile(out/"summary.json",report);
+    for(const auto& point:report["points"])if(!point.at("converged").get<bool>())return 3;
+    return 0;
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

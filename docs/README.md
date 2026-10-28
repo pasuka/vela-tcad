@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [BVMethods 电势／人口核心模式开发，2026-10-28](validation/potential_density_development_2026-10-28.md)：
+  P0–P5 实施记录；显式 ψ/n/p、直接装配、局部保护、核心导数恢复及 JSON/CMD 路径，资格以实际测试为准。
+
 - [BVMethods 50%人口保护多偏压续算，2026-10-28](validation/bvmethods_retained_continuation_2026-10-28.md)：
   双机共同通过0.8至1.25 V窗口，区分健康入口、持续保留比例及半步控制；全局到边界τ=0.99仍可能保留1%，未改默认或验收门。
 

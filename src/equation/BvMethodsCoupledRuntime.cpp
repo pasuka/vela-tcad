@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <optional>
+#include <tuple>
 
 namespace vela {
 struct BvMethodsCoupledRuntime::Impl {
@@ -61,7 +62,7 @@ struct BvMethodsCoupledRuntime::Impl {
             fail("profile owns GradQF current-source support; cutoffs, interpolation and source overrides unqualified");
         for(Index cid=0;cid<a.mesh_.numCells();++cid)
             if(a.mesh_.getCell(cid).node_ids.size()!=3)fail("requires Tri3 cells");
-        auto legacy=a.scaling_;legacy.coupledOperator="legacy";
+        auto legacy=a.scaling_;legacy.coupledOperator="legacy";legacy.stateVariables="potential_quasi_fermi";
         auto noAv=av;noAv.model="none";
         poisson=std::make_unique<CoupledDDAssembler>(a.mesh_,a.matdb_,a.doping_,a.Vt_,
             a.mobilityConfig_,a.recombinationConfig_,a.bandgapNarrowingConfig_,noAv,
@@ -76,7 +77,9 @@ struct BvMethodsCoupledRuntime::Impl {
             const auto w=detail::cellBoxNodeMeasures(a.mesh_,cid);const auto& cell=a.mesh_.getCell(cid);
             for(int k=0;k<3;++k){volumes[cell.node_ids[k]]+=w[k];active[cell.node_ids[k]]=true;}
         }
-        auto state=makeState(VectorXd::Zero(3*n));
+        VectorXd seed=VectorXd::Zero(3*n);
+        if(a.usesPopulationState())for(int i=0;i<n;++i)if(active[i])seed[n+i]=seed[2*n+i]=a.ni_[i];
+        auto state=makeState(seed);
         const auto& u=context.newton.inputScaling.unitSystem();
         const double line=u.currentDensityAM2PerInternal()*u.lengthMPerInternal()*continuity;
         element=std::make_unique<detail::BvMethodsTri3Operator>(context,state,a.Nc_,a.Nv_,scale,line,a.Vt_);
@@ -99,6 +102,12 @@ struct BvMethodsCoupledRuntime::Impl {
         const int n=owner.mesh_.numNodes();if(x.size()!=3*n || !x.allFinite())
             throw std::invalid_argument("bvmethods_tri3_qf: invalid QF state");
         detail::BvMethodsQfState s;s.psi=x.head(n)*scale;
+        if(owner.usesPopulationState()) {
+            const auto state=owner.unpack(x);
+            s.phin=state.phin*scale;s.phip=state.phip*scale;
+            s.n=state.n;s.p=state.p;s.populationCoordinates=true;
+            return s;
+        }
         s.phin=x.segment(n,n)*scale+owner.electronQuasiFermiReferenceField();
         s.phip=x.tail(n)*scale+owner.holeQuasiFermiReferenceField();
         s.n=owner.electronDensity(x);s.p=owner.holeDensity(x);
@@ -122,10 +131,10 @@ struct BvMethodsCoupledRuntime::Impl {
         if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
         return result;
     }
-    Evaluation compute(const VectorXd& x,bool jac)const {
+    Evaluation compute(const VectorXd& x,bool jac,bool approximate=false)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
-        out.transport=element->transport(s,jac,true,true);
-        if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac);
+        out.transport=element->transport(s,jac,true,true,approximate);
+        if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac&&!approximate);
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;
         const auto& u=context.newton.inputScaling.unitSystem();
@@ -136,7 +145,9 @@ struct BvMethodsCoupledRuntime::Impl {
             auto population=[&](bool electron){
                 const double v=electron?s.n[i]:s.p[i],dos=electron?owner.Nc_[i]:owner.Nv_[i];
                 AvJet a(v);const double d=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(v,dos)/vt;
-                a.derivative[0]=electron?d:-d;a.derivative[electron?1:2]=electron?-d:d;return a;
+                if(owner.usesPopulationState())a.derivative[electron?1:2]=1./scale;
+                else {a.derivative[0]=electron?d:-d;a.derivative[electron?1:2]=electron?-d:d;}
+                return a;
             };
             const auto nj=population(true),pj=population(false);
             auto gamma=[&](const AvJet& p,double dos){
@@ -146,7 +157,14 @@ struct BvMethodsCoupledRuntime::Impl {
                 for(int k=0;k<3;++k)g.derivative[k]=g.value*(1/p.value-1/slope)*p.derivative[k];return g;
             };
             const auto gn=gamma(nj,owner.Nc_[i]),gp=gamma(pj,owner.Nv_[i]);
-            const auto splitting=(AvJet::variable(s.phip[i],2)-AvJet::variable(s.phin[i],1))/AvJet(vt);
+            AvJet fn=AvJet::variable(s.phin[i],1),fp=AvJet::variable(s.phip[i],2);
+            if(owner.usesPopulationState()) {
+                fn.derivative.fill(0.);fp.derivative.fill(0.);
+                fn.derivative[0]=fp.derivative[0]=1.;
+                fn.derivative[1]=-vt/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.n[i],owner.Nc_[i])/scale;
+                fp.derivative[2]=vt/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.p[i],owner.Nv_[i])/scale;
+            }
+            const auto splitting=(fp-fn)/AvJet(vt);
             const auto excess=gn*gp*AvJet(owner.ni_[i]*owner.ni_[i])*detail::dualExpm1(splitting);
             const double dop=owner.recombination_.srhDopingConcentration(owner.doping_.donors(i),owner.doping_.acceptors(i));
             const double rate=owner.recombination_.srhRateGeneralizedFromExcessProduct(excess.value,nj.value,pj.value,
@@ -162,6 +180,48 @@ struct BvMethodsCoupledRuntime::Impl {
             }
         }
         out.srhJacobian.resize(3*n,3*n);out.srhJacobian.setFromTriplets(entries.begin(),entries.end());return out;
+    }
+    // Direct fixed-population Poisson assembly. No QF forward reconstruction
+    // or subtraction of Debye terms from a QF Jacobian is involved.
+    std::pair<VectorXd,SparseMatrixd> populationBase(const VectorXd& x,
+        const CoupledDDBoundaryConditions& b,bool derivatives)const {
+        const auto s=makeState(x);const int n=active.size();
+        VectorXd r=VectorXd::Zero(3*n);
+        std::vector<Eigen::Triplet<double>> entries;
+        const double area=owner.scaling_.enabled?owner.scaling_.chargeAreaFactor:1.;
+        const double rowScale=owner.scaling_.enabled?owner.scaling_.permittivityReference_F_per_m*scale:1.;
+        for(Index e=0;e<owner.mesh_.numEdges();++e) {
+            const auto& edge=owner.mesh_.getEdge(e);if(edge.length<1e-30)continue;
+            const int i=edge.n0,j=edge.n1;const double g=owner.edgeAssemblyKernels_[e].poissonCoupling;
+            const double flux=g*(s.psi[i]-s.psi[j]);r[i]+=flux;r[j]-=flux;
+            if(derivatives)for(auto [a,c,v]:{std::tuple{i,i,g},std::tuple{j,j,g},std::tuple{i,j,-g},std::tuple{j,i,-g}})
+                if(!b.psi.contains(a))entries.emplace_back(a,c,v*scale/rowScale);
+        }
+        for(int i=0;i<n;++i) {
+            r[i]-=constants::q*s.p[i]*owner.poissonHoleVol_[i]*area;
+            r[i]-=constants::q*owner.doping_.netDoping(i)*owner.poissonDopantVol_[i]*area;
+            r[i]+=constants::q*s.n[i]*owner.poissonElectronVol_[i]*area;
+            r[i]-=owner.fixedInterfaceChargeRhs_[i];r[i]/=rowScale;
+            if(b.psi.contains(i)) {r[i]=x[i]-b.psi.at(i);if(derivatives)entries.emplace_back(i,i,1.);}
+            else if(derivatives && active[i]) {
+                entries.emplace_back(i,n+i,constants::q*owner.poissonElectronVol_[i]*area/rowScale);
+                entries.emplace_back(i,2*n+i,-constants::q*owner.poissonHoleVol_[i]*area/rowScale);
+            }
+            for(int block:{1,2}) {
+                const auto& bc=block==1?b.phin:b.phip;const int row=block*n+i;
+                if(!active[i]) {r[row]=x[row];if(derivatives)entries.emplace_back(row,row,1.);continue;}
+                if(!bc.contains(i))continue;
+                r[row]=(block==1?s.phin[i]:s.phip[i])/scale-bc.at(i);
+                if(derivatives) {
+                    const double c=block==1?s.n[i]:s.p[i],dos=block==1?owner.Nc_[i]:owner.Nv_[i];
+                    const double slope=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(c,dos);
+                    entries.emplace_back(row,i,1.);
+                    entries.emplace_back(row,row,(block==1?-1.:1.)*owner.Vt_/slope/scale);
+                }
+            }
+        }
+        SparseMatrixd j(3*n,3*n);if(derivatives)j.setFromTriplets(entries.begin(),entries.end());
+        return {r,j};
     }
     void validateBoundary(const CoupledDDBoundaryConditions& b)const {
         if(!b.thermionic.empty())throw std::invalid_argument("bvmethods_tri3_qf: thermionic boundaries unqualified");
@@ -182,13 +242,13 @@ VectorXd BvMethodsCoupledRuntime::residual(const VectorXd& x,const CoupledDDBoun
     auto& p=*impl_;p.validateBoundary(b);p.sync();
     Impl::Evaluation e;try{e=p.evaluate(x,false);}catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
     const int n=p.active.size();
-    VectorXd r=p.poisson->residual(x,b);const auto carrier=e.transport.source+e.av.source+e.srh;
+    VectorXd r=p.owner.usesPopulationState()?p.populationBase(x,b,false).first:p.poisson->residual(x,b);const auto carrier=e.transport.source+e.av.source+e.srh;
     for(int i=0;i<n;++i)for(int block:{1,2})if(p.active[i]&&!p.constrained(block*n+i,b))r[block*n+i]=carrier[block*n+i];
     return r;
 }
-SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
-    auto& p=*impl_;p.validateBoundary(b);p.sync();auto e=p.evaluate(x,true);const int n=p.active.size();
-    const auto base=p.poisson->assembleJacobian(x,b);const SparseMatrixd carrier=e.transport.jacobian+e.av.jacobian+e.srhJacobian;
+SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool approximate)const {
+    auto& p=*impl_;p.validateBoundary(b);p.sync();auto e=approximate?p.compute(x,true,true):p.evaluate(x,true);const int n=p.active.size();
+    const auto base=p.owner.usesPopulationState()?p.populationBase(x,b,true).second:p.poisson->assembleJacobian(x,b);const SparseMatrixd carrier=e.transport.jacobian+e.av.jacobian+e.srhJacobian;
     std::vector<Eigen::Triplet<double>> t;
     for(int k=0;k<base.outerSize();++k)for(SparseMatrixd::InnerIterator v(base,k);v;++v)
         if(v.row()<n || !p.active[v.row()%n] || p.constrained(v.row(),b))t.emplace_back(v.row(),v.col(),v.value());
@@ -225,6 +285,39 @@ VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x)const {
 }
 SparseMatrixd BvMethodsCoupledRuntime::transportJacobian(const VectorXd& x)const {
     auto& p=*impl_;p.sync();return p.transport(x,true).jacobian;
+}
+std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationPoissonTerms(
+    const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
+    auto& p=*impl_;const auto& a=p.owner;
+    if(!a.usesPopulationState())throw std::invalid_argument("population Poisson diagnostics require population state");
+    const auto s=p.makeState(x);const int n=p.active.size();
+    const auto actual=p.populationBase(x,b,false).first;
+    const auto free=p.populationBase(x,{},false).first;
+    const double rowScale=a.scaling_.enabled?a.scaling_.permittivityReference_F_per_m*p.scale:1.;
+    const double area=a.scaling_.enabled?a.scaling_.chargeAreaFactor:1.;
+    std::vector<CoupledDDPoissonTermDiagnostic> rows(n);
+    for(int i=0;i<n;++i) {
+        auto& t=rows[i];t.nodeId=i;t.intrinsicDensity=a.ni_[i];
+        t.electronDensityOfStates=a.Nc_[i];t.holeDensityOfStates=a.Nv_[i];
+        t.suppliedElectronDensity=t.reconstructedElectronDensity=s.n[i];
+        t.suppliedHoleDensity=t.reconstructedHoleDensity=s.p[i];t.hasSuppliedCarrierState=true;
+        t.electronRequiredQuasiFermiPotential=s.phin[i];t.holeRequiredQuasiFermiPotential=s.phip[i];
+        t.electronCharge=constants::q*s.n[i]*a.poissonElectronVol_[i]*area/rowScale;
+        t.holeCharge=-constants::q*s.p[i]*a.poissonHoleVol_[i]*area/rowScale;
+        t.dopingCharge=-constants::q*a.doping_.netDoping(i)*a.poissonDopantVol_[i]*area/rowScale;
+        t.fixedInterfaceCharge=-a.fixedInterfaceChargeRhs_[i]/rowScale;
+        t.unconstrainedResidual=free[i];t.productionResidual=actual[i];t.constrained=b.psi.contains(i);
+        t.boundaryReplacement=t.productionResidual-t.unconstrainedResidual;
+    }
+    for(Index e=0;e<a.mesh_.numEdges();++e) {
+        const auto& edge=a.mesh_.getEdge(e);if(edge.length<1e-30)continue;
+        const double f=a.edgeAssemblyKernels_[e].poissonCoupling*(s.psi[edge.n0]-s.psi[edge.n1])/rowScale;
+        rows[edge.n0].dielectricFlux+=f;rows[edge.n1].dielectricFlux-=f;
+        rows[edge.n0].dielectricFluxAbsSum+=std::abs(f);rows[edge.n1].dielectricFluxAbsSum+=std::abs(f);
+    }
+    for(auto& t:rows)t.closureError=t.productionResidual-(t.dielectricFlux+t.electronCharge+t.holeCharge+
+        t.dopingCharge+t.fixedInterfaceCharge+t.boundaryReplacement);
+    return rows;
 }
 VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const {
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);

@@ -216,10 +216,13 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         if(!overrides.holeQuasiFermiDropByEdge.empty() || solution.packedLow.size()!=0)
             throw std::invalid_argument("BVMethods contact current overrides/split state unqualified");
         RecombinationModelConfig none;none.mechanisms.clear();
+        auto coordinates=scaling_;
+        if(solution.stateVariables=="potential_density")coordinates.stateVariables="potential_density";
         CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage_,mobilityConfig_,none,
-            bandgapConfig_,ImpactIonizationModelConfig{},{},{},scaling_,{},carrierStatistics_,electronQuantumPotentialConfig_);
+            bandgapConfig_,ImpactIonizationModelConfig{},{},{},coordinates,{},carrierStatistics_,electronQuantumPotentialConfig_);
         const Real vscale=scaling_.enabled?scaling_.V0:1.;VectorXd x;
-        if(solution.hasConsistentPackedState() && solution.packedPotentialScale_V==vscale){
+        if(assembler.usesPopulationState())x=assembler.packPopulation(solution.psi,solution.n,solution.p);
+        else if(solution.hasConsistentPackedState() && solution.packedPotentialScale_V==vscale){
             assembler.setQuasiFermiReferenceFields(solution.electronQfReference,solution.holeQfReference);x=solution.packedState;
         }else{x=assembler.pack({solution.psi/vscale,solution.phin/vscale,solution.phip/vscale});}
         ContactCurrentDetailedResult result;result.totals=computeFromResidual(assembler,x,contactName);return result;

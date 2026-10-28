@@ -538,6 +538,10 @@ CoupledDDAssembler::CoupledDDAssembler(
     , carrierDiagonalFloor_(carrierDiagonalFloor)
 {
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
+    if (scaling_.stateVariables != "potential_quasi_fermi" && scaling_.stateVariables != "potential_density")
+        throw std::invalid_argument("unknown coupled state_variables");
+    if (usesPopulationState() && scaling_.coupledOperator != "bvmethods_tri3_qf")
+        throw std::invalid_argument("potential_density currently requires the explicit BVMethods operator");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&
         (usesFermiDirac_ || impactIonizationConfig_.model!="none"))
         throw std::invalid_argument("element_box_phumob currently requires Boltzmann statistics and disabled avalanche.");
@@ -1163,6 +1167,10 @@ CoupledDDAssembler::fixedJacobianOffset(int row, int col) const
 
 VectorXd CoupledDDAssembler::pack(const CoupledDDState& state) const
 {
+    if (usesPopulationState()) {
+        const Real scale=scaling_.enabled ? scaling_.V0 : 1.;
+        return packPopulation((state.psi*scale).eval(),state.n,state.p);
+    }
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N)
         throw std::invalid_argument("CoupledDDAssembler::pack: state vector size mismatch.");
@@ -1189,6 +1197,24 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
     CoupledDDState state;
     state.psi = x.segment(psiOffset(), N);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    if (usesPopulationState()) {
+        if (!x.allFinite()) throw std::domain_error("nonfinite population state");
+        state.n=x.segment(N,N); state.p=x.tail(N);
+        state.phin=VectorXd::Zero(N); state.phip=VectorXd::Zero(N);
+        for (int i=0;i<N;++i) {
+            if (ni_[i]<=0.) {
+                if (state.n[i]!=0. || state.p[i]!=0.)
+                    throw std::domain_error("inactive population slots must be zero");
+                continue;
+            }
+            if (!(state.n[i]>0.) || !(state.p[i]>0.))
+                throw std::domain_error("positive population state required");
+            const Real psi=state.psi[i]*potentialScale;
+            state.phin[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],psi,state.n[i],Vt_,carrierStatistics_)/potentialScale;
+            state.phip[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],psi,state.p[i],Vt_,carrierStatistics_)/potentialScale;
+        }
+        return state;
+    }
     state.phin.resize(N);
     state.phip.resize(N);
     for (int i = 0; i < N; ++i) {
@@ -1199,6 +1225,23 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
             + holeQuasiFermiReferenceAt(node) / potentialScale;
     }
     return state;
+}
+
+VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd& n,
+                                           const VectorXd& p) const {
+    const int count=mesh_.numNodes();
+    if (!usesPopulationState() || psi.size()!=count || n.size()!=count || p.size()!=count)
+        throw std::invalid_argument("invalid population pack contract");
+    VectorXd y(3*count);
+    y.head(count)=psi/(scaling_.enabled ? scaling_.V0 : 1.);
+    y.segment(count,count)=n; y.tail(count)=p;
+    (void)unpack(y);
+    return y;
+}
+
+SparseMatrixd CoupledDDAssembler::populationBootstrapJacobian(const VectorXd& y,const CoupledDDBoundaryConditions& b) const {
+    if(!usesPopulationState())throw std::invalid_argument("bootstrap population Jacobian requires population coordinates");
+    return bvMethodsRuntime()->jacobian(y,b,true);
 }
 
 void CoupledDDAssembler::setLegacyEdgeJacobianSteps(Real transport, Real avalanche)
@@ -1479,6 +1522,14 @@ Real CoupledDDAssembler::nodeRecombinationRate(
 
 VectorXd CoupledDDAssembler::electronDensity(const VectorXd& x) const
 {
+    if (usesPopulationState()) {
+        const int n=mesh_.numNodes();
+        if(x.size()!=3*n || !x.allFinite())throw std::domain_error("invalid population state");
+        VectorXd density=x.segment(n,n);
+        for(int i=0;i<n;++i)if(ni_[i]>0. ? !(density[i]>0.) : density[i]!=0.)
+            throw std::domain_error("invalid electron population");
+        return density;
+    }
     if(auto split=splitRuntime())return split->density(x,true);
     const int N = static_cast<int>(mesh_.numNodes());
     VectorXd n(N);
@@ -1496,6 +1547,14 @@ VectorXd CoupledDDAssembler::electronDensity(const VectorXd& x) const
 
 VectorXd CoupledDDAssembler::holeDensity(const VectorXd& x) const
 {
+    if (usesPopulationState()) {
+        const int n=mesh_.numNodes();
+        if(x.size()!=3*n || !x.allFinite())throw std::domain_error("invalid population state");
+        VectorXd density=x.tail(n);
+        for(int i=0;i<n;++i)if(ni_[i]>0. ? !(density[i]>0.) : density[i]!=0.)
+            throw std::domain_error("invalid hole population");
+        return density;
+    }
     if(auto split=splitRuntime())return split->density(x,false);
     const int N = static_cast<int>(mesh_.numNodes());
     VectorXd p(N);
@@ -1517,6 +1576,12 @@ std::pair<VectorXd, VectorXd> CoupledDDAssembler::carrierDensityTangent(
     const VectorXd& x, const VectorXd& direction) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
+    if (usesPopulationState()) {
+        (void)unpack(x);
+        if(direction.size()!=x.size() || !direction.allFinite())
+            throw std::invalid_argument("invalid population tangent");
+        return {direction.segment(N,N), direction.tail(N)};
+    }
     if (splitDDEnabled_ || x.size() != 3*N || direction.size() != x.size())
         throw std::invalid_argument("carrierDensityTangent requires classical 3*N QF coordinates");
     const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
@@ -1696,6 +1761,10 @@ CoupledDDAssembler::poissonTermDiagnosticsImpl(
     const VectorXd& suppliedElectronDensity, const VectorXd& suppliedHoleDensity,
     const CoupledDDFeedbackStateSubstitution* substitution) const
 {
+    if(usesPopulationState()) {
+        if(substitution)throw std::invalid_argument("population Poisson diagnostic substitution is unsupported");
+        return bvMethodsRuntime()->populationPoissonTerms(x,bcs);
+    }
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
     if (x.size() != 3 * N) {

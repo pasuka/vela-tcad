@@ -16,6 +16,7 @@
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/DensityUpdateConvergence.h"
+#include "vela/solver/PopulationState.h"
 #include <functional>
 #include <limits>
 #include <memory>
@@ -242,6 +243,9 @@ struct NewtonConfig {
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
     std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
+    std::string stateVariables = "potential_quasi_fermi";
+    std::string populationDerivativeRecovery = "full";
+    PopulationUpdateConfig populationUpdate;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
     ///< Optional Sentaurus eQuantumPotential outer iteration.
@@ -279,6 +283,9 @@ struct NewtonIterationInfo {
     std::string event;
     NewtonCarrierRowConvergenceEvaluation carrierRowConvergence;
     std::vector<LineSearchIterationInfo> lineSearchHistory;
+    DensityUpdateError populationUpdateError;
+    Real populationEffectiveAlpha = 1.;
+    int protectedElectrons = 0, protectedHoles = 0;
 };
 
 struct NewtonCarrierDiagnostics {
@@ -895,6 +902,7 @@ public:
         Real currentScale) const;
 
 private:
+    NewtonResult solvePopulation(const DDSolution& initial) const;
     void configureAssemblerNumerics(CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;

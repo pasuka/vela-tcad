@@ -373,6 +373,7 @@ add_library(vela_core STATIC
     src/post/TerminalCharge.cpp
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
+    src/solver/PopulationNewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
@@ -664,6 +665,10 @@ add_executable(vela_bvmethods_backend_comparison_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_backend_comparison_probe.cpp)
 target_link_libraries(vela_bvmethods_backend_comparison_probe PRIVATE vela_core)
 
+add_executable(vela_population_operator_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/population_operator_probe.cpp)
+target_link_libraries(vela_population_operator_probe PRIVATE vela_core)
+
 # ---------------------------------------------------------------------------
 # Native launcher `vela device ...` (sdevice front end, contract C9)
 # ---------------------------------------------------------------------------
@@ -941,6 +946,7 @@ target_link_libraries(test_bvmethods_population_newton PRIVATE vela_core Catch2:
 
 add_executable(test_bvmethods_derivative_switch tests/test_bvmethods_derivative_switch.cpp)
 target_link_libraries(test_bvmethods_derivative_switch PRIVATE Catch2::Catch2WithMain)
+target_include_directories(test_bvmethods_derivative_switch PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
