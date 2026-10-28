@@ -509,7 +509,19 @@ worker count. Exact sparse patterns and identical numerical factors are reused.
 Selection applies to shared auxiliary solves too; it does not select the
 separate electrothermal backend or change assembly, nonlinear updates or
 acceptance criteria. This is not extended-precision solving or a guarantee of
-Sentaurus-equivalent results. Constraint-elimination variants are not included.
+Sentaurus-equivalent results. The core `LinearSolver` now eliminates prescribed
+constraints by default before invoking the backend and recovers the full direction
+afterward. `VELA_CONSTRAINT_ELIMINATION=0` disables this reduction for controls;
+`1` (or unset) enables it. Ordinary calls identify numerical diagonal prescribed
+rows, ignoring stored zeros without a magnitude cutoff. Coupled load-line and
+population-coordinate calls retain the row IDs from the device Jacobian before
+adding the circuit border or changing coordinates, so affine contact dependencies
+are also eliminated. The selected block must have nonzero diagonal and acyclic
+dependencies; unsupported explicit metadata raises an error. The full RHS
+correction and affine back-substitution are retained. Original residual/update
+acceptance gates are unchanged. Explicit QR and emergency alternate factorization
+paths retain their existing policies; changing backend alone does not prove
+Sentaurus matrix agreement.
 An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 `direct_bordered` load-line matrix and its refinement corrections, including
 the direct path of `auto`; a PARDISO error is returned without backend fallback.

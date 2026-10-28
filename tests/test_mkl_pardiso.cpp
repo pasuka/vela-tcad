@@ -125,6 +125,10 @@ TEST_CASE("PARDISO propagates vendor errors and recovers without stale factors",
     Environment library("VELA_MKL_RT_LIBRARY"), phase("VELA_TEST_MKL_FAIL_PHASE");
     library.set(VELA_TEST_MKL_LIBRARY); phase.set(nullptr);
     LinearSolver solver("pardiso_mkl");
+    // The failure-injection runtime only solves diagonal systems. Bypass
+    // reduction here so these prescribed rows still exercise its vendor calls;
+    // real-runtime and constraint cases independently cover default reduction.
+    solver.setConstraintElimination(false);
     SparseMatrixd a(2,2); a.insert(0,0)=2.; a.insert(1,1)=4.; a.makeCompressed();
     VectorXd b(2); b<<6.,-8.;
     for (const char* failedPhase : {"11", "22", "33"}) {

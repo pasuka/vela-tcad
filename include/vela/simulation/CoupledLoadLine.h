@@ -1081,20 +1081,23 @@ private:
             LinearSolver::selectedBackend() == "pardiso_mkl") {
             try {
                 pardiso = std::make_unique<LinearSolver>("pardiso_mkl");
-                scaledUpdate = pardiso->solve(augmented, rhs);
+                scaledUpdate = pardiso->solve(augmented, rhs, diagonalConstraintRows(deviceJacobian));
                 recordCandidate("pardiso_mkl", augmented, scaledUpdate);
             } catch (const std::exception& error) {
                 failureReason = std::string("direct bordered PARDISO failed: ") + error.what();
                 return false;
             }
         }
-        Eigen::SparseLU<SparseMatrixd> lu;
-        if (scaledUpdate.size() != n + 1)
-            lu.compute(augmented);
-        if (scaledUpdate.size() != n + 1 && lu.info() == Eigen::Success) {
-            scaledUpdate = lu.solve(rhs);
-            recordCandidate("eigen_lu", augmented, scaledUpdate);
-        } else if (scaledUpdate.size() != n + 1) {
+        LinearSolver lu("sparselu");
+        if (scaledUpdate.size() != n + 1) {
+            try {
+                scaledUpdate = lu.solve(augmented,rhs,diagonalConstraintRows(deviceJacobian));
+                recordCandidate("eigen_lu", augmented, scaledUpdate);
+            } catch (const std::exception&) {
+                scaledUpdate.resize(0);
+            }
+        }
+        if (scaledUpdate.size() != n + 1) {
             if (solveUmfPackSystem(augmented, rhs, scaledUpdate)) {
                 const Real umfpackResidual = recordCandidate(
                     "umfpack", augmented, scaledUpdate);
@@ -1216,24 +1219,20 @@ private:
                 rawAugmented, -rawRhs, update);
             constexpr Real backwardTolerance = 1.0e-10;
             if (defect.backwardMax > backwardTolerance) {
-                Eigen::SparseLU<SparseMatrixd> correctionLu;
-                if (!pardiso) correctionLu.compute(augmented);
-                if (!pardiso && correctionLu.info() != Eigen::Success) {
-                    failureReason = "direct bordered refinement factorization failed";
-                    return false;
-                }
+                LinearSolver correctionLu("sparselu");
                 for (int k = 0; k < config_.directRefinementSteps &&
                      defect.backwardMax > backwardTolerance; ++k) {
                     const VectorXd correctionRhs = -defect.values.cwiseProduct(rowScale);
                     VectorXd correction;
                     try {
-                        correction = pardiso ? pardiso->solve(augmented, correctionRhs)
-                                             : VectorXd(correctionLu.solve(correctionRhs));
+                        const auto constraints=diagonalConstraintRows(deviceJacobian);
+                        correction = pardiso ? pardiso->solve(augmented, correctionRhs,constraints)
+                                             : correctionLu.solve(augmented,correctionRhs,constraints);
                     } catch (const std::exception& error) {
                         failureReason = std::string("direct bordered refinement failed: ") + error.what();
                         return false;
                     }
-                    if ((!pardiso && correctionLu.info() != Eigen::Success) || !correction.allFinite()) {
+                    if (!correction.allFinite()) {
                         failureReason = "direct bordered refinement correction failed";
                         return false;
                     }

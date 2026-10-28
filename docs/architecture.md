@@ -26,6 +26,14 @@ decks and reference-case workflows. Optional pybind11 bindings expose a thin Pyt
 
 ## Solver Paths
 
+`LinearSolver` performs exact prescribed-row substitution by default before
+backend factorization and recovers the full update afterward. The core
+`ConstraintElimination` API retains the affine boundary RHS and supports acyclic
+contact dependencies. Coupled load-line and population-coordinate drivers identify
+prescribed rows in the device Jacobian before bordering or changing coordinates.
+State/residual arrays retain their original dimensions. The opt-out control and
+backend exceptions are documented in the [configuration schema](config_schema.md).
+
 The explicit `solver.coupled_operator: "bvmethods_tri3_qf"` profile routes
 coupled carrier residuals, Jacobians, ledgers and terminal totals through
 `BvMethodsCoupledRuntime`, retaining existing Poisson and constraint rows.

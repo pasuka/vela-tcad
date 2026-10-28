@@ -18,6 +18,31 @@ TEST_CASE("Population Newton coordinates reproduce density tangents across scale
     REQUIRE(x[5]==z[5]);REQUIRE(x[8]==z[8]);
     REQUIRE(x[9]==Approx(c.voltageScale_V*z[9]));
 }
+TEST_CASE("Population relative columns preserve minority tangents below the old overflow threshold", "[population_newton]") {
+    const double vt=.025852;
+    VectorXd psi=VectorXd::Constant(1,-.1713951393747497);
+    VectorXd n=VectorXd::Constant(1,6.981265876883068e-301),p=VectorXd::Constant(1,2.65e13);
+    for(int step=0;step<5;++step) {
+        const auto c=diagnostics::populationCoordinates(psi,n,p,n/vt,p/vt,{true},vt,vt,1.05);
+        REQUIRE(c.electronScale_cm3[0]==n[0]);
+        REQUIRE(c.qfFromScaledPopulation.coeff(1,1)==Approx(-1.));
+        REQUIRE(c.qfFromScaledPopulation.coeff(2,2)==Approx(1.));
+        VectorXd z=VectorXd::Zero(4);z[1]=-1210.4320286817224;
+        const VectorXd dx=c.qfFromScaledPopulation*z;
+        REQUIRE(dx.allFinite());
+        const double dc=(n[0]/vt)*(dx[0]-dx[1])*vt;
+        REQUIRE(dc/n[0]==Approx(z[1]).epsilon(1e-13));
+        n[0]=diagnostics::localNonpositivePopulation(n[0],dc,1.).value;
+    }
+    REQUIRE(n[0]>0.);
+}
+TEST_CASE("Population coordinate validation rejects unusable restart slopes", "[population_newton]") {
+    VectorXd psi=VectorXd::Zero(1),n=VectorXd::Ones(1),p=n,slope=n;
+    slope[0]=std::numeric_limits<double>::infinity();
+    REQUIRE_THROWS_AS(diagnostics::populationCoordinates(psi,n,p,slope,p,{true},1.,.025,0.),std::domain_error);
+    slope[0]=0.;
+    REQUIRE_THROWS_AS(diagnostics::populationCoordinates(psi,n,p,slope,p,{true},1.,.025,0.),std::domain_error);
+}
 TEST_CASE("Population fraction step preserves positivity without density projection", "[population_newton]") {
     VectorXd n(2),p(2),dn(2),dp(2);n<<100.,1e-200;p<<4.,2.;dn<<-120.,-2e-200;dp<<.3,-.5;
     const auto f=diagnostics::populationFractionToBoundary(n,p,dn,dp,{true,true},.99);

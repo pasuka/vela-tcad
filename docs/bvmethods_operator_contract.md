@@ -77,6 +77,26 @@ complete-BV performance.
 
 ## State and statistics
 
+The [adaptive-candidate VM failure analysis](validation/bvmethods_vm_adaptive_failure_2026-10-27.md)
+records 24 accepted points before the frozen pre-reduction scan stopped at
+outer 1.079671328 V. Positive minority populations did not guarantee a finite
+population-coordinate map: electron node 498 reached about 6.98e-301 cm^-3,
+and the fixed density-reference column scale overflowed before the next
+Jacobian solve. Bounded reuse on/off controls retain identical operators and
+states. This identifies the direct exception and its state history, without
+qualifying a scaling repair or the physical origin of repeated negative
+minority directions. The core reduction qualification remains separate.
+
+The [core prescribed-row reduction](validation/bvmethods_core_constraint_elimination_2026-10-27.md)
+is now enabled by default for ordinary `LinearSolver` calls and the normal direct
+bordered path. Device QF row IDs survive population-column transformations and
+the circuit border; the backend receives the 6765-dimensional free system for
+this mesh while state and physical residual arrays retain 7801 entries. Affine
+RHS correction and recovery are part of the solve. `VELA_CONSTRAINT_ELIMINATION=0`
+provides the unreduced control. This algebraic change does not qualify native
+Jacobian support or complete BV convergence, and the frozen VM task uses its
+previous source snapshot. Explicit QR/emergency fallback policies remain separate.
+
 The unknowns are ordinary physical electrostatic and electron/hole
 quasi-Fermi potentials, packed as `(psi, fn, fp)/V0`. Only zero-reference
 coordinates are qualified; reference-tail and split-DD coordinates are rejected.

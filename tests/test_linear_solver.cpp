@@ -21,6 +21,70 @@
 
 using namespace vela;
 
+TEST_CASE("Constraint elimination preserves affine rows and nonzero boundary RHS", "[linear_solver][constraints]") {
+    SparseMatrixd a(5,5);
+    std::vector<Eigen::Triplet<double>> t={{0,0,2.},{0,4,-3.},
+        {1,0,4.},{1,1,-5.},{1,4,6.},
+        {2,0,2.},{2,1,3.},{2,2,8.},{2,3,-1.},{2,4,.2},
+        {3,0,-1.},{3,2,2.},{3,3,6.},{3,4,.3},
+        {4,0,.2},{4,1,-.5},{4,2,.7},{4,3,1.},{4,4,4.}};
+    a.setFromTriplets(t.begin(),t.end());
+    VectorXd exact(5); exact<<.31,-1.7,2.3,-.6,1.9;
+    const VectorXd rhs=a*exact;
+    const auto r=eliminateLinearConstraints(a,rhs,{1,0});
+    CHECK(r.kept==std::vector<int>{2,3,4}); CHECK(r.matrix.rows()==3);
+    LinearSolver solver("sparselu"); REQUIRE(solver.constraintEliminationEnabled());
+    const auto x=solver.solve(a,rhs,{0,1});
+    CHECK(solver.lastReducedDimension()==3);
+    CHECK((x-exact).lpNorm<Eigen::Infinity>()<2e-15);
+    CHECK((a*x-rhs).lpNorm<Eigen::Infinity>()<2e-14);
+    CHECK((r.recover(solver.solve(r.matrix,r.rhs))-exact).norm()<3e-15);
+    solver.setConstraintElimination(false);
+    CHECK((solver.solve(a,rhs)-x).norm()<3e-15);
+    CHECK(solver.lastReducedDimension()==5);
+    solver.setConstraintElimination(true);
+    CHECK((solver.solve(a,2.*rhs,{0,1})-2.*x).norm()<4e-15);
+}
+
+TEST_CASE("Default constraint elimination ignores stored zeros but preserves tiny couplings", "[linear_solver][constraints]") {
+    SparseMatrixd a(3,3); a.insert(0,0)=2.;a.insert(0,1)=0.;
+    a.insert(1,0)=1.;a.insert(1,1)=3.;a.insert(1,2)=1e-250;
+    a.insert(2,1)=.5;a.insert(2,2)=4.;a.makeCompressed();
+    CHECK(diagonalConstraintRows(a)==std::vector<int>{0});
+    const VectorXd exact=VectorXd::LinSpaced(3,1.,3.);
+    LinearSolver solver("sparselu");
+    CHECK((solver.solve(a,a*exact)-exact).norm()<1e-14);
+    CHECK(solver.lastReducedDimension()==2);
+    SparseMatrixd diagonal(2,2);diagonal.insert(0,0)=2.;diagonal.insert(1,1)=-3.;
+    VectorXd rhs(2);rhs<<6.,12.;
+    const auto all=eliminateLinearConstraints(diagonal,rhs,{0,1});
+    CHECK(all.matrix.rows()==0);CHECK((all.recover(VectorXd{})-solver.solve(diagonal,rhs)).norm()==0.);
+    CHECK(solver.lastReducedDimension()==0);
+}
+
+TEST_CASE("Constraint substitution rejects cycles singular pivots and invalid metadata", "[linear_solver][constraints]") {
+    SparseMatrixd a(2,2);a.insert(0,0)=2.;a.insert(0,1)=1.;a.insert(1,0)=1.;a.insert(1,1)=3.;
+    const auto b=VectorXd::Ones(2).eval();
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0,1}),std::invalid_argument);
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0,0}),std::invalid_argument);
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{2}),std::invalid_argument);
+    a.coeffRef(0,0)=0.;CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0}),std::invalid_argument);
+    a.coeffRef(0,0)=std::numeric_limits<double>::infinity();
+    CHECK_THROWS_AS(diagonalConstraintRows(a),std::invalid_argument);
+}
+
+TEST_CASE("Constraint validation ignores unused uncompressed sparse capacity", "[linear_solver][constraints]") {
+    SparseMatrixd a(3,3);a.reserve(Eigen::VectorXi::Constant(3,5));
+    a.insert(0,0)=2.;a.insert(1,0)=.1;a.insert(1,1)=3.;a.insert(2,1)=.2;a.insert(2,2)=4.;
+    REQUIRE_FALSE(a.isCompressed());
+    for(int col=0;col<a.outerSize();++col)
+        for(int k=a.outerIndexPtr()[col]+a.innerNonZeroPtr()[col];k<a.outerIndexPtr()[col+1];++k)
+            a.valuePtr()[k]=std::numeric_limits<double>::quiet_NaN();
+    const VectorXd exact=VectorXd::LinSpaced(3,1.,3.);
+    LinearSolver solver("sparselu");
+    CHECK((solver.solve(a,a*exact)-exact).norm()<1e-14);
+}
+
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
 extern "C" int openblas_get_num_threads();
 extern "C" void openblas_set_num_threads(int);
@@ -306,6 +370,8 @@ TEST_CASE("UMFPACK retains factors safely and recovers after rejected systems", 
 {
 #if defined(VELA_HAS_UMFPACK)
     LinearSolver solver("umfpack");
+    // This case audits the backend's full-pattern cache; reduction has its own cases.
+    solver.setConstraintElimination(false);
     const VectorXd exact = (VectorXd(3) << 1., -2., 3.).finished();
     auto a = makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{0,1,.7},{2,0,-.3}});
     const auto check = [&](const SparseMatrixd& m) {
@@ -393,16 +459,18 @@ TEST_CASE("LinearSolver re-analyzes when sparse pattern changes", "[linear_solve
     const VectorXd b = (VectorXd(3) << 2.0, 6.0, 12.0).finished();
 
     const VectorXd x1 = solver.solve(diagonal, b);
-    REQUIRE(solver.patternAnalysisCount() == 1);
+    REQUIRE(solver.patternAnalysisCount() == 0);
+    REQUIRE(solver.lastReducedDimension() == 0);
     REQUIRE((diagonal * x1 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 
     const VectorXd x2 = solver.solve(coupled, b);
-    REQUIRE(solver.patternAnalysisCount() == 2);
+    REQUIRE(solver.patternAnalysisCount() == 1);
+    REQUIRE(solver.lastReducedDimension() == 2);
     REQUIRE((coupled * x2 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 
     solver.clearPatternCache();
     const VectorXd x3 = solver.solve(coupled, b);
-    REQUIRE(solver.patternAnalysisCount() == 3);
+    REQUIRE(solver.patternAnalysisCount() == 2);
     REQUIRE((coupled * x3 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 }
 

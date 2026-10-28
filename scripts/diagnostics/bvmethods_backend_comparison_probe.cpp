@@ -6,6 +6,7 @@
 #include "vela/simulation/CoupledLoadLine.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/physics/experimental/JoyceDixonStatistics.h"
+#include "BvMethodsPopulationNewton.h"
 
 namespace {
 using namespace vela;
@@ -49,6 +50,26 @@ int main(int argc,char**argv){try{
         for(int i=0;i<d;++i){if(fv[i]!=0)entries.emplace_back(i,d,fv[i]);if(p.stateDerivative[i]!=0)entries.emplace_back(d,i,1e7*p.stateDerivative[i]);}
         entries.emplace_back(d,d,1+1e7*p.parameterDerivative);SparseMatrixd a(d+1,d+1);a.setFromTriplets(entries.begin(),entries.end());
         matrixFile(folder/"matrix.csv",a);const VectorXd f=sys.residual(x,inner);
+        VectorXd fullRhs(d+1);fullRhs.head(d)=-f;fullRhs[d]=-(inner+1e7*p.value-outer);
+        const auto constraints=diagonalConstraintRows(device);
+        std::vector<int> carriers;for(int row:constraints)if(row>=n)carriers.push_back(row);
+        const auto reduced=eliminateLinearConstraints(a,fullRhs,constraints);
+        const auto carrierReduced=eliminateLinearConstraints(a,fullRhs,carriers);
+        matrixFile(folder/"core_reduced.csv",reduced.matrix);
+        matrixFile(folder/"core_carrier_reduced.csv",carrierReduced.matrix);
+        {std::ofstream z(folder/"core_reduced_rhs.csv");z<<std::setprecision(17)<<"row,original_row,rhs\n";
+         for(int i=0;i<reduced.rhs.size();++i)z<<i<<','<<reduced.kept[i]<<','<<reduced.rhs[i]<<'\n';}
+        LinearSolver reducedSolver,fullSolver;fullSolver.setConstraintElimination(false);
+        const auto equilibrated=diagnostics::equilibratePopulationSystem(a);
+        const VectorXd scaledRhs=equilibrated.rowWeights.cwiseProduct(fullRhs);
+        const VectorXd direction=equilibrated.columnWeights.cwiseProduct(reducedSolver.solve(equilibrated.matrix,scaledRhs,constraints));
+        const VectorXd fullDirection=equilibrated.columnWeights.cwiseProduct(fullSolver.solve(equilibrated.matrix,scaledRhs));
+        const auto defect=linear_refinement::highPrecisionDefect(a,-fullRhs,direction);
+        const auto fullDefect=linear_refinement::highPrecisionDefect(a,-fullRhs,fullDirection);
+        jsonFile(folder/"core_reduction.json",{{"full_dimension",a.rows()},{"carrier_reduced_dimension",carrierReduced.matrix.rows()},
+          {"reduced_dimension",reduced.matrix.rows()},{"backend_dimension",reducedSolver.lastReducedDimension()},
+          {"eliminated",constraints},{"backward_error",defect.backwardMax},{"full_backward_error",fullDefect.backwardMax},
+          {"direction_max_difference",(direction-fullDirection).lpNorm<Eigen::Infinity>()},{"backend",reducedSolver.backend()}});
         std::ofstream r(folder/"rhs.csv");r<<std::setprecision(17)<<"row,rhs\n";for(int i=0;i<d;++i)r<<i<<','<<-f[i]<<'\n';
         r<<d<<','<<-(inner+1e7*p.value-outer)<<'\n';
         const double scale=owner.evaluateResidual(unpack(x)).potentialScale;

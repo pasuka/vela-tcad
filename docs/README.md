@@ -1,5 +1,23 @@
 # Vela Documentation
 
+- [BVMethods 50%人口保护多偏压续算，2026-10-28](validation/bvmethods_retained_continuation_2026-10-28.md)：
+  双机共同通过0.8至1.25 V窗口，区分健康入口、持续保留比例及半步控制；全局到边界τ=0.99仍可能保留1%，未改默认或验收门。
+
+- [BVMethods 局部人口保留1%／10%／50%对照，2026-10-28](validation/bvmethods_retained_fraction_2026-10-28.md)：
+  双机50%均五轮通过同一尾部形成检查点，首步算子与原始方向保持，弱行平衡及全网格人口尾部改善；未修改默认比例。
+
+- [BVMethods 尾部形成前候选进展与弱行导数，2026-10-28](validation/bvmethods_weak_row_jv_2026-10-28.md)：
+  T470p／C560复核首次1%回退后的负输运斜率、弱行进展及近似矩阵相减精度；保持完整RHS与原验收门。
+
+- [BVMethods 相对人口坐标完整扫描停滞定位，2026-10-27](validation/bvmethods_stable_population_failure_2026-10-27.md)：
+  电子尾部与全局保护节点542、分块更新误差及候选/恢复选择链；同目标成功路径四步通过，保留物理导数核验边界。
+
+- [BVMethods VM 自适应候选完整扫描失败定位，2026-10-27](validation/bvmethods_vm_adaptive_failure_2026-10-27.md)：
+  节点498电子尾部使固定人口列尺度溢出；复用开关同态对照一致，区分中途缩步与最终不可继续接受态。
+
+- [BVMethods 核心默认约束消元与 Jacobian 支撑对照，2026-10-27](validation/bvmethods_core_constraint_elimination_2026-10-27.md)：
+  保留非零边界 RHS 和完整回代，实际自由系统 6765 维；15 套同态原装配保持，严格非零及显著支撑差异单列。
+
 - [BVMethods 四项求值优化 VM 完整扫描完成，2026-10-27](validation/bvmethods_vm_four_switch_full_2026-10-27.md)：
   冷 Poisson、全局缩步与自动导数恢复，103 个接受点达到停止电流，正常退出；与后续新候选策略分开记账。
 - [BVMethods T470p／C560 候选选择与迭代内复用，2026-10-27](validation/bvmethods_candidate_selection_2026-10-27.md)：

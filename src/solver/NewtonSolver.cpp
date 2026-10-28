@@ -3579,14 +3579,11 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             const CoupledDDBoundaryConditions bcs =
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda));
             const SparseMatrixd jacobian = assembler->assembleJacobian(x, bcs);
-            Eigen::SparseLU<SparseMatrixd> lu;
-            lu.compute(jacobian);
-            if (lu.info() != Eigen::Success)
-                return false;
-            y = lu.solve(b);
-            if (lu.info() != Eigen::Success)
-                return false;
-            return y.allFinite();
+            try {
+                LinearSolver linear("sparselu");
+                y = linear.solve(jacobian,b);
+                return y.allFinite();
+            } catch (const std::exception&) { return false; }
         };
     system.solveJacobianPair =
         [self, assembler, biasesAt](const VectorXd& x,
@@ -3598,19 +3595,12 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             const CoupledDDBoundaryConditions bcs =
                 self->buildBoundaryConditions(*assembler, biasesAt(lambda));
             const SparseMatrixd jacobian = assembler->assembleJacobian(x, bcs);
-            Eigen::SparseLU<SparseMatrixd> lu;
-            lu.compute(jacobian);
-            if (lu.info() != Eigen::Success)
-                return false;
-            Eigen::MatrixXd rhs(b1.size(), 2);
-            rhs.col(0) = b1;
-            rhs.col(1) = b2;
-            const Eigen::MatrixXd solution = lu.solve(rhs);
-            if (lu.info() != Eigen::Success || !solution.allFinite())
-                return false;
-            y1 = solution.col(0);
-            y2 = solution.col(1);
-            return true;
+            try {
+                LinearSolver linear("sparselu");
+                y1 = linear.solve(jacobian,b1);
+                y2 = linear.solve(jacobian,b2);
+                return y1.allFinite() && y2.allFinite();
+            } catch (const std::exception&) { return false; }
         };
     if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
         cfg_.quasiFermiUpdateLimitMinority_V > 0.0) {

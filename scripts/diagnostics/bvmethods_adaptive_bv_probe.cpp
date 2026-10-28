@@ -45,11 +45,16 @@ int main(int argc, char** argv) { try {
         throw std::invalid_argument("population_protection must be fraction_to_boundary, local_nonpositive or adaptive");
     const bool localProtection=protection=="local_nonpositive";
     const bool adaptiveProtection=protection=="adaptive";
+    const double retainedFraction=m.value("local_retained_fraction",.01);
+    if(!(retainedFraction>0.&&retainedFraction<1.))
+        throw std::invalid_argument("local_retained_fraction must be between zero and one");
     const std::string selectionMetric=m.value("population_selection_metric",std::string{"target_normalized"});
     if(selectionMetric!="target_normalized"&&selectionMetric!="fixed_rows_l2")
         throw std::invalid_argument("population_selection_metric must be target_normalized or fixed_rows_l2");
     if(adaptiveProtection&&!automatic)throw std::invalid_argument("adaptive population protection requires automatic derivative restoration");
     const bool protectionReplay=m.contains("protection_checkpoint");
+    const bool diagnosticIterationStates=m.value("diagnostic_iteration_states",false);
+    const auto diagnosticNodes=m.value("diagnostic_nodes",std::vector<int>{});
     const Json optimization=m.value("evaluation_optimization",Json::object());
     const bool reuseCandidate=optimization.value("candidate_diagnostics",false);
     const bool reusePhysical=optimization.value("physical_reuse",false);
@@ -228,7 +233,7 @@ int main(int argc, char** argv) { try {
     Json report={{"schema","vela.adaptive_derivative_bv.v1"},{"from_cold_poisson",!protectionReplay},{"imported_checkpoint",protectionReplay},
         {"backend",LinearSolver::selectedBackend()},{"poisson",{{"converged",poisson.converged},{"iterations",poisson.iters},{"residual",poisson.finalResidualNorm},{"trace",ph}}},
         {"resistance_ohm_um",resistance},{"equation_tolerance",eqtol},{"load_tolerance_V",loadtol},{"max_newton_updates",budget},
-        {"population_protection",protection},{"population_selection_metric",selectionMetric},{"local_retained_fraction",.01},
+        {"population_protection",protection},{"population_selection_metric",selectionMetric},{"local_retained_fraction",retainedFraction},
         {"fraction_tau",tau},{"inner_predictor_limit_V",innerControl.volts},{"inner_predictor_source",innerControl.source},{"inner_predictor_reason",innerControl.reason},
         {"corrector_voltage_update_limit_V",voltageUpdateLimit},{"extrapolate",extrapolate},
         {"outer_initial_step_V",outerControl.initial},{"outer_min_step_V",outerControl.minimum},{"outer_max_step_V",outerControl.maximum},
@@ -272,6 +277,7 @@ int main(int argc, char** argv) { try {
         LinearSolver linear;
         for(int iteration=1;iteration<=budget;++iteration)try {
             const auto s=unpack(x);const auto c=coordinates(s,bias);
+            if(diagnosticIterationStates)saveState(folder/("before_"+std::to_string(iteration)+".h5"),s,bias);
             const VectorXd F=reuseIteration?cachedResidual:fullResidual(x,bias);
             if(reuseIteration)++residualHits;
             const bool initialReuse=reuseIteration&&iteration==1;
@@ -303,13 +309,15 @@ int main(int argc, char** argv) { try {
                     ++directionBuilds;
                     SparseMatrixd correction=(1.-theta)*mu;if(!avDerivatives)correction-=av;
                     const SparseMatrixd jac=fullJac+project(correction);auto pt=terminal;pt.stateDerivative+=(1.-theta)*portMu;
+                    const auto constraintRows=diagonalConstraintRows(jac);
                     jq=border(jac,fv,pt);const SparseMatrixd jp=jq*c.qfFromScaledPopulation;
                     const std::string tag="iter"+std::to_string(iteration)+"_theta"+std::to_string(theta)+"_av"+std::to_string(avDerivatives);
                     if(dumpSystems&&iteration==1){matrixFile(folder/(tag+"_qf.csv"),jq);matrixFile(folder/(tag+"_population.csv"),jp);matrixFile(folder/"coordinate_map.csv",c.qfFromScaledPopulation);}
                     const auto eq=timed("driver.equilibration",[&]{return diagnostics::equilibratePopulationSystem(jp);});
-                    q.z=eq.columnWeights.cwiseProduct(timed("driver.linear_solve",[&]{return linear.solve(eq.matrix,(-eq.rowWeights.cwiseProduct(F)).eval());}));
+                    q.z=eq.columnWeights.cwiseProduct(timed("driver.linear_solve",[&]{return linear.solve(eq.matrix,(-eq.rowWeights.cwiseProduct(F)).eval(),constraintRows);}));
                     auto defect=timed("driver.population_defect",[&]{return linear_refinement::highPrecisionDefect(jp,F,q.z);});
-                    if(defect.backwardMax>1e-12){q.z+=eq.columnWeights.cwiseProduct(timed("driver.linear_solve",[&]{return linear.solve(eq.matrix,(-eq.rowWeights.cwiseProduct(defect.values)).eval());}));defect=timed("driver.population_defect",[&]{return linear_refinement::highPrecisionDefect(jp,F,q.z);});}
+                    if(defect.backwardMax>1e-12){q.z+=eq.columnWeights.cwiseProduct(timed("driver.linear_solve",[&]{return linear.solve(eq.matrix,(-eq.rowWeights.cwiseProduct(defect.values)).eval(),constraintRows);}));defect=timed("driver.population_defect",[&]{return linear_refinement::highPrecisionDefect(jp,F,q.z);});}
+                    q.log["linear_reduced_dimension"]=linear.lastReducedDimension();
                     q.log["population_linear_backward_error"]=defect.backwardMax;
                     if(defect.backwardMax>1e-10){
                         matrixFile(folder/(tag+"_failed_population.csv"),jp);matrixFile(folder/(tag+"_failed_qf.csv"),jq);
@@ -339,8 +347,8 @@ int main(int argc, char** argv) { try {
                         double nn=en[i]+q.alpha*q.dn[i],pp=hp[i]+q.alpha*q.dp[i];
                         negativeN+=en[i]+q.dn[i]<=0.;negativeP+=hp[i]+q.dp[i]<=0.;
                         if(projection){
-                            const auto a=diagnostics::localNonpositivePopulation(en[i],q.dn[i],q.alpha);
-                            const auto b=diagnostics::localNonpositivePopulation(hp[i],q.dp[i],q.alpha);
+                            const auto a=diagnostics::localNonpositivePopulation(en[i],q.dn[i],q.alpha,retainedFraction);
+                            const auto b=diagnostics::localNonpositivePopulation(hp[i],q.dp[i],q.alpha,retainedFraction);
                             nn=a.value;pp=b.value;protectedN+=a.protectedNonpositive;protectedP+=b.protectedNonpositive;
                             if(a.protectedNonpositive||b.protectedNonpositive)protectedNodes.push_back({{"node",i},{"electron",a.protectedNonpositive},{"hole",b.protectedNonpositive}});
                         }
@@ -356,6 +364,11 @@ int main(int argc, char** argv) { try {
                     q.x=solver.packArclengthState(next);const auto check=unpack(q.x);double roundtrip=0.;
                     for(int i=0;i<n;++i)if(active[i])roundtrip=std::max({roundtrip,std::abs(check.n[i]/next.n[i]-1.),std::abs(check.p[i]/next.p[i]-1.)});
                     if(roundtrip>1e-10)throw std::runtime_error("population inverse roundtrip failed");
+                    // A positive finite candidate must also be usable at the
+                    // next Newton entry; do not accept a poisoned restart.
+                    (void)coordinates(check,q.bias);
+                    q.log["next_coordinate_map_finite"]=true;
+                    q.log["population_column_scaling"]="relative_population";
                     q.F=fullResidual(q.x,q.bias);if(!q.F.allFinite())throw std::runtime_error("nonfinite candidate physical RHS");
                     q.merit=fixedRows.cwiseProduct(q.F).lpNorm<Eigen::Infinity>();
                     if(automatic){
@@ -367,6 +380,7 @@ int main(int argc, char** argv) { try {
                     }
                     const auto er=timed("driver.update_error",[&]{return updateError(x,q.dx.head(d),q.x,q.bias,q.dx[d]);});
                     if(!er.valid||!std::isfinite(er.rms))throw std::runtime_error("invalid raw update RMS");q.rms=er.rms;
+                    if(diagnosticIterationStates){q.log["update_block_RMS"]=er.blockRms;q.log["update_counts"]=er.counts;}
                     double qfBackward;
                     const auto existing=defectCache.find(key);
                     if(reuseDirection&&existing!=defectCache.end()){qfBackward=existing->second;++qfDefectHits;}
@@ -381,6 +395,25 @@ int main(int argc, char** argv) { try {
                         {"negative_electron_raw_candidates",negativeN},{"negative_hole_raw_candidates",negativeP},
                         {"max_relative_electron_tangent",relativeN},{"max_relative_hole_tangent",relativeP}});
                     q.valid=true;
+                    if(diagnosticIterationStates){
+                        Json nodes=Json::array();
+                        for(int i:diagnosticNodes){
+                            if(i<0||i>=n||!active[i])throw std::invalid_argument("diagnostic node must be in semiconductor");
+                            nodes.push_back({{"node",i},{"n_before_cm3",en[i]},{"n_after_cm3",cm(check.n[i])},
+                                {"p_before_cm3",hp[i]},{"p_after_cm3",cm(check.p[i])},
+                                {"raw_dn_cm3",q.dn[i]},{"raw_dp_cm3",q.dp[i]},
+                                {"delta_psi_V",check.psi[i]-s.psi[i]},
+                                {"delta_fn_V",check.phin[i]-s.phin[i]},{"delta_fp_V",check.phip[i]-s.phip[i]},
+                                {"electron_F_before",F[n+i]},{"electron_F_after",q.F[n+i]},
+                                {"hole_F_before",F[2*n+i]},{"hole_F_after",q.F[2*n+i]}});
+                        }
+                        if(!diagnosticNodes.empty())q.log["node_updates"]=nodes;
+                        const auto tag="candidate_"+std::to_string(iteration)+"_"+std::to_string(theta)+"_"+
+                            std::to_string(avDerivatives)+"_"+(projection?"local":"fraction");
+                        saveState(folder/(tag+".h5"),check,q.bias);
+                        q.log["candidate_inner_V"]=q.bias;
+                        diagnostics::writeExperimentJson(folder/(tag+".json"),q.log);
+                    }
                 }catch(const std::exception& e){q.log["error"]=e.what();}
                 return q;
             };
