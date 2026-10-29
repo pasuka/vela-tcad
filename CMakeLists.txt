@@ -1994,3 +1994,8 @@ add_test(NAME bvmethods_cmd_profile
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_cmd_profile)
 set_tests_properties(bvmethods_cmd_profile PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(bvmethods_cmd_profile)
+
+add_test(NAME bvmethods_precision_reference
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_precision_reference)
+set_tests_properties(bvmethods_precision_reference PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(bvmethods_precision_reference)

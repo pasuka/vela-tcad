@@ -51,6 +51,58 @@ class StateArchiveTest(unittest.TestCase):
             self.assertEqual(np.asarray(got[name],dtype='<f8').tobytes(),
                              np.asarray(self.fields[name],dtype='<f8').tobytes(), name)
 
+    def population_state(self):
+        self.fields = {k: v for k, v in self.fields.items() if k not in archive.SPLIT}
+        raw = [float.fromhex('0x1.0000000000001p+0'), np.nextafter(0., 1.), 0.]
+        self.meta.update(state_variables='potential_density',
+            population_coordinate_schema='vela.population-coordinates.v1',
+            population_concentration_m3_per_internal=1e6)
+        for key, physical in zip(archive.POPULATION, ('electrons_m3', 'holes_m3')):
+            self.fields[key] = list(raw)
+            self.fields[physical] = [float(v)*1e6 for v in raw]
+
+    def test_population_coordinates_preserve_bits_and_translate(self):
+        self.population_state()
+        archive.write(self.path, self.fields, self.meta)
+        self.assertFields(archive.read(self.path, 3, 'a'*64)[0])
+        target=self.path.parent/'shifted.h5'
+        archive.translate(self.path, target, 1., {0,1,2}, 3, 'a'*64)
+        fields, _=archive.read(target, 3, 'a'*64)
+        for key in archive.POPULATION:
+            self.assertEqual(np.asarray(fields[key]).tobytes(), np.asarray(self.fields[key]).tobytes())
+
+    def test_population_coordinates_reject_inconsistent_or_mixed_state(self):
+        import copy
+        self.population_state()
+        fields, meta=copy.deepcopy(self.fields),dict(self.meta)
+        mutations = [
+            lambda f,m: f.pop(archive.POPULATION[1]),
+            lambda f,m: m.pop('population_coordinate_schema'),
+            lambda f,m: m.update(population_concentration_m3_per_internal=-1.),
+            lambda f,m: m.update(population_concentration_m3_per_internal=True),
+            lambda f,m: m.update(state_variables='potential_quasi_fermi'),
+            lambda f,m: f['electrons_m3'].__setitem__(0, 42.),
+            lambda f,m: f[archive.POPULATION[0]].__setitem__(0, -1.),
+            lambda f,m: f.update({k:[0.]*3 for k in archive.SPLIT}),
+        ]
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                f,m=copy.deepcopy(fields),dict(meta);mutation(f,m)
+                with self.assertRaises(ValueError):archive.write(self.path,f,m)
+        self.assertFalse(self.path.exists())
+
+    @unittest.skipUnless(os.environ.get('VELA_STATE_ARCHIVE_TOOL'), 'C++ tool supplied by CTest')
+    def test_population_cpp_python_interop(self):
+        self.population_state()
+        tool=os.environ['VELA_STATE_ARCHIVE_TOOL']
+        archive.write(self.path,self.fields,self.meta)
+        got=json.loads(subprocess.check_output([tool,'decode',str(self.path),'3','a'*64],text=True))
+        self.assertFields(got['fields'])
+        source=self.path.with_suffix('.json')
+        source.write_text(json.dumps(dict(fields=self.fields,metadata=self.meta)))
+        subprocess.run([tool,'encode',str(source),str(self.path)],check=True)
+        self.assertFields(archive.read(self.path,3,'a'*64)[0])
+
     def test_roundtrip_thermal_and_split(self):
         self.meta['mode'] = 'electrothermal'
         self.fields['temperature_K'] = [300.,327.25,401.5]

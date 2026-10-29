@@ -1824,6 +1824,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
     cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
     cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
+    cfg.populationSgCurrent=json.value("population_sg_current",cfg.populationSgCurrent);
+    if((cfg.populationSgCurrent!="quasi_fermi" && cfg.populationSgCurrent!="band_population") ||
+       (cfg.populationSgCurrent!="quasi_fermi" && cfg.stateVariables!="potential_density"))
+        throw std::invalid_argument("population_sg_current requires band_population/potential_density or quasi_fermi");
     if(json.contains("population_update")) {
         const auto& p=json.at("population_update");
         if(!p.is_object())throw std::invalid_argument("population_update must be an object");
@@ -2892,6 +2896,9 @@ NewtonSolver::NewtonSolver(
     , sheetCharges_(std::move(sheetCharges))
 {
     validateNumericalPrecisionOptions(cfg_);
+    if((cfg_.populationSgCurrent!="quasi_fermi" && cfg_.populationSgCurrent!="band_population") ||
+       (cfg_.populationSgCurrent!="quasi_fermi" && cfg_.stateVariables!="potential_density"))
+        throw std::invalid_argument("invalid population SG arithmetic mode");
     if(cfg_.stateVariables!="potential_quasi_fermi" && cfg_.stateVariables!="potential_density")
         throw std::invalid_argument("unknown state_variables");
     if((cfg_.populationDerivativeRecovery!="full"&&cfg_.populationDerivativeRecovery!="automatic") ||
@@ -3062,6 +3069,7 @@ DDScalingSpec NewtonSolver::buildScalingSpec() const
     DDScalingSpec scaling;
     scaling.coupledOperator = cfg_.coupledOperator;
     scaling.stateVariables = cfg_.stateVariables;
+    scaling.populationSgCurrent = cfg_.populationSgCurrent;
     scaling.regionResolvedInterfaceAssembly =
         cfg_.regionResolvedInterfaceAssembly;
     scaling.poissonChargeVolumePolicy = cfg_.poissonChargeVolumePolicy;
@@ -3654,6 +3662,16 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             } catch (const std::exception&) { return false; }
         };
     if(assembler->usesPopulationState()) {
+        system.predictState=[assembler](const VectorXd& previous,const VectorXd& current,Real ratio) {
+            (void)assembler->unpack(previous);(void)assembler->unpack(current);
+            if(ratio==0.)return current;
+            auto next=predictPopulation(previous,current,ratio);
+            // Constant populations are exact stationary predictor coordinates;
+            // do not round them through exp(log(c)), especially at contacts.
+            for(int k=current.size()/3;k<current.size();++k)
+                if(previous[k]==current[k])next[k]=current[k];
+            (void)assembler->unpack(next);return next;
+        };
         system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
         system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
             return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
@@ -6342,7 +6360,7 @@ NewtonResult NewtonSolver::solve() const
 NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization() const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.populationSgCurrent="quasi_fermi";
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -6389,8 +6407,15 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";
-        return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.populationSgCurrent="quasi_fermi";
+        auto result=NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
+        // Poisson may solve in QF coordinates, but its checkpoint belongs to
+        // the caller's population contract. Keep the computed n/p untouched.
+        auto& state=result.solution;state.stateVariables="potential_density";
+        state.packedState.resize(0);state.packedLow.resize(0);
+        state.phinIncrement.resize(0);state.phipIncrement.resize(0);
+        state.electronQfReference.resize(0);state.holeQfReference.resize(0);
+        return result;
     }
     const double Vt = thermalVoltage(cfg_.temperature_K);
     RecombinationModelConfig recombinationConfig =

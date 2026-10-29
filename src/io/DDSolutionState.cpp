@@ -30,6 +30,12 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
     field("psi", solution.psi); field("phin", solution.phin); field("phip", solution.phip);
     field("electrons_m3", solution.n); field("holes_m3", solution.p);
     const auto& units = scaling.unitSystem();
+    if(solution.stateVariables=="potential_density") {
+        field("population_electrons_internal",solution.n);field("population_holes_internal",solution.p);
+        s.metadata["population_coordinate_schema"]="vela.population-coordinates.v1";
+        s.metadata["population_concentration_m3_per_internal"]=units.internalConcentrationToM3(1.);
+        s.metadata["authoritative_fields"]={"psi","population_electrons_internal","population_holes_internal"};
+    }
     for (const char* name : {"electrons_m3", "holes_m3"})
         for (auto& v : s.fields.at(name)) v = units.internalConcentrationToM3(v);
     if (solution.electronQuantumPotential.size()) field("electron_quantum_potential_V", solution.electronQuantumPotential);
@@ -93,6 +99,17 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
     for (auto* density : {&s.n, &s.p}) for (auto& v : *density) {
         v = scaling.unitSystem().m3ToInternalConcentration(v);
         if (!std::isfinite(v)) throw std::invalid_argument("DD density conversion overflow");
+    }
+    if(s.stateVariables=="potential_density") {
+        s.populationRestoreMode="legacy_si";
+        if(archive.fields.contains("population_electrons_internal")) {
+            const double stored=archive.metadata.at("population_concentration_m3_per_internal");
+            const double current=scaling.unitSystem().internalConcentrationToM3(1.);
+            if(stored==current) {
+                field("population_electrons_internal",s.n);field("population_holes_internal",s.p);
+                s.populationRestoreMode="exact_internal";
+            } else s.populationRestoreMode="converted_units";
+        }
     }
     s.electronQuantumPotential = VectorXd::Zero(s.psi.size());
     if (archive.fields.contains("electron_quantum_potential_V")) field("electron_quantum_potential_V", s.electronQuantumPotential);

@@ -42,7 +42,8 @@ class BvMethodsTri3Operator {
  MobilityModelConfig cfg_,geo_;
  std::shared_ptr<MobilityModel> bulk_;
  std::vector<bool> electronActive_,holeActive_;
- std::vector<double> nc_,nv_;
+ std::vector<double> nc_,nv_,ni_;
+ bool directPopulationSg_=false;
  double potentialScale_,factor_,vt_;
  struct CellCache {
   Index id;
@@ -57,14 +58,17 @@ class BvMethodsTri3Operator {
 public:
  BvMethodsTri3Operator(const BvMethodsTri3Context& problem,const BvMethodsQfState& initial,
         const std::vector<double>& nc,const std::vector<double>& nv,
-        double potentialScale,double physicalLineFactor,double thermalVoltage)
+        double potentialScale,double physicalLineFactor,double thermalVoltage,
+        const std::vector<double>& ni={},bool directPopulationSg=false)
  :problem_(problem),materials_(detail::buildCellMaterials(problem.mesh,problem.matdb,300.)),
   cfg_(problem.newton.mobility),geo_(cfg_),potentialScale_(potentialScale),
   factor_(100./physicalLineFactor),vt_(thermalVoltage)
  {
   const auto& mesh=problem.mesh;const int n=mesh.numNodes();const auto units=problem.newton.inputScaling.unitSystem();
   electronActive_.resize(n);holeActive_.resize(n);nc_.resize(n);nv_.resize(n);
-  for(int i=0;i<n;++i){nc_[i]=units.internalConcentrationToM3(nc[i])/1e6;nv_[i]=units.internalConcentrationToM3(nv[i])/1e6;}
+  directPopulationSg_=directPopulationSg;
+  if(directPopulationSg_ && ni.size()!=static_cast<std::size_t>(n))throw std::invalid_argument("Population SG requires intrinsic densities");
+  ni_.resize(n);for(int i=0;i<n;++i){nc_[i]=units.internalConcentrationToM3(nc[i])/1e6;nv_[i]=units.internalConcentrationToM3(nv[i])/1e6;if(directPopulationSg_)ni_[i]=units.internalConcentrationToM3(ni[i])/1e6;}
   geo_.model="phumob_field_lombardi";geo_.edgeAveraging="element_box_phumob";
   geo_.surface.discretization="element_distance_gradient";geo_.highFieldGradientDiscretization="element_vertex_partial_layer";
   geo_.surface.cellNormalX.clear();geo_.surface.cellNormalY.clear();geo_.surface.cellDistances.clear();geo_.surface.nodeDistances.clear();geo_.highFieldCells.clear();
@@ -78,7 +82,7 @@ public:
   for(Index cid=0;cid<mesh.numCells();++cid){if(materials_[cid].ni<=0)continue;
    const auto& c=mesh.getCell(cid);CellCache a;a.id=cid;
    for(auto i:c.node_ids){electronActive_[i]=true;holeActive_[i]=true;}
-   for(int k=0;k<3;++k){a.nodes[k]=c.node_ids[k];const auto& p=mesh.getNode(a.nodes[k]);a.geometry.points_cm[k]={units.internalLengthToMeters(p.x)*100.,units.internalLengthToMeters(p.y)*100.};}
+   for(int k=0;k<3;++k){a.nodes[k]=c.node_ids[k];a.geometry.nodeOrder[k]=a.nodes[k];const auto& p=mesh.getNode(a.nodes[k]);a.geometry.points_cm[k]={units.internalLengthToMeters(p.x)*100.,units.internalLengthToMeters(p.y)*100.};}
    const auto& p0=mesh.getNode(a.nodes[0]);const auto& p1=mesh.getNode(a.nodes[1]);const auto& p2=mesh.getNode(a.nodes[2]);
    const double x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
    a.shape[1]={y2/det,-x2/det};a.shape[2]={-y1/det,x1/det};a.shape[0]=-a.shape[1]-a.shape[2];
@@ -132,7 +136,15 @@ public:
     return mu;
    };
    const auto mn=mobility(true,en),mp=mobility(false,hp);
-   const auto result=experimental::evaluateBvMethodsTri3Avalanche(a.geometry,ns,ps,fn,fp,mn,mp,en,hp,vt_,electron_,hole_);
+   std::array<AvJet,2> directN,directP;
+   if(directPopulationSg_){
+    if(!state.populationCoordinates)throw std::invalid_argument("Direct SG requires population coordinates");
+    std::array<double,3> ni,nc,nv;for(int k=0;k<3;++k){ni[k]=ni_[a.nodes[k]];nc[k]=nc_[a.nodes[k]];nv[k]=nv_[a.nodes[k]];}
+    directN=experimental::populationAvCurrent(a.geometry,ns,psi,ni,nc,vt_,true);
+    directP=experimental::populationAvCurrent(a.geometry,ps,psi,ni,nv,vt_,false);
+   }
+   const auto result=experimental::evaluateBvMethodsTri3Avalanche(a.geometry,ns,ps,fn,fp,mn,mp,en,hp,vt_,electron_,hole_,
+       directPopulationSg_?&directN:nullptr,directPopulationSg_?&directP:nullptr);
    if(result.electronZeroNorm&&experimental::avCoefficient(en,electron_).value>0)++out.zeroActiveElectron;
    if(result.holeZeroNorm&&experimental::avCoefficient(hp,hole_).value>0)++out.zeroActiveHole;
    const auto genN=experimental::avCoefficient(en,electron_)*mn*experimental::avNorm(result.electronParticleCurrentWithoutMobility);
@@ -197,7 +209,8 @@ public:
     }
    }
    auto einstein=[&](const std::array<AvJet,3>& population,const std::array<AvJet,3>& eta,int k){
-    const int j=(k+1)%3;auto log=experimental::avLogRatio(population[j],population[k]);
+    int j=(k+1)%3;if(directPopulationSg_ && a.geometry.nodeOrder[k]>a.geometry.nodeOrder[j])std::swap(k,j);
+    auto log=experimental::avLogRatio(population[j],population[k]);
     if(std::abs(log.value)>1e-10)return (eta[j]-eta[k])/log;
     const auto mid=(eta[j]+eta[k])/AvJet(2);const auto jet=experimental::JoyceDixonStatistics::evaluate(mid.value);
     AvJet value(std::max(1.,jet.value/jet.first));
@@ -209,8 +222,15 @@ public:
    std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
    auto averagingAreas=a.geometry.boxAreas_cm2;
    if(coefficientAveraging){auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);for(int k=0;k<3;++k)averagingAreas[k]=weights[k]*units.areaM2PerInternal()*1e4;}
-   auto tn=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ns,fn,mn,vt_,true,gn);
-   auto tp=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ps,fp,mp,vt_,false,gp);
+   std::array<AvJet,3> an,ap;
+   if(directPopulationSg_){
+    if(!state.populationCoordinates)throw std::invalid_argument("Direct SG requires population coordinates");
+    for(int k=0;k<3;++k){int u=k,v=(k+1)%3;if(a.geometry.nodeOrder[u]>a.geometry.nodeOrder[v])std::swap(u,v);
+     an[k]=experimental::populationSgArgument(ns[u],ns[v],psi[u],psi[v],ni_[a.nodes[u]],ni_[a.nodes[v]],nc_[a.nodes[u]],nc_[a.nodes[v]],vt_,true,gn[k]);
+     ap[k]=experimental::populationSgArgument(ps[u],ps[v],psi[u],psi[v],ni_[a.nodes[u]],ni_[a.nodes[v]],nv_[a.nodes[u]],nv_[a.nodes[v]],vt_,false,gp[k]);}
+   }
+   auto tn=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ns,fn,mn,vt_,true,gn,directPopulationSg_?&an:nullptr,a.geometry.nodeOrder);
+   auto tp=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ps,fp,mp,vt_,false,gp,directPopulationSg_?&ap:nullptr,a.geometry.nodeOrder);
    for(int k=0;k<3;++k)for(int block=1;block<=2;++block){
     const int row=block*n+a.nodes[k];const auto& f=block==1?tn.nodeFlux_per_cm_s[k]:tp.nodeFlux_per_cm_s[k];out.source[row]+=f.value*factor_;out.absoluteSource[row]+=(std::abs((block==1?tn.edgeFlux_per_cm_s[k]:tp.edgeFlux_per_cm_s[k]).value)+std::abs((block==1?tn.edgeFlux_per_cm_s[(k+2)%3]:tp.edgeFlux_per_cm_s[(k+2)%3]).value))*factor_;
     if(derivatives)for(int j=0;j<9;++j){double value=f.derivative[j]*factor_*potentialScale_;if(value!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],value);}

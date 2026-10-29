@@ -20,6 +20,7 @@ values into the solver or predictor.
 | `electron_quantum_potential_V` | V | When available |
 | `electron_quantum_potential_like_V` | V | Requires the quantum-potential field |
 | `temperature_K` | K | Required in electrothermal mode; absent in DD mode |
+| `population_electrons_internal`, `population_holes_internal` | internal_concentration | Optional complete potential-density DD coordinate pair, with explicit scale metadata |
 | `packed_psi`, `packed_electron_qf_increment`, `packed_hole_qf_increment` | 1 | Optional complete normalized DD coordinate bundle; requires all four QF reference/increment fields |
 | `packed_psi_low`, `packed_electron_qf_increment_low`, `packed_hole_qf_increment_low` | 1 | Optional complete low-component bundle; requires the high-component bundle |
 
@@ -39,6 +40,26 @@ three high/low blocks without a physical-potential round trip. Low tails,
 including subnormals, retain their binary64 bits. The solver additionally checks
 the split mesh fingerprint when loading its runtime; the archive still requires
 the independent full `mesh_sha256` check.
+
+For `state_variables: potential_density`, the optional internal carrier pair
+requires `population_coordinate_schema: vela.population-coordinates.v1` and a
+positive finite `population_concentration_m3_per_internal` conversion factor.
+Each internal value must be finite and nonnegative, and its binary64 product
+with that factor must equal the corresponding SI density. A complete pair and
+both metadata fields are required together. This bundle rejects split/packed
+QF state. Physical `phin`/`phip` remain derived outputs; they do not replace n/p.
+C++ and Python enforce the same storage contract.
+
+The DD writer records the original carrier coordinates without a unit round
+trip, including subnormals and inactive zeros. Same-scale restore reads these
+coordinates directly. Different-scale restore converts SI output fields; older
+population archives without this bundle remain readable through the SI path.
+`DDSolution::populationRestoreMode` reports `exact_internal`, `converted_units`
+or `legacy_si` respectively. The marker describes carrier restoration, not a
+universal bitwise guarantee for potential renormalization or changed models.
+The metadata `authoritative_fields` lists ψ and the internal carrier pair;
+validation uses the explicit schema, field names and scale rather than trusting
+that informational list. No cached coordinate copy is retained in DDSolution.
 
 The migration-only CSV importer extracts repeated scale/schema/fingerprint
 columns into metadata, checks their uniformity, and verifies every decoded
@@ -107,8 +128,8 @@ binary64 equality and source/output hashes. It is not a runtime fallback.
 Curve/statistics CSV and mesh/doping inputs retain their existing formats.
 
 The general codec preserves binary64 values including signed zero. The DD
-solver writer retains its pre-existing normalization of subnormal values to
-zero; migration comparisons distinguish that solver policy from serialization.
+QF-mode solver writer retains its pre-existing normalization of subnormal values to
+zero; population coordinates and their output fields preserve subnormals; migration comparisons distinguish that solver policy from serialization.
 HDF5 byte hashes identify concrete files; compare decoded fields when testing
 numerical equality between independently written HDF5 files.
 

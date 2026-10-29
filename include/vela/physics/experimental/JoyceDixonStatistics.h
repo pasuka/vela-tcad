@@ -57,6 +57,20 @@ public:
                                     : highInverse(ratio) - join().shift;
     }
 
+    // Explicit stable primitive contract; existing inverse/forward dispatch is unchanged.
+    // g=log(r)-eta(r) and dg/dr have finite nondegenerate limits at r=0.
+    static double primitiveLogGamma(double ratio) {
+        if (!(ratio>=0.) || !std::isfinite(ratio))
+            throw std::invalid_argument("JD gamma requires a nonnegative finite ratio");
+        return ratio<join().ratio ? -correction(ratio) : std::log(ratio)-inverse(ratio);
+    }
+    static double primitiveLogGammaSlope(double ratio) {
+        if (!(ratio>=0.) || !std::isfinite(ratio))
+            throw std::invalid_argument("JD gamma slope requires a nonnegative finite ratio");
+        if(ratio<join().ratio)return -(a1+ratio*(2*a2+ratio*(3*a3+ratio*4*a4)));
+        return 1./ratio-highSlope(ratio);
+    }
+
     // Scale before the nondegenerate exponential reaches the subnormal
     // range. DOS*exp(eta) can be normal although exp(eta) has lost digits
     // or underflowed. These are the same low-density JD law, without a floor.
@@ -127,10 +141,13 @@ public:
     }
 
 private:
-    static constexpr double a1 = 0.35355339059327379;
-    static constexpr double a2 = -0.0049500897298752622;
-    static constexpr double a3 = 1.4838577128872821e-4;
-    static constexpr double a4 = -4.4256301190009895e-6;
+    // Correctly rounded from high-precision reversion of the F_{1/2} fugacity
+    // series. Computing high-order coefficients by cancelling doubles changes
+    // the dense-branch C1 shift by about 2e-14.
+    static constexpr double a1 = 0.3535533905932738;
+    static constexpr double a2 = -0.004950089729875255;
+    static constexpr double a3 = 0.00014838577128872333;
+    static constexpr double a4 = -4.425630118996707e-06;
     static constexpr double norm = 0.75225277806367504926; // 4/(3 sqrt(pi))
     static constexpr double c = 1.64493406684822643647; // pi^2/6
 

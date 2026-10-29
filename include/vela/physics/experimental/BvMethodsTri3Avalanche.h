@@ -101,6 +101,7 @@ struct AvTri3Geometry {
     std::array<double,3> boxAreas_cm2{};
     std::size_t representative=0;
     std::array<double,4> currentProjection{1.,0.,0.,1.};
+    std::array<std::size_t,3> nodeOrder{0,1,2};
 };
 
 inline std::array<AvJet,2> avParticleCurrentWithoutMobility(
@@ -147,13 +148,15 @@ inline AvTri3Result evaluateBvMethodsTri3Avalanche(
     const std::array<AvJet,3>& p,const std::array<AvJet,3>& fn,
     const std::array<AvJet,3>& fp,const AvJet& mun,const AvJet& mup,
     const AvJet& electronField,const AvJet& holeField,double thermalVoltage,
-    const AvCoefficient& electron,const AvCoefficient& hole)
+    const AvCoefficient& electron,const AvCoefficient& hole,
+    const std::array<AvJet,2>* directElectronCurrent=nullptr,
+    const std::array<AvJet,2>* directHoleCurrent=nullptr)
 {
     AvTri3Result out;
     out.electronParticleCurrentWithoutMobility=
-        avParticleCurrentWithoutMobility(geometry,n,fn,thermalVoltage,true);
+        directElectronCurrent?*directElectronCurrent:avParticleCurrentWithoutMobility(geometry,n,fn,thermalVoltage,true);
     out.holeParticleCurrentWithoutMobility=
-        avParticleCurrentWithoutMobility(geometry,p,fp,thermalVoltage,false);
+        directHoleCurrent?*directHoleCurrent:avParticleCurrentWithoutMobility(geometry,p,fp,thermalVoltage,false);
     const auto jn=avNorm(out.electronParticleCurrentWithoutMobility);
     const auto jp=avNorm(out.holeParticleCurrentWithoutMobility);
     out.electronZeroNorm=jn.value==0.;out.holeZeroNorm=jp.value==0.;

@@ -540,6 +540,9 @@ CoupledDDAssembler::CoupledDDAssembler(
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
     if (scaling_.stateVariables != "potential_quasi_fermi" && scaling_.stateVariables != "potential_density")
         throw std::invalid_argument("unknown coupled state_variables");
+    if((scaling_.populationSgCurrent!="quasi_fermi" && scaling_.populationSgCurrent!="band_population") ||
+       (scaling_.populationSgCurrent!="quasi_fermi"&&!usesPopulationState()))
+        throw std::invalid_argument("invalid population SG arithmetic mode");
     if (usesPopulationState() && scaling_.coupledOperator != "bvmethods_tri3_qf")
         throw std::invalid_argument("potential_density currently requires the explicit BVMethods operator");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&

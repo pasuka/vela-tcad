@@ -245,6 +245,7 @@ struct NewtonConfig {
     std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
     std::string stateVariables = "potential_quasi_fermi";
     std::string populationDerivativeRecovery = "full";
+    std::string populationSgCurrent = "quasi_fermi";
     PopulationUpdateConfig populationUpdate;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};

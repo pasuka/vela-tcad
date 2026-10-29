@@ -3,6 +3,8 @@
 #include "vela/physics/experimental/JoyceDixonStatistics.h"
 #include <cmath>
 #include <limits>
+#include <array>
+#include <algorithm>
 
 using vela::experimental::JoyceDixonStatistics;
 using Catch::Approx;
@@ -128,4 +130,33 @@ TEST_CASE("Joyce-Dixon public density and FD-BGN dispatch use one inverse", "[bv
     REQUIRE(fermiStatisticsBandgapCorrection(nd,na,nc,nv,vt)!=Approx(expected).epsilon(1e-6));
     REQUIRE(fermiDiracHalf(3.,CarrierStatisticsModel::FermiDirac)==fermiDiracHalf(3.));
     REQUIRE(fermiDiracHalfDerivative(3.,CarrierStatisticsModel::FermiDirac)==fermiDiracHalfDerivative(3.));
+}
+
+TEST_CASE("Joyce-Dixon inverse preserves independently reverted Fermi series", "[carrier_statistics][joyce_dixon]") {
+    // 80-digit reference: revert sum_k (-1)^(k+1) z^k/k^(3/2), then
+    // expand log(z). Dense references use the same mathematical C1 join.
+    // This checks coefficient accuracy independently of a double round trip.
+    const std::array<std::array<double,2>,6> reference{{{0.5,-0.5175897360762486},{1,0.3487472610045682},{4,2.7296702158669968},{8,4.648909057646425},{9,5.057642331812939},{16,7.555030873204023}}};
+    for(const auto& p:reference){
+        const double eta=JoyceDixonStatistics::inverse(p[0]);
+        REQUIRE(std::abs(eta-p[1])<=4*std::numeric_limits<double>::epsilon()*std::max(1.,std::abs(p[1])));
+    }
+}
+
+TEST_CASE("JD primitive gamma retains the dilute value and population tangent", "[carrier_statistics][joyce_dixon]") {
+    using S=JoyceDixonStatistics;
+    const double a1=0.353553390593273762200422;
+    for(double r:{0.,1e-300,1e-30,1e-18}){
+        REQUIRE(std::isfinite(S::primitiveLogGamma(r)));
+        REQUIRE(S::primitiveLogGammaSlope(r)==Approx(-a1).epsilon(2e-15));
+        if(r>0.)REQUIRE(S::primitiveLogGamma(r)/r==Approx(-a1).epsilon(2e-14));
+        else REQUIRE(S::primitiveLogGamma(r)==0.);
+    }
+    for(double r:{.1,1.,4.,8.,9.,16.}){
+        const double h=r*1e-5;
+        const double fd=(S::primitiveLogGamma(r+h)-S::primitiveLogGamma(r-h))/(2*h);
+        REQUIRE(fd==Approx(S::primitiveLogGammaSlope(r)).epsilon(2e-7));
+        REQUIRE(S::primitiveLogGamma(r)==Approx(std::log(r)-S::inverse(r)).epsilon(1e-12).margin(1e-15));
+    }
+    REQUIRE_THROWS(S::primitiveLogGamma(-1.));
 }

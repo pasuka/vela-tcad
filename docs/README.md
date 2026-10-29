@@ -1,5 +1,26 @@
 # Vela Documentation
 
+- [BVMethods自主原始量、边界人口与双机整理，2026-10-29](validation/bvmethods_autonomous_primitives_2026-10-29.md)：
+  自主材料／统计／SG原型、完整RHS及Jacobian对照、边界与冷Poisson前五点；零偏弱空穴余差单列。
+
+- [BVMethods微小驱动力与Cn表示差异，2026-10-29](validation/bvmethods_microdrive_2026-10-29.md)：
+  重点边能带／统计／QF误差分解，Cn公共偏移相减的独立控制，以及当前源码VM三小时任务。
+
+- [BVMethods 高精度统计、单元AV与弱行RHS误差账本，2026-10-28](validation/bvmethods_precision_budget_2026-10-28.md)：
+  6个单元的AV方向贡献闭合、统计值／导数基准、非零边界仿射修正，以及原生off保留源项的口径更正。
+
+- [BVMethods 原始量、JD 系数与 Poisson 基准，2026-10-28](validation/bvmethods_primitive_contract_2026-10-28.md)：
+  独立能带／归一化契约、JD系数精度修正、完整Poisson残差隔离闭合，以及剩余AV／弱空穴差异。
+
+- [BVMethods 人口 SG 算术路径与原生同态复核，2026-10-28](validation/bvmethods_population_sg_arithmetic_2026-10-28.md)：
+  能带组合、统计／QF 与 Bernoulli 分项核验；显式直接人口 SG、零偏及有限态完整算子对照。
+
+- [BVMethods 对数人口外推、无损重启与零偏 AV 同态复核，2026-10-28](validation/potential_density_predictor_archive_2026-10-28.md)：
+  核心前五目标通过，JSON/CMD 与七点重启逐位一致；原生完整精度及共同 SG 电流诊断单列。
+
+- [BVMethods 人口模式剩余问题定位，2026-10-28](validation/potential_density_remaining_diagnosis_2026-10-28.md)：
+  原生对数外推、固定第五点隔离验证、材料／VT与零偏AV差异、人口单位往返重启对照。
+
 - [BVMethods 电势／人口核心模式开发，2026-10-28](validation/potential_density_development_2026-10-28.md)：
   P0–P5 实施记录；显式 ψ/n/p、直接装配、局部保护、核心导数恢复及 JSON/CMD 路径，资格以实际测试为准。
 

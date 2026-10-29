@@ -3677,6 +3677,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     DDScalingSpec ddScaling;
     ddScaling.coupledOperator = newton.coupledOperator;
     ddScaling.stateVariables = newton.stateVariables;
+    ddScaling.populationSgCurrent = newton.populationSgCurrent;
     ddScaling.regionResolvedInterfaceAssembly =
         newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;

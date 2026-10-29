@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
+#include "vela/physics/experimental/BvMethodsPopulationSg.h"
 
 namespace vela::experimental {
 
@@ -20,7 +20,9 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
     const std::array<AvJet,3>& quasiFermi_V,
     const std::array<AvJet,3>& vertexMobility_cm2_V_s,
     double thermalVoltage_V,bool electron,
-    const std::array<AvJet,3>& einsteinFactor={AvJet(1),AvJet(1),AvJet(1)})
+    const std::array<AvJet,3>& einsteinFactor={AvJet(1),AvJet(1),AvJet(1)},
+    const std::array<AvJet,3>* directArguments=nullptr,
+    const std::array<std::size_t,3>& nodeOrder={0,1,2})
 {
     if(!(thermalVoltage_V>0.))throw std::invalid_argument("Transport requires positive thermal voltage");
     Tri3TransportResult out;
@@ -40,10 +42,19 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
             throw std::invalid_argument("Invalid transport coefficient or Einstein factor");
         const auto j=(k+1)%3;
         const auto thermal=AvJet(thermalVoltage_V)*einsteinFactor[k];
-        const auto delta=AvJet(electron?1.:-1.)*(quasiFermi_V[j]-quasiFermi_V[k])/thermal;
-        const auto argument=avLogRatio(density_cm3[j],density_cm3[k])+delta;
-        const auto flux=avSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
-            *thermal,density_cm3[k],density_cm3[j],delta,argument);
+        AvJet flux;
+        if(!directArguments){
+            const auto delta=AvJet(electron?1.:-1.)*(quasiFermi_V[j]-quasiFermi_V[k])/thermal;
+            const auto argument=avLogRatio(density_cm3[j],density_cm3[k])+delta;
+            flux=avSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
+                *thermal,density_cm3[k],density_cm3[j],delta,argument);
+        }
+        if(directArguments) {
+            const bool reverse=nodeOrder[k]>nodeOrder[j];const auto u=reverse?j:k,v=reverse?k:j;
+            flux=populationSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
+                *thermal,density_cm3[u],density_cm3[v],(*directArguments)[k]);
+            if(reverse)flux=-flux;
+        }
         out.edgeFlux_per_cm_s[k]=flux;
         out.nodeFlux_per_cm_s[k]=out.nodeFlux_per_cm_s[k]+flux;
         out.nodeFlux_per_cm_s[j]=out.nodeFlux_per_cm_s[j]-flux;

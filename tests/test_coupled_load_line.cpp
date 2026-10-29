@@ -1,4 +1,5 @@
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/solver/PopulationState.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -551,4 +552,22 @@ TEST_CASE("load-line secant predictor limits the complete bordered increment",
         solver.secantPredict(previous, current, 6.0, 1.0);
     REQUIRE(predicted.x(0) == Catch::Approx(2.5));
     REQUIRE(predicted.lambda == Catch::Approx(1.25));
+}
+
+TEST_CASE("Coupled continuation uses positive population predictor and rolls back invalid predictions", "[coupled_load_line][population_core]") {
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real){return VectorXd::Zero(x.size()).eval();};
+    s.parameterDerivative=[](const VectorXd& x,Real){return VectorXd::Zero(x.size()).eval();};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd& b,VectorXd& y){y=b;return true;};
+    s.predictState=[](const VectorXd& a,const VectorXd& b,Real t){return predictPopulation(a,b,t);};
+    CoupledLoadLineConfig cfg;
+    CoupledLoadLineNewton solver(s,[](const VectorXd&,Real){return 0.;},cfg);
+    VectorXd a(6),b(6);a<<0.,0.,100.,0.,1e-100,0.;b<<.01,0.,10.,0.,1e-100,0.;
+    ArclengthState previous{a,0.},current{b,.01};
+    const auto prediction=solver.secantPredict(previous,current,.02,1.);
+    REQUIRE(prediction.x[2]==Catch::Approx(1.).epsilon(1e-13));REQUIRE(prediction.lambda==.02);
+    REQUIRE(prediction.x[0]==.02);REQUIRE(prediction.x[3]==0.);
+    const auto noHistory=solver.secantPredict(current,current,.02,1.);REQUIRE(noHistory.x==current.x);
+    current.x[2]=1e-300;
+    const auto invalid=solver.secantPredict(previous,current,.02,1.);REQUIRE(invalid.x==current.x);REQUIRE(invalid.lambda==current.lambda);
 }

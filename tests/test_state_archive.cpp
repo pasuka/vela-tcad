@@ -263,3 +263,23 @@ TEST_CASE("Population restart keeps physical carrier bits without QF packed auth
     s.packedState=VectorXd::Zero(9);
     REQUIRE_THROWS_AS(archiveDDSolution(s,metadata),std::invalid_argument);
 }
+
+TEST_CASE("Population archive preserves internal carrier bits across SI transport and validates authority", "[state_archive][population_core]") {
+    using namespace vela;Workspace w;DDSolution s;s.stateVariables="potential_density";
+    s.psi=VectorXd::Zero(3);s.phin=s.psi;s.phip=s.psi;s.n.resize(3);s.p.resize(3);
+    UnitScalingConfig scaling;scaling.physicalUnitSystem=PhysicalUnitSystem::tcadInternal();
+    const auto units=scaling.unitSystem();double value=1.2345678901234567;
+    for(int i=0;i<10000 && units.m3ToInternalConcentration(units.internalConcentrationToM3(value))==value;++i)value=std::nextafter(value,2.);
+    REQUIRE(units.m3ToInternalConcentration(units.internalConcentrationToM3(value))!=value);
+    s.n<<value,std::numeric_limits<double>::denorm_min(),0.;s.p<<1e-200,1e20,0.;
+    auto a=archiveDDSolution(s,example().metadata,scaling);writeStateArchive(w.root/"population.h5",a);
+    const auto disk=readStateArchive(w.root/"population.h5",3,std::string(64,'a'));
+    const auto restored=restoreDDSolution(disk,scaling);REQUIRE(restored.populationRestoreMode=="exact_internal");
+    for(int i=0;i<3;++i){REQUIRE(std::bit_cast<std::uint64_t>(restored.n[i])==std::bit_cast<std::uint64_t>(s.n[i]));REQUIRE(std::bit_cast<std::uint64_t>(restored.p[i])==std::bit_cast<std::uint64_t>(s.p[i]));}
+    const auto si=restoreDDSolution(disk);REQUIRE(si.populationRestoreMode=="converted_units");REQUIRE(si.n[0]==units.internalConcentrationToM3(s.n[0]));
+    auto bad=a;bad.fields.at("population_electrons_internal")[0]=0.;REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.fields.erase("population_holes_internal");REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.metadata["state_variables"]="potential_quasi_fermi";REQUIRE_THROWS(validateStateArchive(bad));
+    auto legacy=a;legacy.fields.erase("population_electrons_internal");legacy.fields.erase("population_holes_internal");legacy.metadata.erase("population_coordinate_schema");legacy.metadata.erase("population_concentration_m3_per_internal");
+    const auto old=restoreDDSolution(legacy,scaling);REQUIRE(old.populationRestoreMode=="legacy_si");REQUIRE(old.n[0]!=s.n[0]);
+}

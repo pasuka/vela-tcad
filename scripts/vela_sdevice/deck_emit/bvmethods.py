@@ -36,6 +36,9 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     variables = requested.get("state_variables", "potential_quasi_fermi")
     if variables not in ("potential_quasi_fermi", "potential_density"):
         raise ValueError("unknown state_variables")
+    sg = requested.get("population_sg_current", "quasi_fermi")
+    if sg not in ("quasi_fermi", "band_population") or (sg != "quasi_fermi" and variables != "potential_density"):
+        raise ValueError("invalid population_sg_current")
     recovery = requested.get("population_derivative_recovery", "full")
     if recovery not in ("full", "automatic") or (recovery != "full" and variables != "potential_density"):
         raise ValueError("invalid population_derivative_recovery")
@@ -43,6 +46,8 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
         if requested.get("method", "newton") not in ("newton", "poisson_only"):
             raise ValueError("potential_density does not support Gummel, hybrid or frozen-state solver paths")
         solver["state_variables"] = variables
+        if "population_sg_current" in requested:
+            solver["population_sg_current"] = sg
         if "population_derivative_recovery" in requested:
             solver["population_derivative_recovery"] = recovery
         if "population_update" in requested:

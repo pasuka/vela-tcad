@@ -859,6 +859,11 @@ public:
         if (system_.limitUpdate)
             system_.limitUpdate(current.x, stateIncrement, voltageIncrement);
         predicted.x = current.x + stateIncrement;
+        if (system_.predictState) {
+            try { predicted.x=system_.predictState(previous.x,current.x,ratio); }
+            catch(const std::exception&) { return current; }
+            if(predicted.x.size()!=current.x.size())return current;
+        }
         predicted.lambda = current.lambda + voltageIncrement;
         if (!predicted.x.allFinite() || !std::isfinite(predicted.lambda))
             return current;

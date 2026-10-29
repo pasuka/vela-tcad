@@ -24,6 +24,8 @@ SPLIT = {'electron_qf_increment_V', 'hole_qf_increment_V',
 PACKED = ('packed_psi', 'packed_electron_qf_increment', 'packed_hole_qf_increment')
 PACKED_LOW = tuple(name+'_low' for name in PACKED)
 UNITS.update({name:'1' for name in PACKED+PACKED_LOW})
+POPULATION = ('population_electrons_internal', 'population_holes_internal')
+UNITS.update({name:'internal_concentration' for name in POPULATION})
 
 
 def mesh_identity(mesh, length_m_per_internal):
@@ -165,6 +167,25 @@ def validate(fields, metadata):
         a = np.asarray(values, dtype='<f8')
         if a.shape != (count,) or not np.all(np.isfinite(a)):
             raise ValueError('Invalid field '+name)
+    population = [name in fields for name in POPULATION]
+    if (population[0] != population[1]
+            or population[0] != ('population_coordinate_schema' in metadata)
+            or population[0] != ('population_concentration_m3_per_internal' in metadata)):
+        raise ValueError('Incomplete population coordinates')
+    if population[0]:
+        factor = metadata['population_concentration_m3_per_internal']
+        if (metadata['mode'] != 'dd' or metadata.get('state_variables') != 'potential_density'
+                or packed or SPLIT.intersection(fields)
+                or metadata['population_coordinate_schema'] != 'vela.population-coordinates.v1'
+                or type(factor) not in (int, float) or not math.isfinite(factor) or factor <= 0):
+            raise ValueError('Invalid population coordinate metadata')
+        for raw, physical in zip(POPULATION, ('electrons_m3', 'holes_m3')):
+            values = np.asarray(fields[raw], dtype='<f8')
+            with np.errstate(over='ignore', under='ignore'):
+                converted = values * factor
+            if (np.any(values < 0) or not np.all(np.isfinite(converted))
+                    or not np.array_equal(converted, np.asarray(fields[physical], dtype='<f8'))):
+                raise ValueError('Population coordinates disagree with physical fields')
     if SPLIT <= fields.keys():
         for carrier, qf in (('electron', 'phin'), ('hole', 'phip')):
             combined = np.asarray(fields[carrier+'_qf_reference_V']) + np.asarray(fields[carrier+'_qf_increment_V'])
