@@ -170,6 +170,20 @@
 
 - [PN2D 外接电阻法起步验证，2026-10-23](validation/pn2d_external_resistor_start_2026-10-23.md)：
   本地 main 合并、负向外压入口修复及旧 v3 净掺杂配置证据；当前总杂质修正与重跑见原生矩阵对照。
+- [BVmethods 原脚本自主建模与 P5 合同](sde_bv_modeling.md)：创建态栅极移除、multibox、Erf、x 镜像及 live Sentaurus 语义对照。
+- [MOS 原脚本自主建模与 P4 合同](sde_mos_modeling.md)：圆角弦误差、快捷加密、半/全镜像、独立导入及明确消费端拒绝边界。
+
+- [BJT 原脚本自主建模与 P3 合同](sde_bjt_modeling.md)：General 受限 AST、有界 MaxTransDiff、掺杂积分和结位置。
+
+- [自产 SDE 网格进入 sd-sim 的 P2 检查](sde_sdevice_checks.md)：8份具名命令、接口边界分类修复、输入/材料/sidecar/阶段身份与明确拒绝门禁。
+
+- [离线 SDE 案例回归与使用说明](reference_sde_cases.md)：八例自产网格合同与原生身份检查、重复运行及失败恢复。
+
+- [SDE 建模与 GRD/DAT/MSH 后续计划，2026-10-30](superpowers/plans/2026-09-05-reference-sde-modeling-development-plan.md)：
+  基于已合并的 main 基线；主案例 8/8 建模导出及原生导入，P1–P5 完成；P6 本地跨平台资格通过，真实 CI 按用户选择未执行。
+
+- [P6 离线建模包与本地双平台资格](sde_p6_qualification.md)：最终包 32 次主案例运行、32 次商业网格对照、
+  8 次最终 TDX 回转和两平台 P2 命令检查通过；原始 TDR/日志不提交，真实 CI 未执行。
 
 - [PARDISO 编译开关与 HFS 测试耗时分析，2026-10-23](validation/pardiso_build_option_hfs_audit_2026-10-23.md)：
   PARDISO 默认编译关闭、GitHub CI 显式关闭；HFS 高精度 Jacobian 检查的工作量与双机 OFF／ON 验证。

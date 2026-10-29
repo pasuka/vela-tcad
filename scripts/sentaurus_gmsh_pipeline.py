@@ -72,10 +72,71 @@ def _file_sha256(path: Path) -> str:
 
 def _strict_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(
-        json.dumps(payload, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=f".{path.name}.", delete=False) as handle:
+        temporary = Path(handle.name)
+        try:
+            handle.write(json.dumps(payload, indent=2, allow_nan=False) + "\n")
+        except Exception:
+            handle.close()
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+# Fixed names only: never accept arbitrary deletion paths from a manifest.
+GENERATED_FILES = frozenset({
+    "device.msh", "device.grd", "device.dat", "device.vtu", "device.vtk",
+    "mesh.json", "doping.csv", "mesh_field_bundle.json", "id_mapping.json",
+    "device_ir.json", "mesh_qualification.json", "cross_format_report.json",
+    "gmsh_runtime_manifest.json", "refinement_field_dag.json", "transfinite_mesh_contract.json",
+})
+
+
+def _prepare_output(output: Path, source: Path) -> None:
+    """Validate ownership before invalidating a prior standalone CLI result."""
+    def reject(message: str) -> None:
+        raise PipelineError(message, "output_safety")
+
+    reserved = GENERATED_FILES | {"run_manifest.json", "fail_report.json"}
+    if any(source == (output / name).resolve() for name in reserved):
+        reject("input source collides with a generated output")
+    if any((output / name).is_symlink() for name in reserved):
+        reject("refusing linked output files")
+    manifest_path = output / "run_manifest.json"
+    owned: set[str] = set()
+    if manifest_path.exists():
+        try:
+            old = json.loads(manifest_path.read_text(encoding="utf-8"))
+            names = old["generated"]
+            if old["schema"] != RUN_SCHEMA or not isinstance(old.get("sha256"), dict) or not isinstance(names, list) or any(
+                    not isinstance(name, str) or name not in GENERATED_FILES for name in names):
+                reject("unrecognized output ownership manifest")
+            owned = set(names)
+            for name in owned:
+                path = output / name
+                if path.exists() and (not path.is_file() or _file_sha256(path) != old["sha256"].get(name)):
+                    reject(f"previous output was modified: {name}")
+        except (KeyError, TypeError, ValueError, OSError) as error:
+            reject(f"cannot verify prior output ownership: {error}")
+    for name in GENERATED_FILES - owned:
+        if (output / name).exists():
+            reject(f"refusing to overwrite unrelated file: {name}")
+    failure = output / "fail_report.json"
+    if failure.exists():
+        try:
+            record = json.loads(failure.read_text(encoding="utf-8"))
+            if not isinstance(record, dict) or record.get("schema") != FAIL_SCHEMA:
+                reject("refusing to overwrite unrelated fail_report.json")
+        except (ValueError, OSError) as error:
+            reject(f"cannot verify prior failure report: {error}")
+    output.mkdir(parents=True, exist_ok=True)
+    # All targets have been checked, and stay inside the resolved output directory.
+    for name in owned | {"run_manifest.json", "fail_report.json"}:
+        (output / name).unlink(missing_ok=True)
 
 
 def _load_runtime(args: argparse.Namespace) -> tuple[Any, dict[str, Any]]:
@@ -349,12 +410,15 @@ def run_pipeline(
     with the offline frontend.
     """
     output = args.output_dir.resolve()
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.mkdir(parents=True, exist_ok=True)
-    for stale in ("run_manifest.json", "fail_report.json"):
-        path = output / stale
-        if path.exists():
-            path.unlink()
+    standalone = device_ir_override is None
+    if standalone:
+        if args.sde.resolve().is_relative_to(args.runtime_dir.resolve()):
+            raise PipelineError("input source is inside the runtime staging directory", "output_safety")
+        _prepare_output(output, args.sde.resolve())
+    else:
+        output.mkdir(parents=True, exist_ok=True)
+        for stale in ("run_manifest.json", "fail_report.json"):
+            (output / stale).unlink(missing_ok=True)
     gmsh = None
     initialized = False
     try:
@@ -481,6 +545,11 @@ def run_pipeline(
                 os.replace(work / name, output / name)
             os.replace(work / "run_manifest.json", output / "run_manifest.json")
             return manifest
+    except Exception:
+        if standalone:
+            for name in GENERATED_FILES | {"run_manifest.json"}:
+                (output / name).unlink(missing_ok=True)
+        raise
     finally:
         if initialized and gmsh is not None:
             gmsh.finalize()
@@ -530,7 +599,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         manifest = run_pipeline(args)
-    except Exception as error:  # noqa: BLE001 - CLI always leaves a strict report
+    except Exception as error:  # noqa: BLE001 - CLI leaves a report in owned directories
+        if isinstance(error, PipelineError) and error.stage == "output_safety":
+            print(f"output_safety: {error}", file=sys.stderr)
+            return 2
         try:
             report = write_fail_report(args.output_dir, error)
         except Exception as report_error:  # noqa: BLE001

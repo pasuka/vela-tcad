@@ -1,0 +1,292 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.reference_sde_cases.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "vela.reference_sde_cases.v1"
+    },
+    "revision": {
+      "const": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^reference_tcad/[^/]+/source/[^/]+\\.(cmd|scm)$"
+          },
+          "source_sha256_lf": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "expected": {
+            "enum": [
+              "generated",
+              "rejected"
+            ]
+          },
+          "contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "materials": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "materials_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "regions": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "region_area_um2": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "contacts": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "axis": {
+                      "enum": [
+                        "x",
+                        "y"
+                      ]
+                    },
+                    "coordinate_um": {
+                      "type": "number"
+                    },
+                    "length_um": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "axis",
+                    "coordinate_um",
+                    "length_um"
+                  ]
+                }
+              },
+              "bounds_um": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "doping": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "pn"
+                      },
+                      "concentration_cm3": {
+                        "type": "number"
+                      },
+                      "junction_x_um": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "concentration_cm3",
+                      "junction_x_um"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "donor"
+                      },
+                      "concentration_cm3": {
+                        "type": "number"
+                      },
+                      "silicon_top_um": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "concentration_cm3",
+                      "silicon_top_um"
+                    ]
+                  }
+                ]
+              },
+              "mesh_quality": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "connected_components",
+                  "spacing_p95_factor",
+                  "region_max_spacing_um"
+                ],
+                "properties": {
+                  "connected_components": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "spacing_p95_factor": {
+                    "const": 1.35
+                  },
+                  "region_max_spacing_um": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "additionalProperties": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "materials",
+              "materials_sha256",
+              "regions",
+              "region_area_um2",
+              "contacts",
+              "bounds_um",
+              "doping",
+              "mesh_quality"
+            ]
+          },
+          "rejection": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "stage": {
+                "const": "sde_parse"
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "column": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "message_contains": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "stage",
+              "line",
+              "column",
+              "message_contains"
+            ]
+          },
+          "success_stage": {
+            "const": "native_import"
+          },
+          "repeat_policy": {
+            "enum": [
+              "byte_identical",
+              "contract_equivalent"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "source_sha256_lf",
+          "expected"
+        ],
+        "oneOf": [
+          {
+            "properties": {
+              "expected": {
+                "const": "generated"
+              }
+            },
+            "required": [
+              "contract",
+              "success_stage",
+              "repeat_policy"
+            ],
+            "not": {
+              "required": [
+                "rejection"
+              ]
+            }
+          },
+          {
+            "properties": {
+              "expected": {
+                "const": "rejected"
+              }
+            },
+            "required": [
+              "rejection"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "contract"
+                  ]
+                },
+                {
+                  "required": [
+                    "success_stage"
+                  ]
+                },
+                {
+                  "required": [
+                    "repeat_policy"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "revision",
+    "cases"
+  ]
+}

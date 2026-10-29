@@ -1,0 +1,232 @@
+{
+  "schema": "vela.reference_sde_cases.v1",
+  "revision": 1,
+  "cases": [
+    {
+      "id": "pn2d",
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "source_sha256_lf": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "expected": "generated",
+      "contract": {
+        "materials": {
+          "Silicon": "Si"
+        },
+        "materials_sha256": "f05071cf6eb2a74a610950659a8aef882df263a23512695076a28e469ccaef92",
+        "regions": {
+          "R.Si": "Si"
+        },
+        "region_area_um2": {
+          "R.Si": 1.0
+        },
+        "contacts": {
+          "Anode": {
+            "axis": "x",
+            "coordinate_um": 0,
+            "length_um": 0.5
+          },
+          "Cathode": {
+            "axis": "x",
+            "coordinate_um": 2,
+            "length_um": 0.5
+          }
+        },
+        "bounds_um": [
+          0,
+          0,
+          2,
+          0.5
+        ],
+        "doping": {
+          "kind": "pn",
+          "concentration_cm3": 1e+17,
+          "junction_x_um": 1
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Si": [
+              0.05,
+              0.05
+            ]
+          }
+        }
+      },
+      "success_stage": "native_import",
+      "repeat_policy": "byte_identical"
+    },
+    {
+      "id": "schottky",
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "source_sha256_lf": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "expected": "generated",
+      "contract": {
+        "materials": {
+          "Silicon": "Si"
+        },
+        "materials_sha256": "f05071cf6eb2a74a610950659a8aef882df263a23512695076a28e469ccaef92",
+        "regions": {
+          "R.Silicon": "Si"
+        },
+        "region_area_um2": {
+          "R.Silicon": 1.0
+        },
+        "contacts": {
+          "anode": {
+            "axis": "x",
+            "coordinate_um": 0,
+            "length_um": 1
+          },
+          "cathode": {
+            "axis": "x",
+            "coordinate_um": 1,
+            "length_um": 1
+          }
+        },
+        "bounds_um": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "doping": {
+          "kind": "donor",
+          "concentration_cm3": 1e+16,
+          "silicon_top_um": 1
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Silicon": [
+              0.05,
+              0.1
+            ]
+          }
+        }
+      },
+      "success_stage": "native_import",
+      "repeat_policy": "byte_identical"
+    },
+    {
+      "id": "gate_reference",
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd",
+      "source_sha256_lf": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+      "expected": "generated",
+      "contract": {
+        "materials": {
+          "Silicon": "Si",
+          "Oxide": "SiO2"
+        },
+        "materials_sha256": "a6712bde7ab1a191d268c684286c168d4e3c64e865f4bfcf268ce8a6b4ee015a",
+        "regions": {
+          "R.Si": "Si",
+          "R.Ox": "SiO2"
+        },
+        "region_area_um2": {
+          "R.Si": 0.05,
+          "R.Ox": 0.0005
+        },
+        "contacts": {
+          "gate": {
+            "axis": "y",
+            "coordinate_um": 1.01,
+            "length_um": 0.05
+          },
+          "substrate": {
+            "axis": "y",
+            "coordinate_um": 0,
+            "length_um": 0.05
+          }
+        },
+        "bounds_um": [
+          0,
+          0,
+          0.05,
+          1.01
+        ],
+        "doping": {
+          "kind": "donor",
+          "concentration_cm3": 1e+17,
+          "silicon_top_um": 1
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Si": [
+              0.025,
+              0.02
+            ],
+            "R.Ox": [
+              0.025,
+              0.005
+            ]
+          }
+        }
+      },
+      "success_stage": "native_import",
+      "repeat_policy": "contract_equivalent"
+    },
+    {
+      "id": "bjt",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "expected": "rejected",
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 6,
+        "column": 3,
+        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      }
+    },
+    {
+      "id": "bjt_local",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+      "expected": "rejected",
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 7,
+        "column": 3,
+        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      }
+    },
+    {
+      "id": "singledevice",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "source_sha256_lf": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "expected": "rejected",
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 57,
+        "column": 1,
+        "message_contains": "(define ...) requires a symbol name"
+      }
+    },
+    {
+      "id": "transportmodels",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "source_sha256_lf": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "expected": "rejected",
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 57,
+        "column": 1,
+        "message_contains": "(define ...) requires a symbol name"
+      }
+    },
+    {
+      "id": "bvmethods",
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+      "expected": "rejected",
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 32,
+        "column": 1,
+        "message_contains": "unsupported SDE material 'PolySi'"
+      }
+    }
+  ]
+}

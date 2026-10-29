@@ -1,0 +1,375 @@
+{
+  "schema": "vela.reference_sde_p1_acceptance.v1",
+  "date": "2026-10-29",
+  "base_commit": "e696d87e",
+  "status": "passed",
+  "coverage": {
+    "generated": 3,
+    "expected_rejection": 5,
+    "total_primary_sources": 8
+  },
+  "repeat_decision": "User explicitly approved contract-equivalent geometry/contact/doping/mesh-quality repeats for gate_reference; byte-identical repeats remain required for PN2D and Schottky.",
+  "manifest_sha256": "20974aad4816edcca358450aa30166c0d5d15c65fe9286bb9c5e1aa9b36c27ba",
+  "cases": [
+    {
+      "id": "pn2d",
+      "source_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "expected": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "status": "generated",
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        }
+      ],
+      "repeats": 3,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd"
+    },
+    {
+      "id": "schottky",
+      "source_sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "expected": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "status": "generated",
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "ae50355cf4b5d096a71668323bbbdd690038a40b8a04bebdb7f605ce8deafc7f",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "ae50355cf4b5d096a71668323bbbdd690038a40b8a04bebdb7f605ce8deafc7f",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "ae50355cf4b5d096a71668323bbbdd690038a40b8a04bebdb7f605ce8deafc7f",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        }
+      ],
+      "repeats": 3,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd"
+    },
+    {
+      "id": "gate_reference",
+      "source_sha256": "d7a33f04d5f887e7b65b329fa1d0f63b76a290e3a1527012ad0b0ad2685a69d8",
+      "expected": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "status": "generated",
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "959a025c2829a1ec6da204ffabc85c51832106cfc170998a8e09125db636df5e",
+            "device.dat": "5bbc7045975bd08f9f1bc92cfe665d36ca7f75178088edf2d42d9420329296ba",
+            "device.msh": "2d9cf0e4e0fa8f8deb07ea16c1ddc22b1ef48dbc35402eec9fd796d3154b5a1d",
+            "mesh.json": "156cfa7edb47724cadcea9fee7c96eaa71e38785c114eb044f663d43ad7ad8d7",
+            "doping.csv": "d359da6874b43c321b8dad5b08eed459c86365f695c0e050405e87b22d1b92e8"
+          },
+          "mesh_quality": {
+            "node_count": 163,
+            "cell_count": 216,
+            "max_angle_degrees": 135.7775137580009,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.02500000244413647,
+                0.02000998995177994
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "ca0d2acc7301ed3c47565a7c430954eec7c6b1573b44a65250f3afd39508d956",
+            "device.dat": "9ac5b5797476fda2f8361e4db003b364ab7de0c71ceebefe46b2d3b467c01c15",
+            "device.msh": "ee2ed3697a0008e2ae13dc9529356b6426d540a975952dac7b5f427732392ff4",
+            "mesh.json": "8be414ef0a1ed85c86783038d1ffe7fd3ff0ab7438744a46ede4682e577c9f45",
+            "doping.csv": "4b4617f137eecc2983a0f0c0ef7f7cdca42e2a780adacc319f83e9a10f566d99"
+          },
+          "mesh_quality": {
+            "node_count": 166,
+            "cell_count": 222,
+            "max_angle_degrees": 135.7775136908344,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.025000003177193204,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "4d05f637fad02fcf2f2b7ceb72d35b02831915c3b503bd4be1022d6ca3836303",
+            "device.dat": "e23b442e84947864dc8979151bf491db508bfcf22e1c119bcd6cfe55e71721fa",
+            "device.msh": "7deb9e9ef7491825d3c873a0e48c74dc73495a44e8639b382f3ab8bca651a559",
+            "mesh.json": "6ce383e03d2ef938b30c26a43d310e8156be397d7edc12e42842c7a5b2156449",
+            "doping.csv": "675fa8d55dd75ba8c8daf3a68b736f607462687f734e0c4381a2e640427f582f"
+          },
+          "mesh_quality": {
+            "node_count": 169,
+            "cell_count": 228,
+            "max_angle_degrees": 135.7775137580009,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.02500000332914866,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        }
+      ],
+      "repeats": 3,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd"
+    },
+    {
+      "id": "bjt",
+      "source_sha256": "99949a88906c09383490870326e1ac82b9b43c8a9bc2aad1a36c8b8196096f3d",
+      "expected": "rejected",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "status": "expected_rejection",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "rejection_contract": {
+        "stage": "sde_parse",
+        "line": 6,
+        "column": 3,
+        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      }
+    },
+    {
+      "id": "bjt_local",
+      "source_sha256": "ce3f55f004608386e8a1d5b238b2f619371e5c5d7410eef441d3a8c6681793fe",
+      "expected": "rejected",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "status": "expected_rejection",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "rejection_contract": {
+        "stage": "sde_parse",
+        "line": 7,
+        "column": 3,
+        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      }
+    },
+    {
+      "id": "singledevice",
+      "source_sha256": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "expected": "rejected",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "status": "expected_rejection",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "rejection_contract": {
+        "stage": "sde_parse",
+        "line": 57,
+        "column": 1,
+        "message_contains": "(define ...) requires a symbol name"
+      }
+    },
+    {
+      "id": "transportmodels",
+      "source_sha256": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "expected": "rejected",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "status": "expected_rejection",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "rejection_contract": {
+        "stage": "sde_parse",
+        "line": 57,
+        "column": 1,
+        "message_contains": "(define ...) requires a symbol name"
+      }
+    },
+    {
+      "id": "bvmethods",
+      "source_sha256": "809d3f22ab2f264d6ce635b1b190802a3c397c763a4671b171ab843b51ec6676",
+      "expected": "rejected",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "status": "expected_rejection",
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "rejection_contract": {
+        "stage": "sde_parse",
+        "line": 32,
+        "column": 1,
+        "message_contains": "unsupported SDE material 'PolySi'"
+      }
+    }
+  ],
+  "validation": {
+    "p1_ctest": "passed (18 test methods, no skips)",
+    "existing_related_ctests": "all 9 have passing evidence; M1 rerun after migrating its fake success marker to real owned output",
+    "cmake_release_configure": "passed",
+    "full_ctest": "not run",
+    "full_cpp_solver_build": "not run (no C++ solver changes)",
+    "linux_ci": "not run",
+    "live_sde_tdx": "not run",
+    "sdevice_full_check_and_numerical_solve": "not run; P2 or separate qualification"
+  },
+  "repository_policy": "No generated grid, TDR or raw log included; only contracts, source/tests/docs and this structured evidence."
+}

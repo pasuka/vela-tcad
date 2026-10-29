@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -138,8 +139,9 @@ class M1GmshIntegrationTest(unittest.TestCase):
                 encoding="utf-8",
             )
             failed_output = root / "failed-output"
-            failed_output.mkdir()
-            (failed_output / "run_manifest.json").write_text('{"status":"generated"}\n')
+            # A genuine prior result proves ownership; a bare success string
+            # is intentionally protected as an unrelated user file now.
+            shutil.copytree(output, failed_output)
             fail_command = list(completed.args)
             fail_command[fail_command.index(str(FIXTURE))] = str(overlap)
             fail_command[fail_command.index(str(output))] = str(failed_output)
