@@ -3775,16 +3775,22 @@ NewtonSolver::makeArclengthConvergenceEvaluator(const std::string& activeContact
         biases[activeContact] = bias;
         const auto bcs = self->buildBoundaryConditions(*assembler, biases);
         NewtonStateConvergenceEvaluation evaluation;
-        evaluation.blockNorms = blockResidualInfo(
-            assembler->residual(x, bcs), self->mesh_.numNodes());
-        evaluation.carrierRows = evaluateCarrierRowConvergence(
-            assembler->carrierContinuityEquationTermDiagnostics(x, bcs),
-            self->cfg_.carrierRowConvergence);
+        std::vector<CoupledDDCarrierTermDiagnostic> constrained,unconstrained;
+        if(assembler->usesBvMethodsOperator()) {
+            auto physical=assembler->bvMethodsPhysicalDiagnostics(x,bcs);
+            evaluation.blockNorms=blockResidualInfo(physical.residual,self->mesh_.numNodes());
+            constrained=std::move(physical.constrainedTerms);unconstrained=std::move(physical.unconstrainedTerms);
+        } else {
+            evaluation.blockNorms=blockResidualInfo(assembler->residual(x,bcs),self->mesh_.numNodes());
+            constrained=assembler->carrierContinuityEquationTermDiagnostics(x,bcs);
+            unconstrained=assembler->carrierContinuityEquationTermDiagnostics(x,{});
+        }
+        evaluation.carrierRows = evaluateCarrierRowConvergence(constrained,self->cfg_.carrierRowConvergence);
         std::vector<Index> electronContacts, holeContacts;
         for (const auto& [node, value] : bcs.phin) electronContacts.push_back(node);
         for (const auto& [node, value] : bcs.phip) holeContacts.push_back(node);
         evaluation.globalContinuity = evaluateGlobalContinuityClosure(
-            assembler->carrierContinuityEquationTermDiagnostics(x, {}),
+            unconstrained,
             electronContacts, holeContacts, self->cfg_.globalContinuityClosure);
         return evaluation;
     };

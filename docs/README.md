@@ -1,5 +1,7 @@
 # Vela Documentation
 
+- [T470p BVMethods第二轮热点优化，2026-10-29](validation/bvmethods_t470p_round2_2026-10-29.md)：
+  同态诊断融合与Lombardi常系数预计算，普通Release 31.92→24.97 s，数值轨迹保持一致。
 - [T470p当前核心BVMethods gprof与优化，2026-10-29](validation/bvmethods_t470p_gprof_2026-10-29.md)：
   显式变量开关确认，节点统计与区域接口判断复用；普通Release短窗口配对、状态与算子一致性。
 

@@ -97,6 +97,12 @@ struct CoupledDDCarrierTermDiagnostic {
     Real holeResidual = 0.0;
 };
 
+// One state, one physical evaluation; boundary replacement stays explicit.
+struct CoupledDDPhysicalDiagnostics {
+    VectorXd residual;
+    std::vector<CoupledDDCarrierTermDiagnostic> constrainedTerms, unconstrainedTerms;
+};
+
 // Diagnostic-only decomposition of the Poisson row assembled by residual().
 // All contribution fields use the production residual's scaled coordinates;
 // boundaryReplacement is the amount by which a Dirichlet contact row replaces
@@ -484,6 +490,8 @@ public:
     carrierContinuityEquationTermDiagnostics(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;
+    CoupledDDPhysicalDiagnostics bvMethodsPhysicalDiagnostics(
+        const VectorXd& x,const CoupledDDBoundaryConditions& bcs) const;
     std::vector<CoupledDDCarrierTermDiagnostic>
     feedbackSubstitutionCarrierContinuityTermDiagnostics(
         const VectorXd& x,

@@ -692,3 +692,26 @@ TEST_CASE("Surface geometry preserves region selectors for repeated cells and li
     detail::updateSurfaceMobilityCellGeometry(missing,mesh,edges,psi,1.,&mats);
     for(double d:missing.surface.cellDistances)REQUIRE_FALSE(std::isfinite(d));
 }
+
+
+#include "vela/physics/PreparedElementLombardi.h"
+#include <bit>
+TEST_CASE("Prepared element Lombardi retains value and tangent bits across static conditions", "[mobility][surface_geometry]") {
+    const auto cfg=mobilityModelConfig("phumob_field_lombardi");
+    for(const auto& p:{cfg.electronLombardi,cfg.holeLombardi})
+    for(double temperature:{250.,300.,425.})for(double distance:{0.,1e-9,2e-7})
+    for(double doping:{1e10,1e22,1e26}) {
+        const auto prepared=prepareElementLombardi(distance,doping,temperature,p,cfg);
+        for(double field:{-1e9,-100.,-0.,0.,1e-20,100.,1e5,1e9})for(double bulk:{0.,.001,.1}) {
+            const auto a=evaluateElementLombardi(bulk,field,distance,doping,temperature,p,cfg);
+            const auto b=evaluatePreparedElementLombardi(bulk,field,prepared,p,cfg);
+            for(const auto pair:{std::pair{a.mobility,b.mobility},std::pair{a.bulkDerivative,b.bulkDerivative},std::pair{a.fieldDerivative,b.fieldDerivative}})
+                REQUIRE(std::bit_cast<std::uint64_t>(pair.first)==std::bit_cast<std::uint64_t>(pair.second));
+        }
+    }
+    auto invalid=cfg.electronLombardi;invalid.alpha=1.;
+    const auto bad=prepareElementLombardi(0.,1e22,300.,invalid,cfg);
+    REQUIRE_THROWS(evaluatePreparedElementLombardi(.1,0.,bad,invalid,cfg));
+    const auto missing=prepareElementLombardi(std::numeric_limits<double>::quiet_NaN(),1e22,300.,invalid,cfg);
+    REQUIRE(evaluatePreparedElementLombardi(.1,1e5,missing,invalid,cfg).mobility==.1);
+}

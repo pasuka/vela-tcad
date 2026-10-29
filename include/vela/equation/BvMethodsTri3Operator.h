@@ -6,7 +6,7 @@
 // SG uses stable log-density/expm1 QF differences. No native/cache input.
 
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
-#include "vela/physics/ElementLombardi.h"
+#include "vela/physics/PreparedElementLombardi.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/JoyceDixonStatistics.h"
 
@@ -43,6 +43,7 @@ class BvMethodsTri3Operator {
  std::shared_ptr<MobilityModel> bulk_;
  std::vector<bool> electronActive_,holeActive_;
  std::vector<double> nc_,nv_,ni_;
+ std::vector<PreparedElementLombardi> lombardiN_,lombardiP_;
  bool directPopulationSg_=false;
  double potentialScale_,factor_,vt_;
  struct CellCache {
@@ -112,6 +113,12 @@ public:
    S<<z[0],z[2],z[1],z[3];auto P=(S/cfg_.surface.coordinateFieldFactor*G.inverse()).eval();
    a.geometry.currentProjection={P(0,0),P(0,1),P(1,0),P(1,1)};cells_.push_back(a);
   }
+  lombardiN_.resize(n);lombardiP_.resize(n);
+  for(int i=0;i<n;++i)if(electronActive_[i]) {
+   const double distance=geo_.surface.nodeDistances[i],impurity=problem.doping.totalImpurity(i);
+   lombardiN_[i]=prepareElementLombardi(distance,impurity,300.,cfg_.electronLombardi,cfg_);
+   lombardiP_[i]=prepareElementLombardi(distance,impurity,300.,cfg_.holeLombardi,cfg_);
+  }
  }
 
  BvMethodsTri3Evaluation evaluate(const BvMethodsQfState& state,bool derivatives) const {
@@ -142,7 +149,7 @@ public:
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    auto mobility=[&](bool e,const AvJet& drive){
     const double low=e?a.bulkN[rep]:a.bulkP[rep];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
-    const auto surface=evaluateElementLombardi(low,normal.value,geo_.surface.nodeDistances[node],problem_.doping.totalImpurity(node),300.,lp,cfg_);
+    const auto surface=evaluatePreparedElementLombardi(low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_);
     const auto high=evaluateElementCanali(surface.mobility,drive.value,hf,100./cfg_.internalFieldToVPerM);
     const double scale=units.internalMobilityToM2PerVS(1.)*1e4;AvJet mu(high.mobility*scale);
     for(int k=0;k<9;++k)mu.derivative[k]=(high.lowDerivative*surface.fieldDerivative*normal.derivative[k]+high.fieldDerivative*drive.derivative[k])*scale;
@@ -200,7 +207,7 @@ public:
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    auto mobility=[&](bool e,const AvJet& drive,int local){auto node=a.nodes[local];
     const double low=e?a.bulkN[local]:a.bulkP[local];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
-    const auto surface=evaluateElementLombardi(low,normal.value,geo_.surface.nodeDistances[node],problem_.doping.totalImpurity(node),300.,lp,cfg_);
+    const auto surface=evaluatePreparedElementLombardi(low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_);
     const auto high=evaluateElementCanali(surface.mobility,drive.value,hf,100./cfg_.internalFieldToVPerM);
     const double scale=units.internalMobilityToM2PerVS(1.)*1e4;AvJet mu(high.mobility*scale);
     for(int k=0;k<9;++k)mu.derivative[k]=(high.lowDerivative*surface.fieldDerivative*normal.derivative[k]+high.fieldDerivative*drive.derivative[k])*scale;
