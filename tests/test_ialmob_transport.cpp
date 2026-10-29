@@ -11,6 +11,7 @@
 #include "vela/equation/IalTransport.h"
 #include "vela/equation/BVProcessProbe.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/post/ContactCurrent.h"
@@ -744,6 +745,7 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
     SECTION("Tight bracket Halley screening preserves coupled columns"){screening(IalScreeningMethod::Halley);}
     SECTION("Explicit legacy screening preserves coupled columns"){screening(IalScreeningMethod::Legacy);}
     SECTION("TOMS748 screening preserves coupled columns"){screening(IalScreeningMethod::Toms748);}
+    SECTION("Version bound single Newton cutoff preserves coupled columns"){screening(IalScreeningMethod::U202212SingleNewton);}
     SECTION("Cached four-equation structure retains all coupled partials"){reuseStructure=true;}
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
@@ -1248,6 +1250,50 @@ TEST_CASE("Observed IALMob avalanche assembles every live potential column in bo
         CHECK((source-sourceFd).norm()/source.norm()<3e-6);
         const auto full=assembler.assembleJacobian(x,bc);
         DDSolution physical;
+        {
+            // Actual IAL/source bundle, including TCAD units and corner cells.
+            // Split values must preserve the equations, then respond to a low
+            // component that is erased by ordinary absolute-potential storage.
+            CoupledDDAssembler split(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+            split.enableSplitDDState(true);
+            auto runtime=split.splitRuntime();const auto ordinary=assembler.residual(x,bc);
+            const auto wide=split.residual(x,bc);
+            for(int b=0;b<3;++b)CHECK((wide-ordinary).segment(b*6,6).norm()<1e-12*std::max(ordinary.segment(b*6,6).norm(),1e-30));
+            const auto terms=split.carrierContinuityTermDiagnostics(x,bc);
+            Real generation=0;for(const auto& t:terms)generation+=t.impactCombinedSource;
+            CHECK(generation>0.);
+            CHECK(generation==Catch::Approx(-assembler.impactIonizationSourceResidual(x,bc).segment(6,6).sum()).epsilon(1e-12));
+            VectorXd d=VectorXd::Zero(18);d(0)=0x1p-60;
+            const auto y=runtime->candidate(x,d,1.,runtime->low());
+            CHECK(y(0)==x(0));CHECK(runtime->low()(0)!=0.);
+            VectorXd plus,minus;auto response=runtime->symmetricDifference(y,d,bc,plus,minus);
+            CHECK(response.norm()>0.);
+            DDSolution checkpoint;runtime->save(y,checkpoint);
+            CHECK(checkpoint.hasConsistentSplitPackedState());
+            NewtonConfig nc;nc.splitDDState=true;nc.warmStart=true;nc.mobility=f.mobility;
+            nc.recombination.clear();nc.impactIonization=impact;nc.quasiFermiReference="contact_nearest_state";
+            nc.inputScaling=UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI};
+            NewtonSolver reader(f.mesh,f.materials,f.doping,{{"left",0.},{"right",.01}},nc);
+            // A checkpoint is encoded in the solve's original reference frame.
+            // The nearest terminal may change when its final state is read back.
+            auto originalFrameConfig=nc;originalFrameConfig.quasiFermiReference="none";
+            NewtonSolver originalFrameReader(f.mesh,f.materials,f.doping,
+                {{"left",0.},{"right",.01}},originalFrameConfig);
+            const auto expectedReadback=originalFrameReader.evaluateResidual(checkpoint);
+            const auto nearestReadback=reader.evaluateResidual(checkpoint);
+            CHECK((nearestReadback.raw.array()==expectedReadback.raw.array()).all());
+            CHECK(checkpoint.hasConsistentSplitPackedState());
+            for(const auto* name:{"left","right"})
+                CHECK(reader.evaluateStateTerminalCurrent(checkpoint,name,1e-6*nc.inputScaling.unitSystem().currentDensityAM2PerInternal()*nc.inputScaling.unitSystem().lengthMPerInternal())==Catch::Approx(runtime->current(y,name)).epsilon(2e-12));
+            const auto r=split.residual(y,bc);
+            CoupledDDAssembler reloaded(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+            reloaded.enableSplitDDState(true);auto rr=reloaded.splitRuntime();auto z=rr->restore(checkpoint);
+            CHECK((reloaded.residual(z,bc).array()==r.array()).all());
+            const auto local=runtime->terms(y,{});
+            for(const auto& t:local)if(t.electronContinuityActive) {
+                CHECK(std::abs(t.electronResidual-(t.electronFlux+t.electronRecombination+t.electronImpact))<1e-14*std::max({std::abs(t.electronFlux),std::abs(t.electronImpact),1e-30}));
+            }
+        }
         physical.psi=state.psi*scale;physical.phin=state.phin*scale;physical.phip=state.phip*scale;
         physical.n=assembler.electronDensity(x);physical.p=assembler.holeDensity(x);
         auto probe=evaluateBVProcessProbe(f.mesh,f.doping,physical,f.mobility,impact,{},f.materials,300.,
@@ -1377,4 +1423,25 @@ TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature 
     CHECK((changed.assemble(x,bc).jacobian-fresh.assemble(x,bc).jacobian).norm()==0.);
     CHECK(cache->coupled->builds==5);
     cached.setStructureCache(nullptr);CHECK((cached.assemble(x,bc).jacobian-plain.assemble(x,bc).jacobian).norm()==0.);
+}
+
+TEST_CASE("Split IAL retains generalized SRH and density-enhanced Auger", "[ialmob][split][recombination]") {
+    Fixture f;
+    const Real vt=constants::Vt_300;
+    for(bool generation:{false,true})for(bool classical:{false,true})for(const auto* volume:{"legacy_node","material_local_mixed_voronoi"}) {
+        RecombinationModelConfig rc;rc.mechanisms={"srh","auger"};rc.activeMaterials={"Si"};
+        rc.augerDensityDependence={true,3.46667,8.25688,1e24,1e24};
+        rc.volumePolicy=volume;rc.augerWithGeneration=generation;rc.augerExcessProduct=classical?"classical_np":"generalized_fermi";
+        CoupledDDAssembler plain(f.mesh,f.materials,f.doping,vt,f.mobility,rc);
+        CoupledDDAssembler split(f.mesh,f.materials,f.doping,vt,f.mobility,rc);split.enableSplitDDState(true);
+        CoupledDDState s{VectorXd::Constant(6,.48),VectorXd::Constant(6,.01),VectorXd::Constant(6,.011)};
+        s.psi(1)+=.002;s.phin(2)+=.0001;s.phip(3)-=.0002;
+        auto x=plain.pack(s);auto a=plain.carrierContinuityTermDiagnostics(x,{}),b=split.carrierContinuityTermDiagnostics(x,{});
+        for(int i=0;i<4;++i) {
+            CAPTURE(generation,classical,i);
+            CHECK(b[i].electronRecombination==Catch::Approx(a[i].electronRecombination).epsilon(2e-12).margin(1e-60));
+            CHECK(b[i].electronFlux==Catch::Approx(a[i].electronFlux).epsilon(2e-12).margin(1e-60));
+        }
+        REQUIRE(split.assembleJacobian(x,{}).norm()>0.);
+    }
 }

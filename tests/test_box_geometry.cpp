@@ -318,6 +318,46 @@ TEST_CASE("BoxGeometryBuilder: assembled Delaunay policy falls back only on a ne
 }
 
 
+TEST_CASE("SLOT external transport permits only the controlled live IALMob avalanche source",
+          "[box_geometry][carrier_transport_profile]")
+{
+    ImpactIonizationModelConfig impact;
+    MobilityModelConfig mobility;
+    mobility.model="ialmob";
+    const std::string slot="slot_ldmos_external_averagebox";
+    const std::string templates="templates_ldmos_external_averagebox";
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics(slot,impact,mobility,false));
+    impact.model="van_overstraeten";
+    impact.currentApproximation="ialmob_element_density_grad_qf";
+    impact.sourceJacobianMode="local_ad";
+    for (const auto& coupling:{"self_consistent","postprocess_only"}) {
+        impact.couplingMode=coupling;
+        CHECK_NOTHROW(validateCarrierTransportCouplePhysics(slot,impact,mobility,false));
+    }
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,impact,mobility,true),std::invalid_argument);
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(templates,impact,mobility,false),std::invalid_argument);
+    auto other=impact;other.currentApproximation="element_edge_sg_gss_laux";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    other=impact;other.sourceJacobianMode="frozen";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    other=impact;other.model="okuto_crowell";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,mobility,false),std::invalid_argument);
+    // The PhuMob element profile uses cell box geometry, not imported edge
+    // couples. Do not silently qualify it as an external AverageBox profile.
+    other=impact;other.currentApproximation="phumob_element_density_grad_qf";
+    auto phumob=mobility;phumob.model="phumob_field_lombardi";
+    phumob.edgeAveraging="element_box_phumob";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,other,phumob,false),std::invalid_argument);
+    mobility.model="constant";
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(slot,impact,mobility,false),std::invalid_argument);
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics("mesh_default",impact,mobility,true));
+    impact.model="none";
+    CHECK_NOTHROW(validateCarrierTransportCouplePhysics(templates,impact,mobility,false));
+    mobility.model="masetti_lombardi";
+    REQUIRE(isSurfaceMobilityModel(mobility));
+    CHECK_THROWS_AS(validateCarrierTransportCouplePhysics(templates,impact,mobility,false),std::invalid_argument);
+}
+
 TEST_CASE("External AverageBox carrier profile is explicit and leaves Poisson couples unchanged",
           "[box_geometry][carrier_transport_profile]")
 {

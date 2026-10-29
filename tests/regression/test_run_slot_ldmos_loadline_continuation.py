@@ -178,6 +178,26 @@ class QualificationTests(Base):
 
 
 class IdentityTests(Base):
+    def test_external_transport_and_avalanche_resources_are_frozen(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ("transport.csv", "avalanche.json", "runner.exe"):
+                (root / name).write_text("original")
+            base = deck()
+            base["mesh_geometry"] = {"external_averagebox_couples_file": "transport.csv"}
+            base["solver"]["impact_ionization"] = {"avalanche_geometry_file": "avalanche.json"}
+            resolved, identity = M.freeze_inputs(base, root, root / "runner.exe")
+            self.assertEqual(resolved["mesh_geometry"]["external_averagebox_couples_file"],
+                             str((root / "transport.csv").resolve()))
+            self.assertEqual(resolved["solver"]["impact_ionization"]["avalanche_geometry_file"],
+                             str((root / "avalanche.json").resolve()))
+            for name in ("transport.csv", "avalanche.json"):
+                M.verify_hashes(identity["files"])
+                (root / name).write_text("changed")
+                with self.assertRaises(M.EvidenceError):
+                    M.verify_hashes(identity["files"])
+                (root / name).write_text("original")
+
     def test_relative_nested_geometry_resolved_and_hashed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -426,6 +446,7 @@ class SolverBackendTests(Base):
         self.zero_updates = False
         self.change_confirmation = False
         self.audit_wrong_state = False
+        (self.root / "runner.exe").write_text("runner fixture")
         self.backend = M.SolverBackend(self.base, self.root, self.root / "runner.exe",
                                       expected_node_count=3, expected_active_count=2)
         self.backend.raw_execute = self.execute
@@ -489,6 +510,79 @@ class SolverBackendTests(Base):
         point = self.solve(); self.change_confirmation = True
         with self.assertRaisesRegex(M.NumericalFailure, "confirmation_state_changed"):
             self.backend.confirm(point, 1.122, self.root / "confirm")
+
+    def test_verified_cache_skips_reaudit_but_checks_each_file(self):
+        point = self.solve()
+        with patch.object(M, 'qualify_files', wraps=M.qualify_files) as audit:
+            self.backend.validate(point)
+            self.backend.validate(point)
+            self.assertEqual(audit.call_count, 1)
+            for path in point['evidence']:
+                p = Path(path); original = p.read_bytes()
+                p.write_bytes(original + b' ')
+                try:
+                    with self.assertRaises(M.EvidenceError): self.backend.validate(point)
+                finally: p.write_bytes(original)
+            self.assertEqual(audit.call_count, 1)
+
+    def test_cache_rejects_resource_base_and_point_changes(self):
+        point = self.solve(); self.backend.validate(point)
+        for p in (self.root/'runner.exe', self.root/'mesh.json'):
+            original = p.read_bytes(); p.write_bytes(original+b' ')
+            try:
+                with self.assertRaises(M.EvidenceError): self.backend.validate(point)
+            finally: p.write_bytes(original)
+        altered = M.clone(point); altered['current_A_per_um'] *= 2
+        with self.assertRaises(M.EvidenceError): self.backend.validate(altered)
+        self.backend.base['solver']['reltol'] = 1e-3
+        with self.assertRaises(M.EvidenceError): self.backend.validate(point)
+
+    def test_cache_requires_audit_and_lineage_dependencies(self):
+        point = self.solve()
+        proof = json.loads(Path(point['proof_file']).read_text())
+        for path in (proof['audit_config'], proof['lineage'][0]['config_file'], str(self.seed)):
+            altered = M.clone(point); altered['evidence'].pop(str(Path(path).resolve()))
+            with self.assertRaisesRegex(M.EvidenceError, 'dependency'): self.backend.validate(altered)
+
+    def test_legacy_proof_cannot_validate_under_changed_physics(self):
+        point = self.solve()
+        proof_path = Path(point['proof_file']); proof = json.loads(proof_path.read_text())
+        proof.pop('validation_identity'); proof_path.write_text(json.dumps(proof))
+        config = Path(proof['lineage'][0]['config_file'])
+        d = json.loads(config.read_text()); d['temperature'] = 500
+        config.write_text(json.dumps(d)); point['evidence'].update(M.hashes([config,proof_path]))
+        with self.assertRaisesRegex(M.EvidenceError, 'contract'): self.backend.validate(point)
+
+    def test_adopt_reuses_completed_full_validation_without_solver(self):
+        point = self.solve(); count = len(self.calls)
+        config = Path(point['state_file']).parent/'config.json'
+        config.write_bytes(Path(self.backend.lineage[-1]['config_file']).read_bytes())
+        adopted = self.backend.adopt_validation(point['state_file'], 1.1,
+            {'state_file':str(self.seed)}, proof_directory=self.root/'adopt')
+        self.backend.validate(adopted)
+        self.assertEqual(len(self.calls), count)
+        self.assertEqual(adopted['state_sha256'], point['state_sha256'])
+        with self.assertRaisesRegex(M.EvidenceError, 'overwrite'):
+            self.backend.adopt_validation(point['state_file'], 1.1,
+                {'state_file':str(self.seed)}, proof_directory=self.root/'adopt')
+
+    def test_adopt_rejects_changed_qualification_contract(self):
+        point = self.solve(); config = Path(point['state_file']).parent/'config.json'
+        config.write_bytes(Path(self.backend.lineage[-1]['config_file']).read_bytes())
+        d = json.loads(config.read_text()); d['solver']['reltol'] = 1e-3
+        config.write_text(json.dumps(d))
+        with self.assertRaisesRegex(M.EvidenceError, 'contract'):
+            self.backend.adopt_validation(point['state_file'], 1.1,
+                {'state_file':str(self.seed)}, proof_directory=self.root/'adopt')
+
+    def test_confirmation_cache_checks_voltage_and_bound_content(self):
+        point = self.solve(); conf = self.backend.confirm(point, 1.122, self.root/'confirm')
+        self.backend.validate_confirmation(point, 1.122, conf)
+        with self.assertRaises(M.EvidenceError):
+            self.backend.validate_confirmation(point, 1.123, conf)
+        p = Path(conf['config_file']); p.write_bytes(p.read_bytes()+b' ')
+        with self.assertRaises(M.EvidenceError):
+            self.backend.validate_confirmation(point, 1.122, conf)
 
     def test_new_voltage_without_update_is_not_qualified(self):
         self.zero_updates = True
@@ -556,16 +650,153 @@ class SolverBackendTests(Base):
         self.backend.validate(point)
 
 
+class PredictingBackend(AnalyticBackend):
+    def __init__(self):
+        super().__init__(function=lambda x: 0.)
+        self.predictions = []
+        self.prediction_failure = None
+
+    def solve_predicted(self, bias, seed, previous, directory, max_ratio):
+        self.predictions.append((bias, seed['inner_V'], previous['inner_V'], str(seed['state_file'])))
+        if self.prediction_failure is not None:
+            error, self.prediction_failure = self.prediction_failure, None
+            raise error
+        return self.solve(bias, seed, directory)
+
+
+class AdaptivePredictorTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.seed = self.root / "seed.h5"; self.seed.write_text("imported")
+        self.runner = self.root / "runner.exe"; self.runner.write_text("runner")
+        self.identity = {"files": M.hashes([self.runner, self.seed]), "config_sha256": "frozen"}
+        self.backend = PredictingBackend()
+
+    campaign = CampaignTests.campaign
+
+    def options(self):
+        return dict(initial_outer=1., max_inner_step=.2, predictor_max_ratio=1.6,
+            adaptive_outer=dict(initial_step_V=.05, max_step_V=.2, growth_factor=1.6))
+
+    def test_growth_is_bounded_and_final_target_preserved(self):
+        run = self.campaign(targets=(1.5,), **self.options())
+        self.assertTrue(run.run())
+        history = run.snapshot['adaptive_state']['history']
+        spans = [r['accepted_step_V'] for r in history]
+        self.assertAlmostEqual(spans[0], .05)
+        self.assertAlmostEqual(spans[1], .08)
+        self.assertTrue(all(0 < s <= .2+1e-12 for s in spans))
+        self.assertEqual(run.snapshot['outer_ledger'][-1]['outer_V'], 1.5)
+        self.assertTrue(self.backend.predictions)
+        for bias, seed, previous, _ in self.backend.predictions:
+            self.assertLess(previous, seed)
+            self.assertGreater(bias, seed)
+        calls = len(self.backend.calls)
+        self.assertTrue(self.campaign(targets=(1.5,), resume=True, **self.options()).run())
+        self.assertEqual(len(self.backend.calls), calls)
+
+    def test_prediction_rejection_retries_parent_and_inhibits_growth(self):
+        self.backend.prediction_failure = M.NumericalFailure('rejected prediction')
+        run = self.campaign(targets=(1.4,), **self.options())
+        self.assertTrue(run.run())
+        event = next(e for e in run.snapshot['events'] if e['event']=='predictor_failed')
+        failed = json.loads((Path(event['attempt'])/'result.json').read_text())
+        self.assertFalse(failed['qualified'])
+        first = self.backend.predictions[0]
+        self.assertIn((first[0],first[1]),self.backend.calls)
+        h = run.snapshot['adaptive_state']['history'][1]
+        self.assertFalse(h['grew'])
+        self.assertAlmostEqual(h['next_step_V'], h['accepted_step_V'])
+        self.assertGreater(run.snapshot['attempt_count'], len(self.backend.calls))
+
+    def test_prediction_environment_error_is_not_numerical_fallback(self):
+        self.backend.prediction_failure = RuntimeError('environment')
+        run = self.campaign(targets=(1.4,), **self.options())
+        with self.assertRaisesRegex(RuntimeError,'environment'):
+            run.run()
+        self.assertEqual(len(self.backend.predictions),1)
+        self.assertFalse(run.snapshot['events'])
+
+    def test_rejected_prediction_and_parent_retry_still_halve_from_qualified_seed(self):
+        self.backend.prediction_failure=M.NumericalFailure('prediction rejected')
+        def reject_large(bias,seed):
+            if abs(bias-seed['inner_V']) > .061:
+                raise M.NumericalFailure('parent step rejected')
+        self.backend.fail=reject_large
+        run=self.campaign(targets=(1.2,),**self.options())
+        self.assertTrue(run.run())
+        kinds=[e['event'] for e in run.snapshot['events']]
+        self.assertIn('predictor_failed',kinds)
+        self.assertIn('device_failed',kinds)
+        self.assertTrue(any(abs(b-1.09)<1e-10 and abs(s-1.05)<1e-10 for b,s in self.backend.calls))
+        for e in run.snapshot['events']:
+            if 'attempt' in e:
+                result=json.loads((Path(e['attempt'])/'result.json').read_text())
+                self.assertFalse(result['qualified'])
+
+    def test_prediction_total_budget_error_is_not_fallback(self):
+        self.backend.prediction_failure=M.BudgetExhausted('budget_exhausted: test')
+        run=self.campaign(targets=(1.4,),**self.options())
+        self.assertFalse(run.run())
+        self.assertTrue(run.snapshot['failure'].startswith('budget_exhausted'))
+        self.assertEqual(len(self.backend.predictions),1)
+        self.assertFalse(run.snapshot['events'])
+
+    def test_adaptive_interruption_resume_and_changed_predictor_rejected(self):
+        def interrupt(bias, seed):
+            if bias > 1.1:
+                self.backend.fail = None
+                raise KeyboardInterrupt()
+        self.backend.fail = interrupt
+        run = self.campaign(targets=(1.4,), **self.options())
+        with self.assertRaises(KeyboardInterrupt): run.run()
+        changed = self.options(); changed['predictor_max_ratio']=2.
+        with self.assertRaises(M.EvidenceError):
+            self.campaign(targets=(1.4,), resume=True, **changed)
+        resumed = self.campaign(targets=(1.4,), resume=True, **self.options())
+        self.assertTrue(resumed.run())
+        self.assertEqual(resumed.snapshot['outer_ledger'][-1]['outer_V'],1.4)
+
+    def test_well_spaced_parents_preferred_to_tiny_circuit_correction(self):
+        run = self.campaign(targets=(1.2,), predictor_max_ratio=1.6)
+        run.evaluate(1., {'inner_V':1., 'state_file':str(self.seed)},same_bias=True)
+        p = run.evaluate(1.05,run.snapshot['inner_ledger'][-1])
+        p = run.evaluate(1.050001,p)
+        run.evaluate(1.13,p)
+        self.assertAlmostEqual(self.backend.predictions[-1][2],1.)
+
+    def test_no_step_growth_before_circuit_confirmation(self):
+        original=self.backend.confirm
+        def confirm(point,outer,directory):
+            if outer>1.:
+                raise M.NumericalFailure('confirmation_state_changed')
+            return original(point,outer,directory)
+        self.backend.confirm=confirm
+        run=self.campaign(targets=(1.4,),**self.options())
+        self.assertFalse(run.run())
+        self.assertEqual(len(run.snapshot['outer_ledger']),1)
+        self.assertEqual(run.snapshot['adaptive_state']['history'],[])
+        self.assertEqual(run.snapshot['adaptive_state']['step_V'],.05)
+
+
 class CliTests(Base):
     def test_cli_requires_explicit_inner_voltage_and_exposes_budgets(self):
         self.assertTrue(hasattr(M, "parser"), "CLI is missing")
         args = M.parser().parse_args(["--repo-root", ".", "--runner", "runner.exe",
             "--base-config", "base.json", "--initial-state", "state.h5", "--initial-inner-bias", "37.03",
             "--outer-targets", "37.075", "37.1", "--output-dir", "out", "--resume",
-            "--max-attempts", "80", "--carrier-corrector-passes", "12", "--restore-poly-equilibrium"])
+            "--max-attempts", "80", "--carrier-corrector-passes", "12", "--restore-poly-equilibrium",
+            "--carrier-corrector-mode", "density_then_qf", "--state-predictor-max-ratio", "1.6",
+            "--adaptive-outer-initial-step", ".025", "--adaptive-outer-max-step", ".2"])
         self.assertEqual(args.outer_targets, [37.075, 37.1])
         self.assertEqual(args.initial_inner_bias, 37.03)
         self.assertEqual(args.max_attempts, 80)
+        self.assertEqual(args.carrier_corrector_mode, "density_then_qf")
+        self.assertEqual(args.state_predictor_max_ratio, 1.6)
+        self.assertEqual(args.adaptive_outer_initial_step, .025)
+        self.assertEqual(args.adaptive_outer_max_step, .2)
 
     def test_checkpoint_atomicity_keeps_last_good_on_replace_failure(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -574,6 +805,89 @@ class CliTests(Base):
             with patch.object(M.os, "replace", side_effect=OSError("interrupted")):
                 with self.assertRaises(OSError): M.atomic_json(path, {"accepted": 2})
             self.assertEqual(json.loads(path.read_text()), {"accepted": 1})
+
+    def test_checkpoint_transient_windows_lock_preserves_old_then_replaces(self):
+        for winerror in (5, 32, 33):
+            with self.subTest(winerror=winerror), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "checkpoint.json"
+                M.atomic_json(path, {"accepted": 1})
+                replace = M.os.replace
+                error = PermissionError("reader lock")
+                error.winerror = winerror
+                calls = []
+                def locked_once(source, target):
+                    calls.append((source, target))
+                    self.assertEqual(json.loads(path.read_text()), {"accepted": 1})
+                    self.assertEqual(json.loads(Path(source).read_text()), {"accepted": 2})
+                    if len(calls) == 1:
+                        raise error
+                    replace(source, target)
+                with patch.object(M.os, "replace", side_effect=locked_once), patch.object(M.time, "sleep") as sleep:
+                    M.atomic_json(path, {"accepted": 2})
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(sleep.call_count, 1)
+                self.assertEqual(json.loads(path.read_text()), {"accepted": 2})
+                self.assertFalse(path.with_suffix(".tmp").exists())
+
+    def test_checkpoint_persistent_windows_denial_is_bounded_environment_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "checkpoint.json"
+            M.atomic_json(path, {"accepted": 1})
+            error = PermissionError("persistent denial")
+            error.winerror = 5
+            with patch.object(M.os, "replace", side_effect=error) as replace, patch.object(M.time, "sleep") as sleep:
+                with self.assertRaises(PermissionError):
+                    M.atomic_json(path, {"accepted": 2})
+            self.assertGreater(replace.call_count, 1)
+            self.assertLessEqual(replace.call_count, 8)
+            self.assertLessEqual(sum(c.args[0] for c in sleep.call_args_list), 2)
+            self.assertEqual(json.loads(path.read_text()), {"accepted": 1})
+            self.assertEqual(json.loads(path.with_suffix(".tmp").read_text()), {"accepted": 2})
+
+    def test_checkpoint_other_permissions_are_not_retried(self):
+        for winerror in (None, 19):
+            with self.subTest(winerror=winerror), tempfile.TemporaryDirectory() as tmp:
+                error = PermissionError("not a transient Windows sharing failure")
+                if winerror is not None:
+                    error.winerror = winerror
+                with patch.object(M.os, "replace", side_effect=error) as replace, patch.object(M.time, "sleep") as sleep:
+                    with self.assertRaises(PermissionError):
+                        M.atomic_json(Path(tmp)/"checkpoint.json", {"accepted": 1})
+                self.assertEqual(replace.call_count, 1)
+                sleep.assert_not_called()
+
+    @unittest.skipUnless(M.sys.platform == "win32", "Windows sharing semantics")
+    def test_checkpoint_real_windows_reader_lock_released_during_retry(self):
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+            ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"checkpoint.json"
+            M.atomic_json(path, {"accepted": 1})
+            # Read/write sharing but deliberately no FILE_SHARE_DELETE.
+            handle = kernel.CreateFileW(str(path), 0x80000000, 3, None, 3, 0x80, None)
+            self.assertNotEqual(handle, ctypes.c_void_p(-1).value)
+            waits = []
+            def release_reader(delay):
+                nonlocal handle
+                self.assertEqual(json.loads(path.read_text()), {"accepted": 1})
+                waits.append(delay)
+                if handle is not None:
+                    self.assertTrue(kernel.CloseHandle(handle))
+                    handle = None
+            try:
+                with patch.object(M.time, "sleep", side_effect=release_reader):
+                    M.atomic_json(path, {"accepted": 2})
+            finally:
+                if handle is not None:
+                    kernel.CloseHandle(handle)
+            self.assertEqual(len(waits), 1)
+            self.assertEqual(json.loads(path.read_text()), {"accepted": 2})
 
 
 if __name__ == "__main__":

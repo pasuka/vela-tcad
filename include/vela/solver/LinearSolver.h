@@ -37,7 +37,21 @@ bool solveSpqrSystem(const SparseMatrixd& A,
  * VELA_LINEAR_SOLVER to one of "sparselu", "sparseqr",
  * "umfpack", "sparselu_metis", "umfpack_metis", "mumps", "mumps_metis",
  * "superlu_mt", "superlu_mt_metis", "strumpack", "bicgstab_ilut",
- * "gmres_ilut", or "simplicial_ldlt". Optional direct backends retain symbolic
+ * "gmres_ilut", "sparselu_long_double", or "simplicial_ldlt".
+ * "sparselu_long_double" promotes assembled binary64 inputs to long double
+ * for Eigen factorisation and solve, then rounds the direction back to double.
+ * It requires a wider long double, does not cache factors, and is not full
+ * extended-precision assembly or nonlinear state storage.
+ * "sparselu_eliminated", "sparselu_eliminated_long_double",
+ * "umfpack_eliminated" and "pardiso_mkl_eliminated" are opt-in
+ * affine diagonal-singleton elimination backends. Vendor reduced solvers retain
+ * identical-matrix factors for residual correction; Eigen alternate paths do not. All
+ * correct RHS in long double, round to double, solve the free system and lift.
+ * "pardiso_mkl_eliminated_keep_psi" and "sparselu_eliminated_keep_psi"
+ * explicitly require three equal contiguous [psi, phin, phip] nodal blocks.
+ * They retain all first-block equations and eliminate only carrier singleton
+ * constraints. They must not be used for interleaved or other block layouts.
+ * Optional direct backends retain symbolic
  * and identical-value numeric factors; the other alternate backends do not.
  */
 class LinearSolver {
@@ -86,6 +100,7 @@ private:
     bool factorStatistics_ = true;
     std::unique_ptr<UmfPackState> umfpack_;
     std::unique_ptr<detail::DirectBackend> direct_;
+    std::unique_ptr<LinearSolver> eliminatedDirect_;
     void createDirectBackend();
     VectorXd solveDirect(const SparseMatrixd& A, const VectorXd& b);
     VectorXd solveUmfPack(const SparseMatrixd& A, const VectorXd& b);

@@ -302,6 +302,25 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
             self.assertAlmostEqual(float(predicted["hole_qf_increment_V"]), 9.0)
 
 
+    def test_outer_secant_ratio_is_defined_on_internal_plateau(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            previous,current,output=(root/n for n in ('previous.h5','current.h5','out.h5'))
+            for path,qf in ((previous,.1),(current,.2)):
+                h5.write(path,[dict(node_id=0,psi=2.5,phin=qf,phip=0.,electrons_m3=10.,holes_m3=20.)])
+            kw=dict(document={'mesh_file':'mesh.json'},config_directory=root)
+            with self.assertRaisesRegex(ValueError,'distinct'):
+                MODULE.write_secant_restart(previous,current,output,2.5,2.5,2.5,**kw)
+            for ratio in (float('nan'),3.):
+                with self.assertRaisesRegex(ValueError,'explicit'):
+                    MODULE.write_secant_restart(previous,current,output,2.5,2.5,2.5,ratio_override=ratio,**kw)
+            ratio=MODULE.write_secant_restart(previous,current,output,2.5,2.5,2.5,ratio_override=.5,**kw)
+            row=h5.read(output)[0]
+            self.assertEqual(ratio,.5)
+            self.assertEqual(float(row['psi']),2.5)
+            self.assertAlmostEqual(float(row['phin']),.25)
+            self.assertEqual(float(row['electrons_m3']),10.)
+
     def test_secant_preserves_sub_ulp_current_signal_on_a_moving_reference(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -482,6 +501,31 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
                 self.assertFalse(result['passed'])
                 self.assertEqual(result['state_file'], '')
                 self.assertEqual(len(result['steps']), 1)
+
+    def test_density_then_qf_handoff_is_bounded_and_requires_coupled_audit(self):
+        for final_passed in (False, True):
+            with self.subTest(final_passed=final_passed), tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);seen=[];states=[]
+                document=dict(simulation_type='dc_sweep',solver={'abstol':1e-9},
+                    sweep=dict(contact='drain'),contacts=[dict(name='drain',bias=0.)])
+                def execute(runner, repo, config, run_dir, timeout):
+                    deck=json.loads(config.read_text())
+                    self.assertEqual(deck['solver']['abstol'],1e-9)
+                    if deck['simulation_type']=='newton_block_step_probe':
+                        mode=deck['block_modes'][0];seen.append(mode);states.append(deck['state_file'])
+                        (run_dir/f'trial_{mode}.h5').write_text('candidate')
+                    else:
+                        (run_dir/'final_state.h5').write_text('coupled')
+                        (run_dir/'iv.csv').write_text('converged,newton_iterations\n1,1\n')
+                    return 0,False,.1
+                audits=[{'passed':False},{'passed':False},{'passed':False},{'passed':True},{'passed':final_passed}]
+                with patch.object(MODULE,'execute_config',side_effect=execute), patch.object(MODULE,'audit_local_candidate',side_effect=audits):
+                    result=MODULE.correct_local_candidate(document,root/'seed.h5',1.,root/'runner',root,root/'attempt',1.,root,4,'density_then_qf')
+                self.assertEqual(seen,['carrier_density','carrier_density','carrier_only','carrier_only'])
+                self.assertTrue(states[2].endswith('step_002/trial_carrier_density.h5') or states[2].endswith('step_002\\trial_carrier_density.h5'))
+                self.assertEqual(result['passed'],final_passed)
+                self.assertEqual(len(result['steps']),4)
+                self.assertEqual(result['coupled_newton_iterations'],1)
 
     def test_audit_timeout_keeps_target_without_correction_or_bisection(self):
         with tempfile.TemporaryDirectory() as tmp:

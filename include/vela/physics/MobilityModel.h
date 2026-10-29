@@ -185,6 +185,8 @@ struct MobilityModelConfig {
     // element_box is qualified for state-independent constant/Masetti only.
     // element_box_phumob is an explicit, restricted carrier-dependent candidate.
     std::string edgeAveraging = "legacy";
+    /// Explicit element-box material override; skip PhuMob, surface and HFS.
+    std::vector<std::string> constantMaterials;
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
     /// ``edge_projection`` preserves the historical edge-aligned difference;

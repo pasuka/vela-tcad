@@ -85,6 +85,7 @@ struct RecombinationModelConfig {
 class RecombinationModel {
 public:
     explicit RecombinationModel(RecombinationModelConfig config = {});
+    const RecombinationModelConfig& config() const { return config_; }
 
     bool srhEnabled() const { return srhEnabled_; }
     const std::vector<std::string>& activeMaterials() const { return config_.activeMaterials; }

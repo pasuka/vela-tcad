@@ -579,6 +579,63 @@ TEST_CASE("Default bandgap narrowing interface returns zero", "[bgn]")
     REQUIRE(bgn.deltaEg(1.0e25, 1.0e24, 1.0e20) == Catch::Approx(0.0));
 }
 
+TEST_CASE("Bennett Wilson follows threshold and total doping rather than carrier injection",
+          "[bgn][bennett][sentaurus]")
+{
+    const auto cfg = bandgapNarrowingConfig("bennett_wilson");
+    const auto bgn = makeBandgapNarrowingModel(cfg);
+    for (Real doping : {0.0, 1e23, cfg.referenceDoping}) {
+        CHECK(bgn->deltaEg(doping, 1e30, 1e30) == 0.0);
+    }
+    // Reference values computed from manual Eq.165 using concentrations in cm^-3.
+    CHECK(bgn->deltaEg(1e25, 0, 0) == Catch::Approx(0.009067628765164547).epsilon(1e-12));
+    CHECK(bgn->deltaEg(1e26, 0, 0) == Catch::Approx(0.08160036080352656).epsilon(1e-12));
+    CHECK(bgn->deltaEg(1e26, 1e30, 1e30) == bgn->deltaEg(1e26, 0, 0));
+    const Real delta = bgn->deltaEg(1e26, 0, 0);
+    const Real ni = 1.0749877484e16;
+    const Real vt = 0.025851999786435;
+    CHECK(effectiveIntrinsicDensity(ni, vt, delta) / ni
+          == Catch::Approx(std::exp(delta / (2 * vt))).epsilon(1e-12));
+    CHECK_THROWS_AS(bgn->deltaEg(-1, 0, 0), std::invalid_argument);
+    CHECK_THROWS_AS(bgn->deltaEg(std::numeric_limits<Real>::quiet_NaN(), 0, 0),
+                    std::invalid_argument);
+}
+
+TEST_CASE("Bennett Wilson JSON mapping is unit invariant in Newton and Gummel",
+          "[bgn][bennett][config][scaling]")
+{
+    for (auto mode : {UnitScalingMode::LegacySI, UnitScalingMode::UnitScaling}) {
+        const UnitScalingConfig scale{mode};
+        const Real nref = scale.unitSystem().m3ToInternalConcentration(3.162e24);
+        const Real doping = scale.unitSystem().m3ToInternalConcentration(1e26);
+        for (const nlohmann::json value : {
+                 nlohmann::json("bennett_wilson"),
+                 nlohmann::json{{"model", "bennett_wilson"},
+                                {"reference_doping_m3", nref}, {"coefficient_eV", 0.00684}}}) {
+            const nlohmann::json input{{"bandgap_narrowing", value}};
+            for (const auto cfg : {newtonConfigFromJson(input, scale).bandgapNarrowing,
+                                   gummelConfigFromJson(input, scale).bandgapNarrowing}) {
+                CHECK(cfg.referenceDoping == Catch::Approx(nref));
+                CHECK_FALSE(cfg.fermiStatisticsCorrection);
+                CHECK(makeBandgapNarrowingModel(cfg)->deltaEg(doping, 0, 0)
+                      == Catch::Approx(0.08160036080352656).epsilon(1e-12));
+            }
+        }
+    }
+}
+
+TEST_CASE("Bennett Wilson rejects invalid or foreign model parameters", "[bgn][bennett]")
+{
+    auto cfg = bandgapNarrowingConfig("bennett_wilson");
+    SECTION("reference") { cfg.referenceDoping = 0; }
+    SECTION("nonfinite reference") { cfg.referenceDoping = std::numeric_limits<Real>::infinity(); }
+    SECTION("coefficient") { cfg.coefficient = -1; }
+    SECTION("nonfinite coefficient") { cfg.coefficient = std::numeric_limits<Real>::quiet_NaN(); }
+    SECTION("material reference is not narrowing") { cfg.offset = -0.01; }
+    SECTION("no Slotboom smoothing") { cfg.smoothing = 0.5; }
+    CHECK_THROWS_AS(makeBandgapNarrowingModel(cfg), std::invalid_argument);
+}
+
 TEST_CASE("Slotboom bandgap narrowing grows effective intrinsic density", "[bgn]")
 {
     BandgapNarrowingConfig cfg;

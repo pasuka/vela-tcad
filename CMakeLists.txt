@@ -238,6 +238,24 @@ endif()
 # ---------------------------------------------------------------------------
 # Library: vela_core
 # ---------------------------------------------------------------------------
+# pkg-config may emit <prefix>/bin/../include. Normalize it so CMake recognizes
+# the compiler's implicit include root and does not move it ahead of <cmath>.
+# An explicit -isystem for that root breaks GCC's #include_next <math.h>.
+if(MINGW)
+    foreach(_target PkgConfig::UMFPACK PkgConfig::SPQR PkgConfig::CHOLMOD PkgConfig::VELA_METIS)
+        if(TARGET ${_target})
+            get_target_property(_includes ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+            if(_includes)
+                set(_normalized_includes)
+                foreach(_dir IN LISTS _includes)
+                    cmake_path(NORMAL_PATH _dir OUTPUT_VARIABLE _normalized_dir)
+                    list(APPEND _normalized_includes "${_normalized_dir}")
+                endforeach()
+                set_property(TARGET ${_target} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${_normalized_includes}")
+            endif()
+        endif()
+    endforeach()
+endif()
 add_library(vela_core STATIC
     src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
@@ -296,6 +314,7 @@ add_library(vela_core STATIC
     src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
+    src/numerics/BankRose.cpp
     src/simulation/PoissonSimulation.cpp
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
@@ -352,6 +371,8 @@ target_sources(vela_core PRIVATE src/solver/LinearCapture.cpp)
 target_sources(vela_core PRIVATE src/solver/MumpsBackend.cpp)
 target_sources(vela_core PRIVATE src/solver/SuperLuMtBackend.cpp)
 target_sources(vela_core PRIVATE src/solver/StrumpackBackend.cpp)
+target_sources(vela_core PRIVATE src/solver/MklPardisoBackend.cpp)
+target_link_libraries(vela_core PRIVATE ${CMAKE_DL_LIBS})
 if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
     find_package(OpenMP REQUIRED COMPONENTS CXX)
     find_library(VELA_BACKEND_BLAS NAMES openblas REQUIRED)
@@ -674,7 +695,11 @@ add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_production_numerics tests/test_production_numerics.cpp)
+target_sources(test_production_numerics PRIVATE tests/test_shadow_convergence.cpp)
 target_link_libraries(test_production_numerics PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME shadow_convergence_replay
+    COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_shadow_convergence_replay.py)
 add_executable(test_split_dd_runtime tests/test_split_dd_runtime.cpp)
 target_link_libraries(test_split_dd_runtime PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_split_dd_state tests/test_split_dd_state.cpp)
@@ -682,13 +707,18 @@ target_link_libraries(test_split_dd_state PRIVATE vela_core Catch2::Catch2WithMa
 add_executable(test_permittivity_assembly tests/test_permittivity_assembly.cpp)
 target_link_libraries(test_permittivity_assembly PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_element_box_transport tests/test_element_box_transport.cpp)
+target_sources(test_element_box_transport PRIVATE tests/test_dilute_fermi_transport.cpp)
 target_link_libraries(test_element_box_transport PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_sg_flux tests/test_sg_flux.cpp)
 target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_carrier_statistics tests/test_carrier_statistics.cpp)
+target_sources(test_carrier_statistics PRIVATE tests/test_slot_log_inverse.cpp)
+target_sources(test_carrier_statistics PRIVATE tests/test_slot_population_coordinates.cpp)
 target_link_libraries(test_carrier_statistics PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_slot_population_hold tests/test_slot_population_hold.cpp)
+target_link_libraries(test_slot_population_hold PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
@@ -701,6 +731,10 @@ target_link_libraries(test_device_stability PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_newton_trend_stop tests/test_newton_trend_stop.cpp)
+target_include_directories(test_newton_trend_stop PRIVATE include)
+target_link_libraries(test_newton_trend_stop PRIVATE Catch2::Catch2WithMain)
+add_test(NAME newton_trend_stop COMMAND test_newton_trend_stop)
 
 add_executable(test_external_state tests/test_external_state.cpp)
 target_link_libraries(test_external_state PRIVATE vela_core Catch2::Catch2WithMain)
@@ -742,6 +776,8 @@ target_link_libraries(test_density_gradient_quantum_potential PRIVATE vela_core 
 
 add_executable(test_line_search_backtrack_failure tests/test_line_search_backtrack_failure.cpp)
 target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_bank_rose tests/test_bank_rose.cpp)
+target_link_libraries(test_bank_rose PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
@@ -801,6 +837,7 @@ vela_catch_discover_tests(test_mesh)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)
+vela_catch_discover_tests(test_slot_population_hold)
 vela_catch_discover_tests(test_performance_profiler)
 vela_catch_discover_tests(test_box_geometry)
 vela_catch_discover_tests(test_csv_utils)
@@ -830,6 +867,7 @@ vela_catch_discover_tests(test_recombination)
 vela_catch_discover_tests(test_lattice_heat)
 vela_catch_discover_tests(test_density_gradient_quantum_potential)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
+vela_catch_discover_tests(test_bank_rose)
 vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
 vela_catch_discover_tests(test_pseudo_arclength)
@@ -879,6 +917,18 @@ vela_set_windows_msys2_test_path(reference_tcad_regression)
 set_property(TEST reference_tcad_regression APPEND PROPERTY ENVIRONMENT
     "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
+add_test(NAME poisson_arithmetic_probe
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_poisson_arithmetic_probe.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+vela_set_windows_msys2_test_path(poisson_arithmetic_probe)
+
+add_test(NAME zero_supply_load_line_probe
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_zero_supply_load_line_probe.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+vela_set_windows_msys2_test_path(zero_supply_load_line_probe)
+
 add_test(NAME slot_ldmos_local_continuity_audit
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_audit_slot_ldmos_local_continuity)
@@ -889,14 +939,27 @@ vela_set_windows_msys2_test_path(slot_ldmos_local_continuity_audit)
 add_test(NAME slot_ldmos_noavalanche_continuation
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_run_slot_ldmos_noavalanche_continuation
+            tests.regression.test_slot_reference_frame
             tests.regression.test_slot_poly_equilibrium)
 set_tests_properties(slot_ldmos_noavalanche_continuation PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)
 
+add_test(NAME slot_ldmos_idl_configuration
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_idl_configuration)
+set_tests_properties(slot_ldmos_idl_configuration PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_idl_configuration)
+
 add_test(NAME slot_ldmos_loadline_continuation
     COMMAND ${Python3_EXECUTABLE} -m unittest
-            tests.regression.test_run_slot_ldmos_loadline_continuation)
+            tests.regression.test_run_slot_ldmos_loadline_continuation
+            tests.regression.test_run_slot_ldmos_bv_campaign
+            tests.regression.test_slot_loadline_step_control
+            tests.regression.test_slot_bounded_recovery
+            tests.regression.test_slot_local_row_repair
+            tests.regression.test_slot_probe_failure)
 set_tests_properties(slot_ldmos_loadline_continuation PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(slot_ldmos_loadline_continuation)
@@ -1305,6 +1368,20 @@ set_tests_properties(sentaurus_vm_reference_runner PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_vm_reference_runner)
 
+add_test(NAME slot_linear_quality
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_linear_quality)
+set_tests_properties(slot_linear_quality PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_linear_quality)
+
+add_test(NAME slot_population_acceptance
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_population_acceptance)
+set_tests_properties(slot_population_acceptance PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_population_acceptance)
+
 add_test(NAME templates_ldmos_phase01_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_templates_ldmos_phase01)
@@ -1532,3 +1609,8 @@ if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
             ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}")
     endif()
 endif()
+
+# Opt-in SLOT global population step and selected BVMethods policy checks.
+add_executable(test_population_step_control tests/test_population_step_control.cpp tests/test_bvmethods_population_newton.cpp)
+target_link_libraries(test_population_step_control PRIVATE vela_core Catch2::Catch2WithMain)
+vela_catch_discover_tests(test_population_step_control)

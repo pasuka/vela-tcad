@@ -155,6 +155,7 @@ struct GummelConfig {
     double temperature_K = constants::T0; ///< Lattice temperature [K]
     PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         PoissonChargeVolumePolicy::Global;
+    bool poissonPerCellPermittivity = false;
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
     bool equilibriumQuasiFermiLock = false; ///< Keep a common equilibrium QF and rebuild carriers from psi.
     double taun        = 1.0e-5; ///< Electron SRH lifetime [s]

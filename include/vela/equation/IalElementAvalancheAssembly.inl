@@ -62,6 +62,8 @@ ialElementAvalancheSourceIntegralsLocal(
     }
 }
 
+#include "vela/equation/PhuMobElementAvalancheAssembly.inl"
+
 template <typename Scalar>
 inline ElementEdgeGssLauxLocalSourceIntegrals<Scalar>
 elementLocalAvalancheSourceIntegrals(
@@ -72,6 +74,8 @@ elementLocalAvalancheSourceIntegrals(
     const std::array<Scalar,3>& fp,const std::array<Scalar,3>& n,const std::array<Scalar,3>& p,
     const std::array<Real,3>& ni,Real vt,Real fieldFactor)
 {
+    if (usesPhuMobElementAvalancheSource(impact))
+        return phumobElementAvalancheSourceIntegralsLocal(impact,mobility,mesh,doping,materials,cell,psi,fn,fp,n,p);
     if (usesIalElementAvalancheSource(impact))
         return ialElementAvalancheSourceIntegralsLocal(impact,mobility,mesh,doping,cell,psi,fn,fp,n,p);
     return elementEdgeGssLauxAvalancheSourceIntegralsLocal<Scalar>(

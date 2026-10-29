@@ -69,6 +69,18 @@ Real limitedExp(Real value)
     return std::exp(std::clamp(value, -500.0, 500.0));
 }
 
+// At eta < -700 the fugacity correction is far below binary64 precision,
+// while exp(eta) may be subnormal or zero even when DOS*exp(eta) is normal.
+// Combine exponents first only in that tail; retain ordinary arithmetic and
+// the full Fermi integral elsewhere. The same expression is its eta derivative.
+template<bool Derivative = false>
+Real scaledFermiHalf(Real dos, Real eta)
+{
+    if (eta < -700.0) return std::exp(std::log(dos) + eta);
+    if constexpr (Derivative) return dos * fermiDiracHalfDerivative(eta);
+    return dos * fermiDiracHalf(eta);
+}
+
 void validateDensityArguments(Real ni, Real densityOfStates, Real Vt,
                               CarrierStatisticsModel model)
 {
@@ -97,6 +109,10 @@ Real boltzmannElectronEquilibrium(Real netDoping, Real ni)
 
 CarrierStatisticsModel carrierStatisticsModel(const CarrierStatisticsConfig& config)
 {
+    if (config.transport != "generalized_einstein" && config.transport != "effective_band_sg")
+        throw std::invalid_argument("carrier_statistics.transport must be 'generalized_einstein' or 'effective_band_sg'.");
+    if (config.transport == "effective_band_sg" && config.model != "fermi_dirac")
+        throw std::invalid_argument("effective_band_sg transport requires Fermi-Dirac statistics.");
     if (config.model == "boltzmann")
         return CarrierStatisticsModel::Boltzmann;
     if (config.model == "fermi_dirac")
@@ -114,6 +130,11 @@ Real fermiDiracHalf(Real eta)
 {
     ++physicsCallCounters.fermiDiracHalf;
     return evaluateFermiHalf<false>(eta);
+}
+
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta)
+{
+    return scaledFermiHalf(densityOfStates, eta);
 }
 
 Real fermiDiracHalfDerivative(Real eta)
@@ -182,7 +203,7 @@ Real electronDensity(Real ni, Real Nc, Real psi, Real phin, Real Vt,
     if (!usesFermiDirac(model))
         return ni * limitedExp((psi - phin) / Vt);
     const Real eta = (psi - phin) / Vt + std::log(ni / Nc);
-    return Nc * fermiDiracHalf(eta);
+    return scaledFermiHalf(Nc, eta);
 }
 
 Real holeDensity(Real ni, Real Nv, Real psi, Real phip, Real Vt,
@@ -194,7 +215,7 @@ Real holeDensity(Real ni, Real Nv, Real psi, Real phip, Real Vt,
     if (!usesFermiDirac(model))
         return ni * limitedExp((phip - psi) / Vt);
     const Real eta = (phip - psi) / Vt + std::log(ni / Nv);
-    return Nv * fermiDiracHalf(eta);
+    return scaledFermiHalf(Nv, eta);
 }
 
 Real electronDensityDerivativeEta(Real ni, Real Nc, Real psi, Real phin, Real Vt,
@@ -204,7 +225,7 @@ Real electronDensityDerivativeEta(Real ni, Real Nc, Real psi, Real phin, Real Vt
     if (!usesFermiDirac(model) || n == 0.0)
         return n;
     const Real eta = (psi - phin) / Vt + std::log(ni / Nc);
-    return Nc * fermiDiracHalfDerivative(eta);
+    return scaledFermiHalf<true>(Nc, eta);
 }
 
 Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
@@ -214,7 +235,7 @@ Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
     if (!usesFermiDirac(model) || p == 0.0)
         return p;
     const Real eta = (phip - psi) / Vt + std::log(ni / Nv);
-    return Nv * fermiDiracHalfDerivative(eta);
+    return scaledFermiHalf<true>(Nv, eta);
 }
 
 Real electronDensity(Real ni, Real Nc, Real psi, Real phin, Real Vt,
@@ -288,8 +309,8 @@ EquilibriumCarrierState equilibriumCarrierState(
     // The arguments are validated once above and ni != 0 here, so the
     // per-call validation and the log(ni/Nc), log(ni/Nv) evaluations inside
     // electronDensity()/holeDensity() are hoisted out of the scalar solve.
-    // The remaining arithmetic and its ordering are unchanged, so every
-    // intermediate value stays bit-identical to the previous implementation.
+    // Ordinary-range arithmetic and ordering remain unchanged; the extreme
+    // dilute tail shares the scaled evaluation used by the public functions.
     const Real logNiNc = std::log(ni / Nc);
     const Real logNiNv = std::log(ni / Nv);
     const auto electronEta = [&](Real potential) {
@@ -299,8 +320,8 @@ EquilibriumCarrierState equilibriumCarrierState(
         return (0.0 - potential) / Vt + logNiNv;
     };
     const auto charge = [&](Real potential) {
-        return Nc * fermiDiracHalf(electronEta(potential))
-            - Nv * fermiDiracHalf(holeEta(potential))
+        return scaledFermiHalf(Nc, electronEta(potential))
+            - scaledFermiHalf(Nv, holeEta(potential))
             - netDoping;
     };
 
@@ -327,8 +348,8 @@ EquilibriumCarrierState equilibriumCarrierState(
         ++physicsCallCounters.equilibriumStateIterations;
         const Real etaN = electronEta(potential);
         const Real etaP = holeEta(potential);
-        n = Nc * fermiDiracHalf(etaN);
-        p = Nv * fermiDiracHalf(etaP);
+        n = scaledFermiHalf(Nc, etaN);
+        p = scaledFermiHalf(Nv, etaP);
         const Real residual = n - p - netDoping;
         if (residual > 0.0)
             upper = potential;
@@ -341,8 +362,8 @@ EquilibriumCarrierState equilibriumCarrierState(
 
         // Same values as electronDensityDerivativeEta()/holeDensityDerivativeEta()
         // at this potential, reusing the densities evaluated for the residual.
-        const Real dn = n == 0.0 ? n : Nc * fermiDiracHalfDerivative(etaN);
-        const Real dp = p == 0.0 ? p : Nv * fermiDiracHalfDerivative(etaP);
+        const Real dn = n == 0.0 ? n : scaledFermiHalf<true>(Nc, etaN);
+        const Real dp = p == 0.0 ? p : scaledFermiHalf<true>(Nv, etaP);
         const Real derivative = (dn + dp) / Vt;
         const Real newton = derivative > 0.0 ? potential - residual / derivative
                                              : 0.5 * (lower + upper);
@@ -350,8 +371,8 @@ EquilibriumCarrierState equilibriumCarrierState(
             ? newton : 0.5 * (lower + upper);
     }
     if (!haveFinalDensities) {
-        n = Nc * fermiDiracHalf(electronEta(potential));
-        p = Nv * fermiDiracHalf(holeEta(potential));
+        n = scaledFermiHalf(Nc, electronEta(potential));
+        p = scaledFermiHalf(Nv, holeEta(potential));
     }
     return {potential, n, p};
 }

@@ -85,9 +85,30 @@ def _profile(document: dict) -> None:
                 "current_approximation": "element_edge_sg_gss_laux",
                 "source_mapping_mode": "element_vertex_box_measure",
                 "cell_reconstructed_midpoint_density": "bernoulli", "source_jacobian": "local_ad"}
-    _require(all(av.get(key) == value for key, value in expected.items())
-             and av.get("contact_electric_field_fallback") is False,
-             "avalanche requires canonical SG/current-density/GradQF with electric fallback false")
+    if av.get("current_approximation") == "ialmob_element_density_grad_qf":
+        # AssemblerUtils::sgAvalancheSourceComponentIntegrals explicitly visits
+        # Si cells only for this profile. _components additionally rejects any
+        # Poly node shared with Si/another transport material. Thus the contact
+        # electric-field fallback cannot introduce a Poly source here.
+        expected.update(current_approximation="ialmob_element_density_grad_qf",
+                        quasi_fermi_gradient_discretization="cell_gradient",
+                        source_volume_policy="genius_truncated", source_volume_factor=0.,
+                        source_geometry_scale=1., ialmob_boundary_field_projection=True,
+                        contact_electric_field_fallback=True)
+        _require(all(av.get(key) == value for key, value in expected.items()),
+                 "observed Si-only avalanche requires its explicit canonical profile")
+        _require(mobility.get("jacobian_field_derivatives") is True,
+                 "observed Si-only avalanche requires mobility derivatives")
+        _require(av.get("contact_electric_field_fallback_scope", "contact_node_cell") == "contact_node_cell"
+                 and av.get("contact_electric_field_fallback_mode", "cell_gradient_magnitude") == "cell_gradient_magnitude"
+                 and not av.get("debug_raw_van_overstraeten", False),
+                 "unsupported observed avalanche contact/raw-field profile")
+        for key in ("temperature_K", "reference_temperature_K"):
+            _require(_finite(av.get(key, 300), key) == 300, "observed avalanche requires 300 K")
+    else:
+        _require(all(av.get(key) == value for key, value in expected.items())
+                 and av.get("contact_electric_field_fallback") is False,
+                 "avalanche requires canonical SG/current-density/GradQF with electric fallback false")
     _require(av.get("driving_force_interpolation", "none") == "none",
              "avalanche driving-force interpolation is unsupported")
     for key in ("electron_driving_force_ref_density_m3", "hole_driving_force_ref_density_m3",
@@ -241,6 +262,13 @@ def write_poly_equilibrium_restart(document: dict, input_path: Path, output_path
             if split:
                 row[f"{carrier}_qf_reference_V"] = target
                 row[f"{carrier}_qf_increment_V"] = 0.
+                # The new reference is the complete target QF. Retained packed
+                # increments must describe that same zero increment, including
+                # an optional low component. Preserve psi and non-Poly hints.
+                packed = f"packed_{carrier}_qf_increment"
+                for key in (packed, packed + "_low"):
+                    if key in row:
+                        row[key] = 0.
     _require(seen == nodes, "HDF5 state does not cover every mesh node")
     provenance = {"seed": str(source), "input_sha256": hashlib.sha256(source_bytes).hexdigest(),
                   "output": str(output), "mesh_file": str(mesh_path), "bias_V": bias,

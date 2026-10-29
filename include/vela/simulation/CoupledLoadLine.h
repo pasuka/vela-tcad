@@ -20,6 +20,9 @@ namespace vela {
 
 struct CoupledLoadLineConfig {
     int maxIterations = 40;
+    /// Default-off bounded diagnostic: suppress early convergence for at most
+    /// three accepted updates. Residual tolerances and line search still apply.
+    int diagnosticMinUpdates = 0;
     Real equationTolerance = 1.0e-8;
     Real loadLineTolerance_V = 1.0e-6;
     /// Coefficient of the continuation voltage in the scalar boundary row:
@@ -141,6 +144,19 @@ inline bool coupledResidualFilterAccepts(
     return equationImproves || loadImproves;
 }
 
+/// Read-only observation of a successfully evaluated line-search trial. This
+/// never changes the accept/reject policy; callback failures propagate to caller.
+struct CoupledLoadLineTrial {
+    int iteration = 0;
+    int lineSearch = 0;
+    Real alpha = 0.0;
+    Real equationResidual = 0.0;
+    Eigen::Index equationResidualIndex = -1;
+    Real loadResidual_V = 0.0;
+    Real merit = 0.0;
+    bool accepted = false;
+};
+
 struct CoupledLoadLineResult {
     bool converged = false;
     ArclengthState state;
@@ -228,7 +244,9 @@ public:
                 "CoupledLoadLineNewton: residual, parameter derivative, Jacobian "
                 "solve, and current callbacks are required.");
         }
-        if (config_.maxIterations <= 0 || config_.maxLineSearchSteps < 0) {
+        if (config_.maxIterations <= 0 || config_.maxLineSearchSteps < 0 ||
+            config_.diagnosticMinUpdates < 0 || config_.diagnosticMinUpdates > 3 ||
+            config_.diagnosticMinUpdates > config_.maxIterations) {
             throw std::invalid_argument(
                 "CoupledLoadLineNewton: iteration limits are invalid.");
         }
@@ -284,7 +302,11 @@ public:
 
     CoupledLoadLineResult solve(const ArclengthState& initial,
                                 Real outerVoltage_V,
-                                Real resistance_ohm_um) const
+                                Real resistance_ohm_um,
+                                const std::function<void(int, const ArclengthState&)>&
+                                    acceptedUpdateObserver = {},
+                                const std::function<void(const CoupledLoadLineTrial&,
+                                    const ArclengthState&)>& trialObserver = {}) const
     {
         if (initial.x.size() <= 0 || !initial.x.allFinite() ||
             !std::isfinite(initial.lambda)) {
@@ -304,6 +326,9 @@ public:
         Real anchoredLoadEnvelopeScale =
             std::numeric_limits<Real>::quiet_NaN();
         for (int iter = 0; iter <= config_.maxIterations; ++iter) {
+            // Observe only accepted states, never rejected line-search trials.
+            if (iter > 0 && acceptedUpdateObserver)
+                acceptedUpdateObserver(iter, result.state);
             VectorXd f;
             Real current = std::numeric_limits<Real>::quiet_NaN();
             try {
@@ -348,7 +373,8 @@ public:
                 result.failureReason = "non-finite coupled residual";
                 return result;
             }
-            if (result.equationResidualNorm <=
+            if (iter >= config_.diagnosticMinUpdates &&
+                result.equationResidualNorm <=
                     result.effectiveEquationTolerance &&
                 std::abs(result.loadLineResidual_V) <=
                     config_.loadLineTolerance_V) {
@@ -524,6 +550,8 @@ public:
                 ++result.lineSearchAttempts;
                 ArclengthState trial;
                 trial.lambda = result.state.lambda + alpha * deltaVoltage;
+                CoupledLoadLineTrial observation;
+                bool evaluated = false;
                 try {
                     trial.x = system_.trialState
                         ? system_.trialState(result.state.x, deltaState, alpha)
@@ -563,14 +591,26 @@ public:
                         config_.lineSearchMode == "residual_filter"
                         ? filterAccepted
                         : trialMerit < result.merit;
-                    if (std::isfinite(trialMerit) && acceptedByPolicy) {
-                        result.state = std::move(trial);
-                        result.trace.back().acceptedAlpha = alpha;
-                        accepted = true;
-                        break;
-                    }
+                    observation.iteration = iter;
+                    observation.lineSearch = lineSearch;
+                    observation.alpha = alpha;
+                    observation.equationResidual = trialEquationResidual;
+                    if (trialF.size() > 0)
+                        trialF.cwiseAbs().maxCoeff(&observation.equationResidualIndex);
+                    observation.loadResidual_V = trialLoadResidual;
+                    observation.merit = trialMerit;
+                    observation.accepted = std::isfinite(trialMerit) && acceptedByPolicy;
+                    evaluated = true;
                 } catch (const std::exception&) {
                     // Backtracking will try a smaller finite state.
+                }
+                // Do not swallow observer/export errors as numerical rejections.
+                if (evaluated && trialObserver) trialObserver(observation, trial);
+                if (evaluated && observation.accepted) {
+                    result.state = std::move(trial);
+                    result.trace.back().acceptedAlpha = alpha;
+                    accepted = true;
+                    break;
                 }
                 alpha *= 0.5;
             }
@@ -606,6 +646,93 @@ public:
     /// voltage.  Both terminal currents are reevaluated with the same
     /// functional used by Newton, so no separately supplied outer voltage is
     /// needed for the previous point.
+    struct TangentPrediction {
+        ArclengthState state;
+        bool applied = false;
+        std::string reason = "not_attempted";
+        Real outerIncrement = 0.0;
+        Real alpha = 0.0;
+        Real voltageIncrement = 0.0;
+        Real stateIncrementInf = 0.0;
+        Real deviceResidual = 0.0;
+        Real innerPerOuter = 0.0;
+    };
+
+    /// Solve [F_x F_V; R I_x c+R I_V] d = [0; delta_U] at the
+    /// parent. This is a full-state tangent, not a Newton residual correction.
+    /// Returned states are guesses only; solve() must still close both blocks.
+    TangentPrediction tangentPredict(const ArclengthState& parent,
+                                      Real targetOuter, Real resistance) const
+    {
+        TangentPrediction result;
+        result.state = parent;
+        result.reason = "invalid_input";
+        if (parent.x.size() == 0 || !parent.x.allFinite() ||
+            !std::isfinite(parent.lambda) || !std::isfinite(targetOuter) ||
+            !std::isfinite(resistance) || resistance <= 0.0)
+            return result;
+        try {
+            const Real parentResidual = infinityNorm(system_.residual(parent.x, parent.lambda));
+            result.deviceResidual = parentResidual;
+            result.reason = "parent_outside_device_tolerance";
+            if (!std::isfinite(parentResidual) || parentResidual > config_.equationTolerance)
+                return result;
+            const Real parentOuter = config_.voltageCoefficient * parent.lambda +
+                resistance * current_(parent.x, parent.lambda);
+            const Real du = targetOuter - parentOuter;
+            result.outerIncrement = du;
+            result.reason = "zero_or_invalid_supply_increment";
+            if (!std::isfinite(du) || std::abs(du) <= config_.loadLineTolerance_V)
+                return result;
+            VectorXd dx;
+            Real dv = 0.0;
+            std::string failure;
+            // Always use the complete bordered system: the device-only
+            // Jacobian can be singular on a perfectly regular load-line branch.
+            if (!solveDirectBorderedUpdate(parent, VectorXd::Zero(parent.x.size()),
+                    system_.parameterDerivative(parent.x, parent.lambda), -du,
+                    resistance, dx, dv, failure)) {
+                result.reason = "linear_solve_failed: " + failure;
+                return result;
+            }
+            result.innerPerOuter = dv / du;
+            if (std::abs(dv) > config_.maxVoltageUpdate_V) {
+                const Real scale = config_.maxVoltageUpdate_V / std::abs(dv);
+                dx *= scale;
+                dv *= scale;
+            }
+            if (system_.limitUpdate)
+                system_.limitUpdate(parent.x, dx, dv);
+            const Real initialMerit = std::max(parentResidual / config_.equationTolerance,
+                std::abs(du) / config_.loadLineTolerance_V);
+            result.reason = "no_improving_predictor";
+            for (int trial = 0; trial < config_.maxLineSearchSteps; ++trial) {
+                const Real alpha = std::ldexp(1.0, -trial);
+                ArclengthState guess{parent.x + alpha * dx, parent.lambda + alpha * dv};
+                if (!guess.x.allFinite() || !std::isfinite(guess.lambda))
+                    continue;
+                const Real residual = infinityNorm(system_.residual(guess.x, guess.lambda));
+                const Real load = config_.voltageCoefficient * guess.lambda +
+                    resistance * current_(guess.x, guess.lambda) - targetOuter;
+                const Real merit = std::max(residual / config_.equationTolerance,
+                    std::abs(load) / config_.loadLineTolerance_V);
+                if (std::isfinite(residual) && std::isfinite(load) && merit < initialMerit) {
+                    result.applied = true;
+                    result.reason = "tangent_applied";
+                    result.state = std::move(guess);
+                    result.alpha = alpha;
+                    result.voltageIncrement = result.state.lambda - parent.lambda;
+                    result.stateIncrementInf = infinityNorm(result.state.x - parent.x);
+                    result.deviceResidual = residual;
+                    return result;
+                }
+            }
+        } catch (const std::exception& error) {
+            result.reason = std::string("predictor_exception: ") + error.what();
+        }
+        return result;
+    }
+
     ArclengthState secantPredict(const ArclengthState& previous,
                                  const ArclengthState& current,
                                  Real targetOuterVoltage_V,

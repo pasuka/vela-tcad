@@ -1,6 +1,7 @@
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/mesh/DelaunayBox.h"
+#include "vela/mesh/AverageBox.h"
 #include "vela/mesh/MeshEntity.h"
 #include <algorithm>
 #include <array>
@@ -135,6 +136,26 @@ std::array<Real,3> BoxGeometryBuilder::mixedVoronoiVertexVolumes(const DeviceMes
         {angleDegreesAt(a,b,c),angleDegreesAt(b,c,a),angleDegreesAt(c,a,b)},area);
 }
 
+std::array<Real,3> BoxGeometryBuilder::circumcentricVertexVolumes(
+    const DeviceMesh& mesh, const Cell& cell)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        throw std::invalid_argument("Circumcentric vertex volumes require Tri3 cells");
+    const auto& a = mesh.getNode(cell.node_ids[0]);
+    const auto& b = mesh.getNode(cell.node_ids[1]);
+    const auto& c = mesh.getNode(cell.node_ids[2]);
+    if (!(triangleArea(a,b,c) > kDegenerateTol))
+        throw std::invalid_argument("Circumcentric vertex volumes require nondegenerate cells");
+    const std::array<const Node*,3> nodes = {&a,&b,&c};
+    std::array<Real,3> shares{};
+    for (int i=0;i<3;++i) {
+        const auto& p=*nodes[i];const auto& q=*nodes[(i+1)%3];const auto& r=*nodes[(i+2)%3];
+        shares[i]=0.125*(distanceSquared(p,r)*cotangentAtOppositeVertex(p,r,q)+
+                          distanceSquared(p,q)*cotangentAtOppositeVertex(p,q,r));
+    }
+    return shares;
+}
+
 void BoxGeometryBuilder::build(DeviceMesh& mesh)
 {
     (void)buildWithReport(mesh, Options{});
@@ -156,9 +177,11 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
     const bool cellMaterial = options.poissonPermittivityPolicy ==
         PoissonPermittivityPolicy::CellMaterial;
     const bool transfer = options.cellBoxPolicy == CellBoxPolicy::DelaunayTransfer;
-    if (transfer && (!cellMaterial || !supplied.empty()))
-        throw std::invalid_argument("delaunay_transfer requires cell_material and cannot combine with supplied cell coefficients.");
-    const auto generated = transfer ? buildDelaunayCellBox(mesh) : DelaunayBoxResult{};
+    const bool average = options.cellBoxPolicy == CellBoxPolicy::AverageIntersection;
+    if ((transfer || average) && (!cellMaterial || !supplied.empty()))
+        throw std::invalid_argument("Generated cell box requires cell_material and cannot combine with supplied cell coefficients.");
+    const auto generated = average ? buildAverageCellBox(mesh) :
+        transfer ? buildDelaunayCellBox(mesh) : DelaunayBoxResult{};
     if (!supplied.empty() && (!cellMaterial || supplied.size() != mesh.numCells()))
         throw std::invalid_argument("Poisson cell coefficients require cell_material policy and one record per cell.");
     if (cellMaterial) {
@@ -336,7 +359,7 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
         }
     }
 
-    if (transfer) poissonCoefficients = generated.coefficients;
+    if (transfer || average) poissonCoefficients = generated.coefficients;
     mesh.poissonPermittivityPolicy_ = options.poissonPermittivityPolicy;
     mesh.poissonCellEdgeCoefficients_ = std::move(poissonCoefficients);
     return report;

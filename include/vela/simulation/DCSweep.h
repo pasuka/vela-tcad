@@ -256,6 +256,7 @@ struct ExternalResistorControlConfig {
     bool coupledPositiveDensityUpdates = false;
     std::string coupledLineSearchMode = "merit";
     std::string coupledLinearSolver = "direct_bordered";
+    std::string coupledStatePredictor = "none";
     Real coupledFilterGamma = 1.0e-4;
     Real coupledFilterEnvelopeFactor = 2.0;
     bool coupledInexactDeviceForcingEnabled = false;
@@ -263,6 +264,7 @@ struct ExternalResistorControlConfig {
     Real coupledInexactLoadActivationRatio = 10.0;
     bool coupledInexactZeroConvergedResidual = false;
     bool coupledLinearizationAudit = false;
+    int coupledDiagnosticMinUpdates = 0;
 };
 
 struct VoltageToCurrentControlConfig {

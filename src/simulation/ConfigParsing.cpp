@@ -1,6 +1,8 @@
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CsvUtils.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/physics/ImpactIonizationModel.h"
+#include "vela/physics/MobilityModel.h"
 
 #include <nlohmann/json.hpp>
 #include <cmath>
@@ -14,6 +16,26 @@
 #include <utility>
 
 namespace vela {
+
+void validateCarrierTransportCouplePhysics(
+    const std::string& profile, const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, bool quantumPotential)
+{
+    if (profile == "mesh_default") return;
+    const bool slot = profile == "slot_ldmos_external_averagebox";
+    const bool observedSource = slot && mobility.model == "ialmob" &&
+        impact.model == "van_overstraeten" &&
+        impact.currentApproximation == "ialmob_element_density_grad_qf" &&
+        impact.sourceJacobianMode == "local_ad";
+    if (quantumPotential || (!slot && isSurfaceMobilityModel(mobility)) ||
+        (impact.model != "none" && !observedSource)) {
+        throw std::invalid_argument(
+            "external AverageBox requires quantum potential off; avalanche is "
+            "restricted to SLOT explicit IALMob element source with local_ad; "
+            "Templates also requires surface mobility off.");
+    }
+}
+
 namespace {
 
 void appendConfigFixedChargeSpec(
@@ -184,8 +206,10 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     const std::string cellBox = geometry.value("cell_box_policy", "legacy_positive");
     if (cellBox == "delaunay_transfer")
         options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::DelaunayTransfer;
+    else if (cellBox == "average_intersection")
+        options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::AverageIntersection;
     else if (cellBox != "legacy_positive")
-        throw std::runtime_error("cell_box_policy must be legacy_positive or delaunay_transfer.");
+        throw std::runtime_error("cell_box_policy must be legacy_positive, delaunay_transfer, or average_intersection.");
     if (permittivity == "cell_material")
         options.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
     else if (permittivity != "legacy_average")
@@ -219,6 +243,17 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     return options;
 }
 
+bool parsePoissonPerCellPermittivity(const nlohmann::json& cfg)
+{
+    if (!cfg.contains("discretization")) return false;
+    const auto& d = cfg.at("discretization");
+    if (!d.is_object()) throw std::invalid_argument("discretization must be an object");
+    const auto value = d.value("poisson_permittivity_coupling", "edge_mean");
+    if (value == "edge_mean") return false;
+    if (value == "per_cell") return true;
+    throw std::invalid_argument("discretization.poisson_permittivity_coupling must be 'edge_mean' or 'per_cell'");
+}
+
 PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     const nlohmann::json& cfg)
 {
@@ -233,6 +268,10 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
         "poisson_charge_volume_policy", "global");
     if (policy == "global")
         return PoissonChargeVolumePolicy::Global;
+    if (policy == "material_local_box")
+        return PoissonChargeVolumePolicy::MaterialLocalBox;
+    if (policy == "material_local_circumcentric")
+        return PoissonChargeVolumePolicy::MaterialLocalCircumcentric;
     if (policy == "material_local_mixed_voronoi") {
         if (!cfg.contains("mesh_geometry") ||
             cfg.at("mesh_geometry").value("node_volume_policy","barycentric")!="mixed_voronoi")
@@ -242,7 +281,7 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     if (policy != "material_local") {
         throw std::runtime_error(
             "ConfigParsing: discretization.poisson_charge_volume_policy must be "
-            "'global', 'material_local', or 'material_local_mixed_voronoi'.");
+            "'global', 'material_local', 'material_local_mixed_voronoi', 'material_local_circumcentric', or 'material_local_box'.");
     }
     if (cfg.contains("mesh_geometry") &&
         cfg.at("mesh_geometry").value("node_volume_policy", "barycentric") !=

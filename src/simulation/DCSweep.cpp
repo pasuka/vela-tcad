@@ -1000,7 +1000,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                         (niElectron[edge.n0] / Nc[edge.n0]));
                 return sgElectronFermiDiracContinuityFlux(
                     sol.n(i), sol.n(j), etaI, etaJ, driftPotential,
-                    sol.phin(i), sol.phin(j), Vt, coef);
+                    sol.phin(i), sol.phin(j), Vt, coef, carrierStatistics.transport == "effective_band_sg");
             }
             return sgElectronBoltzmannContinuityFlux(
                 niElectron[edge.n0],
@@ -1027,7 +1027,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                     (niHole[edge.n1] / Nv[edge.n1]));
             return sgHoleFermiDiracContinuityFlux(
                 sol.p(i), sol.p(j), etaI, etaJ, driftPotential,
-                sol.phip(i), sol.phip(j), Vt, coef);
+                sol.phip(i), sol.phip(j), Vt, coef, carrierStatistics.transport == "effective_band_sg");
         }
         return sgHoleBoltzmannContinuityFlux(
             niHole[edge.n0],
@@ -1821,9 +1821,19 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.externalResistor.coupledFilterEnvelopeFactor = circuit.value(
             "coupled_filter_envelope_factor",
             sweep.externalResistor.coupledFilterEnvelopeFactor);
+        sweep.externalResistor.coupledStatePredictor = circuit.value(
+            "coupled_state_predictor", std::string("none"));
+        if (sweep.externalResistor.coupledStatePredictor != "none" &&
+            sweep.externalResistor.coupledStatePredictor != "tangent")
+            throw std::invalid_argument("coupled_state_predictor must be none or tangent");
         sweep.externalResistor.coupledLinearizationAudit = circuit.value(
             "coupled_linearization_audit",
             sweep.externalResistor.coupledLinearizationAudit);
+        sweep.externalResistor.coupledDiagnosticMinUpdates = circuit.value(
+            "coupled_diagnostic_min_updates", 0);
+        if (sweep.externalResistor.coupledDiagnosticMinUpdates < 0 ||
+            sweep.externalResistor.coupledDiagnosticMinUpdates > 3)
+            throw std::invalid_argument("coupled_diagnostic_min_updates must be in [0,3]");
         if (circuit.contains("coupled_inexact_device_forcing")) {
             const auto& forcing =
                 circuit.at("coupled_inexact_device_forcing");
@@ -2988,6 +2998,8 @@ nlohmann::json lineSearchHistoryJson(const std::vector<LineSearchIterationInfo>&
             {"sufficient_decrease", item.sufficientDecrease},
             {"accepted", item.accepted},
             {"rejection_reason", item.rejectionReason},
+            {"bank_rose_active", item.bankRoseActive},
+            {"bank_rose_K", item.bankRoseK},
         });
     }
     return out;
@@ -3383,6 +3395,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         newton.mobility.ialmobGeometry = mobilityConfig.ialmobGeometry;
         gummel.mobility.ialmobGeometry = mobilityConfig.ialmobGeometry;
     }
+    newton.poissonPerCellPermittivity = parsePoissonPerCellPermittivity(cfg);
+    gummel.poissonPerCellPermittivity = newton.poissonPerCellPermittivity;
     newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     if (sweep.stepGrowthMode == "newton_iterations") {
@@ -3429,6 +3443,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (sweep.initialization.mode == "poisson_block") {
         initializationNewton = newtonConfigFromJson(solverCfg, scaling);
         initializationNewton->unitScalingRefs = scalingRefs;
+        initializationNewton->poissonPerCellPermittivity = newton.poissonPerCellPermittivity;
         initializationNewton->poissonChargeVolumePolicy =
             poissonChargeVolumePolicy;
     }
@@ -3516,15 +3531,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepBgnConfig = gummel.bandgapNarrowing;
         sweepImpactIonizationConfig = gummel.impactIonization;
     }
-    if (transportCoupleProfile.profile != "mesh_default" &&
-        (sweepImpactIonizationConfig.model != "none" ||
-         (transportCoupleProfile.profile != "slot_ldmos_external_averagebox" && isSurfaceMobilityModel(mobilityConfig)) ||
-         sweepQuantumPotential.enabled)) {
-        throw std::invalid_argument(
-            "DCSweep: external AverageBox requires "
-            "with impact ionization, surface mobility/IALMob, and quantum "
-            "potential off.");
-    }
+    validateCarrierTransportCouplePhysics(transportCoupleProfile.profile,
+        sweepImpactIonizationConfig, mobilityConfig, sweepQuantumPotential.enabled);
     if (poissonCoupleProfile.profile != "mesh_default" &&
         (sweepImpactIonizationConfig.model != "none" ||
          isSurfaceMobilityModel(mobilityConfig) ||
@@ -3599,6 +3607,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     ddScaling.regionResolvedInterfaceAssembly =
         newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
+    ddScaling.poissonPerCellPermittivity = newton.poissonPerCellPermittivity;
     if (sweep.scaling.isUnitScaling()) {
         // Derive DDScalingSpec from the unit scaling system.
         UnitScalingSystem sc = UnitScalingSystem::fromInputs(
@@ -7213,11 +7222,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
 
         if (converged && bvProcessProbeCsv != nullptr) {
+            auto probeMobilityConfig = recordMobilityConfig;
+            if (detail::usesPhuMobElementAvalancheSource(sweepImpactIonizationConfig)) {
+                detail::updateElementHighFieldGeometry(
+                    probeMobilityConfig, mesh, sweepEdgeCells, sweepCellMaterials);
+                detail::updateSurfaceMobilityCellGeometry(
+                    probeMobilityConfig, mesh, sweepEdgeCells, sol.psi,
+                    fieldFactor, &sweepCellMaterials);
+            }
             const BVProcessProbeResult probe = evaluateBVProcessProbe(
                 mesh,
                 doping,
                 sol,
-                recordMobilityConfig,
+                probeMobilityConfig,
                 sweepImpactIonizationConfig,
                 sweepBgnConfig,
                 matdb,
@@ -7227,7 +7244,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 detail::currentDensityAvalancheSourceIntegrals(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    recordMobilityConfig,
+                    probeMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -7932,6 +7949,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         };
         solved.root = detail::solveMonotoneBoundaryRoot(
             seedVoltage, activeRootConfig, evaluate);
+        // A converged inner device evaluation is not a converged boundary
+        // equation. Reject here, before either caller records a successful
+        // sweep point or promotes the last evaluation to a continuation seed.
+        if (!solved.root.converged) {
+            throw std::runtime_error(
+                "DCSweep: boundary-control root not converged: mode=" +
+                controlMode + " target=" + formatReal(targetValue) +
+                " " + targetUnit + " inner_voltage_V=" +
+                formatReal(solved.root.voltage) + " residual=" +
+                formatReal(solved.root.residual) + " evaluations=" +
+                std::to_string(solved.root.evaluations));
+        }
         if (solved.root.evaluations >
             sweep.boundaryControl.preferredMaxEvaluations) {
             runtimeLogWarn(
@@ -8039,6 +8068,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 sweep.externalResistor.coupledInexactZeroConvergedResidual;
             coupledConfig.linearizationAuditEnabled =
                 sweep.externalResistor.coupledLinearizationAudit;
+            coupledConfig.diagnosticMinUpdates =
+                sweep.externalResistor.coupledDiagnosticMinUpdates;
             const Real coupledCurrentScale =
                 sweep.externalResistor.currentDirection *
                 currentPerInternalDepthToAPerUm(
@@ -8085,7 +8116,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             auto attemptCoupledOuterPoint =
                 [&](Real outerVoltage, Real attemptedOuterStep, int retryCount) {
                     ArclengthState solveSeed = coupledState;
-                    if (attemptedOuterStep != 0.0 &&
+                    if (sweep.externalResistor.coupledStatePredictor == "tangent") {
+                        const auto prediction = coupledSolver.tangentPredict(
+                            coupledState, outerVoltage,
+                            sweep.externalResistor.resistance_ohm_um);
+                        solveSeed = prediction.state;
+                        runtimeLogInfo("external_circuit: tangent_predictor applied=" +
+                            std::to_string(prediction.applied) + " reason=" + prediction.reason +
+                            " outer_increment_V=" + formatReal(prediction.outerIncrement) +
+                            " d_inner_d_outer=" + formatReal(prediction.innerPerOuter) +
+                            " alpha=" + formatReal(prediction.alpha) +
+                            " delta_inner_V=" + formatReal(prediction.voltageIncrement) +
+                            " actual_state_update_inf=" + formatReal(prediction.stateIncrementInf) +
+                            " device_residual=" + formatReal(prediction.deviceResidual));
+                    } else if (attemptedOuterStep != 0.0 &&
                         previousCoupledState.has_value()) {
                         solveSeed = coupledSolver.secantPredict(
                             *previousCoupledState,
@@ -8093,10 +8137,54 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             outerVoltage,
                             sweep.externalResistor.resistance_ohm_um);
                     }
+                    if (coupledConfig.linearizationAuditEnabled && !sweep.writeStateFile.empty()) {
+                        const std::string seedPath = sweep.writeStateFile +
+                            ".coupled_seed_" + formatReal(outerVoltage) + "_" +
+                            std::to_string(retryCount) + ".h5";
+                        saveBiasState(seedPath, coupledStateUnpacker(solveSeed.x),
+                            solveSeed.lambda, "coupled_initial_guess_only");
+                        const Real seedCurrent = coupledCurrentValue(solveSeed.x, solveSeed.lambda);
+                        runtimeLogInfo("external_circuit: coupled seed state_file=" + seedPath +
+                            " current_A_per_um=" + formatReal(seedCurrent) +
+                            " inner_V=" + formatReal(solveSeed.lambda) +
+                            " load_line_residual_V=" + formatReal(solveSeed.lambda +
+                                sweep.externalResistor.resistance_ohm_um * seedCurrent - outerVoltage));
+                    }
                     pendingCoupled = coupledSolver.solve(
                         solveSeed,
                         outerVoltage,
-                        sweep.externalResistor.resistance_ohm_um);
+                        sweep.externalResistor.resistance_ohm_um,
+                        [&](int update, const ArclengthState& accepted) {
+                            if (coupledConfig.diagnosticMinUpdates == 0 ||
+                                sweep.writeStateFile.empty()) return;
+                            const std::string path = sweep.writeStateFile +
+                                ".coupled_update_" + formatReal(outerVoltage) + "_" +
+                                std::to_string(retryCount) + "_" +
+                                std::to_string(update) + ".h5";
+                            saveBiasState(path, coupledStateUnpacker(accepted.x),
+                                accepted.lambda, "coupled_update_diagnostic_only");
+                            runtimeLogInfo("external_circuit: diagnostic accepted_update=" +
+                                std::to_string(update) + " state_file=" + path);
+                        },
+                        [&](const CoupledLoadLineTrial& info, const ArclengthState& trial) {
+                            if (coupledConfig.diagnosticMinUpdates == 0 ||
+                                sweep.writeStateFile.empty()) return;
+                            const std::string path = sweep.writeStateFile +
+                                ".coupled_trial_" + formatReal(outerVoltage) + "_" +
+                                std::to_string(retryCount) + "_" +
+                                std::to_string(info.iteration) + "_" +
+                                std::to_string(info.lineSearch) + ".h5";
+                            saveBiasState(path, coupledStateUnpacker(trial.x),
+                                trial.lambda, "coupled_trial_diagnostic_only");
+                            runtimeLogInfo("external_circuit: diagnostic trial iteration=" +
+                                std::to_string(info.iteration) + " line_search=" +
+                                std::to_string(info.lineSearch) + " alpha=" + formatReal(info.alpha) +
+                                " equation_residual=" + formatReal(info.equationResidual) +
+                                " equation_residual_index=" + std::to_string(info.equationResidualIndex) +
+                                " load_residual_V=" + formatReal(info.loadResidual_V) +
+                                " merit=" + formatReal(info.merit) + " accepted=" +
+                                (info.accepted ? "1" : "0") + " state_file=" + path);
+                        });
                     hasPendingCoupled = true;
                     runtimeLogInfo(
                         "external_circuit: coupled Newton outer_V=" +
@@ -8112,7 +8200,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         formatReal(pendingCoupled.equationResidualNorm) +
                         " load_line_residual_V=" +
                         formatReal(pendingCoupled.loadLineResidual_V));
-                    if (!pendingCoupled.converged) {
+                    if (coupledConfig.linearizationAuditEnabled) {
+                        runtimeLogInfo("external_circuit: coupled audit convergence inexact_used=" +
+                            std::to_string(pendingCoupled.inexactConvergenceUsed) +
+                            " effective_equation_tolerance=" + formatReal(pendingCoupled.effectiveEquationTolerance));
+                    }
+                    if (!pendingCoupled.converged || coupledConfig.linearizationAuditEnabled) {
                         for (const auto& trace : pendingCoupled.trace) {
                             runtimeLogInfo(
                                 "external_circuit: coupled trace outer_V=" +

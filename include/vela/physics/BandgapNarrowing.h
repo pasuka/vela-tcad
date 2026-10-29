@@ -8,17 +8,17 @@
 namespace vela {
 
 struct BandgapNarrowingConfig {
-    std::string model = "none"; ///< "none", "slotboom", or "old_slotboom"
+    std::string model = "none"; ///< "none", "slotboom", "old_slotboom", "bennett_wilson"
     /// Numerical evaluation used on Boltzmann, equal-ni transport edges when
     /// BGN is disabled.  The legacy path subtracts two quasi-Fermi
     /// exponentials; the compensated path uses the algebraically equivalent
     /// log/expm1 VariableNi kernel.  The legacy default preserves existing
     /// solver results unless a diagnostic deck opts in explicitly.
     std::string equalNiFluxEvaluation = "legacy_factor_difference";
-    Real referenceDoping = 1.0e23; ///< Slotboom reference concentration [m^-3]
-    Real coefficient = 9.0e-3; ///< Slotboom narrowing coefficient [eV]
+    Real referenceDoping = 1.0e23; ///< Reference concentration in active units; factory supplies model defaults
+    Real coefficient = 9.0e-3; ///< Narrowing coefficient [eV]
     Real smoothing = 0.5; ///< Dimensionless Slotboom smoothing term
-    Real offset = 0.0; ///< Optional additive narrowing offset [eV]
+    Real offset = 0.0; ///< Optional Slotboom additive narrowing offset [eV]; Bennett-Wilson requires zero
     /// Apply the Sentaurus correction used when EffectiveIntrinsicDensity is
     /// combined with Fermi statistics.  This remains opt-in so existing Vela
     /// calibration decks retain their previous semantics.
@@ -42,6 +42,18 @@ class SlotboomBandgapNarrowing final : public BandgapNarrowing {
 public:
     explicit SlotboomBandgapNarrowing(BandgapNarrowingConfig config = {});
 
+    Real deltaEg(Real impurityConcentration, Real n, Real p) const override;
+
+private:
+    BandgapNarrowingConfig config_;
+};
+
+/// Sentaurus Bennett-Wilson: Eref * log(Ntotal/Nref)^2 above Nref, zero below.
+/// Ntotal is donors + acceptors in the active concentration unit, not net
+/// doping or injected carriers. Material dEg0 belongs in the base ni, not here.
+class BennettWilsonBandgapNarrowing final : public BandgapNarrowing {
+public:
+    explicit BennettWilsonBandgapNarrowing(BandgapNarrowingConfig config);
     Real deltaEg(Real impurityConcentration, Real n, Real p) const override;
 
 private:

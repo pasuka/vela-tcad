@@ -1,3 +1,4 @@
+#include "vela/solver/SlotPopulationNumerics.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -20,6 +21,152 @@
 #include <cstdlib>
 
 using namespace vela;
+
+TEST_CASE("Opt-in MKL PARDISO preserves equations and invalidates cached factors", "[linear_solver][mkl]") {
+#if defined(_WIN32) || defined(__linux__)
+    if(!std::getenv("VELA_MKL_RT_DLL") && !std::getenv("VELA_MKL_RT_LIBRARY")) {
+        REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
+        return;
+    }
+    LinearSolver solver("pardiso_mkl");
+    SparseMatrixd a(4,4);
+    a.insert(0,0)=1.00000001; // Non-unit affine constraint.
+    a.insert(1,0)=2.;a.insert(1,1)=4.;a.insert(1,2)=-1.;
+    a.insert(2,0)=-3.;a.insert(2,1)=.5;a.insert(2,2)=6.;a.insert(2,3)=2.;
+    a.insert(3,2)=1.;a.insert(3,3)=5.;a.makeCompressed();
+    VectorXd truth(4);truth<<.25,-2.,3.,1.;
+    auto verify=[&] {
+        VectorXd b=a*truth;auto x=solver.solve(a,b);
+        REQUIRE((x-truth).lpNorm<Eigen::Infinity>()<1e-12);
+        REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+    };
+    verify();truth<<1.,4.,-2.,.3;verify(); // Same factors, different RHS.
+    a.coeffRef(1,1)=7.;verify(); // Same pattern, changed numerical values.
+    a.coeffRef(0,2)=.2;a.makeCompressed();verify(); // New pattern.
+    SparseMatrixd singular(4,4);singular.insert(0,0)=1.;singular.makeCompressed();
+    REQUIRE_THROWS(solver.solve(singular,truth));
+    verify(); // Recovery must not use stale factors after an error.
+#else
+    REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
+#endif
+}
+
+TEST_CASE("Strict elimination preserves affine constraints and changing systems", "[linear_solver][elimination]") {
+    std::vector<const char*> backends{"sparselu_eliminated", "sparselu_eliminated_long_double"};
+#ifdef VELA_HAS_UMFPACK
+    backends.push_back("umfpack_eliminated");
+#endif
+#if defined(_WIN32) || defined(__linux__)
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated");
+#endif
+    for(const auto* backend : backends) {
+        INFO(backend);
+        if(std::string(backend)=="sparselu_eliminated_long_double" &&
+           std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits) continue;
+        LinearSolver solver(backend);
+        SparseMatrixd a(4,4);
+        a.insert(0,0)=1.00000001; a.insert(0,2)=0.;
+        a.insert(1,0)=7.;a.insert(1,1)=4.;a.insert(1,2)=-2.;a.insert(1,3)=3.;
+        a.insert(2,0)=-5.;a.insert(2,1)=1.;a.insert(2,2)=3.;
+        a.insert(3,3)=-2.;a.makeCompressed();
+        VectorXd exact(4);exact<<.25,2.,-3.,-.5;
+        auto verify=[&]() {
+            VectorXd b=a*exact, x=solver.solve(a,b);
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
+            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+        };
+        verify();exact<<0.,-1.,4.,2.;verify();
+        a.coeffRef(0,1)=.1;a.makeCompressed();verify(); // changed constraint set
+        SparseMatrixd diagonal(4,4);diagonal.setIdentity();
+        REQUIRE((solver.solve(diagonal,exact)-exact).norm()==0.);
+        SparseMatrixd zero(4,4);zero.makeCompressed();
+        REQUIRE_THROWS(solver.solve(zero,exact));
+    }
+}
+
+TEST_CASE("Carrier-only elimination retains affine potential constraints", "[linear_solver][elimination]") {
+    std::vector<const char*> backends{"sparselu_eliminated_keep_psi"};
+#if defined(_WIN32) || defined(__linux__)
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated_keep_psi");
+#endif
+    for(const auto* backend:backends) {
+        INFO(backend);
+        LinearSolver solver(backend);
+        // Two nodes per block. Nonzero boundary increments must affect the
+        // coupled free RHS; psi row zero must remain in the factorization.
+        SparseMatrixd a(6,6);
+        a.insert(0,0)=2.;
+        a.insert(1,0)=3.;a.insert(1,1)=8.;a.insert(1,2)=-2.;a.insert(1,4)=1.;
+        a.insert(2,2)=1.00000001;
+        a.insert(3,0)=-1.;a.insert(3,1)=.5;a.insert(3,2)=2.;a.insert(3,3)=5.;
+        a.insert(4,4)=-2.;
+        a.insert(5,1)=2.;a.insert(5,4)=3.;a.insert(5,5)=7.;a.makeCompressed();
+        VectorXd exact(6);exact<<.25,-2.,.7,3.,-.4,2.;
+        auto check=[&](int eliminated) {
+            PerformanceProfiler profiler({true,"unused.json"});
+            VectorXd b=a*exact,x;
+            {ActivePerformanceProfilerScope active(&profiler);x=solver.solve(a,b);}
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
+            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+            const auto obs=profiler.toJson().at("observations");
+            REQUIRE(obs.at("linear.eliminated_dofs").at("last")==eliminated);
+            REQUIRE(obs.at("linear.reduced_dimension").at("last")==6-eliminated);
+            REQUIRE(obs.at("linear.retained_prefix").at("last")==2);
+        };
+        check(2);exact<<-1.,.1,2.,-3.,.5,4.;check(2);
+        a.coeffRef(2,1)=.25;a.makeCompressed();check(1);
+        SparseMatrixd incompatible(4,4);incompatible.setIdentity();
+        REQUIRE_THROWS_AS(solver.solve(incompatible,VectorXd::Ones(4)),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Vendor elimination reuses only identical reduced factors", "[linear_solver][elimination]") {
+    std::vector<const char*> backends;
+#ifdef VELA_HAS_UMFPACK
+    backends.push_back("umfpack_eliminated");
+#endif
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY"))
+        backends.push_back("pardiso_mkl_eliminated_keep_psi");
+    for(const auto* backend:backends) {
+        INFO(backend);LinearSolver solver(backend);
+        SparseMatrixd a(6,6);a.setIdentity();a.coeffRef(1,0)=2.;a.coeffRef(1,1)=4.;
+        a.coeffRef(1,2)=-1.;a.coeffRef(3,1)=.5;a.coeffRef(3,3)=3.;a.makeCompressed();
+        VectorXd exact(6);exact<<.2,1.,-.3,2.,.7,-1.;
+        PerformanceProfiler profiler({true,"unused.json"});ActivePerformanceProfilerScope scope(&profiler);
+        auto check=[&]{const VectorXd b=a*exact;const auto x=solver.solve(a,b);
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);};
+        check();exact*=2.;check(); // Changed affine constraints, same reduced A.
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==1);
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_cache_hits")==1);
+        a.coeffRef(1,1)=5.;check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==2);
+        solver.clearNumericCache();check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==3);
+        solver.clearPatternCache();check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==4);
+    }
+}
+
+TEST_CASE("Extended SparseLU solves nonsymmetric systems without stale factors", "[linear_solver][long_double]") {
+    SparseMatrixd a(3,3);
+    a.insert(0,0)=1e-8; a.insert(0,1)=2e-8;
+    a.insert(1,0)=-3.; a.insert(1,1)=7.; a.insert(1,2)=1.;
+    a.insert(2,1)=2e8; a.insert(2,2)=9e8;
+    a.makeCompressed();
+    VectorXd exact(3); exact << 1.25,-2.5,3.75;
+    LinearSolver solver("sparselu_long_double");
+    if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
+        REQUIRE_THROWS_WITH(solver.solve(a,a*exact), Catch::Matchers::ContainsSubstring("wider"));
+    } else {
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        exact << -4.,2.,1.;
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        a.coeffRef(1,1)=11.;
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        SparseMatrixd singular(3,3); singular.insert(0,0)=1.; singular.makeCompressed();
+        REQUIRE_THROWS(solver.solve(singular,exact));
+    }
+}
 
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
 extern "C" int openblas_get_num_threads();
@@ -696,4 +843,73 @@ TEST_CASE("Electrothermal natural corrector recognizes linear contraction and re
     const auto projected=experimental::electrothermalNaturalTrial(d,20.*d,.4,true);
     CHECK(projected.nextAlpha==.2);
     CHECK_THROWS(experimental::electrothermalNaturalTrial(VectorXd::Zero(2),d,1.));
+}
+
+TEST_CASE("SLOT memory mixed linear guard rejects constrained and material errors", "[slot_population]") {
+    vela::SparseMatrixd a(3,3);
+    a.insert(0,0)=1.;a.insert(1,1)=1e-20;a.insert(1,2)=2e-20;a.insert(2,2)=2.;
+    vela::VectorXd x(3);x<<0.,1e-15,0.;
+    vela::VectorXd b=vela::VectorXd::Zero(3);
+    REQUIRE(vela::slot_population::linearQuality(a,b,x,.02585,1).accepted==false);
+    // Normwise guards remain independent of the mixed near-zero allowance.
+    b=a*x;
+    REQUIRE(vela::slot_population::linearQuality(a,b,x,.02585,1).accepted);
+    x[0]=1e-10;
+    REQUIRE_FALSE(vela::slot_population::linearQuality(a,b,x,.02585,1).accepted);
+    x[0]=0.;x[1]=1.;
+    REQUIRE_FALSE(vela::slot_population::linearQuality(a,b,x,.02585,1).accepted);
+}
+
+TEST_CASE("SLOT bounded row refinement repairs weak rows without relaxing guards", "[slot_population]") {
+    using namespace vela::slot_population;
+    SparseMatrixd a(9,9);std::vector<Eigen::Triplet<double>> t{
+        {0,0,1.},{1,1,1.},{2,2,1.},{3,3,1.},{4,4,1.},{5,5,1.},
+        {6,6,1e-17},{6,7,-.99e-17},{7,6,-1e-19},{7,7,1e-15},{8,8,1.}};
+    a.setFromTriplets(t.begin(),t.end());
+    VectorXd b=VectorXd::Zero(9),x=VectorXd::Zero(9);b[8]=x[8]=1.;x[6]=1e-11;
+    REQUIRE_FALSE(linearQuality(a,b,x,.02585,3).accepted);
+    auto r=refineMixedRows(a,b,x,.02585,3,4);
+    REQUIRE(r.after.accepted);REQUIRE(linearQuality(a,b,x,.02585,3).accepted);
+    CHECK(x.head(6).isZero());CHECK((a*x-b).norm()<1e-27);
+    const auto good=x;auto identity=refineMixedRows(a,b,x,.02585,3,4);
+    CHECK(identity.sweeps==0);CHECK((x.array()==good.array()).all());
+    // Boundary errors cannot be hidden by the weak-row repair.
+    x=VectorXd::Zero(9);x[8]=1.;x[0]=1e-3;x[6]=1e-11;auto original=x;
+    auto rejected=refineMixedRows(a,b,x,.02585,3,4);
+    REQUIRE_FALSE(rejected.after.accepted);CHECK((x.array()==original.array()).all());
+    CHECK_THROWS(refineMixedRows(a,b,x,.02585,3,5));
+    x=VectorXd::Zero(9);x[8]=1.;x[6]=1e-11;
+    LinearSolver factorSolver("sparselu");factorSolver.solve(a,b);
+    int calls=0;
+    auto factors=refineWithFactors(a,b,x,.02585,3,3,[&](const VectorXd& rhs){++calls;return factorSolver.solve(a,rhs);});
+    REQUIRE(factors.after.accepted);CHECK(calls==1);
+    CHECK(factorSolver.patternAnalysisCount()==1);
+    x[6]=1e-11;original=x;
+    auto refused=refineWithFactors(a,b,x,.02585,3,1,[](const VectorXd& rhs){return VectorXd::Zero(rhs.size());});
+    CHECK_FALSE(refused.after.accepted);CHECK((x.array()==original.array()).all());
+}
+
+TEST_CASE("SLOT diagnostic hold preserves population while potential and neighbors respond", "[slot_population]") {
+    using namespace vela::slot_population;
+    SparseMatrixd a(6,6);std::vector<Eigen::Triplet<Real>> t{
+        {0,0,2.},{0,4,1.},{1,1,3.},{2,2,1.},{3,3,1.},
+        {4,4,-2.},{4,5,1.},{5,5,4.},{5,4,-1.}};
+    a.setFromTriplets(t.begin(),t.end());
+    VectorXd b(6);b<<3.,6.,0.,0.,-20.,7.;
+    auto constrained=populationConstraintMatrix(a,{4},2);auto rhs=b;rhs[4]=0.;
+    const auto x=LinearSolver("sparselu").solve(constrained,rhs);
+    CHECK(x[4]==Catch::Approx(x[0]).margin(1e-14));
+    CHECK(std::abs(x[0])>.1);CHECK(std::abs(x[5])>.1);
+    const auto originalResidual=(a*x-b).eval();
+    for(int i:{0,1,2,3,5})CHECK(std::abs(originalResidual[i])<1e-12);
+    CHECK(std::abs(originalResidual[4])>1.); // Held row is not claimed solved.
+    CHECK((populationConstraintMatrix(a,{},2)-a).norm()==0.);
+    CHECK(retainPopulationHold(true,-2.));CHECK(retainPopulationHold(true,0.));
+    CHECK_FALSE(retainPopulationHold(true,.01));CHECK_FALSE(retainPopulationHold(false,-2.));
+    CHECK_THROWS(populationConstraintMatrix(a,{0},2));
+    CHECK_THROWS(populationConstraintMatrix(a,{4,4},2));
+    // Relative Fermi recovery with dq=applied psi exactly preserves eta.
+    const double dpsi=.0259*std::log1p(2./.0259);
+    const double dq=dpsi+relativeInverse(1e-20,0.);
+    CHECK(dq-dpsi==0.);
 }

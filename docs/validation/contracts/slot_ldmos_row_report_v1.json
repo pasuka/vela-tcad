@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "policy_id": "slot_row_report_v1",
+  "scope": "Current SLOT IdVd case only; not a Vela global default",
+  "authorized_change": "Carrier-row convergence becomes report-only. Stop on overall residual OR raw population-update error, with original global closure and boundary guards still required.",
+  "primary": {
+    "logic": "rho <= 1e-10 OR E < 1",
+    "rho": "Vela normalizedBlockL2 with fixed initial block normalization, not the Sentaurus internal RHS norm",
+    "relative_rhs_branch": false,
+    "E": "RMS(delta_x / (1e-5 * (abs(x_new) + x_ref)))",
+    "delta_x": "Pre-cap and pre-line-search stabilized Newton direction, transformed through parent-state Fermi derivatives into physical psi and population increments",
+    "x_units": ["V", "cm^-3", "cm^-3"],
+    "x_ref": [0.025851995266484913, 1e10, 1e10],
+    "variable_counts": [13881, 12634, 12634],
+    "finite_step_update_error": "Reported separately; not used for convergence"
+  },
+  "required_guards": {
+    "global_continuity_closure_mode": "enforce",
+    "relative_tolerance": 0.01,
+    "source_floor": 1e-11,
+    "absolute_tolerance": 1e-12,
+    "closure_branch": "Original implementation chooses relative or absolute according to source scale",
+    "boundary": "Preserve configured contact potentials and QF conditions and original acceptance checks",
+    "domain": "Preserve finite and positive population/domain checks"
+  },
+  "report_only": {
+    "carrier_row_convergence_mode": "report",
+    "eps_row": 0.001,
+    "row_scale_floor": 1e-30,
+    "record": ["violation count by carrier", "maximum row ratio", "node IDs", "strict-row verdict"]
+  },
+  "unchanged": ["physics and material mapping", "assembly and scaling", "QF caps", "merit line search", "Poisson recorrection", "regularization and closure-system stabilization"],
+  "implementation": {
+    "trial_directory": "build/s11slot_row_report",
+    "entry": "run.py",
+    "backend": "pardiso_mkl",
+    "workpoint": {"Vg_V": 5, "Vd_V": 0.005, "temperature_K": 300},
+    "rhs_branch": "Frozen Vela solver, row report mode and closure enforce mode",
+    "update_branch": "External controller checks accepted snapshots. Conservatively requires both relative closure ratios <=0.01; then a zero-update original-boundary/closure audit must pass without changing the saved state numerically. A failure is not accepted.",
+    "budget": {"max_accepted_updates": 40, "soft_seconds": 1080, "hard_seconds_upper_bound": 1200, "total_seconds": 1400},
+    "no_automatic_voltage_sweep": true
+  }
+}

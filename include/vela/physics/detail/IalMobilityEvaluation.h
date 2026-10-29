@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <type_traits>
 
 namespace vela::ial_detail {
 
@@ -53,6 +54,16 @@ inline Dual power(const Dual& a, const Dual& b) {
         for (int i=0;i<7;++i) r.derivative[i]+=r.value*std::log(a.value)*b.derivative[i];
     return r;
 }
+// Version-bound numerical convention observed in U-2022.12 binary64. Keep the
+// recorded auxiliary constants and single update; converging this iteration
+// instead would select the ordinary stationary-minimum policy.
+template<class S> S u202212ScreeningCutoff(Real mass,const S& temperature) {
+    const S u=temperature/S(300.*mass), y=power(u,.28227);
+    const S x=S(.15)*(S(1.)+u), c=S(7.324855641)*power(u,-.727845002);
+    const S base=S(.41372)+x*y, f=power(base,.853672965);
+    const S slope=S(.853672965)*y*f/base;
+    return x+(f-c*x*x)/(S(2.)*c*x-slope);
+}
 inline Real exponential(Real x) { return std::exp(x); }
 inline Dual exponential(const Dual& x) {
     Dual r(std::exp(x.value));
@@ -86,7 +97,8 @@ template<class S> struct Preparation {
     S phononNumerator,phononTemperaturePower,roughnessExponent,roughnessNumerator;
 };
 template<class S> Preparation<S> prepare(const std::array<S,7>& state,
-    const IalMobilityParameters& p, bool electron, Real pMin) {
+    const IalMobilityParameters& p, bool electron, Real pMin,
+    Real minimumTemperatureDerivative=0.) {
     const S inf(std::numeric_limits<Real>::infinity());
     const S nd=state[0]/S(1e6), na=state[1]/S(1e6);
     const S n=state[2]/S(1e6), h=state[3]/S(1e6);
@@ -100,7 +112,9 @@ template<class S> Preparation<S> prepare(const std::array<S,7>& state,
     if (value(nsc)>0.) {
         const S screening=t*t/(S(2.459/3.97e13)*power(nsc,2./3.)+
                                       S(3.828/(p.mass*1.36e20))*(c+other));
-        const S clamped=value(screening)>pMin?screening:S(pMin);
+        S cutoff(pMin);
+        if constexpr(std::is_same_v<S,Dual>)cutoff.derivative[6]=minimumTemperatureDerivative;
+        const S clamped=value(screening)>pMin?screening:cutoff;
         g=S(1.)-S(.89233)/power(S(.41372)+clamped*power(t/S(p.mass),.28227),.19778)
             +S(.005978)/power(clamped*power(S(p.mass)/t,.72169),1.80618);
         const S pPower=power(screening,.6478);

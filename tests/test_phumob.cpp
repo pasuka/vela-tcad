@@ -19,6 +19,42 @@
 
 using namespace vela;
 
+TEST_CASE("PhuMob G minimum follows temperature mass and every model coefficient",
+          "[mobility][phumob][minimum_cache]")
+{
+    // Independent minimization of the scalar G formula, rather than the
+    // production derivative-root search. Interleave >8 parameter sets to
+    // exercise cache replacement, followed by repeated and changed states.
+    const std::array<Real PhuMobParameters::*,7> fields{&PhuMobParameters::gA,
+        &PhuMobParameters::gB,&PhuMobParameters::gC,&PhuMobParameters::gAlpha,
+        &PhuMobParameters::gAlphaPrime,&PhuMobParameters::gBeta,&PhuMobParameters::gGamma};
+    for(int pass=0;pass<2;++pass) for(int variant=0;variant<11;++variant) {
+        PhuMobParameters p;
+        if(variant<7) p.*fields[variant]*=1.07;
+        if(variant==8) p.electronMassRatio*=1.13;
+        if(variant==9) p.holeMassRatio*=.91;
+        const Real temperature=variant==10?355.:300.;
+        for(auto carrier:{CarrierType::Electron,CarrierType::Hole}) {
+            const Real mass=carrier==CarrierType::Electron?p.electronMassRatio:p.holeMassRatio;
+            auto g=[&](Real x){return 1-p.gA*std::pow(p.gB+x*std::pow(temperature/300./mass,p.gAlpha),-p.gBeta)
+                +p.gC*std::pow(x*std::pow(mass/(temperature/300.),p.gAlphaPrime),-p.gGamma);};
+            Real lo=-30.,hi=10.;
+            for(int k=0;k<160;++k){const Real a=(2*lo+hi)/3,b=(lo+2*hi)/3;if(g(std::exp(a))<g(std::exp(b)))hi=b;else lo=a;}
+            const Real xmin=std::exp((lo+hi)/2),floor=std::abs(g(xmin));
+            for(Real density:{1e19,1e24,1e28}) {
+                PhuMobScalarState s{density,.2*density,.8*density,pass?1e12:1e18,temperature};
+                const auto actual=evaluatePhuMobScalar(carrier,s,p);
+                const auto repeat=evaluatePhuMobScalar(carrier,s,p);
+                const Real expected=actual.screeningParameter<xmin?floor:std::max(g(actual.screeningParameter),floor);
+                CAPTURE(variant,pass,density);
+                REQUIRE(actual.screeningG==Catch::Approx(expected).epsilon(2e-12));
+                REQUIRE(actual.mobility==repeat.mobility);
+                REQUIRE(actual.screeningGDerivative==repeat.screeningGDerivative);
+            }
+        }
+    }
+}
+
 namespace {
 
 DeviceMesh makePhuMobTriangle()

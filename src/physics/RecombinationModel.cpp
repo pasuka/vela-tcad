@@ -77,7 +77,9 @@ RecombinationModel::RecombinationModel(RecombinationModelConfig config)
     , bandToBand_(config_.bandToBand)
 {
     if (config_.volumePolicy != "legacy_node" &&
-        config_.volumePolicy != "material_local_mixed_voronoi")
+        config_.volumePolicy != "material_local_mixed_voronoi" &&
+        config_.volumePolicy != "material_local_circumcentric" &&
+        config_.volumePolicy != "material_local_box")
         throw std::invalid_argument("Unsupported recombination_volume_policy");
     if (config_.srhDopingDependence.densityCoupling != "quantum" &&
         config_.srhDopingDependence.densityCoupling != "sentaurus_default") {

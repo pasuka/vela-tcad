@@ -37,7 +37,7 @@ struct GeometryBuildReport {
 class BoxGeometryBuilder {
 public:
     enum class PoissonPermittivityPolicy { LegacyAverage, CellMaterial };
-    enum class CellBoxPolicy { LegacyPositive, DelaunayTransfer };
+    enum class CellBoxPolicy { LegacyPositive, DelaunayTransfer, AverageIntersection };
 
     // Dimensionless d/l, ordered along (0,1), (1,2), (2,0).
     // Node identity guards against accidentally reusing a reordered mesh.
@@ -70,6 +70,8 @@ public:
     static Real triangleArea(const Node& a, const Node& b, const Node& c);
     /// Exactly the local mixed-Voronoi shares used by buildWithReport.
     static std::array<Real,3> mixedVoronoiVertexVolumes(const DeviceMesh& mesh,const Cell& cell);
+    /// Signed circumcentric shares; callers must qualify assembled nodal measures.
+    static std::array<Real,3> circumcentricVertexVolumes(const DeviceMesh& mesh,const Cell& cell);
     static void build(DeviceMesh& mesh);
     static void build(DeviceMesh& mesh, const Options& options);
     static GeometryBuildReport buildWithReport(DeviceMesh& mesh);

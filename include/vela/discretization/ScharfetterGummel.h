@@ -282,9 +282,13 @@ Real sgHoleBoltzmannContinuityFlux(Real ni0,
 Real sgGeneralizedEinsteinFactor(
     Real density0, Real density1, Real eta0, Real eta1);
 
+/// Effective-band argument log(c1/c0) + signed QF drop / Vt.
+/// New transport keeps Fermi populations; effectiveBand=false preserves legacy weights.
+/// The effective-band quantum overloads are only used with quantum correction disabled.
+Real sgEffectiveBandArgument(Real density0, Real density1, Real signedQfDropOverVt);
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand = false);
 
 /// Fermi-Dirac electron flux when the transported density has an additional
 /// multiplicative quantum factor. The generalized Einstein factor is formed
@@ -293,12 +297,12 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
     Real qmDensity0, Real qmDensity1,
     Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand = false);
 
 /// Hole counterpart of sgElectronFermiDiracContinuityFlux.
 Real sgHoleFermiDiracContinuityFlux(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand = false);
 
 /// Extended-precision references for diagnostics of sub-ULP quasi-Fermi
 /// drops.  The drop is supplied directly so callers can form it from
@@ -307,10 +311,10 @@ Real sgHoleFermiDiracContinuityFlux(
 long double sgElectronFermiDiracQuantumContinuityFluxLongDouble(
     Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef);
+    long double quasiFermiDrop, Real Vt, Real coef, bool effectiveBand = false);
 long double sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef);
+    long double quasiFermiDrop, Real Vt, Real coef, bool effectiveBand = false);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.

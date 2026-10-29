@@ -94,6 +94,46 @@ class PolyEquilibriumTests(unittest.TestCase):
             self.assertAlmostEqual(float(row["electrons_m3"]) / (2e20 * math.exp((0.12-target)/vt)), 1)
             self.assertAlmostEqual(float(row["holes_m3"]) / (3e10 * math.exp((target+0.08)/vt)), 1)
 
+    def test_packed_restart_stays_consistent_after_poly_restore(self):
+        for low in (False, True):
+            with self.subTest(low=low):
+                rows = copy.deepcopy(self.rows)
+                for row in rows:
+                    row.update(packed_psi=row['psi'],
+                               packed_electron_qf_increment=row['electron_qf_increment_V'],
+                               packed_hole_qf_increment=row['hole_qf_increment_V'])
+                    if low:
+                        row.update(packed_psi_low=0., packed_electron_qf_increment_low=1e-18,
+                                   packed_hole_qf_increment_low=1e-18)
+                        for carrier, field in (('electron', 'phin'), ('hole', 'phip')):
+                            row[field] = math.fsum((float(row[f'{carrier}_qf_reference_V']),
+                                                   float(row[f'{carrier}_qf_increment_V']), 1e-18))
+                metadata = dict(packed_potential_scale_V=1.)
+                if low:
+                    metadata.update(split_state_schema='vela.split-dd-state.v1',
+                                    split_mesh_fingerprint='synthetic-fixture')
+                h5.write(self.source, rows, self.mesh, **metadata)
+                original = self.source.read_bytes()
+                output = self.root / ('packed_low.h5' if low else 'packed.h5')
+                self.write_restart(self.doc, self.source, output, self.root, 2.)
+                out = h5.read(output)  # Includes strict packed-state validation.
+                before = h5.read(self.source)
+                self.assertEqual(self.source.read_bytes(), original)
+                self.assertEqual(out[6:], before[6:])
+                for i in range(6):
+                    self.assertEqual(out[i]['packed_psi'], before[i]['packed_psi'])
+                    for carrier in ('electron', 'hole'):
+                        self.assertEqual(out[i][f'packed_{carrier}_qf_increment'], 0.)
+                        if low:
+                            self.assertEqual(out[i][f'packed_{carrier}_qf_increment_low'], 0.)
+                        self.assertEqual(out[i][f'{carrier}_qf_increment_V'], 0.)
+                    target = .1 if i < 3 else -.1
+                    vt = 1.380649e-23 * 300 / 1.602176634e-19
+                    self.assertAlmostEqual(out[i]['electrons_m3'] /
+                                           (2e20 * math.exp((.12-target)/vt)), 1.)
+                    self.assertAlmostEqual(out[i]['holes_m3'] /
+                                           (3e10 * math.exp((target+.08)/vt)), 1.)
+
     def test_sweep_contact_bias_overrides_static_bias(self):
         self.doc["sweep"]["contact"] = "gate"
         self.run_helper(bias=0.2)
@@ -162,6 +202,37 @@ class PolyEquilibriumTests(unittest.TestCase):
             "source_mapping_mode": "element_vertex_box_measure",
             "cell_reconstructed_midpoint_density": "bernoulli", "source_jacobian": "local_ad",
             "driving_force_interpolation": "none", "electron_driving_force_ref_density_m3": 1e18}
+        self.assert_rejected()
+
+    def observed_source(self):
+        self.doc['solver']['mobility']['jacobian_field_derivatives'] = True
+        return dict(model='van_overstraeten', generation='current_density',
+            driving_force='quasi_fermi_gradient', current_approximation='ialmob_element_density_grad_qf',
+            source_mapping_mode='element_vertex_box_measure', source_jacobian='local_ad',
+            cell_reconstructed_midpoint_density='bernoulli',
+            quasi_fermi_gradient_discretization='cell_gradient', source_volume_policy='genius_truncated',
+            source_volume_factor=0., source_geometry_scale=1.,
+            ialmob_boundary_field_projection=True, contact_electric_field_fallback=True)
+
+    def test_observed_si_only_source_preserves_nonpoly_state(self):
+        self.doc['solver']['impact_ionization'] = self.observed_source()
+        result = self.run_helper()
+        self.assertFalse(result['qualified'])
+        self.assertEqual(self.read_output()[6:], h5.read(self.source)[6:])
+        self.assertEqual(float(self.read_output()[0]['phin']), .1)
+        self.assertEqual(float(self.read_output()[3]['phip']), -.1)
+
+    def test_observed_source_rejects_profile_changes_and_shared_si_node(self):
+        av = self.observed_source()
+        for key, value in [('source_volume_factor', 1.), ('source_geometry_scale', 2.),
+                           ('contact_electric_field_fallback', False), ('ialmob_boundary_field_projection', False),
+                           ('source_jacobian', 'none'), ('temperature_K', 301),
+                           ('contact_electric_field_fallback_scope', 'contact_boundary_face')]:
+            with self.subTest(key=key):
+                self.doc['solver']['impact_ionization'] = dict(av, **{key:value})
+                self.assert_rejected()
+        self.doc['solver']['impact_ionization'] = av
+        self.mesh['triangles'][2]['node_ids'] = [2,7,8]
         self.assert_rejected()
 
     def test_rejects_zero_mobility_partial_split_and_bad_mesh(self):

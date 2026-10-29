@@ -1,0 +1,260 @@
+{
+  "_comment": "Independent Fermi effective-band SG transport control; original material constants, integral populations, SG source and qualification thresholds retained. Requires requalification; not a production qualified template.",
+  "contacts": [
+    {
+      "bias": 0.0,
+      "name": "source",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "drain",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "gate",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "substrate",
+      "type": "ohmic"
+    }
+  ],
+  "doping": [
+    {
+      "acceptors": 4.136545324405086e+19,
+      "donors": 5.048315856197694e+19,
+      "region": "Silicon_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Oxide_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_2.1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "PolySilicon_1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_1.1"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_2.2"
+    },
+    {
+      "acceptors": 0.0,
+      "donors": 0.0,
+      "region": "Nitride_1.2"
+    }
+  ],
+  "materials_file": "configs/regression/slot_ldmos_idvd_fermi_materials.json",
+  "mesh_file": "build/slot_ldmos_noavalanche_1p25_resume02/mesh.json",
+  "mesh_geometry": {
+    "edge_coupling_policy": "assembled_delaunay_fallback",
+    "node_volume_policy": "mixed_voronoi",
+    "require_non_obtuse": false,
+    "poisson_permittivity_policy": "cell_material",
+    "cell_box_policy": "average_intersection"
+  },
+  "node_doping_file": "build/slot_physics_controls_20260921/poly_controls/poly_doped/doping.csv",
+  "output_csv": "build/s10transport/cold_template/iv.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "simulation_type": "dc_sweep",
+  "solver": {
+    "abstol": 1e-09,
+    "auger_cn_m6_per_s": 2.9e-31,
+    "auger_cp_m6_per_s": 1.028e-31,
+    "bandgap_narrowing": {
+      "model": "bennett_wilson",
+      "reference_doping_m3": 3.162e+18,
+      "coefficient_eV": 0.00684,
+      "offset_eV": 0.0,
+      "smoothing": 0.0,
+      "fermi_statistics_correction": true
+    },
+    "carrier_regularization_scale": 1e-08,
+    "carrier_row_qualified_stall_acceptance": true,
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale_fraction": 0.0,
+      "min_source_scale": 0,
+      "min_newton_max_iter": 24,
+      "min_carrier_density_m3": 1e-200,
+      "diagnostic_csv": "build/s10transport/cold_template/carrier_row_convergence.csv"
+    },
+    "damping_psi": 0.2,
+    "handoff": {
+      "fallback": "none",
+      "gummel_max_iter": 0,
+      "newton_max_iter": 100,
+      "require_gummel_convergence": false
+    },
+    "line_search": true,
+    "line_search_mode": "merit",
+    "max_iter": 100,
+    "method": "newton",
+    "mobility": {
+      "model": "phumob_field_lombardi",
+      "doping_concentration_basis": "total_impurity",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "element_vertex_partial_layer",
+      "jacobian_field_derivatives": true,
+      "surface": {
+        "discretization": "element_distance_gradient"
+      },
+      "edge_averaging": "element_box_phumob",
+      "constant_materials": [
+        "PolySilicon"
+      ]
+    },
+    "global_continuity_closure": {
+      "linear_system_stabilization": "replace_free_row_sum",
+      "mode": "enforce",
+      "source_floor": 1e-11,
+      "absolute_tolerance": 1e-12,
+      "tolerance": 0.01,
+      "feasibility_restoration": "final_linear_qf_projection",
+      "feasibility_restoration_factor": 1.0,
+      "restoration_jacobian": "stabilized",
+      "roundoff_audit": false,
+      "restoration_physical_rows_only": true
+    },
+    "quasi_fermi_trust_region_expansion_threshold": 0.75,
+    "quasi_fermi_trust_region_growth_factor": 2.0,
+    "quasi_fermi_trust_region_max_multiplier": 4.0,
+    "quasi_fermi_trust_region_min_multiplier": 0.125,
+    "quasi_fermi_trust_region_shrink_factor": 0.5,
+    "quasi_fermi_update_limit_V": 0.1,
+    "quasi_fermi_update_limit_minority_V": 0.05,
+    "quasi_fermi_update_limit_mode": "componentwise_poisson_recorrect",
+    "residual_filter_envelope_factor": 4.0,
+    "residual_filter_gamma": 0.0001,
+    "recombination": [
+      "srh",
+      "auger"
+    ],
+    "reltol": 1e-08,
+    "stall_residual_floor": 1e-08,
+    "srh_doping_dependence": {
+      "concentration_basis": "total_impurity",
+      "electron": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 1e-05,
+        "tau_min_s": 0.0
+      },
+      "electron_temperature_exponent": -1.5,
+      "enabled": true,
+      "hole": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 3e-06,
+        "tau_min_s": 0.0
+      },
+      "hole_temperature_exponent": -1.5,
+      "reference_temperature_K": 300.0,
+      "temperature_dependence": true
+    },
+    "taun": 1e-05,
+    "taup": 3e-06,
+    "warm_start": true,
+    "diagnostic_history": true,
+    "return_best_feasible_on_failure": false,
+    "carrier_diagonal_floor": {
+      "enabled": false,
+      "scale": 10.0,
+      "minority_density_ratio": 1.0
+    },
+    "quasi_fermi_reference": "contact_nearest_state",
+    "contact_boundary_reconstruction": "legacy_node_local",
+    "auger_with_generation": false,
+    "recombination_materials": [
+      "Si"
+    ],
+    "auger_density_dependence": {
+      "enabled": true,
+      "electron": {
+        "enhancement": 3.46667,
+        "reference_density_m3": 1e+18
+      },
+      "hole": {
+        "enhancement": 8.25688,
+        "reference_density_m3": 1e+18
+      }
+    },
+    "recombination_volume_policy": "material_local_box",
+    "impact_ionization": {
+      "model": "van_overstraeten",
+      "generation": "current_density",
+      "driving_force": "quasi_fermi_gradient",
+      "current_approximation": "phumob_element_sg_best_vertex",
+      "quasi_fermi_gradient_discretization": "cell_gradient",
+      "source_jacobian": "local_ad",
+      "source_mapping_mode": "element_vertex_box_measure",
+      "contact_electric_field_fallback": true,
+      "contact_electric_field_fallback_scope": "contact_node_cell",
+      "contact_electric_field_fallback_mode": "cell_gradient_magnitude"
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac",
+      "transport": "effective_band_sg"
+    },
+    "region_resolved_interface_assembly": {
+      "transport_edge_geometry": "element_box"
+    },
+    "performance_profiling": {
+      "enabled": true,
+      "json_file": "build/s10transport/cold_template/performance.json"
+    },
+    "progress_directory": "build/s10transport/cold_template/progress",
+    "soft_time_limit_seconds": 480.0
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "drain",
+    "current_contact": "drain",
+    "bias_points": [
+      0.0
+    ],
+    "start": 0.0,
+    "stop": 0.0,
+    "step": 0.005,
+    "write_vtk": false,
+    "write_state_file": "build/s10transport/cold_template/state.h5",
+    "diagnostics": {
+      "newton_history": {
+        "enabled": true,
+        "attempts_csv_file": "build/s10transport/cold_template/attempts.csv",
+        "iterations_csv_file": "build/s10transport/cold_template/iterations.csv",
+        "rejected_state_directory": "build/s10transport/cold_template/rejected_states"
+      }
+    },
+    "initialization": {
+      "mode": "poisson_block",
+      "diagnostic_csv": "build/s10transport/cold_template/initialization.csv",
+      "write_state_file": "build/s10transport/cold_template/poisson.h5"
+    }
+  },
+  "state_format": "hdf5",
+  "potential_origin_V": 0.0,
+  "discretization": {
+    "poisson_charge_volume_policy": "material_local_box",
+    "poisson_permittivity_coupling": "edge_mean"
+  }
+}

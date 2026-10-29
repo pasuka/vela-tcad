@@ -7,6 +7,9 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <array>
+#include <cstdlib>
+#include <string_view>
 
 namespace vela {
 
@@ -707,6 +710,13 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.model = value.value("model", config.model);
     if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
     config.edgeAveraging = value.value("edge_averaging", "legacy");
+    if (value.contains("constant_materials")) {
+        config.constantMaterials = value.at("constant_materials").get<std::vector<std::string>>();
+        if (config.edgeAveraging != "element_box_phumob")
+            throw std::invalid_argument("constant_materials requires element_box_phumob");
+        for (const auto& name : config.constantMaterials)
+            if (name.empty()) throw std::invalid_argument("constant_materials contains an empty material");
+    }
     if (config.edgeAveraging != "legacy" && config.edgeAveraging != "element_box" &&
         config.edgeAveraging != "element_box_phumob")
         throw std::invalid_argument("mobility.edge_averaging must be legacy, element_box or element_box_phumob.");
@@ -1026,12 +1036,23 @@ bool screeningGDerivativeIsPositive(Real logScreening, Real massRatio,
     return logPositive > logNegative;
 }
 
-Real screeningG(Real screening, Real massRatio, Real temperature_K,
-                const PhuMobParameters& params, Real* derivative)
+// The clamp minimum depends on temperature, mass and all seven G constants,
+// never on carrier/dopant populations. Keep exact (not quantized) keys and a
+// bounded thread-local cache: no shared mutation and no stale state across
+// devices or temperature sweeps. The miss path preserves the original search.
+std::array<Real,2> screeningGMinimum(Real massRatio, Real temperature_K,
+                                   const PhuMobParameters& params)
 {
-    *derivative = 0.0;
-    if (!std::isfinite(screening))
-        return 1.0;
+    using Key=std::array<Real,9>;
+    struct Entry { Key key{}; std::array<Real,2> value{}; bool valid=false; };
+    static thread_local std::array<Entry,8> cache{};
+    static thread_local std::size_t next=0;
+    // Diagnostic rollback for paired numerical/performance verification.
+    static const bool enabled=[](){const auto* flag=std::getenv("VELA_PHUMOB_G_MINIMUM_CACHE");return !flag || std::string_view(flag)!="0";}();
+    const Key key{massRatio,temperature_K,params.gA,params.gB,params.gC,
+                  params.gAlpha,params.gAlphaPrime,params.gBeta,params.gGamma};
+    if(enabled) for(const auto& entry:cache)
+        if(entry.valid && entry.key==key) return entry.value;
     const Real logFloor = std::log(std::numeric_limits<Real>::min());
     Real low = std::max(logFloor, -80.0);
     Real high = 0.0;
@@ -1052,6 +1073,18 @@ Real screeningG(Real screening, Real massRatio, Real temperature_K,
     const Real minimum = rawScreeningG(
         minimumScreening, massRatio, temperature_K, params);
     const Real minimumFloor = std::abs(minimum);
+    const std::array<Real,2> result{minimumScreening,minimumFloor};
+    if(enabled){cache[next]={key,result,true};next=(next+1)%cache.size();}
+    return result;
+}
+
+Real screeningG(Real screening, Real massRatio, Real temperature_K,
+                const PhuMobParameters& params, Real* derivative)
+{
+    *derivative = 0.0;
+    if (!std::isfinite(screening)) return 1.0;
+    const auto minimum=screeningGMinimum(massRatio,temperature_K,params);
+    const Real minimumScreening=minimum[0],minimumFloor=minimum[1];
     if (screening < minimumScreening)
         return minimumFloor;
     const Real raw = rawScreeningG(screening, massRatio, temperature_K, params);

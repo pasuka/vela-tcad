@@ -21,5 +21,6 @@ std::unique_ptr<DirectBackend> makeMetisSparseLU();
 std::unique_ptr<DirectBackend> makeMumps(bool metis);
 std::unique_ptr<DirectBackend> makeSuperLuMt(bool metis);
 std::unique_ptr<DirectBackend> makeStrumpack();
+std::unique_ptr<DirectBackend> makeMklPardiso();
 int directBackendThreads();
 } // namespace vela::detail

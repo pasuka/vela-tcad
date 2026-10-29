@@ -121,6 +121,10 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , carrierStatistics_(std::move(carrierStatistics))
     , electronQuantumPotentialConfig_(std::move(electronQuantumPotential))
 {
+    (void)carrierStatisticsModel(carrierStatistics_);
+    if (carrierStatistics_.transport == "effective_band_sg" &&
+        (electronQuantumPotentialConfig_.enabled || mobilityConfig_.carrierCurrentDiscretization == "element_qf_gradient"))
+        throw std::invalid_argument("effective_band_sg requires classical edge SG transport.");
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
     if (bandgapNarrowingConfig.equalNiFluxEvaluation !=
             "legacy_factor_difference" &&
@@ -580,22 +584,26 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     (1.0 - exponentialWeight) * (quantum_j - quantum_i)
                     + thermalVoltage_ * std::log(
                         (niElectron_[idxJ] / Nc_[idxJ]) / (niElectron_[idxI] / Nc_[idxI]));
-                const Real fermiDensityI = Nc_[idxI] * fermiDiracHalf(etaI);
-                const Real fermiDensityJ = Nc_[idxJ] * fermiDiracHalf(etaJ);
+                const Real fermiDensityI = scaledFermiDiracHalf(Nc_[idxI], etaI);
+                const Real fermiDensityJ = scaledFermiDiracHalf(Nc_[idxJ], etaJ);
                 electronGeneralizedFactor = sgGeneralizedEinsteinFactor(
                     fermiDensityI, fermiDensityJ, etaI, etaJ);
                 electronGeneralizedArgument = driftPotential /
                     (thermalVoltage_ * electronGeneralizedFactor);
+                if (carrierStatistics_.transport == "effective_band_sg") {
+                    electronGeneralizedFactor = 1.0;
+                    electronGeneralizedArgument = sgEffectiveBandArgument(n_i, n_j, electronQfDrop / thermalVoltage_);
+                }
                 electronContinuityFlux01 =
                     sgElectronFermiDiracQuantumContinuityFlux(
                     n_i, n_j, fermiDensityI, fermiDensityJ,
                     etaI, etaJ, driftPotential,
-                    0.0, electronQfDrop, thermalVoltage_, coef);
+                    0.0, electronQfDrop, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
                 electronContinuityFluxLongDouble01 =
                     sgElectronFermiDiracQuantumContinuityFluxLongDouble(
                         n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
-                        electronQfDropLong, thermalVoltage_, coef);
+                        electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
             } else {
                 const Real electronPsiFromNode0Qf = electronPsi_i - phin_i;
                 const Real electronPsiFromNode0QfAtJ =
@@ -627,14 +635,18 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     p_i, p_j, etaI, etaJ);
                 holeGeneralizedArgument = driftPotential /
                     (thermalVoltage_ * holeGeneralizedFactor);
+                if (carrierStatistics_.transport == "effective_band_sg") {
+                    holeGeneralizedFactor = 1.0;
+                    holeGeneralizedArgument = -sgEffectiveBandArgument(p_i, p_j, -holeQfDropForFlux / thermalVoltage_);
+                }
                 holeContinuityFlux01 = sgHoleFermiDiracContinuityFlux(
                     p_i, p_j, etaI, etaJ, driftPotential,
                     0.0, holeQfDropForFlux,
-                    thermalVoltage_, coef);
+                    thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
                 holeContinuityFluxLongDouble01 =
                     sgHoleFermiDiracContinuityFluxLongDouble(
                         p_i, p_j, etaI, etaJ, driftPotential,
-                        holeQfDropForFluxLong, thermalVoltage_, coef);
+                        holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
             } else {
                 const Real holePsiFromNode0Qf = holePsi_i - phip_i_forHole;
                 const Real holePsiFromNode0QfAtJ =

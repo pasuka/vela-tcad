@@ -283,6 +283,25 @@ Solve { Coupled { Poisson Electron Hole } }
         self.assertEqual(dependence["hole"]["reference_doping_m3"], 1.0e16)
         self.assertEqual(warnings, [])
 
+    def test_solver_physics_maps_explicit_bennett_wilson(self) -> None:
+        deck = {"solver": {"type": "newton"}}
+        summary = {"physics": [{"models": ["EffectiveIntrinsicDensity", "BennettWilson"]}]}
+        sentaurus_import.apply_solver_physics(deck, summary, {"name": "idl", "kind": "iv"})
+        self.assertEqual(deck["solver"]["bandgap_narrowing"], "bennett_wilson")
+        execution_ir = sentaurus_import.build_execution_ir(
+            {**summary, "electrodes": [{"name": "source", "voltage": 0.0},
+                                       {"name": "drain", "voltage": 0.0}],
+             "solve": {"initial_steps": [], "sweeps": []}},
+            source="idl.cmd", models=sentaurus_import.sentaurus_models(summary))
+        self.assertEqual(execution_ir["unsupported"], [])
+        for other in ("OldSlotboom", "NoBandGapNarrowing", "Fermi"):
+            with self.subTest(other=other):
+                with self.assertRaises(ValueError):
+                    sentaurus_import.apply_solver_physics(
+                        {"solver": {}},
+                        {"physics": [{"models": ["BennettWilson", other]}]},
+                        {"name": "idl", "kind": "iv"})
+
     def test_solver_physics_maps_old_slotboom_and_van_overstraeten(self) -> None:
         deck = {"solver": {"type": "gummel"}}
 

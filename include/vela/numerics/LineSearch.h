@@ -27,6 +27,8 @@ struct LineSearchIterationInfo {
     bool sufficientDecrease = false;
     bool accepted = false;
     std::string rejectionReason;
+    bool bankRoseActive = false;
+    Real bankRoseK = 0.0;
 };
 
 struct LineSearchResult {

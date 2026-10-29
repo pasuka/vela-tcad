@@ -118,8 +118,10 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         const auto& statistics = json.at("carrier_statistics");
         if (statistics.is_string())
             cfg.carrierStatistics.model = statistics.get<std::string>();
-        else if (statistics.is_object())
+        else if (statistics.is_object()) {
             cfg.carrierStatistics.model = statistics.value("model", cfg.carrierStatistics.model);
+            cfg.carrierStatistics.transport = statistics.value("transport", cfg.carrierStatistics.transport);
+        }
         else
             throw std::invalid_argument(
                 "gummelConfigFromJson: carrier_statistics must be a string or object.");
@@ -150,7 +152,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         "auger_excess_product", cfg.augerExcessProduct);
     cfg.recombinationVolumePolicy = json.value("recombination_volume_policy", cfg.recombinationVolumePolicy);
     if (cfg.recombinationVolumePolicy != "legacy_node" &&
-        cfg.recombinationVolumePolicy != "material_local_mixed_voronoi")
+        cfg.recombinationVolumePolicy != "material_local_mixed_voronoi" &&
+        cfg.recombinationVolumePolicy != "material_local_circumcentric" &&
+        cfg.recombinationVolumePolicy != "material_local_box")
         throw std::invalid_argument("Unsupported recombination_volume_policy");
     if (json.contains("recombination_materials"))
         cfg.recombinationMaterials=json.at("recombination_materials").get<std::vector<std::string>>();
@@ -401,6 +405,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     const bool useScaledUnknowns = cfg.inputScaling.isUnitScaling();
     DDScalingSpec ddScaling;
     ddScaling.poissonChargeVolumePolicy = cfg.poissonChargeVolumePolicy;
+    ddScaling.poissonPerCellPermittivity = cfg.poissonPerCellPermittivity;
     if (useScaledUnknowns) {
         const Real epsRef = constants::eps0 *
             maxRelativePermittivityAcrossRegions(mesh, matdb, cfg.temperature_K);

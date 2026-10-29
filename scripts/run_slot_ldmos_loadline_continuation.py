@@ -18,6 +18,17 @@ import os
 from pathlib import Path
 import sys
 import time
+from collections import OrderedDict
+
+# Process-local only. Content hashes are rechecked even on a cache hit.
+_VERIFIED_RESULTS = OrderedDict()
+
+
+def _remember_verified(key):
+    _VERIFIED_RESULTS[key] = None
+    _VERIFIED_RESULTS.move_to_end(key)
+    while len(_VERIFIED_RESULTS) > 128:
+        _VERIFIED_RESULTS.popitem(last=False)
 
 
 def _module(name):
@@ -47,6 +58,55 @@ class NumericalFailure(RuntimeError):
 
 class BudgetExhausted(RuntimeError):
     pass
+
+
+def probe_input_hashes(document, directory):
+    """Match the runner's resource provenance, plus the exact candidate state."""
+    result = {}
+    def visit(value, key):
+        if isinstance(value, dict):
+            for name, child in value.items(): visit(child, key + '/' + name)
+        elif isinstance(value, list):
+            for index, child in enumerate(value): visit(child, key + '/' + str(index))
+        elif key.endswith('_file') and isinstance(value, str):
+            result[key] = hashlib.sha256((directory / value).read_bytes()).hexdigest()
+    for key in ('mesh_file', 'materials_file', 'node_doping_file', 'doping',
+                'mesh_geometry', 'mobility', 'mobility_SI', 'state_file'):
+        if key in document: visit(document[key], key)
+    if 'mobility' in document.get('solver', {}):
+        visit(document['solver']['mobility'], 'solver/mobility')
+    return result
+
+
+def validate_probe_failure(path, config_hash, inputs, document):
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+        if (document.get('simulation_type') != 'newton_block_step_probe'
+                or document.get('block_modes') != ['carrier_density']
+                or data['schema'] != 'vela.block_candidate_failure.v1'
+                or data['failure_class'] != 'numerical_no_candidate'
+                or data['mode'] != 'carrier_density'
+                or data['config_sha256'] != config_hash
+                or data['input_file_sha256'] != inputs
+                or not inputs.get('state_file')):
+            raise ValueError('identity mismatch')
+        def number(v):
+            return type(v) in (int, float) and math.isfinite(v) and v >= 0
+        if not number(data['initial_merit']) or len(data['backtracks']) != 20:
+            raise ValueError('invalid base merit or history')
+        for i, row in enumerate(data['backtracks']):
+            if not number(row['alpha']) or row['alpha'] != 2. ** -i or type(row['finite']) is not bool:
+                raise ValueError('invalid backtrack')
+            if row['finite']:
+                if not number(row['trial_merit']) or row['trial_merit'] <= data['initial_merit']*(1-1e-4*row['alpha']):
+                    raise ValueError('invalid rejected merit')
+            elif row['trial_merit'] is not None:
+                raise ValueError('nonfinite merit must be null')
+            for key in ('depletion_clips', 'qf_clips'):
+                if type(row[key]) is not int or row[key] < 0: raise ValueError('invalid clip count')
+        return data
+    except (OSError, ValueError, KeyError, TypeError, OverflowError) as exc:
+        raise EvidenceError(f'invalid numerical failure evidence: {path}: {exc}') from exc
 
 
 def finite(value):
@@ -107,7 +167,8 @@ def freeze_inputs(base, directory, runner):
     def resolve(value):
         if isinstance(value, dict):
             for key, item in value.items():
-                if key in {"mesh_file", "materials_file", "node_doping_file", "geometry_file"}:
+                if key in {"mesh_file", "materials_file", "node_doping_file", "geometry_file",
+                           "avalanche_geometry_file", "external_averagebox_couples_file"}:
                     path = (Path(directory) / item).resolve()
                     value[key] = str(path)
                     resources.append(path)
@@ -133,8 +194,10 @@ def halfway(seed, failed, minimum):
     return middle if abs(middle - seed) >= minimum and middle not in (seed, failed) else None
 
 
-def proposal(samples, seed, maximum, exploration):
+def proposal(samples, seed, maximum, exploration, bracket_margin=.05):
     """Safeguard true brackets; same-sign samples are only secant estimates."""
+    if not math.isfinite(bracket_margin) or not 0 < bracket_margin < .5:
+        raise ValueError("bracket margin must lie strictly between zero and one half")
     pairs = [(finite(x), finite(f)) for x, f in samples]
     brackets = [(a, b) for i, a in enumerate(pairs) for b in pairs[i + 1:]
                 if a[0] != b[0] and ((a[1] < 0 < b[1]) or (b[1] < 0 < a[1]))]
@@ -150,7 +213,7 @@ def proposal(samples, seed, maximum, exploration):
                 candidate = value
     if bracket:
         lo, hi = sorted([bracket[0][0], bracket[1][0]])
-        if candidate is None or not lo + .05 * (hi - lo) < candidate < hi - .05 * (hi - lo):
+        if candidate is None or not lo + bracket_margin * (hi - lo) < candidate < hi - bracket_margin * (hi - lo):
             candidate = lo + .5 * (hi - lo)
     elif candidate is None:
         # Alternate bounded exploration; do not assume monotonic I(V).
@@ -255,7 +318,18 @@ def atomic_json(path, value):
         stream.write("\n")
         stream.flush()
         os.fsync(stream.fileno())
-    os.replace(temporary, path)
+    # Windows readers/scanners can briefly deny replacement of a closed file.
+    # Retry only the rename, keeping the last good checkpoint intact. Persistent
+    # access failures remain environment errors, never numerical failures.
+    delays = (.025, .05, .1, .2, .4, .8)
+    for attempt in range(len(delays) + 1):
+        try:
+            os.replace(temporary, path)
+            return
+        except PermissionError as exc:
+            if getattr(exc, "winerror", None) not in (5, 32, 33) or attempt == len(delays):
+                raise
+            time.sleep(delays[attempt])
 
 
 def solver_environment():
@@ -270,11 +344,28 @@ class Campaign:
                  direction, backend, *, resume=False, max_attempts=100,
                  max_shots=12, max_inner_retries=8, max_inner_step=.05,
                  min_inner_step=1e-9, min_outer_step=1e-6,
-                 max_total_seconds=7200., initial_outer=None):
+                 max_total_seconds=7200., initial_outer=None, bracket_margin=.05,
+                 predictor_max_ratio=None, adaptive_outer=None):
         self.output = Path(output).resolve()
         self.identity = {**identity, "solver_environment": solver_environment()}
         self.backend = backend
         self.direction = direction
+        if not math.isfinite(bracket_margin) or not 0 < bracket_margin < .5:
+            raise ValueError("invalid bracket margin")
+        self.bracket_margin = bracket_margin
+        if predictor_max_ratio is not None and (not math.isfinite(predictor_max_ratio) or predictor_max_ratio <= 0):
+            raise ValueError("invalid state predictor ratio")
+        self.predictor_max_ratio = predictor_max_ratio
+        self.adaptive_outer = clone(adaptive_outer) if adaptive_outer is not None else None
+        if self.adaptive_outer is not None:
+            a = self.adaptive_outer
+            if (set(a) != {"initial_step_V", "max_step_V", "growth_factor"}
+                    or not all(math.isfinite(v) and v > 0 for v in a.values())
+                    or a["growth_factor"] <= 1 or a["initial_step_V"] > a["max_step_V"]
+                    or a["initial_step_V"] < min_outer_step
+                    or initial_outer is None or not math.isfinite(initial_outer)
+                    or len(targets) != 1 or not math.isfinite(targets[0]) or targets[0] <= initial_outer):
+                raise ValueError("adaptive outer stepping requires one increasing final target and positive bounded steps")
         self.started = time.monotonic()
         self.budgets = dict(max_attempts=max_attempts, max_shots=max_shots,
             max_inner_retries=max_inner_retries, max_inner_step=max_inner_step,
@@ -287,6 +378,12 @@ class Campaign:
         self.request = {"targets": [finite(t) for t in targets], "initial_inner_V": finite(initial_inner),
                         "initial_state": str(Path(initial_state).resolve()), "direction": direction,
                         "initial_outer_V": initial_outer}
+        if bracket_margin != .05:
+            self.request["bracket_margin"] = bracket_margin
+        if predictor_max_ratio is not None:
+            self.request["predictor_max_ratio"] = predictor_max_ratio
+        if self.adaptive_outer is not None:
+            self.request["adaptive_outer"] = self.adaptive_outer
         verify_hashes(identity["files"])
         path = self.output / "checkpoint.json"
         if resume:
@@ -304,6 +401,9 @@ class Campaign:
                 "elapsed_s": 0., "inner_ledger": [], "outer_ledger": [],
                 "pending_targets_V": list(targets), "events": [], "completed": False,
                 "failure": "", "active_ids": None}
+            if self.adaptive_outer is not None:
+                self.snapshot["adaptive_state"] = {"step_V": self.adaptive_outer["initial_step_V"],
+                    "event_count_at_accept": 0, "history": []}
         self.previous_elapsed = finite(self.snapshot["elapsed_s"])
         self.output.joinpath("attempts").mkdir(exist_ok=True)
         if hasattr(backend, "set_deadline"):
@@ -341,6 +441,14 @@ class Campaign:
             raise EvidenceError("checkpoint discarded requested target")
         if s["completed"] != (not pending):
             raise EvidenceError("checkpoint completion disagrees with pending targets")
+        if self.adaptive_outer is not None:
+            a = s.get("adaptive_state", {})
+            if (not isinstance(a.get("step_V"), (int, float)) or not math.isfinite(a["step_V"])
+                    or not self.budgets["min_outer_step"] <= a["step_V"] <= self.adaptive_outer["max_step_V"]
+                    or type(a.get("event_count_at_accept")) is not int
+                    or not 0 <= a["event_count_at_accept"] <= len(s["events"])
+                    or not isinstance(a.get("history"), list)):
+                raise EvidenceError("invalid adaptive step checkpoint")
 
     def save(self):
         self.snapshot["elapsed_s"] = self.previous_elapsed + time.monotonic() - self.started
@@ -366,16 +474,35 @@ class Campaign:
         self.save()  # Interrupted attempts consume budget and cannot be reused.
         return directory
 
-    def evaluate(self, bias, seed, *, same_bias=False):
+    def evaluate(self, bias, seed, *, same_bias=False, allow_prediction=True):
+        previous = None
+        if self.predictor_max_ratio is not None and allow_prediction and not same_bias:
+            candidates = [p for p in self.snapshot["inner_ledger"]
+                if p["id"] != seed.get("id") and (seed["inner_V"]-p["inner_V"])*(bias-seed["inner_V"]) > 0]
+            if candidates:
+                stable = [p for p in candidates if abs(bias-seed["inner_V"]) <=
+                    self.predictor_max_ratio*abs(seed["inner_V"]-p["inner_V"])]
+                # Avoid dividing by a tiny load-line correction interval when
+                # a well-spaced qualified parent can support the next step.
+                previous = (min(stable, key=lambda p: abs(seed["inner_V"]-p["inner_V"])) if stable
+                    else max(candidates, key=lambda p: abs(seed["inner_V"]-p["inner_V"])))
         directory = self.allocate("device", inner_V=bias, seed=seed.get("id"), same_bias=same_bias)
         try:
-            point = self.backend.solve(bias, seed, directory, same_bias=same_bias)
+            if previous is None:
+                point = self.backend.solve(bias, seed, directory, same_bias=same_bias)
+            else:
+                point = self.backend.solve_predicted(bias, seed, previous, directory, self.predictor_max_ratio)
             if self.snapshot["active_ids"] is not None and point["active_ids"] != self.snapshot["active_ids"]:
                 raise EvidenceError("all-active row IDs changed from qualified baseline")
         except NumericalFailure as exc:
             atomic_json(directory / "result.json", {"qualified": False, "failure": str(exc)})
-            self.snapshot["events"].append({"event": "device_failed", "inner_V": bias, "failure": str(exc), "attempt": str(directory)})
+            self.snapshot["events"].append({"event": "predictor_failed" if previous is not None else "device_failed",
+                "inner_V": bias, "failure": str(exc), "attempt": str(directory)})
             self.save()
+            if previous is not None:
+                # Retry the same voltage from the qualified parent, never from
+                # the rejected prediction. This consumes a separate attempt.
+                return self.evaluate(bias, seed, allow_prediction=False)
             raise
 
         point["id"] = len(self.snapshot["inner_ledger"])
@@ -398,11 +525,22 @@ class Campaign:
         if confirmation["device_state_sha256"] != point["state_sha256"]:
             raise EvidenceError("confirmation inherited proof for a different state")
         checkpoint = {"outer_V": target, "device_id": point["id"], "residual_V": value, "confirmation": confirmation}
+        previous_outer = self.snapshot["outer_ledger"][-1]["outer_V"] if self.snapshot["outer_ledger"] else None
         self.snapshot["outer_ledger"].append(checkpoint)
         if self.snapshot["pending_targets_V"] and self.snapshot["pending_targets_V"][0] == target:
             self.snapshot["pending_targets_V"].pop(0)
             self.snapshot["target_shots"] = 0
         self.snapshot["inner_recovery"] = None
+        if self.adaptive_outer is not None and previous_outer is not None:
+            state = self.snapshot["adaptive_state"]
+            clean = len(self.snapshot["events"]) == state["event_count_at_accept"]
+            span = target-previous_outer
+            factor = self.adaptive_outer["growth_factor"] if clean else 1.
+            state["step_V"] = max(self.budgets["min_outer_step"],
+                min(self.adaptive_outer["max_step_V"], span*factor))
+            state["history"].append({"from_outer_V": previous_outer, "to_outer_V": target,
+                "accepted_step_V": span, "next_step_V": state["step_V"], "grew": clean})
+            state["event_count_at_accept"] = len(self.snapshot["events"])
         atomic_json(directory / "result.json", {"qualified": True, "outer_V": target})
         self.save()
 
@@ -425,12 +563,15 @@ class Campaign:
             if self.snapshot["target_shots"] >= self.budgets["max_shots"]:
                 return False
             if recovery is None:
-                trial, bracket = proposal(samples, seed["inner_V"], self.budgets["max_inner_step"], self.snapshot["target_shots"])
+                maximum = self.budgets["max_inner_step"]
+                if self.adaptive_outer is not None:
+                    maximum = min(maximum, self.snapshot["adaptive_state"]["step_V"])
+                trial, bracket = proposal(samples, seed["inner_V"], maximum, self.snapshot["target_shots"], self.bracket_margin)
                 self.snapshot["last_scalar"] = {"target_outer_V": target, "seed_id": seed["id"], "true_bracket": bracket, "sample_ids": [p["id"] for p in ledger]}
                 if any(abs(trial - p["inner_V"]) < self.budgets["min_inner_step"] for p in ledger):
                     # Bounded alternative exploration for a repeated secant estimate.
                     sign = 1 if self.snapshot["target_shots"] % 2 else -1
-                    trial = seed["inner_V"] + sign * self.budgets["max_inner_step"] / (self.snapshot["target_shots"] + 1)
+                    trial = seed["inner_V"] + sign * maximum / (self.snapshot["target_shots"] + 1)
             else:
                 trial, seed = recovery
             if abs(trial - seed["inner_V"]) < self.budgets["min_inner_step"]:
@@ -464,6 +605,12 @@ class Campaign:
                 outer = self.request["initial_outer_V"]
                 self.accept_outer(point, computed_outer if outer is None else outer)
             while self.snapshot["pending_targets_V"]:
+                if self.adaptive_outer is not None:
+                    last = self.snapshot["outer_ledger"][-1]["outer_V"]
+                    proposed = last + self.snapshot["adaptive_state"]["step_V"]
+                    if proposed < self.snapshot["pending_targets_V"][0] - self.budgets["min_outer_step"]:
+                        self.snapshot["pending_targets_V"].insert(0, proposed)
+                        self.save()
                 target = self.snapshot["pending_targets_V"][0]
                 if self.solve_outer(target):
                     continue
@@ -500,11 +647,14 @@ class SolverBackend:
         validate_profile(base)
         self.base = clone(base)
         self.repo, self.runner = Path(repo).resolve(), Path(runner).resolve()
+        _, self.validation_identity = freeze_inputs(self.base, self.repo, self.runner)
+        self.validation_base = clone(self.base)
         self.timeout = timeout_seconds
         self.max_newton_iterations = max_newton_iterations
         self.prewarm = poisson_prewarm
         self.prewarm_iterations = poisson_prewarm_max_iterations
         self.corrector_passes = carrier_corrector_passes
+        self.corrector_stagnation_passes = 0
         self.corrector_mode = carrier_corrector_mode
         self.restore_poly = restore_poly_equilibrium
         self.expected_active_count = expected_active_count
@@ -528,12 +678,29 @@ class SolverBackend:
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise BudgetExhausted("budget_exhausted: total wall time")
+        document = json.loads(Path(config).read_text(encoding="utf-8"))
+        is_probe = document.get('simulation_type') == 'newton_block_step_probe'
+        failure_path = Path(config).parent / 'numerical_failure.json'
+        if failure_path.exists():
+            raise EvidenceError(f'stale numerical failure evidence: {failure_path}')
+        config_hash = hashlib.sha256(Path(config).read_bytes()).hexdigest()
+        inputs = probe_input_hashes(document, Path(config).parent) if is_probe else None
         result = self.raw_execute(runner, repo, config, run_dir, min(timeout, remaining))
         code, timed_out, _ = result
         if timed_out:
             raise NumericalFailure("timeout: device or probe process exceeded time budget")
-        document = json.loads(Path(config).read_text(encoding="utf-8"))
+        if code == 3:
+            if (hashlib.sha256(Path(config).read_bytes()).hexdigest() != config_hash
+                    or not is_probe or probe_input_hashes(document, Path(config).parent) != inputs):
+                raise EvidenceError('failed probe inputs changed during execution')
+            validate_probe_failure(failure_path, config_hash, inputs, document)
+            error = NumericalFailure('numerical_no_candidate: density block exhausted backtracking')
+            error.exit_code = 3
+            error.status_file = str(failure_path.resolve())
+            raise error
         output = (Path(config).parent / document["output_csv"]).resolve()
+        if code == 0 and not output.is_file():
+            raise EvidenceError(f'successful process missing solver output: {output}')
         if code != 0 and not output.is_file():
             raise RuntimeError(f"runtime_environment_or_invalid_input: process exit {code} without solver output; see {run_dir}")
         if (document.get("simulation_type", "dc_sweep") in ("dc_sweep", "newton")
@@ -570,6 +737,12 @@ class SolverBackend:
             self.runner, self.repo, directory, self.timeout, config.parent)
         if not audit_result.get("passed"):
             raise NumericalFailure("local_audit: final all-active rows fail")
+        return self._bind_validation(config, directory, state, bias, same_bias, seed)
+
+    def _bind_validation(self, config, directory, state, bias, same_bias, seed, proof_directory=None):
+        """Bind an existing full solve and final row probe; never rerun either."""
+        config, directory, state = Path(config), Path(directory), Path(state)
+        self._check_validation_contract(config, bias)
         terms = directory / "local_audit/terms.csv"
         audit_config = directory / "local_audit/config.json"
         self._check_audit_binding(audit_config, state, bias)
@@ -580,7 +753,12 @@ class SolverBackend:
         proof = {"state_sha256": point["state_sha256"], "inner_V": bias,
                  "current_A_per_um": point["current_A_per_um"],
                  "audit_config": str(audit_config.resolve()), "lineage": clone(self.lineage)}
-        proof_path = directory / "qualification.json"
+        proof_directory = Path(proof_directory) if proof_directory is not None else directory
+        proof_directory.mkdir(parents=True, exist_ok=True)
+        proof_path = proof_directory / "qualification.json"
+        if proof_path.exists():
+            raise EvidenceError('refusing to overwrite completed qualification evidence')
+        proof['validation_identity'] = clone(self.validation_identity)
         atomic_json(proof_path, proof)
         point["proof_file"] = str(proof_path.resolve())
         files = [config, audit_config, proof_path, Path(seed["state_file"])]
@@ -616,6 +794,68 @@ class SolverBackend:
             total += updates
         return total
 
+    def solve_predicted(self, bias, seed, previous, directory, max_ratio):
+        self.validate(previous)
+        self.validate(seed)
+        directory = Path(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+        predicted = directory / "predicted.h5"
+        ratio = self.helper.write_secant_restart(Path(previous["state_file"]), Path(seed["state_file"]),
+            predicted, previous["inner_V"], seed["inner_V"], bias, max_ratio,
+            document=self.base, config_directory=self.repo)
+        record = directory / "predictor.json"
+        atomic_json(record, {"qualified": False, "role": "initial_guess_only",
+            "previous_id": previous["id"], "seed_id": seed["id"], "target_inner_V": bias,
+            "ratio": ratio, "max_ratio": max_ratio,
+            "parent_hashes": hashes([previous["state_file"], seed["state_file"]]),
+            "predicted_sha256": sha256(predicted)})
+        point = self.solve(bias, {**seed, "state_file": str(predicted)}, directory)
+        point["evidence"].update(hashes([record, predicted, previous["state_file"], seed["state_file"]]))
+        return point
+
+    def _check_validation_contract(self, config, bias):
+        actual = json.loads(Path(config).read_text(encoding='utf-8'))
+        if (actual.get('solver', {}).get('method') != 'newton' or
+                actual.get('sweep', {}).get('bias_points') != [bias] or
+                actual['sweep']['external_circuit']['enabled']):
+            raise EvidenceError('reused validation is not a fixed-bias full Newton result')
+        def contract(document):
+            d = clone(document)
+            d['state_format'] = d.get('state_format', 'hdf5')
+            d['simulation_type'] = d.get('simulation_type', 'dc_sweep')
+            d.pop('output_csv', None)
+            for key in ('bias_points','initial_state_file','write_state_file','write_state_every_point_prefix'):
+                d['sweep'].pop(key, None)
+            d['solver'].pop('max_iter', None)
+            d['solver'].get('handoff', {}).pop('newton_max_iter', None)
+            d['solver'].get('carrier_row_convergence', {}).pop('min_newton_max_iter', None)
+            def paths(v):
+                if isinstance(v, dict):
+                    for k in list(v):
+                        if k in ('diagnostic_csv','csv_file','attempts_csv_file','iterations_csv_file','rejected_state_directory'):
+                            v.pop(k)
+                        else: paths(v[k])
+                elif isinstance(v, list):
+                    for x in v: paths(x)
+            paths(d)
+            return d
+        if contract(actual) != contract(self.base):
+            raise EvidenceError('reused validation physics/qualification contract differs from base')
+
+    def adopt_validation(self, state, bias, seed, *, same_bias=True, proof_directory=None):
+        """Use the helper's completed strict validation, not its passed flag."""
+        state = Path(state)
+        return self._bind_validation(state.parent/'config.json', state.parent, state,
+            bias, same_bias, seed, proof_directory)
+
+    def _validation_cache_key(self, role, payload, evidence):
+        if self.base != self.validation_base:
+            raise EvidenceError('backend physical configuration changed during validation')
+        verify_hashes(self.validation_identity['files'])
+        verify_hashes(evidence)
+        return json.dumps([role, self.validation_identity, self.expected_active_count,
+            sorted(self.mesh_ids), payload], sort_keys=True, allow_nan=False)
+
     def solve(self, bias, seed, directory, same_bias=False):
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
@@ -640,37 +880,33 @@ class SolverBackend:
         if self.corrector_passes and candidate is not None and candidate.is_file():
             result = self.helper.correct_local_candidate(document, candidate, bias, self.runner,
                 self.repo, run_dir, self.timeout, config.parent, self.corrector_passes,
-                self.corrector_mode, self.restore_poly)
+                self.corrector_mode, self.restore_poly,
+                **({'stagnation_passes': self.corrector_stagnation_passes}
+                   if self.corrector_stagnation_passes else {}))
             if result.get("passed"):
-                final = Path(result["state_file"])
-                # The helper already audited this file. Reuse its bound final
-                # probe; never overwrite immutable completed audit evidence.
-                validation = final.parent
-                config = validation / "config.json"
-                audit_config = validation / "local_audit/config.json"
-                self._check_audit_binding(audit_config, final, bias)
-                point = qualify_files(final, validation / "iv.csv", validation / "local_audit/terms.csv",
-                    bias, self.base, self.mesh_ids, expected_count=self.expected_active_count,
-                    expected_active=seed.get("active_ids"), updates=self._lineage_updates(self.lineage, bias),
-                    same_bias=same_bias)
-                proof = {"state_sha256": point["state_sha256"], "inner_V": bias,
-                         "current_A_per_um": point["current_A_per_um"],
-                         "audit_config": str(audit_config.resolve()), "lineage": clone(self.lineage)}
-                proof_path = validation / "qualification.json"
-                atomic_json(proof_path, proof)
-                point["proof_file"] = str(proof_path.resolve())
-                files = [config, audit_config, proof_path, Path(seed["state_file"])]
-                for step in self.lineage:
-                    files.extend([step["config_file"], step["iv_file"]])
-                    files.append(json.loads(Path(step["config_file"]).read_text(encoding="utf-8"))["sweep"]["initial_state_file"])
-                point["evidence"].update(hashes(files))
-                return point
-            failure = NumericalFailure("local_corrector_unqualified: bounded correction exhausted")
+                return self.adopt_validation(result['state_file'], bias, seed, same_bias=same_bias)
+            failure = NumericalFailure("local_corrector_unqualified: " +
+                result.get('failure_reason', 'bounded correction exhausted'))
         raise failure
 
     def validate(self, point):
-        verify_hashes(point["evidence"])
+        required = (point['state_file'], point['iv_file'], point['terms_file'], point['proof_file'])
+        if any(str(Path(p).resolve()) not in point['evidence'] for p in required):
+            raise EvidenceError('missing bound point evidence')
+        key = self._validation_cache_key('device', point, point['evidence'])
+        if key in _VERIFIED_RESULTS:
+            return
         proof = json.loads(Path(point["proof_file"]).read_text(encoding="utf-8"))
+        dependencies = [proof['audit_config']]
+        for step in proof['lineage']:
+            dependencies.extend([step['config_file'], step['iv_file']])
+            document = json.loads(Path(step['config_file']).read_text(encoding='utf-8'))
+            dependencies.append(document['sweep']['initial_state_file'])
+            self._check_validation_contract(step['config_file'], point['inner_V'])
+        if any(str(Path(p).resolve()) not in point['evidence'] for p in dependencies):
+            raise EvidenceError('missing bound validation dependency')
+        if 'validation_identity' in proof and proof['validation_identity'] != self.validation_identity:
+            raise EvidenceError('qualification physical input identity mismatch')
         self._check_audit_binding(proof["audit_config"], point["state_file"], point["inner_V"])
         updates = self._lineage_updates(proof["lineage"], point["inner_V"])
         checked = qualify_files(Path(point["state_file"]), Path(point["iv_file"]), Path(point["terms_file"]),
@@ -682,6 +918,7 @@ class SolverBackend:
         for key in ("inner_V", "current_A_per_um", "state_sha256"):
             if proof[key] != point[key]:
                 raise EvidenceError(f"qualification proof binding mismatch: {key}")
+        _remember_verified(self._validation_cache_key('device', point, point['evidence']))
 
     def confirm(self, point, outer, directory):
         directory = Path(directory)
@@ -702,7 +939,16 @@ class SolverBackend:
         return confirmation
 
     def validate_confirmation(self, point, outer, confirmation):
-        verify_hashes(confirmation["evidence"])
+        for p in (confirmation['state_file'], confirmation['iv_file'], confirmation['config_file']):
+            if str(Path(p).resolve()) not in confirmation['evidence']:
+                raise EvidenceError('missing bound confirmation evidence')
+        evidence = dict(point['evidence'])
+        if any(p in evidence and evidence[p] != h for p, h in confirmation['evidence'].items()):
+            raise EvidenceError('conflicting confirmation evidence binding')
+        evidence.update(confirmation['evidence'])
+        key = self._validation_cache_key('confirmation', [point, outer, confirmation], evidence)
+        if key in _VERIFIED_RESULTS:
+            return
         row = read_rows(confirmation["iv_file"])[-1]
         config = json.loads(Path(confirmation["config_file"]).read_text(encoding="utf-8"))
         circuit = config["sweep"]["external_circuit"]
@@ -721,6 +967,7 @@ class SolverBackend:
         value = residual(finite(row["inner_voltage_V"]), finite(row["current_total_A_per_um"]), outer, circuit["current_direction"])
         if abs(value) > TOLERANCE or not math.isclose(finite(row["load_line_residual_V"]), value, rel_tol=0, abs_tol=1e-12):
             raise EvidenceError("confirmation load-line mismatch")
+        _remember_verified(self._validation_cache_key('confirmation', [point, outer, confirmation], evidence))
 
 
 def parser():
@@ -732,6 +979,11 @@ def parser():
                         help="optional asserted outer coordinate; otherwise derive it from the requalified seed")
     result.add_argument("--outer-targets", type=float, nargs="+", required=True)
     result.add_argument("--resume", action="store_true")
+    result.add_argument("--state-predictor-max-ratio", type=float,
+                        help="opt-in split-QF secant initial guess; failed predictions retry the qualified parent")
+    result.add_argument("--adaptive-outer-initial-step", type=float)
+    result.add_argument("--adaptive-outer-max-step", type=float, default=.2)
+    result.add_argument("--adaptive-outer-growth", type=float, default=1.6)
     result.add_argument("--max-attempts", type=int, default=100,
                         help="total device and confirmation attempts, including interrupted attempts")
     result.add_argument("--max-shots", type=int, default=12, help="device attempts per outer target before outer-step halving")
@@ -746,7 +998,7 @@ def parser():
     result.add_argument("--poisson-prewarm", action="store_true")
     result.add_argument("--poisson-prewarm-max-iterations", type=int, default=60)
     result.add_argument("--carrier-corrector-passes", type=int, default=0)
-    result.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density"), default="carrier_only")
+    result.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density", "density_then_qf"), default="carrier_only")
     result.add_argument("--restore-poly-equilibrium", action="store_true")
     return result
 
@@ -782,7 +1034,11 @@ def main(argv=None):
             "min_inner_step", "min_outer_step", "max_total_seconds")}
         campaign = Campaign(args.output_dir, identity, args.outer_targets, args.initial_state,
             args.initial_inner_bias, base["sweep"]["external_circuit"]["current_direction"], backend,
-            resume=args.resume, initial_outer=args.initial_outer_bias, **budget_options)
+            resume=args.resume, initial_outer=args.initial_outer_bias,
+            predictor_max_ratio=args.state_predictor_max_ratio,
+            adaptive_outer=None if args.adaptive_outer_initial_step is None else dict(
+                initial_step_V=args.adaptive_outer_initial_step, max_step_V=args.adaptive_outer_max_step,
+                growth_factor=args.adaptive_outer_growth), **budget_options)
         complete = campaign.run()
         print(json.dumps({"completed": complete, "checkpoint": str(campaign.output / "checkpoint.json"),
             "failure": campaign.snapshot["failure"], "pending_targets_V": campaign.snapshot["pending_targets_V"],

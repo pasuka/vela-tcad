@@ -162,6 +162,8 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Assemble Poisson equation
     // ------------------------------------------------------------------
+    if (parsePoissonPerCellPermittivity(cfg))
+        throw std::invalid_argument("per_cell Poisson permittivity is a coupled-Newton diagnostic only");
     PoissonScalingSpec poissonScaling;
     poissonScaling.poissonChargeVolumePolicy =
         parsePoissonChargeVolumePolicy(cfg);

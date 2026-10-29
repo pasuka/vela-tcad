@@ -1,0 +1,33 @@
+{
+  "_comment": "IDL-specific Bennett-Wilson material mapping at 300 K. PolySilicon transports both carriers with constant mobility and no recombination. unit_scaling: ni, Nc_m3 and Nv_m3 inputs are cm^-3, mun/mup cm^2/(V s). Band/reference/DOS values recovered from native material fields; not fitted to current. Silicon remains unchanged from the validated attribution control. Not for the historical BVDS deck.",
+  "materials": [
+    {
+      "bandgap_eV": 1.1241592307692307,
+      "electron_affinity_eV": 4.0727403846153845,
+      "eps_r": 11.7,
+      "name": "PolySilicon",
+      "temperature_K": 300.0,
+      "ni": 10750038488.844242,
+      "mun": 1417.0,
+      "mup": 470.5,
+      "Nc_m3": 2.8566532887163142e+19,
+      "Nv_m3": 3.104628932474834e+19,
+      "intrinsic_reference_potential_V": -4.0000343928130655e-05
+    },
+    {
+      "bandgap_eV": 5.0,
+      "electron_affinity_eV": 1.9,
+      "eps_r": 7.5,
+      "name": "Nitride",
+      "temperature_K": 300.0
+    },
+    {
+      "name": "Si",
+      "ni": 10749877484.352535,
+      "bandgap_eV": 1.12416,
+      "electron_affinity_eV": 4.0727,
+      "Nc_m3": 2.8566532127079047e+19,
+      "Nv_m3": 3.104628932474838e+19
+    }
+  ]
+}

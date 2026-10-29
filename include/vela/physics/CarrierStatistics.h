@@ -9,6 +9,8 @@ namespace vela {
 struct CarrierStatisticsConfig {
     /// "boltzmann" or "fermi_dirac".  Boltzmann remains the compatibility default.
     std::string model = "boltzmann";
+    /// Independent Fermi edge-flux discretization; population statistics do not change.
+    std::string transport = "generalized_einstein";
 };
 
 /**
@@ -70,6 +72,9 @@ constexpr bool usesFermiDirac(CarrierStatisticsModel model) noexcept
  * non-degenerate limit is exp(eta).
  */
 Real fermiDiracHalf(Real eta);
+/// DOS * F_{1/2}(eta), retaining representable populations when F alone underflows.
+/// Uses the same scaled evaluation as electronDensity/holeDensity; no density floor.
+Real scaledFermiDiracHalf(Real densityOfStates, Real eta);
 Real fermiDiracHalfDerivative(Real eta);
 /// Second derivative of the same high-accuracy representation.
 Real fermiDiracHalfSecondDerivative(Real eta);

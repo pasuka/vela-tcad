@@ -28,6 +28,7 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg);
 
 PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
     const nlohmann::json& cfg);
+bool parsePoissonPerCellPermittivity(const nlohmann::json& cfg);
 
 struct CarrierTransportCoupleProfileReport {
     std::string profile = "mesh_default";
@@ -37,6 +38,13 @@ struct CarrierTransportCoupleProfileReport {
     Real minimumCouple = 0.0;
     Real maximumCouple = 0.0;
 };
+
+struct ImpactIonizationModelConfig;
+struct MobilityModelConfig;
+/// Shared by frozen probes and sweeps; kernel-specific contracts still apply.
+void validateCarrierTransportCouplePhysics(
+    const std::string& profile, const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, bool quantumPotential);
 
 /// Apply an explicit carrier-transport-only edge-coupling profile. The
 /// default profile performs no I/O and leaves every edge on mesh geometry.

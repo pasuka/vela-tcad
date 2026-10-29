@@ -3,9 +3,13 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/solver/SlotPopulationNumerics.h"
+
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include <boost/math/quadrature/gauss_kronrod.hpp>
+#include <boost/multiprecision/cpp_bin_float.hpp>
+#include <span>
 
 #include <cmath>
 #include <limits>
@@ -13,6 +17,101 @@
 
 using Catch::Approx;
 using namespace vela;
+
+namespace finite_step_reference {
+#include "../src/physics/FermiHalfCoefficients.inc"
+using Wide=boost::multiprecision::number<boost::multiprecision::cpp_bin_float<200>>;
+// Independent high-precision Clenshaw value/first derivative of the same
+// production approximation. Tests do not compare against another FD model.
+std::pair<Wide,Wide> polynomial(Wide eta) {
+ std::size_t segment=0;while(eta>FermiBounds[segment+1])++segment;
+ Wide scale=Wide(2)/(Wide(FermiBounds[segment+1])-FermiBounds[segment]);
+ Wide t=(eta-FermiBounds[segment])*scale-1,b1=0,b2=0,d1=0,d2=0;
+ auto c=FermiCoefficients[segment];
+ for(std::size_t k=c.size()-1;k>0;--k){
+  Wide d=2*b1+2*t*d1-d2,b=Wide(c[k])+2*t*b1-b2;
+  d2=d1;d1=d;b2=b1;b1=b;
+ }
+ return {Wide(c[0])+t*b1-b2,(b1+t*d1-d2)*scale};
+}
+}
+
+TEST_CASE("Small concentration steps retain nonlinear remainder and tiny QF directions", "[slot_population][finite_update]") {
+ using namespace finite_step_reference;
+ using namespace vela::slot_population;
+ for(double eta:{-6.,-2.,2.,6.,12.,24.,48.})for(double t:{-1e-4,-1e-12,1e-14,1e-6}){
+  const auto base=polynomial(Wide(eta));Wide d=t;
+  for(int k=0;k<10;++k){auto f=polynomial(Wide(eta)+d);d-=(f.first-base.first-base.second*Wide(t))/f.second;}
+  const Wide exact=d-Wide(t);const double got=inverseTangentRemainder(eta,t);
+  CHECK(abs((Wide(got)-exact)/exact)<Wide("2e-11"));
+ }
+ // The dilute exact inverse is log1p; cancellation does not set the step to zero.
+ for(double t:{-1e-4,-1e-14,1e-14,1e-4}){
+  const Wide exact=log(1+Wide(t))-Wide(t);
+  CHECK(abs((Wide(inverseTangentRemainder(-700.,t))-exact)/exact)<Wide("1e-14"));
+ }
+ const double vt=.025851999786435535,xp=-4.3236142232904707e-16/vt,xq=1.0846837444346201e-29/vt;
+ for(double sign:{-1.,1.}) {
+  const double step=tangentQuasiFermiStep(-2.,sign,vt,xp,xq,vt*xp);
+  const Wide t=Wide(sign)*(Wide(xq)-xp);const auto base=polynomial(Wide(-2));Wide d=t;
+  for(int k=0;k<10;++k){auto f=polynomial(Wide(-2)+d);d-=(f.first-base.first-base.second*t)/f.second;}
+  const Wide expected=Wide(vt)*xq+Wide(sign)*vt*(d-t);
+  CHECK(abs((Wide(step)-expected)/expected)<Wide("1e-11"));
+  CHECK(step!=0.);
+  const double written=tangentQuasiFermiStep(-2.,sign,vt,xp,xq,0.);
+  CHECK(written==Catch::Approx(step-vt*xp).epsilon(1e-14));
+ }
+ CHECK(inverseTangentRemainder(0.,0.)==0.);
+ CHECK_THROWS(inverseTangentRemainder(0.,.1));
+}
+
+TEST_CASE("Effective-band SG keeps Fermi populations and conservative thermal weights",
+          "[carrier_statistics][sg][effective_band]")
+{
+    const Real vt = constants::Vt_300;
+    const Real n0 = 2.8e25 * fermiDiracHalf(9.0);
+    const Real n1 = 2.8e25 * fermiDiracHalf(10.0);
+    const Real q0 = .02, q1 = .025, coef = .03;
+    const Real a = std::log(n1/n0) + (q1-q0)/vt;
+    // Independent two-population SG expression (no cancellation in this case).
+    const auto B=[](Real v) { return v/std::expm1(v); };
+    const Real expected = coef*(B(-a)*n0-B(a)*n1);
+    const Real flux = sgElectronFermiDiracContinuityFlux(n0,n1,9.,10.,.123,q0,q1,vt,coef,true);
+    REQUIRE(flux == Approx(expected).epsilon(2e-13));
+    REQUIRE(sgElectronFermiDiracContinuityFlux(n1,n0,10.,9.,-.123,q1,q0,vt,coef,true)
+        == Approx(-flux).epsilon(2e-13));
+    REQUIRE(sgHoleFermiDiracContinuityFlux(n0,n1,9.,10.,-.123,-q0,-q1,vt,coef,true)
+        == Approx(flux).epsilon(2e-13));
+    REQUIRE(sgElectronFermiDiracContinuityFlux(n0,n1,9.,10.,.123,q0,q0,vt,coef,true)==0.);
+    REQUIRE(sgHoleFermiDiracContinuityFlux(n0,n1,9.,10.,.123,q0,q0,vt,coef,true)==0.);
+    REQUIRE(sgElectronFermiDiracQuantumContinuityFlux(n0,n1,n0,n1,9.,10.,.123,q0,q1,vt,coef,true)
+        == Approx(flux).epsilon(2e-13));
+    REQUIRE(static_cast<Real>(sgElectronFermiDiracQuantumContinuityFluxLongDouble(
+        n1,n0,n1,9.,10.,.123,static_cast<long double>(q1)-q0,vt,coef,true))
+        == Approx(flux).epsilon(2e-13));
+    REQUIRE(static_cast<Real>(sgHoleFermiDiracContinuityFluxLongDouble(
+        n0,n1,9.,10.,-.123,static_cast<long double>(q0)-q1,vt,coef,true))
+        == Approx(flux).epsilon(2e-13));
+    // Degenerate population law has not been replaced by Boltzmann statistics.
+    REQUIRE(std::abs(flux/sgElectronFermiDiracContinuityFlux(n0,n1,9.,10.,.123,q0,q1,vt,coef)-1.)>1e-3);
+    for (Real eta : {-30.,-20.}) {
+        const Real c0=2.8e25*fermiDiracHalf(eta), c1=2.8e25*fermiDiracHalf(eta+.4);
+        const Real drift=vt*.4+q1-q0;
+        const Real original=sgElectronFermiDiracContinuityFlux(c0,c1,eta,eta+.4,drift,q0,q1,vt,coef);
+        const Real effective=sgElectronFermiDiracContinuityFlux(c0,c1,eta,eta+.4,drift,q0,q1,vt,coef,true);
+        REQUIRE(effective==Approx(original).epsilon(2e-8));
+    }
+    REQUIRE(std::isfinite(sgEffectiveBandArgument(1e-300,1e300,.1)));
+    REQUIRE(std::isfinite(sgElectronFermiDiracContinuityFlux(1e-200,1e200,0.,0.,0.,0.,20.,vt,1e-200,true)));
+}
+
+TEST_CASE("Fermi transport choice is explicit and validated", "[carrier_statistics][effective_band]")
+{
+    REQUIRE(CarrierStatisticsConfig{}.transport=="generalized_einstein");
+    REQUIRE(usesFermiDirac(CarrierStatisticsConfig{"fermi_dirac","effective_band_sg"}));
+    REQUIRE_THROWS(carrierStatisticsModel(CarrierStatisticsConfig{"boltzmann","effective_band_sg"}));
+    REQUIRE_THROWS(carrierStatisticsModel(CarrierStatisticsConfig{"fermi_dirac","misspelled"}));
+}
 
 TEST_CASE("Fermi-Dirac half integral has the documented normalization",
           "[carrier_statistics][fermi_dirac]")
@@ -317,4 +416,84 @@ TEST_CASE("Fermi half second derivative is positive and matches derivative slope
             CHECK(second==Catch::Approx(fd).epsilon(2e-6));
         }
     }
+}
+
+TEST_CASE("SLOT relative Fermi update preserves identity and depleted recovery", "[slot_population]") {
+    for(double eta : {-100.,-40.,-8.,0.,4.,16.}) {
+        double z=vela::fermiDiracHalf(eta);
+        REQUIRE(vela::slot_population::relativeInverse(z,0.)==0.);
+        for(double change : {-0.999,-0.5,1e-12,0.5}) {
+            double d=vela::slot_population::relativeInverse(z,change);
+            REQUIRE(std::isfinite(d));
+            REQUIRE(d*change>0.);
+            REQUIRE(vela::fermiDiracHalf(eta+d)/z == Catch::Approx(1+change).epsilon(1e-9));
+        }
+    }
+    REQUIRE_THROWS(vela::slot_population::relativeInverse(1.,-1.));
+    REQUIRE_THROWS(vela::slot_population::fermiChange(0.,1e20));
+    REQUIRE_THROWS(vela::slot_population::relativeInverse(0.,.1));
+}
+
+TEST_CASE("Dilute Fermi densities avoid subnormal intermediate loss", "[carrier_statistics][fermi_dirac][dilute_mapping]") {
+    constexpr auto model=CarrierStatisticsModel::FermiDirac;
+    // ni=DOS, Vt=1 and psi=0 expose eta exactly in both public carrier APIs.
+    // The extended reference retains exp(eta) precision before multiplication.
+    for(double dos:{3.1e19,2.8e25})for(double eta:{-699.999,-700.,-700.001,-729.,-750.}) {
+        const double expected=static_cast<double>(static_cast<long double>(dos)*std::exp(static_cast<long double>(eta)));
+        const double n=electronDensity(dos,dos,0.,-eta,1.,model);
+        const double p=holeDensity(dos,dos,0.,eta,1.,model);
+        REQUIRE(expected>0.);
+        CHECK(std::abs(n/expected-1.)<3e-13);
+        CHECK(std::abs(p/expected-1.)<3e-13);
+        CHECK(std::abs(electronDensityDerivativeEta(dos,dos,0.,-eta,1.,model)/expected-1.)<3e-13);
+        CHECK(std::abs(holeDensityDerivativeEta(dos,dos,0.,eta,1.,model)/expected-1.)<3e-13);
+        const double h=1e-3;
+        const double slope=(holeDensity(dos,dos,0.,eta+h,1.,model)-holeDensity(dos,dos,0.,eta-h,1.,model))/(2*h);
+        CHECK(std::abs(slope/p-1.)<2e-7);
+    }
+    // Ordinary statistics remain bitwise unchanged, including the degenerate region.
+    for(double eta:{-700.,-30.,-8.,0.,20.}) {
+        CHECK(holeDensity(3.1e19,3.1e19,0.,eta,1.,model)==3.1e19*fermiDiracHalf(eta));
+        CHECK(holeDensityDerivativeEta(3.1e19,3.1e19,0.,eta,1.,model)==3.1e19*fermiDiracHalfDerivative(eta));
+    }
+    // Recorded 6251 scale: construct the reference without first rounding p/DOS.
+    const double target=5.678873e-298,dos=3.1e19;
+    const double eta=static_cast<double>(std::log(static_cast<long double>(target)/dos));
+    CHECK(std::abs(holeDensity(dos,dos,0.,eta,1.,model)/target-1.)<3e-13);
+    CHECK(holeDensity(dos,dos,0.,-1000.,1.,model)==0.); // no artificial positive floor
+}
+
+TEST_CASE("Relative dilute Fermi inverse keeps ratios through subnormal endpoints", "[slot_population][dilute_mapping]") {
+    using vela::slot_population::relativeInverse;
+    for(double z:{std::numeric_limits<double>::denorm_min(),1.83e-317,1e-300,1e-20,1e-14}) {
+        CHECK(relativeInverse(z,0.)==0.);
+        for(double rel:{-.999,-.5,1e-12,.5,10.}) {
+            const double d=relativeInverse(z,rel);
+            // Compare a ratio, not an absolute tiny residual whose tolerance can vanish.
+            CHECK(std::abs(std::expm1(d)-rel)<2e-12*std::abs(rel));
+        }
+    }
+    // Starting dilute is insufficient: a non-dilute endpoint must retain Fermi statistics.
+    const double z=1e-14,rel=1e13-1.;
+    const double d=relativeInverse(z,rel);
+    CHECK(std::abs(fermiDiracHalf(inverseFermiDiracHalf(z)+d)/(z*(1+rel))-1.)<1e-11);
+    CHECK(std::abs(d-std::log1p(rel))>1e-3);
+    // A projected finite density step must survive both inverse and forward mapping.
+    constexpr double dos=3.1e19,p=5.678873e-295,relProjection=-.999;
+    const double eta=static_cast<double>(std::log(static_cast<long double>(p)/dos));
+    const double nextEta=eta+relativeInverse(p/dos,relProjection);
+    const double next=holeDensity(dos,dos,0.,nextEta,1.,CarrierStatisticsModel::FermiDirac);
+    CHECK(std::abs(next/(p*(1+relProjection))-1.)<3e-13);
+}
+
+TEST_CASE("SLOT primary-only acceptance separates physical reports from stopping", "[slot_population]") {
+    using namespace vela::slot_population;
+    for(bool closure:{false,true})for(bool boundary:{false,true}) {
+        CHECK(accepts(1e-10,20.,closure,boundary,AcceptancePolicy::PrimaryOnly));
+        CHECK(accepts(1e-7,.9,closure,boundary,AcceptancePolicy::PrimaryOnly));
+        CHECK_FALSE(accepts(1.01e-10,1.,closure,boundary,AcceptancePolicy::PrimaryOnly));
+        CHECK(accepts(1e-10,20.,closure,boundary,AcceptancePolicy::PrimaryWithGuards)==(closure&&boundary));
+    }
+    CHECK_FALSE(accepts(-1.,.1,true,true,AcceptancePolicy::PrimaryOnly));
+    CHECK_FALSE(accepts(1e-12,std::numeric_limits<double>::infinity(),true,true,AcceptancePolicy::PrimaryOnly));
 }

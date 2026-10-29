@@ -11,6 +11,7 @@
  */
 
 #include "vela/core/Types.h"
+#include "vela/core/PopulationDomainError.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
@@ -1713,6 +1714,9 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
     const MobilityModel& mobility,const Material& material,Index cid,CarrierType carrier,
     const MobilityModelConfig* config=nullptr,const EdgeMobilityCarrierState* populations=nullptr,const VectorXd* psi=nullptr)
 {
+    if (config && std::find(config->constantMaterials.begin(), config->constantMaterials.end(), material.name)
+            != config->constantMaterials.end())
+        return carrier == CarrierType::Electron ? material.mun : material.mup;
     const bool phumob=config && config->edgeAveraging=="element_box_phumob";
     if(phumob && (!populations || !populations->electrons || !populations->holes ||
         populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
@@ -1790,6 +1794,8 @@ inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
     for(Index cid:edgeCells.at(edgeId)) {
         const auto& mat=materials.at(cid);
         if((carrier==CarrierType::Electron?mat.mun:mat.mup)<=0) continue;
+        if (std::find(config.constantMaterials.begin(), config.constantMaterials.end(), mat.name)
+                != config.constantMaterials.end()) continue;
         const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
         if(g==0) continue;
         const auto measures=cellBoxNodeMeasures(mesh,cid);
@@ -2502,12 +2508,35 @@ inline bool usesIalElementAvalancheSource(const ImpactIonizationModelConfig& con
     return config.currentApproximation=="ialmob_element_density_grad_qf";
 }
 
+inline bool usesPhuMobElementAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return config.currentApproximation=="phumob_element_density_grad_qf" ||
+           config.currentApproximation=="phumob_element_sg_best_vertex";
+}
+
 /// Validates the impact-ionization configuration shared by the Gummel and
 /// Newton solver config loaders. `context` is prefixed to any thrown message.
 inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
                                                  const char* context)
 {
     const bool observedIal=usesIalElementAvalancheSource(config);
+    const bool phumobElement=usesPhuMobElementAvalancheSource(config);
+    if (phumobElement &&
+        (config.model!="van_overstraeten" || config.generation!="current_density" ||
+         config.drivingForce!="quasi_fermi_gradient" ||
+         config.quasiFermiGradientDiscretization!="cell_gradient" ||
+         config.sourceMappingMode!="element_vertex_box_measure" ||
+         config.sourceJacobianMode!="local_ad" || config.ialmobBoundaryFieldProjection ||
+         config.drivingForceInterpolation!="none" ||
+         config.electronDrivingForceRefDensity!=0. || config.holeDrivingForceRefDensity!=0. ||
+         config.quasiFermiCarrierTruncation!=0. || config.sourceVolumeFactor!=0. ||
+         config.sourceGeometryScale!=1. || config.edgeSourcePartition!="symmetric" ||
+         config.currentMagnitudeMode!="edge_scalar_abs" || config.sourceVolumePolicy!="genius_truncated" ||
+         config.debugRawVanOverstraeten || config.temperature_K!=300. || config.referenceTemperature_K!=300. ||
+         (config.contactElectricFieldFallback &&
+          (config.contactElectricFieldFallbackScope!="contact_node_cell" ||
+           config.contactElectricFieldFallbackMode!="cell_gradient_magnitude"))))
+        throw std::invalid_argument(std::string(context)+": PhuMob source requires its explicit 300 K GradQF/local_ad profile");
     if (observedIal &&
         (config.model!="van_overstraeten" || config.generation!="current_density" ||
          config.drivingForce!="quasi_fermi_gradient" ||
@@ -2610,6 +2639,8 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         config.currentApproximation != "nodal_vector_current_reconstructed" &&
         config.currentApproximation != "element_edge_sg_gss_laux" &&
         config.currentApproximation != "ialmob_element_density_grad_qf" &&
+        config.currentApproximation != "phumob_element_density_grad_qf" &&
+        config.currentApproximation != "phumob_element_sg_best_vertex" &&
         config.currentApproximation != "conserved_total_current") {
         throw std::invalid_argument(
             std::string(context) +
@@ -2763,7 +2794,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
     }
     const bool elementEdgeGssLauxRequested =
         config.currentApproximation == "element_edge_sg_gss_laux" ||
-        (config.sourceMappingMode == "element_vertex_box_measure" && !observedIal);
+        (config.sourceMappingMode == "element_vertex_box_measure" && !observedIal && !phumobElement);
     if (elementEdgeGssLauxRequested &&
         (config.generation != "current_density" ||
          (config.drivingForce != "quasi_fermi_gradient" &&
@@ -2863,7 +2894,7 @@ inline bool usesElementEdgeGssLauxAvalancheSource(
 
 inline bool usesElementLocalAvalancheSource(const ImpactIonizationModelConfig& config)
 {
-    return usesElementEdgeGssLauxAvalancheSource(config) || usesIalElementAvalancheSource(config);
+    return usesElementEdgeGssLauxAvalancheSource(config) || usesIalElementAvalancheSource(config) || usesPhuMobElementAvalancheSource(config);
 }
 
 inline bool usesDensityGradientAvalancheCurrent(
@@ -3047,6 +3078,7 @@ inline bool usesEdgeCurrentAvalancheSource(
             config.currentApproximation == "nodal_vector_current_reconstructed" ||
             config.currentApproximation == "element_edge_sg_gss_laux" ||
             config.currentApproximation == "ialmob_element_density_grad_qf" ||
+            usesPhuMobElementAvalancheSource(config) ||
             config.currentApproximation == "conserved_total_current");
 }
 
@@ -3748,7 +3780,8 @@ inline std::vector<Real> computePoissonChargeVolumes(
         allCellsTransport = allCellsTransport && isTransportMaterial(material);
     // Preserve the legacy arithmetic and bit pattern on a one-material
     // semiconductor mesh instead of recomputing an equivalent area sum.
-    if (allCellsTransport)
+    if (allCellsTransport && policy != PoissonChargeVolumePolicy::MaterialLocalCircumcentric &&
+        policy != PoissonChargeVolumePolicy::MaterialLocalBox)
         return computeNodeVolumes(mesh);
 
     std::vector<Real> volume(mesh.numNodes(), 0.0);
@@ -3761,11 +3794,24 @@ inline std::vector<Real> computePoissonChargeVolumes(
                 "computePoissonChargeVolumes: material_local supports Tri3 cells only.");
         }
         const Real share = triangleArea(mesh, cell) / 3.0;
-        const auto shares = policy == PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi
+        const auto shares = policy == PoissonChargeVolumePolicy::MaterialLocalBox
+            ? cellBoxNodeMeasures(mesh,cell.id)
+            : policy == PoissonChargeVolumePolicy::MaterialLocalCircumcentric
+            ? BoxGeometryBuilder::circumcentricVertexVolumes(mesh,cell)
+            : policy == PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi
             ? BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh,cell)
             : std::array<Real,3>{share,share,share};
         for (std::size_t k=0;k<3;++k)
             volume.at(static_cast<std::size_t>(cell.node_ids[k])) += shares[k];
+    }
+    if (policy == PoissonChargeVolumePolicy::MaterialLocalCircumcentric ||
+        policy == PoissonChargeVolumePolicy::MaterialLocalBox) {
+        for (const auto& cell : mesh.cells()) {
+            if (!isTransportMaterial(cellMaterials.at(cell.id))) continue;
+            for (Index node : cell.node_ids)
+                if (!(volume.at(node)>0.0) || !std::isfinite(volume.at(node)))
+                    throw std::invalid_argument("Circumcentric transport node volume must be positive and finite");
+        }
     }
     return volume;
 }
@@ -3778,6 +3824,12 @@ inline std::vector<Real> recombinationNodeVolumes(const DeviceMesh& mesh,
     const std::vector<Material>& materials, const std::string& policy)
 {
     if (policy == "legacy_node") return computeNodeVolumes(mesh);
+    if (policy == "material_local_box")
+        return computePoissonChargeVolumes(mesh,materials,
+            PoissonChargeVolumePolicy::MaterialLocalBox);
+    if (policy == "material_local_circumcentric")
+        return computePoissonChargeVolumes(mesh,materials,
+            PoissonChargeVolumePolicy::MaterialLocalCircumcentric);
     if (policy != "material_local_mixed_voronoi")
         throw std::invalid_argument("Unsupported recombination_volume_policy");
     if (materials.size() != mesh.numCells())
@@ -5782,7 +5834,7 @@ currentDensityAvalancheSourceComponentIntegrals(
     const std::vector<Real>&           Nc = {},
     const std::vector<Real>&           Nv = {})
 {
-    if (usesIalElementAvalancheSource(config)) {
+    if (usesIalElementAvalancheSource(config) || usesPhuMobElementAvalancheSource(config)) {
         SgAvalancheSourceComponentIntegrals source;
         source.electron.assign(mesh.numNodes(),0.);
         source.hole.assign(mesh.numNodes(),0.);
@@ -5794,8 +5846,9 @@ currentDensityAvalancheSourceComponentIntegrals(
                 const auto id=cell.node_ids.at(i);
                 lp[i]=psi[id];lfn[i]=phin[id];lfp[i]=phip[id];ln[i]=n[id];lh[i]=p[id];
             }
-            const auto local=ialElementAvalancheSourceIntegralsLocal(
-                config,mobilityConfig,mesh,doping,cell.id,lp,lfn,lfp,ln,lh);
+            const auto local=usesPhuMobElementAvalancheSource(config)
+                ? phumobElementAvalancheSourceIntegralsLocal(config,mobilityConfig,mesh,doping,cellMaterials,cell.id,lp,lfn,lfp,ln,lh)
+                : ialElementAvalancheSourceIntegralsLocal(config,mobilityConfig,mesh,doping,cell.id,lp,lfn,lfp,ln,lh);
             for (std::size_t i=0;i<3;++i) {
                 const auto id=cell.node_ids[i];source.electron[id]+=local.electron[i];
                 source.hole[id]+=local.hole[i];source.combined[id]+=local.combined[i];

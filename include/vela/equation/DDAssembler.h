@@ -78,6 +78,8 @@ struct DDScalingSpec {
     /// Discretization contract; independent of whether unit scaling is active.
     PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         PoissonChargeVolumePolicy::Global;
+    /// Opt-in Tri3 coupled-Newton diagnostic; signed per-cell dielectric stiffness.
+    bool poissonPerCellPermittivity = false;
 };
 
 /**

@@ -13,6 +13,91 @@
 
 using namespace vela;
 
+TEST_CASE("U202212 screening compatibility reproduces observed cutoffs without changing defaults", "[ialmob][screening_compatibility]") {
+    const auto method=IalScreeningMethod::U202212SingleNewton;
+    CHECK(ialScreeningMethod("u2022_12_single_newton")==method);
+    CHECK(std::string(ialScreeningMethodName(method))=="u2022_12_single_newton");
+    CHECK(ial_json::screeningMethod({{"screening_method","u2022_12_single_newton"}})==method);
+    CHECK(ial_json::screeningMethod(nlohmann::json::object())==IalScreeningMethod::Halley);
+    // Independent runtime returns from the version-bound native binary64 run.
+    for(const auto& row:std::array<std::array<Real,3>,2>{{{1.,.325897068887456,.09811015773601309},
+            {1.258,.29005511595549854,.07994397371813236}}}){
+        const auto cut=ialScreeningMinimum(row[0],300.,method);
+        CHECK(cut==Catch::Approx(row[1]).epsilon(2e-15));
+        const Real g=1.-.89233/std::pow(.41372+cut*std::pow(1./row[0],.28227),.19778)
+            +.005978/std::pow(cut*std::pow(row[0],.72169),1.80618);
+        CHECK(g==Catch::Approx(row[2]).margin(2e-16));
+        CHECK(cut>ialScreeningMinimum(row[0],300.));
+        IalScreeningCache cache;
+        CHECK(cache.minimum(row[0],300.,method)==cut);
+        CHECK(cache.minimum(row[0],300.)==ialScreeningMinimum(row[0],300.));
+        cache.minimum(row[0],301.,method);CHECK(cache.size()==3);
+    }
+    for(Real t:{249.99,500.01})CHECK_THROWS_AS(ialScreeningMinimum(1.,t,method),std::invalid_argument);
+    CHECK_THROWS_AS(ialScreeningMinimum(.5,300.,method),std::invalid_argument);
+}
+
+TEST_CASE("U202212 low field derivatives retain the moving cutoff and cache identity", "[ialmob][screening_compatibility][jacobian]") {
+    const std::array members{&IalMobilityState::donors_m3,&IalMobilityState::acceptors_m3,
+        &IalMobilityState::electrons_m3,&IalMobilityState::holes_m3,
+        &IalMobilityState::normalField_V_per_m,&IalMobilityState::interfaceDistance_m,
+        &IalMobilityState::temperature_K};
+    for(bool electron:{false,true})for(Real t:{250.1,299.,300.,401.,499.9})for(Real density:{1e20,1e24,1e27}){
+        auto p=IalMobility::siliconDefaults(electron);p.lCrit=p.lCritC=1e-6;
+        const IalMobility model(p,electron,IalScreeningMethod::U202212SingleNewton);
+        const IalMobilityState state{density,.8*density,.3*density,.7*density,1e7,2e-8,t};
+        const auto a=model.evaluateWithDerivatives(state);IalScreeningCache cache;IalMobilityPreparationCache prepared;
+        const auto b=model.evaluateWithDerivatives(state,&cache,&prepared);
+        CHECK(b.result.mobility_m2_per_Vs==a.result.mobility_m2_per_Vs);
+        CHECK(b.derivative_SI==a.derivative_SI);
+        CHECK(b.temperatureDerivative_m2_per_Vs_K==a.temperatureDerivative_m2_per_Vs_K);
+        CHECK(model.evaluate(state,&cache,&prepared).mobility_m2_per_Vs==a.result.mobility_m2_per_Vs);
+        for(int i=0;i<7;++i){
+            CAPTURE(electron,t,density,i);auto hi=state,lo=state;
+            const Real scale=state.*members[i],h=scale*1e-5;
+            hi.*members[i]+=h;lo.*members[i]-=h;
+            const Real fd=(model.evaluate(hi).mobility_m2_per_Vs-model.evaluate(lo).mobility_m2_per_Vs)/(2*h);
+            const Real ad=i<6?a.derivative_SI[i]:a.temperatureDerivative_m2_per_Vs_K;
+            CHECK(std::abs(ad-fd)*scale/a.result.mobility_m2_per_Vs<2e-8);
+        }
+        CHECK_THROWS_AS(model.evaluate(state,nullptr,nullptr,true),std::invalid_argument);
+        CHECK_THROWS_AS(model.evaluateWithDerivatives(state,nullptr,nullptr,true),std::invalid_argument);
+    }
+}
+
+TEST_CASE("U202212 screening branch is continuous with separately verified one sided slopes", "[ialmob][screening_compatibility][jacobian]") {
+    for(bool electron:{false,true}){
+        auto p=IalMobility::siliconDefaults(electron);p.lCrit=p.lCritC=1e-6;
+        const auto method=IalScreeningMethod::U202212SingleNewton;
+        const IalMobility model(p,electron,method);const Real cut=ialScreeningMinimum(p.mass,300.,method);
+        const auto state=[&](Real doping){return IalMobilityState{doping,doping,1e16,1e16,1e7,2e-8,300.};};
+        const auto screening=[&](Real doping){
+            const Real d=doping/1e6,rd=d/p.nRefD,ra=d/p.nRefA;
+            const Real nsc=d*(1+rd*rd/(1+p.cRefD*rd*rd))+d*(1+ra*ra/(1+p.cRefA*ra*ra))+1e10;
+            return 1./(2.459/3.97e13*std::pow(nsc,2./3.)+3.828/(p.mass*1.36e20)*2e10);
+        };
+        Real lo=1e16,hi=1e28;
+        for(int i=0;i<110;++i){const Real mid=std::sqrt(lo*hi);if(screening(mid)>cut)lo=mid;else hi=mid;}
+        const Real d=std::sqrt(lo*hi),mu=model.evaluate(state(d)).mobility_m2_per_Vs;
+        std::array<Real,2> slopes{};
+        for(int side=0;side<2;++side){
+            const Real ds=d*(side?1.+1e-5:1.-1e-5),h=ds*1e-7;
+            const auto a=model.evaluateWithDerivatives(state(ds));
+            const Real fd=(model.evaluate(state(ds+h)).mobility_m2_per_Vs-model.evaluate(state(ds-h)).mobility_m2_per_Vs)/(2*h);
+            const Real ad=a.derivative_SI[0]+a.derivative_SI[1];
+            CAPTURE(electron,side,screening(ds),cut);
+            CHECK(std::abs(ad-fd)*ds/mu<2e-8);slopes[side]=ad*ds/mu;
+        }
+        // Compatibility is C0, not a stationary C1 splice. Do not hide its kink.
+        CHECK(std::abs(slopes[0]-slopes[1])>1e-7);
+        for(Real h:{1e-5,1e-6,1e-7}){
+            const auto left=model.evaluate(state(d*(1-h))).mobility_m2_per_Vs;
+            const auto right=model.evaluate(state(d*(1+h))).mobility_m2_per_Vs;
+            CHECK(std::abs(left-right)/mu<4*h);
+        }
+    }
+}
+
 TEST_CASE("IALMob omitted screening method uses safeguarded Halley and keeps explicit legacy", "[mobility][ialmob][screening_default]") {
     IalKernelProfilingScope profile(false);
     const auto root=ialScreeningMinimum(1.258,401.);

@@ -209,6 +209,29 @@ TEST_CASE("Gummel Slotboom BGN uses total impurity at compensated contacts",
     REQUIRE(sol.p(3) == Catch::Approx(niEff).epsilon(1.0e-12));
 }
 
+TEST_CASE("Gummel Bennett Wilson compensated equilibrium preserves mass action",
+          "[gummel][bgn][bennett][doping]")
+{
+    DeviceMesh mesh = makeHighDopingPNMesh();
+    MaterialDatabase matdb;
+    const auto doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 5e25, 5e25}, {"p_region", 5e25, 5e25}});
+    GummelConfig cfg;
+    cfg.maxIter = 20;
+    cfg.reltol = 1e-8;
+    cfg.abstol = 1e-10;
+    cfg.bandgapNarrowing = bandgapNarrowingConfig("bennett_wilson");
+    const auto sol = runGummel(mesh, matdb, doping,
+        {{"anode", 0.0}, {"cathode", 0.0}}, cfg);
+    const Real vt = constants::kb * cfg.temperature_K / constants::q;
+    const Real niEff = matdb.getMaterial("Si").ni * std::exp(0.08160036080352656 / (2 * vt));
+    REQUIRE(sol.converged);
+    for (Index i = 0; i < mesh.numNodes(); ++i) {
+        CHECK(sol.n(i) == Catch::Approx(niEff).epsilon(1e-12));
+        CHECK(sol.p(i) == Catch::Approx(niEff).epsilon(1e-12));
+    }
+}
+
 TEST_CASE("Gummel high-doping asymmetric reverse bias does not diverge", "[gummel][high-doping][stability]")
 {
     DeviceMesh mesh = makeHighDopingPNMesh();

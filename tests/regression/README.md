@@ -1,5 +1,31 @@
 # Reference TCAD regression tests
 
+`poisson_arithmetic_probe` runs the built CLI against a small semiconductor
+fixture, checks the read-only arithmetic export against production binary128
+residuals, preserves inputs and existing output files, and rejects unsupported
+Fermi statistics. The numerical material/Poisson tests also check sub-ULP charge
+and dielectric responses against the physical Jacobian. These tests do not
+qualify a full split-state IALMob/Auger/avalanche Newton path.
+
+`python -B tests/regression/test_slot_newton_stabilization.py` checks that the
+two independent SLOT stabilization controls preserve physics and acceptance
+settings, reject invalid enabled scales, and do not overwrite existing evidence.
+Numerical four-arm evidence is recorded separately in the validation reports.
+
+The SLOT IdVd driver tests (`test_run_slot_ldmos_idvd.py`) cover the optional
+`--gate-step-policy adaptive --gate-only` route, including the Fermi Poly
+predictor advisory monitor. `GATE_BIAS_WARNING_THRESHOLD_V=0.1` writes a warning
+for every larger bias change; it does not reject or clip the prediction. The
+adaptive policy retains its separate 0.25 V maximum. Neither value is a device
+acceptance tolerance: prediction must still pass Poisson preparation and full
+Newton qualification. Tests cover repeated warnings, continuation from a
+qualified nonzero gate bias, and halving the actual failed span. An optional
+explicit cap in the generic policy is also tested, but is not applied by the
+Fermi gate route.
+Mocked continuation to 5 V establishes control flow only, not numerical
+qualification. Existing frozen campaign directories are not updated by changes
+to the source driver.
+
 This directory contains Python regression tests for checked-in cross-TCAD
 fixtures, import/conversion tools, comparison scripts, and validation report
 contracts.  Device-level reusable inputs live under `reference_tcad/`; the
@@ -63,6 +89,19 @@ hash shared by M33/M35/M37. The archive-integrity test asserts this gap; it does
 not imply complete historical reproducibility. Current solver qualification
 uses numerical/property tests and a separately sealed engineering campaign.
 
+The opt-in SLOT neighboring-row recovery properties are covered by
+`test_slot_local_row_repair.py` in the `slot_ldmos_loadline_continuation` CTest:
+disabled mode performs no work, patch selection preserves all violating rows,
+connected weak neighbors remain in the patch, backtracking checks spillover
+across the full active row set, and row descent cannot override the original
+global screen. Unscreened trials are never selected. The separate
+`--predict-boundary` option ranks same-carrier neighboring rows by finite-difference
+response, expands in the first cycle within the existing eight-DOF cap, and reuses
+already evaluated columns; it does not change any acceptance threshold.
+Synthetic callback tests verify
+proposal logic only; real-device qualification still requires the unchanged
+Newton solve, full row audit and bound evidence.
+
 The retired custom NMOS, coarse7x3, Minimal6, and skewed-Tri3 reference cases
 are no longer regression inputs. Import/contact and mesh invariants remain
 covered using temporary data and retained fixtures. Shared avalanche helper
@@ -77,6 +116,62 @@ continuity audit. It prepares isolated source-free PolySilicon candidates only;
 full coupled convergence, final all-active row checks, and update-history
 qualification remain mandatory. Unsupported profiles are rejected rather than
 silently projected. See the [2026-09-22 SLOT evidence](../../docs/validation/slot_ldmos_high_voltage_resume_2026-09-22.md).
+
+`slot_ldmos_idl_configuration` checks the independent IDL Bennett-Wilson
+material bundle, a cold zero-bias start, and rejection of incomplete continuity
+proof. Run directly with `python -m unittest tests.regression.test_slot_idl_configuration`.
+The numerical path is deliberately separate: `scripts/run_slot_ldmos_idl.py`
+requires the archived SLOT mesh/native geometry resources and a specified runner.
+It starts without a saved state, establishes Vd=0.1 V, then sweeps Vg to 5 V.
+Density/poly restart operations provide candidates only; acceptance requires
+the original complete Newton, active-row and global-closure gates. This IDL
+material bundle must not silently replace the historical BVDS materials.
+
+The separate IdVd package is checked with
+`python -m unittest tests.regression.test_slot_idvd_configuration`.
+`scripts/run_slot_ldmos_idvd.py` starts cold, establishes Vg=5 V at Vd=0,
+then follows the supplied native drain samples with at most 1 V intermediate
+steps. It freezes resources and the runner, bounds child and total runtimes,
+halves a failed interval at most three levels, and accepts only original
+full-device gates. It deliberately does not reuse the Boltzmann IDL poly reset.
+Its `goal_reached` means completion of the qualified voltage path; current
+agreement with Sentaurus is separately reported at identical drain biases.
+`test_run_slot_ldmos_idvd.py` checks that a successful process with a rejected
+device state cannot become a retry parent; it uses mocked rows and is not
+numerical qualification.
+
+The opt-in `--drain-initialization secant` uses the two most recent qualified
+drain states, with a target/history step ratio in (0,3]. The default remains
+`warm`. A failed secant solve gets one same-target warm attempt before the
+existing bounded bisection; an out-of-range ratio uses warm initialization.
+Rejected states never enter either parent history. The Fermi split-QF/log-density
+predictor is an unqualified guess and does not change the constitutive model.
+`--drain-import-summary` checks the last two saved states of a completed batch
+against full-gate IV records, hashes, physical inputs and Vg=5 V contact metadata.
+Imported records are separate from new records; this check is not an independent
+numerical re-solve. `--drain-stop` limits the requested segment to an exact native
+sample (default 60 V). For imported/short runs, `goal_reached` refers only to that
+requested segment, as recorded by `requested_drain_segment_qualified`.
+Run the corresponding control, predictor and configuration tests with:
+
+```text
+python -m unittest tests.regression.test_run_slot_ldmos_idvd tests.regression.test_slot_idvd_secant_predictor tests.regression.test_slot_idvd_configuration
+```
+
+The explicit `--gate-initialization fermi_poly_poisson` option adds an isolated
+Poly Fermi bias predictor and a `preserve_initial` Poisson stage before each
+gate-point full Newton solve. The default remains `none`. Predictor/Poisson
+states never enter the accepted records or become retry parents, and the drain
+stage retains full transport Newton without this equilibrium initialization.
+All substage time and failures count toward the same campaign budget. The
+driver regression covers the handoff, rejection isolation and gate-only scope.
+
+`python -m unittest tests.regression.test_slot_fermi_poly_predictor` checks the
+explicit Fermi Poly rigid-bias initial guess: preserve occupation arguments,
+densities and unselected nodes, and reject unsupported packed coordinates.
+`scripts/slot_fermi_poly_predictor.py` does not qualify a state or change the
+production IdVd driver. Its output requires Poisson/coupled requalification;
+it does not apply a Boltzmann density reset to a Fermi configuration.
 
 The `slot_ldmos_loadline_continuation` test covers the SLOT-specific independent
 device load-line driver, `scripts/run_slot_ldmos_loadline_continuation.py`.
@@ -95,3 +190,10 @@ corrupt proof, or resource/environment changes stop the campaign. This entry is
 qualified only for the documented SLOT profile, not a general circuit solver or
 proof of original AvalDensGradQF parity. See the
 [2026-09-23 review](../../docs/validation/slot_ldmos_loadline_review_2026-09-23.md).
+
+The Catch2 `test_split_dd_runtime` target includes `[split_sg_diagnostics]`
+properties: equilibrium with unequal carrier-specific population prefactors,
+sub-ULP driving forces, edge-orientation reversal, common-ni fallback and explicit
+unavailability for edges without transport support. Diagnostics must leave the
+production residual, current and low coordinates unchanged. Its 200-digit SG
+reference holds production mobility fixed and does not qualify a device state.

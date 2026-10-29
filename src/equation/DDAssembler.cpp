@@ -171,6 +171,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
 {
+    if (scaling_.poissonPerCellPermittivity)
+        throw std::invalid_argument("per_cell Poisson permittivity is not supported by Gummel/DDAssembler");
     recombinationNodes_=detail::recombinationNodeMask(mesh_,cellMaterials_,recombinationConfig.activeMaterials);
     recombinationVol_=detail::recombinationNodeVolumes(mesh_,cellMaterials_,recombinationConfig.volumePolicy);
     for (const auto& cell:mesh_.cells()) {
@@ -182,6 +184,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
             throw std::invalid_argument("Intrinsic reference avalanche requires Si-only element IALMob source");
     }
     (void)usesFermiDirac(carrierStatistics_);
+    if (carrierStatistics_.transport == "effective_band_sg")
+        throw std::invalid_argument("effective_band_sg requires coupled Newton, not Gummel/DDAssembler.");
     if (mobilityConfig_.edgeAveraging != "legacy" || scaling_.regionResolvedInterfaceAssembly.transportEdgeGeometry != "inherit")
         throw std::invalid_argument("DDAssembler: element box carrier transport requires CoupledDDAssembler (Newton).");
     if (scaling_.regionResolvedInterfaceAssembly.srhSignedTransportVolumeFraction != 0.0 ||

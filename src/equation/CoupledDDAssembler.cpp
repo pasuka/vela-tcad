@@ -1,4 +1,5 @@
 #include "vela/equation/ExtendedPoissonResidual.h"
+#include "vela/physics/detail/MobilityChainProduct.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/discretization/StableSGDerivative.h"
@@ -529,15 +530,20 @@ CoupledDDAssembler::CoupledDDAssembler(
         if (electronQuantumPotentialConfig_.enabled)
             throw std::invalid_argument("Intrinsic reference quantum coupling is not supported");
         if (impactIonizationEnabled_ &&
-            (mobilityConfig_.model!="ialmob" ||
+            ((mobilityConfig_.model!="ialmob" && !detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_)) ||
              !detail::usesElementLocalAvalancheSource(impactIonizationConfig_) ||
              mesh_.getRegion(cell.region_id).material=="Si"))
             throw std::invalid_argument("Intrinsic reference avalanche requires Si-only element IALMob source");
     }
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
+    if (detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_) &&
+        (!usesElementHighField(mobilityConfig_) || !mobilityConfig_.jacobianFieldDerivatives ||
+         electronQuantumPotentialConfig_.enabled ||
+         std::find(mobilityConfig_.constantMaterials.begin(),mobilityConfig_.constantMaterials.end(),"Si")!=mobilityConfig_.constantMaterials.end()))
+        throw std::invalid_argument("PhuMob element avalanche requires classical Si PhuMob/Lombardi/HFS with complete derivatives");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&
-        (usesFermiDirac_ || impactIonizationConfig_.model!="none"))
-        throw std::invalid_argument("element_box_phumob currently requires Boltzmann statistics and disabled avalanche.");
+        impactIonizationConfig_.model!="none" && !detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_))
+        throw std::invalid_argument("element_box_phumob avalanche requires phumob_element_density_grad_qf.");
     if (bandgapNarrowingConfig_.equalNiFluxEvaluation !=
             "legacy_factor_difference" &&
         bandgapNarrowingConfig_.equalNiFluxEvaluation !=
@@ -551,6 +557,10 @@ CoupledDDAssembler::CoupledDDAssembler(
         throw std::invalid_argument("Independent SRH volume requires SRH enabled and Auger disabled.");
     carrierStatisticsModel_ = carrierStatisticsModel(carrierStatistics_);
     usesFermiDirac_ = usesFermiDirac(carrierStatisticsModel_);
+    effectiveBandSg_ = carrierStatistics_.transport == "effective_band_sg";
+    if (effectiveBandSg_ && (electronQuantumPotentialConfig_.enabled ||
+            mobilityConfig_.carrierCurrentDiscretization == "element_qf_gradient"))
+        throw std::invalid_argument("effective_band_sg requires classical edge SG transport (no quantum correction).");
     if (usesFermiDirac_) {
         for (Index node = 0; node < mesh_.numNodes(); ++node) {
             if (ni_[node] > 0.0 && (!(Nc_[node] > 0.0) || !(Nv_[node] > 0.0))) {
@@ -618,6 +628,36 @@ CoupledDDAssembler::CoupledDDAssembler(
     buildNodalCurrentReconstructionKernels();
 }
 
+Real CoupledDDAssembler::poissonConductance(Index edgeId) const
+{
+    const auto& edge = mesh_.getEdge(edgeId);
+    if (!scaling_.poissonPerCellPermittivity)
+        return detail::poissonEdgeCoefficient(
+            mesh_, matdb_, edgeCells_, edgeId,
+            scaling_.regionResolvedInterfaceAssembly.poissonEdgeCoupling);
+    Real result = 0.0;
+    const auto& a = mesh_.getNode(edge.n0);
+    const auto& b = mesh_.getNode(edge.n1);
+    for (Index cellId : edgeCells_[edgeId]) {
+        const auto& cell = mesh_.getCell(cellId);
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+            throw std::invalid_argument("per_cell Poisson permittivity requires Tri3 cells");
+        for (Index node : cell.node_ids) {
+            if (node == edge.n0 || node == edge.n1) continue;
+            const auto& o = mesh_.getNode(node);
+            const Real ux = a.x-o.x, uy = a.y-o.y;
+            const Real vx = b.x-o.x, vy = b.y-o.y;
+            const Real area2 = std::abs(ux*vy-uy*vx);
+            if (area2 <= 1.0e-30)
+                throw std::invalid_argument("per_cell Poisson permittivity requires nondegenerate triangles");
+            const Real eps = matdb_.getMaterial(mesh_.getRegion(cell.region_id).material).eps_r * constants::eps0;
+            // Signed stiffness, including obtuse contributions; no edge fallback.
+            result += eps * 0.5 * ((ux*vx+uy*vy)/area2);
+        }
+    }
+    return result;
+}
+
 void CoupledDDAssembler::buildEdgeAssemblyKernels()
 {
     edgeAssemblyKernels_.resize(mesh_.numEdges());
@@ -659,9 +699,7 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
                 (niHole_[edge.n1] / Nv_[edge.n1]));
         }
         if (edge.length > 1.0e-30) {
-            kernel.poissonCoupling = detail::poissonEdgeCoefficient(
-                mesh_, matdb_, edgeCells_, edgeId,
-                scaling_.regionResolvedInterfaceAssembly.poissonEdgeCoupling);
+            kernel.poissonCoupling = poissonConductance(edgeId);
         }
 
         const auto appendStencilNode = [&](Index node) {
@@ -1629,16 +1667,17 @@ CoupledDDAssembler::poissonTermDiagnostics(
         const Edge& edge = mesh_.getEdge(edgeId);
         if (edge.length < 1.0e-30)
             continue;
-        const Real eps = detail::edgeEpsilon(
-            edgeCells_, mesh_, matdb_, edgeId);
-        const Real conductance = detail::poissonEdgeCoefficient(
-            mesh_, matdb_, edgeCells_, edgeId,
-            scaling_.regionResolvedInterfaceAssembly.poissonEdgeCoupling);
+        const Real conductance = poissonConductance(edgeId);
         const Real flux = conductance * potentialScale *
             (x(psiOffset() + static_cast<int>(edge.n0)) -
              x(psiOffset() + static_cast<int>(edge.n1)));
         terms[edge.n0].dielectricFlux += flux;
         terms[edge.n1].dielectricFlux -= flux;
+        const Real operand = std::abs(conductance * potentialScale) *
+            (std::abs(x(psiOffset() + static_cast<int>(edge.n0))) +
+             std::abs(x(psiOffset() + static_cast<int>(edge.n1))));
+        terms[edge.n0].dielectricOperandSum += operand;
+        terms[edge.n1].dielectricOperandSum += operand;
     }
 
     const VectorXd n = electronDensity(x);
@@ -1697,6 +1736,7 @@ CoupledDDAssembler::poissonTermDiagnostics(
             scaling_.permittivityReference_F_per_m * scaling_.V0;
         for (auto& term : terms) {
             term.dielectricFlux /= poissonScale;
+            term.dielectricOperandSum /= poissonScale;
             term.electronCharge /= poissonScale;
             term.holeCharge /= poissonScale;
             term.dopingCharge /= poissonScale;
@@ -2030,7 +2070,7 @@ VectorXd CoupledDDAssembler::residualImpl(
         // residual's inclusive endpoint at exactly 1e-30 coordinate units.
         const Real G = h > 1.0e-30
             ? edgeKernel.poissonCoupling
-            : detail::edgeEpsilon(edgeCells, mesh_, matdb_, e) * poissonCouple[e] / h;
+            : poissonConductance(e);
         const Real psiFlux = G * (psi_i - psi_j);
         add(psiOffset() + i, psiFlux);
         add(psiOffset() + j, -(psiFlux));
@@ -2063,10 +2103,10 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const Real driftPotential = electronDpsi + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    Nc_[idxI] * fermiDiracHalf(etaI),
-                    Nc_[idxJ] * fermiDiracHalf(etaJ),
+                    scaledFermiDiracHalf(Nc_[idxI], etaI),
+                    scaledFermiDiracHalf(Nc_[idxJ], etaJ),
                     etaI, etaJ, driftPotential,
-                    phin_i, phin_j, Vt_, coef);
+                    phin_i, phin_j, Vt_, coef, effectiveBandSg_);
             } else {
                 nFlux = sgElectronBoltzmannContinuityFlux(
                     niElectron_[idxI], niElectron_[idxJ],
@@ -2101,7 +2141,7 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, driftPotential,
-                    phip_i, phip_j, Vt_, coef);
+                    phip_i, phip_j, Vt_, coef, effectiveBandSg_);
             } else {
                 pFlux = sgHoleBoltzmannContinuityFlux(
                     niHole_[idxI], niHole_[idxJ],
@@ -2363,18 +2403,7 @@ VectorXd CoupledDDAssembler::residualImpl(
             (electronQuantumPotential_V_.size() && !electronQuantumPotential_V_.isZero(0.0)) ||
             substitution != nullptr || !bcs.thermionic.empty())
             throw std::runtime_error("Extended Poisson residual requires classical Boltzmann carriers without quantum potential, feedback substitutions, or thermionic contacts");
-        namespace pp=poisson_precision;
-        std::vector<pp::Node> pn;pn.reserve(N);
-        for(int i=0;i<N;++i)pn.push_back({psi(i),n(i),p(i),x(i),x(N+i),x(2*N+i),potentialScale,
-            electronQuasiFermiReferenceAt(i),holeQuasiFermiReferenceAt(i),ni_[i],Vt_,
-            doping_.netDoping(i),poissonElectronVol_[i],poissonHoleVol_[i],poissonDopantVol_[i],
-            constants::q,chargeAreaFactor,scaling_.enabled?scaling_.permittivityReference_F_per_m*scaling_.V0:1.,fixedInterfaceChargeRhs_(i)});
-        std::vector<pp::Edge> pe;pe.reserve(mesh_.numEdges());
-        for(Index e=0;e<mesh_.numEdges();++e) {
-            const auto& edge=mesh_.getEdge(e);if(edge.length<1e-30)continue;
-            pe.push_back({static_cast<int>(edge.n0),static_cast<int>(edge.n1),edgeAssemblyKernels_[e].poissonCoupling});
-        }
-        const auto pr=pp::evaluate(pn,pe,true);
+        const auto pr=poisson_precision::evaluate(poissonArithmeticModel(x,bcs));
         for(int i=0;i<N;++i)r(i)=static_cast<Real>(pr[i]);
     }
 
@@ -2390,6 +2419,33 @@ VectorXd CoupledDDAssembler::residualImpl(
             - (value - holeQuasiFermiReferenceAt(node) / potentialScale);
 
     return r;
+}
+
+poisson_precision::Model CoupledDDAssembler::poissonArithmeticModel(
+    const VectorXd& x, const CoupledDDBoundaryConditions& bcs) const
+{
+    const int N=static_cast<int>(mesh_.numNodes());
+    if(x.size()!=3*N || !x.allFinite())
+        throw std::invalid_argument("Poisson arithmetic export requires finite three-block coordinates");
+    if(usesFermiDirac_ || electronQuantumPotentialConfig_.enabled ||
+       (electronQuantumPotential_V_.size() && !electronQuantumPotential_V_.isZero(0.0)) ||
+       !bcs.thermionic.empty() || splitDDEnabled_)
+        throw std::invalid_argument("Poisson arithmetic export requires classical Boltzmann coordinates without split transport, quantum or thermionic contacts");
+    const Real potentialScale=scaling_.enabled?scaling_.V0:1.;
+    const Real chargeAreaFactor=scaling_.enabled?scaling_.chargeAreaFactor:1.;
+    const auto n=electronDensity(x),p=holeDensity(x);
+    poisson_precision::Model model;model.nodes.reserve(N);
+    for(int i=0;i<N;++i)model.nodes.push_back({x(i)*potentialScale,n(i),p(i),x(i),x(N+i),x(2*N+i),potentialScale,
+        electronQuasiFermiReferenceAt(i),holeQuasiFermiReferenceAt(i),niElectron_[i],niHole_[i],Vt_,
+        doping_.netDoping(i),poissonElectronVol_[i],poissonHoleVol_[i],poissonDopantVol_[i],constants::q,
+        chargeAreaFactor,scaling_.enabled?scaling_.permittivityReference_F_per_m*scaling_.V0:1.,fixedInterfaceChargeRhs_(i)});
+    model.edges.reserve(mesh_.numEdges());
+    for(Index e=0;e<mesh_.numEdges();++e) {
+        const auto& edge=mesh_.getEdge(e);if(edge.length<1e-30)continue;
+        model.edges.push_back({static_cast<int>(edge.n0),static_cast<int>(edge.n1),edgeAssemblyKernels_[e].poissonCoupling});
+    }
+    for(const auto& [node,value]:bcs.psi)model.dirichlet.emplace_back(static_cast<int>(node),value);
+    return model;
 }
 
 std::vector<CoupledDDCarrierTermDiagnostic>
@@ -2670,9 +2726,9 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                 const Real drift = (electronPsi_j - electronPsi_i) + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    Nc_[idxI] * fermiDiracHalf(etaI),
-                    Nc_[idxJ] * fermiDiracHalf(etaJ),
-                    etaI, etaJ, drift, phin_i, phin_j, Vt_, coef);
+                    scaledFermiDiracHalf(Nc_[idxI], etaI),
+                    scaledFermiDiracHalf(Nc_[idxJ], etaJ),
+                    etaI, etaJ, drift, phin_i, phin_j, Vt_, coef, effectiveBandSg_);
             } else {
                 nFlux = sgElectronBoltzmannContinuityFlux(
                     niElectron_[idxI], niElectron_[idxJ],
@@ -2704,7 +2760,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                     + edgeKernel.holeLogNiNv1;
                 const Real drift = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
-                    p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef);
+                    p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef, effectiveBandSg_);
             } else {
                 pFlux = sgHoleBoltzmannContinuityFlux(
                     niHole_[idxI], niHole_[idxJ],
@@ -3042,16 +3098,18 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                 + std::log(niElectron_[idxJ] / Nc_[idxJ]);
             electronDriftPotential += Vt_ * std::log(
                 (niElectron_[idxJ] / Nc_[idxJ]) / (niElectron_[idxI] / Nc_[idxI]));
-            electronFermiDensityI = Nc_[idxI] * fermiDiracHalf(electronEtaI);
-            electronFermiDensityJ = Nc_[idxJ] * fermiDiracHalf(electronEtaJ);
+            electronFermiDensityI = scaledFermiDiracHalf(Nc_[idxI], electronEtaI);
+            electronFermiDensityJ = scaledFermiDiracHalf(Nc_[idxJ], electronEtaJ);
             electronGeneralizedEinsteinFactor = sgGeneralizedEinsteinFactor(
                 electronFermiDensityI, electronFermiDensityJ,
                 electronEtaI, electronEtaJ);
         } else if (bgnEnabled_) {
             electronDriftPotential += Vt_ * std::log(niElectron_[idxI] / niElectron_[idxJ]);
         }
-        const Real electronBernoulliArgument = electronDriftPotential /
-            (Vt_ * electronGeneralizedEinsteinFactor);
+        if (effectiveBandSg_) electronGeneralizedEinsteinFactor = 1.0;
+        const Real electronBernoulliArgument = effectiveBandSg_
+            ? sgEffectiveBandArgument(n(i), n(j), (phin_j - phin_i) / Vt_)
+            : electronDriftPotential / (Vt_ * electronGeneralizedEinsteinFactor);
         const Real electronQuasiFermiArgument = (phin_j - phin_i) /
             (Vt_ * electronGeneralizedEinsteinFactor);
 
@@ -3066,7 +3124,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     n(i), n(j),
                     electronFermiDensityI, electronFermiDensityJ,
                     electronEtaI, electronEtaJ, electronDriftPotential,
-                    phin_i, phin_j, Vt_, coef);
+                    phin_i, phin_j, Vt_, coef, effectiveBandSg_);
             } else {
                 nFlux = sgElectronBoltzmannContinuityFlux(
                     niElectron_[idxI], niElectron_[idxJ],
@@ -3095,7 +3153,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                             electronFermiDensityI, electronFermiDensityJ,
                             electronEtaI, electronEtaJ,
                             electronDriftPotential,
-                            phin_i, phin_j, Vt_, unitCoef);
+                            phin_i, phin_j, Vt_, unitCoef, effectiveBandSg_);
                 } else {
                     nFluxPerInternalCouple =
                         sgElectronContinuityFluxFromQuasiFermiVariableNi(
@@ -3119,7 +3177,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     (niHole_[idxI] / Nv_[idxI]) / (niHole_[idxJ] / Nv_[idxJ]));
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, drift,
-                    phip_i, phip_j, Vt_, coef);
+                    phip_i, phip_j, Vt_, coef, effectiveBandSg_);
             } else {
                 pFlux = sgHoleBoltzmannContinuityFlux(
                     niHole_[idxI], niHole_[idxJ],
@@ -3144,7 +3202,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     pFluxPerInternalCouple =
                         sgHoleFermiDiracContinuityFlux(
                             p(i), p(j), etaI, etaJ, drift,
-                            phip_i, phip_j, Vt_, unitCoef);
+                            phip_i, phip_j, Vt_, unitCoef, effectiveBandSg_);
                 } else {
                     pFluxPerInternalCouple =
                         sgHoleContinuityFluxFromQuasiFermiVariableNi(
@@ -4300,6 +4358,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const CoupledDDBoundaryConditions& bcs,
     bool includeCarrierDiagonalFloor) const
 {
+    return assembleSourceDiagnosticJacobian(x,bcs,0,includeCarrierDiagonalFloor);
+}
+
+SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
+    const VectorXd& x,const CoupledDDBoundaryConditions& bcs,
+    int sourceMode,bool includeCarrierDiagonalFloor) const
+{
+    if(sourceMode<0 || sourceMode>2 ||
+       (sourceMode && !detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_)))
+        throw std::invalid_argument("source diagnostic requires PhuMob local AD and mode 0..2");
     ScopedPerformanceTimer timer("dd.jacobian");
     incrementPerformanceCounter("dd.jacobian_calls");
     const Index Nidx = mesh_.numNodes();
@@ -4838,7 +4906,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 psiB - psiA + edge.electronDriftOffset;
             return sgElectronFermiDiracContinuityFlux(
                 nA, nB, etaA, etaB, driftPotential,
-                phinA, phinB, Vt_, coefficient);
+                phinA, phinB, Vt_, coefficient, effectiveBandSg_);
         }
         return sgElectronBoltzmannContinuityFlux(
             niElectron_[a], niElectron_[b], psiA, psiB, phinA, phinB, Vt_, coefficient,
@@ -4894,7 +4962,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 psiB - psiA + edge.holeDriftOffset;
             return sgHoleFermiDiracContinuityFlux(
                 pA, pB, etaA, etaB, driftPotential,
-                phipA, phipB, Vt_, coefficient);
+                phipA, phipB, Vt_, coefficient, effectiveBandSg_);
         }
         return sgHoleBoltzmannContinuityFlux(
             niHole_[a], niHole_[b], psiA, psiB, phipA, phipB, Vt_, coefficient,
@@ -5647,7 +5715,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             niHole_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phip_j,
             Vt_, carrierStatisticsModel_);
         const Real mun = fixedMobility >= 0.0 &&
-                !isPhuMobModel(mobilityConfig_)
+                (!isPhuMobModel(mobilityConfig_) || mobilityConfig_.edgeAveraging=="element_box_phumob")
             ? fixedMobility
             : cachedEdgeMobility(
                 e, CarrierType::Electron, electronMobilityField,
@@ -5664,7 +5732,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real psiRelative = electronPsi_i - electronReferenceI;
                 v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
                 v.density = electronDensityAt(idxI, psi_i - electronReferenceI, phin_i);
-                v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta);
+                v.fermiDensity = scaledFermiDiracHalf(Nc_[idxI], v.eta);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxJ] : electronEndpoints[1],
@@ -5674,7 +5742,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real psiRelative = electronPsi_j - electronReferenceI;
                 v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
                 v.density = electronDensityAt(idxJ, psi_j - electronReferenceJ, phinJLocal);
-                v.fermiDensity = Nc_[idxJ] * fermiDiracHalf(v.eta);
+                v.fermiDensity = scaledFermiDiracHalf(Nc_[idxJ], v.eta);
                 return v;
             });
             const Real driftPotential =
@@ -5682,7 +5750,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             return sgElectronFermiDiracQuantumContinuityFlux(
                 left.density, right.density, left.fermiDensity, right.fermiDensity,
                 left.eta, right.eta, driftPotential,
-                phin_i, phin_j, Vt_, coef);
+                phin_i, phin_j, Vt_, coef, effectiveBandSg_);
         }
         return sgElectronBoltzmannContinuityFlux(
             niElectron_[idxI], niElectron_[idxJ],
@@ -5758,7 +5826,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             niHole_[idxJ], Nv_[idxJ], psi_j - holeReferenceJ, phipJLocal,
             Vt_, carrierStatisticsModel_);
         const Real mup = fixedMobility >= 0.0 &&
-                !isPhuMobModel(mobilityConfig_)
+                (!isPhuMobModel(mobilityConfig_) || mobilityConfig_.edgeAveraging=="element_box_phumob")
             ? fixedMobility
             : cachedEdgeMobility(
                 e, CarrierType::Hole, holeMobilityField, psiForMobility,
@@ -5774,7 +5842,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_i - holeReferenceI;
                 v.eta = (phip_i - psiRelative) / Vt_ + edgeKernel.holeLogNiNv0;
-                v.density = Nv_[idxI] * fermiDiracHalf(v.eta);
+                v.density = scaledFermiDiracHalf(Nv_[idxI], v.eta);
                 return v;
             });
             const auto right = endpointState(fermiNodeCacheEnabled_ ? holeNodes[idxJ] : holeEndpoints[1],
@@ -5783,13 +5851,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 EndpointState v{};
                 const Real psiRelative = psi_j - holeReferenceI;
                 v.eta = (phip_j - psiRelative) / Vt_ + edgeKernel.holeLogNiNv1;
-                v.density = Nv_[idxJ] * fermiDiracHalf(v.eta);
+                v.density = scaledFermiDiracHalf(Nv_[idxJ], v.eta);
                 return v;
             });
             const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
             return sgHoleFermiDiracContinuityFlux(
                 left.density, right.density, left.eta, right.eta, driftPotential,
-                phip_i, phip_j, Vt_, coef);
+                phip_i, phip_j, Vt_, coef, effectiveBandSg_);
         }
         return sgHoleBoltzmannContinuityFlux(
             niHole_[idxI], niHole_[idxJ],
@@ -5960,7 +6028,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             std::abs((psi_j - electronQuantumPotential_V_(j) - electronQuasiFermiReferenceAt(edgeKernel.n1) - phin_j) / Vt_) < 500.0 &&
             std::abs((phip_i - psi_i + holeQuasiFermiReferenceAt(edgeKernel.n0)) / Vt_) < 500.0 &&
             std::abs((phip_j - psi_j + holeQuasiFermiReferenceAt(edgeKernel.n1)) / Vt_) < 500.0;
-        if(elementBoxPhuMob && !stablePhuMobEdge)
+        if(elementBoxPhuMob && !usesFermiDirac_ && !stablePhuMobEdge)
             throw std::invalid_argument("element_box_phumob Jacobian requires the smooth Boltzmann density interval; exponent-clamped states are not qualified.");
         // Every vertex of both adjacent cells can affect this edge mobility.
         // Scatter all carrier columns with the same conservative row signs.
@@ -5972,12 +6040,25 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const Real etaN=(psi(node)-electronQuantumPotential_V_(node)-
                     electronQuasiFermiReferenceAt(term.node)-x(phinOffset()+node)*potentialScale)/Vt_;
                 const Real etaP=(x(phipOffset()+node)*potentialScale-psi(node)+holeQuasiFermiReferenceAt(term.node))/Vt_;
-                if(std::abs(etaN)>=500.0 || std::abs(etaP)>=500.0)
+                if(!usesFermiDirac_ && (std::abs(etaN)>=500.0 || std::abs(etaP)>=500.0))
                     throw std::invalid_argument("element_box_phumob adjacent vertex is outside the smooth density interval.");
-                const Real dn=flux/mobility/Vt_*term.electrons;
-                const Real dp=flux/mobility/Vt_*term.holes;
+                // Constitutive derivatives are with respect to log density.
+                // Fermi populations require F_{-1/2}/F_{1/2}, not the
+                // Boltzmann value one. Preserve all adjacent-cell columns.
+                const Real responseN = usesFermiDirac_ && n(node)>0.
+                    ? electronDensityDerivativeEtaAt(term.node,psi(node)-electronQuasiFermiReferenceAt(term.node),
+                        x(phinOffset()+node)*potentialScale)/n(node) : 1.;
+                const Real responseP = usesFermiDirac_ && p(node)>0.
+                    ? holeDensityDerivativeEta(niHole_[term.node],Nv_[term.node],
+                        psi(node)-holeQuasiFermiReferenceAt(term.node),x(phipOffset()+node)*potentialScale,
+                        Vt_,carrierStatisticsModel_)/p(node) : 1.;
+                const Real dn=detail::mobilityChainProduct(flux,mobility,term.electrons,Vt_,responseN);
+                const Real dp=detail::mobilityChainProduct(flux,mobility,term.holes,Vt_,responseP);
+                // Freeze only the direct transport mobility QF-gradient chain.
+                // Population, psi, source AD and HFS geometry stay unchanged.
+                const Real qfChain = diagnosticFreezeTransportQfMobility_ ? 0. : detail::mobilityChainProduct(flux,mobility,term.quasiFermi);
                 for(const auto& [column,value]:std::array<std::pair<int,Real>,3>{{
-                        {psiOffset()+node,dn-dp+flux/mobility*term.potential},{phinOffset()+node,-dn+(carrier==CarrierType::Electron?flux/mobility*term.quasiFermi:0.)},{phipOffset()+node,dp+(carrier==CarrierType::Hole?flux/mobility*term.quasiFermi:0.)}}}) {
+                        {psiOffset()+node,dn-dp+detail::mobilityChainProduct(flux,mobility,term.potential)},{phinOffset()+node,-dn+(carrier==CarrierType::Electron?qfChain:0.)},{phipOffset()+node,dp+(carrier==CarrierType::Hole?qfChain:0.)}}}) {
                     add(rowOffset+i,column,value);
                     add(rowOffset+j,column,-value);
                 }
@@ -5987,6 +6068,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             e, CarrierType::Electron, electronMobilityField, &psi,
             n(i), n(j), p(i), p(j), &n, &p, &phinState, &phipState);
         if (mun > 0.0) {
+            if (elementBoxPhuMob && usesFermiDirac_)
+                addBoxCarrierChain(CarrierType::Electron, edgeElectronTransportFlux(
+                    e,i,j,h,psi_i,psi_j,phin_i,phin_j,phip_i,phip_j,mun,noPerturbedNode,0.),mun);
             if (mobilityConfig_.model == "ialmob") {
                 addIalFeedback(e, CarrierType::Electron, mun, edgeElectronTransportFlux(
                     e, i, j, h, psi_i, psi_j, phin_i, phin_j, phip_i, phip_j,
@@ -5995,7 +6079,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
-            if (vectorQfMobilityFeedback && !stablePhuMobEdge) {
+            if (vectorQfMobilityFeedback && !stablePhuMobEdge && !elementBoxPhuMob) {
                 addVectorQfMobilityFeedback(e, CarrierType::Electron,
                     mun, edgeElectronTransportFlux(
                         e, i, j, h, psi_i, psi_j, phin_i, phin_j, phip_i, phip_j,
@@ -6011,7 +6095,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phipOffset() + i, phipOffset() + j,
                 };
                 const Real fixedMobility =
-                    mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
+                    elementBoxPhuMob || mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility && !surfaceMobilityEnabled_ && !densityMobility &&
                          (!mobilityConfig_.contactElectricFieldFallback ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))
@@ -6047,7 +6131,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     add(phinOffset() + i, cols[k], dF);
                     add(phinOffset() + j, cols[k], -dF);
                 }
-                if (surfaceMobilityEnabled_ || contactMobilityFallbackActive) {
+                if (!elementBoxPhuMob && (surfaceMobilityEnabled_ || contactMobilityFallbackActive)) {
                     for (std::size_t stencilIndex = 0;
                          stencilIndex < edgeKernel.avalancheStencilNodeCount;
                          ++stencilIndex) {
@@ -6164,6 +6248,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             e, CarrierType::Hole, holeMobilityField, &psi,
             n(i), n(j), p(i), p(j), &n, &p, &phinState, &phipState);
         if (mup > 0.0) {
+            if (elementBoxPhuMob && usesFermiDirac_)
+                addBoxCarrierChain(CarrierType::Hole, edgeHoleTransportFlux(
+                    e,i,j,h,psi_i,psi_j,phip_i,phip_j,phin_i,phin_j,mup,noPerturbedNode,0.),mup);
             if (mobilityConfig_.model == "ialmob") {
                 addIalFeedback(e, CarrierType::Hole, mup, edgeHoleTransportFlux(
                     e, i, j, h, psi_i, psi_j, phip_i, phip_j, phin_i, phin_j,
@@ -6172,7 +6259,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
-            if (vectorQfMobilityFeedback && !stablePhuMobEdge) {
+            if (vectorQfMobilityFeedback && !stablePhuMobEdge && !elementBoxPhuMob) {
                 addVectorQfMobilityFeedback(e, CarrierType::Hole,
                     mup, edgeHoleTransportFlux(
                         e, i, j, h, psi_i, psi_j, phip_i, phip_j, phin_i, phin_j,
@@ -6188,7 +6275,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phinOffset() + i, phinOffset() + j,
                 };
                 const Real fixedMobility =
-                    mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
+                    elementBoxPhuMob || mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility && !surfaceMobilityEnabled_ && !densityMobility &&
                          (!mobilityConfig_.contactElectricFieldFallback ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))
@@ -6224,7 +6311,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     add(phipOffset() + i, cols[k], dF);
                     add(phipOffset() + j, cols[k], -dF);
                 }
-                if (surfaceMobilityEnabled_ || contactMobilityFallbackActive) {
+                if (!elementBoxPhuMob && (surfaceMobilityEnabled_ || contactMobilityFallbackActive)) {
                     for (std::size_t stencilIndex = 0;
                          stencilIndex < edgeKernel.avalancheStencilNodeCount;
                          ++stencilIndex) {
@@ -6737,6 +6824,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 (material.mun > 0.0 || material.mup > 0.0);
         };
         const bool useLocalAd =
+            detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_) ||
             (elementEdgeGssLauxAvalanche && !surfaceMobilityEnabled_) ||
             (triangleGssAvalanche && !surfaceMobilityEnabled_ &&
              impactIonizationConfig_.sourceJacobianMode == "local_ad");
@@ -6777,8 +6865,27 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                         detail::localAdLimitedExp(
                             (localPhip[localNode] - localPsi[localNode]) /
                             detail::Tri3LocalForwardDual(Vt_));
+                    if (detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_)) {
+                        // Differentiate the very same live populations used by
+                        // the residual, including Fermi statistics and QF anchors.
+                        auto& en=localElectronDensity[localNode];
+                        auto& hp=localHoleDensity[localNode];
+                        en=detail::Tri3LocalForwardDual(n(nodeIndex));
+                        hp=detail::Tri3LocalForwardDual(p(nodeIndex));
+                        const Real dn=electronDensityDerivativeEtaAt(node,
+                            psi(nodeIndex)-electronQuasiFermiReferenceAt(node),x(phinOffset()+nodeIndex)*potentialScale)/Vt_;
+                        const Real dp=holeDensityDerivativeEta(niHole_[node],Nv_[node],
+                            psi(nodeIndex)-holeQuasiFermiReferenceAt(node),x(phipOffset()+nodeIndex)*potentialScale,Vt_,carrierStatisticsModel_)/Vt_;
+                        en.derivative[localNode]=dn; en.derivative[3+localNode]=-dn;
+                        hp.derivative[localNode]=-dp; hp.derivative[6+localNode]=dp;
+                    }
                 }
-                const auto sources = elementEdgeGssLauxAvalanche
+                const auto sources = sourceMode==1
+                    ? detail::phumobElementAvalancheSourceIntegralsLocal(
+                          impactIonizationConfig_,mobilityConfig_,mesh_,doping_,
+                          cellMaterials_,cellId,localPsi,localPhin,localPhip,
+                          localElectronDensity,localHoleDensity,nullptr,true)
+                    : elementEdgeGssLauxAvalanche
                     ? detail::elementLocalAvalancheSourceIntegrals<
                           detail::Tri3LocalForwardDual>(
                           impactIonizationConfig_, mobilityConfig_, *mobility_,
@@ -6815,9 +6922,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                         anySourceOrDerivative =
                             anySourceOrDerivative || derivative != 0.0;
                         add(phinOffset() + rowNode, columnOffset + columnNode,
-                            -derivative);
+                            sourceMode==2 ? 0. : -derivative);
                         add(phipOffset() + rowNode, columnOffset + columnNode,
-                            -derivative);
+                            sourceMode==2 ? 0. : -derivative);
                     }
                 }
                 if (anySourceOrDerivative) {

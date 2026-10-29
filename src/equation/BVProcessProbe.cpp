@@ -138,7 +138,8 @@ void finalizeRecord(
                      ? 1
                      : 0)
              << ";flux_sign="
-             << (record.supportKind=="observed_ialmob_element_vertex" ? "not_applicable" : record.directedSgFlux > 0.0
+             << ((record.supportKind=="observed_ialmob_element_vertex" ||
+                  record.supportKind=="phumob_element_vertex") ? "not_applicable" : record.directedSgFlux > 0.0
                      ? "positive"
                      : (record.directedSgFlux < 0.0 ? "negative" : "zero"));
     if (!record.productionBranchDetails.empty())
@@ -330,6 +331,13 @@ std::string bvProcessConfigurationFingerprint(
             }
         }
     }
+    if (detail::usesPhuMobElementAvalancheSource(impact)) {
+        canonical << ";element_box=" << mobility.edgeAveraging
+                  << ";surface_discretization=" << mobility.surface.discretization
+                  << ";hfs_discretization=" << mobility.highFieldGradientDiscretization;
+        for(const auto& material:mobility.constantMaterials)
+            canonical << ";constant_material=" << material;
+    }
     return fnv1a64(canonical.str());
 }
 
@@ -386,6 +394,58 @@ BVProcessProbeResult evaluateBVProcessProbe(
     const auto impact = makeImpactIonizationModel(impactConfig);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<bool> contactNodes = detail::contactNodeMask(mesh);
+
+    if (detail::usesPhuMobElementAvalancheSource(impactConfig)) {
+        // A standalone diagnostic receives configuration, not the assembler's
+        // populated geometry cache. Build the same material/contact support
+        // before evaluating HFS and recording contact adjacency.
+        detail::updateElementHighFieldGeometry(mobilityConfig, mesh, edgeCells, cellMaterials);
+        detail::updateSurfaceMobilityCellGeometry(mobilityConfig,mesh,edgeCells,state.psi,fieldFactor,&cellMaterials);
+        for(const auto& cell:mesh.cells()) {
+            if(mesh.getRegion(cell.region_id).material!="Si") continue;
+            std::array<Real,3> psi,fn,fp,n,p;
+            for(int k=0;k<3;++k) {
+                const auto node=cell.node_ids[k];psi[k]=state.psi[node];fn[k]=state.phin[node];fp[k]=state.phip[node];
+                n[k]=state.n[node];p[k]=state.p[node];
+            }
+            detail::PhuMobElementAvalancheDiagnostics diagnostic;
+            const auto evaluated=detail::phumobElementAvalancheSourceIntegralsLocal(
+                impactConfig,mobilityConfig,mesh,doping,cellMaterials,cell.id,psi,fn,fp,n,p,&diagnostic);
+            const auto measures=detail::cellBoxNodeMeasures(mesh,cell.id);
+            for(int carrier=0;carrier<2;++carrier) for(int k=0;k<3;++k) {
+                const bool electron=carrier==0;
+                BVProcessProbeRecord record;
+                record.supportKind="phumob_element_vertex";record.carrier=electron?"electron":"hole";
+                record.cellId=cell.id;record.edgeId=InvalidIndex;record.node0=record.node1=cell.node_ids[k];
+                assignEndpointState(record,state);
+                record.midpointDensity=electron?n[k]:p[k];
+                record.electricFieldVector=-cellGradient(mesh,cell.id,state.psi)*fieldFactor;
+                record.quasiFermiGradientVector=cellGradient(mesh,cell.id,electron?state.phin:state.phip)*fieldFactor;
+                record.finalMobility=electron?diagnostic.electronMobility[k]:diagnostic.holeMobility[k];
+                record.lowFieldMobility=electron?diagnostic.electronLowFieldMobility[k]:diagnostic.holeLowFieldMobility[k];
+                record.impactField=electron?diagnostic.electronDrive:diagnostic.holeDrive;
+                record.highFieldDrive=electron?diagnostic.electronHighFieldDrive:diagnostic.holeHighFieldDrive;
+                record.alpha=electron?diagnostic.electronAlpha:diagnostic.holeAlpha;
+                record.currentVector=-record.midpointDensity*record.finalMobility*record.quasiFermiGradientVector;
+                record.currentVectorProvenance="vertex_density_phumob_gradqf";
+                if(impactConfig.currentApproximation=="phumob_element_sg_best_vertex") {
+                    const auto& j=electron?diagnostic.electronSgCurrent:diagnostic.holeSgCurrent;
+                    record.currentVector=Point2(j[0],j[1]);
+                    record.currentVectorProvenance="sg_best_vertex_effective_band";
+                    record.productionBranchDetails="source_vertex="+std::to_string(cell.node_ids[diagnostic.sourceVertex]);
+                }
+                record.selectedFluxMagnitude=record.currentVector.norm();
+                record.sourceMeasure=measures[k];
+                record.sourceIntegral=electron?evaluated.electron[k]:evaluated.hole[k];
+                record.scatterCount=1;record.scatterNodes[0]=record.node0;record.sourceWeights[0]=1.;
+                record.contactAdjacent=mobilityConfig.highFieldCells.at(cell.id).contact;
+                record.reconstructedCurrent=true;
+                record.productionBranchDetails+=";material=Si;source=phumob_vertex;hfs=element_vertex_partial_layer";
+                appendRecord(result,std::move(record),impactConfig);
+            }
+        }
+        return result;
+    }
 
     if (detail::usesIalElementAvalancheSource(impactConfig)) {
         for (const auto& support:mobilityConfig.ialmobGeometry->cells) {

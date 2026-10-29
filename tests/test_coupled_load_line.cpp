@@ -1,9 +1,67 @@
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/CarrierReducedLoadLine.h"
+#include "vela/simulation/CommonRelativeLinearSolve.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 using namespace vela;
+
+TEST_CASE("Common-relative solve preserves affine direction and tiny relative part", "[coupled_load_line][common_relative]") {
+    SparseMatrixd a(3,3);std::vector<Eigen::Triplet<Real>> e={{0,0,2},{0,1,-1},{1,0,-1},{1,1,3},{1,2,1},{2,2,1}};a.setFromTriplets(e.begin(),e.end());
+    VectorXd b(3);b<<1,4,2;VectorXd common=a*VectorXd((VectorXd(3)<<1,1,0).finished());
+    auto z=solveCommonRelative(a,b,{{0,1}},{common},"sparselu");
+    REQUIRE((a*(z.shared+z.relative)-b).norm()<1e-13);
+    REQUIRE((z.matrix*z.direction-b).norm()<1e-13);
+    REQUIRE_THROWS(solveCommonRelative(a,b,{{0,1},{1,2}},{common,common},"sparselu"));
+    // The relative unknown remains available even when adding it to a common
+    // binary64 value would round it away. Split-state consumers apply separately.
+    SparseMatrixd identity(2,2);identity.setIdentity();VectorXd rhs(2);rhs<<1,1e-30;
+    VectorXd col(2);col<<1,0;
+    auto tiny=solveCommonRelative(identity,rhs,{{0,1}},{col},"sparselu");
+    REQUIRE(tiny.shared[1]==1);REQUIRE(tiny.relative[1]==Catch::Approx(1e-30));
+    REQUIRE(tiny.shared[1]+tiny.relative[1]==1);
+}
+
+TEST_CASE("Carrier-reduced real circuit border preserves affine constraints and psi rows",
+          "[coupled_load_line][carrier_reduced_border]")
+{
+    // Two nodes: inactive carrier constraints have nonzero prescribed updates.
+    // Retain both psi constraints, both active carrier equations and the circuit.
+    SparseMatrixd j(6,6);
+    std::vector<Eigen::Triplet<Real>> e={{0,0,1},{1,1,1},{2,2,3},{2,3,2},
+        {3,3,2},{4,4,4},{4,5,1},{5,5,5}};
+    j.setFromTriplets(e.begin(),e.end());
+    VectorXd r(6); r<<-.2,.3,1,-.8,-2,.5;
+    VectorXd fv=VectorXd::Zero(6); fv[2]=-.7; fv[4]=.4;
+    VectorXd ig(6); ig<<.01,.02,.03,.04,.05,.06;
+    const auto a=assembleCarrierReducedLoadLine(j,r,fv,ig,.1,.03,0,0,10,2);
+    REQUIRE(a.reduced.rows()==5);
+    REQUIRE(a.map[0]>=0); REQUIRE(a.map[1]>=0); REQUIRE(a.map[6]>=0);
+    REQUIRE(a.map[3]==-1); REQUIRE(a.map[5]==-1);
+    const auto d=a.solve("sparselu");
+    REQUIRE((a.full*d-a.rhs).lpNorm<Eigen::Infinity>()<1e-14);
+    REQUIRE(d[3]==Catch::Approx(.4)); REQUIRE(d[5]==Catch::Approx(-.1));
+    // A voltage-dependent carrier constraint requires affine substitution into
+    // both the device equations and the circuit row, then a voltage-aware lift.
+    fv[3]=.5;
+    const auto b=assembleCarrierReducedLoadLine(j,r,fv,ig,.1,.03,0,0,10,2);
+    REQUIRE(b.reduced.rows()==5);
+    REQUIRE(b.map[3]==-1);
+    REQUIRE(b.voltageSlope[3]==Catch::Approx(-.25));
+    REQUIRE((b.full*b.solve("sparselu")-b.rhs).lpNorm<Eigen::Infinity>()<1e-14);
+    REQUIRE_THROWS_AS(a.solve("pardiso_mkl_eliminated_keep_psi"),std::invalid_argument);
+}
+
+TEST_CASE("Carrier-reduced border rejects invalid layout and nonfinite coefficients",
+          "[coupled_load_line][carrier_reduced_border]")
+{
+    SparseMatrixd j(3,3); j.setIdentity();
+    VectorXd z=VectorXd::Zero(3);
+    REQUIRE_THROWS_AS(assembleCarrierReducedLoadLine(j,z,z,z,0,0,0,0,1,2),std::invalid_argument);
+    j.coeffRef(0,0)=std::numeric_limits<Real>::infinity();
+    REQUIRE_THROWS_AS(assembleCarrierReducedLoadLine(j,z,z,z,0,0,0,0,1,1),std::runtime_error);
+}
 
 namespace {
 
@@ -53,6 +111,176 @@ ArclengthScalarFunctional foldedCurrentFunctional()
 }
 
 } // namespace
+
+TEST_CASE("Bounded diagnostic updates preserve gates and observe only accepted states",
+          "[coupled_load_line][diagnostic]")
+{
+    auto system = foldedDeviceSystem();
+    auto current = foldedCurrentFunctional();
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered_qr";
+    config.equationTolerance = 1e-3;
+    config.loadLineTolerance_V = 1e-3;
+    ArclengthState initial{VectorXd::Constant(1, 0.1), -0.0989};
+    const Real outer = initial.lambda + 3.0 * initial.x(0);
+    CoupledLoadLineNewton early(system, current.value, config, current);
+    REQUIRE(early.solve(initial, outer, 3.0).iterations == 0);
+    config.diagnosticMinUpdates = 2;
+    config.maxIterations = 2;
+    CoupledLoadLineNewton deeper(system, current.value, config, current);
+    int observed = 0;
+    const auto result = deeper.solve(initial, outer, 3.0,
+        [&](int iteration, const ArclengthState& state) {
+            REQUIRE(iteration == ++observed);
+            REQUIRE(state.x.allFinite());
+        });
+    REQUIRE(result.converged);
+    REQUIRE(result.iterations == 2);
+    REQUIRE(observed == 2);
+    REQUIRE(result.equationResidualNorm <= config.equationTolerance);
+    REQUIRE(std::abs(result.loadLineResidual_V) <= config.loadLineTolerance_V);
+    config.diagnosticMinUpdates = 4;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(system, current.value, config, current), std::invalid_argument);
+    config.diagnosticMinUpdates = 1;
+    config.maxIterations = 1;
+    config.equationTolerance = 1e-16;
+    config.loadLineTolerance_V = 1e-16;
+    CoupledLoadLineNewton limited(system, current.value, config, current);
+    const auto failed = limited.solve(initial, outer, 3.0);
+    REQUIRE_FALSE(failed.converged);
+    system.trialState = [](const VectorXd&, const VectorXd&, Real) -> VectorXd {
+        throw std::runtime_error("diagnostic test rejects every trial");
+    };
+    CoupledLoadLineNewton rejected(system, current.value, config, current);
+    observed = 0;
+    const auto noUpdate = rejected.solve(initial, outer, 3.0,
+        [&](int, const ArclengthState&) { ++observed; });
+    REQUIRE_FALSE(noUpdate.converged);
+    REQUIRE(observed == 0);
+}
+
+TEST_CASE("Trial observation preserves rejection and propagates export errors",
+          "[coupled_load_line][diagnostic]")
+{
+    auto system = foldedDeviceSystem();
+    const auto current = foldedCurrentFunctional();
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered_qr";
+    config.maxLineSearchSteps = 3;
+    ArclengthState initial{VectorXd::Constant(1, 0.1), -0.09};
+    const Real outer = initial.lambda + 3.0 * initial.x(0);
+    // Every trial remains on the same equation defect and has a non-decreasing
+    // circuit defect: the observer must not accidentally accept a stalled step.
+    system.trialState = [](const VectorXd& x, const VectorXd&, Real) { return x; };
+    system.limitUpdate = [](const VectorXd&, VectorXd&, Real& dv) { dv = 0; };
+    CoupledLoadLineNewton solver(system, current.value, config, current);
+    const auto baseline = solver.solve(initial, outer, 3.0);
+    int observed = 0;
+    const auto result = solver.solve(initial, outer, 3.0, {},
+        [&](const CoupledLoadLineTrial& info, const ArclengthState& state) {
+            REQUIRE(info.lineSearch == observed++);
+            REQUIRE_FALSE(info.accepted);
+            REQUIRE(info.equationResidual == Catch::Approx(0.009));
+            REQUIRE(info.equationResidualIndex == 0);
+            REQUIRE(state.lambda == initial.lambda);
+        });
+    REQUIRE(observed == 4);
+    REQUIRE_FALSE(result.converged);
+    REQUIRE(result.failureReason == baseline.failureReason);
+    REQUIRE(result.state.x == baseline.state.x);
+    REQUIRE_THROWS_AS(solver.solve(initial, outer, 3.0, {},
+        [](const CoupledLoadLineTrial&, const ArclengthState&) {
+            throw std::runtime_error("export failed");
+        }), std::runtime_error);
+
+    system = foldedDeviceSystem();
+    CoupledLoadLineNewton normal(system, current.value, config, current);
+    int accepted = 0;
+    const auto solved = normal.solve(initial, outer, 3.0, {},
+        [&](const CoupledLoadLineTrial& info, const ArclengthState&) {
+            if (info.accepted) ++accepted;
+        });
+    REQUIRE(solved.converged);
+    REQUIRE(accepted == solved.iterations);
+}
+
+TEST_CASE("Supply tangent predicts the full state through a device fold",
+          "[coupled_load_line][tangent]")
+{
+    auto system = foldedDeviceSystem();
+    auto current = foldedCurrentFunctional();
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered";
+    CoupledLoadLineNewton solver(system, current.value, config, current);
+    ArclengthState parent{VectorXd::Constant(1, 1.0 / std::sqrt(3.0)), 0.0};
+    parent.lambda = std::pow(parent.x(0), 3) - parent.x(0);
+    const Real outer = parent.lambda + 2.0 * parent.x(0);
+    auto p = solver.tangentPredict(parent, outer + 1e-4, 2.0);
+    REQUIRE(p.applied);
+    REQUIRE(p.alpha == 1.0);
+    REQUIRE(p.state.x(0) - parent.x(0) == Catch::Approx(5e-5).margin(1e-13));
+    REQUIRE(std::abs(p.voltageIncrement) < 1e-12);
+    auto half = solver.tangentPredict(parent, outer + 5e-5, 2.0);
+    REQUIRE(half.applied);
+    REQUIRE(p.deviceResidual / half.deviceResidual == Catch::Approx(4.0).epsilon(1e-3));
+    auto solved = solver.solve(p.state, outer + 1e-4, 2.0);
+    REQUIRE(solved.converged);
+}
+
+TEST_CASE("Supply tangent respects voltage trust region and rejects unqualified parents",
+          "[coupled_load_line][tangent]")
+{
+    auto system = foldedDeviceSystem();
+    auto current = foldedCurrentFunctional();
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered";
+    config.maxVoltageUpdate_V = 1e-4;
+    CoupledLoadLineNewton solver(system, current.value, config, current);
+    ArclengthState parent{VectorXd::Zero(1), 0.0};
+    const auto p = solver.tangentPredict(parent, 0.01, 2.0);
+    REQUIRE(p.applied);
+    REQUIRE(std::abs(p.voltageIncrement) <= config.maxVoltageUpdate_V);
+    REQUIRE(p.state.x(0) == Catch::Approx(-p.voltageIncrement));
+    parent.lambda = 0.1;
+    const auto rejected = solver.tangentPredict(parent, 0.2, 2.0);
+    REQUIRE_FALSE(rejected.applied);
+    REQUIRE(rejected.reason == "parent_outside_device_tolerance");
+    REQUIRE(rejected.state.lambda == parent.lambda);
+    REQUIRE(rejected.state.x == parent.x);
+    system.jacobian = {};
+    CoupledLoadLineConfig fallbackConfig;
+    CoupledLoadLineNewton missing(system, current.value, fallbackConfig, current);
+    parent.lambda = 0.0;
+    REQUIRE_FALSE(missing.tangentPredict(parent, 0.1, 2.0).applied);
+}
+
+TEST_CASE("Supply tangent includes explicit voltage current derivative and device limits",
+          "[coupled_load_line][tangent]")
+{
+    auto system = foldedDeviceSystem();
+    system.residual = [](const VectorXd& x, Real v) { return VectorXd(x.array() - 2*v); };
+    system.parameterDerivative = [](const VectorXd&, Real) { return VectorXd::Constant(1,-2); };
+    system.jacobian = [](const VectorXd&, Real) {
+        SparseMatrixd j(1,1); j.insert(0,0)=1.; return j;
+    };
+    system.limitUpdate = [](const VectorXd&, VectorXd& dx, Real& dv) { dx*=.5; dv*=.5; };
+    ArclengthScalarFunctional current;
+    current.value = [](const VectorXd& x, Real v) { return 3*x(0)+4*v; };
+    current.linearize = [current](const VectorXd& x, Real v) {
+        return ArclengthScalarLinearization{current.value(x,v),VectorXd::Constant(1,3),4.};
+    };
+    CoupledLoadLineConfig config; config.linearSolver="direct_bordered";
+    CoupledLoadLineNewton solver(system,current.value,config,current);
+    ArclengthState parent{VectorXd::Zero(1),0.};
+    auto p=solver.tangentPredict(parent,.21,2.);
+    REQUIRE(p.applied);
+    REQUIRE(p.voltageIncrement == Catch::Approx(.005));
+    REQUIRE(p.state.x(0) == Catch::Approx(.01));
+    REQUIRE(p.deviceResidual < 1e-12);
+    auto q=solver.solve(p.state,.21,2.);
+    REQUIRE(q.converged);
+    REQUIRE(q.state.lambda == Catch::Approx(.01).margin(1e-7));
+}
 
 TEST_CASE("Coupled residual filter applies independent block envelopes",
           "[coupled_load_line][filter]")

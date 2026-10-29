@@ -33,6 +33,9 @@ Real logBernoulli(Real value)
 
 Real signedSaturatedExp(Real logMagnitude, Real sign)
 {
+    // Invalid arithmetic is not a finite overflow and must remain observable.
+    if (std::isnan(logMagnitude) || !std::isfinite(sign))
+        return std::numeric_limits<Real>::quiet_NaN();
     if (sign == 0.0)
         return 0.0;
     const Real logMaximum = std::log(std::numeric_limits<Real>::max());
@@ -513,11 +516,12 @@ Real stableGeneralizedFermiDifference(Real rightDensity,
                                       Real logarithmicLeftOverRight,
                                       Real coefficient)
 {
+    if (!std::isfinite(rightDensity) || !std::isfinite(rightBernoulliArgument) ||
+        !std::isfinite(logarithmicLeftOverRight) || !std::isfinite(coefficient))
+        return std::numeric_limits<Real>::quiet_NaN();
     if (!(rightDensity > 0.0) || coefficient == 0.0 ||
         logarithmicLeftOverRight == 0.0)
         return 0.0;
-    if (!std::isfinite(logarithmicLeftOverRight) || !std::isfinite(coefficient))
-        return std::numeric_limits<Real>::quiet_NaN();
 
     const Real logAbsRelativeDifference = logarithmicLeftOverRight > 50.0
         ? logarithmicLeftOverRight
@@ -534,14 +538,30 @@ Real stableGeneralizedFermiDifference(Real rightDensity,
 
 } // namespace
 
+Real sgEffectiveBandArgument(Real density0, Real density1, Real signedQfDropOverVt)
+{
+    if (!(density0 > 0.0) || !(density1 > 0.0))
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Real ratio = density1 / density0;
+    const Real logRatio = ratio > 0.5 && ratio < 2.0
+        ? std::log1p((density1 - density0) / density0)
+        : std::log(density1) - std::log(density0);
+    return logRatio + signedQfDropOverVt;
+}
+
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (effectiveBand) {
+        const Real drop = (quasiFermi1 - quasiFermi0) / Vt;
+        return stableGeneralizedFermiDifference(
+            n1, sgEffectiveBandArgument(n0, n1, drop), drop, coef);
+    }
     const Real factor = sgGeneralizedEinsteinFactor(n0, n1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
     const Real logLeftOverRight = (quasiFermi1 - quasiFermi0) / (Vt * factor);
@@ -557,12 +577,17 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
     Real qmDensity0, Real qmDensity1,
     Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (effectiveBand) {
+        const Real drop = (quasiFermi1 - quasiFermi0) / Vt;
+        return stableGeneralizedFermiDifference(
+            qmDensity1, sgEffectiveBandArgument(qmDensity0, qmDensity1, drop), drop, coef);
+    }
     const Real factor = sgGeneralizedEinsteinFactor(
         fermiDensity0, fermiDensity1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
@@ -579,12 +604,17 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
 
 Real sgHoleFermiDiracContinuityFlux(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, bool effectiveBand)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (effectiveBand) {
+        const Real drop = -(quasiFermi1 - quasiFermi0) / Vt;
+        return stableGeneralizedFermiDifference(
+            p1, sgEffectiveBandArgument(p0, p1, drop), drop, coef);
+    }
     const Real factor = sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
     const Real logLeftOverRight = -(quasiFermi1 - quasiFermi0) / (Vt * factor);
@@ -599,11 +629,18 @@ Real sgHoleFermiDiracContinuityFlux(
 long double sgElectronFermiDiracQuantumContinuityFluxLongDouble(
     Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef)
+    long double quasiFermiDrop, Real Vt, Real coef, bool effectiveBand)
 {
     if (!(qmDensity1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
         quasiFermiDrop == 0.0L) {
         return 0.0L;
+    }
+    if (effectiveBand) {
+        const long double drop = quasiFermiDrop / static_cast<long double>(Vt);
+        const long double ratio = static_cast<long double>(fermiDensity1) / fermiDensity0;
+        const long double argument = std::log(ratio) + drop;
+        return static_cast<long double>(coef) * longDoubleBernoulli(argument)
+            * static_cast<long double>(fermiDensity1) * std::expm1(drop);
     }
     const long double factor = static_cast<long double>(
         sgGeneralizedEinsteinFactor(
@@ -621,11 +658,18 @@ long double sgElectronFermiDiracQuantumContinuityFluxLongDouble(
 
 long double sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef)
+    long double quasiFermiDrop, Real Vt, Real coef, bool effectiveBand)
 {
     if (!(p1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
         quasiFermiDrop == 0.0L) {
         return 0.0L;
+    }
+    if (effectiveBand) {
+        const long double drop = -quasiFermiDrop / static_cast<long double>(Vt);
+        const long double ratio = static_cast<long double>(p1) / p0;
+        const long double argument = std::log(ratio) + drop;
+        return static_cast<long double>(coef) * longDoubleBernoulli(argument)
+            * static_cast<long double>(p1) * std::expm1(drop);
     }
     const long double factor = static_cast<long double>(
         sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1));

@@ -162,3 +162,183 @@ TEST_CASE("Split sweep predictor updates full state across references and retain
     auto invalid=a;invalid.packedLow.resize(0);
     REQUIRE_THROWS(detail::predictDCSweepInitialState(cfg,&invalid,b,0.,.1,.25));
 }
+
+namespace {
+nlohmann::json sgFixture() {
+    auto model=fixture();model["continuity_scale"]=1.;model["field_factor"]=1.;
+    auto& edge=model["transport_edges"][0];edge["id"]=0;edge["length"]=1.;edge["couple"]=1.;edge["length_m"]=1.;edge["couple_m"]=1.;
+    // Deliberately asymmetric carrier prefactors and common ni: using common
+    // ni in either SG weight would create a fictitious equilibrium current.
+    model["population_prefactors"]={{2e16,7e15},{9e16,3e16}};
+    return model;
+}
+}
+TEST_CASE("Split SG diagnostics preserve equilibrium with carrier specific prefactors", "[split_sg_diagnostics]") {
+    SplitDDRuntime runtime(sgFixture());VectorXd x(6);x<<1.,2.,0.,0.,0.,0.;
+    const auto before=runtime.residual(x,{});const auto current=runtime.current(x,"drain");const auto low=runtime.low();
+    const auto edge=runtime.edges(x).at(0);
+    REQUIRE(edge.electronFlux==0.);REQUIRE(edge.holeFlux==0.);
+    REQUIRE(std::abs(edge.electronSgReconstructedFluxScaled)/edge.electronSgHighPrecisionReferenceTermScaleScaled<1e-90);
+    REQUIRE(std::abs(edge.holeSgReconstructedFluxScaled)/edge.holeSgHighPrecisionReferenceTermScaleScaled<1e-90);
+    REQUIRE(std::abs(edge.electronSgHighPrecisionReferenceFluxScaled)/edge.electronSgHighPrecisionReferenceTermScaleScaled<1e-180);
+    REQUIRE(std::abs(edge.holeSgHighPrecisionReferenceFluxScaled)/edge.holeSgHighPrecisionReferenceTermScaleScaled<1e-180);
+    REQUIRE(edge.electronSgPopulationPrefactor0Internal==2e16);
+    REQUIRE(edge.holeSgPopulationPrefactor0Internal==7e15);
+    REQUIRE(edge.splitSgReferenceDecimalDigits==200);
+    REQUIRE((runtime.residual(x,{}).array()==before.array()).all());
+    REQUIRE(runtime.current(x,"drain")==current);REQUIRE((runtime.low().array()==low.array()).all());
+}
+TEST_CASE("Split SG independent references retain sub ULP drive and reverse orientation", "[split_sg_diagnostics]") {
+    auto model=sgFixture();SplitDDRuntime runtime(model);VectorXd x(6);x<<1.,2.,.125,.125,.125,.125;
+    auto low=runtime.low();low(3)=1e-28;low(5)=-2e-28;runtime.setLow(low);
+    const auto a=runtime.edges(x).at(0);
+    REQUIRE(a.phin0_V==a.phin1_V);REQUIRE(a.phip0_V==a.phip1_V);
+    REQUIRE(a.electronFlux!=0.);REQUIRE(a.holeFlux!=0.);
+    REQUIRE(std::abs(a.electronSgHighPrecisionReferenceFluxScaled/a.electronFlux-1)<1e-14);
+    REQUIRE(std::abs(a.holeSgHighPrecisionReferenceFluxScaled/a.holeFlux-1)<1e-14);
+    const auto packet=nlohmann::json::parse(a.splitSgOperandsJson);
+    REQUIRE(packet["primitives"]["packed_low"][3].get<double>()==low(3));
+    REQUIRE(packet["primitives"]["electron_prefactors_internal"][0]==2e16);
+    // Direct cache serialization must retain a drive hidden by double output.
+    using split_dd::Wide;
+    const auto& cache=packet.at("production_cache");
+    const Wide q0(cache["phin_V"][0].get<std::string>()),q1(cache["phin_V"][1].get<std::string>());
+    REQUIRE(q0!=q1);
+    REQUIRE(static_cast<double>(q0)==static_cast<double>(q1));
+    const Wide vt(model["nodes"][0][10].get<double>());
+    const Wide psi0(cache["psi_V"][0].get<std::string>());
+    const Wide n0(cache["n_internal"][0].get<std::string>());
+    REQUIRE(abs(log(n0/Wide(2e16))-(psi0-q0)/vt)<Wide("1e-90"));
+    REQUIRE(static_cast<double>(Wide(cache["flux_scaled"][0].get<std::string>()))==a.electronFlux);
+    // Reversing the edge must reverse both particle fluxes without changing
+    // any state or constitutive parameter.
+    model["transport_edges"][0]["i"]=1;model["transport_edges"][0]["j"]=0;
+    SplitDDRuntime reversed(model);reversed.setLow(low);const auto b=reversed.edges(x).at(0);
+    REQUIRE(std::abs(b.electronSgHighPrecisionReferenceFluxScaled/a.electronFlux+1)<1e-14);
+    REQUIRE(std::abs(b.holeSgHighPrecisionReferenceFluxScaled/a.holeFlux+1)<1e-14);
+}
+TEST_CASE("Split SG references cover finite drive and common intrinsic fallback", "[split_sg_diagnostics]") {
+    auto model=sgFixture();model.erase("population_prefactors");SplitDDRuntime runtime(model);
+    VectorXd x(6);x<<1.,2.,.125,.25,.2,.1;const auto a=runtime.edges(x).at(0);
+    REQUIRE(a.electronSgPopulationPrefactor0Internal==1e16);
+    REQUIRE(a.holeSgPopulationPrefactor1Internal==1e16);
+    REQUIRE(std::abs(a.electronSgHighPrecisionReferenceFluxScaled/a.electronFlux-1)<1e-14);
+    REQUIRE(std::abs(a.holeSgHighPrecisionReferenceFluxScaled/a.holeFlux-1)<1e-14);
+}
+
+TEST_CASE("Split SG absent transport support is explicitly unavailable", "[split_sg_diagnostics]") {
+    auto model=sgFixture();model["transport_edges"][0]["weights"]=nlohmann::json::array();
+    SplitDDRuntime runtime(model);VectorXd x(6);x<<1.,2.,.125,.25,.2,.1;
+    const auto edge=runtime.edges(x).at(0);const auto packet=nlohmann::json::parse(edge.splitSgOperandsJson);
+    REQUIRE_FALSE(edge.electronSgBoltzmannDecompositionAvailable);
+    REQUIRE(edge.splitSgReferenceDecimalDigits==0);
+    REQUIRE_FALSE(packet["production_transport_active"].get<bool>());
+    REQUIRE_FALSE(packet.contains("reference_eta"));
+    REQUIRE(edge.electronFlux==0.);REQUIRE(edge.holeFlux==0.);
+}
+
+TEST_CASE("Split boundary retains tiny bias and is idempotent", "[split_boundary]") {
+    using split_dd::Wide;
+    constexpr double scale=.02585,bias=1e-22;
+    auto model=fixture();model["nodes"][0][7]=.8;model["nodes"][0][8]=-.7;
+    SplitDDRuntime runtime(model);VectorXd x=VectorXd::Zero(6);
+    CoupledDDBoundaryConditions zero,tiny;
+    for(int b=0;b<3;++b) {
+        setSplitBoundaryTarget(zero,b,0,b==0?.8:0.,0.,scale);
+        setSplitBoundaryTarget(tiny,b,0,b==0?.8:0.,bias,scale);
+    }
+    runtime.applyBoundary(x,zero);auto base=runtime.residual(x,zero);auto before=runtime.residual(x,tiny);
+    for(int b=0;b<3;++b)REQUIRE(std::abs(before[b*2]-base[b*2]+bias/scale)<1e-28);
+    runtime.applyBoundary(x,tiny);auto r=runtime.residual(x,tiny);
+    for(int b=0;b<3;++b)REQUIRE(std::abs(r[b*2])<1e-30);
+    const auto hi=x,lo=runtime.low();runtime.applyBoundary(x,tiny);
+    REQUIRE((hi.array()==x.array()).all());REQUIRE((lo.array()==runtime.low().array()).all());
+    REQUIRE(tiny.psiLow.at(0)!=0.);
+    DDSolution saved;runtime.save(x,saved);SplitDDRuntime again(model);
+    const auto loaded=again.restore(saved);REQUIRE((again.low().array()==lo.array()).all());
+    REQUIRE((again.residual(loaded,tiny).array()==r.array()).all());
+    REQUIRE_THROWS(setSplitBoundaryTarget(tiny,0,0,0.,0.,0.));
+}
+
+#include "vela/numerics/StableBoltzmannSg.h"
+#include "vela/numerics/SplitContactVoltage.h"
+TEST_CASE("Contact low voltage is retained by boundary targets circuit and archive", "[split_boundary]") {
+    using split_dd::Wide;
+    constexpr double voltage=.075,scale=.02585,dv=-4.4e-25;
+    const numerics::SplitContactVoltage base{{voltage,0}};
+    const auto changed=base.shifted(1.,dv);
+    REQUIRE(changed.value.hi==voltage);REQUIRE(changed.value.lo==dv);
+    REQUIRE(changed.loadLine(1e12,0.,voltage)==dv);
+    REQUIRE(base.shifted(0.,dv).value.lo==0.);
+    SplitDDRuntime runtime(fixture());VectorXd x=VectorXd::Zero(6);
+    CoupledDDBoundaryConditions before,after;
+    for(int b=0;b<3;++b) {
+        setSplitBoundaryTarget(before,b,0,b==0?.8:0.,voltage,scale);
+        setSplitBoundaryTarget(after,b,0,b==0?.8:0.,changed.value.hi,scale,changed.value.lo);
+    }
+    runtime.applyBoundary(x,before);const auto low=runtime.low();
+    const auto beforeR=runtime.residual(x,before),afterR=runtime.residual(x,after);
+    for(int b=0;b<3;++b)REQUIRE(std::abs(afterR[2*b]-beforeR[2*b]+dv/scale)<1e-30);
+    auto shifted=before;shiftSplitBoundaryVoltage(shifted,0,changed.value.lo,scale);
+    for(int b=0;b<3;++b) {
+        const auto& hi=b==0?after.psi:b==1?after.phin:after.phip;
+        const auto& lo=b==0?after.psiLow:b==1?after.phinLow:after.phipLow;
+        const auto& shi=b==0?shifted.psi:b==1?shifted.phin:shifted.phip;
+        const auto& slo=b==0?shifted.psiLow:b==1?shifted.phinLow:shifted.phipLow;
+        REQUIRE(abs(Wide(hi.at(0))+Wide(lo.at(0))-Wide(shi.at(0))-Wide(slo.at(0)))<Wide("1e-30"));
+    }
+    runtime.applyBoundary(x,after);const auto r=runtime.residual(x,after);
+    DDSolution saved;runtime.save(x,saved);SplitDDRuntime again(fixture());auto restored=again.restore(saved);
+    REQUIRE((again.residual(restored,after).array()==r.array()).all());
+    for(int b=0;b<3;++b)REQUIRE(std::abs(r[2*b])<1e-30);
+    REQUIRE_THROWS(changed.loadLine(-1,0,voltage));
+}
+
+TEST_CASE("Constant Boltzmann SG derivative preserves equilibrium and relative directions", "[split_sg_diagnostics]") {
+    using split_dd::Wide;
+    const auto flux=[](Wide cp,Wide eta,Wide q)->Wide {
+        return cp*(eta==0?Wide(1):Wide(eta/expm1(eta)))*expm1(q);
+    };
+    for(double eta:{-8.,-1e-10,0.,1e-10,2.}) {
+        const Wide cp=1e12,q=Wide("1e-30"),common=Wide("1e-18");
+        const Wide d=numerics::stableBoltzmannSgDirection<Wide>(cp,Wide(eta),q,-common,0,0);
+        REQUIRE(abs(d+flux(cp,Wide(eta),q)*common)<abs(d)*Wide("1e-30"));
+        REQUIRE(numerics::stableBoltzmannSgDirection<Wide>(cp,Wide(eta),0,1,2,0)==0);
+        const Wide finiteQ=.13,dl=.2,de=-.3,dq=.7,h=Wide("1e-8");
+        const Wide analytic=numerics::stableBoltzmannSgDirection<Wide>(cp,Wide(eta),finiteQ,dl,de,dq);
+        const Wide plus=flux(cp*exp(h*dl),Wide(eta)+h*de,finiteQ+h*dq);
+        const Wide minus=flux(cp*exp(-h*dl),Wide(eta)-h*de,finiteQ-h*dq);
+        REQUIRE(abs((plus-minus)/(2*h)-analytic)<abs(analytic)*Wide("1e-14"));
+    }
+}
+
+TEST_CASE("Rounded nonzero voltage projection removes boundary tail but preserves free updates", "[split_boundary]") {
+    constexpr double scale=.02585,voltage=.075,dv=-4.4e-25;
+    REQUIRE(voltage+dv==voltage);
+    SplitDDRuntime runtime(fixture());VectorXd x=VectorXd::Zero(6);
+    CoupledDDBoundaryConditions bcs;
+    for(int block=0;block<3;++block)setSplitBoundaryTarget(bcs,block,0,0.,voltage,scale);
+    runtime.applyBoundary(x,bcs);const auto base=runtime.low();
+    VectorXd step=VectorXd::Constant(6,dv/scale);
+    auto trial=runtime.candidate(x,step,1.,base);
+    const auto fullDelta=runtime.coordinateDelta(trial,x,base);
+    REQUIRE_THROWS(runtime.coordinateDelta(trial,x,VectorXd::Zero(5)));
+    const double tailRoundoff=4*std::numeric_limits<double>::epsilon()*
+        (base.lpNorm<Eigen::Infinity>()+step.lpNorm<Eigen::Infinity>());
+    REQUIRE((fullDelta-step).lpNorm<Eigen::Infinity>()<=tailRoundoff);
+    REQUIRE((fullDelta-step).lpNorm<Eigen::Infinity>()<step.lpNorm<Eigen::Infinity>()*1e-6);
+    const auto before=runtime.residual(trial,bcs);const auto hi=trial,lo=runtime.low();
+    REQUIRE(std::abs(before[0])>1e-24);
+    runtime.applyBoundary(trial,bcs);const auto after=runtime.residual(trial,bcs);
+    const auto projectedDelta=runtime.coordinateDelta(trial,x,base);
+    for(int block=0;block<3;++block) {
+        REQUIRE(std::abs(after[2*block])<1e-30);
+        REQUIRE(trial[2*block+1]==hi[2*block+1]);
+        REQUIRE(runtime.low()[2*block+1]==lo[2*block+1]);
+        REQUIRE(projectedDelta[2*block]==0.);
+        REQUIRE(projectedDelta[2*block+1]==fullDelta[2*block+1]);
+    }
+    DDSolution saved;runtime.save(trial,saved);SplitDDRuntime reread(fixture());
+    const auto restored=reread.restore(saved);
+    REQUIRE((reread.residual(restored,bcs).array()==after.array()).all());
+}

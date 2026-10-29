@@ -105,14 +105,21 @@ def write_secant_restart(previous_path: Path, current_path: Path,
                           output_path: Path, previous_bias: float,
                           current_bias: float, target_bias: float,
                           max_ratio: float = 2.0, *, document: dict,
-                          config_directory: Path) -> float:
+                          config_directory: Path, ratio_override: float | None = None) -> float:
     """Predict HDF5 unknowns without folding sub-ULP split QF increments."""
     if not all(math.isfinite(v) for v in (previous_bias, current_bias, target_bias, max_ratio)) or max_ratio <= 0:
         raise ValueError("invalid secant bias/ratio")
-    denominator = current_bias - previous_bias
-    if denominator == 0:
-        raise ValueError("secant restart requires distinct previous/current biases")
-    ratio = max(-max_ratio, min(max_ratio, (target_bias-current_bias)/denominator))
+    if ratio_override is None:
+        denominator = current_bias - previous_bias
+        if denominator == 0:
+            raise ValueError("secant restart requires distinct previous/current biases")
+        ratio = max(-max_ratio, min(max_ratio, (target_bias-current_bias)/denominator))
+    else:
+        # Outer-voltage continuation remains defined at an inner-voltage fold
+        # or plateau. The caller binds its own coordinate and bounded ratio.
+        if not math.isfinite(ratio_override) or abs(ratio_override) > max_ratio:
+            raise ValueError("invalid explicit secant ratio")
+        ratio = ratio_override
     previous, _ = states.read(previous_path, document, config_directory)
     current, metadata = states.read(current_path, document, config_directory)
     if previous.keys() != current.keys():
@@ -373,18 +380,41 @@ def restore_poly_candidate(document: dict, source: Path, output: Path,
         document, source, output, config_directory, bias)
 
 
+def poisson_stagnation(rows: list, passes: int) -> bool:
+    """Only shorten failed recovery; this never grants convergence."""
+    if passes < 2 or len(rows) < passes:
+        return False
+    values = []
+    for row in rows[-passes:]:
+        if (row.get('failure_reason') != 'line_search_non_decrease' or
+                row.get('carrier_row_violations') != '0' or
+                row.get('global_continuity_closure_satisfied') != '1'):
+            return False
+        try:
+            value = float(row['final_psi_residual_norm'])
+        except (KeyError, ValueError, TypeError):
+            return False
+        if not math.isfinite(value) or value <= 0:
+            return False
+        values.append(value)
+    return max(values)-min(values) <= 1e-4*max(values)
+
+
 def correct_local_candidate(document: dict, state: Path, bias: float,
                             runner: Path, repo: Path, run_dir: Path,
                             timeout_seconds: float, config_directory: Path,
                             max_passes: int, mode: str = "carrier_only",
-                            restore_poly_equilibrium: bool = False) -> dict:
+                            restore_poly_equilibrium: bool = False,
+                            stagnation_passes: int = 0) -> dict:
     """Try bounded carrier Newton steps, then require the original coupled gates.
 
     The probe supplies candidates only. It cannot mark an I-V point accepted.
     Both the full coupled validator and the all-active row audit must pass.
     """
-    if mode not in ("carrier_only", "carrier_density"):
+    if mode not in ("carrier_only", "carrier_density", "density_then_qf"):
         raise ValueError("Unknown carrier candidate mode")
+    if mode == "density_then_qf" and max_passes < 2:
+        raise ValueError("density_then_qf requires at least two candidate passes")
     root = run_dir / "local_corrector"
     root.mkdir(parents=True, exist_ok=True)
     base = json.loads(json.dumps(document))
@@ -395,7 +425,9 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
     result = {"passed": False, "timed_out": False, "mode": mode, "steps": [], "state_file": "", "validation_row": {},
               "coupled_newton_iterations": 0}
     current = state.resolve()
+    validation_rows = []
     for iteration in range(1, max_passes + 1):
+        step_mode = ("carrier_density" if iteration <= (max_passes + 1) // 2 else "carrier_only") if mode == "density_then_qf" else mode
         step_dir = root / f"step_{iteration:03d}"
         step_dir.mkdir(exist_ok=True)
         probe = json.loads(json.dumps(base))
@@ -403,7 +435,7 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         probe["state_file"] = str(current)
         probe["output_csv"] = str((step_dir / "step.csv").resolve())
         probe["output_state_prefix"] = str((step_dir / "trial").resolve())
-        probe["block_modes"] = [mode]
+        probe["block_modes"] = [step_mode]
         driven = probe.pop("sweep")["contact"]
         for contact in probe["contacts"]:
             if contact["name"] == driven:
@@ -414,9 +446,22 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         redirect_diagnostics(probe, step_dir)
         config = step_dir / "config.json"
         config.write_text(json.dumps(probe, indent=2), encoding="utf-8")
-        code, timed_out, elapsed = execute_config(runner, repo, config, step_dir, timeout_seconds)
-        trial = step_dir / f"trial_{mode}.h5"
-        step = {"iteration": iteration, "exit_code": code, "timed_out": timed_out,
+        started = time.monotonic()
+        try:
+            code, timed_out, elapsed = execute_config(runner, repo, config, step_dir, timeout_seconds)
+        except Exception as exc:
+            # Adapters may raise before returning an exit tuple. Persist the
+            # attempted step without changing exception/retry semantics.
+            result["steps"].append({"iteration": iteration, "mode": step_mode,
+                "exit_code": getattr(exc, "exit_code", None),
+                "elapsed_s": time.monotonic() - started, "local_audit_passed": False,
+                "exception_type": type(exc).__name__, "failure": str(exc),
+                "failure_status_file": getattr(exc, "status_file", None)})
+            result["failure_reason"] = str(exc)
+            (root / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+            raise
+        trial = step_dir / f"trial_{step_mode}.h5"
+        step = {"iteration": iteration, "mode": step_mode, "exit_code": code, "timed_out": timed_out,
                 "elapsed_s": elapsed, "local_audit_passed": False}
         result["steps"].append(step)
         if timed_out:
@@ -455,6 +500,7 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
             row = load_last_row(validation_dir / "iv.csv")
             candidate = validation_dir / "final_state.h5"
             result["validation_row"] = row
+            validation_rows.append(row)
             result["validation_exit_code"] = code
             result["validation_timed_out"] = timed_out
             if timed_out:
@@ -478,6 +524,10 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
             # can in turn disturb carrier rows. Continue the same bounded
             # correction loop from its saved result, never accept either alone.
             if timed_out:
+                break
+            if poisson_stagnation(validation_rows, stagnation_passes):
+                result['failure_reason'] = 'poisson_stagnation_with_qualified_carriers'
+                result['stagnation_validation_rows'] = validation_rows[-stagnation_passes:]
                 break
             if candidate.is_file() and row.get("converged") == "1":
                 current = candidate
@@ -891,7 +941,7 @@ def main() -> int:
                         help="audit every active carrier row before accepting a continuation checkpoint")
     parser.add_argument("--carrier-corrector-passes", type=int, default=0,
                         help="bounded carrier Newton corrections followed by full coupled validation; requires local audit")
-    parser.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density"),
+    parser.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density", "density_then_qf"),
                         default="carrier_only", help="coordinate choice for the candidate correction, preserving full acceptance gates")
     parser.add_argument("--restore-poly-equilibrium", action="store_true",
                         help="restore guarded source-free Poly equilibrium in corrector candidates; retain full validation")

@@ -129,6 +129,7 @@ IalScreeningMethod ialScreeningMethod(const std::string& name) {
     if(name=="newton")return IalScreeningMethod::Newton;
     if(name=="halley")return IalScreeningMethod::Halley;
     if(name=="toms748")return IalScreeningMethod::Toms748;
+    if(name=="u2022_12_single_newton")return IalScreeningMethod::U202212SingleNewton;
     throw std::invalid_argument("Unknown IALMob screening root method");
 }
 const char* ialScreeningMethodName(IalScreeningMethod method) {
@@ -137,6 +138,7 @@ const char* ialScreeningMethodName(IalScreeningMethod method) {
     case IalScreeningMethod::Newton: return "newton";
     case IalScreeningMethod::Halley: return "halley";
     case IalScreeningMethod::Toms748: return "toms748";
+    case IalScreeningMethod::U202212SingleNewton: return "u2022_12_single_newton";
     }
     throw std::invalid_argument("Unknown IALMob screening root method");
 }
@@ -146,6 +148,17 @@ Real ialScreeningMinimum(Real mass,Real temperature,IalScreeningMethod method) {
     ElectrothermalCostTimer cost(ElectrothermalCostProfile::ScreeningRoot,
         electrothermalCostProfile.mode==ElectrothermalCostProfile::Screening);
     ++physicsCallCounters.ialScreeningMinimumSolves;
+    if(method==IalScreeningMethod::U202212SingleNewton){
+        // Runtime identity was established for Si at 300 K. This bounded
+        // thermal interval is for opt-in consistency tests, not a claim of
+        // native validation at other temperatures or arbitrary material mass.
+        if((mass!=1. && mass!=1.258)||temperature<250.||temperature>500.)
+            throw std::invalid_argument("u2022_12_single_newton requires Si mass 1 or 1.258 and 250 <= T <= 500 K");
+        const Real cutoff=ial_detail::u202212ScreeningCutoff(mass,temperature);
+        if(!std::isfinite(cutoff)||cutoff<=0.)
+            throw std::runtime_error("Invalid U-2022.12 screening cutoff");
+        return cutoff;
+    }
     return method==IalScreeningMethod::Legacy?legacyScreeningMinimum(mass,temperature):candidateScreeningMinimum(mass,temperature,method);
 }
 
@@ -215,6 +228,8 @@ IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeni
     IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
+    if(generated&&screeningMethod_==IalScreeningMethod::U202212SingleNewton)
+        throw std::invalid_argument("U-2022.12 screening compatibility requires the reference IALMob kernel");
     const auto minimum=[&]{return state.temperature_K==300.?pMin_:
         cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);};
     if(generated) {
@@ -259,6 +274,8 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
     IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
+    if(generated&&screeningMethod_==IalScreeningMethod::U202212SingleNewton)
+        throw std::invalid_argument("U-2022.12 screening compatibility requires the reference IALMob kernel");
     IalMobilityDifferential result;
     const std::array<Real,7> inputs{state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
@@ -267,12 +284,14 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
         variables[i]=ial_detail::Dual(inputs[i]);
         variables[i].derivative[i]=1.;
     }
-    // At the clamped minimum, dG/dP = 0. The envelope derivative is the
-    // partial dG/dT; differentiating the numerical minimizer is unnecessary.
+    // Ordinary methods use the stationary envelope derivative. The explicit
+    // one-step compatibility cutoff is not stationary and must carry dPcut/dT.
     const auto prepare=[&]{
         const Real minimum=state.temperature_K==300.?pMin_:
             cache?cache->minimum(params_.mass,state.temperature_K,screeningMethod_):ialScreeningMinimum(params_.mass,state.temperature_K,screeningMethod_);
-        return ial_detail::prepare(variables,params_,electron_,minimum);
+        const Real slope=screeningMethod_==IalScreeningMethod::U202212SingleNewton?
+            ial_detail::u202212ScreeningCutoff(params_.mass,variables[6]).derivative[6]:0.;
+        return ial_detail::prepare(variables,params_,electron_,minimum,slope);
     };
     const auto differentiated=[&]{
         if(generated){
