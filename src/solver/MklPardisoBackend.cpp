@@ -21,6 +21,8 @@
 
 namespace vela::detail {
 #if defined(_WIN32) || defined(__linux__)
+static_assert(sizeof(int) == 4 && std::is_same_v<Real, double>,
+              "MKL LP64 adapter requires 32-bit int and binary64 Real");
 // Explicit runtime-only integration: no MKL dependency in ordinary builds.
 // LP64 C ABI, real nonsymmetric matrices; all input/output scalars are double.
 class MklPardiso final : public DirectBackend {
@@ -99,7 +101,7 @@ public:
         unload();
     }
     void analyze(const SparseMatrixd& a) override {
-        if(a.rows()>std::numeric_limits<int>::max() || a.nonZeros()>=std::numeric_limits<int>::max())
+        if(a.rows()>=std::numeric_limits<int>::max() || a.nonZeros()>=std::numeric_limits<int>::max())
             throw std::invalid_argument("MKL LP64 matrix too large");
         n_=static_cast<int>(a.rows());rows_.assign(n_+1,0);
         for(int k=0;k<a.nonZeros();++k)++rows_[a.innerIndexPtr()[k]+1];

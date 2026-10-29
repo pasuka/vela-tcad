@@ -700,3 +700,54 @@ TEST_CASE("PhuMob Enormal coupled DD Jacobian includes spatial field closure",
     CAPTURE(relativeError);
     REQUIRE(relativeError < 4.0e-4);
 }
+
+
+TEST_CASE("Surface geometry preserves region selectors for repeated cells and live fields", "[mobility][surface_geometry]") {
+    DeviceMesh mesh;
+    for(const auto& n:std::vector<Node>{{0,0.,0.},{1,1e-6,0.},{2,2e-6,0.},{3,0.,1e-6},{4,1e-6,1e-6},{5,2e-6,1e-6}})mesh.addNode(n);
+    mesh.addCell({0,CellType::Tri3,0,{0,1,3}});mesh.addCell({1,CellType::Tri3,0,{1,4,3}});
+    mesh.addCell({2,CellType::Tri3,1,{1,2,4}});mesh.addCell({3,CellType::Tri3,1,{2,5,4}});
+    mesh.addRegion({0,"silicon","Si",{0,1}});mesh.addRegion({1,"oxide","SiO2",{2,3}});mesh.buildEdges();
+    const auto edges=detail::buildEdgeCellMap(mesh);const MaterialDatabase materials;
+    const auto mats=detail::buildCellMaterials(mesh,materials,300.);VectorXd psi(6);psi<<0.,1.,2.,0.,1.,2.;
+    for(const std::string selected:{"", "silicon", "oxide"}) {
+        auto cfg=mobilityModelConfig("phumob_lombardi");cfg.surface.surfaceInterface={"silicon","oxide"};cfg.surface.surfaceRegion=selected;
+        detail::updateSurfaceMobilityCellGeometry(cfg,mesh,edges,psi,1.,&mats);
+        for(Index i=0;i<4;++i) {
+            const bool active=selected.empty() || selected==mesh.getRegion(mesh.getCell(i).region_id).name;
+            REQUIRE(std::isfinite(cfg.surface.cellDistances[i])==active);
+            if(active) {
+                REQUIRE(cfg.surface.cellDistances[i]==Catch::Approx((i==0||i==3?2.:1.)*1e-6/3.).epsilon(1e-14));
+                REQUIRE(std::abs(cfg.surface.cellNormalX[i])==1.);REQUIRE(cfg.surface.cellNormalY[i]==0.);
+                const double before=cfg.surface.cellNormalFields[i];const VectorXd changed=2.*psi;
+                REQUIRE(detail::liveSurfaceNormalFieldForCell(cfg,mesh,changed,i)==Catch::Approx(2.*before));
+            }
+        }
+    }
+    auto missing=mobilityModelConfig("phumob_lombardi");missing.surface.surfaceInterface={"silicon","missing"};
+    detail::updateSurfaceMobilityCellGeometry(missing,mesh,edges,psi,1.,&mats);
+    for(double d:missing.surface.cellDistances)REQUIRE_FALSE(std::isfinite(d));
+}
+
+
+#include "vela/physics/PreparedElementLombardi.h"
+#include <bit>
+TEST_CASE("Prepared element Lombardi retains value and tangent bits across static conditions", "[mobility][surface_geometry]") {
+    const auto cfg=mobilityModelConfig("phumob_field_lombardi");
+    for(const auto& p:{cfg.electronLombardi,cfg.holeLombardi})
+    for(double temperature:{250.,300.,425.})for(double distance:{0.,1e-9,2e-7})
+    for(double doping:{1e10,1e22,1e26}) {
+        const auto prepared=prepareElementLombardi(distance,doping,temperature,p,cfg);
+        for(double field:{-1e9,-100.,-0.,0.,1e-20,100.,1e5,1e9})for(double bulk:{0.,.001,.1}) {
+            const auto a=evaluateElementLombardi(bulk,field,distance,doping,temperature,p,cfg);
+            const auto b=evaluatePreparedElementLombardi(bulk,field,prepared,p,cfg);
+            for(const auto pair:{std::pair{a.mobility,b.mobility},std::pair{a.bulkDerivative,b.bulkDerivative},std::pair{a.fieldDerivative,b.fieldDerivative}})
+                REQUIRE(std::bit_cast<std::uint64_t>(pair.first)==std::bit_cast<std::uint64_t>(pair.second));
+        }
+    }
+    auto invalid=cfg.electronLombardi;invalid.alpha=1.;
+    const auto bad=prepareElementLombardi(0.,1e22,300.,invalid,cfg);
+    REQUIRE_THROWS(evaluatePreparedElementLombardi(.1,0.,bad,invalid,cfg));
+    const auto missing=prepareElementLombardi(std::numeric_limits<double>::quiet_NaN(),1e22,300.,invalid,cfg);
+    REQUIRE(evaluatePreparedElementLombardi(.1,1e5,missing,invalid,cfg).mobility==.1);
+}

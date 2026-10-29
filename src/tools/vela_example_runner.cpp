@@ -519,6 +519,13 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     if (diagnosticFreeze && (problem.newton.softTimeLimitSeconds <= 0. ||
                             problem.newton.softTimeLimitSeconds > 240.))
         throw std::invalid_argument("diagnostic transport solve requires a soft limit in (0,240] seconds");
+    const std::string requestedCurrentContact = cfg.value("current_contact", std::string{});
+    if (cfg.contains("current_contact") &&
+        (requestedCurrentContact.empty() ||
+         problem.biases.find(requestedCurrentContact) == problem.biases.end())) {
+        throw std::invalid_argument(
+            "newton_solve_from_state: current_contact must name a configured contact");
+    }
     DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution initial =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
@@ -552,6 +559,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
     // terminal current.
     vela::DDScalingSpec ddScaling;
+    ddScaling.coupledOperator=problem.newton.coupledOperator;
+    ddScaling.stateVariables=problem.newton.stateVariables;
     ddScaling.regionResolvedInterfaceAssembly =
         problem.newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy =
@@ -595,6 +604,7 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     nlohmann::json contactComponentsJson = nlohmann::json::object();
     vela::Real drivenCurrentPerMicron = 0.0;
     vela::Real drivenAbsBias = -1.0;
+    std::string drivenContact;
     for (const auto& [name, bias] : problem.biases) {
         const vela::ContactCurrentResult cc =
             contactCurrent.compute(result.solution, name);
@@ -603,8 +613,10 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
         if(cfg.contains("convergence_diagnostics_directory"))
             contactComponentsJson[name]={{"electron",cc.electronCurrent*perMeterToPerMicron},
                 {"hole",cc.holeCurrent*perMeterToPerMicron},{"total",currentPerMicron}};
-        if (std::abs(bias) > drivenAbsBias) {
+        if ((!requestedCurrentContact.empty() && name == requestedCurrentContact) ||
+            (requestedCurrentContact.empty() && std::abs(bias) > drivenAbsBias)) {
             drivenAbsBias = std::abs(bias);
+            drivenContact = name;
             drivenCurrentPerMicron = currentPerMicron;
         }
     }
@@ -623,6 +635,9 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
         {"carrier_row_recovery", carrierRowRecoveryJson(result.carrierRowRecovery)},
         {"contact_currents_A_per_um", contactCurrentsJson},
         {"current_total_A_per_um", drivenCurrentPerMicron},
+        {"current_contact", drivenContact},
+        {"current_contact_selection", requestedCurrentContact.empty()
+            ? "legacy_max_abs_effective_boundary_potential" : "explicit"},
     };
     if (cfg.contains("convergence_diagnostics_directory")) {
         const std::filesystem::path folder=resolvePath(cfgDir,cfg.at("convergence_diagnostics_directory").get<std::string>());
@@ -1344,7 +1359,14 @@ void writeNewtonStepProbeCsv(const std::filesystem::path& path,
         << "trial_psi,trial_phin,trial_phip,trial_electron_density_m3,trial_hole_density_m3,"
         << "psi_residual,phin_residual,phip_residual,"
         << "trial_psi_residual,trial_phin_residual,trial_phip_residual,"
-        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3\n";
+        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3,"
+        << "raw_delta_psi_V,raw_delta_phin_V,raw_delta_phip_V,"
+        << "raw_linear_defect_psi,raw_linear_defect_phin,raw_linear_defect_phip,"
+        << "capped_linear_defect_psi,capped_linear_defect_phin,capped_linear_defect_phip,"
+        << "raw_backward_psi,raw_backward_phin,raw_backward_phip,"
+        << "capped_backward_psi,capped_backward_phin,capped_backward_phip,"
+        << "direction_analytic_psi,direction_analytic_phin,direction_analytic_phip,"
+        << "direction_fd_psi,direction_fd_phin,direction_fd_phip,free_electron_row,free_hole_row\n";
     const int n = static_cast<int>(mesh.numNodes());
     for (int i = 0; i < n; ++i) {
         const auto nodeId = static_cast<vela::Index>(i);
@@ -1377,7 +1399,12 @@ void writeNewtonStepProbeCsv(const std::filesystem::path& path,
             << units.internalConcentrationToM3(doping.netDoping(nodeId)) << ','
             << units.internalConcentrationToM3(
                    step.residual.intrinsicDensity[static_cast<std::size_t>(nodeId)])
-            << '\n';
+            << ',' << step.rawDeltaPsi(i) << ',' << step.rawDeltaPhin(i) << ',' << step.rawDeltaPhip(i);
+        for (const auto* values : {&step.rawLinearDefect, &step.cappedLinearDefect,
+                &step.rawLinearBackwardErrors, &step.cappedLinearBackwardErrors,
+                &step.directionalAnalyticChange, &step.directionalFiniteDifferenceChange})
+            out << ',' << (*values)(i) << ',' << (*values)(n+i) << ',' << (*values)(2*n+i);
+        out << ',' << step.freeElectronRows(i) << ',' << step.freeHoleRows(i) << '\n';
     }
 }
 
@@ -1430,7 +1457,8 @@ nlohmann::json runNewtonStepProbe(const std::string& configFile, const nlohmann:
     DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
-    const vela::NewtonStepEvaluation step = solver.evaluateStep(state);
+    const vela::NewtonStepEvaluation step = solver.evaluateStep(
+        state, cfg.value("directional_audit_scale", 0.0));
     writeNewtonStepProbeCsv(
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
         problem.mesh,
@@ -1443,6 +1471,9 @@ nlohmann::json runNewtonStepProbe(const std::string& configFile, const nlohmann:
         {"nodes", problem.mesh.numNodes()},
         {"scaled_state", step.residual.scaledState},
         {"potential_scale", step.residual.potentialScale},
+        {"directional_audit_scale", step.directionalAuditScale},
+        {"raw_linear_backward_max", step.rawLinearBackwardErrors.maxCoeff()},
+        {"capped_linear_backward_max", step.cappedLinearBackwardErrors.maxCoeff()},
         {"raw_step_norm", step.rawStepNorm},
         {"step_norm", step.stepNorm},
         {"block_residuals", {

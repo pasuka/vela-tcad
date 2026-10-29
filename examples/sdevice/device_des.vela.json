@@ -1,0 +1,6 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "description": "Set the iteration limit for the sweep stage only.",
+  "apply_to": [1],
+  "solver": {"max_iter": 60}
+}

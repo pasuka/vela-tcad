@@ -1,0 +1,4516 @@
+{
+  "date": "2026-10-12",
+  "stage": "Q2/Q3",
+  "qualification": false,
+  "production_cpp_changed_this_round": false,
+  "source_head": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "worktree": "<WORKTREE>",
+  "evidence_directory": "<WORKTREE>\\build-release\\bvmethods_slot_transfer_20261012",
+  "analysis": {
+    "local_analysis": {
+      "qualification": false,
+      "nonlinear_updates": 0,
+      "normalization": "Both sides use sealed prior first fixed left scales; not a relative physical error or a gate",
+      "carriers": {
+        "electron": {
+          "baseline_v2": {
+            "rows": 2121,
+            "full_difference_L2": 0.015277036483827645,
+            "transport_difference_L2": 0.015276478909752922,
+            "avalanche_difference_L2": 1.7038785940362845e-06,
+            "other_source_difference_L2": 1.4908701079064158e-10,
+            "internal_closure_relative": 6.141485511476252e-17,
+            "largest_absolute_difference_node": 784
+          },
+          "effective_band_v2": {
+            "rows": 2121,
+            "full_difference_L2": 0.015286591063027226,
+            "transport_difference_L2": 0.015286033835834335,
+            "avalanche_difference_L2": 1.7038785940148408e-06,
+            "other_source_difference_L2": 1.4908701079064158e-10,
+            "internal_closure_relative": 9.184727636046459e-17,
+            "largest_absolute_difference_node": 784
+          }
+        },
+        "hole": {
+          "baseline_v2": {
+            "rows": 2121,
+            "full_difference_L2": 1.090849900980681e-05,
+            "transport_difference_L2": 1.0424253784350308e-05,
+            "avalanche_difference_L2": 3.2104015135325687e-06,
+            "other_source_difference_L2": 2.921211072926443e-10,
+            "internal_closure_relative": 7.876249579667035e-17,
+            "largest_absolute_difference_node": 152
+          },
+          "effective_band_v2": {
+            "rows": 2121,
+            "full_difference_L2": 1.0908499011089196e-05,
+            "transport_difference_L2": 1.042425378495494e-05,
+            "avalanche_difference_L2": 3.2104015134945225e-06,
+            "other_source_difference_L2": 2.921211072926443e-10,
+            "internal_closure_relative": 8.977869437048641e-17,
+            "largest_absolute_difference_node": 152
+          }
+        }
+      },
+      "populations_bitwise_equal": true
+    },
+    "native_analysis": {
+      "qualification": false,
+      "observer_identity": {
+        "double": {
+          "ElectrostaticPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eDensity": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hDensity": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eQuasiFermiPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hQuasiFermiPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eMobility": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hMobility": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eImpactIonization": {
+            "max_abs": 7.0,
+            "relative_L2": 7.020015985333054e-16,
+            "bitwise_equal": false
+          },
+          "hImpactIonization": {
+            "max_abs": 670367035764.6875,
+            "relative_L2": 0.0007329398441185643,
+            "bitwise_equal": false
+          },
+          "hole_largest_differences": [
+            {
+              "node": 252,
+              "builtin": 313051307272751.8,
+              "observer": 312380940236987.1,
+              "relative": -0.0021413966982115618,
+              "force_min": 411153.6596660076,
+              "force_max": 411291.3864404293,
+              "callbacks": 2
+            },
+            {
+              "node": 254,
+              "builtin": 406958855010110.94,
+              "observer": 406409170310943.8,
+              "relative": -0.0013507132045411652,
+              "force_min": 397142.48721562186,
+              "force_max": 397187.5412543457,
+              "callbacks": 2
+            },
+            {
+              "node": 249,
+              "builtin": 240184197568978.53,
+              "observer": 239656035470754.47,
+              "relative": -0.00219898770847482,
+              "force_min": 396863.82266587985,
+              "force_max": 405654.25525552727,
+              "callbacks": 2
+            },
+            {
+              "node": 251,
+              "builtin": 353493995551176.75,
+              "observer": 352982182731134.06,
+              "relative": -0.0014478684970155031,
+              "force_min": 383469.38959071523,
+              "force_max": 397338.4424729918,
+              "callbacks": 2
+            },
+            {
+              "node": 250,
+              "builtin": 204691180059258.16,
+              "observer": 204280879436848.78,
+              "relative": -0.002004486086262247,
+              "force_min": 421619.22774336586,
+              "force_max": 421782.8625276371,
+              "callbacks": 2
+            },
+            {
+              "node": 253,
+              "builtin": 460064165081649.5,
+              "observer": 459765279440782.0,
+              "relative": -0.000649660772458649,
+              "force_min": 370230.56199163635,
+              "force_max": 384634.7682795639,
+              "callbacks": 2
+            },
+            {
+              "node": 247,
+              "builtin": 103325680022229.94,
+              "observer": 103066215433969.03,
+              "relative": -0.0025111336136871554,
+              "force_min": 398459.3544469059,
+              "force_max": 406960.1080456792,
+              "callbacks": 2
+            },
+            {
+              "node": 1564,
+              "builtin": 112280487985048.17,
+              "observer": 112078887854121.2,
+              "relative": -0.0017955045844992856,
+              "force_min": 382750.97687483137,
+              "force_max": 397503.8498728716,
+              "callbacks": 2
+            },
+            {
+              "node": 1565,
+              "builtin": 161700132432027.72,
+              "observer": 161516534076016.56,
+              "relative": -0.0011354248957609059,
+              "force_min": 369709.5027842026,
+              "force_max": 384006.28722290735,
+              "callbacks": 2
+            },
+            {
+              "node": 256,
+              "builtin": 441554675049056.56,
+              "observer": 441419975346229.94,
+              "relative": -0.00030505781149670064,
+              "force_min": 383094.4957638172,
+              "force_max": 383110.45509155525,
+              "callbacks": 2
+            },
+            {
+              "node": 1563,
+              "builtin": 55207301552558.01,
+              "observer": 55104997604590.305,
+              "relative": -0.00185308727452127,
+              "force_min": 395266.73244316067,
+              "force_max": 407933.87017924926,
+              "callbacks": 2
+            },
+            {
+              "node": 275,
+              "builtin": 232021955644766.97,
+              "observer": 231935346667263.78,
+              "relative": -0.0003732792324007139,
+              "force_min": 358300.73278820317,
+              "force_max": 372446.72676750325,
+              "callbacks": 2
+            },
+            {
+              "node": 248,
+              "builtin": 91441993328469.9,
+              "observer": 91371974079428.05,
+              "relative": -0.0007657231266857689,
+              "force_min": 427092.4771096667,
+              "force_max": 427996.1299196506,
+              "callbacks": 2
+            },
+            {
+              "node": 276,
+              "builtin": 296484947882986.5,
+              "observer": 296419520140589.2,
+              "relative": -0.0002206781250262413,
+              "force_min": 346847.93711130024,
+              "force_max": 362232.449567692,
+              "callbacks": 2
+            },
+            {
+              "node": 245,
+              "builtin": 30867655671116.918,
+              "observer": 30818293595864.332,
+              "relative": -0.0015991520631990497,
+              "force_min": 127190.08334800431,
+              "force_max": 413462.5682366554,
+              "callbacks": 2
+            },
+            {
+              "node": 272,
+              "builtin": 159057684623345.4,
+              "observer": 159011892747200.03,
+              "relative": -0.0002878947738602644,
+              "force_min": 370023.5886424209,
+              "force_max": 377905.0306759747,
+              "callbacks": 2
+            },
+            {
+              "node": 1566,
+              "builtin": 184014040542578.47,
+              "observer": 183968969699433.9,
+              "relative": -0.0002449315444172928,
+              "force_min": 356707.04802216886,
+              "force_max": 370791.2961848806,
+              "callbacks": 2
+            },
+            {
+              "node": 255,
+              "builtin": 507341692301702.75,
+              "observer": 507296963342962.7,
+              "relative": -8.816338065409379e-05,
+              "force_min": 357141.32668315433,
+              "force_max": 371784.203104099,
+              "callbacks": 2
+            },
+            {
+              "node": 1573,
+              "builtin": 14025324230684.143,
+              "observer": 13989037826575.125,
+              "relative": -0.002587206078960458,
+              "force_min": 385197.47699145717,
+              "force_max": 392431.441948998,
+              "callbacks": 2
+            },
+            {
+              "node": 268,
+              "builtin": 45384291343515.26,
+              "observer": 45353394189593.516,
+              "relative": -0.0006807896081901799,
+              "force_min": 361942.5984509485,
+              "force_max": 384459.8548359079,
+              "callbacks": 2
+            }
+          ]
+        },
+        "extended": {
+          "ElectrostaticPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eDensity": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hDensity": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eQuasiFermiPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hQuasiFermiPotential": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eMobility": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "hMobility": {
+            "max_abs": 0.0,
+            "relative_L2": 0.0,
+            "bitwise_equal": true
+          },
+          "eImpactIonization": {
+            "max_abs": 7.0,
+            "relative_L2": 4.838458458066533e-16,
+            "bitwise_equal": false
+          },
+          "hImpactIonization": {
+            "max_abs": 670367035886.0,
+            "relative_L2": 0.0007329398128607272,
+            "bitwise_equal": false
+          },
+          "hole_largest_differences": [
+            {
+              "node": 252,
+              "builtin": 313051307369626.0,
+              "observer": 312380940333740.0,
+              "relative": -0.0021413966979364485,
+              "force_min": 411153.65966464934,
+              "force_max": 411291.3864416462,
+              "callbacks": 2
+            },
+            {
+              "node": 254,
+              "builtin": 406958854633949.2,
+              "observer": 406409169934926.0,
+              "relative": -0.001350713205436005,
+              "force_min": 397142.4872147979,
+              "force_max": 397187.54125527386,
+              "callbacks": 2
+            },
+            {
+              "node": 249,
+              "builtin": 240184197537745.4,
+              "observer": 239656035439595.66,
+              "relative": -0.0021989877084512832,
+              "force_min": 396863.8226658303,
+              "force_max": 405654.25525677466,
+              "callbacks": 2
+            },
+            {
+              "node": 251,
+              "builtin": 353493995654224.5,
+              "observer": 352982182834104.9,
+              "relative": -0.001447868496811111,
+              "force_min": 383469.38959066133,
+              "force_max": 397338.44247297297,
+              "callbacks": 2
+            },
+            {
+              "node": 250,
+              "builtin": 204691180053814.75,
+              "observer": 204280879431449.7,
+              "relative": -0.0020044860860990443,
+              "force_min": 421619.2277438109,
+              "force_max": 421782.8625278654,
+              "callbacks": 2
+            },
+            {
+              "node": 253,
+              "builtin": 460064164926235.7,
+              "observer": 459765279285201.0,
+              "relative": -0.000649660773041516,
+              "force_min": 370230.56199131795,
+              "force_max": 384634.76828019763,
+              "callbacks": 2
+            },
+            {
+              "node": 247,
+              "builtin": 103325680034406.1,
+              "observer": 103066215446094.02,
+              "relative": -0.0025111336138865514,
+              "force_min": 398459.35444823693,
+              "force_max": 406960.1080457411,
+              "callbacks": 2
+            },
+            {
+              "node": 1564,
+              "builtin": 112280488077774.27,
+              "observer": 112078887946761.86,
+              "relative": -0.0017955045837774186,
+              "force_min": 382750.976880899,
+              "force_max": 397503.8498698661,
+              "callbacks": 2
+            },
+            {
+              "node": 1565,
+              "builtin": 161700132307401.12,
+              "observer": 161516533951288.8,
+              "relative": -0.0011354248972615943,
+              "force_min": 369709.502784401,
+              "force_max": 384006.2872265347,
+              "callbacks": 2
+            },
+            {
+              "node": 256,
+              "builtin": 441554674154333.75,
+              "observer": 441419974451883.3,
+              "relative": -0.00030505781126288767,
+              "force_min": 383094.49575805885,
+              "force_max": 383110.45509476884,
+              "callbacks": 2
+            },
+            {
+              "node": 1563,
+              "builtin": 55207301518666.984,
+              "observer": 55104997570730.55,
+              "relative": -0.0018530872750924798,
+              "force_min": 395266.7324393356,
+              "force_max": 407933.8701791383,
+              "callbacks": 2
+            },
+            {
+              "node": 275,
+              "builtin": 232021955628605.7,
+              "observer": 231935346651126.03,
+              "relative": -0.0003732792323253298,
+              "force_min": 358300.7327882544,
+              "force_max": 372446.7267678227,
+              "callbacks": 2
+            },
+            {
+              "node": 248,
+              "builtin": 91441993334511.62,
+              "observer": 91371974085393.27,
+              "relative": -0.0007657231274718068,
+              "force_min": 427092.47710668447,
+              "force_max": 427996.12991882925,
+              "callbacks": 2
+            },
+            {
+              "node": 276,
+              "builtin": 296484947958890.2,
+              "observer": 296419520216431.25,
+              "relative": -0.0002206781251775647,
+              "force_min": 346847.93711131625,
+              "force_max": 362232.44956768985,
+              "callbacks": 2
+            },
+            {
+              "node": 245,
+              "builtin": 30867655675685.98,
+              "observer": 30818293600433.586,
+              "relative": -0.0015991520629561329,
+              "force_min": 127190.08337293453,
+              "force_max": 413462.56823648803,
+              "callbacks": 2
+            },
+            {
+              "node": 272,
+              "builtin": 159057684633759.78,
+              "observer": 159011892757600.44,
+              "relative": -0.00028789477392920926,
+              "force_min": 370023.58864241495,
+              "force_max": 377905.03067670687,
+              "callbacks": 2
+            },
+            {
+              "node": 1566,
+              "builtin": 184014040140314.7,
+              "observer": 183968969297177.38,
+              "relative": -0.00024493154491334046,
+              "force_min": 356707.0480330066,
+              "force_max": 370791.29616982606,
+              "callbacks": 2
+            },
+            {
+              "node": 255,
+              "builtin": 507341692279306.4,
+              "observer": 507296963320810.2,
+              "relative": -8.8163380177253e-05,
+              "force_min": 357141.32668268855,
+              "force_max": 371784.2031042646,
+              "callbacks": 2
+            },
+            {
+              "node": 1573,
+              "builtin": 14025324227018.76,
+              "observer": 13989037822914.291,
+              "relative": -0.0025872060793122875,
+              "force_min": 385197.47699134407,
+              "force_max": 392431.4419493014,
+              "callbacks": 2
+            },
+            {
+              "node": 268,
+              "builtin": 45384291339444.33,
+              "observer": 45353394185529.46,
+              "relative": -0.0006807896080998077,
+              "force_min": 361942.5984443266,
+              "force_max": 384459.8548357511,
+              "callbacks": 2
+            }
+          ]
+        }
+      },
+      "SG": {
+        "observer_double": {
+          "e": {
+            "callbacks": 1964,
+            "weighted_vector_error": 0.00010292663627561616,
+            "major": 1210,
+            "major_unique": 163,
+            "major_unmatched": 1047,
+            "major_ambiguous": 0
+          },
+          "h": {
+            "callbacks": 2919,
+            "weighted_vector_error": 0.03871117947851693,
+            "major": 2532,
+            "major_unique": 1319,
+            "major_unmatched": 1213,
+            "major_ambiguous": 0
+          }
+        },
+        "observer_extended": {
+          "e": {
+            "callbacks": 1967,
+            "weighted_vector_error": 5.2171012224102844e-08,
+            "major": 1210,
+            "major_unique": 862,
+            "major_unmatched": 348,
+            "major_ambiguous": 0
+          },
+          "h": {
+            "callbacks": 2915,
+            "weighted_vector_error": 3.9121031460900746e-05,
+            "major": 2523,
+            "major_unique": 1772,
+            "major_unmatched": 751,
+            "major_ambiguous": 0
+          }
+        },
+        "code_extended": {
+          "e": {
+            "callbacks": 1855,
+            "weighted_vector_error": 1.321113404795983e-15,
+            "major": 1150,
+            "major_unique": 1150,
+            "major_unmatched": 0,
+            "major_ambiguous": 0
+          },
+          "h": {
+            "callbacks": 1952,
+            "weighted_vector_error": 8.085310938478079e-16,
+            "major": 570,
+            "major_unique": 570,
+            "major_unmatched": 0,
+            "major_ambiguous": 0
+          }
+        }
+      },
+      "source_integration": {
+        "electron": {
+          "rows": 2121,
+          "resolved_64ulp": 1077,
+          "relative_L2": 2.3927259267147556e-09,
+          "resolved_relative_L2": 2.382873800898981e-09,
+          "max_abs_error": 1.0380010602304907e-16
+        },
+        "hole": {
+          "rows": 2121,
+          "resolved_64ulp": 1201,
+          "relative_L2": 2.448956670554704e-13,
+          "resolved_relative_L2": 2.446147440687711e-13,
+          "max_abs_error": 9.367048186513038e-21
+        }
+      },
+      "precision_state_identity": {
+        "builtin_extended": {
+          "ElectrostaticPotential": {
+            "bitwise_equal": false,
+            "max_abs": 3.430589146091734e-14,
+            "relative_L2": 5.9930088653180294e-15
+          },
+          "eDensity": {
+            "bitwise_equal": false,
+            "max_abs": 120651776.0,
+            "relative_L2": 2.32540191922481e-13
+          },
+          "hDensity": {
+            "bitwise_equal": false,
+            "max_abs": 187904.0,
+            "relative_L2": 1.633362323545987e-13
+          },
+          "eQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        },
+        "observer_extended": {
+          "ElectrostaticPotential": {
+            "bitwise_equal": false,
+            "max_abs": 3.430589146091734e-14,
+            "relative_L2": 5.9930088653180294e-15
+          },
+          "eDensity": {
+            "bitwise_equal": false,
+            "max_abs": 120651776.0,
+            "relative_L2": 2.32540191922481e-13
+          },
+          "hDensity": {
+            "bitwise_equal": false,
+            "max_abs": 187904.0,
+            "relative_L2": 1.633362323545987e-13
+          },
+          "eQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        }
+      },
+      "source_ablation_state_identity": {
+        "source_noava": {
+          "ElectrostaticPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "eDensity": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hDensity": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "eQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        },
+        "source_nosrhbtbt": {
+          "ElectrostaticPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "eDensity": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hDensity": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "eQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          },
+          "hQuasiFermiPotential": {
+            "bitwise_equal": true,
+            "max_abs": 0.0,
+            "relative_L2": 0.0
+          }
+        }
+      }
+    },
+    "roundtrip": {
+      "qualification": false,
+      "carrier_changes": {
+        "electron": {
+          "max_self_inverse_QF_shift_V": 8.429709423929802e-15,
+          "scalar_forward_vs_assembler_population_max_relative": 7.438494264988549e-15
+        },
+        "hole": {
+          "max_self_inverse_QF_shift_V": 8.747591830384371e-15,
+          "scalar_forward_vs_assembler_population_max_relative": 7.327471962526033e-15
+        }
+      },
+      "runs": [
+        {
+          "arm": "zero_noop",
+          "mode": "baseline",
+          "rc": 0
+        },
+        {
+          "arm": "zero_noop",
+          "mode": "effective",
+          "rc": 0
+        },
+        {
+          "arm": "self_roundtrip_free",
+          "mode": "baseline",
+          "rc": 0
+        },
+        {
+          "arm": "self_roundtrip_free",
+          "mode": "effective",
+          "rc": 0
+        },
+        {
+          "arm": "native_inverse_free",
+          "mode": "baseline",
+          "rc": 0
+        },
+        {
+          "arm": "native_inverse_free",
+          "mode": "effective",
+          "rc": 0
+        }
+      ],
+      "arms": {
+        "zero_noop": {
+          "electron": {
+            "max_shift_V": 0.0,
+            "changed_free_nodes": 0,
+            "contact_fields_bitwise_equal": true
+          },
+          "hole": {
+            "max_shift_V": 0.0,
+            "changed_free_nodes": 0,
+            "contact_fields_bitwise_equal": true
+          }
+        },
+        "self_roundtrip_free": {
+          "electron": {
+            "max_shift_V": 8.429709423929802e-15,
+            "changed_free_nodes": 2121,
+            "contact_fields_bitwise_equal": true
+          },
+          "hole": {
+            "max_shift_V": 8.747591830384371e-15,
+            "changed_free_nodes": 2118,
+            "contact_fields_bitwise_equal": true
+          }
+        },
+        "native_inverse_free": {
+          "electron": {
+            "max_shift_V": 3.5441519331290085e-14,
+            "changed_free_nodes": 2121,
+            "contact_fields_bitwise_equal": true
+          },
+          "hole": {
+            "max_shift_V": 1.260561684095679e-14,
+            "changed_free_nodes": 2121,
+            "contact_fields_bitwise_equal": true
+          }
+        }
+      }
+    },
+    "roundtrip_analysis": {
+      "zero_noop": {
+        "state_fields": {
+          "electron_qf_increment_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electron_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electron_quantum_potential_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electrons_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "hole_qf_increment_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "hole_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "holes_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "phin": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "phip": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "psi": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          }
+        },
+        "baseline": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.015277036483827645,
+            "transport_difference_L2": 0.015276478909752922,
+            "avalanche_difference_L2": 1.7038785940362845e-06,
+            "other_source_difference_L2": 1.4908701079064158e-10,
+            "internal_closure_relative": 6.141485511476252e-17,
+            "change_from_unmodified_full_L2": 0.0,
+            "change_from_unmodified_transport_L2": 0.0
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.090849900980681e-05,
+            "transport_difference_L2": 1.0424253784350308e-05,
+            "avalanche_difference_L2": 3.2104015135325687e-06,
+            "other_source_difference_L2": 2.921211072926443e-10,
+            "internal_closure_relative": 7.876249579667035e-17,
+            "change_from_unmodified_full_L2": 0.0,
+            "change_from_unmodified_transport_L2": 0.0
+          }
+        },
+        "effective": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.015286591063027226,
+            "transport_difference_L2": 0.015286033835834335,
+            "avalanche_difference_L2": 1.7038785940148408e-06,
+            "other_source_difference_L2": 1.4908701079064158e-10,
+            "internal_closure_relative": 9.184727636046459e-17,
+            "change_from_unmodified_full_L2": 0.0,
+            "change_from_unmodified_transport_L2": 0.0
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.0908499011089196e-05,
+            "transport_difference_L2": 1.042425378495494e-05,
+            "avalanche_difference_L2": 3.2104015134945225e-06,
+            "other_source_difference_L2": 2.921211072926443e-10,
+            "internal_closure_relative": 8.977869437048641e-17,
+            "change_from_unmodified_full_L2": 0.0,
+            "change_from_unmodified_transport_L2": 0.0
+          }
+        }
+      },
+      "self_roundtrip_free": {
+        "state_fields": {
+          "electron_qf_increment_V": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 8.429709423929802e-15
+          },
+          "electron_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electron_quantum_potential_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electrons_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "hole_qf_increment_V": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 8.747591830384371e-15
+          },
+          "hole_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "holes_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "phin": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 8.429709423929802e-15
+          },
+          "phip": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 8.747591830384371e-15
+          },
+          "psi": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          }
+        },
+        "baseline": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.015283651917010267,
+            "transport_difference_L2": 0.015283094592957442,
+            "avalanche_difference_L2": 1.7038739098186874e-06,
+            "other_source_difference_L2": 1.4908701079066526e-10,
+            "internal_closure_relative": 8.766024202045314e-17,
+            "change_from_unmodified_full_L2": 0.0005536882448718967,
+            "change_from_unmodified_transport_L2": 0.0005536882447783429
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.119559008036603e-05,
+            "transport_difference_L2": 1.0724318908681002e-05,
+            "avalanche_difference_L2": 3.210391553007882e-06,
+            "other_source_difference_L2": 2.921211072926713e-10,
+            "internal_closure_relative": 8.488365404514021e-17,
+            "change_from_unmodified_full_L2": 2.15384474153773e-06,
+            "change_from_unmodified_transport_L2": 2.1538447408056902e-06
+          }
+        },
+        "effective": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.015293200817650393,
+            "transport_difference_L2": 0.015292643839966315,
+            "avalanche_difference_L2": 1.703873909797231e-06,
+            "other_source_difference_L2": 1.4908701079066526e-10,
+            "internal_closure_relative": 7.499722169040558e-17,
+            "change_from_unmodified_full_L2": 0.0005537396336389957,
+            "change_from_unmodified_transport_L2": 0.0005537396335454504
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.1195590081615527e-05,
+            "transport_difference_L2": 1.0724318909268716e-05,
+            "avalanche_difference_L2": 3.210391552969815e-06,
+            "other_source_difference_L2": 2.921211072926713e-10,
+            "internal_closure_relative": 8.26546042111775e-17,
+            "change_from_unmodified_full_L2": 2.153844741537723e-06,
+            "change_from_unmodified_transport_L2": 2.153844740805683e-06
+          }
+        }
+      },
+      "native_inverse_free": {
+        "state_fields": {
+          "electron_qf_increment_V": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 3.5441519331290085e-14
+          },
+          "electron_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electron_quantum_potential_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "electrons_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "hole_qf_increment_V": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 1.260561684095679e-14
+          },
+          "hole_qf_reference_V": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "holes_m3": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          },
+          "phin": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 3.5441519331290085e-14
+          },
+          "phip": {
+            "all_bitwise_equal": false,
+            "contact_bitwise_equal": true,
+            "max_abs": 1.260561684095679e-14
+          },
+          "psi": {
+            "all_bitwise_equal": true,
+            "contact_bitwise_equal": true,
+            "max_abs": 0.0
+          }
+        },
+        "baseline": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.02418401385181995,
+            "transport_difference_L2": 0.02418366160172868,
+            "avalanche_difference_L2": 1.7039326904920852e-06,
+            "other_source_difference_L2": 1.4908701231073966e-10,
+            "internal_closure_relative": 8.945026321777269e-17,
+            "change_from_unmodified_full_L2": 0.018721062188664272,
+            "change_from_unmodified_transport_L2": 0.01872106218866894
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.569578946275612e-05,
+            "transport_difference_L2": 1.5363163193187908e-05,
+            "avalanche_difference_L2": 3.210516594548518e-06,
+            "other_source_difference_L2": 2.9212110957598805e-10,
+            "internal_closure_relative": 8.678718857944198e-17,
+            "change_from_unmodified_full_L2": 1.95946101460136e-05,
+            "change_from_unmodified_transport_L2": 1.9594610145282703e-05
+          }
+        },
+        "effective": {
+          "electron": {
+            "rows": 2121,
+            "full_difference_L2": 0.024190067919337317,
+            "transport_difference_L2": 0.024189715756374238,
+            "avalanche_difference_L2": 1.7039326904706427e-06,
+            "other_source_difference_L2": 1.4908701231073966e-10,
+            "internal_closure_relative": 1.0182330620869001e-16,
+            "change_from_unmodified_full_L2": 0.01872108275985995,
+            "change_from_unmodified_transport_L2": 0.018721082759864612
+          },
+          "hole": {
+            "rows": 2121,
+            "full_difference_L2": 1.5695789463647393e-05,
+            "transport_difference_L2": 1.5363163193598153e-05,
+            "avalanche_difference_L2": 3.210516594510475e-06,
+            "other_source_difference_L2": 2.9212110957598805e-10,
+            "internal_closure_relative": 1.1533508760361803e-16,
+            "change_from_unmodified_full_L2": 1.959461014601359e-05,
+            "change_from_unmodified_transport_L2": 1.959461014528269e-05
+          }
+        }
+      }
+    },
+    "cross_platform_and_branch": {
+      "branch": {
+        "verified_files": 149,
+        "comparisons": {
+          "low": {
+            "ElectrostaticPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eDensity": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hDensity": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eQuasiFermiPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hQuasiFermiPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eMobility": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hMobility": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eImpactIonization": {
+              "bitwise_equal": false,
+              "relative_L2": 7.020015985333054e-16,
+              "max_abs": 7.0
+            },
+            "hImpactIonization": {
+              "bitwise_equal": false,
+              "relative_L2": 5.295970379909716e-16,
+              "max_abs": 0.3125
+            }
+          },
+          "high": {
+            "ElectrostaticPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eDensity": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hDensity": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eQuasiFermiPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hQuasiFermiPotential": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eMobility": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "hMobility": {
+              "bitwise_equal": true,
+              "relative_L2": 0.0,
+              "max_abs": 0.0
+            },
+            "eImpactIonization": {
+              "bitwise_equal": false,
+              "relative_L2": 7.020015985333054e-16,
+              "max_abs": 7.0
+            },
+            "hImpactIonization": {
+              "bitwise_equal": false,
+              "relative_L2": 4.974160481694046e-16,
+              "max_abs": 0.375
+            }
+          }
+        }
+      },
+      "t470p": {
+        "status": {
+          "phase": "completed",
+          "platform": "win32",
+          "nonlinear_updates": 0,
+          "runs": [
+            {
+              "label": "compile_NewtonSolver_diagnostic.cpp",
+              "rc": 0,
+              "wall_s": 59.168554899999435
+            },
+            {
+              "label": "compile_ScharfetterGummel_diagnostic.cpp",
+              "rc": 0,
+              "wall_s": 2.024314299999787
+            },
+            {
+              "label": "link",
+              "rc": 0,
+              "wall_s": 1.729910299999574
+            },
+            {
+              "label": "baseline_v2_terms",
+              "rc": 0,
+              "wall_s": 1.43321990000004
+            },
+            {
+              "label": "baseline_v2_sg",
+              "rc": 0,
+              "wall_s": 0.6369142000003194
+            },
+            {
+              "label": "baseline_v2_populations",
+              "rc": 0,
+              "wall_s": 0.3769755000002988
+            },
+            {
+              "label": "effective_band_v2_terms",
+              "rc": 0,
+              "wall_s": 0.49352360000011686
+            },
+            {
+              "label": "effective_band_v2_sg",
+              "rc": 0,
+              "wall_s": 0.6295681000001423
+            },
+            {
+              "label": "effective_band_v2_populations",
+              "rc": 0,
+              "wall_s": 0.3685058000000936
+            }
+          ],
+          "verified_inputs": 12,
+          "core_sha256": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898",
+          "active_step": "effective_band_v2_populations",
+          "runner_sha256": "7af0a5a7ffc49a3b330f9531175901c0473a525f5480ea1d8321fd67c488af13"
+        },
+        "comparisons": {
+          "baseline_v2\\terms\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.504632769052528e-36,
+                "relative_L2": 3.175134386623935e-22
+              },
+              "electron_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.504632769052528e-36,
+                "relative_L2": 3.175134386623935e-22
+              },
+              "hole_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.613357956799892e-29
+              },
+              "hole_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.613357956799892e-29
+              },
+              "hole_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.613357956799892e-29
+              },
+              "hole_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.613357956799892e-29
+              },
+              "impact_electron_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "impact_hole_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "impact_combined_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "donors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "acceptors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "baseline_v2\\sg\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "edge_id": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "length_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_avg_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electric_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_drive_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.938893903907228e-18,
+                "relative_L2": 6.836544980706759e-18
+              },
+              "hole_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.734723475976807e-18,
+                "relative_L2": 1.909063720046898e-18
+              },
+              "electron_eta0": {
+                "finite_values": 6309,
+                "nonfinite_values": 1310,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_eta1": {
+                "finite_values": 6418,
+                "nonfinite_values": 1201,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_drift_potential_V": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_generalized_einstein_factor": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_argument": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_quasi_fermi_argument": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_plus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_minus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_boltzmann_decomposition_available": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_minus_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_left_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_signed_difference_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_reconstructed_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_stable_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_term_scale": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_log_left_over_right": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_factor_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin0_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin1_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_cancellation_condition": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "baseline_v2\\populations\\rows.csv": {
+            "bitwise_equal": true,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nc_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nv_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "has_supplied_carrier_state": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "dielectric_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "doping_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "fixed_interface_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "unconstrained_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "boundary_replacement": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "production_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "closure_error": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "constrained": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\terms\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.504632769052528e-36,
+                "relative_L2": 3.175134386623935e-22
+              },
+              "electron_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.504632769052528e-36,
+                "relative_L2": 3.175134386623935e-22
+              },
+              "hole_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.6133579567476806e-29
+              },
+              "hole_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.6133579567476806e-29
+              },
+              "hole_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.6133579567476806e-29
+              },
+              "hole_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.591774807899561e-41,
+                "relative_L2": 2.6133579567476806e-29
+              },
+              "impact_electron_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "impact_hole_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "impact_combined_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "donors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "acceptors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\sg\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "edge_id": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "length_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_avg_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electric_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_drive_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.938893903907228e-18,
+                "relative_L2": 6.836544980706759e-18
+              },
+              "hole_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.734723475976807e-18,
+                "relative_L2": 1.909063720046898e-18
+              },
+              "electron_eta0": {
+                "finite_values": 6309,
+                "nonfinite_values": 1310,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_eta1": {
+                "finite_values": 6418,
+                "nonfinite_values": 1201,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_drift_potential_V": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_generalized_einstein_factor": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_argument": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_quasi_fermi_argument": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_plus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_bernoulli_minus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_boltzmann_decomposition_available": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_minus_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_left_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_signed_difference_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_reconstructed_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_stable_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_term_scale": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_log_left_over_right": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_factor_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin0_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin1_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_cancellation_condition": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\populations\\rows.csv": {
+            "bitwise_equal": true,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nc_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nv_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "has_supplied_carrier_state": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "dielectric_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "doping_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "fixed_interface_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "unconstrained_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "boundary_replacement": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "production_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "closure_error": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "constrained": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          }
+        }
+      },
+      "c560": {
+        "status": {
+          "phase": "completed",
+          "platform": "linux",
+          "nonlinear_updates": 0,
+          "runs": [
+            {
+              "label": "compile_NewtonSolver_diagnostic.cpp",
+              "rc": 0,
+              "wall_s": 97.46454261500003
+            },
+            {
+              "label": "compile_ScharfetterGummel_diagnostic.cpp",
+              "rc": 0,
+              "wall_s": 2.523093536000033
+            },
+            {
+              "label": "link",
+              "rc": 0,
+              "wall_s": 0.6673111529999005
+            },
+            {
+              "label": "baseline_v2_terms",
+              "rc": 0,
+              "wall_s": 0.4663054650000049
+            },
+            {
+              "label": "baseline_v2_sg",
+              "rc": 0,
+              "wall_s": 0.4657869699999537
+            },
+            {
+              "label": "baseline_v2_populations",
+              "rc": 0,
+              "wall_s": 0.366898214999992
+            },
+            {
+              "label": "effective_band_v2_terms",
+              "rc": 0,
+              "wall_s": 0.41757154600009017
+            },
+            {
+              "label": "effective_band_v2_sg",
+              "rc": 0,
+              "wall_s": 0.46728590799989433
+            },
+            {
+              "label": "effective_band_v2_populations",
+              "rc": 0,
+              "wall_s": 0.3685144850001052
+            }
+          ],
+          "verified_inputs": 12,
+          "core_sha256": "13e2610f6afb28ba642b3c2d2526ee1c8f8d7a9c4938c898409812cbb7b40e5d",
+          "active_step": "effective_band_v2_populations",
+          "runner_sha256": "5545cb73e464e7197a51d3d597e3b7db8468f1e34e30c9337973a5292338aa32"
+        },
+        "comparisons": {
+          "baseline_v2\\terms\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.770941929218793e-23,
+                "relative_L2": 2.373392565552991e-14
+              },
+              "electron_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.8050308177439273e-23,
+                "relative_L2": 4.522580977395366e-16
+              },
+              "electron_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.944304526105059e-31,
+                "relative_L2": 9.670582236374565e-17
+              },
+              "electron_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.591573478969767e-18
+              },
+              "electron_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.770941929218793e-23,
+                "relative_L2": 2.3732962442698318e-14
+              },
+              "electron_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.770941929218793e-23,
+                "relative_L2": 2.3732962442698318e-14
+              },
+              "electron_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.591573478969767e-18
+              },
+              "electron_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.770941929218793e-23,
+                "relative_L2": 2.3732962442698318e-14
+              },
+              "electron_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.770941929218793e-23,
+                "relative_L2": 2.3732962442698318e-14
+              },
+              "hole_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.330371159133885e-28,
+                "relative_L2": 1.0042841957634176e-15
+              },
+              "hole_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.582806648804608e-28,
+                "relative_L2": 5.541606041016465e-16
+              },
+              "hole_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.944304526105059e-31,
+                "relative_L2": 9.670582236374565e-17
+              },
+              "hole_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.591573478969767e-18
+              },
+              "hole_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.330371159133885e-28,
+                "relative_L2": 9.879026504439617e-16
+              },
+              "hole_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.330371159133885e-28,
+                "relative_L2": 9.879026504439617e-16
+              },
+              "hole_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.591573478969767e-18
+              },
+              "hole_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.330371159133885e-28,
+                "relative_L2": 9.879026504439617e-16
+              },
+              "hole_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.330371159133885e-28,
+                "relative_L2": 9.879026504439617e-16
+              },
+              "impact_electron_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.331567953786991e-18
+              },
+              "impact_hole_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5407439555097887e-32,
+                "relative_L2": 2.1861275412599e-16
+              },
+              "impact_combined_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 1.5284180038657104e-30,
+                "relative_L2": 7.591573478969767e-18
+              },
+              "donors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "acceptors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "baseline_v2\\sg\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "edge_id": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "length_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_avg_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.3151166969650932e-22
+              },
+              "electron_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.1871215809099766e-22
+              },
+              "hole_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.82403987750381e-24
+              },
+              "hole_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.634862475245054e-24
+              },
+              "psi0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electric_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_drive_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.938893903907228e-18,
+                "relative_L2": 1.3370646144449879e-17
+              },
+              "hole_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 5.204170427930421e-18,
+                "relative_L2": 2.266887567779005e-17
+              },
+              "electron_eta0": {
+                "finite_values": 6309,
+                "nonfinite_values": 1310,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_eta1": {
+                "finite_values": 6418,
+                "nonfinite_values": 1201,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_drift_potential_V": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 4.336808689942018e-19,
+                "relative_L2": 1.7232186817688453e-19
+              },
+              "electron_generalized_einstein_factor": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 4.440892098500626e-16,
+                "relative_L2": 8.60723929493589e-18
+              },
+              "electron_bernoulli_argument": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 1.3322676295501878e-15,
+                "relative_L2": 1.1485664282782756e-17
+              },
+              "electron_quasi_fermi_argument": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.6940658945086007e-21,
+                "relative_L2": 1.0659706475451266e-18
+              },
+              "electron_bernoulli_plus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 1.3322676295501878e-15,
+                "relative_L2": 4.6090915258002976e-17
+              },
+              "electron_bernoulli_minus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 4.440892098500626e-16,
+                "relative_L2": 6.710508948044342e-17
+              },
+              "electron_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.6957202557337067e-23,
+                "relative_L2": 4.841385405652051e-16
+              },
+              "hole_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 3.218552493301728e-28,
+                "relative_L2": 4.657219041023597e-16
+              },
+              "electron_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.9539925233402755e-14,
+                "relative_L2": 2.66506210999097e-16
+              },
+              "hole_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 4.404571325722362e-20,
+                "relative_L2": 6.016154482409195e-16
+              },
+              "electron_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.003173828125,
+                "relative_L2": 4.898040611109236e-16
+              },
+              "hole_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.146728992462158e-08,
+                "relative_L2": 4.660093181488212e-16
+              },
+              "electron_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 3801088.0,
+                "relative_L2": 2.694058736959985e-16
+              },
+              "hole_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 9.0,
+                "relative_L2": 6.156624327045982e-16
+              },
+              "electron_sg_boltzmann_decomposition_available": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_minus_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_left_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_signed_difference_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_reconstructed_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_stable_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_term_scale": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_log_left_over_right": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_factor_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin0_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin1_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_cancellation_condition": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "baseline_v2\\populations\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nc_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nv_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.1031388126649666e-22
+              },
+              "reconstructed_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.635480501996023e-24
+              },
+              "electron_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "has_supplied_carrier_state": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "dielectric_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.673617379884035e-19,
+                "relative_L2": 9.01415399373921e-24
+              },
+              "hole_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 5.293955920339377e-23,
+                "relative_L2": 8.33869696600088e-27
+              },
+              "doping_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "fixed_interface_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "unconstrained_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "boundary_replacement": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "production_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "closure_error": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "constrained": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\terms\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.938547734763118e-23,
+                "relative_L2": 2.96397893359156e-14
+              },
+              "electron_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 4.1359030627651384e-23,
+                "relative_L2": 5.792530140805963e-16
+              },
+              "electron_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.944304526105059e-31,
+                "relative_L2": 9.670582236374565e-17
+              },
+              "electron_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.762153702110021e-30,
+                "relative_L2": 4.536631001296739e-17
+              },
+              "electron_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.938547734763118e-23,
+                "relative_L2": 2.96385868455733e-14
+              },
+              "electron_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.938547734763118e-23,
+                "relative_L2": 2.96385868455733e-14
+              },
+              "electron_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.762153702110021e-30,
+                "relative_L2": 4.536631001296739e-17
+              },
+              "electron_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.938547734763118e-23,
+                "relative_L2": 2.96385868455733e-14
+              },
+              "electron_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.938547734763118e-23,
+                "relative_L2": 2.96385868455733e-14
+              },
+              "hole_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 6.443794681744137e-16
+              },
+              "hole_flux_abs_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 3.5728810809801877e-16
+              },
+              "hole_recombination": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 3.944304526105059e-31,
+                "relative_L2": 9.670582236374565e-17
+              },
+              "hole_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.762153702110021e-30,
+                "relative_L2": 4.536631001296739e-17
+              },
+              "hole_gauge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_boundary": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 6.338553056606082e-16
+              },
+              "hole_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 6.338553056606082e-16
+              },
+              "hole_adjusted_impact": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.762153702110021e-30,
+                "relative_L2": 4.536631001296739e-17
+              },
+              "hole_adjusted_term_sum": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 6.338553056606082e-16
+              },
+              "hole_adjusted_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 6.338553056606082e-16
+              },
+              "impact_electron_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.663546088957395e-30,
+                "relative_L2": 4.515290219677117e-17
+              },
+              "impact_hole_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 7.703719777548943e-33,
+                "relative_L2": 1.196868494826887e-16
+              },
+              "impact_combined_source": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 9.762153702110021e-30,
+                "relative_L2": 4.536631001296739e-17
+              },
+              "donors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "acceptors_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\sg\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "edge_id": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "node1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y0": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y1": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "length_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_avg_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.3151166969650932e-22
+              },
+              "electron_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.1871215809099766e-22
+              },
+              "hole_density0_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.82403987750381e-24
+              },
+              "hole_density1_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.634862475245054e-24
+              },
+              "psi0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electric_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_drive_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_field_V_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.938893903907228e-18,
+                "relative_L2": 1.3370646144449879e-17
+              },
+              "hole_mobility_m2_V_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 5.204170427930421e-18,
+                "relative_L2": 2.266887567779005e-17
+              },
+              "electron_eta0": {
+                "finite_values": 6309,
+                "nonfinite_values": 1310,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_eta1": {
+                "finite_values": 6418,
+                "nonfinite_values": 1201,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_drift_potential_V": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 4.336808689942018e-19,
+                "relative_L2": 1.7232186817688453e-19
+              },
+              "electron_generalized_einstein_factor": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 4.440892098500626e-16,
+                "relative_L2": 8.60723929493589e-18
+              },
+              "electron_bernoulli_argument": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 1.3322676295501878e-15,
+                "relative_L2": 1.1485664282782756e-17
+              },
+              "electron_quasi_fermi_argument": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.6940658945086007e-21,
+                "relative_L2": 1.0659706475451266e-18
+              },
+              "electron_bernoulli_plus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 1.3322676295501878e-15,
+                "relative_L2": 4.6090915258002976e-17
+              },
+              "electron_bernoulli_minus": {
+                "finite_values": 6307,
+                "nonfinite_values": 1312,
+                "max_abs": 4.440892098500626e-16,
+                "relative_L2": 6.710508948044342e-17
+              },
+              "electron_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 3.88774887899923e-23,
+                "relative_L2": 9.187276087620203e-16
+              },
+              "hole_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.058451752097371e-28,
+                "relative_L2": 5.669981286489675e-16
+              },
+              "electron_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 7.993605777301127e-14,
+                "relative_L2": 1.0432221409907316e-15
+              },
+              "hole_scaled_flux_per_couple_m": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 3.3881317890172014e-20,
+                "relative_L2": 5.252862593309791e-16
+              },
+              "electron_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.00732421875,
+                "relative_L2": 9.288271747142855e-16
+              },
+              "hole_particle_line_flux_per_m_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 1.1175870895385742e-07,
+                "relative_L2": 5.590702521823011e-16
+              },
+              "electron_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 14942208.0,
+                "relative_L2": 1.0473979581113668e-15
+              },
+              "hole_particle_flux_density_per_couple_m2_s": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 6.375,
+                "relative_L2": 5.25377395972226e-16
+              },
+              "electron_sg_boltzmann_decomposition_available": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_minus_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_bernoulli_eta": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_left_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_term_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_signed_difference_m3": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_reconstructed_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_stable_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_high_precision_reference_term_scale": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_log_left_over_right": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_right_factor_flux": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin0_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_phin1_relative_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference0_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_reference1_V": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_sg_cancellation_condition": {
+                "finite_values": 7619,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          },
+          "effective_band_v2\\populations\\rows.csv": {
+            "bitwise_equal": false,
+            "columns": {
+              "node_id": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "x": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "y": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "psi": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phin": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "phip": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "net_doping_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "ni_eff_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nc_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "Nv_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "input_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "reconstructed_electron_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 524288.0,
+                "relative_L2": 1.1031388126649666e-22
+              },
+              "reconstructed_hole_density_m3": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 128.0,
+                "relative_L2": 6.635480501996023e-24
+              },
+              "electron_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_required_qf_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "hole_qf_mapping_error_V": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "has_supplied_carrier_state": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "dielectric_flux": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "electron_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 8.673617379884035e-19,
+                "relative_L2": 9.01415399373921e-24
+              },
+              "hole_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 5.293955920339377e-23,
+                "relative_L2": 8.33869696600088e-27
+              },
+              "doping_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "fixed_interface_charge": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "unconstrained_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "boundary_replacement": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "production_residual": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "closure_error": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              },
+              "constrained": {
+                "finite_values": 2600,
+                "nonfinite_values": 0,
+                "max_abs": 0.0,
+                "relative_L2": 0.0
+              }
+            }
+          }
+        }
+      }
+    },
+    "platform_tests": [
+      {
+        "node": "t470p",
+        "rc": 0,
+        "files": {
+          "scripts/analyze_bvmethods_sg_transfer.py": "dee9b5ddfcb45bc327e48f59fbb350c0e143de50ab975d4de34fe76e8a875f3f",
+          "tests/regression/test_bvmethods_sg_transfer.py": "b2e013839cf8a230696c3a39f6deb7d93f976436a2d63726aea34305ad236041"
+        },
+        "output": "verified 2 files\n\n#< CLIXML\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.371s\n\nOK\n<Objs Version=\"1.1.0.1\" xmlns=\"http://schemas.microsoft.com/powershell/2004/04\"><Obj S=\"progress\" RefId=\"0\"><TN RefId=\"0\"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N=\"SourceId\">1</I64><PR N=\"Record\"><AV>����׼���״�ʹ��ģ�顣</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>"
+      },
+      {
+        "node": "c560",
+        "rc": 0,
+        "files": {
+          "scripts/analyze_bvmethods_sg_transfer.py": "dee9b5ddfcb45bc327e48f59fbb350c0e143de50ab975d4de34fe76e8a875f3f",
+          "tests/regression/test_bvmethods_sg_transfer.py": "b2e013839cf8a230696c3a39f6deb7d93f976436a2d63726aea34305ad236041"
+        },
+        "output": "verified 2 files\n\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.032s\n\nOK\n"
+      }
+    ],
+    "build_identity": {
+      "core_sha256": "ba1a09e270e562161e7b79594610f16ca8916b40ec89c529db0d3b00a8de4898",
+      "newton_object_sha256": "b2450d87e49363e2915c44135aa3e8c8eaec57afb641d33083f8100e73e1caeb",
+      "sg_source_sha256": "938ed5626a34f842c4fa4a93d6d175c16f4a8ee6fc7899e07253e481aa2ff072",
+      "private_sg_sha256": "4e6cf2d1350d358665ce78d97294d0e140527a4d1035b2bcb9f70f52b98b0b23",
+      "runner_sha256": "d02a19826f15fff5f6786ea9aac0839d8882a1b749c221301716b09bed4dc0ca",
+      "quantum_enabled": false,
+      "control": "explicit diagnostic environment flag; Fermi concentrations unchanged; no defaults changed"
+    },
+    "contract": {
+      "remote": "/root/sentaurus_runs/bvmethods_slot_transfer_20261012",
+      "arms": [
+        {
+          "arm": "builtin_double",
+          "expected_exit": 0,
+          "extended": false,
+          "source_seed": "native_integral"
+        },
+        {
+          "arm": "observer_double",
+          "expected_exit": 0,
+          "extended": false,
+          "source_seed": "probe_integral"
+        },
+        {
+          "arm": "builtin_extended",
+          "expected_exit": 0,
+          "extended": true,
+          "source_seed": "native_integral"
+        },
+        {
+          "arm": "observer_extended",
+          "expected_exit": 0,
+          "extended": true,
+          "source_seed": "probe_integral"
+        },
+        {
+          "arm": "code_extended",
+          "expected_exit": 0,
+          "extended": true,
+          "source_seed": "probe_code"
+        },
+        {
+          "arm": "source_full",
+          "expected_exit": 2,
+          "extended": false,
+          "source_seed": "native_integral"
+        },
+        {
+          "arm": "source_noava",
+          "expected_exit": 2,
+          "extended": false,
+          "source_seed": "native_integral"
+        },
+        {
+          "arm": "source_nosrhbtbt",
+          "expected_exit": 2,
+          "extended": false,
+          "source_seed": "native_integral"
+        }
+      ],
+      "payload_sha256": "bd3bd218d13ee34e13357a4bb3f54e663bc7c6bb57faf6ddacd35cc422d0b7a8",
+      "scope": "matched DensityIntegral first-preupdate state, extended-precision Load/Plot controls and builtin first-RHS isolation; no QS trajectory; no gate/default change"
+    },
+    "branch_contract": {
+      "remote": "/root/sentaurus_runs/bvmethods_slot_transfer_branch_20261012",
+      "arms": [
+        "low_builtin",
+        "low_observer",
+        "high_builtin",
+        "high_observer"
+      ],
+      "payload_sha256": "defb319960619b16719e034e23983657b2c9f89083c8cb4aec554d0db160e112",
+      "scope": "explicit frozen-state physical branch ablation ONLY, identical low/high coefficient pairs; original target physics preserved elsewhere; no solver qualification"
+    },
+    "import": {
+      "verified_native_files": 236,
+      "runs": [
+        {
+          "arm": "builtin_double",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "observer_double",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "builtin_extended",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "observer_extended",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "code_extended",
+          "native_exit": 0,
+          "export_exit": 0
+        },
+        {
+          "arm": "source_full",
+          "native_exit": 2,
+          "export_exit": 0
+        },
+        {
+          "arm": "source_noava",
+          "native_exit": 2,
+          "export_exit": 0
+        },
+        {
+          "arm": "source_nosrhbtbt",
+          "native_exit": 2,
+          "export_exit": 0
+        }
+      ]
+    },
+    "preflight": {
+      "t470p": {
+        "rc": 0,
+        "stdout": "<private execution metadata; original preserved in ignored archive>",
+        "stderr": "<private execution metadata; original preserved in ignored archive>"
+      },
+      "c560": {
+        "rc": 0,
+        "stdout": "<private execution metadata; original preserved in ignored archive>",
+        "stderr": "<private execution metadata; original preserved in ignored archive>"
+      },
+      "vm": {
+        "rc": 0,
+        "stdout": "<private execution metadata; original preserved in ignored archive>",
+        "stderr": "<private execution metadata; original preserved in ignored archive>"
+      }
+    }
+  },
+  "tests": {
+    "local_related": 29,
+    "t470p_new": 8,
+    "c560_new": 8,
+    "outcome": "all passed",
+    "full_ctest_run": false
+  },
+  "unfulfilled": [
+    "complete RHS alignment",
+    "all native circuit/QF aliases",
+    "unique element representative and source support",
+    "native threshold transition formula",
+    "all Jacobian cross blocks",
+    "relative density finite-step recovery",
+    "stabilization/backend short relinearization (conditional on operator/weak-row alignment)",
+    "Q4-Q7 and original zero-start high-voltage pure QS"
+  ],
+  "prior_evidence": {
+    "bvmethods_consistent_state_sg_source_20261010": {
+      "sha256": "505111644b239dbb5aea2f38fa5db345dcab49f50b9b24bf4f91929aa4e1cf32",
+      "bytes": 228898380,
+      "manifest_files": 3246,
+      "manifest_sha256": "ba197f72760bb3ddee5db7bcf2bc11faea34159ea4fb5eea0e11eb3120c717f0"
+    },
+    "bvmethods_qf_contact_transport_split_20261010": {
+      "archive": "<WORKTREE>\\build-release\\bvmethods_qf_contact_transport_split_20261010\\evidence_v1.tar.gz",
+      "sha256": "d7eeb87e1493a021764167041b45f259ec25e897d38afaec608bdfece2a2164c",
+      "bytes": 176735145,
+      "manifest_entries": 425,
+      "manifest_sha256": "1a643ed4c9e5ff83ba44d39c8f0691c13355a130f55971aa642eb6174c3297f5"
+    }
+  },
+  "diagnostics_only": [
+    "private effective-band SG",
+    "per-node native constitutive override",
+    "QF absolute inverse controls",
+    "native ExtendedPrecision Load/Plot",
+    "equal-low/high branch ablations"
+  ],
+  "evidence_identity": {
+    "local_analysis.json": "6afeb85f3f11e6ede3bafd6a0891579e60665f52e2b4b8164361f326b5155093",
+    "native_analysis.json": "44397917bdb0fd6f8ebaf63c858b04de6a4688ecd4acef337cc71daf92e3dad8",
+    "roundtrip.json": "6ffb018c9dbf997b01dad23bee06df0a96d57d4543667fa76df90b4d110e63ed",
+    "roundtrip_analysis.json": "4307f30671bca28b6818827591ebef475fd7e5ce08b1be95d4660049256a14e1",
+    "cross_platform_and_branch.json": "f5ea7f8c0e628c62beecc4354395f23198e52df49977052ff2f8e19dbfee20f2",
+    "platform_tests.json": "a69746dcad4734daf722b571dbe928e17654d87441da5fc05ec18e469ee49afe",
+    "build_identity.json": "2e048031562c3ffec86f0cb2c5327db9f6f7a256a5af717c40374fc2989f483b",
+    "contract.json": "e8b406e262251d07bab59680402c661d3e34575616fbcfe3d8dc56294a69f45b",
+    "branch_contract.json": "daf274d0e610bce3aa4c9ff8287a1f9d42bb293557cf1a9c2a830a57e74a7cd2",
+    "import.json": "0deb6f39df6cdef6441da756892b4c6b8d3fba8cfbf98dab2ff2bdd375662267",
+    "preflight.json": "1e3330514a2e3277ff858266dcd38a22d19aa350847f2adca832037c922f14fb"
+  },
+  "archive": {
+    "remote_directory": "<private execution metadata; original preserved in ignored archive>",
+    "verification": {
+      "verified_files": 2252,
+      "archive_sha256": "ff16841a985f7c53ae8da12eec6907bbfb47b3a7bb434a340d787261c62793f9"
+    },
+    "local_receipt": {
+      "sha256": "ff16841a985f7c53ae8da12eec6907bbfb47b3a7bb434a340d787261c62793f9",
+      "bytes": 150465141,
+      "manifest_files": 2252,
+      "manifest_sha256": "704338bf2b5ccc1f9395ee7fe2cacd90b95530508a2aa39a568468ae5d9f07b6"
+    }
+  }
+}

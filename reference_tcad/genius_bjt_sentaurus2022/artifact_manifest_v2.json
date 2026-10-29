@@ -1,0 +1,512 @@
+{
+  "schema": "vela.reference_artifact_manifest.v1",
+  "case": "genius_bjt_sentaurus2022",
+  "version": "v2",
+  "created_utc": "2026-10-03T04:39:29Z",
+  "store": {
+    "kind": "ssh",
+    "host": "sentaurus",
+    "root": "/home/tcad/vela_reference_artifacts"
+  },
+  "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
+  "deck_matches_repository": false,
+  "artifacts": [
+    {
+      "path": "source/bjt_m0_des.cmd",
+      "category": "A",
+      "sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+      "bytes": 1433,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "source/bjt_msh.cmd",
+      "category": "A",
+      "sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74",
+      "bytes": 2606,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "source/bjt_sde.cmd",
+      "category": "A",
+      "sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "bytes": 3812,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "source/models.par",
+      "category": "A",
+      "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+      "bytes": 107158,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "source/wp10_inputs.json",
+      "category": "A",
+      "sha256": "63973c5c4251182621d02ae8a00c4b0c6cc7ef29b0f27cf8a5aae13e5a32d23e",
+      "bytes": 1148,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "mesh/bjt_msh.tdr",
+      "category": "C",
+      "sha256": "3077a2e3d49826fba4db95e00837ace77dd3e05ea36dd3e3c522e0529155d21e",
+      "bytes": 140074,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_msh.cmd",
+        "cmd_sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74",
+        "finished_utc": "2026-09-02T02:07:28Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "plt/bjt_m0_base_bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "dd05b1888149055604614241312f51e8ba3da32028f5cf7b40d131d5aa391c26",
+      "bytes": 22587,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:24Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "emitter OuterVoltage",
+          "emitter InnerVoltage",
+          "emitter QuasiFermiPotential",
+          "emitter DisplacementCurrent",
+          "emitter eCurrent",
+          "emitter hCurrent",
+          "emitter TotalCurrent",
+          "emitter Charge",
+          "base OuterVoltage",
+          "base InnerVoltage",
+          "base QuasiFermiPotential",
+          "base DisplacementCurrent",
+          "base eCurrent",
+          "base hCurrent",
+          "base TotalCurrent",
+          "base Charge",
+          "collector OuterVoltage",
+          "collector InnerVoltage",
+          "collector QuasiFermiPotential",
+          "collector DisplacementCurrent",
+          "collector eCurrent",
+          "collector hCurrent",
+          "collector TotalCurrent",
+          "collector Charge"
+        ],
+        "rows": 36,
+        "first_bias_V": 0.0,
+        "last_bias_V": 0.7,
+        "goal_reached": true
+      }
+    },
+    {
+      "path": "plt/bjt_m0_collector_bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "0aff50fa989d04249b606e9b811a1fd655a7ea545ab4dcefe2e8293bfae0ed9b",
+      "bytes": 19592,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:10:19Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "emitter OuterVoltage",
+          "emitter InnerVoltage",
+          "emitter QuasiFermiPotential",
+          "emitter DisplacementCurrent",
+          "emitter eCurrent",
+          "emitter hCurrent",
+          "emitter TotalCurrent",
+          "emitter Charge",
+          "base OuterVoltage",
+          "base InnerVoltage",
+          "base QuasiFermiPotential",
+          "base DisplacementCurrent",
+          "base eCurrent",
+          "base hCurrent",
+          "base TotalCurrent",
+          "base Charge",
+          "collector OuterVoltage",
+          "collector InnerVoltage",
+          "collector QuasiFermiPotential",
+          "collector DisplacementCurrent",
+          "collector eCurrent",
+          "collector hCurrent",
+          "collector TotalCurrent",
+          "collector Charge"
+        ],
+        "rows": 31,
+        "first_bias_V": 0.0,
+        "last_bias_V": 3.0,
+        "goal_reached": true
+      }
+    },
+    {
+      "path": "plt/bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "81723e933f000f1bb2a6a4ead9929ae88bd16de00c43678bdb4b612523c02295",
+      "bytes": 2221,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:08:45Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      },
+      "summary": {
+        "datasets": [
+          "time",
+          "emitter OuterVoltage",
+          "emitter InnerVoltage",
+          "emitter QuasiFermiPotential",
+          "emitter DisplacementCurrent",
+          "emitter eCurrent",
+          "emitter hCurrent",
+          "emitter TotalCurrent",
+          "emitter Charge",
+          "base OuterVoltage",
+          "base InnerVoltage",
+          "base QuasiFermiPotential",
+          "base DisplacementCurrent",
+          "base eCurrent",
+          "base hCurrent",
+          "base TotalCurrent",
+          "base Charge",
+          "collector OuterVoltage",
+          "collector InnerVoltage",
+          "collector QuasiFermiPotential",
+          "collector DisplacementCurrent",
+          "collector eCurrent",
+          "collector hCurrent",
+          "collector TotalCurrent",
+          "collector Charge"
+        ],
+        "rows": 2,
+        "first_bias_V": 0.0,
+        "last_bias_V": 0.0
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_des.tdr",
+      "category": "D",
+      "sha256": "20eabc6cc42b8b1de1ea6891c39581e3f55f4b7f0b085ff26768007ddbd9fabb",
+      "bytes": 1091582,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:10:19Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_des_min_des.tdr",
+      "category": "D",
+      "sha256": "6959e3a107cf6f80e6d778181f6ce8ed071c1605e64585684e55a5f65aa84e46",
+      "bytes": 615450,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:51Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_equilibrium_des.tdr",
+      "category": "D",
+      "sha256": "9b87658c897f53afa7417fbc21f66cbea2f9d13bd203e69c330fac5e67cdc1f5",
+      "bytes": 642808,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:08:45Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_vbe070_des.tdr",
+      "category": "D",
+      "sha256": "52cff0fbfcc620feba051b2dd944ae45dcf78fe47cba575176567687e0bc2b75",
+      "bytes": 1077019,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:24Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_vce_0000_des.tdr",
+      "category": "D",
+      "sha256": "f5c7ad2b5f83a0ef9a319a6813a187ff5827cbeca6267e73667067920b4c59e8",
+      "bytes": 1077046,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:25Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_vce_0001_des.tdr",
+      "category": "D",
+      "sha256": "1974dc6fa60a057f1a1611c4e248329860f458b12fc8e186ea1bc393027d2eca",
+      "bytes": 1081190,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:32Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_vce_0002_des.tdr",
+      "category": "D",
+      "sha256": "a170fd7def3194991d9eb7e37fa008662d87c83d047fe09acc9e4b23a36fb9b8",
+      "bytes": 1084237,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:09:50Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "tdr/bjt_m0_vce_0003_des.tdr",
+      "category": "D",
+      "sha256": "d87552cdcb4b17e154f2aeaae01433ca06d1dc393ea5cdef8e52bd12f1a7a6eb",
+      "bytes": 1088283,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:10:19Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "log/bjt_m0_des.log",
+      "category": "E",
+      "sha256": "f8ebe06fdb627e5af3de98d81ec5ef6e04abce78345b9113f801825c52ecd3dd",
+      "bytes": 120383,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:10:19Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/bjt_msh.log",
+      "category": "E",
+      "sha256": "e0e5a872c7ee76662e2ecb2099d78500799b89ce5a04f3116965813f319c9375",
+      "bytes": 2984,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_msh.cmd",
+        "cmd_sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74",
+        "finished_utc": "2026-09-02T02:07:28Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "log/bjt_sde.log",
+      "category": "E",
+      "sha256": "8e70b5849d6ed1fbc35f1e483e983e52990bb453134ac5658397ff14f980d1f8",
+      "bytes": 4760,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_sde.cmd",
+        "cmd_sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+        "finished_utc": "2026-09-02T02:07:28Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      }
+    },
+    {
+      "path": "log/m0_console.log",
+      "category": "E",
+      "sha256": "b43191abe533507033ab4c43ecda5ec98dc03f622ebae72dc585181eed1f58ad",
+      "bytes": 121005,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+        "cmd": "bjt_m0_des.cmd",
+        "cmd_sha256": "6334e8e676488118bec4784eb2d8c9499a770f49772c894a36787caed15057f0",
+        "parameter_file": "models.par",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "finished_utc": "2026-10-03T04:10:19Z"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-10-03T04:39:29Z",
+        "note": "sha256 computed on the store copy at registration (local:reference_staging)"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    }
+  ],
+  "origin": {
+    "vm_run_directory": "/home/tcad/vela_sdevice_wp10_20261003",
+    "note": "Authorized WP10 minimum rerun. Parameter declaration added; 0V and IV additionally request ElectricField/Vector output. Physics, mesh, and same-version sdevice -P defaults reused from v1. Local files checked against VM SHA-256 inventory and bundle SHA-256. Literal repository deck equality is false; sdevice_acceptance separately verifies the allowlisted source augmentation."
+  }
+}

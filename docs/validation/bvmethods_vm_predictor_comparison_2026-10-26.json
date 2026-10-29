@@ -1,0 +1,91 @@
+{
+  "schema": "vela.validation.vm_predictor_comparison.v1",
+  "date": "2026-10-26",
+  "state": "running",
+  "scientific_complete": false,
+  "base_commit": "0ee79c7dd4b06a5c31676e701be571bccc6c3a85",
+  "source_snapshot_files": 6029,
+  "host_label": "vela-vm",
+  "build_type": "Release",
+  "build_passed": true,
+  "ctest_passed": 17,
+  "ctest_failed": 0,
+  "ctest_skipped": 0,
+  "linear_backend": "pardiso_mkl",
+  "linear_threads_per_arm": 1,
+  "limit_seconds_per_arm": 10800,
+  "build_time_excluded": true,
+  "started_Asia_Shanghai": "2026-10-26T18:49:59+08:00",
+  "deadline_Asia_Shanghai": "2026-10-26T21:49:59+08:00",
+  "input_reference": "bvmethods_t470p_adaptive_bv_2026-10-26",
+  "arms": {
+    "enforce": {
+      "predictor_mode": "enforce",
+      "from_cold_poisson": true,
+      "imported_checkpoint": false,
+      "inner_predictor_limit_V": 0.02,
+      "poisson_iterations": 7,
+      "poisson_final_residual": 1.0880566605241079e-10,
+      "accepted_points_at_startup_check": 5
+    },
+    "report_only": {
+      "predictor_mode": "report_only",
+      "from_cold_poisson": true,
+      "imported_checkpoint": false,
+      "inner_predictor_limit_V": 0.02,
+      "poisson_iterations": 7,
+      "poisson_final_residual": 1.0880566605241079e-10,
+      "accepted_points_at_startup_check": 5
+    }
+  },
+  "private_receipt": "build-release/bvmethods_velavm_compare_20261026/deployment.json",
+  "core_sha256": "572e611c241cbc0c8e68c6854bfbb0c758bda9e3a0e2847aae9f420e70036fb0",
+  "binary_sha256": "671e4b94f5d9be2817c60e3d3c194b442c58c6fa19ef917a3caa97ba8111a1ca",
+  "startup_contrast_verified": true,
+  "last_startup_check": {
+    "enforce": {
+      "accepted_points": 7,
+      "last_point": {
+        "outer_V": "0.11395373101572118",
+        "inner_V": "0.091808815039894798",
+        "current_A_per_um": "2.2144907240944764e-09",
+        "updates": "6",
+        "electron_closure": "0.12165399306505584",
+        "hole_closure": "9.391837180055994e-06"
+      },
+      "predictor": [
+        {
+          "accepted_outer_V": 0.09266022910241822,
+          "applied_outer_step_V": 0.02129350191330296,
+          "guard_below_minimum": false,
+          "guarded_outer_step_V": 0.02129350191330296,
+          "mode": "enforce",
+          "predicted_abs_inner_step_V": 0.02,
+          "proposed_outer_step_V": 0.03267725060727276
+        }
+      ]
+    },
+    "report_only": {
+      "accepted_points": 7,
+      "last_point": {
+        "outer_V": "0.15149649855791536",
+        "inner_V": "0.12896494458158217",
+        "current_A_per_um": "2.253154292538434e-09",
+        "updates": "7",
+        "electron_closure": "0.12902062689574192",
+        "hole_closure": "2.386287967653048e-05"
+      },
+      "predictor": [
+        {
+          "accepted_outer_V": 0.1039050215171852,
+          "applied_outer_step_V": 0.047591477040730176,
+          "guard_below_minimum": false,
+          "guarded_outer_step_V": 0.021047746131041295,
+          "mode": "report_only",
+          "predicted_abs_inner_step_V": 0.045222397442871175,
+          "proposed_outer_step_V": 0.047591477040730176
+        }
+      ]
+    }
+  }
+}

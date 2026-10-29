@@ -1,0 +1,55 @@
+{
+  "schema": "vela.wp14.materialized_sources.v1",
+  "template_sha256": "68a571a8c0bb05098e917f1f6d7478ab4c2b50afbfd2d6eb362e442268d0bc37",
+  "source_inputs": {
+    "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+    "full_physics_constant_srh.par": "050f3443456d4f7972fbeed958b9892173d23e3814c9e08d491690ffbe191fcc",
+    "aba_poisson_sdevice.cmd": "72ccc3e0d7fd0699d91fc02493600762a8574e44109195752da6cd6e4008c22e",
+    "external_resistor_sdevice.cmd": "7437dd021495bd6abe56d57defd7a1a23400c2921141a2d63d0fa663553036db",
+    "full_physics_ablation_sdevice.cmd": "68a571a8c0bb05098e917f1f6d7478ab4c2b50afbfd2d6eb362e442268d0bc37"
+  },
+  "variants": {
+    "a_constant_no_enormal": {
+      "srh_doping_dep": false,
+      "enormal": false
+    },
+    "b_doping_no_enormal": {
+      "srh_doping_dep": true,
+      "enormal": false
+    },
+    "c_constant_enormal": {
+      "srh_doping_dep": false,
+      "enormal": true
+    },
+    "d_doping_enormal": {
+      "srh_doping_dep": true,
+      "enormal": true
+    }
+  },
+  "mesh_origin": "bvmethods_sentaurus2018/v1/mesh/n1_msh.tdr",
+  "mesh_alias": "bvmethods_nmos_msh.tdr",
+  "parameter_policy": "preserve repository SRH overrides; archive native default dump separately",
+  "numerical_precision_controls": {
+    "d_doping_enormal": "7d34320e42c29752c765ee079cc2841b39109d4b7d99596b28817bead68d41dd"
+  },
+  "external_recovery": {
+    "native_only": true,
+    "original_zero_bias_qs_qualified": false,
+    "physics": "original Fermi/OldSlotboom/Mobility/SRH/BTBT(E2)/Avalanche(Eparallel)",
+    "resistance_ohm_um": 10000000.0,
+    "stop_A_per_um": 0.001443,
+    "voltage_goal_V": 100000,
+    "workflow": [
+      "transient acquisition with original threshold",
+      "independent DC endpoint",
+      "DC backtrack to 14300 V below stop then continuation to original threshold"
+    ],
+    "jobs": {
+      "external_transient_saved": "external_transient_saved_v2",
+      "external_dc_saved": "external_dc_saved",
+      "external_recovery_saved": "external_recovery_saved"
+    },
+    "seed_device": "external_transient_seed_des.sav",
+    "seed_circuit": "external_transient_seed_circuit_des.sav"
+  }
+}

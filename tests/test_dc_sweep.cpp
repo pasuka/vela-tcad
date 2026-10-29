@@ -1,3 +1,5 @@
+
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -819,10 +821,22 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
     std::string line;
     while (std::getline(input, line)) {
         std::vector<std::string> columns;
-        std::stringstream ss(line);
         std::string column;
-        while (std::getline(ss, column, ','))
-            columns.push_back(column);
+        bool quoted = false;
+        for (std::size_t i = 0; i < line.size(); ++i) {
+            const char ch = line[i];
+            if (ch == '"') {
+                if (quoted && i + 1 < line.size() && line[i + 1] == '"') {
+                    column += '"';
+                    ++i;
+                } else quoted = !quoted;
+            } else if (ch == ',' && !quoted) {
+                columns.push_back(column);
+                column.clear();
+            } else column += ch;
+        }
+        REQUIRE_FALSE(quoted);
+        columns.push_back(column);
         rows.push_back(columns);
     }
     return rows;
@@ -970,10 +984,206 @@ TEST_CASE("DCSweep: external resistor records a closed inner/outer load line",
         [&](const auto& row) { return row.at(resumedCol) == "1"; }));
 }
 
+TEST_CASE("DCSweep: nested adaptive outer steps preserve load closure and current stop",
+          "[dc_sweep][external_circuit][integration]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "adaptive.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0}, {"stop", 0.1}, {"step", 0.1},
+        {"initial_step", 0.005}, {"min_step", 0.001}, {"max_step", 0.025},
+        {"growth_factor", 2.0}, {"write_vtk", false},
+        {"boundary_control", {{"adaptive_outer_continuation", true}}},
+        {"external_circuit", {{"mode", "series_resistor"},
+            {"resistance_ohm_um", 1.0e3}, {"max_inner_voltage_step_V", 0.05},
+            {"residual_tolerance_V", 1.0e-7}}}
+    });
+    DCSweep sweep;
+    const auto result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() > 2);
+    REQUIRE(result.points[1].outerVoltage_V == Catch::Approx(0.005));
+    REQUIRE(result.points.back().outerVoltage_V == Catch::Approx(0.1));
+    for (std::size_t i = 1; i < result.points.size(); ++i) {
+        REQUIRE(result.points[i].converged);
+        REQUIRE(std::abs(result.points[i].loadLineResidual_V) <= 1.0e-7);
+        REQUIRE(result.points[i].outerVoltage_V - result.points[i-1].outerVoltage_V <= 0.025 + 1e-12);
+    }
+    // A declared terminal-current stop must end the adaptive outer schedule.
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg; input >> cfg; input.close();
+    const auto curve = readCsvRows(csvPath);
+    const Real stopCurrent = std::abs(csvReal(curve[2],
+        csvColumnIndex(curve.front(), "current_total_A_per_um")));
+    REQUIRE(stopCurrent > 0.0);
+    cfg["sweep"]["breakdown"] = {{"current_contact", "anode"},
+        {"current_abs_A_per_um", stopCurrent * 0.9}};
+    { std::ofstream output(cfgPath); output << cfg; }
+    const auto stopped = sweep.runWithResult(cfgPath.string());
+    REQUIRE(stopped.points.size() == 2);
+    REQUIRE(stopped.points.back().outerVoltage_V == Catch::Approx(0.005));
+
+    // Reject a selector that cannot use the ordinary outer-step schedule.
+    cfg["sweep"]["external_circuit"]["solver"] = "coupled_newton";
+    { std::ofstream output(cfgPath); output << cfg; }
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("requires nested_scalar"));
+    cfg["sweep"].erase("external_circuit");
+    { std::ofstream output(cfgPath); output << cfg; }
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("requires nested_scalar"));
+}
+
+TEST_CASE("DCSweep: failed nested device trial preserves Newton trace and state identity",
+          "[dc_sweep][external_circuit][newton_history][integration]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    // Unit-scaling inputs use micrometres; retain an unconstrained interior
+    // carrier row so a one-iteration biased solve cannot be a trivial root.
+    auto meshJson = nlohmann::json::parse(readTextFile(meshPath));
+    for (auto& node : meshJson["nodes"]) {
+        node["x"] = node["x"].get<Real>() * 1e6;
+        node["y"] = node["y"].get<Real>() * 1e6;
+    }
+    { std::ofstream output(meshPath); output << meshJson; }
+    const auto statePath = dir / "zero.h5";
+    const auto seedCfg = writeUnitScalingSweepConfig(dir, meshPath, dir / "zero.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"write_vtk", false},
+        {"write_state_file", statePath.string()}
+    });
+    DCSweep sweep;
+    REQUIRE(sweep.runWithResult(seedCfg.string()).points.front().converged);
+    const auto csvPath = dir / "failure.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0}, {"stop", 0.25}, {"step", 0.25}, {"write_vtk", false},
+        {"initial_state_file", statePath.string()},
+        {"diagnostics", {{"newton_history", {{"enabled", true},
+            {"rejected_state_directory", (dir / "rejected").string()}}}}},
+        {"external_circuit", {{"mode", "series_resistor"},
+            {"resistance_ohm_um", 1.0e3}, {"max_inner_voltage_step_V", 0.05}}}
+    }, {{"method", "newton"}, {"warm_start", true}, {"max_iter", 1}});
+    REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    const auto trace = readCsvRows(dir / "failure_newton_attempts.csv");
+    REQUIRE(trace.size() > 1);
+    const auto& last = trace.back();
+    REQUIRE(last[csvColumnIndex(trace.front(), "status")] == "rejected");
+    const auto finalPath = last[csvColumnIndex(trace.front(), "rejected_final_state_file")];
+    REQUIRE(std::filesystem::exists(finalPath));
+    const auto mesh = JsonMeshReader{}.read(meshPath.string());
+    const auto archive = readStateArchive(finalPath, mesh.numNodes(),
+        stateMeshIdentity(mesh, UnitScalingConfig{UnitScalingMode::UnitScaling}));
+    REQUIRE(archive.metadata.at("state_role") == "trial_final");
+    REQUIRE(archive.metadata.at("bias_V").get<Real>() == Catch::Approx(0.05));
+
+    // Each outer retry must remain a rejected trial, with its retry number
+    // preserved, and must never overwrite the last accepted zero checkpoint.
+    auto cfg = nlohmann::json::parse(readTextFile(cfgPath));
+    cfg["sweep"]["boundary_control"] = {{"adaptive_outer_continuation", true}};
+    cfg["sweep"]["initial_step"] = 0.25;
+    cfg["sweep"]["max_retries"] = 2;
+    cfg["sweep"]["write_state_file"] = (dir / "accepted.h5").string();
+    { std::ofstream output(cfgPath); output << cfg; }
+    REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    const auto retried = readCsvRows(dir / "failure_newton_attempts.csv");
+    REQUIRE(retried.back()[csvColumnIndex(retried.front(), "retry_number")] == "2");
+    const auto accepted = readStateArchive((dir / "accepted.h5").string(), mesh.numNodes(),
+        stateMeshIdentity(mesh, UnitScalingConfig{UnitScalingMode::UnitScaling}));
+    REQUIRE(accepted.metadata.at("bias_V").get<Real>() == Catch::Approx(0.0));
+}
+
+TEST_CASE("DCSweep: density update policy is explicit and report preserves the curve",
+          "[dc_sweep][external_circuit][density_update_convergence][integration]")
+{
+    const auto dir = makeUniqueSweepDir(); const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto mesh = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, mesh, dir/"points.csv",
+        {{"start",0.}, {"stop",.01}, {"step",.01}, {"write_vtk",false},
+         {"external_circuit", {{"mode","series_resistor"},{"solver","coupled_newton"},
+             {"resistance_ohm_um",1e3},{"coupled_equation_tolerance",1e-5}}}},
+        {{"method","newton"},{"warm_start",true},{"line_search",true},
+         {"global_continuity_closure",{{"mode","report"}}}});
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    DCSweep sweep;
+    const auto baseline = sweep.runWithResult(cfgPath.string());
+    auto& metric = cfg["sweep"]["external_circuit"]["coupled_update_convergence"];
+    metric={{"mode","report"},{"diagnostic_csv","observations/update.csv"}};
+    std::ofstream(cfgPath)<<cfg.dump(2);
+    const auto report = sweep.runWithResult(cfgPath.string());
+    REQUIRE(report.points.size()==baseline.points.size());
+    for (std::size_t i=0;i<report.points.size();++i) {
+        REQUIRE(report.points[i].totalCurrent==baseline.points[i].totalCurrent);
+        REQUIRE(report.points[i].innerVoltage_V==baseline.points[i].innerVoltage_V);
+        REQUIRE(report.points[i].newtonIterations==baseline.points[i].newtonIterations);
+    }
+    REQUIRE(std::filesystem::exists(dir/"observations/update.csv"));
+    const auto observations=readCsvRows(dir/"observations/update.csv");
+    REQUIRE(observations.size()>1);
+    const auto cols=readCsvRows(dir/"points.csv");
+    const auto mismatch=csvColumnIndex(cols[0],"global_electron_absolute_mismatch");
+    for (std::size_t i=1;i<cols.size();++i) {
+        REQUIRE(cols[i].size()==cols[0].size());
+        REQUIRE(csvReal(cols[i],mismatch)>=0.);
+        const auto acceptance=nlohmann::json::parse(report.points[i-1].validationDiagnostics);
+        REQUIRE(acceptance.at("terminal_electron_current_abs_sum_A_per_um").get<Real>()>=0.);
+    }
+    metric["mode"]="enforce";
+    std::ofstream(cfgPath)<<cfg.dump(2);
+    const auto enforced=sweep.runWithResult(cfgPath.string());
+    REQUIRE(enforced.points.back().converged);
+    for (const auto& point:enforced.points)
+        REQUIRE(std::abs(point.loadLineResidual_V)<=1e-6);
+    metric["electron_reference_cm3"]=-1.; std::ofstream(cfgPath)<<cfg.dump(2);
+    REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    metric.erase("electron_reference_cm3"); metric["mode"]="unknown";
+    std::ofstream(cfgPath)<<cfg.dump(2); REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+    metric["mode"]="enforce"; cfg["sweep"]["external_circuit"]["solver"]="nested_scalar";
+    std::ofstream(cfgPath)<<cfg.dump(2); REQUIRE_THROWS(sweep.runWithResult(cfgPath.string()));
+}
+
+TEST_CASE("DCSweep: external resistor follows decreasing reverse-bias targets",
+          "[dc_sweep][external_circuit][reverse][integration]")
+{
+    const std::string solver = GENERATE("nested_scalar", "coupled_newton");
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(
+        dir, meshPath, dir / "reverse.csv",
+        {{"start", 0.0}, {"stop", -0.01}, {"step", -0.005},
+         {"bias_points", {0.0, -0.005, -0.01}}, {"write_vtk", false},
+         {"external_circuit", {{"mode", "series_resistor"}, {"solver", solver},
+             {"resistance_ohm_um", 1e3}, {"residual_tolerance_V", 1e-7},
+             {"coupled_equation_tolerance", 1e-5}}}},
+        {{"method", "newton"}, {"warm_start", true}, {"line_search", true}});
+    DCSweep sweep;
+    const auto result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() >= 3);
+    REQUIRE(result.points.back().outerVoltage_V == Catch::Approx(-0.01));
+    Real previous = 0.0;
+    for (const auto& point : result.points) {
+        REQUIRE(point.converged);
+        REQUIRE(point.outerVoltage_V <= previous);
+        REQUIRE(std::abs(point.loadLineResidual_V) <= 1e-7);
+        previous = point.outerVoltage_V;
+    }
+    // Reversing direction inside a sweep remains unsupported.
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    cfg["sweep"]["bias_points"] = {0.0, -0.005, 0.01};
+    std::ofstream(cfgPath) << cfg.dump(2);
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("must be monotone"));
+}
+
 TEST_CASE("DCSweep: coupled external resistor closes device and circuit residuals",
           "[dc_sweep][external_circuit][coupled_newton][integration]")
 {
-    const bool positiveDensityUpdates = GENERATE(false, true);
     const auto dir = makeUniqueSweepDir();
     const ScopedDirectoryCleanup cleanup{dir};
     std::filesystem::create_directories(dir);
@@ -997,7 +1207,6 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
             {"external_circuit", {
                 {"mode", "series_resistor"},
                 {"solver", "coupled_newton"},
-                {"coupled_positive_density_updates", positiveDensityUpdates},
                 {"resistance_ohm_um", 1.0e3},
                 {"initial_inner_voltage_V", 0.0},
                 {"max_inner_voltage_step_V", 0.1},
@@ -1036,12 +1245,27 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     for (const DCSweepPoint& point : result.points) {
         REQUIRE(point.converged);
         REQUIRE(point.solverMethod == "coupled_load_line_newton");
+        const auto acceptance = nlohmann::json::parse(point.validationDiagnostics);
+        REQUIRE(acceptance.at("coupled_acceptance_checked").get<bool>());
+        REQUIRE(acceptance.at("terminal_kcl_satisfied").get<bool>());
+        REQUIRE(acceptance.at("actual_load_line_satisfied").get<bool>());
         REQUIRE(point.boundaryControlMode == "external_resistor");
         REQUIRE(std::abs(point.loadLineResidual_V) <= 1.0e-7);
         REQUIRE(point.boundaryControlEvaluations >= 1);
     }
     REQUIRE(result.points.back().outerVoltage_V ==
             Catch::Approx(0.25).margin(1.0e-12));
+
+    // Exercise the serialized CSV, not just the in-memory point fields.
+    const auto coupledRows = readCsvRows(csvPath);
+    const auto validationColumn = csvColumnIndex(coupledRows.front(), "validation_diagnostics");
+    const auto outerColumn = csvColumnIndex(coupledRows.front(), "outer_voltage_V");
+    for (std::size_t i = 1; i < coupledRows.size(); ++i) {
+        REQUIRE(coupledRows[i].size() == coupledRows.front().size());
+        REQUIRE(nlohmann::json::parse(coupledRows[i][validationColumn]) ==
+                nlohmann::json::parse(result.points[i - 1].validationDiagnostics));
+        REQUIRE(std::stod(coupledRows[i][outerColumn]) == result.points[i - 1].outerVoltage_V);
+    }
 
     const auto restartCsvPath = dir / "coupled_external_resistor_restart.csv";
     const auto restartCfgPath = writeUnitScalingSweepConfig(
@@ -1086,23 +1310,83 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     REQUIRE(std::abs(restarted.points.back().loadLineResidual_V) <= 1.0e-7);
 }
 
-TEST_CASE("DCSweep: positive density circuit trials require coupled Newton",
-          "[dc_sweep][external_circuit][positive_density]")
+TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops on current",
+          "[dc_sweep][external_circuit][resistor_contract]")
+{
+    const auto dir=makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto mesh=writePNMeshMicrometers(dir);
+    auto cfg=baseSweepConfig(dir,mesh,dir/"coupled.csv");
+    cfg["scaling"]={{"mode","unit_scaling"}};
+    cfg["doping"][0]["donors"]=1e17;
+    cfg["doping"][1]["acceptors"]=1e17;
+    cfg["solver"]={{"method","newton"},{"max_iter",80},{"input_scaling","unit_scaling"}};
+    cfg["sweep"].update({{"start",0.0},{"stop",.02},{"step",.02},{"write_vtk",false},
+        {"step_growth_mode","newton_iterations"},
+        {"external_circuit",{{"mode","series_resistor"},{"solver","coupled_newton"},
+            {"resistance_ohm_um",1e3},{"coupled_initial_outer_step_V",.005},
+            {"coupled_min_outer_step_V",1e-5},{"coupled_max_outer_step_V",.02},
+            {"coupled_outer_growth_factor",1.41},{"max_iterations",20}}}});
+    const auto path=dir/"coupled.json";
+    {std::ofstream f(path); f<<cfg.dump(2);}
+    const auto result=DCSweep().runWithResult(path.string());
+    REQUIRE(result.points.size()>=3);
+    REQUIRE(result.points.back().outerVoltage_V==Catch::Approx(.02));
+    for(std::size_t i=1;i+1<result.points.size();++i) {
+        const auto& p=result.points[i];
+        const Real growth=1+.41*std::max(0.,1-std::max(p.newtonIterations-1,0)/15.);
+        const Real expected=std::min(.02,p.outerVoltage_V+std::abs(p.acceptedStep)*growth);
+        REQUIRE(result.points[i+1].outerVoltage_V==Catch::Approx(expected).margin(1e-12));
+    }
+    // The stop contract is checked against a deterministic already-measured
+    // first positive point, rather than a guessed current magnitude.
+    const Real firstCurrent=UnitScalingConfig{UnitScalingMode::UnitScaling}.unitSystem()
+        .internalCurrentPerDeviceDepthToAPerUm(result.points[1].totalCurrent);
+    REQUIRE(std::abs(firstCurrent)>0);
+    cfg["sweep"]["breakdown"]={{"current_contact","anode"},{"current_abs_A_per_um",
+        std::abs(firstCurrent)*.99}};
+    {std::ofstream f(path); f<<cfg.dump(2);}
+    const auto stopped=DCSweep().runWithResult(path.string());
+    REQUIRE(stopped.points.size()<result.points.size());
+}
+
+TEST_CASE("DCSweep: coupled scalar convergence cannot mask failed physical closure",
+          "[dc_sweep][external_circuit][coupled_acceptance][integration]")
 {
     const auto dir = makeUniqueSweepDir();
     const ScopedDirectoryCleanup cleanup{dir};
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMeshMicrometers(dir);
-    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, dir / "iv.csv", {
-        {"start", 0.0}, {"stop", 0.0}, {"step", 0.1},
-        {"external_circuit", {
-            {"mode", "series_resistor"}, {"solver", "nested_scalar"},
-            {"resistance_ohm_um", 1.0e3}, {"coupled_positive_density_updates", true}
-        }}
-    }, {{"method", "newton"}});
-    DCSweep sweep;
-    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
-        Catch::Matchers::ContainsSubstring("coupled_positive_density_updates requires"));
+    nlohmann::json meshJson;
+    { std::ifstream input(meshPath); input >> meshJson; }
+    // Leave one actual continuity row free; an all-contact mesh has no bulk source.
+    meshJson["contacts"][1]["node_ids"] = {2};
+    { std::ofstream output(meshPath); output << meshJson.dump(2); }
+    const auto statePath = dir / "unbalanced.h5";
+    DDSolution state;
+    state.psi = VectorXd::Zero(4);
+    state.phin = VectorXd::Constant(4, .02);
+    state.phin(0) = 0;
+    state.phip = VectorXd::Zero(4);
+    state.n = state.p = VectorXd::Constant(4, 1e16);
+    const UnitScalingConfig scaling(UnitScalingMode::UnitScaling);
+    JsonMeshReader reader;
+    const DeviceMesh mesh = reader.read(meshPath.string(), scaling);
+    DDStateArchiveScope scope({{"mode", "dd"},
+        {"mesh_sha256", stateMeshIdentity(mesh, scaling)}, {"potential_origin_V", 0.0}});
+    writeDDSolutionState(statePath, state, scaling);
+    const auto output = dir / "rejected.csv";
+    const auto config = writeUnitScalingSweepConfig(dir, meshPath, output,
+        {{"start", 0}, {"stop", 0}, {"step", .01}, {"write_vtk", false},
+         {"initial_state_file", statePath.string()},
+         {"external_circuit", {{"mode", "series_resistor"}, {"solver", "coupled_newton"},
+             {"resistance_ohm_um", 1e7}, {"coupled_equation_tolerance", 1e100},
+             {"residual_tolerance_V", 1e100}}}},
+        {{"method", "newton"}, {"warm_start", true}, {"recombination", {"srh"}},
+         {"global_continuity_closure", {{"mode", "enforce"}, {"tolerance", .01}, {"source_floor", 1e-30}}}});
+    REQUIRE_THROWS_WITH(DCSweep().runWithResult(config.string()),
+        Catch::Matchers::ContainsSubstring("coupled_physical_acceptance: global_continuity_closure"));
 }
 
 TEST_CASE("DCSweep: external resistor restores an interrupted persisted bracket",
@@ -3432,11 +3716,6 @@ TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two cont
     REQUIRE(std::isfinite(csvReal(
         srhRow, csvColumnIndex(srhHeader, "srh_net_current_A_per_um"))));
     REQUIRE(std::isfinite(csvReal(
-        srhRow, csvColumnIndex(srhHeader, "auger_net_current_A_per_um"))));
-    REQUIRE(std::isfinite(csvReal(
-        srhRow,
-        csvColumnIndex(srhHeader, "total_recombination_net_current_A_per_um"))));
-    REQUIRE(std::isfinite(csvReal(
         srhRow, csvColumnIndex(srhHeader, "four_terminal_kcl_residual_A_per_um"))));
     REQUIRE(csvReal(srhRow, csvColumnIndex(srhHeader, "resolution_margin_ratio")) ==
             Catch::Approx(10.0));
@@ -4609,6 +4888,57 @@ TEST_CASE("DCSweep: poisson_block initialization writes runtime artifacts", "[dc
         static_cast<std::size_t>(std::distance(sweepRows.front().begin(), handoffStageIt));
     REQUIRE(sweepRows[1][handoffStageIndex] == "poisson_block_newton");
 }
+TEST_CASE("DCSweep: nonlinear Poisson initialization closes equilibrium before handoff",
+          "[dc_sweep][poisson_initialization]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto cfgPath = writeSweepConfig(dir, meshPath, dir / "zero.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"step", 0.25}, {"write_vtk", false},
+        {"initialization", {{"mode", "poisson_block"}, {"poisson_max_iter", 100},
+                            {"write_state_file", "equilibrium.h5"}}}
+    }, {{"method", "newton"}, {"reltol", 1.0e-8}});
+    // Unequal doping prevents the symmetric interior from already being a root.
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    cfg["doping"][0]["donors"] = 2.0e23;
+    std::ofstream(cfgPath) << cfg.dump(2);
+    const auto result = DCSweep{}.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    std::ifstream reportFile(dir / "zero_poisson_initialization.json");
+    const auto report = nlohmann::json::parse(reportFile);
+    REQUIRE(report.at("converged").get<bool>());
+    REQUIRE(report.at("iterations").get<int>() > 1);
+    REQUIRE(report.at("final_block_residuals").at("psi").get<Real>() < 1.0e-6);
+    REQUIRE(report.at("final_block_residuals").at("phin").get<Real>() < 1.0e-8);
+    REQUIRE(report.at("final_block_residuals").at("phip").get<Real>() < 1.0e-8);
+    REQUIRE(std::filesystem::exists(dir / "equilibrium.h5"));
+}
+
+TEST_CASE("DCSweep: failed nonlinear Poisson initialization cannot hand off a state",
+          "[dc_sweep][poisson_initialization]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto cfgPath = writeSweepConfig(dir, meshPath, dir / "zero.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"step", 0.25}, {"write_vtk", false},
+        {"initialization", {{"mode", "poisson_block"}, {"poisson_max_iter", 1},
+                            {"write_state_file", "equilibrium.h5"}}}
+    }, {{"method", "newton"}, {"reltol", 1.0e-8}});
+    auto cfg = nlohmann::json::parse(std::ifstream(cfgPath));
+    cfg["doping"][0]["donors"] = 2.0e23;
+    std::ofstream(cfgPath) << cfg.dump(2);
+    REQUIRE_THROWS_WITH(DCSweep{}.runWithResult(cfgPath.string()),
+                        Catch::Matchers::ContainsSubstring("Poisson initialization failed"));
+    REQUIRE_FALSE(std::filesystem::exists(dir / "equilibrium.h5"));
+    std::ifstream reportFile(dir / "zero_poisson_initialization.json");
+    REQUIRE_FALSE(nlohmann::json::parse(reportFile).at("converged").get<bool>());
+}
+
 TEST_CASE("DCSweep: poisson_block initialization rejects invalid parser combinations",
           "[dc_sweep]")
 {
@@ -4761,22 +5091,6 @@ TEST_CASE("DCSweep predictor: extrapolates selected coupled variables",
         REQUIRE(predicted.n.isApprox(current.n));
         REQUIRE(predicted.p.isApprox(current.p));
     }
-
-    SECTION("secant without a previous state leaves the warm start unchanged")
-    {
-        SweepPredictorConfig config;
-        config.mode = "secant";
-        config.fields = {"psi", "phin", "phip"};
-
-        const DDSolution predicted = detail::predictDCSweepInitialState(
-            config, nullptr, current, 0.0, 0.2, 0.21);
-
-        REQUIRE(predicted.psi.isApprox(current.psi));
-        REQUIRE(predicted.phin.isApprox(current.phin));
-        REQUIRE(predicted.phip.isApprox(current.phip));
-        REQUIRE(predicted.n.isApprox(current.n));
-        REQUIRE(predicted.p.isApprox(current.p));
-    }
 }
 
 TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
@@ -4822,8 +5136,8 @@ TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
 
     REQUIRE(rows.at(1).at(predictorModeCol) == "linear");
     REQUIRE(rows.at(1).at(predictedStateCol) == "0");
-    // The first nonzero point has only one accepted state, so it is an
-    // ordinary warm start rather than a falsely-labelled constant predictor.
+    // The first warm target has only one accepted state: it is a constant
+    // warm start. A genuine secant prediction requires two accepted states.
     REQUIRE(rows.at(2).at(predictedStateCol) == "0");
     REQUIRE(rows.at(3).at(predictedStateCol) == "1");
     REQUIRE(rows.at(3).at(branchStatusCol) == "accepted");
@@ -5718,17 +6032,116 @@ TEST_CASE("DCSweep step control: minStep boundary records aborting failed attemp
             events.push_back(event);
         });
 
-    REQUIRE(attempts.size() == 2);
+    REQUIRE(attempts.size() == 3);
     REQUIRE(attempts[0] == Catch::Approx(0.5));
     REQUIRE(attempts[1] == Catch::Approx(0.25));
+    REQUIRE(attempts[2] == Catch::Approx(0.2));
 
     REQUIRE(events.size() == 1);
     REQUIRE_FALSE(events[0].converged);
     REQUIRE(events[0].failureReason == "min_step_exhausted");
-    REQUIRE(events[0].voltage == Catch::Approx(0.25));
-    REQUIRE(events[0].attemptedStep == Catch::Approx(0.25));
+    REQUIRE(events[0].voltage == Catch::Approx(0.2));
+    REQUIRE(events[0].attemptedStep == Catch::Approx(0.2));
     REQUIRE(events[0].acceptedStep == Catch::Approx(0.0));
-    REQUIRE(events[0].retryCount == 1);
+    REQUIRE(events[0].retryCount == 2);
+}
+
+TEST_CASE("DCSweep step control: shrinking lands on minStep from the last accepted bias",
+          "[dc_sweep]")
+{
+    for (const Real direction : {1.0, -1.0}) {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.start = direction * 0.1;
+        cfg.stop = direction * 0.6;
+        cfg.step = direction * 0.5;
+        cfg.minStep = 0.2;
+        cfg.maxStep = 0.5;
+        cfg.maxRetries = 5;
+        std::vector<Real> attempts;
+        std::vector<detail::DCSweepStepControlEvent> events;
+        detail::DCSweepStepControlState state;
+        detail::runDCSweepStepControl(cfg,
+            [&](Real voltage, Real step, int) {
+                attempts.push_back(direction * voltage);
+                return std::abs(step) <= 0.2 + 1.0e-15;
+            },
+            [&](const auto& event) { events.push_back(event); }, &state);
+        REQUIRE(attempts.size() == 5);
+        const std::vector<Real> expected{0.6, 0.35, 0.3, 0.5, 0.6};
+        for (std::size_t i = 0; i < expected.size(); ++i)
+            REQUIRE(attempts[i] == Catch::Approx(expected[i]));
+        REQUIRE(events.size() == 3);
+        REQUIRE(events[0].retryCount == 2);
+        REQUIRE(events[0].acceptedStep == Catch::Approx(direction * 0.2));
+        REQUIRE(events[1].retryCount == 0);
+        REQUIRE(events[2].acceptedStep == Catch::Approx(direction * 0.1));
+        REQUIRE(state.adaptiveStep == Catch::Approx(0.2));
+    }
+}
+
+TEST_CASE("DCSweep step control: minStep landing respects retry budget and clipped targets",
+          "[dc_sweep]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.stop = 0.5;
+    cfg.step = 0.5;
+    cfg.minStep = 0.2;
+    cfg.maxStep = 0.5;
+    cfg.maxRetries = 5;
+    std::vector<Real> attempts;
+    std::string expectedReason = "min_step_exhausted";
+    Real expectedLast = 0.1;
+    std::size_t expectedCount = 1;
+    SECTION("retry budget cannot be bypassed to reach the floor") {
+        cfg.maxRetries = 1;
+        expectedReason = "non_convergence";
+        expectedLast = 0.25;
+        expectedCount = 2;
+    }
+    SECTION("failed mandatory remainder below the floor is never enlarged") {
+        cfg.mandatoryPoints = {0.1};
+    }
+    SECTION("failed final remainder below the floor is never enlarged") {
+        cfg.stop = 0.1;
+    }
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(cfg,
+        [&](Real voltage, Real, int) { attempts.push_back(voltage); return false; },
+        [&](const auto& event) { events.push_back(event); });
+    REQUIRE(attempts.size() == expectedCount);
+    REQUIRE(attempts.back() == Catch::Approx(expectedLast));
+    REQUIRE(events.size() == 1);
+    REQUIRE(events[0].failureReason == expectedReason);
+    REQUIRE(events[0].acceptedStep == 0.0);
+}
+
+TEST_CASE("DCSweep step control: BV startup tries ten microvolt floor exactly once",
+          "[dc_sweep]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.stop = cfg.step = cfg.initialStep = cfg.maxStep = 0.01;
+    cfg.minStep = 1.0e-5;
+    cfg.maxRetries = 12;
+    bool accepted = false;
+    cfg.stopRequested = [&] { return accepted; };
+    std::vector<Real> attempts;
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(cfg,
+        [&](Real voltage, Real step, int retry) {
+            attempts.push_back(voltage);
+            REQUIRE(retry == static_cast<int>(attempts.size()) - 1);
+            REQUIRE(voltage == step); // All failures retain the zero-bias parent.
+            accepted = step == cfg.minStep;
+            return accepted;
+        },
+        [&](const auto& event) { events.push_back(event); });
+    REQUIRE(attempts.size() == 11);
+    REQUIRE(attempts[9] == Catch::Approx(1.953125e-5));
+    REQUIRE(attempts[10] == cfg.minStep);
+    REQUIRE(events.size() == 1);
+    REQUIRE(events[0].converged);
+    REQUIRE(events[0].retryCount == 10);
+    REQUIRE(events[0].acceptedStep == cfg.minStep);
 }
 
 TEST_CASE("DCSweep: failed solve records retry diagnostics", "[dc_sweep]")
@@ -5960,7 +6373,8 @@ TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure tr
         {"simulation_type", "dc_sweep"},
         {"mesh_file", (fixture / "mesh.json").string()},
         {"node_doping_file", (fixture / "doping.csv").string()},
-        {"materials_file", (fixture / "materials.json").string()},
+        // Preserve the sealed parent's inherited pre-WP13 material scalars.
+        {"materials_file", (fixture / "materials_legacy_300k.json").string()},
         {"output_csv", outputPath.string()},
         {"scaling", {{"mode", "unit_scaling"}}},
         {"contacts", {
@@ -6477,4 +6891,66 @@ TEST_CASE("Production restart rejects legacy extensions and missing context", "[
     writeDDSolutionState(dir/"state.h5",s);
     REQUIRE(readDDSolutionState(dir/"state.h5",2).psi.isZero());
     REQUIRE_THROWS(readDDSolutionState(dir/"state.h5",3));
+}
+
+TEST_CASE("DCSweep step control rejects unrepresentable progress", "[dc_sweep][step_growth][resistor_contract]")
+{
+    detail::DCSweepStepControlConfig c;
+    c.start=1e16; c.stop=c.start+4; c.step=1;
+    c.initialStep=1; c.minStep=1; c.maxStep=4;
+    int calls=0;
+    const auto attempt=[&](Real,Real,int){++calls;return true;};
+    const auto record=[](const detail::DCSweepStepControlEvent&){};
+    REQUIRE_THROWS_WITH(detail::runDCSweepStepControl(c,attempt,record),
+        Catch::Matchers::ContainsSubstring("not representable"));
+    REQUIRE(calls==0);
+    c.step=4;
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(c,attempt,[&](const auto& e){events.push_back(e);});
+    REQUIRE(calls==0);
+    REQUIRE(events.size()==1);
+    REQUIRE(events[0].failureReason=="step_not_representable");
+}
+
+TEST_CASE("DCSweep state step cap limits accepted advances and respects the minimum",
+          "[dc_sweep][coupled_continuation]")
+{
+    detail::DCSweepStepControlConfig c;
+    c.start=0.; c.stop=.1; c.step=.1; c.initialStep=.1;
+    c.minStep=1e-4; c.maxStep=.1; c.growthFactor=2.;
+    c.stepLimit=[](Real proposed,Real){return std::optional<Real>(std::min(proposed,Real{.02}));};
+    std::vector<Real> accepted;
+    detail::runDCSweepStepControl(c,[&](Real v,Real step,int){
+        REQUIRE(step<=.02*(1.+1e-12)); accepted.push_back(v); return true;
+    },[](const auto&){});
+    REQUIRE(accepted.size()==5);
+    REQUIRE(accepted.back()==Catch::Approx(.1));
+    c.stepLimit=[](Real,Real){return std::optional<Real>{};};
+    accepted.clear();
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){accepted.push_back(v);return true;},
+        [&](const auto& e){events.push_back(e);});
+    REQUIRE(accepted.empty());
+    REQUIRE(events.size()==1);
+    REQUIRE_FALSE(events.front().converged);
+    REQUIRE(events.front().failureReason=="state_step_limit_below_minimum_or_invalid");
+}
+
+TEST_CASE("DCSweep: positive density circuit trials require coupled Newton",
+          "[dc_sweep][external_circuit][positive_density]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, dir / "iv.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"step", 0.1},
+        {"external_circuit", {
+            {"mode", "series_resistor"}, {"solver", "nested_scalar"},
+            {"resistance_ohm_um", 1.0e3}, {"coupled_positive_density_updates", true}
+        }}
+    }, {{"method", "newton"}});
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("coupled_positive_density_updates requires"));
 }

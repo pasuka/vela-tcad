@@ -55,7 +55,7 @@ def absolute(path: Path) -> str:
 def configure_common(config: dict[str, Any], output: Path, initial_state: Path) -> None:
     config["output_csv"] = absolute(output / "sweep.csv")
     config["materials_file"] = absolute(
-        REPO / "reference_tcad/bvmethods_sentaurus2018/vela/materials_sentaurus2018.json"
+        REPO / "reference_tcad/bvmethods_sentaurus2018/vela/materials_sentaurus2018_legacy_300k.json"
     )
     solver = config["solver"]
     solver["verbose"] = True

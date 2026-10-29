@@ -4,6 +4,7 @@
 #include "vela/io/ElectrothermalState.h"
 #include "vela/io/DDSolutionCsv.h"
 #include "vela/numerics/SplitDDState.h"
+#include "vela/solver/experimental/PopulationCheckpoint.h"
 #include <catch2/catch_test_macros.hpp>
 #include <bit>
 #include <chrono>
@@ -182,6 +183,46 @@ TEST_CASE("State SHA256 matches known empty and multiblock vectors", "[state_arc
     REQUIRE(vela::stateSha256("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
     REQUIRE(vela::stateSha256(std::string(1000000,'a')) == "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
 }
+
+TEST_CASE("Private population checkpoint preserves internal bits and rejects stale bindings", "[state_archive][population_checkpoint]") {
+    Workspace w;
+    const vela::UnitScalingConfig scaling{vela::UnitScalingMode::UnitScaling};
+    auto solution=vela::restoreDDSolution(example(),scaling);
+    // Find an actual internal -> SI -> internal non-involution, not a tolerance assertion.
+    double lossy=1.2345678901234567;
+    const auto units=scaling.unitSystem();
+    for(int i=0;i<10000 && units.m3ToInternalConcentration(units.internalConcentrationToM3(lossy))==lossy;++i)
+        lossy=std::nextafter(lossy,2.);
+    REQUIRE(units.m3ToInternalConcentration(units.internalConcentrationToM3(lossy))!=lossy);
+    solution.n<<lossy,std::numeric_limits<double>::denorm_min(),-0.;
+    solution.p<<std::nextafter(lossy,2.),1e-200,1e100;
+    const auto archive=vela::archiveDDSolution(solution,example().metadata,scaling);
+    const auto sidecar=vela::experimental::populationCheckpoint(solution,archive,scaling);
+    vela::writeStateArchive(w.root/"physical.h5",archive);
+    const auto disk=vela::readStateArchive(w.root/"physical.h5",3,std::string(64,'a'));
+    // JSON text and HDF5 transport both participate in this check.
+    const auto parsed=nlohmann::json::parse(sidecar.dump());
+    const auto restored=vela::experimental::restorePopulationCheckpoint(disk,parsed,scaling);
+    for(int i=0;i<3;++i) {
+        REQUIRE(std::bit_cast<std::uint64_t>(solution.n[i])==std::bit_cast<std::uint64_t>(restored.n[i]));
+        REQUIRE(std::bit_cast<std::uint64_t>(solution.p[i])==std::bit_cast<std::uint64_t>(restored.p[i]));
+    }
+    REQUIRE(vela::restoreDDSolution(disk,scaling).n[0]!=solution.n[0]);
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,parsed));
+    auto changed=disk;changed.metadata["bias_V"]=41.;
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(changed,parsed,scaling));
+    changed=disk;changed.fields.at("psi")[0]=.1;
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(changed,parsed,scaling));
+    auto invalid=parsed;invalid["electrons_bits"][0]="0000000000000000";
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,invalid,scaling));
+    // Even a recomputed payload digest cannot bind incompatible SI populations.
+    invalid.erase("payload_sha256");invalid["payload_sha256"]=vela::stateSha256(invalid.dump());
+    REQUIRE_THROWS(vela::experimental::restorePopulationCheckpoint(disk,invalid,scaling));
+    auto stale=solution;stale.psi[0]=.1;
+    REQUIRE_THROWS(vela::experimental::populationCheckpoint(stale,disk,scaling));
+    stale=solution;stale.p[0]=std::numeric_limits<double>::infinity();
+    REQUIRE_THROWS(vela::experimental::populationCheckpoint(stale,disk,scaling));
+}
 TEST_CASE("State mesh identity distinguishes equal sized meshes and units", "[state_archive]") {
     vela::DeviceMesh a,b;
     a.addNode({0,0.,0.});a.addNode({1,1.,0.});
@@ -203,4 +244,42 @@ TEST_CASE("State provenance detects changed model bytes at the same path", "[sta
     REQUIRE(before.size()==1);
     REQUIRE(before.at("materials_file")!=after.at("materials_file"));
     REQUIRE_THROWS(vela::stateInputProvenance(config,w.root/"missing"));
+}
+
+TEST_CASE("Population restart keeps physical carrier bits without QF packed authority", "[state_archive][population_core]") {
+    using namespace vela;
+    DDSolution s;s.stateVariables="potential_density";
+    s.psi=VectorXd::Zero(3);s.phin=VectorXd::Zero(3);s.phip=VectorXd::Zero(3);
+    s.n.resize(3);s.p.resize(3);s.n<<1e20,1e-300,0.;s.p<<1e-200,2e23,0.;
+    auto metadata=example().metadata;
+    const auto archive=archiveDDSolution(s,metadata);
+    REQUIRE(archive.metadata.at("state_variables")=="potential_density");
+    const auto out=restoreDDSolution(archive);
+    REQUIRE(out.stateVariables=="potential_density");
+    for(int i=0;i<3;++i){
+        REQUIRE(std::bit_cast<std::uint64_t>(out.n[i])==std::bit_cast<std::uint64_t>(s.n[i]));
+        REQUIRE(std::bit_cast<std::uint64_t>(out.p[i])==std::bit_cast<std::uint64_t>(s.p[i]));
+    }
+    s.packedState=VectorXd::Zero(9);
+    REQUIRE_THROWS_AS(archiveDDSolution(s,metadata),std::invalid_argument);
+}
+
+TEST_CASE("Population archive preserves internal carrier bits across SI transport and validates authority", "[state_archive][population_core]") {
+    using namespace vela;Workspace w;DDSolution s;s.stateVariables="potential_density";
+    s.psi=VectorXd::Zero(3);s.phin=s.psi;s.phip=s.psi;s.n.resize(3);s.p.resize(3);
+    UnitScalingConfig scaling;scaling.physicalUnitSystem=PhysicalUnitSystem::tcadInternal();
+    const auto units=scaling.unitSystem();double value=1.2345678901234567;
+    for(int i=0;i<10000 && units.m3ToInternalConcentration(units.internalConcentrationToM3(value))==value;++i)value=std::nextafter(value,2.);
+    REQUIRE(units.m3ToInternalConcentration(units.internalConcentrationToM3(value))!=value);
+    s.n<<value,std::numeric_limits<double>::denorm_min(),0.;s.p<<1e-200,1e20,0.;
+    auto a=archiveDDSolution(s,example().metadata,scaling);writeStateArchive(w.root/"population.h5",a);
+    const auto disk=readStateArchive(w.root/"population.h5",3,std::string(64,'a'));
+    const auto restored=restoreDDSolution(disk,scaling);REQUIRE(restored.populationRestoreMode=="exact_internal");
+    for(int i=0;i<3;++i){REQUIRE(std::bit_cast<std::uint64_t>(restored.n[i])==std::bit_cast<std::uint64_t>(s.n[i]));REQUIRE(std::bit_cast<std::uint64_t>(restored.p[i])==std::bit_cast<std::uint64_t>(s.p[i]));}
+    const auto si=restoreDDSolution(disk);REQUIRE(si.populationRestoreMode=="converted_units");REQUIRE(si.n[0]==units.internalConcentrationToM3(s.n[0]));
+    auto bad=a;bad.fields.at("population_electrons_internal")[0]=0.;REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.fields.erase("population_holes_internal");REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.metadata["state_variables"]="potential_quasi_fermi";REQUIRE_THROWS(validateStateArchive(bad));
+    auto legacy=a;legacy.fields.erase("population_electrons_internal");legacy.fields.erase("population_holes_internal");legacy.metadata.erase("population_coordinate_schema");legacy.metadata.erase("population_concentration_m3_per_internal");
+    const auto old=restoreDDSolution(legacy,scaling);REQUIRE(old.populationRestoreMode=="legacy_si");REQUIRE(old.n[0]!=s.n[0]);
 }

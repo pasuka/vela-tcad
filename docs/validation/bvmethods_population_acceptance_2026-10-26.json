@@ -1,0 +1,1217 @@
+{
+  "date": "2026-10-26",
+  "status": "diagnostic_contract_verified_full_BV_unqualified",
+  "configuration": {
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "outer_V": 0.21601246709907068,
+    "initial_inner_V": 0.1929233570334666,
+    "BTBT": false,
+    "AV": "self_consistent_GradQF",
+    "statistics": "Joyce_Dixon_OldSlotboom",
+    "linear_backend": "oneMKL_PARDISO",
+    "build_type": "Release",
+    "line_search": "full_step",
+    "fixed_QF_caps_V": 0
+  },
+  "native": {
+    "load_state_max_psi_difference_V": 7.411679983082564e-07,
+    "load_free_electron_max_relative_difference": 1.644657186838927e-05,
+    "load_free_hole_max_relative_difference": 1.6376530230011177e-05,
+    "initial_inner_V": 0.1929233570334666,
+    "stopping_text": "Finished, because...\nError smaller than 1 ( 3.8059E-01 )."
+  },
+  "native_steps": [
+    {
+      "iteration": 1,
+      "dimension_labeled": 6853,
+      "error_RMS_raw": 154.00481319914783,
+      "error_RMS_applied": 153.87140358993392,
+      "error_L1_raw": 5.43506553167963,
+      "logged": {
+        "iteration": 1,
+        "rhs": 71.2,
+        "factor": 1.0,
+        "step": 0.906,
+        "error": 154.0
+      },
+      "hole152": {
+        "old_cm3": 27817.392486350072,
+        "linear_delta_cm3": -3664635.5013206056,
+        "actual_cm3": 278.17392486350076
+      },
+      "nonpositive_holes": 258,
+      "rule_max_relative_error": 1.461053500406706e-13
+    },
+    {
+      "iteration": 2,
+      "dimension_labeled": 6853,
+      "error_RMS_raw": 268.9711281315688,
+      "error_RMS_applied": 268.97112813156923,
+      "error_L1_raw": 5.830104803727635,
+      "logged": {
+        "iteration": 2,
+        "rhs": 0.0186,
+        "factor": 1.0,
+        "step": 1.19,
+        "error": 269.0
+      },
+      "hole152": {
+        "old_cm3": 278.17392486350076,
+        "linear_delta_cm3": 534123.3474116911,
+        "actual_cm3": 534401.521336555
+      },
+      "nonpositive_holes": 0,
+      "rule_max_relative_error": 4.884981308350689e-14
+    },
+    {
+      "iteration": 3,
+      "dimension_labeled": 6853,
+      "error_RMS_raw": 18.13470111174808,
+      "error_RMS_applied": 18.134699630923066,
+      "error_L1_raw": 0.6082573280332064,
+      "logged": {
+        "iteration": 3,
+        "rhs": 0.00166,
+        "factor": 1.0,
+        "step": 0.411,
+        "error": 18.1
+      },
+      "hole152": {
+        "old_cm3": 534401.521336555,
+        "linear_delta_cm3": -514790.1195381802,
+        "actual_cm3": 19611.401798374623
+      },
+      "nonpositive_holes": 9,
+      "rule_max_relative_error": 2.0583534876550402e-13
+    },
+    {
+      "iteration": 4,
+      "dimension_labeled": 6853,
+      "error_RMS_raw": 0.3805942146620926,
+      "error_RMS_applied": 0.38059421466208937,
+      "error_L1_raw": 0.01820599090945461,
+      "logged": {
+        "iteration": 4,
+        "rhs": 0.00229,
+        "factor": 1.0,
+        "step": 0.149,
+        "error": 0.381
+      },
+      "hole152": {
+        "old_cm3": 19611.401798374623,
+        "linear_delta_cm3": 18073.608161297427,
+        "actual_cm3": 37685.00995967199
+      },
+      "nonpositive_holes": 0,
+      "rule_max_relative_error": 4.884981308350689e-15
+    }
+  ],
+  "native_observed_population_rule": "if old+raw_delta>0: old+raw_delta; else: 0.01*old",
+  "native_error_definition": "10^Digits * sqrt(sum((raw_delta/(abs(actual_after)+reference))^2)/6853); carrier reference 1e10 cm^-3, potential/contact reference native thermal voltage",
+  "native_RHS_debug_norms": [
+    {
+      "iteration": 0,
+      "Linf": 4.16156422621543,
+      "L2": 13.812634038011359,
+      "N": 6853
+    },
+    {
+      "iteration": 1,
+      "Linf": 71.2258084710775,
+      "L2": 238.83559354428982,
+      "N": 6853
+    },
+    {
+      "iteration": 2,
+      "Linf": 0.0185845851233373,
+      "L2": 0.028320830749650482,
+      "N": 6853
+    },
+    {
+      "iteration": 3,
+      "Linf": 0.001663643939537,
+      "L2": 0.007450817874999657,
+      "N": 6853
+    }
+  ],
+  "native_error_field_validation": [
+    {
+      "iteration": 1,
+      "blocks": {
+        "electron": {
+          "nodes": 2121,
+          "max_absolute_difference": 1.4094628242311558e-18,
+          "max_relative_difference_above_1e_minus15_floor": 4.6629367034256575e-15
+        },
+        "hole": {
+          "nodes": 2121,
+          "max_absolute_difference": 2.7755575615628914e-17,
+          "max_relative_difference_above_1e_minus15_floor": 4.884981308350689e-15
+        }
+      },
+      "hole152_error_field": 0.0003664635399380002
+    },
+    {
+      "iteration": 2,
+      "blocks": {
+        "electron": {
+          "nodes": 2121,
+          "max_absolute_difference": 4.235164736271502e-22,
+          "max_relative_difference_above_1e_minus15_floor": 4.9960036108132044e-15
+        },
+        "hole": {
+          "nodes": 2121,
+          "max_absolute_difference": 6.938893903907228e-17,
+          "max_relative_difference_above_1e_minus15_floor": 4.884981308350689e-15
+        }
+      },
+      "hole152_error_field": 5.340948053040423e-05
+    },
+    {
+      "iteration": 3,
+      "blocks": {
+        "electron": {
+          "nodes": 2121,
+          "max_absolute_difference": 3.5734202462290796e-22,
+          "max_relative_difference_above_1e_minus15_floor": 4.9960036108132044e-15
+        },
+        "hole": {
+          "nodes": 2121,
+          "max_absolute_difference": 4.7704895589362195e-18,
+          "max_relative_difference_above_1e_minus15_floor": 4.884981308350689e-15
+        }
+      },
+      "hole152_error_field": 5.1478910996457264e-05
+    },
+    {
+      "iteration": 4,
+      "blocks": {
+        "electron": {
+          "nodes": 2121,
+          "max_absolute_difference": 7.858215819253763e-24,
+          "max_relative_difference_above_1e_minus15_floor": 4.773959005888173e-15
+        },
+        "hole": {
+          "nodes": 2121,
+          "max_absolute_difference": 6.776263578034403e-20,
+          "max_relative_difference_above_1e_minus15_floor": 4.6629367034256575e-15
+        }
+      },
+      "hole152_error_field": 1.8073540051143687e-06
+    }
+  ],
+  "release_rebuild_verification": {
+    "cmake_build_exit": 0,
+    "coupled_load_line_ctest_passed": true,
+    "states": [
+      {
+        "state": "own",
+        "summary_exact_match": true,
+        "direction_csv_exact_match": true
+      },
+      {
+        "state": "native_i1",
+        "summary_exact_match": true,
+        "direction_csv_exact_match": true
+      }
+    ],
+    "core_sha256": "ad013fee4107342fdfb67be42278259730068815a01fbf7a9f58e26ac9288d39",
+    "binary_sha256": "6f6eba6a319ec1621b79236e1b6ffc04948abc0e71502f7c5684c004b8128b1a"
+  },
+  "own_candidate_summary": {
+    "candidates": [
+      {
+        "equation_inf": 8.694785720688644e-10,
+        "focus": [
+          {
+            "fn_V": 0.1896850234149096,
+            "fp_V": 0.10866677380876658,
+            "n_cm3": 413576759589855.4,
+            "node": 145,
+            "p_cm3": 161108.31060872355
+          },
+          {
+            "fn_V": 0.19187961371602286,
+            "fp_V": 0.08447991441567315,
+            "n_cm3": 946312815125476.1,
+            "node": 152,
+            "p_cm3": 27817.80998482584
+          },
+          {
+            "fn_V": 0.17078981952459688,
+            "fp_V": 0.2723496300850743,
+            "n_cm3": 64680776221146.59,
+            "node": 308,
+            "p_cm3": 1040519865.467514
+          },
+          {
+            "fn_V": 0.19069718411833622,
+            "fp_V": 0.0571615239937277,
+            "n_cm3": 9546399421857.602,
+            "node": 321,
+            "p_cm3": 910263.5539285683
+          },
+          {
+            "fn_V": 0.19292098509210398,
+            "fp_V": 0.04781458804391724,
+            "n_cm3": 1.2705635397084704e+17,
+            "node": 415,
+            "p_cm3": 82.24385965024966
+          },
+          {
+            "fn_V": 0.19292167296905957,
+            "fp_V": 0.02112994027119633,
+            "n_cm3": 6.872260882539175e+16,
+            "node": 418,
+            "p_cm3": 53.21419141530808
+          },
+          {
+            "fn_V": 0.19292335703314234,
+            "fp_V": 0.1584231869797087,
+            "n_cm3": 4.3401163247586935e+19,
+            "node": 1120,
+            "p_cm3": 95.54596309064902
+          }
+        ],
+        "inner_V": 0.19292335703346664,
+        "load_V": -9.994613658498297e-06,
+        "name": "seed",
+        "residual_finite": true
+      },
+      {
+        "equation_inf": 15573.857457964035,
+        "focus": [
+          {
+            "fn_V": 0.18969384409617618,
+            "fp_V": 2.127472439492709,
+            "n_cm3": 413454802729642.44,
+            "node": 145,
+            "p_cm3": 7.10436405910909e+21
+          },
+          {
+            "fn_V": 0.1918892024685107,
+            "fp_V": -3.3207595701751016,
+            "n_cm3": 946013587021827.5,
+            "node": 152,
+            "p_cm3": 1.7329803317455715e-53
+          },
+          {
+            "fn_V": 0.17079270738178196,
+            "fp_V": 0.2903291369809968,
+            "n_cm3": 64676084682717.79,
+            "node": 308,
+            "p_cm3": 2085815001.0051086
+          },
+          {
+            "fn_V": 0.19070637953147274,
+            "fp_V": 0.15046236561834062,
+            "n_cm3": 9543761454995.182,
+            "node": 321,
+            "p_cm3": 33613819.07573824
+          },
+          {
+            "fn_V": 0.19293090096154084,
+            "fp_V": -0.4588679717424271,
+            "n_cm3": 1.2703575058508859e+17,
+            "node": 415,
+            "p_cm3": 2.5299682616008513e-07
+          },
+          {
+            "fn_V": 0.19293158894830553,
+            "fp_V": -0.3082398365444602,
+            "n_cm3": 6.871280005308258e+16,
+            "node": 418,
+            "p_cm3": 0.00015586701198415598
+          },
+          {
+            "fn_V": 0.19293327314717434,
+            "fp_V": 0.15843309574641412,
+            "n_cm3": 4.340116324682314e+19,
+            "node": 1120,
+            "p_cm3": 95.545935938343
+          }
+        ],
+        "inner_V": 0.1929332731474986,
+        "load_V": 3.786211150158536e-09,
+        "name": "qf_full",
+        "residual_finite": true
+      },
+      {
+        "equation_inf": 2.4590110952297374e-08,
+        "focus": [
+          {
+            "fn_V": 0.1896938452207238,
+            "fp_V": 0.2216566455474819,
+            "n_cm3": 413454784744680.56,
+            "node": 145,
+            "p_cm3": 12742192.180923322
+          },
+          {
+            "fn_V": 0.19188920376159962,
+            "fp_V": -0.03457153139624336,
+            "n_cm3": 946013539703806.4,
+            "node": 152,
+            "p_cm3": 278.1780998482578
+          },
+          {
+            "fn_V": 0.17079270744979572,
+            "fp_V": 0.2859989947266166,
+            "n_cm3": 64676084512562.27,
+            "node": 308,
+            "p_cm3": 1764138176.3548489
+          },
+          {
+            "fn_V": 0.19070638051894218,
+            "fp_V": 0.09666547899695407,
+            "n_cm3": 9543761090451.97,
+            "node": 321,
+            "p_cm3": 4195366.822265447
+          },
+          {
+            "fn_V": 0.19293090130153057,
+            "fp_V": -0.07123255382438787,
+            "n_cm3": 1.2703574891701282e+17,
+            "node": 415,
+            "p_cm3": 0.8224385965024947
+          },
+          {
+            "fn_V": 0.19293158921169445,
+            "fp_V": -0.09791669566776773,
+            "n_cm3": 6.871279935360789e+16,
+            "node": 418,
+            "p_cm3": 0.5321419141530797
+          },
+          {
+            "fn_V": 0.19293327314717434,
+            "fp_V": 0.15843309574641318,
+            "n_cm3": 4.340116324682314e+19,
+            "node": 1120,
+            "p_cm3": 95.54593593833893
+          }
+        ],
+        "inner_V": 0.1929332731474986,
+        "load_V": 2.215059188848123e-08,
+        "name": "population_observed_1pct_control",
+        "residual_finite": true
+      }
+    ],
+    "inner_V": 0.19292335703346664,
+    "linear_backward_error": 2.253525190732641e-16,
+    "linear_nonpositive_electron_count": 0,
+    "linear_nonpositive_hole_count": 138,
+    "outer_V": 0.21601246709907068,
+    "raw_inner_V": 9.916114031966923e-06,
+    "thermal_voltage_V": 0.025851999786435535,
+    "v0_V": 0.025851999786435535
+  },
+  "own_update_scales": {
+    "seed": {
+      "L1_raw": 5.202711811983662,
+      "RMS_raw": 166.36119281956152,
+      "N": 6853,
+      "blocks_RMS": [
+        1.5965904981652697,
+        6.075852969464616,
+        298.9678882887895,
+        4.532555300609089
+      ],
+      "max_hole_normalized_raw_increment": 9519.896797093234
+    },
+    "qf_full": {
+      "L1_raw": 3.430349991134207,
+      "RMS_raw": 104.19454235788568,
+      "N": 6853,
+      "blocks_RMS": [
+        1.5965595072305687,
+        6.077204157092544,
+        187.182924669103,
+        4.532349869344844
+      ],
+      "max_hole_normalized_raw_increment": 6030.864664134471
+    },
+    "population_observed_1pct_control": {
+      "L1_raw": 4.952520079589799,
+      "RMS_raw": 153.95801234889706,
+      "N": 6853,
+      "blocks_RMS": [
+        1.5965595072305687,
+        6.077204326332556,
+        276.6676738522148,
+        4.532349869344844
+      ],
+      "max_hole_normalized_raw_increment": 8692.390219039999
+    }
+  },
+  "own_population_control_steps": [
+    {
+      "iteration": 1,
+      "equation_inf": 2.4590110952297374e-08,
+      "load_V": 2.215059188848123e-08,
+      "update_RMS": 153.95801234889703,
+      "inner_V": 0.1929332731474986,
+      "negative_holes": 138,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 2,
+      "equation_inf": 2.5286572482587446e-10,
+      "load_V": -7.865619239266763e-09,
+      "update_RMS": 754.4187586018089,
+      "inner_V": 0.19293327391133505,
+      "negative_holes": 124,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 3,
+      "equation_inf": 3.576606321825384e-10,
+      "load_V": -2.259325959652614e-08,
+      "update_RMS": 389.6784965260674,
+      "inner_V": 0.19293327282687814,
+      "negative_holes": 201,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 4,
+      "equation_inf": 3.0661307443228054e-09,
+      "load_V": 1.1421336792993841e-08,
+      "update_RMS": 1315.6744259749755,
+      "inner_V": 0.19293323111933247,
+      "negative_holes": 134,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 5,
+      "equation_inf": 8.770645987664409e-09,
+      "load_V": 1.4903772688201755e-08,
+      "update_RMS": 20570.464584418118,
+      "inner_V": 0.19293334697822695,
+      "negative_holes": 181,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 6,
+      "equation_inf": 1.1294052541604696e-09,
+      "load_V": 1.4660571173719106e-08,
+      "update_RMS": 1049.3287762705418,
+      "inner_V": 0.19293325657602967,
+      "negative_holes": 125,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 7,
+      "equation_inf": 1.194474787578447e-09,
+      "load_V": 1.9315934296493253e-08,
+      "update_RMS": 4647.382718183479,
+      "inner_V": 0.19293327625876006,
+      "negative_holes": 145,
+      "negative_electrons": 0
+    },
+    {
+      "iteration": 8,
+      "equation_inf": 1.0039895303333066e-09,
+      "load_V": 1.0060226540709039e-09,
+      "update_RMS": 1438.5826068490408,
+      "inner_V": 0.19293328635549126,
+      "negative_holes": 149,
+      "negative_electrons": 0
+    }
+  ],
+  "same_native_state_operator_comparison": {
+    "native_i0": {
+      "dimension_native_independent": 6843,
+      "dimension_common": 6765,
+      "alias_entries_removed": 80,
+      "native_componentwise_backward_error": 3.471480094336252e-11,
+      "blocks": {
+        "psi": {
+          "matrix_relative_Frobenius": 8.109321985387471e-06,
+          "native_diagonal_normalized_RHS_Linf": 0.00045357181529407303,
+          "vela_diagonal_normalized_RHS_Linf": 0.00045353395381750284,
+          "RHS_difference_Linf": 4.810943799296517e-06
+        },
+        "port": {
+          "matrix_relative_Frobenius": 7.463951784039033e-07,
+          "native_diagonal_normalized_RHS_Linf": 3.3210154390920478e-06,
+          "vela_diagonal_normalized_RHS_Linf": 3.3074533017234674e-06,
+          "RHS_difference_Linf": 6.6284687408155155e-06
+        },
+        "electron": {
+          "matrix_relative_Frobenius": 1.0841184892045601e-06,
+          "native_diagonal_normalized_RHS_Linf": 3.835966765103111e-06,
+          "vela_diagonal_normalized_RHS_Linf": 3.6241508946999435e-06,
+          "RHS_difference_Linf": 5.209148299782494e-06
+        },
+        "hole": {
+          "matrix_relative_Frobenius": 0.0010895925444787656,
+          "native_diagonal_normalized_RHS_Linf": 0.05180161058688266,
+          "vela_diagonal_normalized_RHS_Linf": 0.05180161923636184,
+          "RHS_difference_Linf": 2.687992298256074e-06
+        },
+        "all": {
+          "matrix_relative_Frobenius": 0.000734304860744984,
+          "native_diagonal_normalized_RHS_Linf": 0.05180161058688266,
+          "vela_diagonal_normalized_RHS_Linf": 0.05180161923636184,
+          "RHS_difference_Linf": 6.6284687408155155e-06
+        }
+      },
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_Si_max_relative": 1.0547118733938987e-14,
+        "hole_Si_max_relative": 1.1546319456101628e-14
+      },
+      "directions": {
+        "electron": {
+          "native_delta_inf_cm3": 2616722506162799.5,
+          "vela_delta_inf_cm3": 2616562263326245.0,
+          "delta_difference_inf_cm3": 351109722389406.5,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 0
+        },
+        "hole": {
+          "native_delta_inf_cm3": 16152418359952.264,
+          "vela_delta_inf_cm3": 9586089667895.037,
+          "delta_difference_inf_cm3": 11980605242703.373,
+          "native_nonpositive": 258,
+          "vela_nonpositive": 138
+        }
+      },
+      "worst_rows": [
+        {
+          "block": 2,
+          "node": 229,
+          "row_difference_L2": 0.6318281377886781
+        },
+        {
+          "block": 2,
+          "node": 1308,
+          "row_difference_L2": 0.4120522284507973
+        },
+        {
+          "block": 2,
+          "node": 1546,
+          "row_difference_L2": 0.3212071692872565
+        },
+        {
+          "block": 2,
+          "node": 2587,
+          "row_difference_L2": 0.22127619631587728
+        },
+        {
+          "block": 2,
+          "node": 791,
+          "row_difference_L2": 0.004433105308210212
+        },
+        {
+          "block": 2,
+          "node": 2084,
+          "row_difference_L2": 0.0031556838478567456
+        },
+        {
+          "block": 0,
+          "node": 2370,
+          "row_difference_L2": 0.0006733621288503855
+        },
+        {
+          "block": 0,
+          "node": 2371,
+          "row_difference_L2": 0.0006733621288077529
+        },
+        {
+          "block": 0,
+          "node": 2407,
+          "row_difference_L2": 0.0006733621282819513
+        },
+        {
+          "block": 0,
+          "node": 2406,
+          "row_difference_L2": 0.0006733621270882395
+        }
+      ],
+      "worst_RHS_rows": [
+        {
+          "block": 3,
+          "node": 0,
+          "native": -3.3210154390920478e-06,
+          "vela": 3.3074533017234674e-06,
+          "difference": 6.6284687408155155e-06
+        },
+        {
+          "block": 1,
+          "node": 1108,
+          "native": -2.5914707168856167e-06,
+          "vela": 2.6176775828968767e-06,
+          "difference": 5.209148299782494e-06
+        },
+        {
+          "block": 1,
+          "node": 1071,
+          "native": -2.5864879778364087e-06,
+          "vela": 2.6128004216850726e-06,
+          "difference": 5.199288399521481e-06
+        },
+        {
+          "block": 1,
+          "node": 1072,
+          "native": -2.5864879776928103e-06,
+          "vela": 2.6128004208248352e-06,
+          "difference": 5.1992883985176455e-06
+        },
+        {
+          "block": 1,
+          "node": 1107,
+          "native": -2.5864879777909586e-06,
+          "vela": 2.6128004205781187e-06,
+          "difference": 5.199288398369077e-06
+        },
+        {
+          "block": 1,
+          "node": 881,
+          "native": -2.5769639621909526e-06,
+          "vela": 2.6032311801856823e-06,
+          "difference": 5.180195142376634e-06
+        },
+        {
+          "block": 1,
+          "node": 880,
+          "native": -2.5619095275887624e-06,
+          "vela": 2.587973341825839e-06,
+          "difference": 5.1498828694146015e-06
+        },
+        {
+          "block": 1,
+          "node": 863,
+          "native": -2.568578733182974e-06,
+          "vela": 2.5750240404013914e-06,
+          "difference": 5.1436027735843655e-06
+        }
+      ]
+    },
+    "native_i1": {
+      "dimension_native_independent": 6843,
+      "dimension_common": 6765,
+      "alias_entries_removed": 80,
+      "native_componentwise_backward_error": 3.966388439158451e-14,
+      "blocks": {
+        "psi": {
+          "matrix_relative_Frobenius": 8.120243412403174e-06,
+          "native_diagonal_normalized_RHS_Linf": 1.697977446694567e-14,
+          "vela_diagonal_normalized_RHS_Linf": 4.811293208244924e-06,
+          "RHS_difference_Linf": 4.811293208162866e-06
+        },
+        "port": {
+          "matrix_relative_Frobenius": 7.466540530610036e-07,
+          "native_diagonal_normalized_RHS_Linf": 2.7821806543570024e-12,
+          "vela_diagonal_normalized_RHS_Linf": 6.6281576371920316e-06,
+          "RHS_difference_Linf": 6.628154855011377e-06
+        },
+        "electron": {
+          "matrix_relative_Frobenius": 0.0040026205168096195,
+          "native_diagonal_normalized_RHS_Linf": 7.113028188171294e-09,
+          "vela_diagonal_normalized_RHS_Linf": 5.2091625922186e-06,
+          "RHS_difference_Linf": 5.209160348070699e-06
+        },
+        "hole": {
+          "matrix_relative_Frobenius": 78.34703283864074,
+          "native_diagonal_normalized_RHS_Linf": 0.07674434815394253,
+          "vela_diagonal_normalized_RHS_Linf": 0.04363412423845614,
+          "RHS_difference_Linf": 0.07674466820623929
+        },
+        "all": {
+          "matrix_relative_Frobenius": 37.838591626347174,
+          "native_diagonal_normalized_RHS_Linf": 0.07674434815394253,
+          "vela_diagonal_normalized_RHS_Linf": 0.04363412423845614,
+          "RHS_difference_Linf": 0.07674466820623929
+        }
+      },
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_Si_max_relative": 1.3211653993039363e-14,
+        "hole_Si_max_relative": 1.27675647831893e-14
+      },
+      "directions": {
+        "electron": {
+          "native_delta_inf_cm3": 35761529039.05353,
+          "vela_delta_inf_cm3": 351110026153373.9,
+          "delta_difference_inf_cm3": 351109856096560.1,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 0
+        },
+        "hole": {
+          "native_delta_inf_cm3": 1863274735.8096433,
+          "vela_delta_inf_cm3": 11980648349978.473,
+          "delta_difference_inf_cm3": 11980749528370.512,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 97
+        }
+      },
+      "worst_rows": [
+        {
+          "block": 2,
+          "node": 308,
+          "row_difference_L2": 36765.7379081635
+        },
+        {
+          "block": 2,
+          "node": 312,
+          "row_difference_L2": 3324.974703642956
+        },
+        {
+          "block": 2,
+          "node": 307,
+          "row_difference_L2": 426.5623202827886
+        },
+        {
+          "block": 2,
+          "node": 309,
+          "row_difference_L2": 149.15302162731618
+        },
+        {
+          "block": 2,
+          "node": 145,
+          "row_difference_L2": 121.25466069832086
+        },
+        {
+          "block": 2,
+          "node": 339,
+          "row_difference_L2": 48.92088608393305
+        },
+        {
+          "block": 2,
+          "node": 313,
+          "row_difference_L2": 30.106548770525258
+        },
+        {
+          "block": 2,
+          "node": 318,
+          "row_difference_L2": 25.68700491498255
+        },
+        {
+          "block": 2,
+          "node": 344,
+          "row_difference_L2": 22.01872343026315
+        },
+        {
+          "block": 2,
+          "node": 269,
+          "row_difference_L2": 21.80625832861568
+        }
+      ],
+      "worst_RHS_rows": [
+        {
+          "block": 2,
+          "node": 311,
+          "native": 0.07674434815394253,
+          "vela": -3.200522967625851e-07,
+          "difference": -0.07674466820623929
+        },
+        {
+          "block": 2,
+          "node": 144,
+          "native": -0.03422701523814382,
+          "vela": -0.04363412423845614,
+          "difference": -0.009407109000312323
+        },
+        {
+          "block": 2,
+          "node": 318,
+          "native": 0.00014919747295439592,
+          "vela": -0.00676515206165275,
+          "difference": -0.006914349534607145
+        },
+        {
+          "block": 2,
+          "node": 307,
+          "native": 0.017852764339998266,
+          "vela": 0.02051529922829108,
+          "difference": 0.0026625348882928154
+        },
+        {
+          "block": 2,
+          "node": 315,
+          "native": 0.0008076280797404317,
+          "vela": -3.436727273375715e-05,
+          "difference": -0.0008419953524741888
+        },
+        {
+          "block": 2,
+          "node": 316,
+          "native": 0.0001940146709710651,
+          "vela": -0.00058886305269191,
+          "difference": -0.0007828777236629751
+        },
+        {
+          "block": 2,
+          "node": 310,
+          "native": 0.0005240337449474417,
+          "vela": -9.79242395468238e-06,
+          "difference": -0.000533826168902124
+        },
+        {
+          "block": 2,
+          "node": 319,
+          "native": -0.0005831315314320277,
+          "vela": -0.0010419215304767197,
+          "difference": -0.00045878999904469205
+        }
+      ]
+    },
+    "native_i2": {
+      "dimension_native_independent": 6843,
+      "dimension_common": 6765,
+      "alias_entries_removed": 80,
+      "native_componentwise_backward_error": 8.359466912877228e-14,
+      "blocks": {
+        "psi": {
+          "matrix_relative_Frobenius": 8.11212037604988e-06,
+          "native_diagonal_normalized_RHS_Linf": 6.944425417887628e-15,
+          "vela_diagonal_normalized_RHS_Linf": 4.811293132994151e-06,
+          "RHS_difference_Linf": 4.811293133158268e-06
+        },
+        "port": {
+          "matrix_relative_Frobenius": 7.463709500069281e-07,
+          "native_diagonal_normalized_RHS_Linf": 8.772463470789334e-17,
+          "vela_diagonal_normalized_RHS_Linf": 6.62815491085829e-06,
+          "RHS_difference_Linf": 6.628154910946014e-06
+        },
+        "electron": {
+          "matrix_relative_Frobenius": 1.08415454340403e-06,
+          "native_diagonal_normalized_RHS_Linf": 2.3198101409410754e-09,
+          "vela_diagonal_normalized_RHS_Linf": 5.2091603466986395e-06,
+          "RHS_difference_Linf": 5.209160347284036e-06
+        },
+        "hole": {
+          "matrix_relative_Frobenius": 0.0008401898662599283,
+          "native_diagonal_normalized_RHS_Linf": 0.0660546046368715,
+          "vela_diagonal_normalized_RHS_Linf": 0.06605463612762161,
+          "RHS_difference_Linf": 2.68798470322866e-06
+        },
+        "all": {
+          "matrix_relative_Frobenius": 0.0004059537918285756,
+          "native_diagonal_normalized_RHS_Linf": 0.0660546046368715,
+          "vela_diagonal_normalized_RHS_Linf": 0.06605463612762161,
+          "RHS_difference_Linf": 6.628154910946014e-06
+        }
+      },
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_Si_max_relative": 1.1879386363489175e-14,
+        "hole_Si_max_relative": 1.27675647831893e-14
+      },
+      "directions": {
+        "electron": {
+          "native_delta_inf_cm3": 47890403076.44294,
+          "vela_delta_inf_cm3": 351109855945261.06,
+          "delta_difference_inf_cm3": 351109855933679.06,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 0
+        },
+        "hole": {
+          "native_delta_inf_cm3": 2957764295.202595,
+          "vela_delta_inf_cm3": 11980755037975.61,
+          "delta_difference_inf_cm3": 11980707875484.002,
+          "native_nonpositive": 9,
+          "vela_nonpositive": 10
+        }
+      },
+      "worst_rows": [
+        {
+          "block": 2,
+          "node": 1546,
+          "row_difference_L2": 0.32103818453973293
+        },
+        {
+          "block": 2,
+          "node": 2587,
+          "row_difference_L2": 0.22115910202395714
+        },
+        {
+          "block": 2,
+          "node": 229,
+          "row_difference_L2": 0.061170420350267464
+        },
+        {
+          "block": 2,
+          "node": 1308,
+          "row_difference_L2": 0.034743299842144214
+        },
+        {
+          "block": 2,
+          "node": 2084,
+          "row_difference_L2": 0.003155396277859223
+        },
+        {
+          "block": 2,
+          "node": 791,
+          "row_difference_L2": 0.001339844116190209
+        },
+        {
+          "block": 0,
+          "node": 2406,
+          "row_difference_L2": 0.0006733654351904761
+        },
+        {
+          "block": 0,
+          "node": 2371,
+          "row_difference_L2": 0.0006733651473922464
+        },
+        {
+          "block": 0,
+          "node": 2407,
+          "row_difference_L2": 0.0006733651247117223
+        },
+        {
+          "block": 0,
+          "node": 2370,
+          "row_difference_L2": 0.0006733651105150784
+        }
+      ],
+      "worst_RHS_rows": [
+        {
+          "block": 3,
+          "node": 0,
+          "native": -8.772463470789334e-17,
+          "vela": 6.62815491085829e-06,
+          "difference": 6.628154910946014e-06
+        },
+        {
+          "block": 1,
+          "node": 1108,
+          "native": -5.853962124764332e-16,
+          "vela": 5.2091603466986395e-06,
+          "difference": 5.209160347284036e-06
+        },
+        {
+          "block": 1,
+          "node": 1072,
+          "native": -3.445191079257592e-16,
+          "vela": 5.1993004369382125e-06,
+          "difference": 5.199300437282731e-06
+        },
+        {
+          "block": 1,
+          "node": 1071,
+          "native": -2.5773353315767833e-17,
+          "vela": 5.1993004369659765e-06,
+          "difference": 5.19930043699175e-06
+        },
+        {
+          "block": 1,
+          "node": 1107,
+          "native": -4.984405580288108e-16,
+          "vela": 5.199300436143981e-06,
+          "difference": 5.199300436642422e-06
+        },
+        {
+          "block": 1,
+          "node": 881,
+          "native": 1.331668582856987e-16,
+          "vela": 5.180207115624071e-06,
+          "difference": 5.1802071154909035e-06
+        },
+        {
+          "block": 1,
+          "node": 880,
+          "native": 1.4677794316328033e-16,
+          "vela": 5.149894735006609e-06,
+          "difference": 5.149894734859831e-06
+        },
+        {
+          "block": 1,
+          "node": 863,
+          "native": 2.9258756098812267e-16,
+          "vela": 5.143619548436529e-06,
+          "difference": 5.143619548143942e-06
+        }
+      ]
+    },
+    "native_i3": {
+      "dimension_native_independent": 6843,
+      "dimension_common": 6765,
+      "alias_entries_removed": 80,
+      "native_componentwise_backward_error": 9.016257170183765e-14,
+      "blocks": {
+        "psi": {
+          "matrix_relative_Frobenius": 8.10926501240619e-06,
+          "native_diagonal_normalized_RHS_Linf": 6.880154111237076e-15,
+          "vela_diagonal_normalized_RHS_Linf": 4.8112932525436525e-06,
+          "RHS_difference_Linf": 4.8112932525436525e-06
+        },
+        "port": {
+          "matrix_relative_Frobenius": 7.466537413504494e-07,
+          "native_diagonal_normalized_RHS_Linf": 6.498428113128383e-17,
+          "vela_diagonal_normalized_RHS_Linf": 6.628154821818957e-06,
+          "RHS_difference_Linf": 6.628154821753973e-06
+        },
+        "electron": {
+          "matrix_relative_Frobenius": 0.004002609123387216,
+          "native_diagonal_normalized_RHS_Linf": 1.6788797043010172e-10,
+          "vela_diagonal_normalized_RHS_Linf": 5.209160347538177e-06,
+          "RHS_difference_Linf": 5.209160347483407e-06
+        },
+        "hole": {
+          "matrix_relative_Frobenius": 0.1579942584944635,
+          "native_diagonal_normalized_RHS_Linf": 0.00011736793480876489,
+          "vela_diagonal_normalized_RHS_Linf": 0.0002038348537213681,
+          "RHS_difference_Linf": 0.00012336736569253142
+        },
+        "all": {
+          "matrix_relative_Frobenius": 0.07636643919237192,
+          "native_diagonal_normalized_RHS_Linf": 0.00011736793480876489,
+          "vela_diagonal_normalized_RHS_Linf": 0.0002038348537213681,
+          "RHS_difference_Linf": 0.00012336736569253142
+        }
+      },
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_Si_max_relative": 1.0769163338864018e-14,
+        "hole_Si_max_relative": 1.3322676295501878e-14
+      },
+      "directions": {
+        "electron": {
+          "native_delta_inf_cm3": 912356507.2578105,
+          "vela_delta_inf_cm3": 351109855970171.25,
+          "delta_difference_inf_cm3": 351109855958005.75,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 0
+        },
+        "hole": {
+          "native_delta_inf_cm3": 56347919.023191355,
+          "vela_delta_inf_cm3": 11980707014049.11,
+          "delta_difference_inf_cm3": 11980707912445.688,
+          "native_nonpositive": 0,
+          "vela_nonpositive": 4
+        }
+      },
+      "worst_rows": [
+        {
+          "block": 2,
+          "node": 365,
+          "row_difference_L2": 74.20123750406037
+        },
+        {
+          "block": 2,
+          "node": 346,
+          "row_difference_L2": 2.09155795463934
+        },
+        {
+          "block": 2,
+          "node": 375,
+          "row_difference_L2": 1.7516941269132729
+        },
+        {
+          "block": 2,
+          "node": 428,
+          "row_difference_L2": 1.6024463514662968
+        },
+        {
+          "block": 2,
+          "node": 343,
+          "row_difference_L2": 1.3569866011973915
+        },
+        {
+          "block": 2,
+          "node": 431,
+          "row_difference_L2": 1.2718654138740573
+        },
+        {
+          "block": 2,
+          "node": 434,
+          "row_difference_L2": 1.2382794931441925
+        },
+        {
+          "block": 1,
+          "node": 667,
+          "row_difference_L2": 1.1022787451530522
+        },
+        {
+          "block": 2,
+          "node": 315,
+          "row_difference_L2": 1.1008593932859516
+        },
+        {
+          "block": 2,
+          "node": 312,
+          "row_difference_L2": 1.0657564603517653
+        }
+      ],
+      "worst_RHS_rows": [
+        {
+          "block": 2,
+          "node": 312,
+          "native": 5.481410437146356e-05,
+          "vela": 0.00017818147006399496,
+          "difference": 0.00012336736569253142
+        },
+        {
+          "block": 2,
+          "node": 315,
+          "native": -8.625070748288422e-05,
+          "vela": -0.0002038348537213681,
+          "difference": -0.00011758414623848389
+        },
+        {
+          "block": 2,
+          "node": 311,
+          "native": -4.325825974500322e-05,
+          "vela": -8.819658334781665e-05,
+          "difference": -4.4938323602813426e-05
+        },
+        {
+          "block": 2,
+          "node": 316,
+          "native": -1.1960766766828676e-05,
+          "vela": -3.5552483731231064e-05,
+          "difference": -2.359171696440239e-05
+        },
+        {
+          "block": 2,
+          "node": 274,
+          "native": -0.00011736793480876489,
+          "vela": -0.00013975999498517838,
+          "difference": -2.2392060176413493e-05
+        },
+        {
+          "block": 2,
+          "node": 273,
+          "native": 5.99005931717905e-05,
+          "vela": 7.420003182325897e-05,
+          "difference": 1.4299438651468467e-05
+        },
+        {
+          "block": 2,
+          "node": 365,
+          "native": 2.1203757047700304e-07,
+          "vela": -1.1298111303657029e-05,
+          "difference": -1.1510148874134032e-05
+        },
+        {
+          "block": 2,
+          "node": 269,
+          "native": 2.4963670950126633e-05,
+          "vela": 3.6183783361526575e-05,
+          "difference": 1.1220112411399942e-05
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Same QF Load is not exact population identity; all 2152 Si populations were instead replayed from actual primary arrays.",
+    "Oxide primary buffers contain native 1e-100 placeholders and are excluded from Si population matching.",
+    "Own material/constants are retained; equal psi/n/p does not imply an equal operator.",
+    "Diagonal row scaling is a diagnostic frozen-prestate coordinate convention, not the native printed RHS or a new stopping gate.",
+    "Observed 1 percent population protection was not installed in production.",
+    "Eight-step control did not converge by the reconstructed RMS criterion; no new full BV result."
+  ],
+  "source_sha256": {
+    "scripts/diagnostics/bvmethods_population_probe.cpp": "9bc66ebcb1eed6d279df106e3b74beb626899b43d084dabeba6662689db98528",
+    "build-release/bvmethods_population_acceptance_20261026/native/ordinary/debug": "af86716888046fe580ce342e4f6581d7728f17163e2c3d5f18fc02c5b021d873",
+    "build-release/bvmethods_population_acceptance_20261026/native/ordinary/n5_des.log": "0f259e838161813c5e4c0a28f645ff6da791d66fc64cd74b2ceffd16d9ec0dfe",
+    "build-release/bvmethods_population_acceptance_20261026/native/ordinary/primary_events.jsonl": "b61e0e826f865d017af8d28dee0793b7f58e25e36256ef574d50032fd5171b3f"
+  },
+  "validation_assertions_passed": true,
+  "evidence_directory": "build-release/bvmethods_population_acceptance_20261026"
+}

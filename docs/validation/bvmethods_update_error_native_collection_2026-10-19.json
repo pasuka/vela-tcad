@@ -1,0 +1,452 @@
+{
+  "schema": "vela.bvmethods.update-error.native-collection.v1",
+  "scope": "2022 installed BVmethods with entire Band2Band disabled; native diagnostic observation and Vela report arithmetic only",
+  "production_acceptance_changed": false,
+  "native_equivalence_claimed": false,
+  "trajectory": {
+    "records": 65,
+    "baseline_observed_bytes_equal": true,
+    "archived_baseline_bytes_equal": true,
+    "sha256": "4e7584452b310adda7cfa45e3dfcba4239627a7202b147f0d10d64fe8d4bb1f0",
+    "checks": {
+      "checks": {
+        "finite": true,
+        "starts_at_zero_voltage": true,
+        "starts_below_original_stop": true,
+        "original_fixed_bias_contacts_all_states": true,
+        "monotone_outer_voltage": true,
+        "fixed_resistor_all_states": true,
+        "terminal_kcl_all_states": true,
+        "negligible_displacement_all_states": true,
+        "current_components_all_states": true,
+        "original_stop_reached": true,
+        "native_current_stop_reported": true,
+        "native_success": true
+      },
+      "status": "pass",
+      "states_checked": 65,
+      "last": {
+        "outer_voltage_V": 14540.4590049101,
+        "inner_voltage_V": 7.41273581274444,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 0.00145331678342468,
+        "h_current_A_per_um": -1.21565149393619e-08,
+        "total_current_A_per_um": 0.00145330462690974,
+        "Charge": 7.7472696866448e-15
+      },
+      "max_load_line_residual_V": 1.216699577026581e-08,
+      "max_kcl_relative_above_1e_minus7_A_per_um": 5.2965211253114606e-15,
+      "low_current_kcl_absolute_floor_A_per_um": 1e-12
+    }
+  },
+  "native_observed_contract": {
+    "S1": "normalized electrostatic potential, one independent current-contact potential, electron and hole densities",
+    "S2": "potential and current-contact potential normalized by thermal voltage, densities normalized by 1.4824351e10 cm^-3",
+    "S3_observed_factor_one": "raw linear update in numerator; post-protection current state in denominator; nonpositive raw density replaced by 0.01 times old density",
+    "independent_coupled_linear_dimension": 6843,
+    "error_entry_counts": {
+      "poisson": 2600,
+      "contact_aliases": 11,
+      "electron": 2121,
+      "hole": 2121
+    },
+    "error_entry_total": 6853,
+    "contact_aliases_are_not_independent_unknowns": true,
+    "normalizations": {
+      "ElectrostaticPotential": 0.025851995266484913,
+      "eDensity": 14824351000.0,
+      "hDensity": 14824351000.0
+    },
+    "scope_exclusions": [
+      "damping factors other than one",
+      "other variable formulations",
+      "other contacts or geometries",
+      "RhsMin scaling in Vela"
+    ]
+  },
+  "native_reconstruction": {
+    "iterations": 412,
+    "in_print_interval_counts": {
+      "before_raw": 106,
+      "raw_after_raw": 333,
+      "protected_after_raw": 412,
+      "protected_after_applied": 334,
+      "raw_after_one_contact": 237
+    },
+    "protected_iterations": 126,
+    "disambiguating_protected_with_bound_next_state": 74,
+    "first_two_bias_rounds": [
+      {
+        "index": 8,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 2750.966758664491,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 0.010261534192796084
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.040734428705903415
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.02284106908439324
+          }
+        },
+        "matrix_contact_count_control": 2682.950431804397,
+        "before_denominator_control": 2517.471304235474,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.05278937547810649,
+          "QuasiFermiPotential": 0.055248252621019,
+          "eDensity": 0.6785978994935143,
+          "hDensity": 0.2133644724073604
+        },
+        "contact_aliases_equal": true,
+        "printed": "2.75e3",
+        "rounding_interval": [
+          2745.0,
+          2755.0
+        ],
+        "inside_print_interval": true
+      },
+      {
+        "index": 9,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 80.23778509758925,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 0.0005524099438205499
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.0011073651581412379
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.0003011685588027579
+          }
+        },
+        "matrix_contact_count_control": 73.15075502462852,
+        "before_denominator_control": 80.59980246357046,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.17982817125108227,
+          "QuasiFermiPotential": 0.18706836656258444,
+          "eDensity": 0.5894999638402736,
+          "hDensity": 0.04360349834605964
+        },
+        "contact_aliases_equal": true,
+        "printed": "8.02e1",
+        "rounding_interval": [
+          80.15,
+          80.25
+        ],
+        "inside_print_interval": true
+      },
+      {
+        "index": 10,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 0.24996383488671486,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 7.349326457056204e-07
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 3.4803455322476017e-06
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 2.5950168955358954e-06
+          }
+        },
+        "matrix_contact_count_control": 0.24629230443486497,
+        "before_denominator_control": 0.24996388416380402,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.03279694085957985,
+          "QuasiFermiPotential": 0.03363515296370414,
+          "eDensity": 0.5999986945800527,
+          "hDensity": 0.33356921159666325
+        },
+        "contact_aliases_equal": true,
+        "printed": "2.4996e-1",
+        "rounding_interval": [
+          0.24995499999999998,
+          0.249965
+        ],
+        "inside_print_interval": true
+      },
+      {
+        "index": 11,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 472.82434883855154,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 0.00191456364897683
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.007008206823682405
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 0.003958342664151549
+          }
+        },
+        "matrix_contact_count_control": 464.2821063207381,
+        "before_denominator_control": 464.5725796643175,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.062206041772404734,
+          "QuasiFermiPotential": 0.04093474768084798,
+          "eDensity": 0.6799454792316069,
+          "hDensity": 0.21691373131514038
+        },
+        "contact_aliases_equal": true,
+        "printed": "4.73e2",
+        "rounding_interval": [
+          472.5,
+          473.5
+        ],
+        "inside_print_interval": true
+      },
+      {
+        "index": 12,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 2.75894149675413,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 1.633462567677781e-05
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 4.305271779144923e-05
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 7.866876647232813e-06
+          }
+        },
+        "matrix_contact_count_control": 2.647977456057686,
+        "before_denominator_control": 2.759442039593903,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.13299214990114025,
+          "QuasiFermiPotential": 0.08818275450421996,
+          "eDensity": 0.7536610980060905,
+          "hDensity": 0.025163997588549352
+        },
+        "contact_aliases_equal": true,
+        "printed": "2.76e0",
+        "rounding_interval": [
+          2.755,
+          2.7649999999999997
+        ],
+        "inside_print_interval": true
+      },
+      {
+        "index": 13,
+        "N": 6853,
+        "tdr_error_rms_plus_contact": 0.00012196976662764827,
+        "tdr_blocks": {
+          "ElectrostaticPotential": {
+            "N": 2600,
+            "rms_unscaled": 7.34322447381887e-11
+          },
+          "eDensity": {
+            "N": 2121,
+            "rms_unscaled": 1.927487455378612e-09
+          },
+          "hDensity": {
+            "N": 2121,
+            "rms_unscaled": 1.0394450650160448e-09
+          }
+        },
+        "matrix_contact_count_control": 0.00012200796898453046,
+        "before_denominator_control": 0.0001219697660146126,
+        "block_squared_contribution_fraction": {
+          "ElectrostaticPotential": 0.0013751872559071695,
+          "QuasiFermiPotential": 0.0009169684566732513,
+          "eDensity": 0.7729273435485567,
+          "hDensity": 0.22478050073886313
+        },
+        "contact_aliases_equal": true,
+        "printed": "1.2197e-4",
+        "rounding_interval": [
+          0.000121965,
+          0.000121975
+        ],
+        "inside_print_interval": true
+      }
+    ],
+    "selected_protected_control": {
+      "index": 32,
+      "loop": 0,
+      "printed": {
+        "iteration": 1,
+        "rhs": "2.65e+06",
+        "factor": 1.0,
+        "error": "7.43e+03"
+      },
+      "counts": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "candidates": {
+        "before_raw": {
+          "value": 20634.36724338763,
+          "in_print_interval": false
+        },
+        "raw_after_raw": {
+          "value": 5248.572435855313,
+          "in_print_interval": false
+        },
+        "protected_after_raw": {
+          "value": 7431.913443011968,
+          "in_print_interval": true
+        },
+        "protected_after_applied": {
+          "value": 4550.397312594677,
+          "in_print_interval": false
+        },
+        "raw_after_one_contact": {
+          "value": 5252.405963285603,
+          "in_print_interval": false
+        }
+      },
+      "next_state_projection_max_relative_error": {
+        "ElectrostaticPotential": 8.302057016254385e-15,
+        "QuasiFermiPotential": 4.375079504328757e-15,
+        "eDensity": 8.870959748267668e-15,
+        "hDensity": 8.705008689855535e-15
+      }
+    },
+    "selected_protected_nodes": 266,
+    "linear_systems_checked": 14,
+    "linear_backward_error_max": 1.3790498348558862e-15,
+    "tdr_error_field_absolute_difference_max": 5.551115123125783e-17
+  },
+  "t470p": {
+    "input_files_verified": 50,
+    "runs": 12,
+    "repeats_bitwise_equal": 6,
+    "roundtrip_groups_pass": 18,
+    "report_test_cases": 5,
+    "report_assertions": 31,
+    "cross_host_hash_equal": {
+      "rows285": {
+        "J": false,
+        "R": false,
+        "n": true,
+        "p": true,
+        "x": true
+      },
+      "rows21": {
+        "J": false,
+        "R": true,
+        "n": true,
+        "p": true,
+        "x": true
+      },
+      "rows11": {
+        "J": false,
+        "R": true,
+        "n": true,
+        "p": true,
+        "x": true
+      },
+      "rows10": {
+        "J": false,
+        "R": true,
+        "n": true,
+        "p": true,
+        "x": true
+      },
+      "rows5": {
+        "J": false,
+        "R": true,
+        "n": true,
+        "p": true,
+        "x": true
+      },
+      "rows0": {
+        "J": false,
+        "R": true,
+        "n": true,
+        "p": true,
+        "x": true
+      }
+    },
+    "cross_host_285_ledger_difference": {
+      "carrier": "hole",
+      "node": 906,
+      "local_flux": 1.396682622173516e-16,
+      "remote_flux": 1.3966826221735176e-16
+    },
+    "strict_L1_complete": false,
+    "L2_complete": false,
+    "packaged_dlls_equal_local_installed": true
+  },
+  "checks": {
+    "native_two_successful_exits": true,
+    "trajectory_bytes_unchanged": true,
+    "archived_trajectory_reproduced": true,
+    "trajectory_existing_checks": true,
+    "six_high_precision_state_bindings": true,
+    "tdr_per_row_error_reconstructed": true,
+    "all_native_update_errors_in_print_intervals": true,
+    "first_two_bias_states_match": true,
+    "actual_linear_systems_decoded": true,
+    "pc_all_input_hashes": true,
+    "pc_all_successful_exits": true,
+    "pc_report_tests": true,
+    "rows285_process_repeat": true,
+    "rows285_input_roundtrip": true,
+    "rows285_assembled_roundtrip": true,
+    "rows285_exact_hint_control": true,
+    "rows21_process_repeat": true,
+    "rows21_input_roundtrip": true,
+    "rows21_assembled_roundtrip": true,
+    "rows21_exact_hint_control": true,
+    "rows11_process_repeat": true,
+    "rows11_input_roundtrip": true,
+    "rows11_assembled_roundtrip": true,
+    "rows11_exact_hint_control": true,
+    "rows10_process_repeat": true,
+    "rows10_input_roundtrip": true,
+    "rows10_assembled_roundtrip": true,
+    "rows10_exact_hint_control": true,
+    "rows5_process_repeat": true,
+    "rows5_input_roundtrip": true,
+    "rows5_assembled_roundtrip": true,
+    "rows5_exact_hint_control": true,
+    "rows0_process_repeat": true,
+    "rows0_input_roundtrip": true,
+    "rows0_assembled_roundtrip": true,
+    "rows0_exact_hint_control": true
+  },
+  "checks_passed": 36,
+  "evidence": {
+    "native_archive_sha256": "7a126559a7c8f2fe43dfe71e3a3af47418bb0ff8f0080b770b2f935168dceeda",
+    "native_output_files_verified": 48,
+    "pc_archive_sha256": "fcd83fd64a06ceb607e7d5ebd3e0130eb501e0ab9ca00975c6dc1a6c70f609a2",
+    "private_evidence_directory": "build-release/bvmethods_update_error_native_20261019/"
+  },
+  "remaining": [
+    "cross-host J values and one R ledger difference",
+    "strict stored-population identity and original stop-state/cache L1 coverage",
+    "L2 live continuation versus restart",
+    "production report hook and noninterference gate",
+    "isolated U1/U2/U3 replay; native mixed numerator/denominator observation reported separately"
+  ],
+  "regression_tests": {
+    "native_matrix_parser": 4,
+    "density_update_audit": 5,
+    "passed": true
+  }
+}

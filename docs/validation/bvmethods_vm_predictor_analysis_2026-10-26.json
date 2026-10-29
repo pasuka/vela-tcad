@@ -1,0 +1,1228 @@
+{
+  "schema": "vela.validation.vm_predictor_analysis.v1",
+  "date": "2026-10-26",
+  "execution_location": "vela-vm",
+  "postprocess_only": true,
+  "scientific_complete": false,
+  "archive_checksum_verified": true,
+  "archive_sha256": "13d37df628f0a55f76b6c4f55cf9ff91d4faf4891088d93adb68cce21450a065",
+  "archive_bytes": 80239786,
+  "source_unchanged": true,
+  "configuration_consistency": {
+    "configs_equal_except_output_paths": true,
+    "population_zero_masks": {
+      "enforce": {
+        "zero_nodes_per_state": 448,
+        "same_for_both_carriers_and_all_states": true
+      },
+      "report_only": {
+        "zero_nodes_per_state": 448,
+        "same_for_both_carriers_and_all_states": true
+      }
+    }
+  },
+  "arms": {
+    "enforce": {
+      "run_status": {
+        "phase": "finished",
+        "started_utc": "2026-10-26T10:49:59Z",
+        "elapsed_seconds": 10804.212441146003,
+        "accepted_points": 240,
+        "last_point": {
+          "outer_V": "4.9261203689339101",
+          "inner_V": "4.7505429506423225",
+          "current_A_per_um": "1.7557746191103573e-08",
+          "updates": "5",
+          "electron_closure": "2.818264288976552e-07",
+          "hole_closure": "2.281817320985855e-11"
+        },
+        "time_limit_reached": true,
+        "exit_code": -15,
+        "ended_utc": "2026-10-26T13:50:04Z",
+        "scientific_complete": false,
+        "failure": null,
+        "stop_reason": null
+      },
+      "backend": "pardiso_mkl",
+      "poisson": {
+        "converged": true,
+        "iterations": 7,
+        "residual": 1.0880566605241079E-10,
+        "trace": [
+          {
+            "alpha": 1.0,
+            "iteration": 1,
+            "residual": 279.9932780940603
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 2,
+            "residual": 52.06213749884764
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 3,
+            "residual": 9.2147425188847
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 4,
+            "residual": 0.9223646486015825
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 5,
+            "residual": 0.031727203097445235
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 6,
+            "residual": 4.8943843146715466E-05
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 7,
+            "residual": 1.0880566605241079E-10
+          }
+        ]
+      },
+      "complete": false,
+      "accepted_points": 240,
+      "last_point": {
+        "diagnostics": {
+          "KCL_A_per_um": 3.4767260826142573E-15,
+          "current_A_per_um": 1.7557746191103573E-08,
+          "electron": {
+            "contact_flux_A_per_um": -1.2337407872051724E-08,
+            "gross_contact_scale_A_per_um": 2.2778084526279206E-08,
+            "gross_source_scale_A_per_um": 1.2337404474467504E-08,
+            "net_denominator_A_per_um": 1.2337407872051724E-08,
+            "qualified": true,
+            "ratio": 2.818264288976552E-07,
+            "signed_mismatch_A_per_um": -3.477007602434157E-15,
+            "source_A_per_um": -1.2337404395044121E-08
+          },
+          "electron_mp_ledger": {
+            "all_node_transport_sum_A_per_um": -1.1397041274467138E-24,
+            "ledger_rounding_defect_A_per_um": -6.866634925608668E-32,
+            "ratio": 2.8182643003078096E-07,
+            "signed_mismatch_A_per_um": -3.4770076164139903E-15,
+            "sum_free_equations_A_per_um": 3.4770076152742863E-15
+          },
+          "equation_inf": 1.4935993796255128E-10,
+          "fixed_scaled_residual_inf": 3.9352180556135726E-10,
+          "global_enforced": false,
+          "global_satisfied": true,
+          "hole": {
+            "contact_flux_A_per_um": -1.2337404395325639E-08,
+            "gross_contact_scale_A_per_um": 1.2337404395332524E-08,
+            "gross_source_scale_A_per_um": 1.2337404474467504E-08,
+            "net_denominator_A_per_um": 1.2337404395325639E-08,
+            "qualified": true,
+            "ratio": 2.281817320985855E-11,
+            "signed_mismatch_A_per_um": -2.8151703045261057E-19,
+            "source_A_per_um": -1.2337404395044121E-08
+          },
+          "hole_mp_ledger": {
+            "all_node_transport_sum_A_per_um": 2.1350313927115543E-24,
+            "ledger_rounding_defect_A_per_um": 6.890162265304175E-31,
+            "ratio": 2.2819553527009834E-11,
+            "signed_mismatch_A_per_um": -2.8153405998349975E-19,
+            "sum_free_equations_A_per_um": 2.815361950155815E-19
+          },
+          "inner_V": 4.7505429506423225,
+          "load_V": 4.361944760944425E-08,
+          "original_gates_pass": true,
+          "row_max_ratio": 8.891546169019746E-08,
+          "row_worst_carrier": "hole",
+          "row_worst_node": 827,
+          "rows_enforced": false,
+          "rows_satisfied": true
+        },
+        "fallback_used": false,
+        "inner_V": 4.7505429506423225,
+        "outer_V": 4.92612036893391,
+        "updates": 5
+      },
+      "completed_attempts": 240,
+      "rejected_attempts": 0,
+      "partial_attempts_at_time_limit": [
+        {
+          "label": "attempt_240_predictor",
+          "target_outer_V": 4.947910645838711,
+          "recorded_updates": 2,
+          "last_iteration": [
+            {
+              "mode": "enforce",
+              "attempt": "attempt_240_predictor",
+              "partial": true,
+              "target_outer_V": 4.947910645838711,
+              "attempt_converged": false,
+              "iteration": 2,
+              "phase": "full_AV_adaptive_mobility",
+              "theta": 0.0,
+              "alpha": 1.0,
+              "raw_RMS": 42.37470658479383,
+              "original_gates_pass": false,
+              "equation_inf": 1.204396390636365E-07,
+              "load_V": -7.062465279261687E-09,
+              "merit": 4.052458975073954E-05,
+              "inner_V": 4.770510018411129,
+              "current_A_per_um": 1.7740062036511642E-08,
+              "KCL_A_per_um": -1.953625295845588E-15,
+              "electron_closure_ratio": 1.65911800094047E-07,
+              "hole_closure_ratio": 9.708909750627338E-09,
+              "raw_dpsi_inf_V": 1.7176372991903015E-05,
+              "raw_dfn_inf_V": 0.00012735355578731404,
+              "raw_dfp_inf_V": 0.0010344971903717564,
+              "raw_voltage_V": 1.7176364864748623E-05,
+              "max_relative_electron_tangent": 0.004864270599611403,
+              "max_relative_hole_tangent": 0.03952705986313313,
+              "negative_electron_raw_candidates": 0,
+              "negative_hole_raw_candidates": 0,
+              "population_linear_backward_error": 2.8055073290693046E-16,
+              "qf_mapped_linear_backward_error": 6.516362571474569E-10,
+              "population_roundtrip_relative": 2.7422508708241367E-14,
+              "limiting_node": -1,
+              "limiting_carrier": -1
+            }
+          ]
+        }
+      ],
+      "completed_updates": 1263,
+      "accepted_updates": 1263,
+      "rejected_updates": 0,
+      "updates_per_nonzero_point": {
+        "count": 239,
+        "min": 3.0,
+        "median": 5.0,
+        "max": 14.0,
+        "sum": 1263.0
+      },
+      "phase_counts": {
+        "combination_bootstrap": 95,
+        "full_AV_adaptive_mobility": 1168
+      },
+      "theta_counts": {
+        "0.0": 1027,
+        "1.0": 167,
+        "0.25": 20,
+        "0.5": 49
+      },
+      "alpha": {
+        "count": 1263,
+        "min": 1.0,
+        "median": 1.0,
+        "max": 1.0,
+        "sum": 1263.0
+      },
+      "chosen_alpha_below_one": 0,
+      "chosen_negative_raw_nodes_iterations": 0,
+      "invalid_trials": {},
+      "selected_population_backward_error": {
+        "count": 1263,
+        "min": 8.687237243252461E-17,
+        "median": 2.5803755426553253E-16,
+        "max": 1.0264772408175785E-13,
+        "sum": 5.775512993444657E-13
+      },
+      "selected_qf_mapped_backward_error": {
+        "count": 1263,
+        "min": 8.629961744182896E-14,
+        "median": 2.4468366037908784E-11,
+        "max": 1.2489574965896051E-05,
+        "sum": 1.8373938322947433E-05
+      },
+      "selected_population_roundtrip": {
+        "count": 1263,
+        "min": 1.0658141036401503E-14,
+        "median": 1.7208456881689926E-14,
+        "max": 3.8191672047105385E-14,
+        "sum": 2.4683588506491105E-11
+      },
+      "first_failure": null,
+      "last_accepted_attempt": {
+        "mode": "enforce",
+        "label": "attempt_239_predictor",
+        "target_outer_V": 4.92612036893391,
+        "converged": true,
+        "failure": null,
+        "updates": 5,
+        "bootstrap_used": false,
+        "restoration_requested": false,
+        "last_phase": "full_AV_adaptive_mobility",
+        "last_RMS": 0.4895798528928144,
+        "last_equation_inf": 1.4935993796255128E-10,
+        "last_load_V": 4.361944760944425E-08,
+        "last_original_gates_pass": true,
+        "any_original_gates_pass": true,
+        "best_RMS": 0.4895798528928144,
+        "last_inner_V": 4.7505429506423225,
+        "last_current_A_per_um": 1.7557746191103573E-08
+      },
+      "last_failures": [],
+      "plateau_completed_attempts": 0,
+      "plateau_completed_updates": 0,
+      "failed_final_original_gates_pass": 0,
+      "failed_any_original_gates_pass": 0,
+      "failed_rows_joint_but_bootstrap": 0,
+      "predictor_clipping_recommendations": 235,
+      "outer_step_V": {
+        "count": 239,
+        "min": 0.01,
+        "median": 0.02046643232995793,
+        "max": 0.026172091751111112,
+        "sum": 4.92612036893391
+      },
+      "inner_step_V": {
+        "count": 239,
+        "min": 0.005244252806359681,
+        "median": 0.019995688745539475,
+        "max": 0.02241945057400651,
+        "sum": 4.7505429506423225
+      },
+      "accepted_original_gate_failures": 0,
+      "accepted_row_report_failures": 7,
+      "accepted_global_report_failures": 14,
+      "closure": {
+        "electron": {
+          "max_qualified_ratio": 0.5117878913876052,
+          "worst_outer_V": 0.01,
+          "worst_details": {
+            "contact_flux_A_per_um": -4.2727360723722874E-16,
+            "gross_contact_scale_A_per_um": 9.511495618090145E-10,
+            "gross_source_scale_A_per_um": 8.751803267654892E-16,
+            "net_denominator_A_per_um": 8.751802745155859E-16,
+            "qualified": true,
+            "ratio": 0.5117878913876052,
+            "signed_mismatch_A_per_um": 4.479066672783571E-16,
+            "source_A_per_um": -8.751802745155859E-16
+          },
+          "last_details": {
+            "contact_flux_A_per_um": -1.2337407872051724E-08,
+            "gross_contact_scale_A_per_um": 2.2778084526279206E-08,
+            "gross_source_scale_A_per_um": 1.2337404474467504E-08,
+            "net_denominator_A_per_um": 1.2337407872051724E-08,
+            "qualified": true,
+            "ratio": 2.818264288976552E-07,
+            "signed_mismatch_A_per_um": -3.477007602434157E-15,
+            "source_A_per_um": -1.2337404395044121E-08
+          },
+          "failed_report_count": 14
+        },
+        "hole": {
+          "max_qualified_ratio": 0.0012794277885946575,
+          "worst_outer_V": 0.01,
+          "worst_details": {
+            "contact_flux_A_per_um": -8.763014389277355E-16,
+            "gross_contact_scale_A_per_um": 8.763040360078372E-16,
+            "gross_source_scale_A_per_um": 8.751803267654892E-16,
+            "net_denominator_A_per_um": 8.763014389277355E-16,
+            "qualified": true,
+            "ratio": 0.0012794277885946575,
+            "signed_mismatch_A_per_um": -1.121164412149629E-18,
+            "source_A_per_um": -8.751802745155859E-16
+          },
+          "last_details": {
+            "contact_flux_A_per_um": -1.2337404395325639E-08,
+            "gross_contact_scale_A_per_um": 1.2337404395332524E-08,
+            "gross_source_scale_A_per_um": 1.2337404474467504E-08,
+            "net_denominator_A_per_um": 1.2337404395325639E-08,
+            "qualified": true,
+            "ratio": 2.281817320985855E-11,
+            "signed_mismatch_A_per_um": -2.8151703045261057E-19,
+            "source_A_per_um": -1.2337404395044121E-08
+          },
+          "failed_report_count": 0
+        }
+      }
+    },
+    "report_only": {
+      "run_status": {
+        "phase": "finished",
+        "started_utc": "2026-10-26T10:49:59Z",
+        "elapsed_seconds": 10804.342365625998,
+        "accepted_points": 49,
+        "last_point": {
+          "outer_V": "8.7633485430641382",
+          "inner_V": "6.5615878603829207",
+          "current_A_per_um": "2.2017604225514752e-07",
+          "updates": "6",
+          "electron_closure": "1.277891757742719e-07",
+          "hole_closure": "4.658577295856794e-13"
+        },
+        "time_limit_reached": true,
+        "exit_code": -15,
+        "ended_utc": "2026-10-26T13:50:04Z",
+        "scientific_complete": false,
+        "failure": null,
+        "stop_reason": null
+      },
+      "backend": "pardiso_mkl",
+      "poisson": {
+        "converged": true,
+        "iterations": 7,
+        "residual": 1.0880566605241079E-10,
+        "trace": [
+          {
+            "alpha": 1.0,
+            "iteration": 1,
+            "residual": 279.9932780940603
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 2,
+            "residual": 52.06213749884764
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 3,
+            "residual": 9.2147425188847
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 4,
+            "residual": 0.9223646486015825
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 5,
+            "residual": 0.031727203097445235
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 6,
+            "residual": 4.8943843146715466E-05
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 7,
+            "residual": 1.0880566605241079E-10
+          }
+        ]
+      },
+      "complete": false,
+      "accepted_points": 49,
+      "last_point": {
+        "diagnostics": {
+          "KCL_A_per_um": -2.7308141013584904E-14,
+          "current_A_per_um": 2.2017604225514752E-07,
+          "electron": {
+            "contact_flux_A_per_um": -2.1369601789319274E-07,
+            "gross_contact_scale_A_per_um": 2.2665610762440593E-07,
+            "gross_source_scale_A_per_um": 2.1369646357695651E-07,
+            "net_denominator_A_per_um": 2.1369604520123424E-07,
+            "qualified": true,
+            "ratio": 1.277891757742719E-07,
+            "signed_mismatch_A_per_um": 2.7308041482487274E-14,
+            "source_A_per_um": -2.1369604520123424E-07
+          },
+          "electron_mp_ledger": {
+            "all_node_transport_sum_A_per_um": 2.5671853673128323E-23,
+            "ledger_rounding_defect_A_per_um": 7.76584336692084E-31,
+            "ratio": 1.277891733130673E-07,
+            "signed_mismatch_A_per_um": 2.730804095653752E-14,
+            "sum_free_equations_A_per_um": -2.7308040930865668E-14
+          },
+          "equation_inf": 4.305513153242389E-10,
+          "fixed_scaled_residual_inf": 4.612321071809123E-12,
+          "global_enforced": false,
+          "global_satisfied": true,
+          "hole": {
+            "contact_flux_A_per_um": -2.136960452013338E-07,
+            "gross_contact_scale_A_per_um": 2.136960452013338E-07,
+            "gross_source_scale_A_per_um": 2.1369646357695651E-07,
+            "net_denominator_A_per_um": 2.136960452013338E-07,
+            "qualified": true,
+            "ratio": 4.658577295856794E-13,
+            "signed_mismatch_A_per_um": -9.955195443893207E-20,
+            "source_A_per_um": -2.1369604520123424E-07
+          },
+          "hole_mp_ledger": {
+            "all_node_transport_sum_A_per_um": 1.6364005421980967E-23,
+            "ledger_rounding_defect_A_per_um": 9.986135953248783E-31,
+            "ratio": 4.681549011576477E-13,
+            "signed_mismatch_A_per_um": -1.0004285091901063E-19,
+            "sum_free_equations_A_per_um": 1.0005921492543123E-19
+          },
+          "inner_V": 6.561587860382921,
+          "load_V": -2.601297417470505E-07,
+          "original_gates_pass": true,
+          "row_max_ratio": 2.212743783638481E-08,
+          "row_worst_carrier": "electron",
+          "row_worst_node": 2425,
+          "rows_enforced": false,
+          "rows_satisfied": true
+        },
+        "fallback_used": false,
+        "inner_V": 6.561587860382921,
+        "outer_V": 8.763348543064138,
+        "updates": 6
+      },
+      "completed_attempts": 83,
+      "rejected_attempts": 34,
+      "partial_attempts_at_time_limit": [
+        {
+          "label": "attempt_83_predictor",
+          "target_outer_V": 8.773119738299556,
+          "recorded_updates": 3,
+          "last_iteration": [
+            {
+              "mode": "report_only",
+              "attempt": "attempt_83_predictor",
+              "partial": true,
+              "target_outer_V": 8.773119738299556,
+              "attempt_converged": false,
+              "iteration": 3,
+              "phase": "combination_bootstrap",
+              "theta": 0.0,
+              "alpha": 1.0,
+              "raw_RMS": 15.915805840065348,
+              "original_gates_pass": false,
+              "equation_inf": 1.4287384786614178E-06,
+              "load_V": -1.8776735153380741E-06,
+              "merit": 0.0005336779495051454,
+              "inner_V": 6.5619272421331,
+              "current_A_per_um": 2.2111906184929415E-07,
+              "KCL_A_per_um": -1.8946531771239232E-13,
+              "electron_closure_ratio": 7.804505080307427E-05,
+              "hole_closure_ratio": 7.892769840768914E-05,
+              "raw_dpsi_inf_V": 0.0002738965464409934,
+              "raw_dfn_inf_V": 0.0002738992468295767,
+              "raw_dfp_inf_V": 0.0002806085692484238,
+              "raw_voltage_V": 0.0002738964473864505,
+              "max_relative_electron_tangent": 0.002562977255716347,
+              "max_relative_hole_tangent": 0.002475981179237296,
+              "negative_electron_raw_candidates": 0,
+              "negative_hole_raw_candidates": 0,
+              "population_linear_backward_error": 2.487113420198459E-16,
+              "qf_mapped_linear_backward_error": 6.002843314992109E-10,
+              "population_roundtrip_relative": 5.1514348342607263E-14,
+              "limiting_node": -1,
+              "limiting_carrier": -1
+            }
+          ]
+        }
+      ],
+      "completed_updates": 1782,
+      "accepted_updates": 504,
+      "rejected_updates": 1278,
+      "updates_per_nonzero_point": {
+        "count": 48,
+        "min": 3.0,
+        "median": 9.0,
+        "max": 26.0,
+        "sum": 504.0
+      },
+      "phase_counts": {
+        "combination_bootstrap": 1587,
+        "full_AV_adaptive_mobility": 195
+      },
+      "theta_counts": {
+        "0.0": 1708,
+        "1.0": 62,
+        "0.5": 8,
+        "0.25": 4
+      },
+      "alpha": {
+        "count": 1782,
+        "min": 3.955005892733895E-37,
+        "median": 1.0,
+        "max": 1.0,
+        "sum": 1448.1229756025623
+      },
+      "chosen_alpha_below_one": 360,
+      "chosen_negative_raw_nodes_iterations": 356,
+      "invalid_trials": {},
+      "selected_population_backward_error": {
+        "count": 1782,
+        "min": 1.9594756314762638E-16,
+        "median": 2.481870167714074E-16,
+        "max": 1.0264772408175785E-13,
+        "sum": 8.853351691337933E-13
+      },
+      "selected_qf_mapped_backward_error": {
+        "count": 1782,
+        "min": 1.0347499667416127E-13,
+        "median": 1.603461536712804E-10,
+        "max": 5.133057553874724E-06,
+        "sum": 1.3142599098628326E-05
+      },
+      "selected_population_roundtrip": {
+        "count": 1782,
+        "min": 1.1546319456101628E-14,
+        "median": 3.2862601528904634E-14,
+        "max": 6.017408793468348E-14,
+        "sum": 6.561673426830339E-11
+      },
+      "first_failure": {
+        "mode": "report_only",
+        "label": "attempt_16_predictor",
+        "target_outer_V": 1.9672626991275783,
+        "converged": false,
+        "failure": "Newton update budget exhausted",
+        "updates": 40,
+        "bootstrap_used": true,
+        "restoration_requested": false,
+        "last_phase": "combination_bootstrap",
+        "last_RMS": 27047.791858597393,
+        "last_equation_inf": 0.2637346177198611,
+        "last_load_V": -0.020075428922194494,
+        "last_original_gates_pass": false,
+        "any_original_gates_pass": false,
+        "best_RMS": 25255.229333248397,
+        "last_inner_V": 1.8520113480078364,
+        "last_current_A_per_um": 9.51759221975474E-09
+      },
+      "last_accepted_attempt": {
+        "mode": "report_only",
+        "label": "attempt_72_predictor",
+        "target_outer_V": 8.763348543064138,
+        "converged": true,
+        "failure": null,
+        "updates": 6,
+        "bootstrap_used": false,
+        "restoration_requested": false,
+        "last_phase": "full_AV_adaptive_mobility",
+        "last_RMS": 0.0012647800576788793,
+        "last_equation_inf": 4.305513153242389E-10,
+        "last_load_V": -2.601297417470505E-07,
+        "last_original_gates_pass": true,
+        "any_original_gates_pass": true,
+        "best_RMS": 0.0012647800576788793,
+        "last_inner_V": 6.561587860382921,
+        "last_current_A_per_um": 2.2017604225514752E-07
+      },
+      "last_failures": [
+        {
+          "mode": "report_only",
+          "label": "attempt_70_predictor",
+          "target_outer_V": 8.996400653026887,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 7.8008817336261,
+          "last_equation_inf": 2.7105709872442637E-09,
+          "last_load_V": -7.050011952003388E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 7.8008817336261,
+          "last_inner_V": 6.573985254062576,
+          "last_current_A_per_um": 2.422415328464192E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_71_accepted_state_retry",
+          "target_outer_V": 8.996400653026887,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 220.063621580059,
+          "last_equation_inf": 1.6643436519000952E-07,
+          "last_load_V": 1.1948107747628E-07,
+          "last_original_gates_pass": false,
+          "any_original_gates_pass": false,
+          "best_RMS": 220.063621580059,
+          "last_inner_V": 6.574452108682279,
+          "last_current_A_per_um": 2.4219486638256857E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_73_predictor",
+          "target_outer_V": 9.07602679059749,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 19.233045349412492,
+          "last_equation_inf": 1.5000043499156088E-08,
+          "last_load_V": -1.3640621610022663E-07,
+          "last_original_gates_pass": false,
+          "any_original_gates_pass": false,
+          "best_RMS": 19.233045349412492,
+          "last_inner_V": 6.577779379302294,
+          "last_current_A_per_um": 2.498247274888981E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_74_accepted_state_retry",
+          "target_outer_V": 9.07602679059749,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 68.7027505530106,
+          "last_equation_inf": 4.905482178520459E-08,
+          "last_load_V": 1.0517222470696197E-07,
+          "last_original_gates_pass": false,
+          "any_original_gates_pass": false,
+          "best_RMS": 68.7027505530106,
+          "last_inner_V": 6.577889313822259,
+          "last_current_A_per_um": 2.4981375819474554E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_75_predictor",
+          "target_outer_V": 8.919687666830814,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 5.303368158004283,
+          "last_equation_inf": 4.29567022159048E-09,
+          "last_load_V": -7.788913691797461E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 5.303368158004283,
+          "last_inner_V": 6.570197127845785,
+          "last_current_A_per_um": 2.349490461095892E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_76_accepted_state_retry",
+          "target_outer_V": 8.919687666830814,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 22.173302977031394,
+          "last_equation_inf": 2.662995917209823E-08,
+          "last_load_V": -4.072028580992537E-08,
+          "last_original_gates_pass": false,
+          "any_original_gates_pass": false,
+          "best_RMS": 22.173302977031394,
+          "last_inner_V": 6.570201571301291,
+          "last_current_A_per_um": 2.3494860548092373E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_77_predictor",
+          "target_outer_V": 8.841518104947477,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 1.9760370308409114,
+          "last_equation_inf": 1.5757956445445318E-09,
+          "last_load_V": 4.363126926421046E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 1.9760370308409114,
+          "last_inner_V": 6.5660351399142955,
+          "last_current_A_per_um": 2.2754830086644509E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_78_accepted_state_retry",
+          "target_outer_V": 8.841518104947477,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 12.123716933388332,
+          "last_equation_inf": 1.18745084523198E-08,
+          "last_load_V": -2.8411444397136165E-07,
+          "last_original_gates_pass": false,
+          "any_original_gates_pass": false,
+          "best_RMS": 12.123716933388332,
+          "last_inner_V": 6.566044804987676,
+          "last_current_A_per_um": 2.2754730158453566E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_79_predictor",
+          "target_outer_V": 8.802433324005808,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": true,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 0.8737633950548401,
+          "last_equation_inf": 6.717224037881492E-10,
+          "last_load_V": 5.245627221484028E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 0.8737633950548401,
+          "last_inner_V": 6.563849052752575,
+          "last_current_A_per_um": 2.2385843237095053E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_80_accepted_state_retry",
+          "target_outer_V": 8.802433324005808,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 6.219602799931241,
+          "last_equation_inf": 6.870460422587842E-09,
+          "last_load_V": 8.705754339644045E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 6.219602799931241,
+          "last_inner_V": 6.563838386373943,
+          "last_current_A_per_um": 2.2385950246894083E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_81_predictor",
+          "target_outer_V": 8.782890933534972,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": true,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 0.4101374843564924,
+          "last_equation_inf": 3.3972554103234747E-10,
+          "last_load_V": -3.2812241812507636E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 0.4101374843564924,
+          "last_inner_V": 6.562728074370959,
+          "last_current_A_per_um": 2.220162826351772E-07
+        },
+        {
+          "mode": "report_only",
+          "label": "attempt_82_accepted_state_retry",
+          "target_outer_V": 8.782890933534972,
+          "converged": false,
+          "failure": "Newton update budget exhausted",
+          "updates": 40,
+          "bootstrap_used": true,
+          "restoration_requested": false,
+          "last_phase": "combination_bootstrap",
+          "last_RMS": 4.186654377475527,
+          "last_equation_inf": 3.6876514426022817E-09,
+          "last_load_V": 5.464460528514792E-08,
+          "last_original_gates_pass": true,
+          "any_original_gates_pass": true,
+          "best_RMS": 4.186654377475527,
+          "last_inner_V": 6.562719375379774,
+          "last_current_A_per_um": 2.2201716127998033E-07
+        }
+      ],
+      "plateau_completed_attempts": 10,
+      "plateau_completed_updates": 400,
+      "failed_final_original_gates_pass": 18,
+      "failed_any_original_gates_pass": 18,
+      "failed_rows_joint_but_bootstrap": 44,
+      "predictor_clipping_recommendations": 57,
+      "outer_step_V": {
+        "count": 48,
+        "min": 0.01,
+        "median": 0.19291714357805745,
+        "max": 0.38272638559972627,
+        "sum": 8.763348543064138
+      },
+      "inner_step_V": {
+        "count": 48,
+        "min": 0.005244252806359681,
+        "median": 0.1172959564850515,
+        "max": 0.3616092653007805,
+        "sum": 6.561587860382921
+      },
+      "accepted_original_gate_failures": 0,
+      "accepted_row_report_failures": 1,
+      "accepted_global_report_failures": 8,
+      "closure": {
+        "electron": {
+          "max_qualified_ratio": 0.5117878913876052,
+          "worst_outer_V": 0.01,
+          "worst_details": {
+            "contact_flux_A_per_um": -4.2727360723722874E-16,
+            "gross_contact_scale_A_per_um": 9.511495618090145E-10,
+            "gross_source_scale_A_per_um": 8.751803267654892E-16,
+            "net_denominator_A_per_um": 8.751802745155859E-16,
+            "qualified": true,
+            "ratio": 0.5117878913876052,
+            "signed_mismatch_A_per_um": 4.479066672783571E-16,
+            "source_A_per_um": -8.751802745155859E-16
+          },
+          "last_details": {
+            "contact_flux_A_per_um": -2.1369601789319274E-07,
+            "gross_contact_scale_A_per_um": 2.2665610762440593E-07,
+            "gross_source_scale_A_per_um": 2.1369646357695651E-07,
+            "net_denominator_A_per_um": 2.1369604520123424E-07,
+            "qualified": true,
+            "ratio": 1.277891757742719E-07,
+            "signed_mismatch_A_per_um": 2.7308041482487274E-14,
+            "source_A_per_um": -2.1369604520123424E-07
+          },
+          "failed_report_count": 8
+        },
+        "hole": {
+          "max_qualified_ratio": 0.0012794277885946575,
+          "worst_outer_V": 0.01,
+          "worst_details": {
+            "contact_flux_A_per_um": -8.763014389277355E-16,
+            "gross_contact_scale_A_per_um": 8.763040360078372E-16,
+            "gross_source_scale_A_per_um": 8.751803267654892E-16,
+            "net_denominator_A_per_um": 8.763014389277355E-16,
+            "qualified": true,
+            "ratio": 0.0012794277885946575,
+            "signed_mismatch_A_per_um": -1.121164412149629E-18,
+            "source_A_per_um": -8.751802745155859E-16
+          },
+          "last_details": {
+            "contact_flux_A_per_um": -2.136960452013338E-07,
+            "gross_contact_scale_A_per_um": 2.136960452013338E-07,
+            "gross_source_scale_A_per_um": 2.1369646357695651E-07,
+            "net_denominator_A_per_um": 2.136960452013338E-07,
+            "qualified": true,
+            "ratio": 4.658577295856794E-13,
+            "signed_mismatch_A_per_um": -9.955195443893207E-20,
+            "source_A_per_um": -2.1369604520123424E-07
+          },
+          "failed_report_count": 0
+        }
+      }
+    }
+  },
+  "iv_comparison": {
+    "exact_common_points": [
+      {
+        "outer_V": 0.0,
+        "inner_difference_V": 0.0,
+        "current_difference_A_per_um": 0.0,
+        "enforce_updates": 0,
+        "report_only_updates": 0
+      },
+      {
+        "outer_V": 0.01,
+        "inner_difference_V": 0.0,
+        "current_difference_A_per_um": 0.0,
+        "enforce_updates": 4,
+        "report_only_updates": 4
+      },
+      {
+        "outer_V": 0.023690000000000003,
+        "inner_difference_V": 0.0,
+        "current_difference_A_per_um": 0.0,
+        "enforce_updates": 3,
+        "report_only_updates": 3
+      },
+      {
+        "outer_V": 0.04261870666666667,
+        "inner_difference_V": 0.0,
+        "current_difference_A_per_um": 0.0,
+        "enforce_updates": 3,
+        "report_only_updates": 3
+      },
+      {
+        "outer_V": 0.06879079841777778,
+        "inner_difference_V": 0.0,
+        "current_difference_A_per_um": 0.0,
+        "enforce_updates": 6,
+        "report_only_updates": 6
+      }
+    ],
+    "interpolation_is_not_same_state_proof": true,
+    "interpolated_count": 23,
+    "interpolated_relative_current_difference": {
+      "count": 23,
+      "min": 8.236294249188096E-07,
+      "median": 7.5868373840359405E-06,
+      "max": 0.0022805448456519025,
+      "sum": 0.0025420857414221254
+    },
+    "interpolated_inner_difference_V": {
+      "count": 23,
+      "min": 2.2455750925409745E-08,
+      "median": 4.4798894294206804E-07,
+      "max": 5.000317376117891E-05,
+      "sum": 6.758847473221918E-05
+    },
+    "max_overlap_outer_V": 4.92612036893391
+  },
+  "state_fields_exact_common": [
+    {
+      "outer_V": 0.0,
+      "max_absolute_field_differences": {
+        "fields/electron_qf_increment_V": 0.0,
+        "fields/electron_qf_reference_V": 0.0,
+        "fields/electron_quantum_potential_V": 0.0,
+        "fields/electrons_m3": 0.0,
+        "fields/hole_qf_increment_V": 0.0,
+        "fields/hole_qf_reference_V": 0.0,
+        "fields/holes_m3": 0.0,
+        "fields/phin": 0.0,
+        "fields/phip": 0.0,
+        "fields/psi": 0.0
+      }
+    },
+    {
+      "outer_V": 0.01,
+      "max_absolute_field_differences": {
+        "fields/electron_qf_increment_V": 0.0,
+        "fields/electron_qf_reference_V": 0.0,
+        "fields/electron_quantum_potential_V": 0.0,
+        "fields/electrons_m3": 0.0,
+        "fields/hole_qf_increment_V": 0.0,
+        "fields/hole_qf_reference_V": 0.0,
+        "fields/holes_m3": 0.0,
+        "fields/phin": 0.0,
+        "fields/phip": 0.0,
+        "fields/psi": 0.0
+      }
+    },
+    {
+      "outer_V": 0.023690000000000003,
+      "max_absolute_field_differences": {
+        "fields/electron_qf_increment_V": 0.0,
+        "fields/electron_qf_reference_V": 0.0,
+        "fields/electron_quantum_potential_V": 0.0,
+        "fields/electrons_m3": 0.0,
+        "fields/hole_qf_increment_V": 0.0,
+        "fields/hole_qf_reference_V": 0.0,
+        "fields/holes_m3": 0.0,
+        "fields/phin": 0.0,
+        "fields/phip": 0.0,
+        "fields/psi": 0.0
+      }
+    },
+    {
+      "outer_V": 0.04261870666666667,
+      "max_absolute_field_differences": {
+        "fields/electron_qf_increment_V": 0.0,
+        "fields/electron_qf_reference_V": 0.0,
+        "fields/electron_quantum_potential_V": 0.0,
+        "fields/electrons_m3": 0.0,
+        "fields/hole_qf_increment_V": 0.0,
+        "fields/hole_qf_reference_V": 0.0,
+        "fields/holes_m3": 0.0,
+        "fields/phin": 0.0,
+        "fields/phip": 0.0,
+        "fields/psi": 0.0
+      }
+    },
+    {
+      "outer_V": 0.06879079841777778,
+      "max_absolute_field_differences": {
+        "fields/electron_qf_increment_V": 0.0,
+        "fields/electron_qf_reference_V": 0.0,
+        "fields/electron_quantum_potential_V": 0.0,
+        "fields/electrons_m3": 0.0,
+        "fields/hole_qf_increment_V": 0.0,
+        "fields/hole_qf_reference_V": 0.0,
+        "fields/holes_m3": 0.0,
+        "fields/phin": 0.0,
+        "fields/phip": 0.0,
+        "fields/psi": 0.0
+      }
+    }
+  ],
+  "population_audit": {
+    "enforce": {
+      "electrons_m3": {
+        "minimum_positive_cm3": 4.943523596933962,
+        "maximum_cm3": 5.0900000000000007E+20,
+        "negative_entries": 0,
+        "zero_entries": 107520,
+        "all_finite": true,
+        "states": 240
+      },
+      "holes_m3": {
+        "minimum_positive_cm3": 3.4527533029547683,
+        "maximum_cm3": 1.0000000000000041E+18,
+        "negative_entries": 0,
+        "zero_entries": 107520,
+        "all_finite": true,
+        "states": 240
+      }
+    },
+    "report_only": {
+      "electrons_m3": {
+        "minimum_positive_cm3": 5.110735884447988,
+        "maximum_cm3": 5.0900000000000007E+20,
+        "negative_entries": 0,
+        "zero_entries": 21952,
+        "all_finite": true,
+        "states": 49
+      },
+      "holes_m3": {
+        "minimum_positive_cm3": 3.670104492492492,
+        "maximum_cm3": 1.0000000000162193E+18,
+        "negative_entries": 0,
+        "zero_entries": 21952,
+        "all_finite": true,
+        "states": 49
+      }
+    }
+  },
+  "accepted_final_mobility_theta": {
+    "enforce": {
+      "1.0": 155,
+      "0.25": 20,
+      "0.0": 17,
+      "0.5": 47
+    },
+    "report_only": {
+      "1.0": 40,
+      "0.5": 6,
+      "0.25": 2
+    }
+  },
+  "restoration": {
+    "failed_joint_states": 44,
+    "next_iteration_returned_to_bootstrap": 40,
+    "budget_boundary_joint_states": 4,
+    "full_derivative_eq_load_pass_but_RMS_above_one": 40,
+    "example_attempt": "attempt_81_predictor",
+    "example_target_outer_V": 8.782890933534972,
+    "example_first_joint_iteration": 10,
+    "example_last_joint_iteration": 40,
+    "example_final_RMS": 0.4101374843564924,
+    "example_restore_next_trials": [
+      {
+        "RMS": 28.432531863592082,
+        "alpha": 1.0,
+        "equation_inf": 3.1719051521766916E-08,
+        "fixed_scaled_residual_inf": 0.0001626034466280367,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": 3.2153154805314443E-08,
+        "max_relative_electron_tangent": 0.0023603696822689407,
+        "max_relative_hole_tangent": 0.002312564460964076,
+        "negative_electron_raw_candidates": 0,
+        "negative_hole_raw_candidates": 0,
+        "population_linear_backward_error": 3.200993715114905E-16,
+        "population_roundtrip_relative": 5.3512749786932545E-14,
+        "qf_mapped_linear_backward_error": 5.459094166512757E-10,
+        "raw_dfn_inf_V": 7.153089601218069E-05,
+        "raw_dfp_inf_V": 5.3689483412554656E-05,
+        "raw_dpsi_inf_V": 1.5383105765512337E-05,
+        "raw_voltage_V": 1.538303715550027E-05,
+        "scaled_tangent_roundtrip_error": 6.195006270556988E-19,
+        "theta": 0.0,
+        "valid": true
+      },
+      {
+        "RMS": 29.856495170513476,
+        "alpha": 1.0,
+        "equation_inf": 1.0146348743238106E-09,
+        "fixed_scaled_residual_inf": 2.1264109533654232E-07,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": -1.2165322971213754E-08,
+        "max_relative_electron_tangent": 0.0028552993707441775,
+        "max_relative_hole_tangent": 0.0026740612515322626,
+        "negative_electron_raw_candidates": 0,
+        "negative_hole_raw_candidates": 0,
+        "population_linear_backward_error": 3.1360977654865157E-16,
+        "population_roundtrip_relative": 5.262457136723242E-14,
+        "qf_mapped_linear_backward_error": 9.7733610156672E-10,
+        "raw_dfn_inf_V": 7.480042005797231E-05,
+        "raw_dfp_inf_V": 6.707905049639207E-05,
+        "raw_dpsi_inf_V": 7.315065437144824E-06,
+        "raw_voltage_V": 7.314994890511703E-06,
+        "scaled_tangent_roundtrip_error": 6.495159511003408E-19,
+        "theta": 1.0,
+        "valid": true,
+        "within_existing_targets": false
+      },
+      {
+        "RMS": 29.18182559683816,
+        "alpha": 1.0,
+        "equation_inf": 1.5428866295781115E-08,
+        "fixed_scaled_residual_inf": 9.249048588674126E-05,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": -1.5282354581813706E-07,
+        "max_relative_electron_tangent": 0.0026061712066339274,
+        "max_relative_hole_tangent": 0.0024753663531870544,
+        "negative_electron_raw_candidates": 0,
+        "negative_hole_raw_candidates": 0,
+        "population_linear_backward_error": 2.617655370176873E-16,
+        "population_roundtrip_relative": 5.240252676230739E-14,
+        "qf_mapped_linear_backward_error": 4.667967898048275E-10,
+        "raw_dfn_inf_V": 7.075740881155161E-05,
+        "raw_dfp_inf_V": 6.061307010149098E-05,
+        "raw_dpsi_inf_V": 9.950737798646179E-06,
+        "raw_voltage_V": 9.950668138433536E-06,
+        "scaled_tangent_roundtrip_error": 7.9472459122838E-19,
+        "theta": 0.5,
+        "valid": true,
+        "within_existing_targets": false
+      },
+      {
+        "RMS": 28.804148036587794,
+        "alpha": 1.0,
+        "equation_inf": 2.1144091017318548E-08,
+        "fixed_scaled_residual_inf": 0.00013047169307497144,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": -2.3663680437380208E-07,
+        "max_relative_electron_tangent": 0.0024834188665337495,
+        "max_relative_hole_tangent": 0.002393062471591797,
+        "negative_electron_raw_candidates": 0,
+        "negative_hole_raw_candidates": 0,
+        "population_linear_backward_error": 2.2981957573127163E-16,
+        "population_roundtrip_relative": 5.129230373768223E-14,
+        "qf_mapped_linear_backward_error": 7.063750343117496E-10,
+        "raw_dfn_inf_V": 7.061309671868734E-05,
+        "raw_dfp_inf_V": 5.724249767606463E-05,
+        "raw_dpsi_inf_V": 1.2086961048599736E-05,
+        "raw_voltage_V": 1.2086891901696566E-05,
+        "scaled_tangent_roundtrip_error": 5.298163941522533E-19,
+        "theta": 0.25,
+        "valid": true,
+        "within_existing_targets": false
+      },
+      {
+        "phase_change": "combination bootstrap from current own state"
+      },
+      {
+        "RMS": 0.9297408375769225,
+        "alpha": 1.0,
+        "equation_inf": 3.0061087949524137E-09,
+        "fixed_scaled_residual_inf": 2.527253305023836E-05,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": -1.2637189428232887E-07,
+        "max_relative_electron_tangent": 7.858334579846406E-05,
+        "max_relative_hole_tangent": 8.543924766168302E-05,
+        "negative_electron_raw_candidates": 0,
+        "negative_hole_raw_candidates": 0,
+        "population_linear_backward_error": 2.8296851578350327E-16,
+        "population_roundtrip_relative": 5.10702591327572E-14,
+        "qf_mapped_linear_backward_error": 1.1519125014820236E-11,
+        "raw_dfn_inf_V": 2.186831848456541E-06,
+        "raw_dfp_inf_V": 1.3161345139353445E-06,
+        "raw_dpsi_inf_V": 1.151412922743305E-06,
+        "raw_voltage_V": 1.1514096203163641E-06,
+        "scaled_tangent_roundtrip_error": 1.2743473213685197E-20,
+        "theta": 0.0,
+        "valid": true
+      }
+    ]
+  },
+  "limitations": [
+    "Both runs stopped at the wall-clock limit; no complete BV result.",
+    "Interpolation is not same-state operator verification.",
+    "All final acceptance gates remain unchanged.",
+    "Population-system accuracy does not certify mapped QF Jacobian accuracy.",
+    "No new solver run or production change was performed."
+  ]
+}

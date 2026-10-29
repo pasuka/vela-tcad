@@ -17,6 +17,8 @@
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/simulation/CarrierReducedLoadLine.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/DensityUpdateConvergence.h"
+#include "vela/solver/PopulationState.h"
 #include <functional>
 #include <array>
 #include <limits>
@@ -97,6 +99,9 @@ struct NewtonGlobalContinuityCarrierClosure {
     Real integratedSource = 0.0;
     Real mismatch = 0.0;
     Real ratio = 0.0;
+    Real netScale = 0.0;
+    Real contactNodeFluxAbsSum = 0.0;
+    Real integratedSourceAbsSum = 0.0;
 };
 
 struct NewtonGlobalContinuityClosureEvaluation {
@@ -188,6 +193,8 @@ struct NewtonConfig {
     std::shared_ptr<LinearSolver> sequentialLinearSolver;
     std::shared_ptr<CoupledDDAssembler::StructureCache> sequentialJacobianStructure;
     bool diagnosticFermiNodeCache = false;
+    bool diagnosticBvMethodsEvaluationReuse = false;
+    bool diagnosticBvMethodsSharedPorts = false;
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;
@@ -222,6 +229,8 @@ struct NewtonConfig {
     // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
     int linearRefinementIterations = 0;
     int linearFactorRefinementSteps = 0; ///< Opt-in 0..3 guarded corrections of the actual three-block linear system.
+    Real legacyTransportJacobianStep = 1e-6;
+    Real legacyAvalancheJacobianStep = 1e-7;
     std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.
     bool splitDDState = false; ///< Opt-in unified hi/lo plain-PhuMob state.
     /// Explicit fixed-contact low parts; paired with contactBiases high parts.
@@ -285,6 +294,11 @@ struct NewtonConfig {
     BandToBandTunnelingConfig bandToBand{}; ///< Local pair generation, including Sentaurus E2.
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
+    std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
+    std::string stateVariables = "potential_quasi_fermi";
+    std::string populationDerivativeRecovery = "full";
+    std::string populationSgCurrent = "quasi_fermi";
+    PopulationUpdateConfig populationUpdate;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
     ///< Optional Sentaurus eQuantumPotential outer iteration.
@@ -322,6 +336,9 @@ struct NewtonIterationInfo {
     std::string event;
     NewtonCarrierRowConvergenceEvaluation carrierRowConvergence;
     std::vector<LineSearchIterationInfo> lineSearchHistory;
+    DensityUpdateError populationUpdateError;
+    Real populationEffectiveAlpha = 1.;
+    int protectedElectrons = 0, protectedHoles = 0;
 };
 
 struct NewtonCarrierDiagnostics {
@@ -409,6 +426,12 @@ struct NewtonResult {
     NewtonFailureDiagnostics failureDiagnostics;
 };
 
+struct NewtonStateConvergenceEvaluation {
+    NewtonBlockResidualInfo blockNorms;
+    NewtonCarrierRowConvergenceEvaluation carrierRows;
+    NewtonGlobalContinuityClosureEvaluation globalContinuity;
+};
+
 struct NewtonResidualEvaluation {
     VectorXd raw;
     NewtonBlockResidualInfo blockNorms;
@@ -461,6 +484,18 @@ struct NewtonStepEvaluation {
     VectorXd deltaPsi;
     VectorXd deltaPhin;
     VectorXd deltaPhip;
+    VectorXd rawDeltaPsi;
+    VectorXd rawDeltaPhin;
+    VectorXd rawDeltaPhip;
+    VectorXd rawLinearDefect;
+    VectorXd cappedLinearDefect;
+    VectorXd rawLinearBackwardErrors;
+    VectorXd cappedLinearBackwardErrors;
+    VectorXd directionalAnalyticChange;
+    VectorXd directionalFiniteDifferenceChange;
+    VectorXd freeElectronRows;
+    VectorXd freeHoleRows;
+    Real directionalAuditScale = 0.0;
     Real rawStepNorm = 0.0;
     Real stepNorm = 0.0;
 };
@@ -863,7 +898,8 @@ public:
     Real maxContactMajorityQuasiFermiDrop(
         const DDSolution& state,
         const std::vector<std::string>& contacts) const;
-    NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
+    NewtonStepEvaluation evaluateStep(
+        const DDSolution& state, Real directionalAuditScale = 0.0) const;
     NewtonLinearSystemEvaluation evaluateLinearSystem(const DDSolution& state,
         NewtonLinearSystemEvaluation* mobilityAlternative = nullptr,
         int factorRefinementSteps = 0) const;
@@ -950,7 +986,8 @@ public:
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
                                         Real biasFiniteDifferenceStep_V = 1.0e-4,
                                         bool positiveDensityTrials = false,
-                                        const DDSolution* referenceState = nullptr) const;
+                                        const DDSolution* referenceState = nullptr,
+                                        bool boundaryOnlyParameterDerivative = false) const;
 
     /// Convert a physical-unit DDSolution into the scaled packed state vector and
     /// back, consistent with makeArclengthSystem. These help drive the continuation
@@ -964,6 +1001,13 @@ public:
     /// evaluations inside bordered circuit Newton.
     std::function<DDSolution(const VectorXd&)>
     makeArclengthStateUnpacker(const DDSolution* referenceState = nullptr) const;
+    /// Evaluate the standard carrier/closure gates at the actual packed state
+    /// and contact bias, without running Newton or altering the physical state.
+    std::function<NewtonStateConvergenceEvaluation(const VectorXd&, Real)>
+    makeArclengthConvergenceEvaluator(const std::string& activeContact) const;
+    DensityUpdateErrorEvaluator makeArclengthUpdateErrorEvaluator(
+        const std::string& activeContact,
+        const DensityUpdateConvergenceConfig& config) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the
@@ -1011,6 +1055,7 @@ public:
 private:
     void configureAssemblerNumerics(CoupledDDAssembler& assembler,
                                       const DDSolution* state = nullptr) const;
+    NewtonResult solvePopulation(const DDSolution& initial) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
@@ -1035,6 +1080,7 @@ private:
     std::unordered_map<std::string, Real> contactBiases_;
     ContactSpecsMap contactSpecs_;
     NewtonConfig cfg_;
+    mutable std::weak_ptr<CoupledDDAssembler> bvMethodsTerminalAssembler_;
     std::vector<RegionFixedChargeSpec> fixedCharges_;
     std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 };

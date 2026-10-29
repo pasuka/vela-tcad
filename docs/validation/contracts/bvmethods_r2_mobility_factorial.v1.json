@@ -1,0 +1,23 @@
+{
+  "registered_before_execution": true,
+  "trigger": "interaction 8.646585e-6 at point5 h3e-6 exceeds 1e-6 resolution budget",
+  "states": [
+    1,
+    5
+  ],
+  "h": [
+    3e-05,
+    1e-05,
+    3e-06
+  ],
+  "direction": "same newton high/low",
+  "factors_bit_order": [
+    "surface_field",
+    "hfs_field",
+    "nonlinear_formula",
+    "averaging"
+  ],
+  "arms": "0 original baseline; 1+mask 0..15 complete factorial; all factorial arms wide SG coefficient",
+  "unchanged": "physical value, field branch, derivative cutoff, masks, J, gate",
+  "scope": "actual complete device residual; fixed states; no acceptance"
+}

@@ -1,0 +1,2338 @@
+{
+  "schema": "vela.validation.vm_restoration_verification.v1",
+  "date": "2026-10-26",
+  "execution_location": "vela-vm",
+  "verification_complete": true,
+  "full_BV_qualified": false,
+  "production_policy_changed": false,
+  "backend": "pardiso_mkl",
+  "dimension": 7801,
+  "outer_V": 8.782890933534972,
+  "checkpoint": {
+    "KCL_A_per_um": -8.499428812989892E-15,
+    "current_A_per_um": 2.2201709196522312E-07,
+    "electron": {
+      "contact_flux_A_per_um": -2.1553619818901096E-07,
+      "gross_contact_scale_A_per_um": 2.2849802761250753E-07,
+      "gross_source_scale_A_per_um": 2.1553651893436472E-07,
+      "net_denominator_A_per_um": 2.1553619818901096E-07,
+      "qualified": true,
+      "ratio": 4.982487270760235E-07,
+      "signed_mismatch_A_per_um": -1.0739063638648025E-13,
+      "source_A_per_um": -2.1553609079837457E-07
+    },
+    "electron_mp_ledger": {
+      "all_node_transport_sum_A_per_um": -5.0563597719938976E-23,
+      "ledger_rounding_defect_A_per_um": 5.038007679149053E-30,
+      "ratio": 4.982487301576136E-07,
+      "signed_mismatch_A_per_um": -1.0739063705067447E-13,
+      "sum_free_equations_A_per_um": 1.0739063700011088E-13
+    },
+    "equation_inf": 3.3035286914463462E-09,
+    "fixed_scaled_residual_inf": 3.0090656801595114E-05,
+    "global_enforced": false,
+    "global_satisfied": true,
+    "hole": {
+      "contact_flux_A_per_um": -2.155362066884398E-07,
+      "gross_contact_scale_A_per_um": 2.155362066884398E-07,
+      "gross_source_scale_A_per_um": 2.1553651893436472E-07,
+      "net_denominator_A_per_um": 2.155362066884398E-07,
+      "qualified": true,
+      "ratio": 5.376825871157935E-07,
+      "signed_mismatch_A_per_um": -1.1589006522936473E-13,
+      "source_A_per_um": -2.1553609079837457E-07
+    },
+    "hole_mp_ledger": {
+      "all_node_transport_sum_A_per_um": -5.0865282267721035E-23,
+      "ledger_rounding_defect_A_per_um": 1.4707866872182836E-29,
+      "ratio": 5.376825900675607E-07,
+      "signed_mismatch_A_per_um": -1.1589006586557745E-13,
+      "sum_free_equations_A_per_um": 1.1589006581471217E-13
+    },
+    "inner_V": 6.562719938652264,
+    "load_V": -7.523047784729897E-08,
+    "original_gates_pass": true,
+    "row_max_ratio": 7.922207447023018E-05,
+    "row_worst_carrier": "electron",
+    "row_worst_node": 1155,
+    "rows_enforced": false,
+    "rows_satisfied": true
+  },
+  "replay_RMS_relative_difference": 0.0,
+  "production_files_identical_to_original": 243,
+  "tests": {
+    "tests": "17",
+    "failures": "0",
+    "disabled": "0",
+    "skipped": "0"
+  },
+  "steps": {
+    "configure": {
+      "exit_code": 0,
+      "seconds": 10.582928914001968
+    },
+    "configure_mkl": {
+      "exit_code": 0,
+      "seconds": 3.8842401779984357
+    },
+    "build": {
+      "exit_code": 0,
+      "seconds": 191.76872435599944
+    },
+    "tests": {
+      "exit_code": 0,
+      "seconds": 0.17338846599886892
+    },
+    "verification": {
+      "exit_code": 0,
+      "seconds": 284.99568505999923
+    }
+  },
+  "initial_core_sha256": "45d85ca28e89fba34299fdc13ddaed74c620051dcbef4f00c0206b285e4b27d3",
+  "initial_probe_binary_sha256": "0111f0498a6a65d20a9da0119b5fb3cd3b693f06c419cb83a2baabb965346a22",
+  "same_state_systems": {
+    "files": {
+      "current": {
+        "rhs_hashes": [
+          "c04037cecaf5f94439b6b64fc6b521ca63ace48ceeb5532c3245b1e1f1952747"
+        ],
+        "rhs_rows": 7801,
+        "full_qf_matrix_sha256": "32353a2aa911a058da45dac027439befd2d614211d60d425545252ece5696d3b",
+        "full_qf_matrix_entries": 98825,
+        "full_qf_matrix_dimension": [
+          7801,
+          7801
+        ]
+      },
+      "full": {
+        "rhs_hashes": [
+          "c04037cecaf5f94439b6b64fc6b521ca63ace48ceeb5532c3245b1e1f1952747"
+        ],
+        "rhs_rows": 7801,
+        "full_qf_matrix_sha256": "32353a2aa911a058da45dac027439befd2d614211d60d425545252ece5696d3b",
+        "full_qf_matrix_entries": 98825,
+        "full_qf_matrix_dimension": [
+          7801,
+          7801
+        ]
+      },
+      "av_only": {
+        "rhs_hashes": [
+          "c04037cecaf5f94439b6b64fc6b521ca63ace48ceeb5532c3245b1e1f1952747"
+        ],
+        "rhs_rows": 7801
+      }
+    },
+    "all_RHS_identical": true,
+    "current_full_matrix_identical": true
+  },
+  "RMS_independent_max_relative_difference": 1.2212453270876722E-15,
+  "first_full_RMS_blocks": [
+    {
+      "RMS": 0.15522194885879073,
+      "block": 0,
+      "count": 2600,
+      "independent_reconstruction_RMS": 0.15522194885879073,
+      "worst": {
+        "after": 0.0030762769897797154,
+        "electron_cm3": 37378820928.857544,
+        "fn_V": 0.00019133804829086706,
+        "fp_V": 0.08490181208795115,
+        "hole_cm3": 792080355441.5237,
+        "node": 1168,
+        "normalized_magnitude": 4.982419381490528,
+        "psi_V": 0.0030762769897797154,
+        "raw_delta": 1.4413280794700493E-06,
+        "reference": 0.025852
+      }
+    },
+    {
+      "RMS": 36.411498506063104,
+      "block": 1,
+      "count": 2121,
+      "independent_reconstruction_RMS": 36.411498506063076,
+      "worst": {
+        "after": 49705255009.39345,
+        "electron_cm3": 49705255009.39345,
+        "fn_V": 6.194557679658553,
+        "fp_V": 6.14028772231399,
+        "hole_cm3": 7841122094.860767,
+        "node": 1129,
+        "normalized_magnitude": 212.64825153735455,
+        "psi_V": 6.191293516148416,
+        "raw_delta": -126962180.85339396,
+        "reference": 10000000000.0
+      }
+    },
+    {
+      "RMS": 39.425124783881735,
+      "block": 2,
+      "count": 2121,
+      "independent_reconstruction_RMS": 39.42512478388169,
+      "worst": {
+        "after": 66930529978.94375,
+        "electron_cm3": 7258013045.414655,
+        "fn_V": 1.0997818734142228,
+        "fp_V": 1.078201613045724,
+        "hole_cm3": 66930529978.94375,
+        "node": 1239,
+        "normalized_magnitude": 209.05234492512528,
+        "psi_V": 1.0602759996715088,
+        "raw_delta": -160825076.8843084,
+        "reference": 10000000000.0
+      }
+    },
+    {
+      "RMS": 0.11102537579131873,
+      "block": 3,
+      "count": 11,
+      "independent_reconstruction_RMS": 0.11102537579131873,
+      "worst": {
+        "after": 6.5627272536471395,
+        "electron_cm3": 3.256916861025977E+20,
+        "fn_V": 6.5627272536471395,
+        "fp_V": 6.5627272536471395,
+        "hole_cm3": 190.44431593868254,
+        "node": 233,
+        "normalized_magnitude": 0.11102537579131873,
+        "psi_V": 7.151149825979242,
+        "raw_delta": 7.314994875670599E-06,
+        "reference": 0.025852
+      }
+    }
+  ],
+  "arms": {
+    "current": {
+      "converged": false,
+      "failure": "Newton update budget exhausted",
+      "updates": 12,
+      "first_joint_restored_iteration": null,
+      "phase_counts": {
+        "combination_bootstrap": 12
+      },
+      "last": {
+        "KCL_A_per_um": 2.44925711566312E-15,
+        "current_A_per_um": 2.2201636664612525E-07,
+        "electron": {
+          "contact_flux_A_per_um": -2.1553546689081534E-07,
+          "gross_contact_scale_A_per_um": 2.284973082611974E-07,
+          "gross_source_scale_A_per_um": 2.1553587727081788E-07,
+          "net_denominator_A_per_um": 2.1553546689081534E-07,
+          "qualified": true,
+          "ratio": 8.176630662433118E-08,
+          "signed_mismatch_A_per_um": -1.762353907421279E-14,
+          "source_A_per_um": -2.1553544926727626E-07
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -1.3567775892478123E-23,
+          "ledger_rounding_defect_A_per_um": -1.8617288803027304E-31,
+          "ratio": 8.176630941212824E-08,
+          "signed_mismatch_A_per_um": -1.7623539675081927E-14,
+          "sum_free_equations_A_per_um": 1.762353966151415E-14
+        },
+        "equation_inf": 1.204205883844617E-09,
+        "fixed_scaled_residual_inf": 2.034499625805839E-05,
+        "global_enforced": false,
+        "global_satisfied": true,
+        "hole": {
+          "contact_flux_A_per_um": -2.1553546444155816E-07,
+          "gross_contact_scale_A_per_um": 2.1553546444155816E-07,
+          "gross_source_scale_A_per_um": 2.1553587727081788E-07,
+          "net_denominator_A_per_um": 2.1553546444155816E-07,
+          "qualified": true,
+          "ratio": 7.040271500438669E-08,
+          "signed_mismatch_A_per_um": -1.517428187641714E-14,
+          "source_A_per_um": -2.1553544926727626E-07
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 9.306985517232938E-25,
+          "ledger_rounding_defect_A_per_um": -9.870593685849079E-30,
+          "ratio": 7.040271801971195E-08,
+          "signed_mismatch_A_per_um": -1.517428252632667E-14,
+          "sum_free_equations_A_per_um": 1.5174282527257358E-14
+        },
+        "inner_V": 6.562727303619665,
+        "load_V": 3.654594493696095E-08,
+        "original_gates_pass": true,
+        "row_max_ratio": 4.093132526582692E-05,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1165,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "trace": [
+        {
+          "iteration": 1,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.9297408375800507,
+          "original_gates_pass": true,
+          "equation_inf": 3.0061087954131864E-09,
+          "load_V": -1.9897090908216342E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.6771867442282877E-16,
+            "qf_mapped_linear_backward_error": 9.286769201522442E-12,
+            "population_roundtrip_relative": 5.46229728115577E-14,
+            "raw_dpsi_inf_V": 1.151412923461983E-06,
+            "raw_dfn_inf_V": 2.186831848577831E-06,
+            "raw_dfp_inf_V": 1.3161345144820285E-06,
+            "raw_voltage_V": 1.151409621035042E-06,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.024402401455124907,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.7863277105013946
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.144039285835234,
+              "worst_node": 848,
+              "worst_normalized_magnitude": 3.6069211239405874
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.2179479380062883,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 6.700926221790963
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.01747585714381484,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.01747585714381484
+            }
+          ]
+        },
+        {
+          "iteration": 2,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.8809239339871083,
+          "original_gates_pass": true,
+          "equation_inf": 2.9409077393574926E-09,
+          "load_V": -4.233107731010932E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.37922188181122E-16,
+            "qf_mapped_linear_backward_error": 1.9825658537663813E-11,
+            "population_roundtrip_relative": 5.440092820663267E-14,
+            "raw_dpsi_inf_V": 1.3897648731503043E-06,
+            "raw_dfn_inf_V": 2.1259685184269368E-06,
+            "raw_dfp_inf_V": 1.5916482392548738E-06,
+            "raw_voltage_V": 1.3897616785408993E-06,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.02945088229495383,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.9492215687682006
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.0766951704423238,
+              "worst_node": 848,
+              "worst_normalized_magnitude": 3.2685607038343525
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.160613225645635,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 5.762569433351239
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.02109351093771222,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.02109351093771222
+            }
+          ]
+        },
+        {
+          "iteration": 3,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.8396271539972531,
+          "original_gates_pass": true,
+          "equation_inf": 2.752288492639555E-09,
+          "load_V": 1.299245280250716E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.1429552873785718E-16,
+            "qf_mapped_linear_backward_error": 3.2096761968275474E-11,
+            "population_roundtrip_relative": 5.395683899678261E-14,
+            "raw_dpsi_inf_V": 1.1254698916692086E-06,
+            "raw_dfn_inf_V": 1.8406760563380188E-06,
+            "raw_dfp_inf_V": 1.3871170027552403E-06,
+            "raw_voltage_V": 1.1254667881241014E-06,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.023852542735501713,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.7686189444400608
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.0241276873869756,
+              "worst_node": 1091,
+              "worst_normalized_magnitude": 3.0897259265405257
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.1082644233490246,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 5.128326605263575
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.01708209566906083,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.01708209566906083
+            }
+          ]
+        },
+        {
+          "iteration": 4,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.8036263283373288,
+          "original_gates_pass": true,
+          "equation_inf": 2.5064857982876472E-09,
+          "load_V": 1.1809856914624106E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.123086308391278E-16,
+            "qf_mapped_linear_backward_error": 5.6531351303066454E-11,
+            "population_roundtrip_relative": 5.140332604014475E-14,
+            "raw_dpsi_inf_V": 8.30900100908177E-07,
+            "raw_dfn_inf_V": 1.574236628581045E-06,
+            "raw_dfp_inf_V": 1.1108949239971421E-06,
+            "raw_voltage_V": 8.308970895506411E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.01761270870879733,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.5673295379568016
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.9798881926808825,
+              "worst_node": 946,
+              "worst_normalized_magnitude": 3.0274728122279257
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.0611701637790003,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 4.780851432923281
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.012611177810535498,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.012611177810535498
+            }
+          ]
+        },
+        {
+          "iteration": 5,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.771856210174541,
+          "original_gates_pass": true,
+          "equation_inf": 2.2666472183259447E-09,
+          "load_V": -2.1990726217779866E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.4584388373889186E-16,
+            "qf_mapped_linear_backward_error": 1.5627088638190937E-11,
+            "population_roundtrip_relative": 5.162537064506978E-14,
+            "raw_dpsi_inf_V": 6.275936270137477E-07,
+            "raw_dfn_inf_V": 1.3879415989763717E-06,
+            "raw_dfp_inf_V": 9.143570722661278E-07,
+            "raw_voltage_V": 6.275907138978416E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.013305807149972705,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.4284076558961394
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.9410667197048637,
+              "worst_node": 946,
+              "worst_normalized_magnitude": 2.9793974519882633
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.0193609497973162,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 4.570076382842917
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.009525436339632884,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.009525436339632884
+            }
+          ]
+        },
+        {
+          "iteration": 6,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.743533127150044,
+          "original_gates_pass": true,
+          "equation_inf": 2.0538729971017434E-09,
+          "load_V": 3.163034456576952E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.4029560256800995E-16,
+            "qf_mapped_linear_backward_error": 2.33155797334323E-11,
+            "population_roundtrip_relative": 5.229150445984487E-14,
+            "raw_dpsi_inf_V": 5.025135200404296E-07,
+            "raw_dfn_inf_V": 1.269800208473541E-06,
+            "raw_dfp_inf_V": 9.746512414837486E-07,
+            "raw_voltage_V": 5.025107107642505E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.010655788859257083,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.3429432918593098
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.9063162754011028,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.931470423365856
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.9821888887004385,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 4.3948906577070295
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.007626998478934182,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.007626998478934182
+            }
+          ]
+        },
+        {
+          "iteration": 7,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.7180253371382681,
+          "original_gates_pass": true,
+          "equation_inf": 1.8686371892921993E-09,
+          "load_V": -4.006890108598782E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.257320126414088E-16,
+            "qf_mapped_linear_backward_error": 6.46737456153724E-11,
+            "population_roundtrip_relative": 5.284661597215745E-14,
+            "raw_dpsi_inf_V": 4.202004520227011E-07,
+            "raw_dfn_inf_V": 1.1907115949560923E-06,
+            "raw_dfp_inf_V": 9.932677228067562E-07,
+            "raw_voltage_V": 4.2019774690761353E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.00891163505379824,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.2867043801054008
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.8749402961961994,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.9021203702290768
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.9487725904555431,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 4.215698935985936
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.006377669775928171,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.006377669775928171
+            }
+          ]
+        },
+        {
+          "iteration": 8,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.6948324369151836,
+          "original_gates_pass": true,
+          "equation_inf": 1.7057523199948477E-09,
+          "load_V": -1.9968453379703988E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.233257784089093E-16,
+            "qf_mapped_linear_backward_error": 2.303782814758738E-11,
+            "population_roundtrip_relative": 5.517808432387028E-14,
+            "raw_dpsi_inf_V": 3.5734732074647375E-07,
+            "raw_dfn_inf_V": 1.1355364765465175E-06,
+            "raw_dfp_inf_V": 9.90098922415977E-07,
+            "raw_voltage_V": 3.573447218774885E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.00757969718842819,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.24376357320066383
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.846439346512871,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.869487063059063
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.91835849862913,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 4.026130338710898
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.005423699973334285,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.005423699973334285
+            }
+          ]
+        },
+        {
+          "iteration": 9,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.6735655728467456,
+          "original_gates_pass": true,
+          "equation_inf": 1.5604700137914712E-09,
+          "load_V": 1.4043719076539674E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.540246778210255E-16,
+            "qf_mapped_linear_backward_error": 2.290001608990836E-11,
+            "population_roundtrip_relative": 5.1514348342607263E-14,
+            "raw_dpsi_inf_V": 3.0401638662255806E-07,
+            "raw_dfn_inf_V": 1.0874176116768873E-06,
+            "raw_dfp_inf_V": 9.759538453295022E-07,
+            "raw_voltage_V": 3.040138910069019E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.0064494880916653625,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.20732974848596109
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.8203837064477217,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.8350579521727575
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.8903955425857649,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 3.8305283892577555
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.004614256082475827,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.004614256082475827
+            }
+          ]
+        },
+        {
+          "iteration": 10,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.6539186166743362,
+          "original_gates_pass": true,
+          "equation_inf": 1.4296621330866153E-09,
+          "load_V": 1.1760782925307467E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.3158133989422323E-16,
+            "qf_mapped_linear_backward_error": 8.841816714292355E-11,
+            "population_roundtrip_relative": 5.306866057708248E-14,
+            "raw_dpsi_inf_V": 2.57319073103564E-07,
+            "raw_dfn_inf_V": 1.0640443633071708E-06,
+            "raw_dfp_inf_V": 9.552068858120323E-07,
+            "raw_voltage_V": 2.5731668006346744E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.005459823138995225,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.17542894165596037
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.7963980637555426,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.8001640816967295
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.8644824239623033,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 3.6338944449603683
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.003905495915998964,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.003905495915998964
+            }
+          ]
+        },
+        {
+          "iteration": 11,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.6356455336822835,
+          "original_gates_pass": true,
+          "equation_inf": 1.311367227942449E-09,
+          "load_V": 2.63056405103157E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.264089105518352E-16,
+            "qf_mapped_linear_backward_error": 3.354587798993218E-11,
+            "population_roundtrip_relative": 5.440092820663267E-14,
+            "raw_dpsi_inf_V": 2.166798128656595E-07,
+            "raw_dfn_inf_V": 1.0563356839720428E-06,
+            "raw_dfp_inf_V": 9.294550452287523E-07,
+            "raw_voltage_V": 2.166775236136045E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.004598508779568277,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.14766781962634956
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.7741630883804251,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.7658759539959332
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.840312473982791,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 3.4394251564358234
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.003288683638864938,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.003288683638864938
+            }
+          ]
+        },
+        {
+          "iteration": 12,
+          "phase": "combination_bootstrap",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.6185455197011436,
+          "original_gates_pass": true,
+          "equation_inf": 1.204205883844617E-09,
+          "load_V": 3.654594493696095E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.5860428282250327E-16,
+            "qf_mapped_linear_backward_error": 3.942696284795219E-11,
+            "population_roundtrip_relative": 5.395683899678261E-14,
+            "raw_dpsi_inf_V": 1.8178242455531415E-07,
+            "raw_dfn_inf_V": 1.0460111909305681E-06,
+            "raw_dfp_inf_V": 8.995647028242185E-07,
+            "raw_voltage_V": 1.8178023617247366E-07,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.003858846117592764,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.12383030880323334
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.7534134574983317,
+              "worst_node": 1093,
+              "worst_normalized_magnitude": 2.733008611235067
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.8176396853781368,
+              "worst_node": 849,
+              "worst_normalized_magnitude": 3.2488431517304908
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.0027590202347963903,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.0027590202347963903
+            }
+          ]
+        }
+      ]
+    },
+    "full": {
+      "converged": true,
+      "failure": null,
+      "updates": 8,
+      "first_joint_restored_iteration": 2,
+      "phase_counts": {
+        "full_AV_adaptive_mobility": 8
+      },
+      "last": {
+        "KCL_A_per_um": -1.2136361653419727E-14,
+        "current_A_per_um": 2.2201635738165168E-07,
+        "electron": {
+          "contact_flux_A_per_um": -2.155354572073749E-07,
+          "gross_contact_scale_A_per_um": 2.284972993926662E-07,
+          "gross_source_scale_A_per_um": 2.1553589706939394E-07,
+          "net_denominator_A_per_um": 2.1553546934359853E-07,
+          "qualified": true,
+          "ratio": 5.630731531336545E-08,
+          "signed_mismatch_A_per_um": 1.2136223633544216E-14,
+          "source_A_per_um": -2.1553546934359853E-07
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 1.7739528664722564E-23,
+          "ledger_rounding_defect_A_per_um": 1.1911842183996313E-30,
+          "ratio": 5.630731498740902E-08,
+          "signed_mismatch_A_per_um": 1.2136223563289038E-14,
+          "sum_free_equations_A_per_um": -1.213622354554951E-14
+        },
+        "equation_inf": 5.572659895887403E-10,
+        "fixed_scaled_residual_inf": 2.3936267743873786E-12,
+        "global_enforced": false,
+        "global_satisfied": true,
+        "hole": {
+          "contact_flux_A_per_um": -2.1553546934373652E-07,
+          "gross_contact_scale_A_per_um": 2.1553546934373652E-07,
+          "gross_source_scale_A_per_um": 2.1553589706939394E-07,
+          "net_denominator_A_per_um": 2.1553546934373652E-07,
+          "qualified": true,
+          "ratio": 6.401670144341778E-13,
+          "signed_mismatch_A_per_um": -1.3797869791444905E-19,
+          "source_A_per_um": -2.1553546934359853E-07
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 7.094814209331021E-23,
+          "ledger_rounding_defect_A_per_um": 9.692278550968025E-32,
+          "ratio": 6.407831802779953E-13,
+          "signed_mismatch_A_per_um": -1.3811150350878988E-19,
+          "sum_free_equations_A_per_um": 1.3818245165098011E-19
+        },
+        "inner_V": 6.562727252277295,
+        "load_V": -1.0744115996885739E-07,
+        "original_gates_pass": true,
+        "row_max_ratio": 4.320115363361823E-08,
+        "row_worst_carrier": "hole",
+        "row_worst_node": 2425,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "trace": [
+        {
+          "iteration": 1,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 29.856495177318862,
+          "original_gates_pass": true,
+          "equation_inf": 1.0167181245085828E-09,
+          "load_V": 7.599152240800322E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.244182999547113E-16,
+            "qf_mapped_linear_backward_error": 6.190740886629117E-10,
+            "population_roundtrip_relative": 5.440092820663267E-14,
+            "raw_dpsi_inf_V": 7.315065422303782E-06,
+            "raw_dfn_inf_V": 7.480042007771463E-05,
+            "raw_dfp_inf_V": 6.707905051355934E-05,
+            "raw_voltage_V": 7.314994875670599E-06,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.15522194885879073,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 4.982419381490528
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 36.411498506063104,
+              "worst_node": 1129,
+              "worst_normalized_magnitude": 212.64825153735455
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 39.425124783881735,
+              "worst_node": 1239,
+              "worst_normalized_magnitude": 209.05234492512528
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.11102537579131873,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.11102537579131873
+            }
+          ]
+        },
+        {
+          "iteration": 2,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 0.0012032145738566829,
+          "original_gates_pass": true,
+          "equation_inf": 3.4267584933287265E-10,
+          "load_V": -2.9800130363355493E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.925708122451021E-16,
+            "qf_mapped_linear_backward_error": 3.2048551770897105E-13,
+            "population_roundtrip_relative": 5.3734794391857577E-14,
+            "raw_dpsi_inf_V": 1.3698464805458881E-09,
+            "raw_dfn_inf_V": 1.1653763062338769E-07,
+            "raw_dfp_inf_V": 1.9522014134842727E-08,
+            "raw_voltage_V": -1.3698450053710238E-09,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 2.892656759434129E-05,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 0.000930984981055642
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 0.0011866562967006349,
+              "worst_node": 995,
+              "worst_normalized_magnitude": 0.022140889624479163
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 0.0018078862801485412,
+              "worst_node": 1240,
+              "worst_normalized_magnitude": 0.031072365431916757
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 2.079120479422854E-05,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 2.079120479422854E-05
+            }
+          ]
+        },
+        {
+          "iteration": 3,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 2.338805315358705E-09,
+          "original_gates_pass": true,
+          "equation_inf": 2.3001808712554313E-10,
+          "load_V": 2.9783185695464454E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.169997909270234E-16,
+            "qf_mapped_linear_backward_error": 1.6357454396753708E-15,
+            "population_roundtrip_relative": 5.5067062021407764E-14,
+            "raw_dpsi_inf_V": 1.5212085573933125E-15,
+            "raw_dfn_inf_V": 2.8174508764333583E-14,
+            "raw_dfp_inf_V": 4.3673463861535824E-13,
+            "raw_voltage_V": -3.729600622822302E-16,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 9.67153981312053E-12,
+              "worst_node": 1172,
+              "worst_normalized_magnitude": 9.90425467360427E-11
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.4999031598429748E-09,
+              "worst_node": 1091,
+              "worst_normalized_magnitude": 9.90218230962453E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 3.927328015469942E-09,
+              "worst_node": 987,
+              "worst_normalized_magnitude": 1.2287334977724406E-07
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 5.660705411615398E-12,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 5.660705411615398E-12
+            }
+          ]
+        },
+        {
+          "iteration": 4,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.678103192637775E-09,
+          "original_gates_pass": true,
+          "equation_inf": 2.3001808712554313E-10,
+          "load_V": 2.9783185695464454E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.2352417732118694E-16,
+            "qf_mapped_linear_backward_error": 7.570416601953594E-16,
+            "population_roundtrip_relative": 5.129230373768223E-14,
+            "raw_dpsi_inf_V": 1.358022048091069E-15,
+            "raw_dfn_inf_V": 1.7351366824113017E-15,
+            "raw_dfp_inf_V": 7.831590865993116E-13,
+            "raw_voltage_V": -2.97305530497115E-16,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 1.1225758242369718E-11,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 2.3610465472169865E-10
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 6.696849185247079E-10,
+              "worst_node": 1043,
+              "worst_normalized_magnitude": 4.725081856554654E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.941092750077053E-09,
+              "worst_node": 229,
+              "worst_normalized_magnitude": 7.39060479421487E-08
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 4.512437645708724E-12,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 4.512437645708724E-12
+            }
+          ]
+        },
+        {
+          "iteration": 5,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 4.312698220476309E-10,
+          "original_gates_pass": true,
+          "equation_inf": 3.4267584933287265E-10,
+          "load_V": -3.882898802487489E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 1.9935636084153945E-16,
+            "qf_mapped_linear_backward_error": 8.725282882878947E-16,
+            "population_roundtrip_relative": 5.129230373768223E-14,
+            "raw_dpsi_inf_V": 1.432252851301899E-15,
+            "raw_dfn_inf_V": 1.7003469199851898E-15,
+            "raw_dfp_inf_V": 2.2687805586442132E-15,
+            "raw_voltage_V": -1.8744543639777332E-16,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 1.0979548413082259E-11,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 2.3392845934096236E-10
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 5.065313756653514E-10,
+              "worst_node": 972,
+              "worst_normalized_magnitude": 2.70320742998227E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 5.86709432935479E-10,
+              "worst_node": 617,
+              "worst_normalized_magnitude": 4.89796839548147E-09
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 2.8450054134657964E-12,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 2.8450054134657964E-12
+            }
+          ]
+        },
+        {
+          "iteration": 6,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 4.4452068024307407E-10,
+          "original_gates_pass": true,
+          "equation_inf": 3.4267584933287265E-10,
+          "load_V": -3.882898802487489E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.255712294455258E-16,
+            "qf_mapped_linear_backward_error": 1.2442370583450363E-15,
+            "population_roundtrip_relative": 5.062616992290714E-14,
+            "raw_dpsi_inf_V": 1.3391827987822071E-15,
+            "raw_dfn_inf_V": 1.6527189870385414E-15,
+            "raw_dfp_inf_V": 2.3454519091163527E-15,
+            "raw_voltage_V": -1.9092109155764153E-16,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 1.0717556974829217E-11,
+              "worst_node": 531,
+              "worst_normalized_magnitude": 1.6699034889947093E-10
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 5.120943305367915E-10,
+              "worst_node": 972,
+              "worst_normalized_magnitude": 3.0127905910864916E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 6.13240818333875E-10,
+              "worst_node": 617,
+              "worst_normalized_magnitude": 4.871087473846342E-09
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 2.897758139460052E-12,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 2.897758139460052E-12
+            }
+          ]
+        },
+        {
+          "iteration": 7,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 4.2732639509819966E-10,
+          "original_gates_pass": true,
+          "equation_inf": 3.4267584933287265E-10,
+          "load_V": -3.882898802487489E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.1431716128348029E-16,
+            "qf_mapped_linear_backward_error": 6.6483641058126045E-16,
+            "population_roundtrip_relative": 4.9182879990894435E-14,
+            "raw_dpsi_inf_V": 1.3559182473024362E-15,
+            "raw_dfn_inf_V": 1.6781632621482466E-15,
+            "raw_dfp_inf_V": 2.365887704091773E-15,
+            "raw_voltage_V": -2.1636536673446209E-16,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 9.985605386433297E-12,
+              "worst_node": 531,
+              "worst_normalized_magnitude": 1.828382428978342E-10
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 5.01125584576089E-10,
+              "worst_node": 972,
+              "worst_normalized_magnitude": 2.9728420418258923E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 5.82031817775736E-10,
+              "worst_node": 617,
+              "worst_normalized_magnitude": 4.885354176010264E-09
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 3.283945725623274E-12,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 3.283945725623274E-12
+            }
+          ]
+        },
+        {
+          "iteration": 8,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 1.0,
+          "alpha": 1.0,
+          "raw_RMS": 4.255447249482477E-10,
+          "original_gates_pass": true,
+          "equation_inf": 5.572659895887403E-10,
+          "load_V": -1.0744115996885739E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.40298151211998E-16,
+            "qf_mapped_linear_backward_error": 5.75281452108482E-16,
+            "population_roundtrip_relative": 5.040412531798211E-14,
+            "raw_dpsi_inf_V": 1.4512770493176098E-15,
+            "raw_dfn_inf_V": 1.7991168434554164E-15,
+            "raw_dfp_inf_V": 2.4435884022729956E-15,
+            "raw_voltage_V": -7.913285653540219E-17,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 9.523218045810989E-12,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 1.4726578421727736E-10
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 4.980007305149115E-10,
+              "worst_node": 972,
+              "worst_normalized_magnitude": 2.969843224110188E-09
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 5.805037591240014E-10,
+              "worst_node": 617,
+              "worst_normalized_magnitude": 4.88296979945085E-09
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 1.201061010354402E-12,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 1.201061010354402E-12
+            }
+          ]
+        }
+      ]
+    },
+    "av_only": {
+      "converged": false,
+      "failure": "Newton update budget exhausted",
+      "updates": 12,
+      "first_joint_restored_iteration": null,
+      "phase_counts": {
+        "full_AV_adaptive_mobility": 12
+      },
+      "last": {
+        "KCL_A_per_um": 2.8612236937768706E-14,
+        "current_A_per_um": 2.2201896038801585E-07,
+        "electron": {
+          "contact_flux_A_per_um": -2.1553808629936712E-07,
+          "gross_contact_scale_A_per_um": 2.284998763163758E-07,
+          "gross_source_scale_A_per_um": 2.1553848536997604E-07,
+          "net_denominator_A_per_um": 2.1553808629936712E-07,
+          "qualified": true,
+          "ratio": 1.330761223876333E-07,
+          "signed_mismatch_A_per_um": -2.868297275157085E-14,
+          "source_A_per_um": -2.1553805761639435E-07
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -2.331375084748683E-24,
+          "ledger_rounding_defect_A_per_um": -9.70548773661528E-32,
+          "ratio": 1.3307612506216036E-07,
+          "signed_mismatch_A_per_um": -2.8682973328033304E-14,
+          "sum_free_equations_A_per_um": 2.868297332570193E-14
+        },
+        "equation_inf": 9.153719885293969E-08,
+        "fixed_scaled_residual_inf": 2.447344564738327E-05,
+        "global_enforced": false,
+        "global_satisfied": true,
+        "hole": {
+          "contact_flux_A_per_um": -2.1553805768713023E-07,
+          "gross_contact_scale_A_per_um": 2.1553805768713023E-07,
+          "gross_source_scale_A_per_um": 2.1553848536997604E-07,
+          "net_denominator_A_per_um": 2.1553805768713023E-07,
+          "qualified": true,
+          "ratio": 3.281826979870784E-10,
+          "signed_mismatch_A_per_um": -7.073586129065694E-17,
+          "source_A_per_um": -2.1553805761639435E-07
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -1.3989374420762867E-23,
+          "ledger_rounding_defect_A_per_um": 7.259548319661109E-29,
+          "ratio": 3.281850715038604E-10,
+          "signed_mismatch_A_per_um": -7.073637287385403E-17,
+          "sum_free_equations_A_per_um": 7.07363588845522E-17
+        },
+        "inner_V": 6.562701628110018,
+        "load_V": 2.9845520543858584E-07,
+        "original_gates_pass": false,
+        "row_max_ratio": 4.922901909616831E-05,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 975,
+        "rows_enforced": false,
+        "rows_satisfied": true
+      },
+      "trace": [
+        {
+          "iteration": 1,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 28.432531879316066,
+          "original_gates_pass": false,
+          "equation_inf": 3.171904058236738E-08,
+          "load_V": -2.100171805352602E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.4183913759036235E-16,
+            "qf_mapped_linear_backward_error": 8.163150120809221E-10,
+            "population_roundtrip_relative": 5.1736392947532295E-14,
+            "raw_dpsi_inf_V": 1.538310567649079E-05,
+            "raw_dfn_inf_V": 7.153089595871041E-05,
+            "raw_dfp_inf_V": 5.368948346275187E-05,
+            "raw_voltage_V": 1.538303706647855E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.3260693005074109,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 10.495824612722148
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 34.847890334757636,
+              "worst_node": 1129,
+              "worst_normalized_magnitude": 186.73434776111043
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 37.382905934919314,
+              "worst_node": 1239,
+              "worst_normalized_magnitude": 195.37066813780237
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.23348005141919104,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.23348005141919104
+            }
+          ]
+        },
+        {
+          "iteration": 2,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.952706844407708,
+          "original_gates_pass": false,
+          "equation_inf": 2.4173074866759443E-08,
+          "load_V": 3.0925546745663723E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.916080770264857E-16,
+            "qf_mapped_linear_backward_error": 1.3730793172070752E-10,
+            "population_roundtrip_relative": 5.306866057708248E-14,
+            "raw_dpsi_inf_V": 1.6804825143772185E-05,
+            "raw_dfn_inf_V": 1.680511413642224E-05,
+            "raw_dfp_inf_V": 2.3679300503786176E-05,
+            "raw_voltage_V": -1.680481666928662E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.35590996015384607,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 11.484921473052855
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 2.266440603744226,
+              "worst_node": 1129,
+              "worst_normalized_magnitude": 25.42814781831407
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.650986316574764,
+              "worst_node": 1240,
+              "worst_normalized_magnitude": 29.53341445771973
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.2550601321827123,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.2550601321827123
+            }
+          ]
+        },
+        {
+          "iteration": 3,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.1123991343966595,
+          "original_gates_pass": false,
+          "equation_inf": 2.1316873561858766E-08,
+          "load_V": -6.297838694990787E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.68706992967433E-16,
+            "qf_mapped_linear_backward_error": 1.7673212215632645E-10,
+            "population_roundtrip_relative": 5.184741524999481E-14,
+            "raw_dpsi_inf_V": 1.8507631278820583E-05,
+            "raw_dfn_inf_V": 1.8759212150536912E-05,
+            "raw_dfp_inf_V": 1.850762530983587E-05,
+            "raw_voltage_V": 1.850762530842129E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.3919669757355372,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 12.646103398667616
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.385025614606223,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 17.16020182568607
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.3751837694742277,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 10.959961474388221
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.280904230626701,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.280904230626701
+            }
+          ]
+        },
+        {
+          "iteration": 4,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.3617939371558385,
+          "original_gates_pass": false,
+          "equation_inf": 3.1993168538369894E-08,
+          "load_V": -1.4097982514726937E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.6988255577881446E-16,
+            "qf_mapped_linear_backward_error": 2.709047071685346E-10,
+            "population_roundtrip_relative": 5.0182080713057076E-14,
+            "raw_dpsi_inf_V": 2.064194280545408E-05,
+            "raw_dfn_inf_V": 2.0642145867794795E-05,
+            "raw_dfp_inf_V": 2.0641936862940922E-05,
+            "raw_voltage_V": -2.0641936860797915E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.43719729560380616,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 14.106341495010188
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.688480178888976,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 19.134606333476064
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.7047269254494832,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 12.300137912879665
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.3132992732599366,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.3132992732599366
+            }
+          ]
+        },
+        {
+          "iteration": 5,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.465218713610529,
+          "original_gates_pass": false,
+          "equation_inf": 2.6112176954775517E-08,
+          "load_V": -1.0763199043140048E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.4172650144707607E-16,
+            "qf_mapped_linear_backward_error": 2.2042425092754157E-10,
+            "population_roundtrip_relative": 5.3290705182007514E-14,
+            "raw_dpsi_inf_V": 2.2970131400437303E-05,
+            "raw_dfn_inf_V": 2.2970292034455814E-05,
+            "raw_dfp_inf_V": 2.297012461631162E-05,
+            "raw_voltage_V": 2.2970124615645035E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.48647483089790905,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 15.694942738845976
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 1.8229628439632612,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 21.29808727018104
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 1.822812537010056,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 13.691589971133666
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.3486348353701078,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.3486348353701078
+            }
+          ]
+        },
+        {
+          "iteration": 6,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.6370121480027258,
+          "original_gates_pass": false,
+          "equation_inf": 4.111245338230335E-08,
+          "load_V": -2.7954790482453973E-08,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.329405667958797E-16,
+            "qf_mapped_linear_backward_error": 3.277632174933482E-10,
+            "population_roundtrip_relative": 5.784261958297066E-14,
+            "raw_dpsi_inf_V": 2.557019075706879E-05,
+            "raw_dfn_inf_V": 2.557046736580882E-05,
+            "raw_dfp_inf_V": 2.5570183229891753E-05,
+            "raw_voltage_V": -2.557018322996764E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.5415815030387723,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 17.474564642939715
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 2.0352021899347945,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 23.70253449541507
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.0386623283843344,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 15.238906338920412
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.38809938420703566,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.38809938420703566
+            }
+          ]
+        },
+        {
+          "iteration": 7,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 1.8218369038898206,
+          "original_gates_pass": false,
+          "equation_inf": 3.175970549265162E-08,
+          "load_V": -1.3037060142551127E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.607176790475027E-16,
+            "qf_mapped_linear_backward_error": 4.4772374330958556E-10,
+            "population_roundtrip_relative": 5.517808432387028E-14,
+            "raw_dpsi_inf_V": 2.8462535274007213E-05,
+            "raw_dfn_inf_V": 2.8462733281056406E-05,
+            "raw_dfp_inf_V": 2.8462526891185344E-05,
+            "raw_voltage_V": 2.8462526891165253E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.6027910738227801,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 19.447380215633437
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 2.265325335054413,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 26.391450880557617
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.268473555966604,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 16.96528022038012
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.43199696069670945,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.43199696069670945
+            }
+          ]
+        },
+        {
+          "iteration": 8,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 2.0277673227333617,
+          "original_gates_pass": false,
+          "equation_inf": 5.324030362172628E-08,
+          "load_V": 1.4041134299702662E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.436916647969946E-16,
+            "qf_mapped_linear_backward_error": 1.0841967045844281E-09,
+            "population_roundtrip_relative": 5.262457136723242E-14,
+            "raw_dpsi_inf_V": 3.1682784110227986E-05,
+            "raw_dfn_inf_V": 3.168315615381768E-05,
+            "raw_dfp_inf_V": 3.16827747793682E-05,
+            "raw_voltage_V": -3.168277477799271E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.6710537844463095,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 21.652365595216082
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 2.5212258526849127,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 29.3676833589898
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.5250072237250274,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 18.881096409616102
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.4808753727178825,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.4808753727178825
+            }
+          ]
+        },
+        {
+          "iteration": 9,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 2.2574458687195347,
+          "original_gates_pass": false,
+          "equation_inf": 3.8429506922694836E-08,
+          "load_V": -2.7703037730475444E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.014931420192819E-16,
+            "qf_mapped_linear_backward_error": 2.571250810152829E-10,
+            "population_roundtrip_relative": 5.3512749786932545E-14,
+            "raw_dpsi_inf_V": 3.526679886762469E-05,
+            "raw_dfn_inf_V": 3.526704395121406E-05,
+            "raw_dfp_inf_V": 3.5266788481289514E-05,
+            "raw_voltage_V": 3.526678848065943E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.746886591958158,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 24.095884610306967
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 2.8069423670138307,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 32.701820456554024
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 2.8109183308812242,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 21.021742975990577
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.5352700133737179,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.5352700133737179
+            }
+          ]
+        },
+        {
+          "iteration": 10,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 2.5124727737871337,
+          "original_gates_pass": false,
+          "equation_inf": 6.949991278503018E-08,
+          "load_V": 4.074024388955877E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.5160503639077165E-16,
+            "qf_mapped_linear_backward_error": 1.3525227937220716E-10,
+            "population_roundtrip_relative": 5.362377208939506E-14,
+            "raw_dpsi_inf_V": 3.9256889945388634E-05,
+            "raw_dfn_inf_V": 3.925739572871169E-05,
+            "raw_dfp_inf_V": 3.925687838249116E-05,
+            "raw_voltage_V": -3.925687838187292E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.8314861447501096,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 26.82932868640005
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 3.123878780240328,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 36.38682877352723
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 3.128566833797961,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 23.394078239364443
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.5958340956051463,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.5958340956051463
+            }
+          ]
+        },
+        {
+          "iteration": 11,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 2.797162255447271,
+          "original_gates_pass": false,
+          "equation_inf": 4.619961882887765E-08,
+          "load_V": -2.418509392754231E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 2.706704716811012E-16,
+            "qf_mapped_linear_backward_error": 3.20423977855624E-10,
+            "population_roundtrip_relative": 5.5067062021407764E-14,
+            "raw_dpsi_inf_V": 4.369762970781122E-05,
+            "raw_dfn_inf_V": 4.369793302588725E-05,
+            "raw_dfp_inf_V": 4.369761683895124E-05,
+            "raw_voltage_V": 4.369761683761142E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 0.9254240698705808,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 29.855302209324154
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 3.4780513950602163,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 40.52134652170221
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 3.4829528224178343,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 26.047996043250674
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.6632304553885339,
+              "worst_node": 1287,
+              "worst_normalized_magnitude": 0.6632304553885339
+            }
+          ]
+        },
+        {
+          "iteration": 12,
+          "phase": "full_AV_adaptive_mobility",
+          "theta": 0.0,
+          "alpha": 1.0,
+          "raw_RMS": 3.1130447960155774,
+          "original_gates_pass": false,
+          "equation_inf": 9.153719885293969E-08,
+          "load_V": 2.9845520543858584E-07,
+          "linear_diagnostics": {
+            "population_linear_backward_error": 3.2272489288675716E-16,
+            "qf_mapped_linear_backward_error": 2.7438335454541544E-10,
+            "population_roundtrip_relative": 5.295763827461997E-14,
+            "raw_dpsi_inf_V": 4.864168585336066E-05,
+            "raw_dfn_inf_V": 4.8642381321569406E-05,
+            "raw_dfp_inf_V": 4.864167152706467E-05,
+            "raw_voltage_V": -4.8641671526474277E-05,
+            "negative_electron_raw_candidates": 0,
+            "negative_hole_raw_candidates": 0
+          },
+          "RMS_blocks": [
+            {
+              "block": 0,
+              "count": 2600,
+              "RMS": 1.0302772443177086,
+              "worst_node": 1168,
+              "worst_normalized_magnitude": 33.24430683157432
+            },
+            {
+              "block": 1,
+              "count": 2121,
+              "RMS": 3.870574349425717,
+              "worst_node": 615,
+              "worst_normalized_magnitude": 45.083184727087165
+            },
+            {
+              "block": 2,
+              "count": 2121,
+              "RMS": 3.876420587381614,
+              "worst_node": 209,
+              "worst_normalized_magnitude": 28.985716025341933
+            },
+            {
+              "block": 3,
+              "count": 11,
+              "RMS": 0.7382754132704472,
+              "worst_node": 233,
+              "worst_normalized_magnitude": 0.7382754132704472
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "near_null_direction_Jv_inconclusive": [
+    {
+      "blocks": [
+        {
+          "absolute_inf": 1.5517482942532072E-09,
+          "analytic_inf": 4.941873358948765E-11,
+          "block": 0,
+          "relative_l2": 19.517069504041665
+        },
+        {
+          "absolute_inf": 1.0384307459417007E-09,
+          "analytic_inf": 1.5299278959760977E-09,
+          "block": 1,
+          "relative_l2": 0.2611825966908782
+        },
+        {
+          "absolute_inf": 2.842176364051263E-14,
+          "analytic_inf": 3.3035286914463578E-09,
+          "block": 2,
+          "relative_l2": 4.554262678179922E-06
+        },
+        {
+          "absolute_inf": 6.419810644572554E-08,
+          "analytic_inf": 7.523114392185871E-08,
+          "block": 3,
+          "relative_l2": 0.8533448130525172
+        }
+      ],
+      "h": 0.1,
+      "relative_inf": 0.8533448130525172,
+      "relative_l2": 0.8417482055846477,
+      "worst_row": 7800
+    },
+    {
+      "blocks": [
+        {
+          "absolute_inf": 1.614262879247867E-08,
+          "analytic_inf": 4.941873358948765E-11,
+          "block": 0,
+          "relative_l2": 211.0966609349451
+        },
+        {
+          "absolute_inf": 1.168761353880299E-08,
+          "analytic_inf": 1.5299278959760977E-09,
+          "block": 1,
+          "relative_l2": 4.0424834728856744
+        },
+        {
+          "absolute_inf": 2.842176364051263E-14,
+          "analytic_inf": 3.3035286914463578E-09,
+          "block": 2,
+          "relative_l2": 4.7445537775839485E-06
+        },
+        {
+          "absolute_inf": 1.1888033347003532E-05,
+          "analytic_inf": 7.523114392185871E-08,
+          "block": 3,
+          "relative_l2": 158.02010613252708
+        }
+      ],
+      "h": 0.01,
+      "relative_inf": 158.02010613252708,
+      "relative_l2": 155.65077470204596,
+      "worst_row": 7800
+    },
+    {
+      "blocks": [
+        {
+          "absolute_inf": 8.96035730717111E-08,
+          "analytic_inf": 4.941873358948765E-11,
+          "block": 0,
+          "relative_l2": 1645.0547242532155
+        },
+        {
+          "absolute_inf": 1.3003403302287423E-07,
+          "analytic_inf": 1.5299278959760977E-09,
+          "block": 1,
+          "relative_l2": 32.744673904614395
+        },
+        {
+          "absolute_inf": 1.4239276424632408E-11,
+          "analytic_inf": 3.3035286914463578E-09,
+          "block": 2,
+          "relative_l2": 0.004358902206205329
+        },
+        {
+          "absolute_inf": 9.681570679559811E-05,
+          "analytic_inf": 7.523114392185871E-08,
+          "block": 3,
+          "relative_l2": 1286.9099384712124
+        }
+      ],
+      "h": 0.001,
+      "relative_inf": 1286.9099384712124,
+      "relative_l2": 1267.613794295151,
+      "worst_row": 7800
+    }
+  ],
+  "column_audit": {
+    "phase": "finished",
+    "finished": true,
+    "error": null,
+    "source_sha256": "a4419a6875e525dc2babea945588cfad50326ae08bf583342e0aa548be4644ab",
+    "original_binary_sha256": "0111f0498a6a65d20a9da0119b5fb3cd3b693f06c419cb83a2baabb965346a22",
+    "core_sha256": "45d85ca28e89fba34299fdc13ddaed74c620051dcbef4f00c0206b285e4b27d3",
+    "binary_sha256": "b94a494925fe9ff21127578046863428270f24d445cd4e7c312b818fd1886752",
+    "replay_RMS_relative_difference": 0.0,
+    "columns": [
+      {
+        "absolute_inf": 1.836042429204099E-11,
+        "analytic_inf": 18.135310210609877,
+        "block": 0,
+        "h": 0.01,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.0124130262353832E-12,
+        "relative_l2": 1.4533348541673002E-12,
+        "worst_row": 1129
+      },
+      {
+        "absolute_inf": 1.5582912737954757E-10,
+        "analytic_inf": 18.135310210609877,
+        "block": 0,
+        "h": 0.001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 8.592581299678091E-12,
+        "relative_l2": 8.579050253501524E-12,
+        "worst_row": 1129
+      },
+      {
+        "absolute_inf": 7.418847758344782E-10,
+        "analytic_inf": 18.135310210609877,
+        "block": 0,
+        "h": 0.0001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 4.0908303592206886E-11,
+        "relative_l2": 4.1094188236955474E-11,
+        "worst_row": 1129
+      },
+      {
+        "absolute_inf": 1.4267722631314438E-11,
+        "analytic_inf": 9.620452067137622E-07,
+        "block": 1,
+        "h": 0.01,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.4830615579959457E-05,
+        "relative_l2": 1.5289598386649058E-05,
+        "worst_row": 3726
+      },
+      {
+        "absolute_inf": 1.426845988010964E-13,
+        "analytic_inf": 9.620452067137622E-07,
+        "block": 1,
+        "h": 0.001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.4831381914836504E-07,
+        "relative_l2": 1.5290351721860126E-07,
+        "worst_row": 3726
+      },
+      {
+        "absolute_inf": 1.53719899256713E-15,
+        "analytic_inf": 9.620452067137622E-07,
+        "block": 1,
+        "h": 0.0001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.59784486408703E-09,
+        "relative_l2": 1.6444832229969477E-09,
+        "worst_row": 3726
+      },
+      {
+        "absolute_inf": 1.7705916663193895E-12,
+        "analytic_inf": 1.1848134219660115E-07,
+        "block": 2,
+        "h": 0.01,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.4944054764178575E-05,
+        "relative_l2": 1.524807062232392E-05,
+        "worst_row": 6330
+      },
+      {
+        "absolute_inf": 9.469414200160963E-13,
+        "analytic_inf": 1.1848134219660115E-07,
+        "block": 2,
+        "h": 0.001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 7.992325225728756E-06,
+        "relative_l2": 5.419335172031048E-06,
+        "worst_row": 1129
+      },
+      {
+        "absolute_inf": 3.3599654228171193E-12,
+        "analytic_inf": 1.1848134219660115E-07,
+        "block": 2,
+        "h": 0.0001,
+        "node": 1129,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 2.835860364614865E-05,
+        "relative_l2": 1.9222652853002595E-05,
+        "worst_row": 1129
+      },
+      {
+        "absolute_inf": 4.080114024418435E-11,
+        "analytic_inf": 4.741241392805942,
+        "block": 0,
+        "h": 0.01,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 8.605581716656192E-12,
+        "relative_l2": 8.070771078057689E-12,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 2.3486990130550112E-11,
+        "analytic_inf": 4.741241392805942,
+        "block": 0,
+        "h": 0.001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 4.9537638320182925E-12,
+        "relative_l2": 4.954523637346906E-12,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 1.3814638322173778E-10,
+        "analytic_inf": 4.741241392805942,
+        "block": 0,
+        "h": 0.0001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 2.913717564166893E-11,
+        "relative_l2": 2.9493142728372645E-11,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 4.002446920217509E-12,
+        "analytic_inf": 2.401456182759547E-07,
+        "block": 1,
+        "h": 0.01,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.6666749736896057E-05,
+        "relative_l2": 1.643156885818654E-05,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 4.002355359026405E-14,
+        "analytic_inf": 2.401456182759547E-07,
+        "block": 1,
+        "h": 0.001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.666636846326816E-07,
+        "relative_l2": 1.6431125022029093E-07,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 4.040384216094455E-16,
+        "analytic_inf": 2.401456182759547E-07,
+        "block": 1,
+        "h": 0.0001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.6824725952116242E-09,
+        "relative_l2": 1.6599561701296165E-09,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 3.676415872842209E-11,
+        "analytic_inf": 2.2146072267205003E-06,
+        "block": 2,
+        "h": 0.01,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 1.660075804180603E-05,
+        "relative_l2": 1.641989147794237E-05,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 1.3616205161808264E-12,
+        "analytic_inf": 2.2146072267205003E-06,
+        "block": 2,
+        "h": 0.001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 6.1483612071346E-07,
+        "relative_l2": 5.315230409482345E-07,
+        "worst_row": 1239
+      },
+      {
+        "absolute_inf": 6.187668521703463E-12,
+        "analytic_inf": 2.2146072267205003E-06,
+        "block": 2,
+        "h": 0.0001,
+        "node": 1239,
+        "physical_column_scale_V": 0.025851999786435535,
+        "relative_inf": 2.794025255153921E-06,
+        "relative_l2": 2.385891670049251E-06,
+        "worst_row": 1239
+      }
+    ],
+    "RHS_identical_to_initial_experiment": true,
+    "Jacobian_identical_to_initial_experiment": true
+  },
+  "instrumentation_first_step_field_differences": {
+    "psi": 0.0,
+    "phin": 0.0,
+    "phip": 0.0,
+    "electrons_m3": 0.0,
+    "holes_m3": 0.0
+  }
+}

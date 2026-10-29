@@ -42,7 +42,7 @@
       "vela_start": -0.5,
       "vela_stop": 2.2,
       "vela_step": 0.135,
-      "vela_materials_file": "materials_sentaurus2018.json",
+      "vela_materials_file": "materials_sentaurus2018_legacy_300k.json",
       "vela_contact_overrides": [
         {"name": "source", "bias": 0.0},
         {"name": "drain", "bias": 0.1},
@@ -72,7 +72,7 @@
       "vela_start": -0.5,
       "vela_stop": 2.2,
       "vela_step": 0.135,
-      "vela_materials_file": "materials_sentaurus2018.json",
+      "vela_materials_file": "materials_sentaurus2018_legacy_300k.json",
       "vela_contact_overrides": [
         {"name": "source", "bias": 0.0},
         {"name": "drain", "bias": 1.1},

@@ -1,0 +1,3766 @@
+{
+  "date": "2026-10-20",
+  "scope": "BVmethods no-BTBT fixed internal bias; isolated representation and bounded direction trials",
+  "runs": 8,
+  "machine": "T470p",
+  "build": "Release",
+  "backend": "UMFPACK",
+  "nodes": 2600,
+  "coordinates": 7800,
+  "temperature_K": 300,
+  "drain_V": 0.00524437249039996,
+  "production_changes": false,
+  "acceptance_changes": false,
+  "qualified_fix": false,
+  "full_ctest_run": false,
+  "batches": [
+    {
+      "direction_origin": "protected",
+      "remote_checks": 111,
+      "independent_checks": 173,
+      "archive_sha256": "e70d6bfe0a735a6325c0e29f87346a97c77a5b5cb050d90ec5c9d7f5f5d06c4d",
+      "download_manifest_files": 269,
+      "core_sha256": "2803fd77e2c981760085a48670c88397eefe6f2eaf53f25cf3f186b0e1fd127b",
+      "exact_baseline_and_repeats": true,
+      "samples": [
+        {
+          "label": "rows0",
+          "iteration": 4,
+          "base_merit": 0.0006963893863150802,
+          "split_guard": "Split DD requires qualified element-box PhuMob, Boltzmann and SRH without quantum/avalanche",
+          "precision": [
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.0006963893863150802,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.0006963893863150802,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006963893863150802,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006963893863150802,
+              "sum_physical_error_V": "0",
+              "violations": 6,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.1489696471470986e-11,
+              "electron_closure": -0.0006963893781775573,
+              "hole_closure": -1.0646017384965569e-07
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.0022828943347724855,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.58591123533775576452067203842778054797618511361267639679642e-19",
+              "merit": 0.0026141211120758252,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0026141211120758252,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 1.9540690581792765e-07,
+              "sum_physical_error_V": "2.11888804265273283453820175201986093737618004849397217275787e-16",
+              "violations": 10,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.147935119183372e-11,
+              "electron_closure": -0.0026141211101091666,
+              "hole_closure": -1.014010129119735e-07
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.0006964048474241616,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.57333220864046051476009548994296747368535243976001001288717e-19",
+              "merit": 0.0006963948584944029,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006963948584944029,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.00034826379734287876,
+              "sum_physical_error_V": "1.31072074161658387019190955771226517654228687294092773335612e-16",
+              "violations": 8,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.097199706037893e-11,
+              "electron_closure": -0.0006963948496658259,
+              "hole_closure": -1.1088890856838982e-07
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0006963893868871875,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "1.0806110303281922421462055334102951683673328673307891503662e-21",
+              "merit": 0.0006963893868846613,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006963893868846613,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006962194031139953,
+              "sum_physical_error_V": "9.17669461350304290266173693250279630165338834664586409320086e-20",
+              "violations": 6,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.148969647142313e-11,
+              "electron_closure": -0.0006963893787459553,
+              "hole_closure": -1.0646791267222007e-07
+            },
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.0006963893863150802,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.0006963893863150802,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006963893863150802,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006963893863150802,
+              "sum_physical_error_V": "0",
+              "violations": 6,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.1489696471470986e-11,
+              "electron_closure": -0.0006963893781775573,
+              "hole_closure": -1.0646017384965569e-07
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.0022828943347724855,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.37269676485496287424729311401197294368462922787845525726392e-19",
+              "merit": 0.004525949232528558,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0026141211120758252,
+              "population_finite": true,
+              "reference_changed": 196,
+              "requested_prediction": 1.9540690581792765e-07,
+              "sum_physical_error_V": "2.7482014021120840695909537201067255242167648923893169309866e-16",
+              "violations": 10,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.147931244451848e-11,
+              "electron_closure": -0.004525949231392644,
+              "hole_closure": -1.0140101291714745e-07
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.0006964048474241616,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.31364372427031013827988273374475776044745360130977474356997e-19",
+              "merit": 0.0006963791225591546,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006963948584944029,
+              "population_finite": true,
+              "reference_changed": 62,
+              "requested_prediction": 0.00034826379734287876,
+              "sum_physical_error_V": "1.58166813247118952256484796078237839398488842834290894916919e-16",
+              "violations": 8,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.097199706037912e-11,
+              "electron_closure": -0.0006963791137303786,
+              "hole_closure": -1.108889085652863e-07
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0006963893868871875,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "1.70653315645336634427536990628825178514956452511948144236161e-21",
+              "merit": 0.0006963893868837291,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006963893868846613,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006962194031139953,
+              "sum_physical_error_V": "1.01043025733106322002785060420543692622414506662225265435677e-19",
+              "violations": 6,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.148969647142313e-11,
+              "electron_closure": -0.0006963893787450229,
+              "hole_closure": -1.0646791267222007e-07
+            }
+          ],
+          "bounded": []
+        },
+        {
+          "label": "rows285",
+          "iteration": 1,
+          "base_merit": 0.003841630491971976,
+          "split_guard": "Split DD requires qualified element-box PhuMob, Boltzmann and SRH without quantum/avalanche",
+          "precision": [
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.003841630491971976,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.003841630491971976,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.003841630491971976,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.003841630491971976,
+              "sum_physical_error_V": "0",
+              "violations": 285,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.760946964215924e-11,
+              "electron_closure": -0.003654676678472763,
+              "hole_closure": -0.00118383411535398
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.007678049258966546,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.58396949585626498211698636956395134784813452900425819206859e-19",
+              "merit": 0.0072971211994817455,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0072971211994817455,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.006956098853770117,
+              "sum_physical_error_V": "2.14607428427148650866956452538814867204636612545408117382387e-16",
+              "violations": 262,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.186868554572963e-11,
+              "electron_closure": -0.005472738553210653,
+              "hole_closure": -0.004826708042561514
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.006315239366167487,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.57747607889476831281254975603105020723105760777314051400904e-19",
+              "merit": 0.0062750725042357005,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0062750725042357005,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.005260754489870883,
+              "sum_physical_error_V": "1.51551011601562390838683207161551596797878836296361641282351e-16",
+              "violations": 275,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.696843791153797e-11,
+              "electron_closure": -0.005497298280964464,
+              "hole_closure": -0.0030259290380839268
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0038427818253028876,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.55609008175566045188662308863844461686589176447639173284178e-19",
+              "merit": 0.0038427809134562968,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0038427809134562968,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.003842203817669699,
+              "sum_physical_error_V": "5.25113207869694308417475684048358166186697511360988976588147e-17",
+              "violations": 285,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.760934723169758e-11,
+              "electron_closure": -0.0036555898750374283,
+              "hole_closure": -0.0011847479961357326
+            },
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.003841630491971976,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.003841630491971976,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.003841630491971976,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.003841630491971976,
+              "sum_physical_error_V": "0",
+              "violations": 285,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.760946964215924e-11,
+              "electron_closure": -0.003654676678472763,
+              "hole_closure": -0.00118383411535398
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.007678049258966546,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.3678733307050756050370788217349087750221889735042955832753e-19",
+              "merit": 0.008366080181627563,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0072971211994817455,
+              "population_finite": true,
+              "reference_changed": 1365,
+              "requested_prediction": 0.006956098853770117,
+              "sum_physical_error_V": "4.44223767371820135746172735970848120185974836607629612156232e-16",
+              "violations": 262,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.184104958435302e-11,
+              "electron_closure": -0.006833314501564628,
+              "hole_closure": -0.00482670804256152
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.006315239366167487,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.36024486886897403121509817995988502606215045514605938193572e-19",
+              "merit": 0.004583224965260069,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0062750725042357005,
+              "population_finite": true,
+              "reference_changed": 1275,
+              "requested_prediction": 0.005260754489870883,
+              "sum_physical_error_V": "3.72480160371121807282884982188244327756687405144859195469499e-16",
+              "violations": 275,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.6943993344541714e-11,
+              "electron_closure": -0.003442339980109907,
+              "hole_closure": -0.003025929038083937
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0038427818253028876,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.35363441634438097649838327554301456610766879105099934368688e-19",
+              "merit": 0.0038418055808842676,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0038427809134562968,
+              "population_finite": true,
+              "reference_changed": 519,
+              "requested_prediction": 0.003842203817669699,
+              "sum_physical_error_V": "1.62172919852841044124607151778831501988692182273998251313238e-16",
+              "violations": 285,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.7609347230214105e-11,
+              "electron_closure": -0.0036545645851408432,
+              "hole_closure": -0.0011847479961357556
+            }
+          ],
+          "bounded": [
+            {
+              "columns": 116,
+              "fixed_rows": 1616,
+              "lambda": 1.0,
+              "last_change": 1.0393320717949628e-06,
+              "linear_merit": 0.006112849327265761,
+              "linear_nonworsening_violations": 55,
+              "max_linear_bound_ratio": 10.381738557670595,
+              "passes": 4000,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "projected_coordinate_residual": 1.0376786261367954e-06,
+              "slope": 6.1351813640566325e-06,
+              "trials": [
+                {
+                  "alpha": 1.0,
+                  "requested_merit": 0.006112849327568898,
+                  "written_merit": 0.006838518463537848,
+                  "actual_merit": 0.006683361837357275,
+                  "violations": 257,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 722,
+                      "bound_ratio": 25.32362126804906
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 19.082232970952372
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 412,
+                      "bound_ratio": 13.947567212892778
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 9.129454845341698
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 415,
+                      "bound_ratio": 8.778415693549148
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 7.653770998136668
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 7.278894902350606
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 7.066325557347842
+                    }
+                  ],
+                  "fixed_violations_current_scale": 270,
+                  "fixed_violations_frozen_scale": 270,
+                  "nonworsening_bound_violations": 64,
+                  "exited": 30,
+                  "entered": 2,
+                  "relative_kcl": 4.969413181586453e-10,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.5,
+                  "requested_merit": 0.00484540153466739,
+                  "written_merit": 0.00591122935375481,
+                  "actual_merit": 0.005956181694025173,
+                  "violations": 271,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 8.27550908508075
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 722,
+                      "bound_ratio": 6.987373962090588
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 5.3823617847968555
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 4.98114715136907
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 412,
+                      "bound_ratio": 3.0706080073494286
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 3.0530504147519237
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 2.9068078140207416
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 2.5739675636819643
+                    }
+                  ],
+                  "fixed_violations_current_scale": 281,
+                  "fixed_violations_frozen_scale": 278,
+                  "nonworsening_bound_violations": 58,
+                  "exited": 22,
+                  "entered": 2,
+                  "relative_kcl": 1.9010343557793117e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.25,
+                  "requested_merit": 0.0042978911079473835,
+                  "written_merit": 0.004859215936171979,
+                  "actual_merit": 0.004875658438311669,
+                  "violations": 276,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 5.215967571058653
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 3.2700732900351617
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 3.169070147894558
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 2.1248366385965993
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.8046470126841088
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.5713376530589669
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.5510018032841886
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.5475504677075156
+                    }
+                  ],
+                  "fixed_violations_current_scale": 280,
+                  "fixed_violations_frozen_scale": 279,
+                  "nonworsening_bound_violations": 55,
+                  "exited": 10,
+                  "entered": 2,
+                  "relative_kcl": 1.900835616226802e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.125,
+                  "requested_merit": 0.00405628626858008,
+                  "written_merit": 0.004344588863722903,
+                  "actual_merit": 0.004349546586897713,
+                  "violations": 282,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 2.153878283880975
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 2.1297031903384727
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.5874364358873685
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.405935244966038
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.2475943741228537
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.2428859932845153
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.2412561640217115
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.2379189142124916
+                    }
+                  ],
+                  "fixed_violations_current_scale": 283,
+                  "fixed_violations_frozen_scale": 282,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 4,
+                  "entered": 2,
+                  "relative_kcl": 1.9007341738758558e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0625,
+                  "requested_merit": 0.003945301894140734,
+                  "written_merit": 0.0040913797963815545,
+                  "actual_merit": 0.004092739833087291,
+                  "violations": 284,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.581388290336297
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.5759377687472418
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.2997530888779456
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.2034192754174313
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.1196008737687182
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.1155052564264814
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.1142458248916685
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.1112590096023114
+                    }
+                  ],
+                  "fixed_violations_current_scale": 284,
+                  "fixed_violations_frozen_scale": 283,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.9006820278056774e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.03125,
+                  "requested_merit": 0.0038925145862611196,
+                  "written_merit": 0.003966031607321117,
+                  "actual_merit": 0.003966387463570011,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.2917480111023982
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.2906533263987885
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.1512838864347201
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.101758694295081
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0595451820686412
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0558156112026957
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0554304649700736
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0539998082902018
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.900655263913282e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.015625,
+                  "requested_merit": 0.0038668298756963392,
+                  "written_merit": 0.003903706993371206,
+                  "actual_merit": 0.0039037989266752205,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.1461262084105006
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.145974300998271
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0759538767945918
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0508897781776974
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0297089693641432
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.027439567743552
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.027304753143977
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0266416551605213
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.9006423137528224e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0078125,
+                  "requested_merit": 0.0038541689187189163,
+                  "written_merit": 0.0038726369962651277,
+                  "actual_merit": 0.0038726590486095826,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0731439674299128
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0731242213539394
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0380350824077227
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.025447313834095
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.014838603182725
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.013604668289047
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.013551292670722
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.013232457538357
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.900635665957707e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00390625,
+                  "requested_merit": 0.003847884313918917,
+                  "written_merit": 0.003857125708510093,
+                  "actual_merit": 0.0038571312807198573,
+                  "violations": 286,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0366101995100485
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0365770898278224
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0190247907107368
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0127242421216607
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0074153342009105
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0067737946894657
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0067505647178485
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0065942835382407
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 0,
+                  "entered": 2,
+                  "relative_kcl": 1.900632082988561e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.001953125,
+                  "requested_merit": 0.0038447535456864004,
+                  "written_merit": 0.003849376088421898,
+                  "actual_merit": 0.0038493777549817127,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0183144806823479
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0182922467407154
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.009513917401702
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0063622648401847
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.003706675625541
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0033797921922907
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.003369035461544
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0032916737633004
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006309391839064e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0009765625,
+                  "requested_merit": 0.0038431910533373395,
+                  "written_merit": 0.0038455027736934823,
+                  "actual_merit": 0.003845503483750537,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.009159558143468
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.009147043019726
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.004757321281366
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0031811680555682
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0018530899906273
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.001688123508362
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.001682958934688
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0016444721612068
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006301513882183e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00048828125,
+                  "requested_merit": 0.0038424105311348753,
+                  "written_merit": 0.0038435664889120867,
+                  "actual_merit": 0.0038435658016876865,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0045803545282133
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0045737506647012
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0023787493239067
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0015905928983284
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.00092648304559
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0008436190689178
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0008410901337261
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0008218951852097
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006294984179618e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.000244140625,
+                  "requested_merit": 0.0038420204511547896,
+                  "written_merit": 0.0038425984633514384,
+                  "actual_merit": 0.0038425976040830463,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0022903205820133
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0022869325242292
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0011893966010597
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0007952986620312
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0004632260360877
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0004216989208166
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0004204477790977
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0004108624043162
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 52,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.900628653790151e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                }
+              ]
+            },
+            {
+              "columns": 116,
+              "fixed_rows": 1616,
+              "lambda": 100.0,
+              "last_change": 5.8984718250346124e-08,
+              "linear_merit": 0.006939809497009387,
+              "linear_nonworsening_violations": 43,
+              "max_linear_bound_ratio": 2.7268258912921772,
+              "passes": 4000,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "projected_coordinate_residual": 5.8897522945550174e-08,
+              "slope": 8.964501141345758e-06,
+              "trials": [
+                {
+                  "alpha": 1.0,
+                  "requested_merit": 0.006939809497085203,
+                  "written_merit": 0.0076618240014614935,
+                  "actual_merit": 0.007291194204913321,
+                  "violations": 256,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 19.082232969736893
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 412,
+                      "bound_ratio": 13.947567212001312
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 415,
+                      "bound_ratio": 8.778415692989828
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 7.278894901415368
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 7.066325557109718
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 6.231721459997472
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 5.441897269623757
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 4.889702325883995
+                    }
+                  ],
+                  "fixed_violations_current_scale": 269,
+                  "fixed_violations_frozen_scale": 269,
+                  "nonworsening_bound_violations": 53,
+                  "exited": 30,
+                  "entered": 2,
+                  "relative_kcl": 4.969413181586453e-10,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.5,
+                  "requested_merit": 0.00525272150141395,
+                  "written_merit": 0.0063074131177897185,
+                  "actual_merit": 0.006269995715663036,
+                  "violations": 271,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 8.27550908482022
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 412,
+                      "bound_ratio": 3.0706080072507116
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 2.5477416547176492
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 2.4915223716590753
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 2.4399888036522666
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 2.326448204765339
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 2.187799108849538
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 2.154633471589242
+                    }
+                  ],
+                  "fixed_violations_current_scale": 281,
+                  "fixed_violations_frozen_scale": 278,
+                  "nonworsening_bound_violations": 47,
+                  "exited": 22,
+                  "entered": 2,
+                  "relative_kcl": 1.9010343557793117e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.25,
+                  "requested_merit": 0.004495274152277558,
+                  "written_merit": 0.005052674183100729,
+                  "actual_merit": 0.005043083867030126,
+                  "violations": 276,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 410,
+                      "bound_ratio": 5.215967570977781
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.5713376530466396
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.5510018032503476
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.5475504676505099
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.5241379735245453
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.4743557716570346
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.4634499850499314
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.2812423953328773
+                    }
+                  ],
+                  "fixed_violations_current_scale": 280,
+                  "fixed_violations_frozen_scale": 279,
+                  "nonworsening_bound_violations": 44,
+                  "exited": 10,
+                  "entered": 2,
+                  "relative_kcl": 1.900835616226802e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.125,
+                  "requested_merit": 0.00415223177314928,
+                  "written_merit": 0.00443942581751622,
+                  "actual_merit": 0.00443703482390312,
+                  "violations": 282,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.2475943741180724
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.2428859932709455
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.2379189141892688
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.2343193545802635
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.213140654165734
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.2087507192373204
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.1369152982087918
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.1258141826028965
+                    }
+                  ],
+                  "fixed_violations_current_scale": 283,
+                  "fixed_violations_frozen_scale": 282,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 4,
+                  "entered": 2,
+                  "relative_kcl": 1.9007341738758558e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0625,
+                  "requested_merit": 0.003992384265443902,
+                  "written_merit": 0.004138173923850692,
+                  "actual_merit": 0.004137580958743512,
+                  "violations": 284,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.1155052564243761
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.1142458248855995
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.1112590095917951
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.1109437341230963
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.1011648478750553
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0991999204815825
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0721683712239851
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.059591495880163
+                    }
+                  ],
+                  "fixed_violations_current_scale": 284,
+                  "fixed_violations_frozen_scale": 283,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.9006820278056774e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.03125,
+                  "requested_merit": 0.003915803534290877,
+                  "written_merit": 0.003989247629438574,
+                  "actual_merit": 0.003989100142683992,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0558156112017134
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0554304649671982
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.053999808283522
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0538410615559217
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0492997847665264
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0483708319813478
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0369983877352504
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.0290106453389856
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.900655263913282e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.015625,
+                  "requested_merit": 0.003878407313271461,
+                  "written_merit": 0.003915266133493546,
+                  "actual_merit": 0.0039152303126621275,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0274395677430743
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0273047531425745
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0266416551572684
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0264893381792055
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0243374348401773
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0238858627509926
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0187260741675621
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.0143142639436824
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.9006423137528224e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0078125,
+                  "requested_merit": 0.003859940364149287,
+                  "written_merit": 0.003878403862026908,
+                  "actual_merit": 0.0038783937929593782,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0136046682888131
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0135512926700305
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0132324575367548
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0131387924656263
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0120916049497868
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0118689873830629
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0094195492849525
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.0071100039436989
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 2,
+                  "entered": 2,
+                  "relative_kcl": 1.900635665957707e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00390625,
+                  "requested_merit": 0.0038507656529544734,
+                  "written_merit": 0.0038600059021525355,
+                  "actual_merit": 0.0038600034002073237,
+                  "violations": 286,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0067737946893567
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0067505647175086
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.00659428353744
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0065431631371506
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0060266481651163
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0059161243979824
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0047238767650148
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.003543298599309
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 0,
+                  "entered": 2,
+                  "relative_kcl": 1.900632082988561e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.001953125,
+                  "requested_merit": 0.003846193111036441,
+                  "written_merit": 0.003850815367383576,
+                  "actual_merit": 0.0038508150657053193,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0033797921922418
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0033690354613674
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0032916737629047
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0032650525481686
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0030085508924942
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0029534843810373
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.0023654606758305
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.0017687332272247
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006309391839064e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0009765625,
+                  "requested_merit": 0.003843910558940464,
+                  "written_merit": 0.003846222207692433,
+                  "actual_merit": 0.0038462224011506906,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0016881235083337
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0016829589345986
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0016444721610183
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0016308976599197
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.001503084066641
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0014755995440663
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.001183610506851
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.000883638813194
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006301513882183e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00048828125,
+                  "requested_merit": 0.0038427702145391834,
+                  "written_merit": 0.00384392615441395,
+                  "actual_merit": 0.0038439253113431043,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0008436190689092
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.000841090133687
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0008218951851031
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0008150421305515
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0007512444278135
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0007375143361088
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.000592025245563
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.0004416376084835
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006294984179618e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.000244140625,
+                  "requested_merit": 0.0038422002754913043,
+                  "written_merit": 0.003842778283211751,
+                  "actual_merit": 0.00384277737973957,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 425,
+                      "bound_ratio": 1.0004216989208106
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 413,
+                      "bound_ratio": 1.0004204477790748
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 363,
+                      "bound_ratio": 1.0004108624042665
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 411,
+                      "bound_ratio": 1.0004074194471297
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 360,
+                      "bound_ratio": 1.0003755478424357
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 358,
+                      "bound_ratio": 1.0003686858372658
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 709,
+                      "bound_ratio": 1.000296067614518
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 359,
+                      "bound_ratio": 1.000220773373697
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 43,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.900628653790151e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "rows5",
+          "iteration": 1,
+          "base_merit": 0.0006977896682557535,
+          "split_guard": "Split DD requires qualified element-box PhuMob, Boltzmann and SRH without quantum/avalanche",
+          "precision": [
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.0006977896682557535,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.0006977896682557535,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006977896682557535,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006977896682557535,
+              "sum_physical_error_V": "0",
+              "violations": 14,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 5.192816246252255e-11,
+              "electron_closure": -0.0006977880627388665,
+              "hole_closure": -1.4968712747334191e-06
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.002283539794669301,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.58603477855860598079705339687293684779015981542983923729195e-19",
+              "merit": 0.002614737203245557,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.002614737203245557,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 1.1102687349466602e-06,
+              "sum_physical_error_V": "2.12823528717805562908132769435619425657611029340246167595398e-16",
+              "violations": 28,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.3154126241056074e-11,
+              "electron_closure": -0.0026147371034207834,
+              "hole_closure": -7.225171887673151e-07
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.0006974286952856736,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "3.50064553116025447402352226109625536720630354760613940433623e-19",
+              "merit": 0.0006973985975936088,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006973985975936088,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.00034928843418698775,
+              "sum_physical_error_V": "1.36389646141143916884468119538364296684326514023691090580043e-16",
+              "violations": 14,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.0971104508625616e-11,
+              "electron_closure": -0.0006973977062475669,
+              "hole_closure": -1.11500949004673e-06
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0006977895098760843,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "8.31842836245370797110720657421589824082506136968800459449966e-22",
+              "merit": 0.0006977886471644041,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.0006977886471644041,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006976195015303431,
+              "sum_physical_error_V": "1.12318147316412161165615403983783831891056892567435469849127e-19",
+              "violations": 14,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.192816246202765e-11,
+              "electron_closure": -0.0006977870420179479,
+              "hole_closure": -1.4966974881342676e-06
+            },
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.0006977896682557535,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.0006977896682557535,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006977896682557535,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006977896682557535,
+              "sum_physical_error_V": "0",
+              "violations": 14,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 5.192816246252255e-11,
+              "electron_closure": -0.0006977880627388665,
+              "hole_closure": -1.4968712747334191e-06
+            },
+            {
+              "alpha": 1.0,
+              "double_written_prediction": 0.002283539794669301,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.37586855068686737999224099871972413682694408987992851803821e-19",
+              "merit": 0.004527395504378338,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.002614737203245557,
+              "population_finite": true,
+              "reference_changed": 364,
+              "requested_prediction": 1.1102687349466602e-06,
+              "sum_physical_error_V": "3.41456506893334489389245827501249625431022748683167923413841e-16",
+              "violations": 28,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.3154079289128857e-11,
+              "electron_closure": -0.00452739544672586,
+              "hole_closure": -7.225171887900803e-07
+            },
+            {
+              "alpha": 0.5,
+              "double_written_prediction": 0.0006974286952856736,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.28075097441000529240925456358349905375880159091988211546137e-19",
+              "merit": 0.0006978025533488163,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006973985975936088,
+              "population_finite": true,
+              "reference_changed": 106,
+              "requested_prediction": 0.00034928843418698775,
+              "sum_physical_error_V": "2.27067604724826935509968812443389225364171070585258908030093e-16",
+              "violations": 14,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 4.0971104462702927e-11,
+              "electron_closure": -0.0006978016625187725,
+              "hole_closure": -1.1150094900439536e-06
+            },
+            {
+              "alpha": 0.000244140625,
+              "double_written_prediction": 0.0006977895098760843,
+              "eligible": 2121,
+              "exact_physical_values": 0,
+              "max_physical_error_V": "4.2515594429082795372136817546023566037369255097505189531151e-21",
+              "merit": 0.0006977896881060902,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.0006977886471644041,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.0006976195015303431,
+              "sum_physical_error_V": "1.55251867218146000669444783593053546099947334096039913591455e-19",
+              "violations": 14,
+              "zero_R": null,
+              "zero_n": null,
+              "zero_p": null,
+              "pde": 5.1928162462027645e-11,
+              "electron_closure": -0.0006977880829620286,
+              "hole_closure": -1.4966974881342676e-06
+            }
+          ],
+          "bounded": []
+        }
+      ]
+    },
+    {
+      "direction_origin": "zero",
+      "remote_checks": 37,
+      "independent_checks": 39,
+      "archive_sha256": "fe636242527cff441ded24afa768ac1b3bc8a9208b91225d87082fd9417da3d6",
+      "download_manifest_files": 141,
+      "core_sha256": "2803fd77e2c981760085a48670c88397eefe6f2eaf53f25cf3f186b0e1fd127b",
+      "exact_baseline_and_repeats": true,
+      "samples": [
+        {
+          "label": "rows285",
+          "iteration": 1,
+          "base_merit": 0.003841630491971976,
+          "split_guard": "Split DD requires qualified element-box PhuMob, Boltzmann and SRH without quantum/avalanche",
+          "precision": [
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.003841630491971976,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.003841630491971976,
+              "mode": "tail_reference",
+              "ordinary_actual_merit": 0.003841630491971976,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.003841630491971976,
+              "sum_physical_error_V": "0",
+              "violations": 285,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.760946964215924e-11,
+              "electron_closure": -0.003654676678472763,
+              "hole_closure": -0.00118383411535398
+            },
+            {
+              "alpha": 0.0,
+              "double_written_prediction": 0.003841630491971976,
+              "eligible": 2121,
+              "exact_physical_values": 2121,
+              "max_physical_error_V": "0",
+              "merit": 0.003841630491971976,
+              "mode": "whole_update_reference",
+              "ordinary_actual_merit": 0.003841630491971976,
+              "population_finite": true,
+              "reference_changed": 0,
+              "requested_prediction": 0.003841630491971976,
+              "sum_physical_error_V": "0",
+              "violations": 285,
+              "zero_R": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 7800,
+                "size_before": 7800
+              },
+              "zero_n": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "zero_p": {
+                "bitwise_equal": true,
+                "different_values": 0,
+                "first_index": -1,
+                "max_absolute_difference": 0.0,
+                "size_after": 2600,
+                "size_before": 2600
+              },
+              "pde": 4.760946964215924e-11,
+              "electron_closure": -0.003654676678472763,
+              "hole_closure": -0.00118383411535398
+            }
+          ],
+          "bounded": [
+            {
+              "columns": 116,
+              "fixed_rows": 1616,
+              "lambda": 1.0,
+              "last_change": 1.553326449688086e-07,
+              "linear_merit": 0.0029808233372309307,
+              "linear_nonworsening_violations": 20,
+              "max_linear_bound_ratio": 7.038139863992852,
+              "passes": 40000,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "projected_coordinate_residual": 1.4778637069667866e-07,
+              "slope": -3.442657602795122e-06,
+              "trials": [
+                {
+                  "alpha": 1.0,
+                  "requested_merit": 0.0029808233374693355,
+                  "written_merit": 0.0029808233369659344,
+                  "actual_merit": 0.0029453823774476624,
+                  "violations": 281,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 4.154085596451
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 4.100099149807003
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 722,
+                      "bound_ratio": 4.018612512663904
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 2.59449968626755
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 2.1746786267060765
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.9602146947803303
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.1864214520680685
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.1020135958943924
+                    }
+                  ],
+                  "fixed_violations_current_scale": 281,
+                  "fixed_violations_frozen_scale": 281,
+                  "nonworsening_bound_violations": 29,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.5,
+                  "requested_merit": 0.0034012632604968006,
+                  "written_merit": 0.0034012632604995268,
+                  "actual_merit": 0.003408738853119644,
+                  "violations": 283,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 2.6482353456796246
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 2.6151882381600324
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.8487643912698164
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.5959836238113476
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0922247145992572
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.048526032109056
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0428519781532706
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0199435234706575
+                    }
+                  ],
+                  "fixed_violations_current_scale": 283,
+                  "fixed_violations_frozen_scale": 283,
+                  "nonworsening_bound_violations": 26,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.25,
+                  "requested_merit": 0.0036194028747416926,
+                  "written_merit": 0.0036194028747879707,
+                  "actual_merit": 0.00362461396661295,
+                  "violations": 284,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.848463510294642
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.8165772927598507
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.4371346457495027
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.2995293577805844
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0458409038986347
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0236871041756812
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0208790890998856
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0094279586651802
+                    }
+                  ],
+                  "fixed_violations_current_scale": 284,
+                  "fixed_violations_frozen_scale": 284,
+                  "nonworsening_bound_violations": 27,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.125,
+                  "requested_merit": 0.003730051034484617,
+                  "written_merit": 0.0037300510344677952,
+                  "actual_merit": 0.0037318994741814215,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.4301495637508732
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.4103993609031238
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.2215907057023543
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.1499076626089437
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0228492148676194
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0117046580142413
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.010307486468176
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0045804717694085
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 25,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0625,
+                  "requested_merit": 0.0037857294815286766,
+                  "written_merit": 0.0037857294815428462,
+                  "actual_merit": 0.0037862701460198334,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.2164993760433434
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.205699747015492
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.1114858457385257
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0749799870187005
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0114063591309739
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0058182152211215
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0051212876096498
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0022571396191131
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 26,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.03125,
+                  "requested_merit": 0.0038136527771196285,
+                  "written_merit": 0.0038136527771045585,
+                  "actual_merit": 0.00381379855479119,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.108593007085281
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.1029698950356444
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.055887479038525
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0374959479010526
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0056985614813332
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0029006538403002
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0025525982989176
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0011203293098754
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 19,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.015625,
+                  "requested_merit": 0.003827634906667121,
+                  "written_merit": 0.0038276349066724805,
+                  "actual_merit": 0.003827672709546003,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.054379700714141
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0515141399461962
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0279651021256015
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0187493988725738
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0028481191464493
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0014482227179193
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0012742962336603
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0005581086324575
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 18,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0078125,
+                  "requested_merit": 0.0038346310265517094,
+                  "written_merit": 0.0038346310265469944,
+                  "actual_merit": 0.003834640714163133,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.027210162242431
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0257642472346353
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0139855325775495
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0093750481626884
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.001423768285972
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.000723586457621
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0006366484399438
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0002785408176094
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 18,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00390625,
+                  "requested_merit": 0.0038381303422138375,
+                  "written_merit": 0.0038381303422129367,
+                  "actual_merit": 0.003838132758589544,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0136100775030012
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0128839011666255
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.006993445695108
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0046876103504714
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0007118112097897
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0003616621467633
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0003181994319161
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0001391420971668
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 23,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.001953125,
+                  "requested_merit": 0.0038398803129728533,
+                  "written_merit": 0.00383988031297224,
+                  "actual_merit": 0.0038398810127400775,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0068062754101401
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.006442392748784
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0034968862014593
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0023438266299765
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0003558873576586
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0001807983207613
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0001590685353206
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0000695389785301
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 19,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0009765625,
+                  "requested_merit": 0.003840755376460648,
+                  "written_merit": 0.00384075537646068,
+                  "actual_merit": 0.003840755533755727,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.003403445112136
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0032213066292344
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0017484831961765
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.001171918664698
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0001779391152783
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.000090390974463
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0000795264745486
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0000347614727334
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 17,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00048828125,
+                  "requested_merit": 0.0038411929277154125,
+                  "written_merit": 0.0038411929277156385,
+                  "actual_merit": 0.0038411929678973393,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0017017991721808
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0016106808419358
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.000874251532719
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0005859606680352
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0000889684165255
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0000451934410304
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0000397612892518
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0000173787323567
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 22,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.000244140625,
+                  "requested_merit": 0.0038414117082188805,
+                  "written_merit": 0.0038414117082187444,
+                  "actual_merit": 0.0038414117025565545,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 825,
+                      "bound_ratio": 1.0008509187095291
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 826,
+                      "bound_ratio": 1.0008053472981997
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 725,
+                      "bound_ratio": 1.0004371282390785
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 823,
+                      "bound_ratio": 1.0002929806677219
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 710,
+                      "bound_ratio": 1.0000444839229536
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 723,
+                      "bound_ratio": 1.0000225962089986
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 718,
+                      "bound_ratio": 1.0000198801576563
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 715,
+                      "bound_ratio": 1.0000086888651987
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 21,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                }
+              ]
+            },
+            {
+              "columns": 116,
+              "fixed_rows": 1616,
+              "lambda": 100.0,
+              "last_change": 4.338307837969957e-11,
+              "linear_merit": 0.003375308892354138,
+              "linear_nonworsening_violations": 10,
+              "max_linear_bound_ratio": 1.3716926397870683,
+              "passes": 40000,
+              "poisson_column_relative_error": 2.3314017096314368e-15,
+              "projected_coordinate_residual": 4.3383050624123953e-11,
+              "slope": -1.8249689139993071e-06,
+              "trials": [
+                {
+                  "alpha": 1.0,
+                  "requested_merit": 0.0033753088936307072,
+                  "written_merit": 0.003375308892067493,
+                  "actual_merit": 0.003239439777337041,
+                  "violations": 281,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.379901893024423
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.021914696487542
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0187145660081673
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0078688475400506
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0042936369271251
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0003107985935664
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000131065927
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.000000001635437
+                    }
+                  ],
+                  "fixed_violations_current_scale": 281,
+                  "fixed_violations_frozen_scale": 281,
+                  "nonworsening_bound_violations": 14,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.5,
+                  "requested_merit": 0.0036061456854501925,
+                  "written_merit": 0.003606145684875621,
+                  "actual_merit": 0.0035689456756193487,
+                  "violations": 283,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.1880231125778558
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0094333689735373
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0093134729887205
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0039241691426752
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0021515689924134
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0001784221522472
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000065532966
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000008182208
+                    }
+                  ],
+                  "fixed_violations_current_scale": 283,
+                  "fixed_violations_frozen_scale": 283,
+                  "nonworsening_bound_violations": 15,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.25,
+                  "requested_merit": 0.003723361797259042,
+                  "written_merit": 0.0037233617977063963,
+                  "actual_merit": 0.003713660803048127,
+                  "violations": 284,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0934861472688417
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.004645835721714
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0043049700610618
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0019595275955107
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0010769760461504
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000963337543518
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.000000003276645
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000004094396
+                    }
+                  ],
+                  "fixed_violations_current_scale": 284,
+                  "fixed_violations_frozen_scale": 284,
+                  "nonworsening_bound_violations": 16,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.125,
+                  "requested_merit": 0.003782370722629124,
+                  "written_merit": 0.0037823707226736893,
+                  "actual_merit": 0.0037798954169069757,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0466050411510892
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0023201991070692
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0020445186612812
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0009791253870173
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0005387864023207
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000501671460842
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000016383208
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000002047562
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 15,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0625,
+                  "requested_merit": 0.0038119699816892383,
+                  "written_merit": 0.003811969981661683,
+                  "actual_merit": 0.0038113449481759257,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0232670313389025
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0011594206683259
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0009940989777444
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.000489403194856
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.000269467857458
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000256150692997
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.000000000819162
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000001024787
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 14,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.03125,
+                  "requested_merit": 0.0038267926693695436,
+                  "written_merit": 0.003826792669413732,
+                  "actual_merit": 0.003826635659956487,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.011624505614936
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0005795407131615
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0004898590159286
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0002446617357619
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.000134752600469
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.000012944624276
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000004095795
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000000509799
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 12,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.015625,
+                  "requested_merit": 0.0038342096998049964,
+                  "written_merit": 0.0038342096997785683,
+                  "actual_merit": 0.0038341703837496944,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0058099817280002
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0002897279638612
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0002431215636092
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0001223209040901
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0000673809692306
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000065071308035
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000002047866
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000000260731
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 12,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0078125,
+                  "requested_merit": 0.003837919627008427,
+                  "written_merit": 0.0038379196270255963,
+                  "actual_merit": 0.0038379098118449017,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0029044206678992
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0001448533853183
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.000121107564081
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0000611579612992
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0000336916518398
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000032623396038
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000001023965
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000000130256
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 11,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00390625,
+                  "requested_merit": 0.0038397749424553943,
+                  "written_merit": 0.0038397749424521426,
+                  "actual_merit": 0.0038397725597987694,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0014520674741307
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0000724240436976
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0000604403260083
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.000030578357988
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.000016846117807
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000016333721253
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000000511984
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000000073705
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 11,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.001953125,
+                  "requested_merit": 0.0038407026879771666,
+                  "written_merit": 0.003840702687970757,
+                  "actual_merit": 0.003840702159006581,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0007259979827552
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0000362113596344
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0000301917801726
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0000152890233305
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.000008423131875
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000008172377393
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000000255957
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.000000000003669
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 12,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.0009765625,
+                  "requested_merit": 0.0038411665826652616,
+                  "written_merit": 0.0038411665826642537,
+                  "actual_merit": 0.003841166470503252,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0003629900478506
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0000181055142643
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0000150887920423
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0000076444727508
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.000004211584091
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.0000004087569283
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000000128015
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 315,
+                      "bound_ratio": 1.0000000000023535
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 16,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.00048828125,
+                  "requested_merit": 0.003841398535491543,
+                  "written_merit": 0.0038413985354916616,
+                  "actual_merit": 0.003841398539436494,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0001814927874226
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0000090527157446
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0000075426212083
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.0000038222266443
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0000021057967516
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.000000204412994
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000000064007
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 273,
+                      "bound_ratio": 1.000000000003386
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 12,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                },
+                {
+                  "alpha": 0.000244140625,
+                  "requested_merit": 0.0038415145132756176,
+                  "written_merit": 0.003841514513275432,
+                  "actual_merit": 0.003841514506587031,
+                  "violations": 285,
+                  "top_nonworsening_violations": [
+                    {
+                      "carrier": "2",
+                      "node": 721,
+                      "bound_ratio": 1.0000907458345087
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 719,
+                      "bound_ratio": 1.0000045263475255
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 651,
+                      "bound_ratio": 1.0000037708668676
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 720,
+                      "bound_ratio": 1.000001911110891
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 404,
+                      "bound_ratio": 1.0000010528994938
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 409,
+                      "bound_ratio": 1.000000102215134
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 649,
+                      "bound_ratio": 1.0000000000032003
+                    },
+                    {
+                      "carrier": "2",
+                      "node": 273,
+                      "bound_ratio": 1.000000000002801
+                    }
+                  ],
+                  "fixed_violations_current_scale": 285,
+                  "fixed_violations_frozen_scale": 285,
+                  "nonworsening_bound_violations": 11,
+                  "exited": 0,
+                  "entered": 0,
+                  "relative_kcl": 1.9006284136623017e-09,
+                  "passes_fixed_nonworsening_and_merit": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "remote_checks": 148,
+  "independent_checks": 212
+}

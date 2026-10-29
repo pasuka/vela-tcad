@@ -1,0 +1,1011 @@
+{
+  "date": "2026-10-22",
+  "scope": "R2 native criteria comparison and opt-in linear refinement",
+  "production_acceptance_changed": false,
+  "thresholds_changed": false,
+  "new_native_runs": false,
+  "native_independent_linear_systems": [
+    {
+      "point": 1,
+      "iteration": 1,
+      "dimension": 6843,
+      "componentwise_max": 7.451631193705462e-08,
+      "worst_row": 6808,
+      "global_l1": 1.1225785827975813e-16,
+      "failed_1e_10": 55
+    },
+    {
+      "point": 1,
+      "iteration": 2,
+      "dimension": 6843,
+      "componentwise_max": 3.164770302867331e-10,
+      "worst_row": 1205,
+      "global_l1": 1.7948119467129117e-16,
+      "failed_1e_10": 3
+    },
+    {
+      "point": 1,
+      "iteration": 3,
+      "dimension": 6843,
+      "componentwise_max": 1.8637297296108106e-12,
+      "worst_row": 5289,
+      "global_l1": 1.350781501506065e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 2,
+      "iteration": 1,
+      "dimension": 6843,
+      "componentwise_max": 3.491184237021317e-08,
+      "worst_row": 1205,
+      "global_l1": 9.549813636991671e-17,
+      "failed_1e_10": 51
+    },
+    {
+      "point": 2,
+      "iteration": 2,
+      "dimension": 6843,
+      "componentwise_max": 1.2161029210747642e-10,
+      "worst_row": 1215,
+      "global_l1": 1.0591447129726124e-16,
+      "failed_1e_10": 1
+    },
+    {
+      "point": 2,
+      "iteration": 3,
+      "dimension": 6843,
+      "componentwise_max": 6.661488508927454e-13,
+      "worst_row": 5289,
+      "global_l1": 1.0140173181592688e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 3,
+      "iteration": 1,
+      "dimension": 6843,
+      "componentwise_max": 8.47729174711038e-09,
+      "worst_row": 2537,
+      "global_l1": 8.773303254854569e-17,
+      "failed_1e_10": 43
+    },
+    {
+      "point": 3,
+      "iteration": 2,
+      "dimension": 6843,
+      "componentwise_max": 7.991808920769117e-10,
+      "worst_row": 1205,
+      "global_l1": 9.63962874194441e-17,
+      "failed_1e_10": 4
+    },
+    {
+      "point": 3,
+      "iteration": 3,
+      "dimension": 6843,
+      "componentwise_max": 1.2044425989634708e-12,
+      "worst_row": 5289,
+      "global_l1": 1.0948579742781466e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 4,
+      "iteration": 1,
+      "dimension": 6843,
+      "componentwise_max": 9.406120679087758e-09,
+      "worst_row": 1205,
+      "global_l1": 1.688108097286368e-16,
+      "failed_1e_10": 35
+    },
+    {
+      "point": 4,
+      "iteration": 2,
+      "dimension": 6843,
+      "componentwise_max": 9.748315596676658e-11,
+      "worst_row": 1215,
+      "global_l1": 1.181685343017636e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 4,
+      "iteration": 3,
+      "dimension": 6843,
+      "componentwise_max": 8.756555506602214e-12,
+      "worst_row": 5289,
+      "global_l1": 1.1273467395548028e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 5,
+      "iteration": 1,
+      "dimension": 6843,
+      "componentwise_max": 2.0940329689771633e-09,
+      "worst_row": 1205,
+      "global_l1": 1.3118643542657761e-16,
+      "failed_1e_10": 25
+    },
+    {
+      "point": 5,
+      "iteration": 2,
+      "dimension": 6843,
+      "componentwise_max": 4.037311636889898e-11,
+      "worst_row": 1215,
+      "global_l1": 1.1368417300831972e-16,
+      "failed_1e_10": 0
+    },
+    {
+      "point": 5,
+      "iteration": 3,
+      "dimension": 6843,
+      "componentwise_max": 1.6322925521717385e-11,
+      "worst_row": 5278,
+      "global_l1": 8.219739727631208e-17,
+      "failed_1e_10": 0
+    }
+  ],
+  "native_update_errors": [
+    {
+      "point": 1,
+      "iteration": 1,
+      "printed": "2.75e+03",
+      "reconstructed": 2750.9667586644914,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.052789375478106484,
+        "QuasiFermiPotential": 0.055248252621019,
+        "eDensity": 0.6785978994935141,
+        "hDensity": 0.21336447240736037
+      },
+      "sha256": "43e27e451fd925e6a02aa306463b05c4654ad0fd561c82a4d3d6581bd8836cf5"
+    },
+    {
+      "point": 1,
+      "iteration": 2,
+      "printed": "8.02e+01",
+      "reconstructed": 80.23778509758927,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.1798281712510823,
+        "QuasiFermiPotential": 0.18706836656258452,
+        "eDensity": 0.5894999638402735,
+        "hDensity": 0.04360349834605964
+      },
+      "sha256": "107710339c796dcb5269264ab55f84de7cf0a7fa8d60429751439cbf0651f0c9"
+    },
+    {
+      "point": 1,
+      "iteration": 3,
+      "printed": "2.50e-01",
+      "reconstructed": 0.2499638348867149,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.03279694085957985,
+        "QuasiFermiPotential": 0.03363515296370413,
+        "eDensity": 0.5999986945800528,
+        "hDensity": 0.3335692115966632
+      },
+      "sha256": "bad0b10ce0916758225ce6d5e7cad8e4ec9d16a77dc68cd19cb51fbf8c425827"
+    },
+    {
+      "point": 2,
+      "iteration": 1,
+      "printed": "4.73e+02",
+      "reconstructed": 472.8243488385516,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.062206041772404734,
+        "QuasiFermiPotential": 0.040934747680847976,
+        "eDensity": 0.6799454792316069,
+        "hDensity": 0.21691373131514038
+      },
+      "sha256": "bec1352231825c536f66bdf6e2bb219ee51cb218c9125f94d0db38dec423aff9"
+    },
+    {
+      "point": 2,
+      "iteration": 2,
+      "printed": "2.76e+00",
+      "reconstructed": 2.7589414967541304,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.13299214990114022,
+        "QuasiFermiPotential": 0.08818275450421996,
+        "eDensity": 0.7536610980060904,
+        "hDensity": 0.025163997588549352
+      },
+      "sha256": "40ec57c15fbdd2c3694be7d6d7604efa42e85a601be13133e4409cba1905f7f1"
+    },
+    {
+      "point": 2,
+      "iteration": 3,
+      "printed": "1.22e-04",
+      "reconstructed": 0.0001219697666276483,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.001375187255907169,
+        "QuasiFermiPotential": 0.0009169684566732511,
+        "eDensity": 0.7729273435485565,
+        "hDensity": 0.22478050073886305
+      },
+      "sha256": "e302949d09b49064803690e16b82d050a636116706c139bc9cb36cba9ae89422"
+    },
+    {
+      "point": 3,
+      "iteration": 1,
+      "printed": "9.58e+02",
+      "reconstructed": 958.1370745739813,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.05952077764686444,
+        "QuasiFermiPotential": 0.022820701321167425,
+        "eDensity": 0.7045266136908674,
+        "hDensity": 0.21313190734110068
+      },
+      "sha256": "3c6fd243fa737afd9d5e3b53db3dda1d021a15c6e39c730295485c14027975a3"
+    },
+    {
+      "point": 3,
+      "iteration": 2,
+      "printed": "1.30e+01",
+      "reconstructed": 13.02366604603317,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.05850513644753926,
+        "QuasiFermiPotential": 0.02268322168307452,
+        "eDensity": 0.8918197980519482,
+        "hDensity": 0.026991843817437848
+      },
+      "sha256": "28296496a3012ad28b06069eef821d59bb249e2f4f6b2026d07d23449fad599d"
+    },
+    {
+      "point": 3,
+      "iteration": 3,
+      "printed": "4.05e-03",
+      "reconstructed": 0.004048684258368852,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.00026503465512843044,
+        "QuasiFermiPotential": 0.00011481852278048647,
+        "eDensity": 0.9910965981930632,
+        "hDensity": 0.00852354862902791
+      },
+      "sha256": "d6920be6ee71c3a1ed0a5225a50f3d27da8926a61f56807441619f9e4623ff43"
+    },
+    {
+      "point": 4,
+      "iteration": 1,
+      "printed": "1.74e+03",
+      "reconstructed": 1736.0812398713763,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.05282405703666392,
+        "QuasiFermiPotential": 0.010790413317004043,
+        "eDensity": 0.7391039736287282,
+        "hDensity": 0.19728155601760386
+      },
+      "sha256": "5b22938a6b721d6b40e1ebf1eb7c0731a90bae288cfb67fcb526799d0816bae1"
+    },
+    {
+      "point": 4,
+      "iteration": 2,
+      "printed": "5.30e+01",
+      "reconstructed": 53.029311553648036,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.015267797236367698,
+        "QuasiFermiPotential": 0.0031783425721359404,
+        "eDensity": 0.9426696995692866,
+        "hDensity": 0.03888416062220969
+      },
+      "sha256": "18f07c060edab8e4b491904ad2f20c7db0e0bf3521fb83f8f1a77c38d7b8b08d"
+    },
+    {
+      "point": 4,
+      "iteration": 3,
+      "printed": "7.55e-02",
+      "reconstructed": 0.07552691037205414,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.003981257236338696,
+        "QuasiFermiPotential": 0.0007536270525340881,
+        "eDensity": 0.9749328402848546,
+        "hDensity": 0.020332275426272455
+      },
+      "sha256": "3d5c94f7d7cffb4e5f6f51336159d8db1840f3a40e54ccb92f828b8d6f2fd47f"
+    },
+    {
+      "point": 5,
+      "iteration": 1,
+      "printed": "2.36e+03",
+      "reconstructed": 2356.922842209865,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.03881496055015382,
+        "QuasiFermiPotential": 0.003669406246070599,
+        "eDensity": 0.8236673040705004,
+        "hDensity": 0.1338483291332751
+      },
+      "sha256": "d0ead6aace54d717bcfdd809dac2da8169017541d42365e5481ce9b05d93bf8a"
+    },
+    {
+      "point": 5,
+      "iteration": 2,
+      "printed": "9.69e+01",
+      "reconstructed": 96.91897216044907,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.019824384796722383,
+        "QuasiFermiPotential": 0.001894056138184277,
+        "eDensity": 0.972161294653877,
+        "hDensity": 0.0061202644112162575
+      },
+      "sha256": "3b33f69d1abd1a16d600a5acf78645b134b6c1c5c4227770ec89e8c779ac2d5b"
+    },
+    {
+      "point": 5,
+      "iteration": 3,
+      "printed": "3.07e-01",
+      "reconstructed": 0.30688610038574077,
+      "factor": 1.0,
+      "entries": {
+        "ElectrostaticPotential": 2600,
+        "QuasiFermiPotential": 11,
+        "eDensity": 2121,
+        "hDensity": 2121
+      },
+      "sum_square_fraction": {
+        "ElectrostaticPotential": 0.00634310297038071,
+        "QuasiFermiPotential": 0.0005627141372291871,
+        "eDensity": 0.9776896769147216,
+        "hDensity": 0.015404505977668542
+      },
+      "sha256": "91fb773f48c584fee6e7f10418a2ad65bb4f87dc3427f169ca28aa1b56baeb91"
+    }
+  ],
+  "private_refinement_controls": [
+    {
+      "point": 1,
+      "runs": [
+        {
+          "audit": true,
+          "converged": false,
+          "device_norm": 5.069171058394253e-06,
+          "directions": [
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908807180419273e-10,
+                  "fd_norm": 3.8944848737544364e-08,
+                  "relative": 1.0028509376060861
+                },
+                {
+                  "analytic_norm": 1.255234035788036e-09,
+                  "fd_norm": 1.3095689773544136e-09,
+                  "relative": 0.1757356192668714
+                },
+                {
+                  "analytic_norm": 1.9161549734373524e-11,
+                  "fd_norm": 1.9161549731041656e-11,
+                  "relative": 1.9004712368947837e-05
+                }
+              ],
+              "epsilon": 0.001,
+              "port_relative": 1.0093935287073388e-06
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908807180419273e-10,
+                  "fd_norm": 9.782288879504428e-08,
+                  "relative": 0.9998921891743945
+                },
+                {
+                  "analytic_norm": 1.255234035788036e-09,
+                  "fd_norm": 1.6054183035513466e-09,
+                  "relative": 0.5778542394974672
+                },
+                {
+                  "analytic_norm": 1.9161549734373524e-11,
+                  "fd_norm": 1.91621639497241e-11,
+                  "relative": 0.008016764255930592
+                }
+              ],
+              "epsilon": 0.0003,
+              "port_relative": 1.0216299248271205e-06
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908807180419273e-10,
+                  "fd_norm": 4.776358681197627e-07,
+                  "relative": 1.00004289819114
+                },
+                {
+                  "analytic_norm": 1.255234035788036e-09,
+                  "fd_norm": 3.0301486692581038e-09,
+                  "relative": 0.9124303469607152
+                },
+                {
+                  "analytic_norm": 1.9161549734373524e-11,
+                  "fd_norm": 1.918364921672795e-11,
+                  "relative": 0.047996179830364714
+                }
+              ],
+              "epsilon": 0.0001,
+              "port_relative": 9.963448661854007e-07
+            }
+          ],
+          "inner": 0.005520684421315759,
+          "iterations": 1,
+          "line_search_attempts": 2,
+          "load": -0.0004999266937842431,
+          "reason": "coupled Newton iteration budget exhausted",
+          "refinement_enabled": false,
+          "trace": [
+            {
+              "alpha": 0.5,
+              "backward_error": 2.8142034657061347e-08,
+              "device_jv_relative": 1.0013254795213484,
+              "iteration": 0,
+              "port_jv_relative": 1.0186869999768726e-06,
+              "raw_voltage": 0.0005526238618315979,
+              "trials": [
+                {
+                  "accepted": false,
+                  "actual_load": -3.740147740127764e-10,
+                  "alpha": 1.0,
+                  "applied_voltage": 0.0005526238618315978,
+                  "predicted_load": -5.109201256514595e-12
+                },
+                {
+                  "accepted": true,
+                  "actual_load": -0.0004999266937842431,
+                  "alpha": 0.5,
+                  "applied_voltage": 0.0002763119309157989,
+                  "predicted_load": -0.0004999267128938858
+                }
+              ]
+            },
+            {
+              "alpha": 0.0,
+              "backward_error": null,
+              "device_jv_relative": null,
+              "iteration": 1,
+              "port_jv_relative": null,
+              "raw_voltage": 0.0,
+              "trials": []
+            }
+          ],
+          "x_hash": "cc7ce564c27a15346d236ae8f4c4d96f6a86c14bef8e3651f49748853f02d85f"
+        },
+        {
+          "audit": true,
+          "converged": false,
+          "device_norm": 5.069170585441548e-06,
+          "directions": [
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908859803653513e-10,
+                  "fd_norm": 3.3051093381232644e-08,
+                  "relative": 0.9989728723893554
+                },
+                {
+                  "analytic_norm": 1.2552264652019775e-09,
+                  "fd_norm": 1.3089704308557443e-09,
+                  "relative": 0.17604192387954012
+                },
+                {
+                  "analytic_norm": 1.9161549706590172e-11,
+                  "fd_norm": 1.9161604987207575e-11,
+                  "relative": 0.0024020647074947336
+                }
+              ],
+              "epsilon": 0.001,
+              "port_relative": 9.94647703756157e-07
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908859803653513e-10,
+                  "fd_norm": 1.258781922142543e-07,
+                  "relative": 0.9993052622262836
+                },
+                {
+                  "analytic_norm": 1.2552264652019775e-09,
+                  "fd_norm": 1.6056275370568417e-09,
+                  "relative": 0.5778750825182355
+                },
+                {
+                  "analytic_norm": 1.9161549706590172e-11,
+                  "fd_norm": 1.9162163925344346e-11,
+                  "relative": 0.008006648806821464
+                }
+              ],
+              "epsilon": 0.0003,
+              "port_relative": 9.929661434819774e-07
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.908859803653513e-10,
+                  "fd_norm": 3.8289162110313914e-07,
+                  "relative": 0.9999857549961095
+                },
+                {
+                  "analytic_norm": 1.2552264652019775e-09,
+                  "fd_norm": 3.029610576361609e-09,
+                  "relative": 0.9122746966321238
+                },
+                {
+                  "analytic_norm": 1.9161549706590172e-11,
+                  "fd_norm": 1.9167076966752043e-11,
+                  "relative": 0.024013789457062576
+                }
+              ],
+              "epsilon": 0.0001,
+              "port_relative": 1.0261388115346102e-06
+            }
+          ],
+          "inner": 0.0055206844083606,
+          "iterations": 1,
+          "line_search_attempts": 2,
+          "load": -0.0004999266740098388,
+          "reason": "coupled Newton iteration budget exhausted",
+          "refinement_enabled": true,
+          "trace": [
+            {
+              "alpha": 0.5,
+              "backward_error": 2.3391261706044194e-15,
+              "device_jv_relative": 1.0013250311786128,
+              "iteration": 0,
+              "port_jv_relative": 1.0466696401606862e-06,
+              "raw_voltage": 0.0005526238359212811,
+              "trials": [
+                {
+                  "accepted": false,
+                  "actual_load": -3.4525683353936465e-10,
+                  "alpha": 1.0,
+                  "applied_voltage": 0.0005526238359212813,
+                  "predicted_load": 1.234856921578098e-11
+                },
+                {
+                  "accepted": true,
+                  "actual_load": -0.0004999266740098388,
+                  "alpha": 0.5,
+                  "applied_voltage": 0.00027631191796064023,
+                  "predicted_load": -0.000499926704165001
+                }
+              ]
+            },
+            {
+              "alpha": 0.0,
+              "backward_error": null,
+              "device_jv_relative": null,
+              "iteration": 1,
+              "port_jv_relative": null,
+              "raw_voltage": 0.0,
+              "trials": []
+            }
+          ],
+          "x_hash": "33ef2cbef679053c682ed77e4d285b3abd6710440584f61392d3693c555ca62e"
+        }
+      ],
+      "parent_R_unchanged": true,
+      "parent_J_unchanged": true
+    },
+    {
+      "point": 5,
+      "runs": [
+        {
+          "audit": true,
+          "converged": false,
+          "device_norm": 4.546952081791272e-06,
+          "directions": [
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.811252219583464e-10,
+                  "fd_norm": 2.9669850494330955e-08,
+                  "relative": 1.0017203690799288
+                },
+                {
+                  "analytic_norm": 1.2582907428584421e-09,
+                  "fd_norm": 3.1511835028424955e-09,
+                  "relative": 0.9003969116884705
+                },
+                {
+                  "analytic_norm": 6.826866213791235e-12,
+                  "fd_norm": 6.983943606455195e-12,
+                  "relative": 0.21089635486895025
+                }
+              ],
+              "epsilon": 0.001,
+              "port_relative": 1.5613556002189484e-05
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.811252219583464e-10,
+                  "fd_norm": 5.8630012345327716e-08,
+                  "relative": 0.9997356149646597
+                },
+                {
+                  "analytic_norm": 1.2582907428584421e-09,
+                  "fd_norm": 8.511247359978084e-09,
+                  "relative": 1.0221163835259448
+                },
+                {
+                  "analytic_norm": 6.826866213791235e-12,
+                  "fd_norm": 6.8268661045913615e-12,
+                  "relative": 0.00017882748177103341
+                }
+              ],
+              "epsilon": 0.0003,
+              "port_relative": 1.6655033566635876e-05
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.811252219583464e-10,
+                  "fd_norm": 2.9563344366252657e-07,
+                  "relative": 1.0001118196249534
+                },
+                {
+                  "analytic_norm": 1.2582907428584421e-09,
+                  "fd_norm": 3.47089585537776e-08,
+                  "relative": 0.9980816007130051
+                },
+                {
+                  "analytic_norm": 6.826866213791235e-12,
+                  "fd_norm": 6.826866102825539e-12,
+                  "relative": 0.000178827481798935
+                }
+              ],
+              "epsilon": 0.0001,
+              "port_relative": 1.6145648546988237e-05
+            }
+          ],
+          "inner": 0.07890779259770579,
+          "iterations": 1,
+          "line_search_attempts": 3,
+          "load": -0.000750084248055255,
+          "reason": "coupled Newton iteration budget exhausted",
+          "refinement_enabled": false,
+          "trace": [
+            {
+              "alpha": 0.25,
+              "backward_error": 1.905488897743155e-08,
+              "device_jv_relative": 1.000916554221974,
+              "iteration": 0,
+              "port_jv_relative": 1.602471795604872e-05,
+              "raw_voltage": 0.0009765253041955695,
+              "trials": [
+                {
+                  "accepted": false,
+                  "actual_load": -4.783015233877919e-10,
+                  "alpha": 1.0,
+                  "applied_voltage": 0.0009765253041955635,
+                  "predicted_load": -1.9046972332681378e-11
+                },
+                {
+                  "accepted": false,
+                  "actual_load": -0.0005000563163497784,
+                  "alpha": 0.5,
+                  "applied_voltage": 0.00048826265209778175,
+                  "predicted_load": -0.0005000561062968173
+                },
+                {
+                  "accepted": true,
+                  "actual_load": -0.000750084248055255,
+                  "alpha": 0.25,
+                  "applied_voltage": 0.00024413132604889087,
+                  "predicted_load": -0.0007500841499217398
+                }
+              ]
+            },
+            {
+              "alpha": 0.0,
+              "backward_error": null,
+              "device_jv_relative": null,
+              "iteration": 1,
+              "port_jv_relative": null,
+              "raw_voltage": 0.0,
+              "trials": []
+            }
+          ],
+          "x_hash": "43082a208a30fee49e715f905be8cb494bd360a55bc2e30811b930a94fe41be4"
+        },
+        {
+          "audit": true,
+          "converged": false,
+          "device_norm": 4.546950884931366e-06,
+          "directions": [
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.8112098470130546e-10,
+                  "fd_norm": 3.836288018733685e-08,
+                  "relative": 0.9977829594922193
+                },
+                {
+                  "analytic_norm": 1.2583717109478746e-09,
+                  "fd_norm": 3.151222221265052e-09,
+                  "relative": 0.900384596890278
+                },
+                {
+                  "analytic_norm": 6.826866112337319e-12,
+                  "fd_norm": 6.826866112189526e-12,
+                  "relative": 1.5496463222575927e-08
+                }
+              ],
+              "epsilon": 0.001,
+              "port_relative": 1.6357293347354447e-05
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.8112098470130546e-10,
+                  "fd_norm": 1.729838047212648e-07,
+                  "relative": 0.9995074531921182
+                },
+                {
+                  "analytic_norm": 1.2583717109478746e-09,
+                  "fd_norm": 8.51111964978441e-09,
+                  "relative": 1.0221162728329893
+                },
+                {
+                  "analytic_norm": 6.826866112337319e-12,
+                  "fd_norm": 7.254799909059268e-12,
+                  "relative": 0.33836845972802965
+                }
+              ],
+              "epsilon": 0.0003,
+              "port_relative": 1.6913258925998052e-05
+            },
+            {
+              "blocks": [
+                {
+                  "analytic_norm": 3.8112098470130546e-10,
+                  "fd_norm": 3.103873593556939e-07,
+                  "relative": 1.000077255623921
+                },
+                {
+                  "analytic_norm": 1.2583717109478746e-09,
+                  "fd_norm": 3.470921876947951e-08,
+                  "relative": 0.9980816570314102
+                },
+                {
+                  "analytic_norm": 6.826866112337319e-12,
+                  "fd_norm": 1.6234002889728703e-11,
+                  "relative": 0.9072791797086304
+                }
+              ],
+              "epsilon": 0.0001,
+              "port_relative": 1.6326432348028953e-05
+            }
+          ],
+          "inner": 0.07890779256577776,
+          "iterations": 1,
+          "line_search_attempts": 3,
+          "load": -0.0007500842502252414,
+          "reason": "coupled Newton iteration budget exhausted",
+          "refinement_enabled": true,
+          "trace": [
+            {
+              "alpha": 0.25,
+              "backward_error": 4.7088711474660984e-15,
+              "device_jv_relative": 1.0010416365608872,
+              "iteration": 0,
+              "port_jv_relative": 1.602289711754372e-05,
+              "raw_voltage": 0.0009765251764834516,
+              "trials": [
+                {
+                  "accepted": false,
+                  "actual_load": -4.816188003964328e-10,
+                  "alpha": 1.0,
+                  "applied_voltage": 0.0009765251764834448,
+                  "predicted_load": 6.924044670952867e-13
+                },
+                {
+                  "accepted": false,
+                  "actual_load": -0.0005000563206532388,
+                  "alpha": 0.5,
+                  "applied_voltage": 0.0004882625882417224,
+                  "predicted_load": -0.0005000560964271289
+                },
+                {
+                  "accepted": true,
+                  "actual_load": -0.0007500842502252414,
+                  "alpha": 0.25,
+                  "applied_voltage": 0.0002441312941208612,
+                  "predicted_load": -0.0007500841449868956
+                }
+              ]
+            },
+            {
+              "alpha": 0.0,
+              "backward_error": null,
+              "device_jv_relative": null,
+              "iteration": 1,
+              "port_jv_relative": null,
+              "raw_voltage": 0.0,
+              "trials": []
+            }
+          ],
+          "x_hash": "e0b27a4a5888a3b241182cdf48b05d86108e01976967fe5efa2f1bec309e5e79"
+        }
+      ],
+      "parent_R_unchanged": true,
+      "parent_J_unchanged": true
+    }
+  ],
+  "source_checks": [
+    {
+      "block": 1,
+      "target": 2,
+      "h": 0.001,
+      "source_relative": 6.433440546650795e-12
+    },
+    {
+      "block": 1,
+      "target": 2,
+      "h": 0.0003,
+      "source_relative": 7.174340535635066e-13
+    },
+    {
+      "block": 1,
+      "target": 2,
+      "h": 0.0001,
+      "source_relative": 3.36399773514453e-14
+    },
+    {
+      "block": 2,
+      "target": 1,
+      "h": 0.001,
+      "source_relative": 7.009506696652338e-12
+    },
+    {
+      "block": 2,
+      "target": 1,
+      "h": 0.0003,
+      "source_relative": 5.532181425615202e-13
+    },
+    {
+      "block": 2,
+      "target": 1,
+      "h": 0.0001,
+      "source_relative": 3.4842577147102263e-13
+    }
+  ],
+  "existing_six_full_residual_assertions": "remain_failed; not removed or waived",
+  "qualification": "R2 incomplete; strict full Jv and nonlinear acceptance remain open",
+  "final_cpp_verification": {
+    "vm_exit_codes": [
+      0,
+      0
+    ],
+    "manifest_files_verified": 39,
+    "final_header_matches_worktree": true,
+    "checks": [
+      {
+        "point": 1,
+        "final_backward_error": 2.3391261706044194e-15,
+        "alpha": 0.5,
+        "earlier_candidate_identity": true,
+        "parent_R_unchanged": true,
+        "parent_J_unchanged": true
+      },
+      {
+        "point": 5,
+        "final_backward_error": 4.7088711474660984e-15,
+        "alpha": 0.25,
+        "earlier_candidate_identity": true,
+        "parent_R_unchanged": true,
+        "parent_J_unchanged": true
+      }
+    ],
+    "T470p_coupled": {
+      "cases": 10,
+      "assertions": 117,
+      "passed": true
+    },
+    "T470p_DCSweep": {
+      "cases": 120,
+      "assertions": 4415,
+      "passed": true
+    },
+    "python_matrix_audit": {
+      "cases": 6,
+      "passed": true
+    },
+    "full_Debug_CTest": "not_run; known strict complete residual test still fails"
+  },
+  "source_hashes": {
+    "include/vela/simulation/CoupledLoadLine.h": "0cabb3afe21f9b48a254a38304ce110db9f7be70a92356f7e55d1f566d2e1193",
+    "tests/test_coupled_load_line.cpp": "0d0ce8592ccf52db40f6f649bc8dffa57aee0fde8180538ad4dcfedf8fdb994e",
+    "scripts/compare_sentaurus_debug_matrix.py": "b3631ced2d115e1726d508590225603b6cd13dae6396cfa8a5b53d7e33b81a77",
+    "tests/regression/test_sentaurus_debug_matrix.py": "839ad5eb160789043b8ed5301e34ab698384f2d34627fb24d7aab3177db4861e"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "schema": "vela.stage_plan.v1",
+  "cmd": {
+    "path": "schottky_n_des.cmd",
+    "sha256": "45f5980ff2382cd4b10b46069331adc2733fd65dafa77ffa47bc43dfc5a04d11",
+    "execution_ir": "execution_ir.json"
+  },
+  "work_dir": "device_vela",
+  "exit_on_failure": true,
+  "threads": 4,
+  "inputs": {
+    "mesh_json": "mesh.json",
+    "doping_csv": "doping.csv",
+    "materials_json": "materials.json",
+    "mesh_qualification": "mesh_qualification.json",
+    "sidecar": null
+  },
+  "outputs": {
+    "log": "schottky_n_des.log",
+    "final_vtu": "schottky_n_des.vtu",
+    "pvd": "schottky_n_des.pvd",
+    "plot_final_only": false,
+    "vtu_binary": false,
+    "keep_intermediate": true
+  },
+  "electrodes": [
+    {
+      "name": "anode",
+      "contact": "anode",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "cathode",
+      "contact": "cathode",
+      "initial_voltage_V": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "index": 0,
+      "ir_stage_index": 0,
+      "kind": "equilibrium",
+      "deck": "simulation_stage00.json",
+      "csv": "stage00.csv",
+      "input_state": null,
+      "output_state": "stage00_state.h5",
+      "electrode_voltages_start_V": {
+        "anode": 0.0,
+        "cathode": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "anode": 0.0,
+        "cathode": 0.0
+      },
+      "current_file": "schottky_n_iv_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": []
+    },
+    {
+      "index": 1,
+      "ir_stage_index": 2,
+      "kind": "sweep",
+      "deck": "simulation_stage01.json",
+      "csv": "stage01.csv",
+      "input_state": "stage00_state.h5",
+      "output_state": "stage01_state.h5",
+      "electrode_voltages_start_V": {
+        "anode": 0.0,
+        "cathode": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "anode": 1.0,
+        "cathode": 0.0
+      },
+      "current_file": "forward_schottky_n_iv_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "sweep": {
+        "contact": "anode",
+        "mode": "voltage",
+        "start_V": 0.0,
+        "stop_V": 1.0,
+        "step_V": 0.05,
+        "initial_step_V": 0.01,
+        "min_step_V": 1e-06,
+        "max_step_V": 0.05,
+        "growth_factor": 1.35,
+        "shrink_factor": 2.0,
+        "t_to_bias": {
+          "v0": 0.0,
+          "v1": 1.0
+        }
+      }
+    }
+  ]
+}

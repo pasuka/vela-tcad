@@ -1,0 +1,1378 @@
+{
+  "date": "2026-10-24",
+  "scope": "Stage 1 only: direct energy-based carrier statistics and separate BGN verification; zero-bias Poisson and coupled states, not a BV run",
+  "production_code_modified": false,
+  "configuration": {
+    "temperature_K": 300,
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "resistor_ohm_um": 10000000.0,
+    "native_version": "Sentaurus T-2022.03-SP2",
+    "physics": "Fermi / OldSlotboom / DopingDep+Enormal+HFS(GradQuasiFermi) / SRH(DopingDep) / Avalanche(GradQuasiFermi), Band2Band disabled",
+    "native_commands": [
+      "sdevice pp5_des.cmd (default Fermi)",
+      "sdevice pp5_des.cmd (Fermi(-WithJoyceDixon))"
+    ],
+    "vela_primitive_build": "UCRT64 Release -O3 -DNDEBUG, unchanged core library; no linear solve",
+    "native_Vt_V": 0.025851995266484913,
+    "units": "energies eV, potentials V, concentrations cm^-3"
+  },
+  "primary_native_exit_codes_and_elapsed_seconds": {
+    "default": {
+      "exit_code": 0,
+      "seconds": 196.4390504360199
+    },
+    "wuensche": {
+      "exit_code": 0,
+      "seconds": 196.75562381744385
+    }
+  },
+  "primary_archive_sha256_matches_remote": true,
+  "core_hash_matches_previous_source_audit": true,
+  "analysis": {
+    "default_poisson": {
+      "nodes": 2152,
+      "donors_cm3": {
+        "min": 0.0,
+        "max": 5.099999999999983e+20,
+        "max_abs": 5.099999999999983e+20,
+        "rms": 1.0293721259391633e+20
+      },
+      "acceptors_cm3": {
+        "min": 9.999999999999986e+17,
+        "max": 9.999999999999986e+17,
+        "max_abs": 9.999999999999986e+17,
+        "rms": 9.999999999999986e+17
+      },
+      "eta_n": {
+        "min": -37.79180460846459,
+        "max": 8.130513994213828,
+        "max_abs": 37.79180460846459,
+        "rms": 21.087153362466182
+      },
+      "eta_p": {
+        "min": -39.771155868888606,
+        "max": -3.424096481903626,
+        "max_abs": 39.771155868888606,
+        "rms": 28.70062061687279
+      },
+      "direct_density_relative_error_n": {
+        "min": -0.002186102671028367,
+        "max": 1.9761969838327786e-14,
+        "max_abs": 0.002186102671028367,
+        "rms": 0.0004719988680045192
+      },
+      "direct_density_relative_error_p": {
+        "min": -3.752553823233029e-14,
+        "max": 2.842170943040401e-14,
+        "max_abs": 3.752553823233029e-14,
+        "rms": 1.2570117416515872e-14
+      },
+      "exact_fn_shift_V": {
+        "min": -0.0003050095602463274,
+        "max": 8.082336874262354e-15,
+        "max_abs": 0.0003050095602463274,
+        "rms": 6.181254425750558e-05
+      },
+      "exact_fp_shift_V": {
+        "min": -9.000784246337622e-15,
+        "max": 1.2399039523016111e-15,
+        "max_abs": 9.000784246337622e-15,
+        "rms": 9.52416929640697e-16
+      },
+      "energy_minus_ni_gap_eV": {
+        "min": -2.220446049250313e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.220446049250313e-16,
+        "rms": 9.954332607421741e-17
+      },
+      "base_gap_minus_gap_minus_BGN_eV": {
+        "min": -2.3592239273284576e-16,
+        "max": 2.0816681711721685e-16,
+        "max_abs": 2.3592239273284576e-16,
+        "rms": 8.660593952089246e-17
+      },
+      "quasi_fermi_energy_plus_potential_n": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "quasi_fermi_energy_plus_potential_p": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "BGN_exact_minus_native_eV": {
+        "min": -6.557254739192331e-15,
+        "max": 0.0003052270688023717,
+        "max_abs": 0.0003052270688023717,
+        "rms": 6.193440017005566e-05
+      },
+      "eta_gap_minus_energy": {
+        "min": -7.105427357601002e-15,
+        "max": 7.993605777301127e-15,
+        "max_abs": 7.993605777301127e-15,
+        "rms": 1.7917870680017424e-15
+      },
+      "reference_n_eV": {
+        "min": -1.1480592150940844e-15,
+        "max": 3.67378948830107e-16,
+        "max_abs": 1.1480592150940844e-15,
+        "rms": 4.657317659250287e-16
+      },
+      "reference_p_eV": {
+        "min": -4.592236860376337e-16,
+        "max": 1.1939815836978479e-15,
+        "max_abs": 1.1939815836978479e-15,
+        "rms": 4.716321476282353e-16
+      },
+      "reference_sum_eV": {
+        "min": -2.2961184301881687e-16,
+        "max": 2.755342116225802e-16,
+        "max_abs": 2.755342116225802e-16,
+        "rms": 7.379793001614922e-17
+      },
+      "integral_checks": [
+        {
+          "node": 237,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 237,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 801,
+          "carrier": "n",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 801,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 863,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 863,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 897,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 897,
+          "carrier": "p",
+          "relative_integral_difference": 3.3306690738754696e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "n",
+          "relative_integral_difference": 6.661338147750939e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 2567,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 2567,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        }
+      ],
+      "selected_nodes": [
+        {
+          "node": 237,
+          "Nd": 5.099999999999983e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.130513994213828,
+          "eta_p_energy": -39.771155868888606,
+          "density_error_n": -0.00211799450026795,
+          "density_error_p": -1.4099832412739488e-14,
+          "delta_fn_exact_V": -0.0003050095602463274,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8179737239726367,
+          "gap_from_ni_eV": 0.8179737239726367,
+          "BGN_native_eV": 0.2902355067965942,
+          "BGN_classic_eV": 0.15396423240533924,
+          "BGN_FD_exact_eV": 0.13657650146005737,
+          "BGN_exact_minus_native_eV": 0.0003052270688023717,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -2.2961184301881687e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 801,
+          "Nd": 4.054803057123056e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 6.940619015201264,
+          "eta_p_energy": -39.69822114360383,
+          "density_error_n": -0.002186102671028367,
+          "density_error_p": 7.105427357601002e-15,
+          "delta_fn_exact_V": -0.0002714425360535519,
+          "delta_fp_exact_V": -1.836894744150535e-16,
+          "gap_energy_eV": 0.8468493751648593,
+          "gap_from_ni_eV": 0.8468493751648593,
+          "BGN_native_eV": 0.2613598556043716,
+          "BGN_classic_eV": 0.14985243617920432,
+          "BGN_FD_exact_eV": 0.11177938766514774,
+          "BGN_exact_minus_native_eV": 0.00027196823998049124,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -1.836894744150535e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 863,
+          "Nd": 5.0878098721026435e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.11654026128744,
+          "eta_p_energy": -39.769771242385545,
+          "density_error_n": -0.0021194979035799033,
+          "density_error_p": -1.4210854715202004e-14,
+          "delta_fn_exact_V": -0.0003047295823083965,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8182991774923019,
+          "gap_from_ni_eV": 0.8182991774923019,
+          "BGN_native_eV": 0.2899100532769291,
+          "BGN_classic_eV": 0.15392131466667888,
+          "BGN_FD_exact_eV": 0.13629370034502816,
+          "BGN_exact_minus_native_eV": 0.0003049617347779532,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -9.184473720752675e-17,
+          "reference_p_eV": 0.0
+        },
+        {
+          "node": 897,
+          "Nd": 1.1869597751016156e+18,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": -10.579370662416466,
+          "eta_p_energy": -30.08611285379689,
+          "density_error_n": 5.773159728050814e-15,
+          "density_error_p": -3.752553823233029e-14,
+          "delta_fn_exact_V": 1.3776710581129014e-16,
+          "delta_fp_exact_V": 1.836894744150535e-16,
+          "gap_energy_eV": 1.051283887370468,
+          "gap_from_ni_eV": 1.051283887370468,
+          "BGN_native_eV": 0.056925343398762956,
+          "BGN_classic_eV": 0.05625173178604998,
+          "BGN_FD_exact_eV": 0.0006736116127134389,
+          "BGN_exact_minus_native_eV": 4.649058915617843e-16,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -5.510684232451606e-16,
+          "reference_p_eV": 5.510684232451606e-16
+        },
+        {
+          "node": 1546,
+          "Nd": 1.2187955950277925e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 2.8364200403479174,
+          "eta_p_energy": -39.29952765007397,
+          "density_error_n": -5.375981317923273e-05,
+          "density_error_p": 1.4432899320127035e-14,
+          "delta_fn_exact_V": -3.2456767533199078e-06,
+          "delta_fp_exact_V": -3.67378948830107e-16,
+          "gap_energy_eV": 0.9426440853279678,
+          "gap_from_ni_eV": 0.9426440853279677,
+          "BGN_native_eV": 0.1655651454412631,
+          "BGN_classic_eV": 0.1283637256924552,
+          "BGN_FD_exact_eV": 0.037204962347867285,
+          "BGN_exact_minus_native_eV": 3.542599059380702e-06,
+          "eta_gap_minus_energy": 7.105427357601002e-15,
+          "reference_n_eV": 9.184473720752675e-17,
+          "reference_p_eV": 0.0
+        },
+        {
+          "node": 2567,
+          "Nd": 2.5999999999999938e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 5.082184251016258,
+          "eta_p_energy": -39.561340534621344,
+          "density_error_n": -0.0014487479005851345,
+          "density_error_p": -7.105427357601002e-15,
+          "delta_fn_exact_V": -0.00013598725186014698,
+          "delta_fp_exact_V": 1.836894744150535e-16,
+          "gap_energy_eV": 0.8913549850361522,
+          "gap_from_ni_eV": 0.8913549850361522,
+          "BGN_native_eV": 0.2168542457330786,
+          "BGN_classic_eV": 0.141893324694944,
+          "BGN_FD_exact_eV": 0.07509863596614717,
+          "BGN_exact_minus_native_eV": 0.00013771492801256668,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -3.67378948830107e-16,
+          "reference_p_eV": 3.67378948830107e-16
+        }
+      ]
+    },
+    "default_coupled": {
+      "nodes": 2152,
+      "donors_cm3": {
+        "min": 0.0,
+        "max": 5.099999999999983e+20,
+        "max_abs": 5.099999999999983e+20,
+        "rms": 1.0293721259391633e+20
+      },
+      "acceptors_cm3": {
+        "min": 9.999999999999986e+17,
+        "max": 9.999999999999986e+17,
+        "max_abs": 9.999999999999986e+17,
+        "rms": 9.999999999999986e+17
+      },
+      "eta_n": {
+        "min": -37.79180460846458,
+        "max": 8.130513994213823,
+        "max_abs": 37.79180460846458,
+        "rms": 21.08715336246579
+      },
+      "eta_p": {
+        "min": -39.771155868888606,
+        "max": -3.424096481903626,
+        "max_abs": 39.771155868888606,
+        "rms": 28.700620616868104
+      },
+      "direct_density_relative_error_n": {
+        "min": -0.002186102671027146,
+        "max": 1.8207657603852567e-14,
+        "max_abs": 0.002186102671027146,
+        "rms": 0.0004719988680044928
+      },
+      "direct_density_relative_error_p": {
+        "min": -3.141931159689193e-14,
+        "max": 3.175237850427948e-14,
+        "max_abs": 3.175237850427948e-14,
+        "rms": 1.23288323627338e-14
+      },
+      "exact_fn_shift_V": {
+        "min": -0.0003050095602464651,
+        "max": 8.449715823092461e-15,
+        "max_abs": 0.0003050095602464651,
+        "rms": 6.181254425750562e-05
+      },
+      "exact_fp_shift_V": {
+        "min": -8.908939509130095e-15,
+        "max": 1.3317486895091378e-15,
+        "max_abs": 8.908939509130095e-15,
+        "rms": 9.49540984254681e-16
+      },
+      "energy_minus_ni_gap_eV": {
+        "min": -2.220446049250313e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.220446049250313e-16,
+        "rms": 1.0080124684044696e-16
+      },
+      "base_gap_minus_gap_minus_BGN_eV": {
+        "min": -2.636779683484747e-16,
+        "max": 1.942890293094024e-16,
+        "max_abs": 2.636779683484747e-16,
+        "rms": 8.887441708805927e-17
+      },
+      "quasi_fermi_energy_plus_potential_n": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "quasi_fermi_energy_plus_potential_p": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "BGN_exact_minus_native_eV": {
+        "min": -6.557254739192331e-15,
+        "max": 0.0003052270688023717,
+        "max_abs": 0.0003052270688023717,
+        "rms": 6.193440017005566e-05
+      },
+      "eta_gap_minus_energy": {
+        "min": -1.0658141036401503e-14,
+        "max": 1.0658141036401503e-14,
+        "max_abs": 1.0658141036401503e-14,
+        "rms": 2.974020638484711e-15
+      },
+      "reference_n_eV": {
+        "min": -1.1882412876223773e-15,
+        "max": 3.67378948830107e-16,
+        "max_abs": 1.1882412876223773e-15,
+        "rms": 4.760500451057537e-16
+      },
+      "reference_p_eV": {
+        "min": -4.592236860376337e-16,
+        "max": 1.1021368464903211e-15,
+        "max_abs": 1.1021368464903211e-15,
+        "rms": 4.766056208797364e-16
+      },
+      "reference_sum_eV": {
+        "min": -3.67378948830107e-16,
+        "max": 3.444177645282253e-16,
+        "max_abs": 3.67378948830107e-16,
+        "rms": 9.522723697024596e-17
+      },
+      "integral_checks": [
+        {
+          "node": 237,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 237,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 443,
+          "carrier": "n",
+          "relative_integral_difference": 6.661338147750939e-16
+        },
+        {
+          "node": 443,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 801,
+          "carrier": "n",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 801,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 863,
+          "carrier": "n",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 863,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 2567,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 2567,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        }
+      ],
+      "selected_nodes": [
+        {
+          "node": 237,
+          "Nd": 5.099999999999983e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.130513994213823,
+          "eta_p_energy": -39.771155868888606,
+          "density_error_n": -0.0021179945002689493,
+          "density_error_p": -1.4099832412739488e-14,
+          "delta_fn_exact_V": -0.0003050095602464651,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8179737239726367,
+          "gap_from_ni_eV": 0.8179737239726367,
+          "BGN_native_eV": 0.2902355067965942,
+          "BGN_classic_eV": 0.15396423240533924,
+          "BGN_FD_exact_eV": 0.13657650146005737,
+          "BGN_exact_minus_native_eV": 0.0003052270688023717,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -1.836894744150535e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 443,
+          "Nd": 6.639154840959748e+18,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": -1.4738480962494582,
+          "eta_p_energy": -38.26148119756734,
+          "density_error_n": -4.054712121615012e-11,
+          "density_error_p": 3.175237850427948e-14,
+          "delta_fn_exact_V": -1.1265101436267684e-12,
+          "delta_fp_exact_V": -7.34757897660214e-16,
+          "gap_energy_eV": 1.0272375448159807,
+          "gap_from_ni_eV": 1.027237544815981,
+          "BGN_native_eV": 0.08097168595324997,
+          "BGN_classic_eV": 0.07856121874257276,
+          "BGN_FD_exact_eV": 0.0024104672124346128,
+          "BGN_exact_minus_native_eV": 1.757399781254776e-12,
+          "eta_gap_minus_energy": 2.220446049250313e-16,
+          "reference_n_eV": -2.812745076980507e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 801,
+          "Nd": 4.054803057123056e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 6.940619015201272,
+          "eta_p_energy": -39.698221143586515,
+          "density_error_n": -0.002186102671027146,
+          "density_error_p": 6.217248937900877e-15,
+          "delta_fn_exact_V": -0.00027144253605339123,
+          "delta_fp_exact_V": -1.836894744150535e-16,
+          "gap_energy_eV": 0.8468493751648593,
+          "gap_from_ni_eV": 0.8468493751648593,
+          "BGN_native_eV": 0.2613598556043716,
+          "BGN_classic_eV": 0.14985243617920432,
+          "BGN_FD_exact_eV": 0.11177938766514774,
+          "BGN_exact_minus_native_eV": 0.00027196823998049124,
+          "eta_gap_minus_energy": 8.881784197001252e-16,
+          "reference_n_eV": -1.1480592150940843e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 863,
+          "Nd": 5.0878098721026435e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.116540261287444,
+          "eta_p_energy": -39.76977124238544,
+          "density_error_n": -0.002119497903579015,
+          "density_error_p": -1.2989609388114332e-14,
+          "delta_fn_exact_V": -0.00030472958230825874,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8182991774923019,
+          "gap_from_ni_eV": 0.8182991774923019,
+          "BGN_native_eV": 0.2899100532769291,
+          "BGN_classic_eV": 0.15392131466667888,
+          "BGN_FD_exact_eV": 0.13629370034502816,
+          "BGN_exact_minus_native_eV": 0.0003049617347779532,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -9.184473720752675e-17,
+          "reference_p_eV": 0.0
+        },
+        {
+          "node": 1546,
+          "Nd": 1.2187955950277925e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 2.836420040347931,
+          "eta_p_energy": -39.29952764969698,
+          "density_error_n": -5.375981317334855e-05,
+          "density_error_p": 1.1102230246251565e-14,
+          "delta_fn_exact_V": -3.2456767529640095e-06,
+          "delta_fp_exact_V": -3.67378948830107e-16,
+          "gap_energy_eV": 0.9426440853279678,
+          "gap_from_ni_eV": 0.9426440853279677,
+          "BGN_native_eV": 0.1655651454412631,
+          "BGN_classic_eV": 0.1283637256924552,
+          "BGN_FD_exact_eV": 0.037204962347867285,
+          "BGN_exact_minus_native_eV": 3.542599059380702e-06,
+          "eta_gap_minus_energy": 7.549516567451064e-15,
+          "reference_n_eV": 1.0332532935846759e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 2567,
+          "Nd": 2.5999999999999938e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 5.082184251016262,
+          "eta_p_energy": -39.561340534621344,
+          "density_error_n": -0.0014487479005841353,
+          "density_error_p": -7.105427357601002e-15,
+          "delta_fn_exact_V": -0.00013598725186005512,
+          "delta_fp_exact_V": 1.836894744150535e-16,
+          "gap_energy_eV": 0.8913549850361522,
+          "gap_from_ni_eV": 0.8913549850361522,
+          "BGN_native_eV": 0.2168542457330786,
+          "BGN_classic_eV": 0.141893324694944,
+          "BGN_FD_exact_eV": 0.07509863596614717,
+          "BGN_exact_minus_native_eV": 0.00013771492801256668,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -2.755342116225803e-16,
+          "reference_p_eV": 3.67378948830107e-16
+        }
+      ]
+    },
+    "wuensche_poisson": {
+      "nodes": 2152,
+      "donors_cm3": {
+        "min": 0.0,
+        "max": 5.099999999999983e+20,
+        "max_abs": 5.099999999999983e+20,
+        "rms": 1.0293721259391633e+20
+      },
+      "acceptors_cm3": {
+        "min": 9.999999999999986e+17,
+        "max": 9.999999999999986e+17,
+        "max_abs": 9.999999999999986e+17,
+        "rms": 9.999999999999986e+17
+      },
+      "eta_n": {
+        "min": -37.79180460846459,
+        "max": 8.060722002624885,
+        "max_abs": 37.79180460846459,
+        "rms": 21.086687660156556
+      },
+      "eta_p": {
+        "min": -39.771958919976896,
+        "max": -3.4242054149611016,
+        "max_abs": 39.771958919976896,
+        "rms": 28.700768162794315
+      },
+      "direct_density_relative_error_n": {
+        "min": -0.0146144363185704,
+        "max": 0.011169728751126762,
+        "max_abs": 0.0146144363185704,
+        "rms": 0.0029703149242390043
+      },
+      "direct_density_relative_error_p": {
+        "min": -0.00010770185911102015,
+        "max": 2.864375403532904e-14,
+        "max_abs": 0.00010770185911102015,
+        "rms": 4.486178314779188e-05
+      },
+      "exact_fn_shift_V": {
+        "min": -0.0021092717964425094,
+        "max": 0.000852268641892254,
+        "max_abs": 0.0021092717964425094,
+        "rms": 0.000356035420293817
+      },
+      "exact_fp_shift_V": {
+        "min": -8.725250034715042e-15,
+        "max": 2.816136886650931e-06,
+        "max_abs": 2.816136886650931e-06,
+        "rms": 1.1726511343223585e-06
+      },
+      "energy_minus_ni_gap_eV": {
+        "min": -2.220446049250313e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.220446049250313e-16,
+        "rms": 9.937055766038347e-17
+      },
+      "base_gap_minus_gap_minus_BGN_eV": {
+        "min": -2.498001805406602e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.498001805406602e-16,
+        "rms": 8.773807458071101e-17
+      },
+      "quasi_fermi_energy_plus_potential_n": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "quasi_fermi_energy_plus_potential_p": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "BGN_exact_minus_native_eV": {
+        "min": -0.0008513927255850706,
+        "max": 0.0021302497779314145,
+        "max_abs": 0.0021302497779314145,
+        "rms": 0.00035960926228092077
+      },
+      "eta_gap_minus_energy": {
+        "min": -7.993605777301127e-15,
+        "max": 7.105427357601002e-15,
+        "max_abs": 7.993605777301127e-15,
+        "rms": 1.984983048355639e-15
+      },
+      "reference_n_eV": {
+        "min": -1.1021368464903211e-15,
+        "max": 4.592236860376337e-16,
+        "max_abs": 1.1021368464903211e-15,
+        "rms": 4.810267862251063e-16
+      },
+      "reference_p_eV": {
+        "min": -3.67378948830107e-16,
+        "max": 1.2858263209053746e-15,
+        "max_abs": 1.2858263209053746e-15,
+        "rms": 4.787541076651526e-16
+      },
+      "reference_sum_eV": {
+        "min": -3.67378948830107e-16,
+        "max": 2.755342116225804e-16,
+        "max_abs": 3.67378948830107e-16,
+        "rms": 7.732517270930421e-17
+      },
+      "integral_checks": [
+        {
+          "node": 237,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 237,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 863,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 863,
+          "carrier": "p",
+          "relative_integral_difference": 3.3306690738754696e-16
+        },
+        {
+          "node": 1203,
+          "carrier": "n",
+          "relative_integral_difference": 1.1102230246251565e-16
+        },
+        {
+          "node": 1203,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "n",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 2567,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 2567,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        }
+      ],
+      "selected_nodes": [
+        {
+          "node": 237,
+          "Nd": 5.099999999999983e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.060722002624885,
+          "eta_p_energy": -39.771958919976896,
+          "density_error_n": -0.0146144363185704,
+          "density_error_p": 0.0,
+          "delta_fn_exact_V": -0.0021092717964425094,
+          "delta_fp_exact_V": 0.0,
+          "gap_energy_eV": 0.8197987466817658,
+          "gap_from_ni_eV": 0.8197987466817657,
+          "BGN_native_eV": 0.28841048408746517,
+          "BGN_classic_eV": 0.15396423240533924,
+          "BGN_FD_exact_eV": 0.13657650146005737,
+          "BGN_exact_minus_native_eV": 0.0021302497779314145,
+          "eta_gap_minus_energy": 7.105427357601002e-15,
+          "reference_n_eV": -2.755342116225803e-16,
+          "reference_p_eV": 3.67378948830107e-16
+        },
+        {
+          "node": 863,
+          "Nd": 5.0878098721026435e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.047666604155154,
+          "eta_p_energy": -39.770646718051424,
+          "density_error_n": -0.014478333938386823,
+          "density_error_p": -1.4210854715202004e-14,
+          "delta_fn_exact_V": -0.0020861880707537784,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8201023317432413,
+          "gap_from_ni_eV": 0.8201023317432412,
+          "BGN_native_eV": 0.28810689902598957,
+          "BGN_classic_eV": 0.15392131466667888,
+          "BGN_FD_exact_eV": 0.13629370034502816,
+          "BGN_exact_minus_native_eV": 0.0021081159857174736,
+          "eta_gap_minus_energy": 7.105427357601002e-15,
+          "reference_n_eV": 0.0,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 1203,
+          "Nd": 0.008787450544601024,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": -37.79180460846254,
+          "eta_p_energy": -3.424205414963134,
+          "density_error_n": 1.4432899320127035e-14,
+          "density_error_p": -0.00010770185911102015,
+          "delta_fn_exact_V": 3.67378948830107e-16,
+          "delta_fp_exact_V": 2.816136886650931e-06,
+          "gap_energy_eV": 1.0655160960289953,
+          "gap_from_ni_eV": 1.0655160960289953,
+          "BGN_native_eV": 0.04269313474023557,
+          "BGN_classic_eV": 0.04240168245229793,
+          "BGN_FD_exact_eV": 0.00029426842482381847,
+          "BGN_exact_minus_native_eV": 2.8161368861787106e-06,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -3.67378948830107e-16,
+          "reference_p_eV": 3.903401331319887e-16
+        },
+        {
+          "node": 1546,
+          "Nd": 1.2187955950277925e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 2.8590150808846317,
+          "eta_p_energy": -39.2989631839831,
+          "density_error_n": 0.009716881474937988,
+          "density_error_p": -7.216449660063518e-15,
+          "delta_fn_exact_V": 0.0005852525048013089,
+          "delta_fp_exact_V": 1.836894744150535e-16,
+          "gap_energy_eV": 0.9420453658722574,
+          "gap_from_ni_eV": 0.9420453658722574,
+          "BGN_native_eV": 0.1661638648969735,
+          "BGN_classic_eV": 0.1283637256924552,
+          "BGN_FD_exact_eV": 0.037204962347867285,
+          "BGN_exact_minus_native_eV": -0.000595176856651003,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": 0.0,
+          "reference_p_eV": 0.0
+        },
+        {
+          "node": 2567,
+          "Nd": 2.5999999999999938e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 5.117703293979048,
+          "eta_p_energy": -39.561526437586565,
+          "density_error_n": 0.00834951610199064,
+          "density_error_p": -1.1102230246251565e-16,
+          "delta_fn_exact_V": 0.0007822508786836203,
+          "delta_fp_exact_V": 0.0,
+          "gap_energy_eV": 0.890441552868185,
+          "gap_from_ni_eV": 0.890441552868185,
+          "BGN_native_eV": 0.21776767790104584,
+          "BGN_classic_eV": 0.141893324694944,
+          "BGN_FD_exact_eV": 0.07509863596614717,
+          "BGN_exact_minus_native_eV": -0.0007757172399546763,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": 9.184473720752675e-17,
+          "reference_p_eV": 0.0
+        }
+      ]
+    },
+    "wuensche_coupled": {
+      "nodes": 2152,
+      "donors_cm3": {
+        "min": 0.0,
+        "max": 5.099999999999983e+20,
+        "max_abs": 5.099999999999983e+20,
+        "rms": 1.0293721259391633e+20
+      },
+      "acceptors_cm3": {
+        "min": 9.999999999999986e+17,
+        "max": 9.999999999999986e+17,
+        "max_abs": 9.999999999999986e+17,
+        "rms": 9.999999999999986e+17
+      },
+      "eta_n": {
+        "min": -37.79180460846459,
+        "max": 8.060722002624885,
+        "max_abs": 37.79180460846459,
+        "rms": 21.086687660156166
+      },
+      "eta_p": {
+        "min": -39.771958919976896,
+        "max": -3.4242054149611003,
+        "max_abs": 39.771958919976896,
+        "rms": 28.70076816279837
+      },
+      "direct_density_relative_error_n": {
+        "min": -0.0146144363185704,
+        "max": 0.011169728751130537,
+        "max_abs": 0.0146144363185704,
+        "rms": 0.0029703149242388265
+      },
+      "direct_density_relative_error_p": {
+        "min": -0.00010770185910469188,
+        "max": 3.7969627442180354e-14,
+        "max_abs": 0.00010770185910469188,
+        "rms": 4.4861783147312004e-05
+      },
+      "exact_fn_shift_V": {
+        "min": -0.0021092717964425094,
+        "max": 0.0008522686418924376,
+        "max_abs": 0.0021092717964425094,
+        "rms": 0.00035603542029380143
+      },
+      "exact_fp_shift_V": {
+        "min": -8.908939509130095e-15,
+        "max": 2.8161368864442804e-06,
+        "max_abs": 2.8161368864442804e-06,
+        "rms": 1.1726511343087719e-06
+      },
+      "energy_minus_ni_gap_eV": {
+        "min": -2.220446049250313e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.220446049250313e-16,
+        "rms": 9.786045549397546e-17
+      },
+      "base_gap_minus_gap_minus_BGN_eV": {
+        "min": -2.498001805406602e-16,
+        "max": 2.220446049250313e-16,
+        "max_abs": 2.498001805406602e-16,
+        "rms": 8.763192794218871e-17
+      },
+      "quasi_fermi_energy_plus_potential_n": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "quasi_fermi_energy_plus_potential_p": {
+        "min": 0.0,
+        "max": 0.0,
+        "max_abs": 0.0,
+        "rms": 0.0
+      },
+      "BGN_exact_minus_native_eV": {
+        "min": -0.0008513927255850706,
+        "max": 0.0021302497779314145,
+        "max_abs": 0.0021302497779314145,
+        "rms": 0.00035960926228092077
+      },
+      "eta_gap_minus_energy": {
+        "min": -7.993605777301127e-15,
+        "max": 1.0658141036401503e-14,
+        "max_abs": 1.0658141036401503e-14,
+        "rms": 3.0913996628038134e-15
+      },
+      "reference_n_eV": {
+        "min": -1.1136174386412618e-15,
+        "max": 4.3626250173575205e-16,
+        "max_abs": 1.1136174386412618e-15,
+        "rms": 4.763255381829394e-16
+      },
+      "reference_p_eV": {
+        "min": -3.7885954098104787e-16,
+        "max": 1.1021368464903211e-15,
+        "max_abs": 1.1021368464903211e-15,
+        "rms": 4.725047937817069e-16
+      },
+      "reference_sum_eV": {
+        "min": -4.592236860376338e-16,
+        "max": 3.67378948830107e-16,
+        "max_abs": 4.592236860376338e-16,
+        "rms": 9.458441758806442e-17
+      },
+      "integral_checks": [
+        {
+          "node": 237,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 237,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 863,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 863,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 1208,
+          "carrier": "n",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 1208,
+          "carrier": "p",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "n",
+          "relative_integral_difference": 4.440892098500626e-16
+        },
+        {
+          "node": 1546,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        },
+        {
+          "node": 2567,
+          "carrier": "n",
+          "relative_integral_difference": 2.220446049250313e-16
+        },
+        {
+          "node": 2567,
+          "carrier": "p",
+          "relative_integral_difference": 0.0
+        }
+      ],
+      "selected_nodes": [
+        {
+          "node": 237,
+          "Nd": 5.099999999999983e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.060722002624885,
+          "eta_p_energy": -39.771958919976896,
+          "density_error_n": -0.0146144363185704,
+          "density_error_p": 0.0,
+          "delta_fn_exact_V": -0.0021092717964425094,
+          "delta_fp_exact_V": 0.0,
+          "gap_energy_eV": 0.8197987466817658,
+          "gap_from_ni_eV": 0.8197987466817657,
+          "BGN_native_eV": 0.28841048408746517,
+          "BGN_classic_eV": 0.15396423240533924,
+          "BGN_FD_exact_eV": 0.13657650146005737,
+          "BGN_exact_minus_native_eV": 0.0021302497779314145,
+          "eta_gap_minus_energy": 7.105427357601002e-15,
+          "reference_n_eV": -2.755342116225803e-16,
+          "reference_p_eV": 3.67378948830107e-16
+        },
+        {
+          "node": 863,
+          "Nd": 5.0878098721026435e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 8.047666604155156,
+          "eta_p_energy": -39.77064671805152,
+          "density_error_n": -0.014478333938386712,
+          "density_error_p": -1.099120794378905e-14,
+          "delta_fn_exact_V": -0.0020861880707537324,
+          "delta_fp_exact_V": 3.67378948830107e-16,
+          "gap_energy_eV": 0.8201023317432413,
+          "gap_from_ni_eV": 0.8201023317432412,
+          "BGN_native_eV": 0.28810689902598957,
+          "BGN_classic_eV": 0.15392131466667888,
+          "BGN_FD_exact_eV": 0.13629370034502816,
+          "BGN_exact_minus_native_eV": 0.0021081159857174736,
+          "eta_gap_minus_energy": 7.105427357601002e-15,
+          "reference_n_eV": -1.3776710581129014e-16,
+          "reference_p_eV": 1.836894744150535e-16
+        },
+        {
+          "node": 1208,
+          "Nd": 1.2147527582137449e-08,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": -37.79180460846454,
+          "eta_p_energy": -3.4242054149611447,
+          "density_error_n": 2.886579864025407e-15,
+          "density_error_p": -0.00010770185910469188,
+          "delta_fn_exact_V": 0.0,
+          "delta_fp_exact_V": 2.8161368864442804e-06,
+          "gap_energy_eV": 1.065516096028995,
+          "gap_from_ni_eV": 1.065516096028995,
+          "BGN_native_eV": 0.042693134740235755,
+          "BGN_classic_eV": 0.04240168245229793,
+          "BGN_FD_exact_eV": 0.00029426842482381847,
+          "BGN_exact_minus_native_eV": 2.8161368859913605e-06,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": -1.836894744150535e-16,
+          "reference_p_eV": 3.099759880754028e-16
+        },
+        {
+          "node": 1546,
+          "Nd": 1.2187955950277925e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 2.859015080884637,
+          "eta_p_energy": -39.29896318427852,
+          "density_error_n": 0.009716881474939543,
+          "density_error_p": -8.881784197001252e-16,
+          "delta_fn_exact_V": 0.0005852525048014237,
+          "delta_fp_exact_V": 0.0,
+          "gap_energy_eV": 0.9420453658722574,
+          "gap_from_ni_eV": 0.9420453658722574,
+          "BGN_native_eV": 0.1661638648969735,
+          "BGN_classic_eV": 0.1283637256924552,
+          "BGN_FD_exact_eV": 0.037204962347867285,
+          "BGN_exact_minus_native_eV": -0.000595176856651003,
+          "eta_gap_minus_energy": 0.0,
+          "reference_n_eV": 1.3776710581129014e-16,
+          "reference_p_eV": 0.0
+        },
+        {
+          "node": 2567,
+          "Nd": 2.5999999999999938e+20,
+          "Na": 9.999999999999986e+17,
+          "eta_n_energy": 5.1177032939790505,
+          "eta_p_energy": -39.561526437586565,
+          "density_error_n": 0.008349516101991084,
+          "density_error_p": -1.1102230246251565e-16,
+          "delta_fn_exact_V": 0.0007822508786836891,
+          "delta_fp_exact_V": 0.0,
+          "gap_energy_eV": 0.890441552868185,
+          "gap_from_ni_eV": 0.890441552868185,
+          "BGN_native_eV": 0.21776767790104584,
+          "BGN_classic_eV": 0.141893324694944,
+          "BGN_FD_exact_eV": 0.07509863596614717,
+          "BGN_exact_minus_native_eV": -0.0007757172399546763,
+          "eta_gap_minus_energy": 8.881784197001252e-16,
+          "reference_n_eV": 1.1480592150940843e-16,
+          "reference_p_eV": 0.0
+        }
+      ]
+    }
+  },
+  "verification": {
+    "four_native_stage_checks": {
+      "default_poisson": {
+        "exit_code": 0,
+        "import_fields": 17,
+        "nodes": 2152,
+        "direct_checks": true
+      },
+      "default_coupled": {
+        "exit_code": 0,
+        "import_fields": 17,
+        "nodes": 2152,
+        "direct_checks": true
+      },
+      "wuensche_poisson": {
+        "exit_code": 0,
+        "import_fields": 17,
+        "nodes": 2152,
+        "direct_checks": true
+      },
+      "wuensche_coupled": {
+        "exit_code": 0,
+        "import_fields": 17,
+        "nodes": 2152,
+        "direct_checks": true
+      }
+    },
+    "native_new_run_vs_previous_export": {
+      "eDensity": 0.0,
+      "hDensity": 0.0,
+      "ElectrostaticPotential": 0.0
+    },
+    "native_cases_differ_only_in_Fermi_option": true,
+    "constants_control": {
+      "default_poisson": {
+        "native_Vt_V": 0.025851995266484913,
+        "codata_Vt_V": 0.025851999786435535,
+        "n_function_change_relative_max": 6.607521912727066e-06,
+        "p_function_change_relative_max": 6.953593040037731e-06
+      },
+      "default_coupled": {
+        "native_Vt_V": 0.025851995266484913,
+        "codata_Vt_V": 0.025851999786435535,
+        "n_function_change_relative_max": 6.607521912727066e-06,
+        "p_function_change_relative_max": 6.953593040037731e-06
+      },
+      "wuensche_poisson": {
+        "native_Vt_V": 0.025851995266484913,
+        "codata_Vt_V": 0.025851999786435535,
+        "n_function_change_relative_max": 6.607521912727066e-06,
+        "p_function_change_relative_max": 6.953733444170496e-06
+      },
+      "wuensche_coupled": {
+        "native_Vt_V": 0.025851995266484913,
+        "codata_Vt_V": 0.025851999786435535,
+        "n_function_change_relative_max": 6.607521912727066e-06,
+        "p_function_change_relative_max": 6.953733444170496e-06
+      }
+    },
+    "defining_integral_grid": {
+      "points": 401,
+      "eta_min": -39.771958919976896,
+      "eta_max": 8.130513994213828,
+      "forward_max_relative_error": 7.771561172376096e-15,
+      "derivative_max_relative_error": 2.6623148130511254e-13,
+      "monotonic_and_positive_derivative": true
+    }
+  },
+  "conclusions": {
+    "native_bandgap_and_ni_reference_consistent": true,
+    "native_default_mapping_differs_from_defining_integral": true,
+    "native_approximation_coefficients_reproduced": false,
+    "old_wuensche_option_is_not_an_alignment_fix": true,
+    "full_native_jacobian_or_nonlinear_acceptance_qualified": false
+  },
+  "private_evidence_root": "build-release/bv_energy_statistics_20261024",
+  "evidence_sha256": {
+    "build-release/bv_energy_statistics_20261024/analyze.py": "8847154d8044b27bc7364f6783d11c10bb9380e482e77f6b53588799ac8efe09",
+    "build-release/bv_energy_statistics_20261024/build_primitive.py": "4ea7dcca728976c30dec811ec6c5969ed5e1dacec16bec118e09c3bf030c5fbb",
+    "build-release/bv_energy_statistics_20261024/import_fields.py": "10e722d0b797f9d67e8d7c9b2e579a2ec15ab0b4dab5805bb7ff46d761410814",
+    "build-release/bv_energy_statistics_20261024/remote_job.py": "6d08a848661c3734688aa4cc13a52e75a2bc6ab9aba6f774229ff1514554f1f1",
+    "build-release/bv_energy_statistics_20261024/seal.py": "54ab6e6306ccb49202142140550f4665af5abc05c7e57583790ebba67dce6a59",
+    "build-release/bv_energy_statistics_20261024/transport.py": "f6701ff28fee9ac9751e90e97c4d58fdc31f56be26e12ea95188152e617e91b5",
+    "build-release/bv_energy_statistics_20261024/verify.py": "558f68a66a9c63bbc2cf3654d734c2c902fc315ca84c540fff47fe8355e9068c",
+    "build-release/bv_energy_statistics_20261024/primitive.cpp": "e45de6d057fade41c3f3b410474cd2776366e2e55ca1de881e05ac6c8853b63f",
+    "build-release/bv_energy_statistics_20261024/primitive.exe": "b4f1c1d54c120cb21e340720c9ba08be24d144d609b8b3a35b04e939b17fe8fb",
+    "build-release/bv_energy_statistics_20261024/primary_evidence.tgz": "98ec5c0dc6bfd3691f9057d6b5d409a60b91fb3836c2351842bbc883f8396180",
+    "build-release/bv_energy_statistics_20261024/analysis.json": "d3208e53c6d1d1b3747bf1f01e782ba216fa62e33e86eab751562ec553f8d125",
+    "build-release/bv_energy_statistics_20261024/verification.json": "a170b5a7ca86c51a7d06492918917cf49750818fc07edfda2a597c428051f244",
+    "build-release/bv_energy_statistics_20261024/build_receipt.json": "e55ab64c92b68812353b2d3639555821e05051566f9d222e50ca98e9f36d17ac",
+    "build-release/bv_energy_statistics_20261024/job_records.json": "3e18040eedeae38f012260a610a674914e5d1de67768c9cc2766775bde8f08ce",
+    "build-release/bv_energy_statistics_20261024/status.log": "f85ddb287967dc136358a2edae5236fa2e100b3873cb46014b9d1d8570ad081d",
+    "build-release/bv_energy_statistics_20261024/default_poisson/codata_input.csv": "292d5228faf732d8833ad8d48451b368815be118b3ab2eea744be561c1c6b171",
+    "build-release/bv_energy_statistics_20261024/default_poisson/codata_output.csv": "a38d0f97a6f20313e46b53c8b0d5ded51617c27239bc08d900dd806774d922aa",
+    "build-release/bv_energy_statistics_20261024/default_poisson/contacts.csv": "b2442c61b0fa0982511a3f36629b1cb9ceda742a560548bfe168025fe9c260bc",
+    "build-release/bv_energy_statistics_20261024/default_poisson/direct_energy_audit.csv": "be3fb864ce4dfbee76a096d45092e68012a2b30f4b98253d2935db4a1fb78068",
+    "build-release/bv_energy_statistics_20261024/default_poisson/doping.csv": "40d9b8773dc2a6755ba10e4c690d2fe0e8d5aa0bfd5705f85538441a0c4d1f13",
+    "build-release/bv_energy_statistics_20261024/default_poisson/elements.csv": "04ad949b187eac5a9bb3afe42b60572032eb02b2e96386bc9de2ec95e3ca045b",
+    "build-release/bv_energy_statistics_20261024/default_poisson/nodes.csv": "77cfc6e56ee6cde228ea273d997f5b244fb9e618751b19529d40b73cd25410ad",
+    "build-release/bv_energy_statistics_20261024/default_poisson/primitive_input.csv": "d7f8bd4ee2b0a1d7c0393f088bc3f52a4ff5f8ac48802b93b06c0e987d978487",
+    "build-release/bv_energy_statistics_20261024/default_poisson/primitive_output.csv": "189c4c3a2429e30cee0619572961619e741b78bbb540537638958a519f0d18f2",
+    "build-release/bv_energy_statistics_20261024/default_poisson/inventory.json": "fd11fdee88dd212d76106aca440cef0d7be324f3416cc84142ee1e6ca3612266",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/ConductionBandEnergy_region3.csv": "3d8f54432752ba96ce2de2dbab245029560d4b99d1604d6f38e5cea7834a3bc2",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/ValenceBandEnergy_region3.csv": "02c1f4ba7f2bb0c9fa21a2db0945d9dde0cd7d934f69cf663b2c8633f9846430",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/eQuasiFermiEnergy_region3.csv": "17b3f812da36857c8d8e6e837989ae84ab57ca7efb17443351c7ffdcf3d7dd74",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/hQuasiFermiEnergy_region3.csv": "17b3f812da36857c8d8e6e837989ae84ab57ca7efb17443351c7ffdcf3d7dd74",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/ElectrostaticPotential_region3.csv": "7a0581275715fcbb0f3631d00ad48a140694625667a0cf0d9634803a1aca06b3",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/eQuasiFermiPotential_region3.csv": "246f1a1332e6ec46ee5424f9ffd6149ade564494ff786da49782173bbc710d74",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/hQuasiFermiPotential_region3.csv": "246f1a1332e6ec46ee5424f9ffd6149ade564494ff786da49782173bbc710d74",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/eDensity_region3.csv": "c076e5de0faa49779eb729ff38568264acfab62ed404aa75671f05bf1e87bdd4",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/hDensity_region3.csv": "c2f84853214b65c865edb6d0ce41c56d7f2856367b544cd7c55450071ad1ae01",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/eEffectiveStateDensity_region3.csv": "e36c1553e39345fe7a27f47270b661208c9d5926045b90b00c0899943e632cfc",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/hEffectiveStateDensity_region3.csv": "80cc6d78fb1c78c463f66ab83852677faaafe852291b0cf6983b535bec2c63ab",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/EffectiveIntrinsicDensity_region3.csv": "beb24efbdb4d71533d39fca7238c28562a87a26cab66f325a61b3b2368290d7f",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/BandgapNarrowing_region3.csv": "cfa6af1ce79a9bac6977d711fcf19911b227c9801eb93a8b438531670f3bc511",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/BandGap_region3.csv": "afb9be5469e0011fc5e42b959da7c6a0d750d47a3fc9d763393d65bffae51dde",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/DonorConcentration_region3.csv": "fec064a2a3c198f05aeff5780041a750e0dc56e282ff7b7c8c5e1b794b0ae516",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/AcceptorConcentration_region3.csv": "b5d809512bf55a4a5e2c6e391b9af5d0a05a98432cd7e64566d8c63a9b27175a",
+    "build-release/bv_energy_statistics_20261024/default_poisson/fields/LatticeTemperature_region3.csv": "047c91407c9aef70e411851bde4e49902916be3ca407fe73dd7561d4c5269ccd",
+    "build-release/bv_energy_statistics_20261024/default_coupled/codata_input.csv": "e1495432b54fe7b8d5e51d7b75c1d345f2c3df40200a23d35ca4be72a328c90d",
+    "build-release/bv_energy_statistics_20261024/default_coupled/codata_output.csv": "6b16c75ef93c7b5bd53a92b437c0a7576076fb6fbcc654b1ee30ec69db2f4366",
+    "build-release/bv_energy_statistics_20261024/default_coupled/contacts.csv": "b2442c61b0fa0982511a3f36629b1cb9ceda742a560548bfe168025fe9c260bc",
+    "build-release/bv_energy_statistics_20261024/default_coupled/direct_energy_audit.csv": "207a92383dcc94ff4391788002fc90cd68baeb0a07ffd7eb12b85d96fde09b7d",
+    "build-release/bv_energy_statistics_20261024/default_coupled/doping.csv": "40d9b8773dc2a6755ba10e4c690d2fe0e8d5aa0bfd5705f85538441a0c4d1f13",
+    "build-release/bv_energy_statistics_20261024/default_coupled/elements.csv": "04ad949b187eac5a9bb3afe42b60572032eb02b2e96386bc9de2ec95e3ca045b",
+    "build-release/bv_energy_statistics_20261024/default_coupled/nodes.csv": "77cfc6e56ee6cde228ea273d997f5b244fb9e618751b19529d40b73cd25410ad",
+    "build-release/bv_energy_statistics_20261024/default_coupled/primitive_input.csv": "1148c46d87b12cfe892fea0a7c09a20dc6b59a5f785b65f28e3eac572bd5e588",
+    "build-release/bv_energy_statistics_20261024/default_coupled/primitive_output.csv": "4d40a50b8f4404afda8d993518375340283dbb5b9832658d9643ebb3c0c55623",
+    "build-release/bv_energy_statistics_20261024/default_coupled/inventory.json": "611728554f1fbc004aada2814f64e6bb33cf8e63014986efd647d62b1262dbba",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/ConductionBandEnergy_region3.csv": "c22275a20bc152d46d4075ee9f57d739d0a95f60d709fcafe2fd1324bbc7f2f6",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/ValenceBandEnergy_region3.csv": "6942ef4e756faaec7ecf6188dce42d86da8c70d2c074993dda282ca06cddc3df",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/eQuasiFermiEnergy_region3.csv": "3c428071da84ad3a0322fbb4baea7a2e5054d3800cef270c924b356d1206b849",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/hQuasiFermiEnergy_region3.csv": "435bc6ff11faca0ca5ae1113fd6a9f6bb34e2da432cb067e55eedf3dc6115b74",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/ElectrostaticPotential_region3.csv": "2a56318d4762cd9f091176314bf4763f1fc77b05183c3f42a566ec69e9b883b5",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/eQuasiFermiPotential_region3.csv": "4025bf42744ab8d9bac0bf088f858180bfe79479893336a1fb1079169ed8a0e8",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/hQuasiFermiPotential_region3.csv": "fecaf357fe63c591574e653274683251b55bf27c5bf89a04a2f28f77c9524af2",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/eDensity_region3.csv": "c25b3d3d00952d60f9cc177c05b165844d0c6b40aa06a67b39d82d7b5b4880c0",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/hDensity_region3.csv": "e515b1050a32b16e7b5edb6e64c7abdd4a74bde6e5deb9fa42650391e0f22fc1",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/eEffectiveStateDensity_region3.csv": "e36c1553e39345fe7a27f47270b661208c9d5926045b90b00c0899943e632cfc",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/hEffectiveStateDensity_region3.csv": "80cc6d78fb1c78c463f66ab83852677faaafe852291b0cf6983b535bec2c63ab",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/EffectiveIntrinsicDensity_region3.csv": "beb24efbdb4d71533d39fca7238c28562a87a26cab66f325a61b3b2368290d7f",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/BandgapNarrowing_region3.csv": "cfa6af1ce79a9bac6977d711fcf19911b227c9801eb93a8b438531670f3bc511",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/BandGap_region3.csv": "afb9be5469e0011fc5e42b959da7c6a0d750d47a3fc9d763393d65bffae51dde",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/DonorConcentration_region3.csv": "fec064a2a3c198f05aeff5780041a750e0dc56e282ff7b7c8c5e1b794b0ae516",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/AcceptorConcentration_region3.csv": "b5d809512bf55a4a5e2c6e391b9af5d0a05a98432cd7e64566d8c63a9b27175a",
+    "build-release/bv_energy_statistics_20261024/default_coupled/fields/LatticeTemperature_region3.csv": "047c91407c9aef70e411851bde4e49902916be3ca407fe73dd7561d4c5269ccd",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/codata_input.csv": "4dc97ccc5c27ffae7a2385e7cbdb273f24aee9bdbb969af2c05d751430c768e3",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/codata_output.csv": "e73a4cd08d19af4cbaa9c14e5ad1891114ed8a3c62a59ef490dc92a505b1b516",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/contacts.csv": "b2442c61b0fa0982511a3f36629b1cb9ceda742a560548bfe168025fe9c260bc",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/direct_energy_audit.csv": "6ac3ccc1bdf214e90dba5b963f8f7ff55df053408963a8f3f0653a803b369218",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/doping.csv": "40d9b8773dc2a6755ba10e4c690d2fe0e8d5aa0bfd5705f85538441a0c4d1f13",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/elements.csv": "04ad949b187eac5a9bb3afe42b60572032eb02b2e96386bc9de2ec95e3ca045b",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/nodes.csv": "77cfc6e56ee6cde228ea273d997f5b244fb9e618751b19529d40b73cd25410ad",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/primitive_input.csv": "966b382589b6ac37e61c9ccf113c0913847d4d7fef0daab9d9a52181f508f9a7",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/primitive_output.csv": "9e9cbd3cc90518aee4dd5e09452e2a649c1013d5f63caa118c568adab8d1ed4b",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/inventory.json": "e94543a745897df25685f6fe2be1b3575b21be8d57b5abb0f1247d9084ddd1cd",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/ConductionBandEnergy_region3.csv": "3e941dd7f5ec77081a973c4ea545d7d3463d8fcd78354a3bdf6331eaafccebb3",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/ValenceBandEnergy_region3.csv": "586d96e07cac087a37f4f0755438453ede8beacad64c94e24bf53eb7063bcd44",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/eQuasiFermiEnergy_region3.csv": "17b3f812da36857c8d8e6e837989ae84ab57ca7efb17443351c7ffdcf3d7dd74",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/hQuasiFermiEnergy_region3.csv": "17b3f812da36857c8d8e6e837989ae84ab57ca7efb17443351c7ffdcf3d7dd74",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/ElectrostaticPotential_region3.csv": "fe7ea84b813e59756f2b1626d75a41a3a6230724600a6ce9135d34c9648f0b2c",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/eQuasiFermiPotential_region3.csv": "246f1a1332e6ec46ee5424f9ffd6149ade564494ff786da49782173bbc710d74",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/hQuasiFermiPotential_region3.csv": "246f1a1332e6ec46ee5424f9ffd6149ade564494ff786da49782173bbc710d74",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/eDensity_region3.csv": "53a2995fc5ee8589f86da85713b92010e73bd1f04b68af7a21c810b2cf9d6302",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/hDensity_region3.csv": "66c2d17900704e4fa13a7626f11128edb9fd37b73ee1e754939466b59141bb07",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/eEffectiveStateDensity_region3.csv": "e36c1553e39345fe7a27f47270b661208c9d5926045b90b00c0899943e632cfc",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/hEffectiveStateDensity_region3.csv": "80cc6d78fb1c78c463f66ab83852677faaafe852291b0cf6983b535bec2c63ab",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/EffectiveIntrinsicDensity_region3.csv": "9daa4bdc392a53baa52e85f2e68fc5311f1a5ffc6d851bd793e2b692254ac044",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/BandgapNarrowing_region3.csv": "792a665b22bb61d850326527ed54169a1feb950088b39d5757a0a4ee3b995ba5",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/BandGap_region3.csv": "afb9be5469e0011fc5e42b959da7c6a0d750d47a3fc9d763393d65bffae51dde",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/DonorConcentration_region3.csv": "fec064a2a3c198f05aeff5780041a750e0dc56e282ff7b7c8c5e1b794b0ae516",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/AcceptorConcentration_region3.csv": "b5d809512bf55a4a5e2c6e391b9af5d0a05a98432cd7e64566d8c63a9b27175a",
+    "build-release/bv_energy_statistics_20261024/wuensche_poisson/fields/LatticeTemperature_region3.csv": "047c91407c9aef70e411851bde4e49902916be3ca407fe73dd7561d4c5269ccd",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/codata_input.csv": "f0aabfba494847231f62b34d45421b7abbecfaca64fdfb5ed236bf407042f4e8",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/codata_output.csv": "c50f34dc9bcfaf807c523be1caeda6def5240ab1789196afa405efb81de19b75",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/contacts.csv": "b2442c61b0fa0982511a3f36629b1cb9ceda742a560548bfe168025fe9c260bc",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/direct_energy_audit.csv": "a276aa8efedd3bd61538ab97694923239ef525696d4907a8c673237fe7dd6f12",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/doping.csv": "40d9b8773dc2a6755ba10e4c690d2fe0e8d5aa0bfd5705f85538441a0c4d1f13",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/elements.csv": "04ad949b187eac5a9bb3afe42b60572032eb02b2e96386bc9de2ec95e3ca045b",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/nodes.csv": "77cfc6e56ee6cde228ea273d997f5b244fb9e618751b19529d40b73cd25410ad",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/primitive_input.csv": "2b1c7aed64ac1bc31ca89ee17b8a5a52179d54a8274ee5932b86a0bed9b2b8cf",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/primitive_output.csv": "befbd18a32eea5711e49c2a8c539e263fc3f34e9e9c1238f3a2c052e6180c459",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/inventory.json": "193da7265b8521e5ee4f5a3f849aac9e594e7c0e6d65ca867654eebdf0577e27",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/ConductionBandEnergy_region3.csv": "c712e507d1579fe3b64561aa3bc215ca4d232001529e31374c12309db672f1b1",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/ValenceBandEnergy_region3.csv": "0a82f843c8255a8cf97abe326bd8e324ddb12c983a07ff8f37b764866912066f",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/eQuasiFermiEnergy_region3.csv": "27960f284ac690dc6fc0e36f4be887e14da422c9bcb434d085649e270e0555c8",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/hQuasiFermiEnergy_region3.csv": "6ea64cb46d7252d4215fb0b44d432a0113e8feb7a1af10093a5c8b3fd809ec2d",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/ElectrostaticPotential_region3.csv": "0f0d3114c2fcb168f6d46f6706c65010616580b8cc073b9b9fe93479ccd487ae",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/eQuasiFermiPotential_region3.csv": "243385407d6b05696d56a245a8ce9759c0b2fd9c44e3fd96a7c64c027dfb7d0a",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/hQuasiFermiPotential_region3.csv": "c395e8be962349e8f85046b6a49ccf67a1d2a11243b6ae058fa9bc419de28c19",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/eDensity_region3.csv": "d36f195c33b4813119c601fa9429f94ee8fae42d16c57165fff65919b0f91677",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/hDensity_region3.csv": "76243e7ade7f5d8c620a9ab3a6c51227542587c45371be8404bde74a694bfbbb",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/eEffectiveStateDensity_region3.csv": "e36c1553e39345fe7a27f47270b661208c9d5926045b90b00c0899943e632cfc",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/hEffectiveStateDensity_region3.csv": "80cc6d78fb1c78c463f66ab83852677faaafe852291b0cf6983b535bec2c63ab",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/EffectiveIntrinsicDensity_region3.csv": "9daa4bdc392a53baa52e85f2e68fc5311f1a5ffc6d851bd793e2b692254ac044",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/BandgapNarrowing_region3.csv": "792a665b22bb61d850326527ed54169a1feb950088b39d5757a0a4ee3b995ba5",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/BandGap_region3.csv": "afb9be5469e0011fc5e42b959da7c6a0d750d47a3fc9d763393d65bffae51dde",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/DonorConcentration_region3.csv": "fec064a2a3c198f05aeff5780041a750e0dc56e282ff7b7c8c5e1b794b0ae516",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/AcceptorConcentration_region3.csv": "b5d809512bf55a4a5e2c6e391b9af5d0a05a98432cd7e64566d8c63a9b27175a",
+    "build-release/bv_energy_statistics_20261024/wuensche_coupled/fields/LatticeTemperature_region3.csv": "047c91407c9aef70e411851bde4e49902916be3ca407fe73dd7561d4c5269ccd",
+    "src/physics/CarrierStatistics.cpp": "0205ae78880e309a340c757caf69487c5aff0698226b39604b75891d577b3e8a",
+    "src/physics/FermiHalfCoefficients.inc": "4ce1f2b37f03b511ecb2e4a3cfb1f6b2721ed8cc335249624a6e4d6adfd81f85",
+    "src/physics/BandgapNarrowing.cpp": "06666a89dcc9634874ce8b37a1589651aa95af8f43f197572e19e2bdf47aa5dc",
+    "include/vela/equation/AssemblerUtils.h": "643b984b59d238c2fb502baaf2c01315b5fe355d1030eff5c7658ec9b1c45cee",
+    "build-release/libvela_core.a": "a931204c66d3f95c4d5f034fbf344bc870d8c93e1a1ecec6e0e4946a539f6c49",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/coupled_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/coupled_des.sav": "c20560021382e8da237b30aecdc69d4ca4b4ace88d1edee6f877549f97943bb5",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/coupled_des.tdr": "ed6271cbe00479f3225cf4dc706ed080b82a2f638f93126b5e396b9c905b2143",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/exit_code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/n1_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/n5_des.log": "d7015d8f264b626ed8d5fc7a45ae711b8302d926d6a9c87fa99a2b64d34f1ba7",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/n5_des.plt": "09f030c36ce24bb39f1739ea2a40509016fd62d18b66a480bd141123121ab235",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/n5_des.tdr": "86bdec007d7099d61525a558cdb3ae54aa0a79b84b84ceb058e4bb969811da93",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/poisson_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/poisson_des.sav": "e133ca7c350e336aed52e9215cc56eed90136427ba25d7a9afd75d55e2705ff0",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/poisson_des.tdr": "f608b467da8b5349398bd9fd2535a03147ab21acec09d624a3388b98e4f5fe55",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/pp5_des.cmd": "139d11958108db88c502770e15b0790d435e32b794fad859f38a94999be5ef77",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/default/run.out": "d299cc8180397d2bb43f329b8b5da50e6c56ddebd3c44266c5bba35c27aa92b1",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/coupled_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/coupled_des.sav": "4d7970e306b4a1c1772e945270eea67bcc269d6787e598374c79b31048f2b239",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/coupled_des.tdr": "8f8502d9771d0f38ae4b21f222efee6fe59cde64ec68d868274fdedbaa03de27",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/exit_code": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/n1_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/n5_des.log": "a4a3ab60c0aab8eb2ed1d1bb7e8313fbb0a7df1bebdec743da8cfc4de7e70a00",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/n5_des.plt": "ef69c4001df8e6250676e528e5e32ffd168f47129bb7f81d157208fa149accb6",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/n5_des.tdr": "092a0f8d3a5c5b422b7fb332a351b2d0b6d7a0af12908262f3b2cdd2ad65e2b1",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/poisson_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/poisson_des.sav": "241a0b718a5f80afd3e9e736e982672b8c113bf8776e013bea75d8fcb6751cb4",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/poisson_des.tdr": "8f369a2f70ff5e4ab35087ab72b26d5c533316e357207b5a836a20bc9d91894b",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/pp5_des.cmd": "41c038ed07ab3243cf983bedf8dceec801d538adc4f4c16d3c0a1dfc0a1493e6",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/wuensche/run.out": "0ee2b33fec4ae3723845e9885220b3891e689a7a262730f94a45f4f01d76f250",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/worker.py": "0db1544f633fd5259f6e980da09f735c52c04354daf9bc7caa9a201a0fc06b24",
+    "build-release/bv_energy_statistics_20261024/remote_evidence/primary/outcomes.json": "bcb2eb993a1bccf0c4563552aa8d50714d22c05c81c8d405902117d1cf53bd19"
+  },
+  "single_thread_diagnostic_exit_codes_and_elapsed_seconds": {
+    "default": {
+      "exit_code": 0,
+      "seconds": 195.89491724967957
+    },
+    "wuensche": {
+      "exit_code": 0,
+      "seconds": 195.92924571037292
+    }
+  },
+  "all_submitted_native_jobs_completed": true
+}

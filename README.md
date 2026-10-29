@@ -9,6 +9,13 @@ The project is intentionally transparent and small. It is useful for solver
 development, regression experiments, and device-trend smoke tests. It is not a
 calibrated commercial TCAD replacement.
 
+For the qualified SDevice cmd frontend packages, installation commands and exact case
+support levels, see the [SDevice delivery guide](docs/sdevice_delivery.md).
+Current source builds provide `sd-sim [options] deck.cmd` as the preferred entry;
+`vela device [options] deck.cmd` remains available. See the
+[CLI support and reserved options](docs/sentaurus_sdevice_workflow.md#21-调用形式).
+Previously qualified packages retain their recorded entry points and capabilities.
+
 ## What Is Implemented
 
 Core solver capabilities:
@@ -91,8 +98,16 @@ Prerequisites:
 
 - CMake 3.21 or newer
 - C++20 compiler
-- Boost headers (Boost.Multiprecision)
-- Eigen3
+- System Boost 1.84 or newer, including Multiprecision and PFR headers.
+  PFR field-name reflection is required; CMake does not download a separate PFR.
+  Vela uses `Boost::headers` and checks the reflection API during configuration;
+  an independent `boost_pfrConfig.cmake` is not required.
+- Eigen 5.0.1 or newer within the 5.x series (the CMake package/target names
+  remain `Eigen3` / `Eigen3::Eigen`). CMake uses a compatible installed package
+  or downloads the official 5.0.1 headers with a pinned SHA-256. An older
+  distribution `libeigen3-dev` package is not used for Vela compilation.
+  For offline builds without a compatible installed package, provide extracted
+  Eigen 5.0.1 sources with `-DFETCHCONTENT_SOURCE_DIR_VELA_EIGEN=/path/to/eigen-5.0.1`.
 - nlohmann/json
 - Catch2 v3
 - Python 3 interpreter for CTest regression orchestration
@@ -152,6 +167,15 @@ HDF5 and HighFive are required for production restart storage in every preset;
 configuration fails if the state-storage dependencies are unavailable. The
 optional TDR import tools can be disabled with `VELA_ENABLE_HDF5=OFF` without
 disabling HDF5 state storage.
+
+The oneMKL PARDISO shared-solver backend is disabled by default
+(`VELA_ENABLE_MKL_PARDISO=OFF`), including in GitHub CI. To compile support on
+Windows or Linux, add `-DVELA_ENABLE_MKL_PARDISO=ON` to the configure command
+(for example, `cmake --preset windows-ucrt64-debug -DVELA_ENABLE_MKL_PARDISO=ON`),
+then build with the matching preset. No MKL SDK is needed for compilation;
+selecting `VELA_LINEAR_SOLVER=pardiso_mkl` at runtime additionally requires the
+installed runtime path and its dependent-library search path, as described in
+[the configuration reference](docs/config_schema.md).
 
 ### Windows / MSYS2 UCRT64
 

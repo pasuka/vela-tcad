@@ -1,0 +1,424 @@
+{
+  "schema": "vela.private-n4.qf-reference-rhs-summary.v1",
+  "date": "2026-10-17",
+  "scope": "installed-original BVmethods, fixed-state private actual assembly and independent canonical load row",
+  "configuration": {
+    "temperature_K": 300,
+    "arithmetic": "binary64",
+    "statistics": "original default JD with Fermi/OldSlotboom",
+    "source": "NonLocalPath",
+    "avalanche": "GradQuasiFermi",
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "silicon_triangles": 4156,
+    "core_units": [
+      "um",
+      "cm^-3",
+      "V"
+    ],
+    "source_units": [
+      "m",
+      "m^-3",
+      "J"
+    ],
+    "terminal_current_units": "A/um",
+    "runner": "Windows UCRT64 Release residual probe, HDF5/SuiteSparse linked, no linear solve"
+  },
+  "population_guard_epsilon_multiplier": 128,
+  "row_error_gate": 1e-08,
+  "denominator_floor": false,
+  "support_policy": {
+    "PDE": "sum of absolute assembly terms in the equation units",
+    "Dirichlet": "abs(psi)+abs(prescribed psi)",
+    "load": "abs(inner voltage)+abs(R*device current)+abs(outer voltage)",
+    "native_load": "one canonical super-system row; 11 aliases not added"
+  },
+  "qualification": {
+    "strict_population_five_states": true,
+    "fixed_state_mapped_rhs": true,
+    "independent_load_five_states": true,
+    "finite_population_directions": true,
+    "arbitrary_full_residual": false,
+    "augmented_newton": false,
+    "full_jacobian": false,
+    "cross_platform_package": false,
+    "production_promoted": false,
+    "n4_complete": false,
+    "n5_started": false
+  },
+  "remaining_controls": [
+    "autonomous band math generated under GNU/Linux is still explicit fixed-state input",
+    "SG Bernoulli and SRH tables retain fixed-state math controls",
+    "arbitrary full source/transport perturbations are unqualified"
+  ],
+  "verification": {
+    "successful_native_passive_captures": 10,
+    "rejected_observer_captures": 5,
+    "successful_actual_assemblies": 15,
+    "population_input_groups": 21520,
+    "population_representation_arms": 7,
+    "nonzero_population_controls": 80,
+    "cpp_cases": 4,
+    "cpp_assertions": 921,
+    "evidence_tests": 18,
+    "active_remote_processes": 0
+  },
+  "states": {
+    "zero": {
+      "strict_state_accepted": true,
+      "mapped_scalar_equations": 6843,
+      "failed_mapped_rows": 0,
+      "blocks": {
+        "poisson_free": {
+          "rows": 2522,
+          "failed": 0,
+          "max_error": 1.3299198097341035e-13,
+          "infinite_rows": 0
+        },
+        "poisson_constraint": {
+          "rows": 78,
+          "failed": 0,
+          "max_error": 0,
+          "infinite_rows": 0
+        },
+        "electron": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 6.77452361233382e-11,
+          "infinite_rows": 0
+        },
+        "hole": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 2.2225312854969544e-10,
+          "infinite_rows": 0
+        },
+        "load": {
+          "rows": 1,
+          "failed": 0,
+          "max_error": 4.90767546522379e-16,
+          "infinite_rows": 0
+        }
+      },
+      "independent_load_difference_V": 2.6469779601696886e-23,
+      "maximum_population_direction_error": 1.2826771154339758e-09,
+      "all_stale_source_states_rejected": true,
+      "QF_voltage_energy_roundtrip_changed_values": 103,
+      "population_rejects": {
+        "old_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "normalized_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "tdr_normalized_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "band_eta": {
+          "electron": 5,
+          "hole": 0
+        },
+        "reference_band_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "reference_absolute_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "raw_reference_eta": {
+          "electron": 0,
+          "hole": 0
+        }
+      }
+    },
+    "first": {
+      "strict_state_accepted": true,
+      "mapped_scalar_equations": 6843,
+      "failed_mapped_rows": 0,
+      "blocks": {
+        "poisson_free": {
+          "rows": 2522,
+          "failed": 0,
+          "max_error": 9.916097329634655e-14,
+          "infinite_rows": 0
+        },
+        "poisson_constraint": {
+          "rows": 78,
+          "failed": 0,
+          "max_error": 7.367117958405781e-17,
+          "infinite_rows": 0
+        },
+        "electron": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 9.231041659523867e-11,
+          "infinite_rows": 0
+        },
+        "hole": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 2.8516419294559794e-10,
+          "infinite_rows": 0
+        },
+        "load": {
+          "rows": 1,
+          "failed": 0,
+          "max_error": 5.105191156787492e-16,
+          "infinite_rows": 0
+        }
+      },
+      "independent_load_difference_V": 1.021038247320649e-17,
+      "maximum_population_direction_error": 1.2996284858646328e-09,
+      "all_stale_source_states_rejected": true,
+      "QF_voltage_energy_roundtrip_changed_values": 456,
+      "population_rejects": {
+        "old_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "normalized_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "tdr_normalized_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "band_eta": {
+          "electron": 4,
+          "hole": 2
+        },
+        "reference_band_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "reference_absolute_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "raw_reference_eta": {
+          "electron": 0,
+          "hole": 0
+        }
+      }
+    },
+    "before_BV": {
+      "strict_state_accepted": true,
+      "mapped_scalar_equations": 6843,
+      "failed_mapped_rows": 0,
+      "blocks": {
+        "poisson_free": {
+          "rows": 2522,
+          "failed": 0,
+          "max_error": 1.045331218537258e-13,
+          "infinite_rows": 0
+        },
+        "poisson_constraint": {
+          "rows": 78,
+          "failed": 0,
+          "max_error": 0,
+          "infinite_rows": 0
+        },
+        "electron": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 1.5078029737940575e-11,
+          "infinite_rows": 0
+        },
+        "hole": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 4.786665717042533e-11,
+          "infinite_rows": 0
+        },
+        "load": {
+          "rows": 1,
+          "failed": 0,
+          "max_error": 1.2933568692437163e-16,
+          "infinite_rows": 0
+        }
+      },
+      "independent_load_difference_V": 1.9667359016270516e-13,
+      "maximum_population_direction_error": 5.58568649350839e-10,
+      "all_stale_source_states_rejected": true,
+      "QF_voltage_energy_roundtrip_changed_values": 735,
+      "population_rejects": {
+        "old_eta": {
+          "electron": 6,
+          "hole": 20
+        },
+        "normalized_eta": {
+          "electron": 13,
+          "hole": 31
+        },
+        "tdr_normalized_eta": {
+          "electron": 1,
+          "hole": 3
+        },
+        "band_eta": {
+          "electron": 94,
+          "hole": 277
+        },
+        "reference_band_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "reference_absolute_eta": {
+          "electron": 2,
+          "hole": 129
+        },
+        "raw_reference_eta": {
+          "electron": 0,
+          "hole": 0
+        }
+      }
+    },
+    "after_BV": {
+      "strict_state_accepted": true,
+      "mapped_scalar_equations": 6843,
+      "failed_mapped_rows": 0,
+      "blocks": {
+        "poisson_free": {
+          "rows": 2522,
+          "failed": 0,
+          "max_error": 1.0791755543330705e-13,
+          "infinite_rows": 0
+        },
+        "poisson_constraint": {
+          "rows": 78,
+          "failed": 0,
+          "max_error": 0,
+          "infinite_rows": 0
+        },
+        "electron": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 9.705222764733198e-12,
+          "infinite_rows": 0
+        },
+        "hole": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 6.166542628734961e-11,
+          "infinite_rows": 0
+        },
+        "load": {
+          "rows": 1,
+          "failed": 0,
+          "max_error": 1.8622242195066477e-15,
+          "infinite_rows": 0
+        }
+      },
+      "independent_load_difference_V": 3.824733110352412e-12,
+      "maximum_population_direction_error": 1.2535728843906737e-09,
+      "all_stale_source_states_rejected": true,
+      "QF_voltage_energy_roundtrip_changed_values": 649,
+      "population_rejects": {
+        "old_eta": {
+          "electron": 9,
+          "hole": 18
+        },
+        "normalized_eta": {
+          "electron": 14,
+          "hole": 29
+        },
+        "tdr_normalized_eta": {
+          "electron": 1,
+          "hole": 2
+        },
+        "band_eta": {
+          "electron": 81,
+          "hole": 277
+        },
+        "reference_band_eta": {
+          "electron": 0,
+          "hole": 0
+        },
+        "reference_absolute_eta": {
+          "electron": 3,
+          "hole": 123
+        },
+        "raw_reference_eta": {
+          "electron": 0,
+          "hole": 0
+        }
+      }
+    },
+    "last": {
+      "strict_state_accepted": true,
+      "mapped_scalar_equations": 6843,
+      "failed_mapped_rows": 0,
+      "blocks": {
+        "poisson_free": {
+          "rows": 2522,
+          "failed": 0,
+          "max_error": 1.0383896375149479e-13,
+          "infinite_rows": 0
+        },
+        "poisson_constraint": {
+          "rows": 78,
+          "failed": 0,
+          "max_error": 0,
+          "infinite_rows": 0
+        },
+        "electron": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 8.254621997350017e-13,
+          "infinite_rows": 0
+        },
+        "hole": {
+          "rows": 2121,
+          "failed": 0,
+          "max_error": 1.3539360349887032e-12,
+          "infinite_rows": 0
+        },
+        "load": {
+          "rows": 1,
+          "failed": 0,
+          "max_error": 1.5890305014796246e-15,
+          "infinite_rows": 0
+        }
+      },
+      "independent_load_difference_V": 4.3877314560925696e-11,
+      "maximum_population_direction_error": 6.135189393174615e-10,
+      "all_stale_source_states_rejected": true,
+      "QF_voltage_energy_roundtrip_changed_values": 655,
+      "population_rejects": {
+        "old_eta": {
+          "electron": 8,
+          "hole": 14
+        },
+        "normalized_eta": {
+          "electron": 15,
+          "hole": 28
+        },
+        "tdr_normalized_eta": {
+          "electron": 0,
+          "hole": 9
+        },
+        "band_eta": {
+          "electron": 64,
+          "hole": 253
+        },
+        "reference_band_eta": {
+          "electron": 0,
+          "hole": 5
+        },
+        "reference_absolute_eta": {
+          "electron": 10,
+          "hole": 128
+        },
+        "raw_reference_eta": {
+          "electron": 0,
+          "hole": 0
+        }
+      }
+    }
+  }
+}

@@ -135,14 +135,14 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , impactIonizationCoupled_(
           impactIonizationConfig.model != "none" &&
           impactIonizationConfig.couplingMode == "self_consistent")
-    , carrierStatistics_(std::move(carrierStatistics))
+    , carrierStatistics_(carrierStatistics)
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "DDAssembler",
           mesh,
           matdb,
           doping,
           bandgapNarrowingConfig,
-          Vt))
+          Vt, carrierStatisticsModel(carrierStatistics)))
     , intrinsicReference_(detail::buildNodeIntrinsicReference(mesh,matdb,Vt * constants::q / constants::kb))
     , niElectron_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,Vt,true))
     , niHole_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,Vt,false))

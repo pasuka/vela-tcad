@@ -1,0 +1,319 @@
+{
+  "date": "2026-10-18",
+  "task": "N4 SG/SRH preserved actual assembly",
+  "status": "partial: SRH realized-input rate-to-row increment verified; SG acceptance still fails",
+  "configuration": {
+    "reference": "installed-library BVmethods resistor T-2022.03-SP2",
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_seeds": 4156,
+    "free_carrier_nodes": 2121,
+    "augmented_dimension": 6843,
+    "temperature_K": 300,
+    "source_rate_unit": "cm^-3 s^-1",
+    "terminal_current_unit": "A/um",
+    "precision": "binary64 compatibility and cpp_dec_float<80> preserved assembly",
+    "environment": "Ubuntu 26.04.1 GCC 15.2; Windows UCRT64 GCC 16.2 representation tests",
+    "linear_backend_used": false
+  },
+  "complete_evaluations": 21,
+  "assembly": [
+    {
+      "direction": "n",
+      "states": 7,
+      "population_failures": 0,
+      "all_resolved": true,
+      "all_stale_rejected": true,
+      "native_base_failed_rows": 0,
+      "native_base_max_error": 1.7806260513340255e-09,
+      "full_assembly_oracle_error": 2.4971750805056256e-80,
+      "increment_identity_max_error": 2.4976147526846017e-80,
+      "SRH_independent_formula_error": 1.4202747282050096e-65,
+      "steps": [
+        {
+          "h": 0.0003,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 120,
+            "legacy_error": 192
+          },
+          "nonzero_rows": 2121,
+          "max_realized_error": 9.944337185074336e-09
+        },
+        {
+          "h": 0.0001,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 144,
+            "legacy_error": 230
+          },
+          "nonzero_rows": 2121,
+          "max_realized_error": 9.944337185074338e-09
+        },
+        {
+          "h": 3e-05,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 178,
+            "legacy_error": 259
+          },
+          "nonzero_rows": 2121,
+          "max_realized_error": 9.944337185074338e-09
+        }
+      ]
+    },
+    {
+      "direction": "psi",
+      "states": 7,
+      "population_failures": 0,
+      "all_resolved": true,
+      "all_stale_rejected": true,
+      "native_base_failed_rows": 0,
+      "native_base_max_error": 1.7806260513340255e-09,
+      "full_assembly_oracle_error": 2.4989309890987145e-80,
+      "increment_identity_max_error": 2.4978368994089768e-80,
+      "SRH_independent_formula_error": 1.4202747282050096e-65,
+      "steps": [
+        {
+          "h": 0.0003,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 0,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 0,
+          "max_realized_error": 0.0
+        },
+        {
+          "h": 0.0001,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 0,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 0,
+          "max_realized_error": 0.0
+        },
+        {
+          "h": 3e-05,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 0,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 0,
+          "max_realized_error": 0.0
+        }
+      ]
+    },
+    {
+      "direction": "small",
+      "states": 7,
+      "population_failures": 0,
+      "all_resolved": true,
+      "all_stale_rejected": true,
+      "native_base_failed_rows": 0,
+      "native_base_max_error": 1.7806260513340255e-09,
+      "full_assembly_oracle_error": 2.4841675977176864e-80,
+      "increment_identity_max_error": 1.8514918517060007e-80,
+      "SRH_independent_formula_error": 1.4202747282050096e-65,
+      "steps": [
+        {
+          "h": 3e-11,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 0,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 3,
+          "max_realized_error": 1.1862455712588275e-15
+        },
+        {
+          "h": 1e-11,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 0,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 3,
+          "max_realized_error": 1.1862449248924173e-15
+        },
+        {
+          "h": 3e-12,
+          "SRH_failures": {
+            "realized_error": 0,
+            "nominal_error": 1,
+            "legacy_error": 0
+          },
+          "nonzero_rows": 3,
+          "max_realized_error": 1.1862448513690608e-15
+        }
+      ]
+    }
+  ],
+  "SG": {
+    "states": [
+      {
+        "h": 0.0,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 0.0,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.00032756924772363896
+      },
+      {
+        "h": 0.0003,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 5.171912553366026e-76,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.0003323208054338071
+      },
+      {
+        "h": -0.0003,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 4.311478028281991e-76,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.0007222146082705518
+      },
+      {
+        "h": 0.0001,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 7.301493382554148e-77,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.00022367195602822755
+      },
+      {
+        "h": -0.0001,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 9.180593566027518e-77,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.0008592812086745146
+      },
+      {
+        "h": 3e-05,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 5.19699647055248e-77,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.00022679378093297934
+      },
+      {
+        "h": -3e-05,
+        "edges": 9070,
+        "delta_identity_max_over_fixed_absolute_budget": 2.1603167717891574e-77,
+        "current_representation_gap_max_over_fixed_absolute_budget": 0.0005864168797052461
+      }
+    ],
+    "canonical_base_native_failures": 95,
+    "canonical_base_native_max_error": 0.00032756924772350436,
+    "no_reference_offset": true,
+    "canonical_candidate_accepted": false,
+    "n_directions": [
+      {
+        "h": 0.0003,
+        "compatibility_failures": 145,
+        "canonical_failures": 2
+      },
+      {
+        "h": 0.0001,
+        "compatibility_failures": 152,
+        "canonical_failures": 4
+      },
+      {
+        "h": 3e-05,
+        "compatibility_failures": 191,
+        "canonical_failures": 1
+      }
+    ]
+  },
+  "transport": [
+    {
+      "direction": "n",
+      "steps": [
+        {
+          "h": 0.0003,
+          "failed_1e5": 145,
+          "legacy_failed_1e5": 145,
+          "failed_above_final_flux_rounding": 145
+        },
+        {
+          "h": 0.0001,
+          "failed_1e5": 152,
+          "legacy_failed_1e5": 152,
+          "failed_above_final_flux_rounding": 152
+        },
+        {
+          "h": 3e-05,
+          "failed_1e5": 191,
+          "legacy_failed_1e5": 191,
+          "failed_above_final_flux_rounding": 191
+        }
+      ]
+    },
+    {
+      "direction": "psi",
+      "steps": [
+        {
+          "h": 0.0003,
+          "failed_1e5": 184,
+          "legacy_failed_1e5": 182,
+          "failed_above_final_flux_rounding": 180
+        },
+        {
+          "h": 0.0001,
+          "failed_1e5": 283,
+          "legacy_failed_1e5": 281,
+          "failed_above_final_flux_rounding": 278
+        },
+        {
+          "h": 3e-05,
+          "failed_1e5": 374,
+          "legacy_failed_1e5": 373,
+          "failed_above_final_flux_rounding": 366
+        }
+      ]
+    },
+    {
+      "direction": "small",
+      "steps": [
+        {
+          "h": 3e-11,
+          "failed_1e5": 0,
+          "legacy_failed_1e5": 0,
+          "failed_above_final_flux_rounding": 0
+        },
+        {
+          "h": 1e-11,
+          "failed_1e5": 2,
+          "legacy_failed_1e5": 2,
+          "failed_above_final_flux_rounding": 2
+        },
+        {
+          "h": 3e-12,
+          "failed_1e5": 0,
+          "legacy_failed_1e5": 0,
+          "failed_above_final_flux_rounding": 0
+        }
+      ]
+    }
+  ],
+  "scope_limits": [
+    "Private C++ preserved residual channel; original double channel retained",
+    "SG upstream arithmetic not repaired by wide accumulation",
+    "No arbitrary-primary complete Jacobian qualification",
+    "No new Sentaurus run or native perturbed RHS capture",
+    "No Newton loop, production promotion or threshold change"
+  ],
+  "next": [
+    "Preserve primary input increments consistently across SG/SRH views",
+    "Resolve current-state SG statistical rounding versus native absolute residual contract",
+    "Audit same-side mobility drive and coefficient chain at electron 864; split event control for cell 4701"
+  ],
+  "verification": {
+    "complete_Cpp_evaluations": 21,
+    "SG_channel_reassemblies": 7,
+    "Windows_Catch2_cases": 3,
+    "Windows_assertions": 12,
+    "Ubuntu_Catch2_cases": 3,
+    "Ubuntu_assertions": 12,
+    "evidence_tests": 15,
+    "previous_sealed_files_verified": [
+      136,
+      1008
+    ],
+    "source_and_binary_binding_checked": true,
+    "full_production_CTest_run": false
+  }
+}

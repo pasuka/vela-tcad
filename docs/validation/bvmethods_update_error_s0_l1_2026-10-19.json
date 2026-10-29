@@ -1,0 +1,176 @@
+{
+  "schema": "vela.bvmethods.update-error.s0-l1.v1",
+  "stage0": "existing evidence frozen; native identities unresolved",
+  "native_new_runs": 0,
+  "newton_updates": 0,
+  "environment": {
+    "build": "UCRT64 Release C++20",
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "temperature_K": 300,
+    "fixed_internal_bias_V": 0.00524437249039996,
+    "band_to_band": "off",
+    "node_volume": "barycentric",
+    "transport_jacobian_step": 1e-08,
+    "linear_backend_available": "UMFPACK",
+    "linear_solves_in_this_L1_audit": 0,
+    "hdf5": true
+  },
+  "states": {
+    "rows285": {
+      "violations": 285,
+      "qualification_count": 1616,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 85,
+        "p": 92
+      },
+      "input_absolute_phin_reconstruction_difference_count": 149,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    },
+    "rows21": {
+      "violations": 21,
+      "qualification_count": 1346,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 99,
+        "p": 87
+      },
+      "input_absolute_phin_reconstruction_difference_count": 82,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    },
+    "rows11": {
+      "violations": 11,
+      "qualification_count": 1346,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 99,
+        "p": 88
+      },
+      "input_absolute_phin_reconstruction_difference_count": 0,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    },
+    "rows10": {
+      "violations": 10,
+      "qualification_count": 1346,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 99,
+        "p": 89
+      },
+      "input_absolute_phin_reconstruction_difference_count": 0,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    },
+    "rows5": {
+      "violations": 5,
+      "qualification_count": 1326,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 99,
+        "p": 88
+      },
+      "input_absolute_phin_reconstruction_difference_count": 0,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    },
+    "rows0": {
+      "violations": 0,
+      "qualification_count": 1306,
+      "active_counts": {
+        "psi": 2522,
+        "electron": 2121,
+        "hole": 2121
+      },
+      "contact_unknown_count": 0,
+      "two_processes_bitwise_hashes_equal": true,
+      "stored_density_roundtrip_difference_counts": {
+        "n": 99,
+        "p": 89
+      },
+      "input_absolute_phin_reconstruction_difference_count": 0,
+      "all_three_roundtrips_preserve_packed_R_J_recomputed_population_masks_qualification": true
+    }
+  },
+  "checks": [
+    "rows285:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows285:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows285:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows285:independent_repeat_and_sealed_input_unchanged",
+    "rows21:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows21:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows21:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows21:independent_repeat_and_sealed_input_unchanged",
+    "rows11:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows11:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows11:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows11:independent_repeat_and_sealed_input_unchanged",
+    "rows10:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows10:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows10:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows10:independent_repeat_and_sealed_input_unchanged",
+    "rows5:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows5:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows5:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows5:independent_repeat_and_sealed_input_unchanged",
+    "rows0:input_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows0:assembled_roundtrip:packed_R_J_population_masks_qualification_equal",
+    "rows0:exact_hint_control:packed_R_J_population_masks_qualification_equal",
+    "rows0:independent_repeat_and_sealed_input_unchanged"
+  ],
+  "checks_passed": 24,
+  "L1_overall_pass": false,
+  "missing_L1": [
+    "live pre-save original stop snapshot",
+    "per-element Jacobian",
+    "cache identity",
+    "strict stored density bit identity"
+  ],
+  "L2_complete": false,
+  "report_solver_integration_complete": false,
+  "report_noninterference_gate_complete": false,
+  "native_001V_import_replay_complete": false,
+  "arithmetic_primitive": "experimental off/report RMS only; not a solver callback or acceptance predicate",
+  "arithmetic_primitive_tests": {
+    "Release_CTest_selected": 5,
+    "passed": 5,
+    "Catch2_assertions": 31,
+    "full_Debug_suite_run": false,
+    "fresh_core_matches_previous_L1_binary": true
+  },
+  "next": [
+    "resolve stored vs authoritative population contract without loosening gates",
+    "add original live-stop and element/cache observation for L1/L2",
+    "authorize prepared native collection separately",
+    "connect verified full population tangent and update provenance to report only after prerequisites"
+  ],
+  "production_acceptance_and_threshold_changes": false
+}

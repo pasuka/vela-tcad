@@ -1,0 +1,179 @@
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+
+namespace vela::experimental {
+
+struct JoyceDixonJet {
+    double value;
+    double first;
+    double second;
+};
+
+/// Explicit Joyce-Dixon approximation used by fermi_dirac_joyce_dixon.
+///
+/// The low-density inverse is the four-term Joyce-Dixon expression (1977,
+/// doi:10.1063/1.89697). A shifted Sommerfeld expression is joined at the
+/// common slope, making the inverse C1. Both eta derivatives and the forward
+/// function are derived from this same inverse. The second derivative is
+/// piecewise: it must not be differenced across the join.
+///
+/// This construction is a candidate for a measured native mapping; it does
+/// not change Vela's defining-integral Fermi-Dirac default. Apparent FD-BGN
+/// must call this inverse too when the candidate is used in a private replay.
+class JoyceDixonStatistics {
+public:
+    struct Join {
+        double ratio;
+        double eta;
+        double shift;
+    };
+
+    static const Join& join()
+    {
+        static const Join value = [] {
+            double lo = 8.0, hi = 9.0;
+            for (int i = 0; i < 64; ++i) {
+                const double mid = lo + (hi - lo) * 0.5;
+                if (lowSlope(mid) > highSlope(mid)) lo = mid;
+                else hi = mid;
+            }
+            const double ratio = lo + (hi - lo) * 0.5;
+            return Join{ratio, lowInverse(ratio),
+                        highInverse(ratio) - lowInverse(ratio)};
+        }();
+        return value;
+    }
+
+    static double inverse(double ratio)
+    {
+        if (ratio == std::numeric_limits<double>::infinity()) return ratio;
+        if (!(ratio > 0.0) || !std::isfinite(ratio))
+            throw std::invalid_argument("Joyce-Dixon inverse requires a positive ratio");
+        return ratio < join().ratio ? lowInverse(ratio)
+                                    : highInverse(ratio) - join().shift;
+    }
+
+    // Explicit stable primitive contract; existing inverse/forward dispatch is unchanged.
+    // g=log(r)-eta(r) and dg/dr have finite nondegenerate limits at r=0.
+    static double primitiveLogGamma(double ratio) {
+        if (!(ratio>=0.) || !std::isfinite(ratio))
+            throw std::invalid_argument("JD gamma requires a nonnegative finite ratio");
+        return ratio<join().ratio ? -correction(ratio) : std::log(ratio)-inverse(ratio);
+    }
+    static double primitiveLogGammaSlope(double ratio) {
+        if (!(ratio>=0.) || !std::isfinite(ratio))
+            throw std::invalid_argument("JD gamma slope requires a nonnegative finite ratio");
+        if(ratio<join().ratio)return -(a1+ratio*(2*a2+ratio*(3*a3+ratio*4*a4)));
+        return 1./ratio-highSlope(ratio);
+    }
+
+    // Scale before the nondegenerate exponential reaches the subnormal
+    // range. DOS*exp(eta) can be normal although exp(eta) has lost digits
+    // or underflowed. These are the same low-density JD law, without a floor.
+    static double density(double eta,double dos)
+    {
+        if(eta<std::log(std::numeric_limits<double>::min()))
+            return std::exp(std::log(dos)+eta);
+        return dos*evaluate(eta).value;
+    }
+    static double densityDerivativeEta(double eta,double dos)
+    {
+        if(eta<std::log(std::numeric_limits<double>::min()))return density(eta,dos);
+        return dos*evaluate(eta).first;
+    }
+    static double inverseDensity(double population,double dos)
+    {
+        if(!(population>0.) || !(dos>0.) || !std::isfinite(population) || !std::isfinite(dos))
+            throw std::invalid_argument("Joyce-Dixon density inverse requires positive finite population and DOS");
+        const double ratio=population/dos;
+        if(ratio<std::numeric_limits<double>::min())return std::log(population)-std::log(dos);
+        return inverse(ratio);
+    }
+    static double densitySlopeFromPopulation(double population,double dos)
+    {
+        if(population/dos<std::numeric_limits<double>::min())return population;
+        return dos*evaluate(inverseDensity(population,dos)).first;
+    }
+
+    static JoyceDixonJet evaluate(double eta)
+    {
+        if (std::isnan(eta)) return {eta, eta, eta};
+        if (eta == -std::numeric_limits<double>::infinity()) return {0., 0., 0.};
+        if (eta == std::numeric_limits<double>::infinity()) return {eta, eta, 0.};
+        if (eta >= join().eta) {
+            const double t = eta + join().shift;
+            const double radius = std::hypot(t, std::sqrt(c));
+            const double root = std::sqrt(radius);
+            const double value = norm * radius * root;
+            const double first = 1.5 * norm * t / root;
+            const double second = 1.5 * norm / root
+                * (0.5 + 0.5 * (c / radius) / radius);
+            return {value, first, second};
+        }
+        if (eta < -36.0) {
+            const double value = std::exp(eta);
+            return {value, value, value};
+        }
+        double lo = eta - a1 * join().ratio;
+        double hi = std::min(eta, std::log(join().ratio));
+        double z = std::clamp(eta - a1 * std::exp(std::min(eta, 0.)), lo, hi);
+        for (int i = 0; i < 40; ++i) {
+            const double ratio = std::exp(z);
+            const double f = z + correction(ratio) - eta;
+            if (std::abs(f) <= 4. * std::numeric_limits<double>::epsilon()
+                    * std::max(1., std::abs(eta))) break;
+            if (f > 0.) hi = z;
+            else lo = z;
+            const double trial = z - f / logSlope(ratio);
+            const double next = trial > lo && trial < hi
+                ? trial : lo + (hi - lo) * 0.5;
+            if (next == z) break;
+            z = next;
+        }
+        const double ratio = std::exp(z);
+        const double d = logSlope(ratio);
+        const double dprime = a1 + ratio * (4*a2 + ratio*(9*a3 + ratio*16*a4));
+        return {ratio, ratio / d, ratio * (d - ratio*dprime) / (d*d*d)};
+    }
+
+private:
+    // Correctly rounded from high-precision reversion of the F_{1/2} fugacity
+    // series. Computing high-order coefficients by cancelling doubles changes
+    // the dense-branch C1 shift by about 2e-14.
+    static constexpr double a1 = 0.3535533905932738;
+    static constexpr double a2 = -0.004950089729875255;
+    static constexpr double a3 = 0.00014838577128872333;
+    static constexpr double a4 = -4.425630118996707e-06;
+    static constexpr double norm = 0.75225277806367504926; // 4/(3 sqrt(pi))
+    static constexpr double c = 1.64493406684822643647; // pi^2/6
+
+    static double correction(double ratio)
+    {
+        return ratio*(a1 + ratio*(a2 + ratio*(a3 + ratio*a4)));
+    }
+    static double logSlope(double ratio)
+    {
+        return 1. + ratio*(a1 + ratio*(2*a2 + ratio*(3*a3 + ratio*4*a4)));
+    }
+    static double lowInverse(double ratio)
+    {
+        return std::log(ratio) + correction(ratio);
+    }
+    static double lowSlope(double ratio) { return logSlope(ratio) / ratio; }
+    static double highInverse(double ratio)
+    {
+        const double u = std::pow(ratio, 2./3.) * std::pow(1./norm, 2./3.);
+        return u * std::sqrt(1. - (c / u) / u);
+    }
+    static double highSlope(double ratio)
+    {
+        const double u = std::pow(ratio, 2./3.) * std::pow(1./norm, 2./3.);
+        return (2./3.) * (u / ratio) * (u / highInverse(ratio));
+    }
+};
+
+} // namespace vela::experimental

@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -43,6 +44,8 @@ using ContactSpecsMap = std::unordered_map<std::string, ContactBoundarySpec>;
  * @brief Result of a Gummel iteration.
  */
 struct DDSolution {
+    std::string stateVariables = "potential_quasi_fermi";
+    std::string populationRestoreMode; ///< exact_internal, converted_units, or legacy_si.
     VectorXd psi;   ///< Electrostatic potential [V]
     VectorXd phin;  ///< Electron quasi-Fermi potential [V]
     VectorXd phip;  ///< Hole quasi-Fermi potential [V]
@@ -273,6 +276,26 @@ void writeDDSolutionVTK(const std::string&    filename,
                         const DDSolution&     sol,
                         UnitScalingConfig scaling = {});
 
+/**
+ * @brief Output options for the full DD exporter.
+ *
+ * ``format == "legacy"`` (default) writes every diagnostic array to a legacy
+ * ASCII ``.vtk`` file exactly as before.  ``format == "vtu"`` writes an XML
+ * UnstructuredGrid file whose arrays carry Sentaurus TDR data names and units
+ * (see ``tdrFieldCatalogue()`` in ``vela/io/VtuWriter.h``); ``fields`` lists
+ * the requested TDR names (``Name`` or ``Name/Vector``; empty selects all),
+ * ``fieldDataStrings``/``fieldDataValues`` become ``FieldData`` entries and
+ * ``skippedFields`` (optional) receives requested names that were not written.
+ */
+struct DDSolutionVtkOptions {
+    std::string format = "legacy";
+    std::vector<std::string> fields;
+    bool binary = false;
+    std::vector<std::pair<std::string, std::string>> fieldDataStrings;
+    std::vector<std::pair<std::string, Real>> fieldDataValues;
+    std::vector<std::string>* skippedFields = nullptr;
+};
+
 void writeDDSolutionVTK(const std::string& filename,
                         const DeviceMesh& mesh,
                         const MaterialDatabase& matdb,
@@ -287,6 +310,7 @@ void writeDDSolutionVTK(const std::string& filename,
                         const CarrierStatisticsConfig& carrierStatistics = {},
                         const std::vector<CoupledDDEdgeFluxDiagnostic>*
                             sgEdgeFluxDiagnostics = nullptr,
-                        bool writeCellFirstSgCurrentDiagnostics = false);
+                        bool writeCellFirstSgCurrentDiagnostics = false,
+                        const DDSolutionVtkOptions* vtkOptions = nullptr);
 
 } // namespace vela

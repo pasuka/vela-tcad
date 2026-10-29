@@ -1,0 +1,116 @@
+{
+  "schema": "vela.validation.bvmethods.nearzero_sg_support.v1",
+  "date": "2026-10-17",
+  "scope": "Installed-library original, default statistics, first positive frozen state; private actual assembly",
+  "native_identity": {
+    "names": true,
+    "variables": true,
+    "rhs1": true,
+    "matrix": true
+  },
+  "native_successful_repeats": 2,
+  "native_producer_instances": 24,
+  "native_unique_edges": 12,
+  "native_actual_element_products": 36,
+  "native_actual_selected_element_calls": 12,
+  "active_merged_edges": 9,
+  "native_arithmetic_exact": true,
+  "argument_chain_from_captured_inputs_exact": true,
+  "normalized_frozen_population_exact": true,
+  "weak_support": {
+    "electron_2156": {
+      "elements": 6,
+      "element_edge_terms": 12,
+      "unique_edges": 6,
+      "closure_error_over_native_absolute_terms": 1.6810440902499807e-17,
+      "actual_outer_addition_exact": true
+    },
+    "hole_2515": {
+      "elements": 6,
+      "element_edge_terms": 12,
+      "unique_edges": 6,
+      "closure_error_over_native_absolute_terms": 3.7294658577499834e-19,
+      "actual_outer_addition_exact": true
+    }
+  },
+  "controls": {
+    "baseline": {
+      "electron_2156": {
+        "error_over_unchanged_Vela_absolute_terms": 3.6229507704542907e-06,
+        "error_over_actual_Vela_absolute_terms": 3.6229507704542907e-06,
+        "error_over_native_transport_and_net_source_absolute_support": 3.6229515484793926e-06
+      },
+      "hole_2515": {
+        "error_over_unchanged_Vela_absolute_terms": 0.21793359158063208,
+        "error_over_actual_Vela_absolute_terms": 0.21793359158063208,
+        "error_over_native_transport_and_net_source_absolute_support": 0.21242042245011647
+      }
+    },
+    "continuity64": {
+      "electron_2156": {
+        "error_over_unchanged_Vela_absolute_terms": 1.6217564150448554e-16,
+        "error_over_actual_Vela_absolute_terms": 1.6217567633154452e-16,
+        "error_over_native_transport_and_net_source_absolute_support": 1.6217567633154447e-16
+      },
+      "hole_2515": {
+        "error_over_unchanged_Vela_absolute_terms": 3.3603926186217772e-16,
+        "error_over_actual_Vela_absolute_terms": 3.2753831773647895e-16,
+        "error_over_native_transport_and_net_source_absolute_support": 3.2753831773647895e-16
+      }
+    },
+    "continuity80": {
+      "electron_2156": {
+        "error_over_unchanged_Vela_absolute_terms": 9.674263655090472e-08,
+        "error_over_actual_Vela_absolute_terms": 9.674265447707378e-08,
+        "error_over_native_transport_and_net_source_absolute_support": 9.674265732629043e-08
+      },
+      "hole_2515": {
+        "error_over_unchanged_Vela_absolute_terms": 0.0006043484222857578,
+        "error_over_actual_Vela_absolute_terms": 0.0005882612198095001,
+        "error_over_native_transport_and_net_source_absolute_support": 0.0005890599344411067
+      }
+    },
+    "population_continuity64": {
+      "electron_2156": {
+        "error_over_unchanged_Vela_absolute_terms": 1.6217564150448554e-16,
+        "error_over_actual_Vela_absolute_terms": 1.6217567633154452e-16,
+        "error_over_native_transport_and_net_source_absolute_support": 1.6217567633154447e-16
+      },
+      "hole_2515": {
+        "error_over_unchanged_Vela_absolute_terms": 3.3603926186217772e-16,
+        "error_over_actual_Vela_absolute_terms": 3.2753831773647895e-16,
+        "error_over_native_transport_and_net_source_absolute_support": 3.2753831773647895e-16
+      }
+    }
+  },
+  "maximum_active_edge_difference_over_native_absolute_edge_terms": 1.187333854918323e-15,
+  "max_argument_difference_from_stable_population_QF_expression": 1.563632878600791e-14,
+  "max_argument_difference_over_stable_nonzero_drive": 1.4314011583043984,
+  "native_source_denominator_scope": "Absolute executed transport products plus absolute net source additions; conservative lower bound, not complete independent source decomposition",
+  "checks": {
+    "catch2_cases": 6,
+    "catch2_assertions": 138,
+    "python_evidence_tests": 12,
+    "runs": {
+      "cpp": {
+        "exit": 0
+      },
+      "evidence": {
+        "exit": 0
+      }
+    },
+    "private_actual_assembly_runs": 7
+  },
+  "production_changed": false,
+  "autonomous_SG_qualified": false,
+  "full_native_source_absolute_decomposition_qualified": false,
+  "full_five_state_RHS_qualified": false,
+  "N4_complete": false,
+  "N5_started": false,
+  "remaining": [
+    "Autonomous effective argument from same-state band/DOS/default Gamma reference and increment with binary64 rounding",
+    "Native per-source absolute decomposition and other frozen-state weak rows",
+    "Strict constitutive population identity",
+    "Augmented load coupling and directional derivatives"
+  ]
+}

@@ -35,6 +35,15 @@ namespace vela {
 
 namespace {
 
+bool sparseAllFinite(const SparseMatrixd& matrix) {
+    // Uncompressed Eigen matrices can contain unused capacity between columns.
+    // Only logical entries belong to the input system.
+    for (int col=0; col<matrix.outerSize(); ++col)
+        for (SparseMatrixd::InnerIterator entry(matrix,col); entry; ++entry)
+            if (!std::isfinite(entry.value())) return false;
+    return true;
+}
+
 int requestedBlasThreads() {
     const char* value=std::getenv("VELA_BLAS_THREADS");
     if(!value || !*value) return 0;
@@ -368,6 +377,11 @@ LinearSolver::LinearSolver(const std::string& backend)
     : backend_(backend.empty() ? selectedBackend() : backend)
 {
     configureBlasThreads();
+    if (const char* flag = std::getenv("VELA_CONSTRAINT_ELIMINATION")) {
+        if (std::strcmp(flag, "0") == 0) eliminateConstraints_ = false;
+        else if (*flag && std::strcmp(flag, "1") != 0)
+            throw std::invalid_argument("VELA_CONSTRAINT_ELIMINATION must be 0 or 1");
+    }
     if(const char* directory=std::getenv("VELA_LINEAR_CAPTURE_DIR")) captureDirectory_=directory;
     if (const char* flag = std::getenv("VELA_LINEAR_FACTOR_STATISTICS")) {
         if (std::strcmp(flag, "0") == 0) factorStatistics_ = false;
@@ -389,7 +403,15 @@ LinearSolver::LinearSolver(const std::string& backend)
 LinearSolver::~LinearSolver() = default;
 
 void LinearSolver::createDirectBackend() {
-    if (backend_ == "pardiso_mkl") direct_ = detail::makeMklPardiso();
+    if (backend_ == "pardiso_mkl") {
+#ifdef VELA_HAS_MKL_PARDISO
+        direct_ = detail::makeMklPardiso();
+#else
+        throw std::invalid_argument(
+            "LinearSolver: pardiso_mkl was not enabled in this build; "
+            "configure with VELA_ENABLE_MKL_PARDISO=ON");
+#endif
+    }
     else if (backend_ == "sparselu_metis") direct_ = detail::makeMetisSparseLU();
     else if (backend_ == "mumps" || backend_ == "mumps_metis") direct_ = detail::makeMumps(backend_ == "mumps_metis");
     else if (backend_ == "superlu_mt" || backend_ == "superlu_mt_metis") direct_ = detail::makeSuperLuMt(backend_ == "superlu_mt_metis");
@@ -401,6 +423,18 @@ VectorXd LinearSolver::solveDirect(const SparseMatrixd& a, const VectorXd& b) {
         if(a.rows()==0) throw std::invalid_argument("empty system");
         if (!b.allFinite() || !Eigen::Map<const VectorXd>(a.valuePtr(),a.nonZeros()).allFinite())
             throw std::runtime_error("nonfinite input");
+        // Exact constraint substitution can leave one scalar. Avoid invoking
+        // vendor graph analysis for that degenerate graph (MKL's Linux
+        // analysis path can reject it); this is an exact division, not a
+        // change of backend or a regularized fallback.
+        if(a.rows()==1) {
+            const Real pivot=a.coeff(0,0);
+            if(pivot==0.)throw std::runtime_error("singular scalar system");
+            VectorXd x(1);x[0]=b[0]/pivot;
+            if(!x.allFinite())throw std::runtime_error("nonfinite scalar solution");
+            incrementPerformanceCounter("linear.scalar_solve_calls");
+            return x;
+        }
         if (!direct_) createDirectBackend();
         const bool same=patternMatches(a), reuse=same && valuesMatchFactorization(a);
         if(!reuse) {
@@ -608,6 +642,56 @@ bool solveSpqrSystem(const SparseMatrixd& A,
 
 VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
 {
+    if (!b.allFinite() || !sparseAllFinite(A))
+        return solveUnreduced(A,b);
+    // Named legacy elimination backends own their affine reduction, including
+    // the three-block keep-psi contract. Do not eliminate psi a first time in
+    // the new generic front end or reduce a second time in the vendor solver.
+    if (backend_.find("_eliminated") != std::string::npos) {
+        lastReducedDimension_ = A.rows();
+        const bool keepPsi = backend_.find("_keep_psi") != std::string::npos;
+        for (int row : diagonalConstraintRows(A))
+            if (!keepPsi || row >= A.rows()/3) --lastReducedDimension_;
+        return solveUnreduced(A,b);
+    }
+    return solve(A,b,eliminateConstraints_ ? diagonalConstraintRows(A) : std::vector<int>{});
+}
+
+VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b,
+                             const std::vector<int>& constraints)
+{
+    if (A.rows() != A.cols() || A.rows() != b.size())
+        throw std::invalid_argument("LinearSolver: invalid system dimensions");
+    if (!b.allFinite() || !sparseAllFinite(A))
+        return solveUnreduced(A,b);
+    lastReducedDimension_ = A.rows();
+    if (!eliminateConstraints_ || constraints.empty()) return solveUnreduced(A,b);
+    ScopedPerformanceTimer timer("linear.constraint_elimination");
+    const auto reduced = eliminateLinearConstraints(A,b,constraints);
+    lastReducedDimension_ = reduced.matrix.rows();
+    observePerformanceValue("linear.original_rows",static_cast<double>(A.rows()));
+    observePerformanceValue("linear.eliminated_rows",static_cast<double>(constraints.size()));
+    observePerformanceValue("linear.reduced_rows",static_cast<double>(reduced.matrix.rows()));
+    VectorXd direction;
+    try {
+        if (reduced.matrix.rows()) {
+            if (backend_.find("_eliminated") != std::string::npos) {
+                const std::string base = backend_.substr(0,backend_.find("_eliminated")) +
+                    (backend_.find("long_double") != std::string::npos ? "_long_double" : "");
+                if (!eliminatedDirect_) eliminatedDirect_=std::make_unique<LinearSolver>(base);
+                eliminatedDirect_->setConstraintElimination(false);
+                direction=eliminatedDirect_->solve(reduced.matrix,reduced.rhs);
+            } else direction=solveUnreduced(reduced.matrix,reduced.rhs);
+        }
+    } catch (const std::exception& error) {
+        throw std::runtime_error(std::string(error.what())+"; original system"+sparseMatrixDiagnostics(A,b));
+    }
+    verifyBlasThreads();
+    return reduced.recover(direction);
+}
+
+VectorXd LinearSolver::solveUnreduced(const SparseMatrixd& A, const VectorXd& b)
+{
     ScopedPerformanceTimer totalTimer("linear.total");
     incrementPerformanceCounter("linear.solve_calls");
     observePerformanceValue("linear.rows", static_cast<double>(A.rows()));
@@ -636,6 +720,7 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
     if (backend_ != "sparselu") {
         if(backend_=="umfpack_eliminated" || backend_=="pardiso_mkl_eliminated" || backend_=="pardiso_mkl_eliminated_keep_psi"){
             if(!eliminatedDirect_)eliminatedDirect_=std::make_unique<LinearSolver>(backend_=="umfpack_eliminated"?"umfpack":"pardiso_mkl");
+            eliminatedDirect_->setConstraintElimination(false);
         }
         return finish(solveWithAlternateBackend(backend_, *matrix, b,eliminatedDirect_.get()));
     }

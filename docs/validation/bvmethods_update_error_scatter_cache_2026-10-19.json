@@ -1,0 +1,3371 @@
+{
+  "schema": "vela.bvmethods.update_error_scatter_cache.v1",
+  "date": "2026-10-19",
+  "acceptance_changed": false,
+  "native_runs": 0,
+  "E1_E4_executed": false,
+  "hosts": "<private execution metadata; original preserved in ignored archive>",
+  "primary_processes": 36,
+  "isolated_replays": 12,
+  "batch_checks": 204,
+  "extra_checks": 20,
+  "ledger_rms_checks": 1204,
+  "iteration_ledgers": 172,
+  "ledger_free_rows": 1163408,
+  "scatter_checkpoints": 12,
+  "scatter_contributions": 2830052,
+  "L2_numerical_events": 162,
+  "best_rejected_reports": 4,
+  "full_cache_identity_qualified": false,
+  "complete_report_equations": false,
+  "report_entry_count": 6764,
+  "report_contact_entries": 0,
+  "all_primary_states_converged": false,
+  "tests": [
+    [
+      "newton_tests_final.log",
+      3330,
+      146
+    ],
+    [
+      "report_tests.log",
+      104,
+      11
+    ],
+    [
+      "pc/newton_tests.log",
+      183,
+      3
+    ],
+    [
+      "pc/report_tests.log",
+      104,
+      11
+    ]
+  ],
+  "cases": [
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "contributions": 232687,
+      "iterations": 1,
+      "L2_events": 1,
+      "first_cache_difference": null,
+      "cache_differing_iterations": 0,
+      "continuity_keys_and_events_match": true,
+      "endpoint_totals_match": true,
+      "rejected_reports": 1,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "contributions": 236479,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "contributions": 236479,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "contributions": 236477,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "contributions": 236395,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "contributions": 236509,
+      "iterations": 5,
+      "L2_events": 4,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 1,
+      "continuity_keys_and_events_match": true,
+      "endpoint_totals_match": true,
+      "rejected_reports": 1,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "contributions": 232687,
+      "iterations": 1,
+      "L2_events": 1,
+      "first_cache_difference": null,
+      "cache_differing_iterations": 0,
+      "continuity_keys_and_events_match": true,
+      "endpoint_totals_match": true,
+      "rejected_reports": 1,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "contributions": 236479,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "contributions": 236479,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "contributions": 236477,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "contributions": 236395,
+      "iterations": 20,
+      "L2_events": 19,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 2,
+      "continuity_keys_and_events_match": false,
+      "endpoint_totals_match": true,
+      "rejected_reports": 0,
+      "converged": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "contributions": 236509,
+      "iterations": 5,
+      "L2_events": 4,
+      "first_cache_difference": {
+        "original_iteration": 2,
+        "restart_iteration": 1,
+        "event": 3,
+        "original": {
+          "amount": 0,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.avalanche_flux_cache_hits",
+          "previous_valid": false
+        },
+        "restarted": {
+          "amount": 1,
+          "key": "db4f440c7fefcab479f8d0f4bddbae60ba341c971dc81ffc47ba9ca8720e9744",
+          "key_size": 0,
+          "name": "jacobian.pattern_build_calls",
+          "previous_valid": false
+        }
+      },
+      "cache_differing_iterations": 1,
+      "continuity_keys_and_events_match": true,
+      "endpoint_totals_match": true,
+      "rejected_reports": 1,
+      "converged": false
+    }
+  ],
+  "isolated_replay_reports": [
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.334874596491885e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399351e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377652536608484
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811224592511107
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.334874596491883e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399342e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377654856132494
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811225891386255
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0738608368450444e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2704856165926024e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010903926017944944
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0006105924514901126
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0738608368450444e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2704856165926006e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010903926260605597
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0006105924650784994
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.494905345622269e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.414004375023724e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0005184917228703349
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00029034233323273954
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.49490534562227e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.414004375023704e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0005184917591138031
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0002903423535281709
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.334874596491883e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399338e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377653556102704
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811225163402247
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828943e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046185896762228e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305432715495e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243544061234e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828943e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046185896762223e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305394588488e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243522711068e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0548918663224561e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.007421455668991e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.641306950708096e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054891866322456e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0074214517334672e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.641306928670152e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.39720308615129e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.979549671791283e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7884226623909986e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.397203086151291e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.979549662107531e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.788422656968341e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828941e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.04618589676222e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305413479274e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243533289433e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801562e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380779e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.842642759363407e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.51163256417402e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801559e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380771e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.842642721275801e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.511632542845918e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0548918663224561e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0069680509836771e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.638767998427561e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054891866322456e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0069680470520664e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.638767976411529e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.39720308615129e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.9772499603662515e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.787134881793198e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.397203086151291e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.977249950692318e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7871348763760384e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801562e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380771e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.84264274014688e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.511632553413248e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.14456135781646e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.04646386256524e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.830334487809159e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740241455321e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.14456135781646e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046463862565235e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.83033444977808e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740220158872e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0547345703481882e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0057663428914171e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.632038735144212e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054734570348188e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0057663389654494e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.632038713159779e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.3889037984142705e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.971167554594734e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7837288874343983e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.3889037984142705e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.971167544934922e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7837288820251464e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.144561357816458e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046463862565231e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.830334468620808e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740230710325e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "accepted_update": false,
+      "failure": "line_search_non_decrease",
+      "attempts": 13,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.243336894518168e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.746651716824621e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 717,
+                "rms": 0.011927590625536697
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.006679158128158416
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.243336894518139e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.746651730259528e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 717,
+                "rms": 0.011927556092802587
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.006679138790716088
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.242474434467667e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.7466517760480833e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 1,
+                "max_node": 161,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.2424744344676424e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.746651789482991e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 1,
+                "max_node": 161,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174013e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816147e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956026728741026
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005015149870710132
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174013e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816139e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956028452644471
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005015150836052733
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 1.0926581833306056e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2775391242643578e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 350,
+                "rms": 1.3886845217598702e+16
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 7776284295145419.0
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 1.0926581833306055e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2775391242643565e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 350,
+                "rms": 2171.349163539599
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 1215.9009577144166
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.5711544476794965e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.473044083215049e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.00044820261546361554
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00025098219970478994
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.571154447679495e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.473044083215028e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0004482026431596493
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00025098221521387273
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174013e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816139e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956027492071195
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.000501515029815584
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.334874596491883e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399351e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377652536608484
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811224592511106
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.33487459649188e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399342e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377654856132494
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811225891386254
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0738608368450444e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2704856165926024e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010903926017944944
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0006105924514901126
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0738608368450444e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2704856165926006e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010903926260605597
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0006105924650784994
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.494905345622269e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.414004375023724e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.000518491722870333
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00029034233323273846
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.49490534562227e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.414004375023704e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0005184917591138013
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00029034235352816976
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1593,
+                "rms": 9.33487459649188e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.099086056399339e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0010377653556102704
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005811225163402247
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828943e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046185896762228e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305432715495e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243544061234e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828943e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046185896762223e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305394588488e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243522711068e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0548918663224561e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.007421455668991e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.641306950708096e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054891866322456e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0074214517334672e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.641306928670152e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.39720308615129e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.979549671791283e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7884226623909986e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.397203086151291e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.979549662107531e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.788422656968341e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151988306828943e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.04618589676222e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.847305413479274e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.514243533289433e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801562e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380779e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.842642759363407e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.51163256417402e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801559e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380771e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.842642721275801e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.511632542845918e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0548918663224561e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0069680509836771e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.638767998427561e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054891866322456e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0069680470520664e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.638767976411529e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.39720308615129e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.9772499603662515e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.787134881793198e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.397203086151291e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.977249950692318e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7871348763760384e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.151989866801562e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046186017380771e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.84264274014688e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.511632553413248e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.14456135781646e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.04646386256524e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.830334487809159e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740241455321e-06
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.14456135781646e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046463862565235e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.83033444977808e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740220158872e-06
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.0547345703481882e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2758892673886025e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0057663428914171e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.632038735144212e-06
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 1.054734570348188e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.275889267388601e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 1.0057663389654494e-05
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.632038713159779e-06
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.3889037984142705e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474824e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.971167554594734e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7837288874343983e-06
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.3889037984142705e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.329024500474804e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 4.971167544934922e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 2.7837288820251464e-06
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 1568,
+                "rms": 9.144561357816458e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.046463862565231e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 353,
+                "rms": 9.830334468620808e-06
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 5.504740230710325e-06
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "accepted_update": false,
+      "failure": "line_search_non_decrease",
+      "attempts": 13,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.2433368945019064e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.746651716824576e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 717,
+                "rms": 0.011927590625698132
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.006679158128248814
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.24333689450188e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.7466517302594822e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 717,
+                "rms": 0.011927556092963993
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0066791387908064735
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.242474434467667e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.7466517760480833e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 1,
+                "max_node": 161,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 937,
+                "rms": 4.2424744344676424e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 723,
+                "rms": 1.746651789482991e-05
+              },
+              {
+                "count": 2121,
+                "invalid": 1,
+                "max_node": 161,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 2522,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 2121,
+                "invalid": 2121,
+                "max_node": null,
+                "rms": null
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": null
+          }
+        }
+      ],
+      "complete_equations": false
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "accepted_update": true,
+      "failure": "",
+      "attempts": 2,
+      "reports": [
+        {
+          "combination": "U1_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174013e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816147e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956026728741026
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005015149870710132
+          }
+        },
+        {
+          "combination": "U1_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174011e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816139e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956028452644471
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.0005015150836052733
+          }
+        },
+        {
+          "combination": "U2_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 1.0926581833306056e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2775391242643578e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 350,
+                "rms": 1.3886845217598702e+16
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 7776284295145419.0
+          }
+        },
+        {
+          "combination": "U2_D1",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 1.0926581833306055e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 812,
+                "rms": 1.2775391242643565e-10
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 350,
+                "rms": 2171.349163539599
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 1215.9009577144166
+          }
+        },
+        {
+          "combination": "U3_D0",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.5711544476794965e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.473044083215049e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.00044820261546361554
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00025098219970478994
+          }
+        },
+        {
+          "combination": "U3_D2",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 2322,
+                "rms": 5.571154447679495e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 1928,
+                "rms": 7.473044083215028e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0004482026431596493
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.00025098221521387273
+          }
+        },
+        {
+          "combination": "raw_with_applied_denominator",
+          "report": {
+            "complete_equations": false,
+            "count": 6764,
+            "equations": [
+              {
+                "count": 2522,
+                "invalid": 0,
+                "max_node": 666,
+                "rms": 9.460155807174013e-12
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 2415,
+                "rms": 8.117467070816139e-11
+              },
+              {
+                "count": 2121,
+                "invalid": 0,
+                "max_node": 357,
+                "rms": 0.0008956027492071195
+              },
+              {
+                "count": 0,
+                "invalid": 0,
+                "max_node": null,
+                "rms": null
+              }
+            ],
+            "rms": 0.000501515029815584
+          }
+        }
+      ],
+      "complete_equations": false
+    }
+  ],
+  "known_limits": [
+    "endpoint per-request keys and opaque factors not serialized",
+    "scatter tags are actual write scopes, not decomposed physics subterms",
+    "cold-cache replay only; full cache snapshot qualification open",
+    "production report and native 0.01 V augmented replay pending",
+    "cross-host low-order numerical differences remain"
+  ],
+  "manifest_sha256": "fc869085d1d80d2adaae0e67bb8a34e8ef0b04d76bcadf70086fed638953a700",
+  "manifest_file_count": 1333
+}

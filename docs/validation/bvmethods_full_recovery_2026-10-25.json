@@ -1,0 +1,2084 @@
+{
+  "schema": "vela.bvmethods_full_recovery.v1",
+  "historical": {
+    "BV": {
+      "inner_voltage_V": 6.670491355462779,
+      "current_A_per_um": 0.0001,
+      "bracket_inner_V": [
+        6.66358826513816,
+        6.679623607430966
+      ],
+      "bracket_current_A_per_um": [
+        8.591369498508931e-05,
+        0.00011863508669995455
+      ],
+      "method": "linear interpolation of accepted current bracket"
+    },
+    "concatenated_path": {
+      "file": "build-release/bvmethods_full_fallback_20261025/result_guarded/iv_full_path.csv",
+      "sha256": "740f09d774705d543652bb451ab89065ec824d84ccee0485c5735577bfeed55b",
+      "accepted_points": 419,
+      "raw_residual_gate_satisfied": true,
+      "maximum_raw_equation_inf": 9.81492154413589e-09,
+      "maximum_absolute_load_V": 3.383966031833552e-07,
+      "maximum_absolute_KCL_A_per_um": 3.383969562751239e-14,
+      "construction": "baseline until strict restart, strict branch until guarded restart, guarded branch through final state; revalidated restart anchors retained"
+    },
+    "QF_limit_V": 0.1,
+    "guarded_restart_outer_V": 0.5587987475283218,
+    "guarded_restart_inner_V": 0.5330536831392544
+  },
+  "material_control": {
+    "mesh_byte_identical": true,
+    "doping_byte_identical": true,
+    "old": {
+      "conduction_band_density_of_states_cm3": 2.8582520073866568e+19,
+      "valence_band_density_of_states_cm3": 3.104628932474839e+19,
+      "intrinsic_carrier_density_cm3": 14638805412.559162
+    },
+    "current": {
+      "conduction_band_density_of_states_cm3": 2.85827787833203e+19,
+      "valence_band_density_of_states_cm3": 3.104657033455896e+19,
+      "intrinsic_carrier_density_cm3": 14638992771.99692
+    }
+  },
+  "current_core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+  "current_default_runner_sha256": "473ff9889aa5a45a99afc61b5beb7aa9e35f8193877f9ea993ea39e3cd17d176",
+  "current_conditions": {
+    "QF_global_limit_V": 0.0,
+    "QF_minority_limit_V": 0.0,
+    "R_ohm_um": 10000000.0,
+    "device_inf_tolerance": 1e-08,
+    "load_tolerance_V": 1e-06,
+    "BTBT": false,
+    "temperature_K": 300,
+    "nodes": 2600,
+    "triangles": 5020
+  },
+  "runs": {
+    "fresh_cmd": {
+      "accepted_points": 15,
+      "last": {
+        "outer_voltage_V": 0.20385218044447775,
+        "inner_voltage_V": 0.18087478398746343,
+        "current_total_A_per_um": 2.297738818085192e-09
+      },
+      "max_device_inf": 9.816943965902914e-09,
+      "max_load_V": 8.276162394293962e-09,
+      "max_KCL_A_per_um": 8.277570364068534e-16,
+      "all_original_electrical_gates": true,
+      "reached_stop_current": false,
+      "csv_sha256": "f74dcb2995dd0a878181e87c7359973a6799e76b9cd44a69cb6580a817627a40",
+      "execution": {
+        "status": "finished",
+        "binary_sha256": "88ec291d57cabf05e80fddd4aff8f9bdfdeead48355567391c39913a79fa0391",
+        "runner_sha256": "1e526aa8578874a09c2ec299815eedc52bbbbd4daf1a55312993f48ab9774ad3",
+        "timeout_s": 3600,
+        "pid": 6756,
+        "exit_code": 0,
+        "seconds": 732.9370000000017
+      },
+      "stages": [
+        {
+          "index": 0,
+          "runner_exit_code": 0,
+          "goal_reached": true,
+          "accepted_points": 1,
+          "reached_voltages_V": {
+            "drain": 0.0,
+            "source": 0.0,
+            "gate": 0.0,
+            "substrate": 0.0
+          }
+        },
+        {
+          "index": 1,
+          "runner_exit_code": 1,
+          "goal_reached": false,
+          "accepted_points": 15,
+          "reached_voltages_V": {
+            "drain": 0.18087478398746343,
+            "source": 0.0,
+            "gate": 0.0,
+            "substrate": 0.0
+          }
+        }
+      ]
+    },
+    "fresh_cmd_repaired": {
+      "accepted_points": 15,
+      "last": {
+        "outer_voltage_V": 0.20385218044447775,
+        "inner_voltage_V": 0.18087478398507656,
+        "current_total_A_per_um": 2.297739166671564e-09
+      },
+      "max_device_inf": 9.81636060302e-09,
+      "max_load_V": 6.4801919386070495e-09,
+      "max_KCL_A_per_um": 6.480275261543307e-16,
+      "all_original_electrical_gates": true,
+      "reached_stop_current": false,
+      "csv_sha256": "6185cd4ee36eb4ee42d1c8895ccca3da580fb7f589bef5c6ab44bcc93fba3a70",
+      "execution": {
+        "status": "finished",
+        "binary_sha256": "88ec291d57cabf05e80fddd4aff8f9bdfdeead48355567391c39913a79fa0391",
+        "runner_sha256": "46b817dff28527c945a8f0bb5af51d817d35cf3fecf4f011003e2def893bea64",
+        "timeout_s": 3600,
+        "pid": 17244,
+        "exit_code": 5,
+        "seconds": 922.3899999999994
+      },
+      "stages": [
+        {
+          "index": 0,
+          "runner_exit_code": 0,
+          "goal_reached": true,
+          "accepted_points": 1,
+          "reached_voltages_V": {
+            "drain": 0.0,
+            "source": 0.0,
+            "gate": 0.0,
+            "substrate": 0.0
+          }
+        },
+        {
+          "index": 1,
+          "runner_exit_code": 1,
+          "goal_reached": false,
+          "accepted_points": 15,
+          "reached_voltages_V": {
+            "drain": 0.18087478398507656,
+            "source": 0.0,
+            "gate": 0.0,
+            "substrate": 0.0
+          }
+        }
+      ]
+    },
+    "full_initial01": {
+      "accepted_points": 10,
+      "last": {
+        "outer_voltage_V": 0.19529187433676462,
+        "inner_voltage_V": 0.17238682864160895,
+        "current_total_A_per_um": 2.290504586664499e-09
+      },
+      "max_device_inf": 5.9368677289506635e-09,
+      "max_load_V": 3.104413698329367e-09,
+      "max_KCL_A_per_um": 3.1045444032318146e-16,
+      "all_original_electrical_gates": true,
+      "reached_stop_current": false,
+      "csv_sha256": "05324b077e1cef47368c94d2ee01f61bf9c9ce54deced711c7b73ae911553e61",
+      "execution": {
+        "status": "finished",
+        "runner_sha256": "46b817dff28527c945a8f0bb5af51d817d35cf3fecf4f011003e2def893bea64",
+        "config": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\bvmethods_failure_full_20261025\\full_initial01\\simulation.json",
+        "pid": 10560,
+        "exit_code": 4294967295,
+        "seconds": 950.9380000000019,
+        "termination": "bounded control stopped after at least 900 seconds without a new accepted point; not a natural nonlinear failure"
+      }
+    },
+    "qr_window": {
+      "accepted_points": 1,
+      "last": {
+        "outer_voltage_V": 0.21427249670046664,
+        "inner_voltage_V": 0.19120778889279155,
+        "current_total_A_per_um": 2.306471094370142e-09
+      },
+      "max_device_inf": 9.135863452124667e-09,
+      "max_load_V": 3.1360263275104217e-09,
+      "max_KCL_A_per_um": 3.1364817527926407e-16,
+      "all_original_electrical_gates": true,
+      "reached_stop_current": false,
+      "csv_sha256": "f3ca4949d1ffa82802f85eed76e45828f78838d8ff8ca147e4e2f0c809bf2564",
+      "execution": {
+        "status": "finished",
+        "runner_sha256": "1e526aa8578874a09c2ec299815eedc52bbbbd4daf1a55312993f48ab9774ad3",
+        "config": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\bvmethods_failure_full_20261025\\qr_window\\simulation.json",
+        "pid": 19776,
+        "exit_code": 1,
+        "seconds": 12.2970000000023
+      }
+    },
+    "tangent_window": {
+      "accepted_points": 2,
+      "last": {
+        "outer_voltage_V": 0.21428249670046665,
+        "inner_voltage_V": 0.19121770428873386,
+        "current_total_A_per_um": 2.3064786581378414e-09
+      },
+      "max_device_inf": 9.135863452124667e-09,
+      "max_load_V": 5.830354365965462e-09,
+      "max_KCL_A_per_um": 4.2620330792097434e-16,
+      "all_original_electrical_gates": true,
+      "reached_stop_current": false,
+      "csv_sha256": "7d5b1ab914eb4e788df69c7efa071263988c1f03408ce0b26dbfd86f7bf056f0",
+      "execution": {
+        "status": "finished",
+        "runner_sha256": "46b817dff28527c945a8f0bb5af51d817d35cf3fecf4f011003e2def893bea64",
+        "config": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\build-release\\bvmethods_failure_full_20261025\\tangent_window\\simulation.json",
+        "pid": 12864,
+        "exit_code": 1,
+        "seconds": 30.625
+      }
+    },
+    "restart_current": {
+      "complete": false,
+      "accepted_points_including_anchor": 318,
+      "attempts": 356,
+      "failures": [
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 4.1571778283877154e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=1.492016311e-09; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=5.436947373e+04; raw_state_update_index=6311; raw_delta_inner_V=1.492016311e-09; limited_state_update_inf=5.436947373e+04",
+          "inner_V": 6.655280456530673,
+          "iterations": 7,
+          "load_V": -6.604547724720078e-06,
+          "outer_V": 17.296299074238267,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.564430245214279e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-6.322872984e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=2.511203308e+06; raw_state_update_index=6308; raw_delta_inner_V=-6.322872984e-07; limited_state_update_inf=2.511203308e+06",
+          "inner_V": 6.657623940761881,
+          "iterations": 6,
+          "load_V": -6.490363446687297e-08,
+          "outer_V": 19.831953816985752,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 5.571549836917546e-06,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.898875400e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.157780167e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.898875400e-05; limited_state_update_inf=1.157780167e+03",
+          "inner_V": 6.659127108620156,
+          "iterations": 9,
+          "load_V": -1.5168665790099567e-06,
+          "outer_V": 25.87357385070543,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5150827359479266e-06,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.747723730e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=9.640806736e+02; raw_state_update_index=6319; raw_delta_inner_V=-1.747723730e-05; limited_state_update_inf=9.640806736e+02",
+          "inner_V": 6.659115586875605,
+          "iterations": 4,
+          "load_V": 5.809826575386978e-08,
+          "outer_V": 25.87357385070543,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.132259237485129e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=2.452659973e-04; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=2.100518444e+03; raw_state_update_index=6319; raw_delta_inner_V=2.452659973e-04; limited_state_update_inf=2.100518444e+03",
+          "inner_V": 6.659004555169596,
+          "iterations": 6,
+          "load_V": -2.340108380506063,
+          "outer_V": 26.56833930586642,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.3883776401475454e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=1.237809203e-04; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.640675933e+03; raw_state_update_index=6319; raw_delta_inner_V=1.237809203e-04; limited_state_update_inf=1.640675933e+03",
+          "inner_V": 6.659000458474832,
+          "iterations": 6,
+          "load_V": -1.1534667376766485,
+          "outer_V": 25.344465255542875,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 2.6724740082558587e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=6.213151102e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.405589587e+03; raw_state_update_index=6319; raw_delta_inner_V=6.213151102e-05; limited_state_update_inf=1.405589587e+03",
+          "inner_V": 6.658997431639965,
+          "iterations": 6,
+          "load_V": -0.5693596422095162,
+          "outer_V": 24.732528230381106,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 6.847706839733414e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=3.124777310e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.291659813e+03; raw_state_update_index=6319; raw_delta_inner_V=3.124777310e-05; limited_state_update_inf=1.291659813e+03",
+          "inner_V": 6.658995254994151,
+          "iterations": 5,
+          "load_V": -0.2828703002156665,
+          "outer_V": 24.42655971780022,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 5.597039147236136e-06,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.079390637e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.126260396e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.079390637e-05; limited_state_update_inf=1.126260396e+03",
+          "inner_V": 6.65901984043597,
+          "iterations": 4,
+          "load_V": -4.1401391825957035e-07,
+          "outer_V": 24.273575461509775,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5692678881772524e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=1.566312122e-05; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.236390132e+03; raw_state_update_index=6319; raw_delta_inner_V=1.566312122e-05; limited_state_update_inf=1.236390132e+03",
+          "inner_V": 6.658994031486619,
+          "iterations": 5,
+          "load_V": -0.14083748085210956,
+          "outer_V": 24.273575461509775,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 2.607644421123308e-06,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-5.068503243e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.153250093e+03; raw_state_update_index=6319; raw_delta_inner_V=-5.068503243e-06; limited_state_update_inf=1.153250093e+03",
+          "inner_V": 6.659006117302342,
+          "iterations": 5,
+          "load_V": -8.894612690824033e-08,
+          "outer_V": 24.197083333364557,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.4667240201541607e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=7.841972828e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.208820279e+03; raw_state_update_index=6319; raw_delta_inner_V=7.841972828e-06; limited_state_update_inf=1.208820279e+03",
+          "inner_V": 6.658993369487911,
+          "iterations": 5,
+          "load_V": -0.07026455007170185,
+          "outer_V": 24.197083333364557,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.2552799808505211e-06,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.450127800e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.164959325e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.450127800e-06; limited_state_update_inf=1.164959325e+03",
+          "inner_V": 6.658999357655686,
+          "iterations": 3,
+          "load_V": -2.539152603731054e-07,
+          "outer_V": 24.158837269291944,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.4926688542322925e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=3.925540290e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.193189035e+03; raw_state_update_index=6319; raw_delta_inner_V=3.925540290e-06; limited_state_update_inf=1.193189035e+03",
+          "inner_V": 6.658993022782501,
+          "iterations": 6,
+          "load_V": -0.03511466267469032,
+          "outer_V": 24.158837269291944,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 6.165352032043331e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.206568397e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.171982479e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.206568397e-06; limited_state_update_inf=1.171982479e+03",
+          "inner_V": 6.658996007403219,
+          "iterations": 7,
+          "load_V": 2.805434462516132e-08,
+          "outer_V": 24.13971423725564,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.502552600547771e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=1.961211555e-06; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.188158915e+03; raw_state_update_index=6319; raw_delta_inner_V=1.961211555e-06; limited_state_update_inf=1.188158915e+03",
+          "inner_V": 6.65899284981666,
+          "iterations": 5,
+          "load_V": -0.01753632217685208,
+          "outer_V": 24.13971423725564,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.0532955391179715e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-5.989837780e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.177406540e+03; raw_state_update_index=6319; raw_delta_inner_V=-5.989837780e-07; limited_state_update_inf=1.177406540e+03",
+          "inner_V": 6.6589943373999745,
+          "iterations": 5,
+          "load_V": -1.3901491513479414e-07,
+          "outer_V": 24.130152721237486,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5087299419949453e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=9.798174142e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.184597109e+03; raw_state_update_index=6319; raw_delta_inner_V=9.798174142e-07; limited_state_update_inf=1.184597109e+03",
+          "inner_V": 6.658992761147946,
+          "iterations": 7,
+          "load_V": -0.008765516444373844,
+          "outer_V": 24.130152721237486,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.5205758985055887e-07,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.993202649e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.179198891e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.993202649e-07; limited_state_update_inf=1.179198891e+03",
+          "inner_V": 6.65899350425217,
+          "iterations": 5,
+          "load_V": -2.2721712511497572e-07,
+          "outer_V": 24.12537196322841,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5149072834421195e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=4.894799784e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.179675362e+03; raw_state_update_index=6319; raw_delta_inner_V=4.894799784e-07; limited_state_update_inf=1.179675362e+03",
+          "inner_V": 6.658992716090497,
+          "iterations": 6,
+          "load_V": -0.004387293941405801,
+          "outer_V": 24.12537196322841,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 7.596755986465144e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.504511559e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.179059363e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.504511559e-07; limited_state_update_inf=1.179059363e+03",
+          "inner_V": 6.658993088071269,
+          "iterations": 6,
+          "load_V": 3.3606607274805356e-08,
+          "outer_V": 24.122981584223872,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5136718151526846e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=2.435615075e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180692977e+03; raw_state_update_index=6319; raw_delta_inner_V=2.435615075e-07; limited_state_update_inf=1.180692977e+03",
+          "inner_V": 6.658992694217898,
+          "iterations": 5,
+          "load_V": -0.002192166499860093,
+          "outer_V": 24.122981584223872,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.801209606406466e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-7.616456821e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180397495e+03; raw_state_update_index=6319; raw_delta_inner_V=-7.616456821e-08; limited_state_update_inf=1.180397495e+03",
+          "inner_V": 6.658992879986266,
+          "iterations": 5,
+          "load_V": -1.8968407644592844e-07,
+          "outer_V": 24.121786394721603,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5149072834421195e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=1.207597879e-07; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180155389e+03; raw_state_update_index=6319; raw_delta_inner_V=1.207597879e-07; limited_state_update_inf=1.180155389e+03",
+          "inner_V": 6.658992683101658,
+          "iterations": 5,
+          "load_V": -0.0010961718403414977,
+          "outer_V": 24.121786394721603,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.9077663304746482e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-3.909963399e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180719086e+03; raw_state_update_index=6319; raw_delta_inner_V=-3.909963399e-08; limited_state_update_inf=1.180719086e+03",
+          "inner_V": 6.658992775986482,
+          "iterations": 7,
+          "load_V": -2.3372877677729775e-07,
+          "outer_V": 24.12118879997047,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 3.5149072834421195e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=5.933881924e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180587921e+03; raw_state_update_index=6319; raw_delta_inner_V=5.933881924e-08; limited_state_update_inf=1.180587921e+03",
+          "inner_V": 6.658992677557927,
+          "iterations": 6,
+          "load_V": -0.0005483800844992004,
+          "outer_V": 24.12118879997047,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.63184004532412e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=2.560791087e-08; best_trial_equation_residual=9.629491146e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-4.126657252e-04; best_trial_merit=4.126657252e+02; raw_state_update_inf=1.177082796e+03; raw_state_update_index=6319; raw_delta_inner_V=2.560791087e-08; limited_state_update_inf=1.177082796e+03",
+          "inner_V": 6.658992725007128,
+          "iterations": 4,
+          "load_V": -0.00041258628945328724,
+          "outer_V": 24.12131130689445,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.63185009109769e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=2.499131212e-09; best_trial_equation_residual=9.629495620e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-2.060889423e-04; best_trial_merit=2.060889423e+02; raw_state_update_inf=1.176993152e+03; raw_state_update_index=6319; raw_delta_inner_V=2.499131212e-09; limited_state_update_inf=1.176993152e+03",
+          "inner_V": 6.658992724513696,
+          "iterations": 4,
+          "load_V": -0.00020593218552278358,
+          "outer_V": 24.121100654744676,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.3233250621240315e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.767779150e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.177723502e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.767779150e-08; limited_state_update_inf=1.177723502e+03",
+          "inner_V": 6.658992742889386,
+          "iterations": 3,
+          "load_V": 1.801789579758406e-07,
+          "outer_V": 24.12099532866979,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.641251348852795e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-9.064310549e-09; best_trial_equation_residual=9.631833386e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-1.032334086e-04; best_trial_merit=1.032334086e+02; raw_state_update_inf=1.072089591e+03; raw_state_update_index=6319; raw_delta_inner_V=-9.064310549e-09; limited_state_update_inf=1.072089591e+03",
+          "inner_V": 6.658992724275831,
+          "iterations": 3,
+          "load_V": -0.00010323227587250017,
+          "outer_V": 24.12099532866979,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.1411108402996e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.410964466e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.179403904e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.410964466e-08; limited_state_update_inf=1.179403904e+03",
+          "inner_V": 6.658992733420787,
+          "iterations": 4,
+          "load_V": -2.8450056532847157e-08,
+          "outer_V": 24.120942665632345,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.64595470267349e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.485449436e-08; best_trial_equation_residual=9.641252790e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-5.202285615e-05; best_trial_merit=5.202285615e+01; raw_state_update_inf=1.267972345e+03; raw_state_update_index=6320; raw_delta_inner_V=-1.485449436e-08; limited_state_update_inf=1.267972345e+03",
+          "inner_V": 6.6589927241653735,
+          "iterations": 2,
+          "load_V": -5.1963443798541675e-05,
+          "outer_V": 24.120942665632345,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.0509258713610671e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.234277037e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180985073e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.234277037e-08; limited_state_update_inf=1.180985073e+03",
+          "inner_V": 6.658992728703619,
+          "iterations": 4,
+          "load_V": -1.1435446012342254e-07,
+          "outer_V": 24.120916334113623,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.620075035302742e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.769949113e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180531688e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.769949113e-08; limited_state_update_inf=1.180531688e+03",
+          "inner_V": 6.658992724060297,
+          "iterations": 5,
+          "load_V": -2.5635976108162595e-05,
+          "outer_V": 24.120916334113623,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.0066176752703952e-08,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.147538953e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.180816239e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.147538953e-08; limited_state_update_inf=1.180816239e+03",
+          "inner_V": 6.658992726361075,
+          "iterations": 5,
+          "load_V": 1.9036794185467443e-07,
+          "outer_V": 24.12090316835426,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "secant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.674339108620933e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.925017950e-08; best_trial_equation_residual=9.636539047e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-1.298421509e-05; best_trial_merit=1.298421509e+01; raw_state_update_inf=1.075464849e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.925017950e-08; limited_state_update_inf=1.075464849e+03",
+          "inner_V": 6.658992724135661,
+          "iterations": 2,
+          "load_V": -1.2950328414973455e-05,
+          "outer_V": 24.12090316835426,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant_fallback"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.963308100582572e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-1.971090310e-08; best_trial_equation_residual=inf; best_trial_equation_residual_index=-1; best_trial_load_residual_V=inf; best_trial_merit=inf; raw_state_update_inf=1.179780674e+03; raw_state_update_index=6319; raw_delta_inner_V=-1.971090310e-08; limited_state_update_inf=1.179780674e+03",
+          "inner_V": 6.65899272580638,
+          "iterations": 1,
+          "load_V": -1.3713172624107983e-05,
+          "outer_V": 24.120913965928235,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 9.968182374899436e-09,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=-2.016461459e-08; best_trial_equation_residual=9.965760760e-09; best_trial_equation_residual_index=756; best_trial_load_residual_V=-9.790199361e-06; best_trial_merit=9.790199361e+00; raw_state_update_inf=1.178073546e+03; raw_state_update_index=6319; raw_delta_inner_V=-2.016461459e-08; limited_state_update_inf=1.178073546e+03",
+          "inner_V": 6.658992725816009,
+          "iterations": 0,
+          "load_V": -9.749907388112433e-06,
+          "outer_V": 24.1209100025949,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        }
+      ],
+      "max_equation_inf": 9.968182374899436e-09,
+      "max_actual_load_V": 2.9812948909579973e-07,
+      "max_KCL_A_per_um": 2.9812947405233714e-14,
+      "last": {
+        "KCL_A_per_um": -1.5534626554660394e-15,
+        "actual_load_V": 2.5009261150898965e-07,
+        "converged": true,
+        "current_A_per_um": 1.7461907526871504e-06,
+        "diagnostics": {
+          "electron_closure": 9.586686815509012e-07,
+          "electron_inf": 1.3846144154804861e-08,
+          "hole_closure": 9.577756888136769e-07,
+          "hole_inf": 1.3665752681285608e-08,
+          "psi_inf": 3.777761776014209e-08
+        },
+        "equation_inf": 9.968182374899436e-09,
+        "failure": "",
+        "fallback_used": false,
+        "inner_V": 6.658992725816009,
+        "iterations": 2,
+        "load_V": 2.5009261150898965e-07,
+        "outer_V": 24.1209000025949,
+        "physical_acceptance": true,
+        "reason": "coupled_residuals",
+        "seed": "secant"
+      },
+      "all_original_electrical_gates": true,
+      "max_electron_closure_reported": 0.0005034292192880518,
+      "max_hole_closure_reported": 0.0005808219474196119,
+      "BV": null,
+      "reached_stop_current": false,
+      "execution": {
+        "status": "finished",
+        "binary_sha256": "741b9fa2b10537af8d47b080044f0baa6601b8ca2c3c87d5504323924846abf0",
+        "core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+        "seed": "historical Vela own 0.5587987475283218 V checkpoint, reclosed under current PAR and zero QF caps",
+        "pid": 17256,
+        "exit_code": 1,
+        "seconds": 2531.405999999999,
+        "driver_source_sha256": "cc51650da81dfea445965e4d1cb4b05d42c415ce0b41bf3b9cfec09667bff93f"
+      }
+    },
+    "upper_reseed": {
+      "complete": true,
+      "accepted_points_including_anchor": 53,
+      "attempts": 53,
+      "failures": [],
+      "max_equation_inf": 7.76906038287918e-09,
+      "max_actual_load_V": 3.31924638885539e-07,
+      "max_KCL_A_per_um": 3.318791577202781e-14,
+      "last": {
+        "KCL_A_per_um": 7.967098463551955e-15,
+        "actual_load_V": 7.966991688590497e-08,
+        "converged": true,
+        "current_A_per_um": 0.0013147517938192996,
+        "diagnostics": {
+          "electron_closure": 6.025646356258956e-12,
+          "electron_inf": 4.767872548482748e-10,
+          "hole_closure": 3.520653173788876e-14,
+          "hole_inf": 8.266726176377873e-12,
+          "psi_inf": 4.109030749272008e-10
+        },
+        "equation_inf": 2.3692968612383e-10,
+        "failure": "",
+        "fallback_used": false,
+        "inner_V": 7.340626485436022,
+        "iterations": 3,
+        "load_V": 7.966991688590497e-08,
+        "outer_V": 13154.858564598762,
+        "physical_acceptance": true,
+        "reason": "coupled_residuals",
+        "seed": "constant"
+      },
+      "all_original_electrical_gates": true,
+      "max_electron_closure_reported": 7.734680579241118e-07,
+      "max_hole_closure_reported": 7.795203079043468e-07,
+      "BV": {
+        "inner_V": 6.670477122481063,
+        "criterion_A_per_um": 0.0001,
+        "bracket_inner_V": [
+          6.663557519429191,
+          6.67880709055253
+        ],
+        "bracket_current_A_per_um": [
+          8.584562196335005e-05,
+          0.00011703934694417044
+        ]
+      },
+      "reached_stop_current": true,
+      "execution": {
+        "status": "finished",
+        "binary_sha256": "c998ea979245ad810e0cd38d80c56fdf0ad05a82399bcf80cf5d2e83846781c2",
+        "core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+        "seed": "healthy historical Vela own potential reclosed at outer 24.1209000025949 V under current PAR and zero QF caps",
+        "pid": 18936,
+        "exit_code": 0,
+        "seconds": 311.57800000000134,
+        "wrapper_seed_label_before_correction": "historical Vela own 0.5587987475283218 V checkpoint, reclosed under current PAR and zero QF caps"
+      }
+    },
+    "filter": {
+      "complete": false,
+      "accepted_points_including_anchor": 9,
+      "attempts": 12,
+      "failures": [
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.9998183695904624e-08,
+          "failure": "coupled Newton iteration budget exhausted",
+          "inner_V": 6.655381550523192,
+          "iterations": 40,
+          "load_V": -0.9227317030619524,
+          "outer_V": 18.296299074238267,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.9972390143898686e-08,
+          "failure": "coupled Newton iteration budget exhausted",
+          "inner_V": 6.655423262794689,
+          "iterations": 40,
+          "load_V": -0.39027706751985747,
+          "outer_V": 17.796299074238267,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        },
+        {
+          "KCL_A_per_um": 0.0,
+          "actual_load_V": 0.0,
+          "converged": false,
+          "current_A_per_um": 0.0,
+          "diagnostics": {},
+          "equation_inf": 1.7316901691219344e-08,
+          "failure": "coupled Newton iteration budget exhausted",
+          "inner_V": 6.655563350058258,
+          "iterations": 40,
+          "load_V": -0.028881208426554394,
+          "outer_V": 17.546299074238267,
+          "physical_acceptance": false,
+          "reason": "",
+          "seed": "constant"
+        }
+      ],
+      "max_equation_inf": 7.950961102976377e-09,
+      "max_actual_load_V": 3.116491278376543e-07,
+      "max_KCL_A_per_um": 3.1142782608449474e-14,
+      "last": {
+        "KCL_A_per_um": 1.2275700258209968e-14,
+        "actual_load_V": 1.225213104305567e-07,
+        "converged": true,
+        "current_A_per_um": 1.2194663508976572e-06,
+        "diagnostics": {
+          "electron_closure": 8.900736764451572e-07,
+          "electron_inf": 9.415120484870156e-09,
+          "hole_closure": 9.001946343711877e-07,
+          "hole_inf": 9.107765015974298e-09,
+          "psi_inf": 2.422295760710726e-08
+        },
+        "equation_inf": 6.613939333914549e-09,
+        "failure": "",
+        "fallback_used": false,
+        "inner_V": 6.656922232843291,
+        "iterations": 31,
+        "load_V": 1.225213104305567e-07,
+        "outer_V": 18.85158561929855,
+        "physical_acceptance": true,
+        "reason": "coupled_residuals",
+        "seed": "constant"
+      },
+      "all_original_electrical_gates": true,
+      "max_electron_closure_reported": 1.2261141599246034e-06,
+      "max_hole_closure_reported": 1.2128212568186771e-06,
+      "BV": null,
+      "reached_stop_current": false,
+      "execution": {
+        "status": "finished",
+        "binary_sha256": "c998ea979245ad810e0cd38d80c56fdf0ad05a82399bcf80cf5d2e83846781c2",
+        "core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+        "seed": "current Vela own state at outer 17.296299074238267 V; residual_filter, constant seed",
+        "pid": 3280,
+        "exit_code": 4294967295,
+        "seconds": 767.6569999999992,
+        "wrapper_seed_label_before_correction": "historical Vela own 0.5587987475283218 V checkpoint, reclosed under current PAR and zero QF caps",
+        "termination": "auxiliary control deliberately ended after main upper branch reached stop current; not natural nonlinear failure"
+      }
+    }
+  },
+  "audit": {
+    "trials": [
+      {
+        "alpha": 0.0,
+        "current_A_per_um": 2.3064754768120027e-09,
+        "current_finite": true,
+        "equation_inf": 4.792660950959004e-09,
+        "fp273_V": -18.06491501557846,
+        "inner_V": 0.1912134534593194,
+        "load_V": -4.28847302719193e-06,
+        "p273": 6.407916235354588e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.0,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -1115.6712809296032,
+        "inner_V": 0.19121770630523813,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.5,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -566.8680979725909,
+        "inner_V": 0.19121557988227877,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.25,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -292.4665064940847,
+        "inner_V": 0.19121451667079908,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -155.26571075483156,
+        "inner_V": 0.19121398506505924,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -86.66531288520501,
+        "inner_V": 0.1912137192621893,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.03125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -52.36511395039174,
+        "inner_V": 0.19121358636075436,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.015625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -35.2150144829851,
+        "inner_V": 0.19121351991003688,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0078125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -26.639964749281777,
+        "inner_V": 0.19121348668467814,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.00390625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -22.35243988243012,
+        "inner_V": 0.19121347007199876,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.001953125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -20.208677449004288,
+        "inner_V": 0.19121346176565907,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0009765625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -19.136796232291374,
+        "inner_V": 0.19121345761248923,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.00048828125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -18.60085562393492,
+        "inner_V": 0.19121345553590433,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.000244140625,
+        "exception": "Invalid transport coefficient or Einstein factor",
+        "fp273_V": -18.332885319756688,
+        "inner_V": 0.19121345449761185,
+        "p273": 1.9940756970549426e-303
+      },
+      {
+        "alpha": 0.0001220703125,
+        "exception": "Nonfinite candidate AV source",
+        "fp273_V": -18.198900167667574,
+        "inner_V": 0.19121345397846562,
+        "p273": 3.5970057766106466e-301
+      },
+      {
+        "alpha": 6.103515625e-05,
+        "current_A_per_um": 2.3064755840165312e-09,
+        "current_finite": true,
+        "equation_inf": 4.792368440331112e-09,
+        "fp273_V": -18.131907591623015,
+        "inner_V": 0.1912134537188925,
+        "load_V": -4.287141408793049e-06,
+        "p273": 4.800507155002422e-300,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.0517578125e-05,
+        "current_A_per_um": 2.3064752958648722e-09,
+        "current_finite": true,
+        "equation_inf": 4.792514693099556e-09,
+        "fp273_V": -18.09841130360074,
+        "inner_V": 0.19121345358910596,
+        "load_V": -4.290152711916573e-06,
+        "p273": 1.7538969488665866e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.52587890625e-05,
+        "current_A_per_um": 2.3064750486958875e-09,
+        "current_finite": true,
+        "equation_inf": 4.792587821392894e-09,
+        "fp273_V": -18.0816631595896,
+        "inner_V": 0.19121345352421268,
+        "load_V": -4.2926892950545525e-06,
+        "p273": 3.35244006188877e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 7.62939453125e-06,
+        "current_A_per_um": 2.3064753693662113e-09,
+        "current_finite": true,
+        "equation_inf": 4.792624386016836e-09,
+        "fp273_V": -18.07328908758403,
+        "inner_V": 0.19121345349176602,
+        "load_V": -4.289515038474745e-06,
+        "p273": 4.634876159796274e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.814697265625e-06,
+        "current_A_per_um": 2.30647504869626e-09,
+        "current_finite": true,
+        "equation_inf": 4.792642668448156e-09,
+        "fp273_V": -18.069102051581243,
+        "inner_V": 0.19121345347554272,
+        "load_V": -4.292737961292259e-06,
+        "p273": 5.449762862919688e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.9073486328125e-06,
+        "current_A_per_um": 2.306475369366397e-09,
+        "current_finite": true,
+        "equation_inf": 4.7926518096936396e-09,
+        "fp273_V": -18.067008533579852,
+        "inner_V": 0.19121345346743104,
+        "load_V": -4.289539371593598e-06,
+        "p273": 5.909458667266146e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 9.5367431640625e-07,
+        "current_A_per_um": 2.306475476811971e-09,
+        "current_finite": true,
+        "equation_inf": 4.792656380323816e-09,
+        "fp273_V": -18.065961774579158,
+        "inner_V": 0.19121345346337523,
+        "load_V": -4.288468971685999e-06,
+        "p273": 6.153640905892435e-299,
+        "residual_finite": true
+      }
+    ],
+    "trials_stable_sg": [
+      {
+        "alpha": 0.0,
+        "current_A_per_um": 2.3064754768120027e-09,
+        "current_finite": true,
+        "equation_inf": 4.792660950959004e-09,
+        "fp273_V": -18.06491501557846,
+        "inner_V": 0.1912134534593194,
+        "load_V": -4.28847302719193e-06,
+        "p273": 6.407916235354588e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.0,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -1115.6712809296032,
+        "inner_V": 0.19121770630523813,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.5,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -566.8680979725909,
+        "inner_V": 0.19121557988227877,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.25,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -292.4665064940847,
+        "inner_V": 0.19121451667079908,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -155.26571075483156,
+        "inner_V": 0.19121398506505924,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -86.66531288520501,
+        "inner_V": 0.1912137192621893,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.03125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -52.36511395039174,
+        "inner_V": 0.19121358636075436,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.015625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -35.2150144829851,
+        "inner_V": 0.19121351991003688,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0078125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -26.639964749281777,
+        "inner_V": 0.19121348668467814,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.00390625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -22.35243988243012,
+        "inner_V": 0.19121347007199876,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.001953125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -20.208677449004288,
+        "inner_V": 0.19121346176565907,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0009765625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -19.136796232291374,
+        "inner_V": 0.19121345761248923,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.00048828125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -18.60085562393492,
+        "inner_V": 0.19121345553590433,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.000244140625,
+        "current_A_per_um": 2.306475028508809e-09,
+        "current_finite": true,
+        "equation_inf": 4.791491030621161e-09,
+        "fp273_V": -18.332885319756688,
+        "inner_V": 0.19121345449761185,
+        "load_V": -4.291917766685582e-06,
+        "p273": 1.9940756970549426e-303,
+        "residual_finite": true
+      },
+      {
+        "alpha": 0.0001220703125,
+        "current_A_per_um": 2.306475584014542e-09,
+        "current_finite": true,
+        "equation_inf": 4.792075950066477e-09,
+        "fp273_V": -18.198900167667574,
+        "inner_V": 0.19121345397846562,
+        "load_V": -4.286881855580793e-06,
+        "p273": 3.5970057766106466e-301,
+        "residual_finite": true
+      },
+      {
+        "alpha": 6.103515625e-05,
+        "current_A_per_um": 2.3064755840165312e-09,
+        "current_finite": true,
+        "equation_inf": 4.792368440331112e-09,
+        "fp273_V": -18.131907591623015,
+        "inner_V": 0.1912134537188925,
+        "load_V": -4.287141408793049e-06,
+        "p273": 4.800507155002422e-300,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.0517578125e-05,
+        "current_A_per_um": 2.3064752958648722e-09,
+        "current_finite": true,
+        "equation_inf": 4.792514693099556e-09,
+        "fp273_V": -18.09841130360074,
+        "inner_V": 0.19121345358910596,
+        "load_V": -4.290152711916573e-06,
+        "p273": 1.7538969488665866e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.52587890625e-05,
+        "current_A_per_um": 2.3064750486958875e-09,
+        "current_finite": true,
+        "equation_inf": 4.792587821392894e-09,
+        "fp273_V": -18.0816631595896,
+        "inner_V": 0.19121345352421268,
+        "load_V": -4.2926892950545525e-06,
+        "p273": 3.35244006188877e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 7.62939453125e-06,
+        "current_A_per_um": 2.3064753693662113e-09,
+        "current_finite": true,
+        "equation_inf": 4.792624386016836e-09,
+        "fp273_V": -18.07328908758403,
+        "inner_V": 0.19121345349176602,
+        "load_V": -4.289515038474745e-06,
+        "p273": 4.634876159796274e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.814697265625e-06,
+        "current_A_per_um": 2.30647504869626e-09,
+        "current_finite": true,
+        "equation_inf": 4.792642668448156e-09,
+        "fp273_V": -18.069102051581243,
+        "inner_V": 0.19121345347554272,
+        "load_V": -4.292737961292259e-06,
+        "p273": 5.449762862919688e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.9073486328125e-06,
+        "current_A_per_um": 2.306475369366397e-09,
+        "current_finite": true,
+        "equation_inf": 4.7926518096936396e-09,
+        "fp273_V": -18.067008533579852,
+        "inner_V": 0.19121345346743104,
+        "load_V": -4.289539371593598e-06,
+        "p273": 5.909458667266146e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 9.5367431640625e-07,
+        "current_A_per_um": 2.306475476811971e-09,
+        "current_finite": true,
+        "equation_inf": 4.792656380323816e-09,
+        "fp273_V": -18.065961774579158,
+        "inner_V": 0.19121345346337523,
+        "load_V": -4.288468971685999e-06,
+        "p273": 6.153640905892435e-299,
+        "residual_finite": true
+      }
+    ],
+    "trials_dilute": [
+      {
+        "alpha": 0.0,
+        "current_A_per_um": 2.3064754768120027e-09,
+        "current_finite": true,
+        "equation_inf": 4.792660950959004e-09,
+        "fp273_V": -18.06491501557846,
+        "inner_V": 0.1912134534593194,
+        "load_V": -4.28847302719193e-06,
+        "p273": 6.407915269371947e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.0,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -1115.6712809296032,
+        "inner_V": 0.19121770630523813,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.5,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -566.8680979725909,
+        "inner_V": 0.19121557988227877,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.25,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -292.4665064940847,
+        "inner_V": 0.19121451667079908,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -155.26571075483156,
+        "inner_V": 0.19121398506505924,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -86.66531288520501,
+        "inner_V": 0.1912137192621893,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.03125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -52.36511395039174,
+        "inner_V": 0.19121358636075436,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.015625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -35.2150144829851,
+        "inner_V": 0.19121351991003688,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0078125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -26.639964749281777,
+        "inner_V": 0.19121348668467814,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.00390625,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -22.35243988243012,
+        "inner_V": 0.19121347007199876,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.001953125,
+        "current_A_per_um": null,
+        "current_finite": false,
+        "equation_inf": null,
+        "fp273_V": -20.208677449004288,
+        "inner_V": 0.19121346176565907,
+        "load_V": null,
+        "p273": 0.0,
+        "residual_finite": false
+      },
+      {
+        "alpha": 0.0009765625,
+        "current_A_per_um": 2.306475296073039e-09,
+        "current_finite": true,
+        "equation_inf": 4.7879832236951115e-09,
+        "fp273_V": -19.136796232291374,
+        "inner_V": 0.19121345761248923,
+        "load_V": -4.286127247010718e-06,
+        "p273": 6.308191e-317,
+        "residual_finite": true
+      },
+      {
+        "alpha": 0.00048828125,
+        "current_A_per_um": 2.3064754765570536e-09,
+        "current_finite": true,
+        "equation_inf": 4.790321436026054e-09,
+        "fp273_V": -18.60085562393492,
+        "inner_V": 0.19121345553590433,
+        "load_V": -4.286398991748541e-06,
+        "p273": 6.357857683513368e-308,
+        "residual_finite": true
+      },
+      {
+        "alpha": 0.000244140625,
+        "current_A_per_um": 2.306475028508809e-09,
+        "current_finite": true,
+        "equation_inf": 4.791491030621161e-09,
+        "fp273_V": -18.332885319756688,
+        "inner_V": 0.19121345449761185,
+        "load_V": -4.291917766685582e-06,
+        "p273": 2.0184304132340976e-303,
+        "residual_finite": true
+      },
+      {
+        "alpha": 0.0001220703125,
+        "current_A_per_um": 2.306475584014542e-09,
+        "current_finite": true,
+        "equation_inf": 4.792075950066477e-09,
+        "fp273_V": -18.198900167667574,
+        "inner_V": 0.19121345397846562,
+        "load_V": -4.286881855580793e-06,
+        "p273": 3.5963774920229067e-301,
+        "residual_finite": true
+      },
+      {
+        "alpha": 6.103515625e-05,
+        "current_A_per_um": 2.3064755840165312e-09,
+        "current_finite": true,
+        "equation_inf": 4.792368440331112e-09,
+        "fp273_V": -18.131907591623015,
+        "inner_V": 0.1912134537188925,
+        "load_V": -4.287141408793049e-06,
+        "p273": 4.800550202379076e-300,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.0517578125e-05,
+        "current_A_per_um": 2.3064752958648722e-09,
+        "current_finite": true,
+        "equation_inf": 4.792514693099556e-09,
+        "fp273_V": -18.09841130360074,
+        "inner_V": 0.19121345358910596,
+        "load_V": -4.290152711916573e-06,
+        "p273": 1.753896203975722e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.52587890625e-05,
+        "current_A_per_um": 2.3064750486958875e-09,
+        "current_finite": true,
+        "equation_inf": 4.792587821392894e-09,
+        "fp273_V": -18.0816631595896,
+        "inner_V": 0.19121345352421268,
+        "load_V": -4.2926892950545525e-06,
+        "p273": 3.3524346774172233e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 7.62939453125e-06,
+        "current_A_per_um": 2.3064753693662113e-09,
+        "current_finite": true,
+        "equation_inf": 4.792624386016836e-09,
+        "fp273_V": -18.07328908758403,
+        "inner_V": 0.19121345349176602,
+        "load_V": -4.289515038474745e-06,
+        "p273": 4.6348805118356444e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 3.814697265625e-06,
+        "current_A_per_um": 2.30647504869626e-09,
+        "current_finite": true,
+        "equation_inf": 4.792642668448156e-09,
+        "fp273_V": -18.069102051581243,
+        "inner_V": 0.19121345347554272,
+        "load_V": -4.292737961292259e-06,
+        "p273": 5.449763444729766e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 1.9073486328125e-06,
+        "current_A_per_um": 2.306475369366397e-09,
+        "current_finite": true,
+        "equation_inf": 4.7926518096936396e-09,
+        "fp273_V": -18.067008533579852,
+        "inner_V": 0.19121345346743104,
+        "load_V": -4.289539371593598e-06,
+        "p273": 5.909451953603559e-299,
+        "residual_finite": true
+      },
+      {
+        "alpha": 9.5367431640625e-07,
+        "current_A_per_um": 2.306475476811971e-09,
+        "current_finite": true,
+        "equation_inf": 4.792656380323816e-09,
+        "fp273_V": -18.065961774579158,
+        "inner_V": 0.19121345346337523,
+        "load_V": -4.288468971685999e-06,
+        "p273": 6.153638550248399e-299,
+        "residual_finite": true
+      }
+    ],
+    "last_state_Jv": {
+      "FD": [
+        {
+          "central_relative_L2": 4.5099016111940265e-08,
+          "current_analytic": 3.2458890354007584e-21,
+          "current_central": -5.360326287071703e-16,
+          "current_relative_error": 1.000006055394507,
+          "forward_relative_L2": 5.533599439920881e-06,
+          "h": 0.1,
+          "maximum_physical_perturbation_V": 0.0001,
+          "mode": "raw_newton"
+        },
+        {
+          "central_relative_L2": 2.29738754769359e-07,
+          "current_analytic": 3.2458890354007584e-21,
+          "current_central": -1.6033503719176785e-14,
+          "current_relative_error": 1.00000020244415,
+          "forward_relative_L2": 4.4459537933146127e-07,
+          "h": 0.01,
+          "maximum_physical_perturbation_V": 1e-05,
+          "mode": "raw_newton"
+        },
+        {
+          "central_relative_L2": 3.358530004389104e-06,
+          "current_analytic": 3.2458890354007584e-21,
+          "current_central": 9.383156655232986e-14,
+          "current_relative_error": 0.9999999654072808,
+          "forward_relative_L2": 7.695343323031325e-06,
+          "h": 0.001,
+          "maximum_physical_perturbation_V": 1e-06,
+          "mode": "raw_newton"
+        },
+        {
+          "central_relative_L2": 2.566554914069962e-05,
+          "current_analytic": 3.2458890354007584e-21,
+          "current_central": -5.36032612163558e-13,
+          "current_relative_error": 1.0000000060553946,
+          "forward_relative_L2": 1.5300459484717205e-06,
+          "h": 0.0001,
+          "maximum_physical_perturbation_V": 1.0000000000000001e-07,
+          "mode": "raw_newton"
+        },
+        {
+          "central_relative_L2": 4.06338002337111e-09,
+          "current_analytic": 0.0,
+          "current_central": 0.0,
+          "current_relative_error": 0.0,
+          "forward_relative_L2": 5.470026385332668e-06,
+          "h": 0.1,
+          "maximum_physical_perturbation_V": 0.0001,
+          "mode": "fp_node273"
+        },
+        {
+          "central_relative_L2": 2.9300332011889958e-08,
+          "current_analytic": 0.0,
+          "current_central": 0.0,
+          "current_relative_error": 0.0,
+          "forward_relative_L2": 5.338247360497453e-07,
+          "h": 0.01,
+          "maximum_physical_perturbation_V": 1e-05,
+          "mode": "fp_node273"
+        },
+        {
+          "central_relative_L2": 3.222500790264626e-07,
+          "current_analytic": 0.0,
+          "current_central": 0.0,
+          "current_relative_error": 0.0,
+          "forward_relative_L2": 7.81286937761629e-08,
+          "h": 0.001,
+          "maximum_physical_perturbation_V": 1e-06,
+          "mode": "fp_node273"
+        },
+        {
+          "central_relative_L2": 2.5258749515511996e-06,
+          "current_analytic": 0.0,
+          "current_central": 0.0,
+          "current_relative_error": 0.0,
+          "forward_relative_L2": 4.967122978298223e-06,
+          "h": 0.0001,
+          "maximum_physical_perturbation_V": 1.0000000000000001e-07,
+          "mode": "fp_node273"
+        }
+      ],
+      "dimension": 7801,
+      "iteration": 0,
+      "linear_defect_inf": 1.8803915012127444e-13,
+      "nnz": 89152
+    }
+  },
+  "build_dilute": {
+    "toolchain": "windows-ucrt64-release generated commands",
+    "core_before": "00bb9cf797125ba9dd810477519658db96df6033681d2c6750b631a07b61e169",
+    "dependency_scope": "CarrierStatistics.cpp and BvMethodsCoupledRuntime.cpp recompiled; tests using the changed statistics and SG contracts rebuilt",
+    "core_after": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+    "runner_sha256": "46b817dff28527c945a8f0bb5af51d817d35cf3fecf4f011003e2def893bea64"
+  },
+  "build_final_drivers": {
+    "core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23"
+  },
+  "refresh_stale_tests": {
+    "reason": "Catch test object predates modified public step-control layout; refresh all stale local include dependencies",
+    "links": [
+      {
+        "target": "test_box_geometry",
+        "exit_code": 0
+      },
+      {
+        "target": "test_cell_reconstructed_avalanche",
+        "exit_code": 0
+      },
+      {
+        "target": "test_dc_sweep_output_contract",
+        "exit_code": 0
+      },
+      {
+        "target": "test_dd_gummel",
+        "exit_code": 0
+      },
+      {
+        "target": "test_electric_field_diagnostics",
+        "exit_code": 0
+      },
+      {
+        "target": "test_element_box_transport",
+        "exit_code": 0
+      },
+      {
+        "target": "test_element_edge_gss_laux_avalanche",
+        "exit_code": 0
+      },
+      {
+        "target": "test_fixed_state_operator_audit",
+        "exit_code": 0
+      },
+      {
+        "target": "test_material_local_poisson_charge",
+        "exit_code": 0
+      },
+      {
+        "target": "test_permittivity_assembly",
+        "exit_code": 0
+      },
+      {
+        "target": "test_phumob",
+        "exit_code": 0
+      },
+      {
+        "target": "test_poisson_charge_volume",
+        "exit_code": 0
+      },
+      {
+        "target": "test_recombination",
+        "exit_code": 0
+      },
+      {
+        "target": "test_schottky_contact",
+        "exit_code": 0
+      },
+      {
+        "target": "test_split_dd_runtime",
+        "exit_code": 0
+      }
+    ],
+    "compiles": [
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_box_geometry.cpp",
+        "exit_code": 0,
+        "seconds": 21.45300000000134
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_split_dd_runtime.cpp",
+        "exit_code": 0,
+        "seconds": 38.28100000000268
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_permittivity_assembly.cpp",
+        "exit_code": 0,
+        "seconds": 29.45300000000134
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_element_box_transport.cpp",
+        "exit_code": 0,
+        "seconds": 28.968999999997322
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_dd_gummel.cpp",
+        "exit_code": 0,
+        "seconds": 20.0
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_phumob.cpp",
+        "exit_code": 0,
+        "seconds": 22.406000000002678
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_cell_reconstructed_avalanche.cpp",
+        "exit_code": 0,
+        "seconds": 25.35899999999674
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_element_edge_gss_laux_avalanche.cpp",
+        "exit_code": 0,
+        "seconds": 29.15599999999904
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_fixed_state_operator_audit.cpp",
+        "exit_code": 0,
+        "seconds": 13.51600000000326
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_recombination.cpp",
+        "exit_code": 0,
+        "seconds": 27.437999999998283
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_dc_sweep_output_contract.cpp",
+        "exit_code": 0,
+        "seconds": 37.48500000000058
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_electric_field_diagnostics.cpp",
+        "exit_code": 0,
+        "seconds": 11.170999999998457
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_schottky_contact.cpp",
+        "exit_code": 0,
+        "seconds": 23.204000000001543
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_poisson_charge_volume.cpp",
+        "exit_code": 0,
+        "seconds": 14.342999999997119
+      },
+      {
+        "source": "D:\\code-repo\\vela-tcad\\.worktrees\\sdevice-cmd-frontend\\tests\\test_material_local_poisson_charge.cpp",
+        "exit_code": 0,
+        "seconds": 13.7970000000023
+      }
+    ]
+  },
+  "ctest_final": {
+    "status": "finished",
+    "selected_tests": 1118,
+    "core_sha256": "5078db5911878940a22dabb1072b5169ec0ec76a563b170d834ff0faad2a3c23",
+    "pid": 2108,
+    "exit_code": 0,
+    "seconds": 464.875
+  },
+  "weak_state_comparison": {
+    "failed_path": {
+      "node": 1120,
+      "p_cm3": 5e-324,
+      "fp_minus_psi_V": -19.922470431921447,
+      "hole_net_flux": -5.976680523141859e-14,
+      "hole_SRH": -2.4384092719828393e-17,
+      "hole_AV": -4.0310678803796344e-14,
+      "hole_residual": -1.0010186812793476e-13
+    },
+    "reclosed": {
+      "node": 1120,
+      "p_cm3": 8764424.09741258,
+      "fp_minus_psi_V": -0.2541853965846208,
+      "hole_net_flux": -5.888804510527651e-13,
+      "hole_SRH": 5.888201549830398e-13,
+      "hole_AV": -8.785963869797115e-202,
+      "hole_residual": -6.029606972530653e-17
+    }
+  },
+  "final_state_check": {
+    "converged": true,
+    "physical_acceptance": true,
+    "iterations": 0,
+    "equation_inf": 2.3692968612383e-10,
+    "load_V": 7.966991688590497e-08,
+    "inner_V": 7.340626485436022,
+    "current_A_per_um": 0.0013147517938192996,
+    "KCL_A_per_um": 7.967098463551955e-15
+  },
+  "final_roundtrip": {
+    "converged": true,
+    "physical_acceptance": true,
+    "iterations": 0,
+    "equation_inf": 2.3692968612383e-10,
+    "load_V": 7.966991688590497e-08,
+    "inner_V": 7.340626485436022,
+    "current_A_per_um": 0.0013147517938192996,
+    "KCL_A_per_um": 7.967098463551955e-15
+  },
+  "healthy_reclosure": {
+    "converged": true,
+    "physical_acceptance": true,
+    "iterations": 2,
+    "equation_inf": 7.76906038287918e-09,
+    "load_V": 1.0528425420375243e-07,
+    "inner_V": 6.658992747068752,
+    "current_A_per_um": 1.7461907360810403e-06,
+    "KCL_A_per_um": 1.052857603376972e-14
+  },
+  "upper_audit": {
+    "converged": false,
+    "physical_acceptance": false,
+    "iterations": 0,
+    "equation_inf": 9.968182374899436e-09,
+    "load_V": -9.749907388112433e-06,
+    "inner_V": 6.658992725816009,
+    "current_A_per_um": 1.7461907526871504e-06,
+    "KCL_A_per_um": -1.5534626554660394e-15
+  },
+  "final_state_hdf5": {
+    "relative_path": "build-release\\bvmethods_failure_full_20261025\\final_state_check\\final\\final_state\\state.h5",
+    "sha256": "0d41f321e99800ea9752f83b1782973e4d200e12dedc68be006682a125cac8ee"
+  },
+  "source_sha256": {
+    "src\\physics\\CarrierStatistics.cpp": "bd2d805433bbd015e3f69b642510afa57ab2274402134357002900219b475eea",
+    "src\\equation\\BvMethodsCoupledRuntime.cpp": "58275672e0bc2e5de009d9635bdc8cc8e9cb2631059269f322a4a879b1e592e5",
+    "include\\vela\\equation\\BvMethodsTri3Operator.h": "ade340f827fe997782cf6918274f0040bc203de1908d02b39495d04b3c5b9cf9",
+    "include\\vela\\physics\\experimental\\JoyceDixonStatistics.h": "b34c558cd0b114bf035e3b419107fcea0c5ba277059cac888ef9e6ea9a2e35c2",
+    "include\\vela\\physics\\experimental\\BvMethodsTri3Avalanche.h": "1dbb112669abb77361bc12cce800e947467e83345db78ad2e7a494b48a32dd7f",
+    "include\\vela\\physics\\experimental\\BvMethodsTri3Transport.h": "3f9065fc7f91fddb3307efb7b5fb36ed0169445e72c451fbb7e82153e02b78d9",
+    "scripts\\diagnostics\\bvmethods_full_sweep_probe.cpp": "4d8e64f0b41244162793412229517d5709a1e18ff0ac77b604628893e1673b8e",
+    "scripts\\diagnostics\\bvmethods_qf_direction_probe.cpp": "9eaa17fcf59dbe8d0735def3c3f004ba4981d97cef28f1e02ee40f5e4744ea20"
+  }
+}

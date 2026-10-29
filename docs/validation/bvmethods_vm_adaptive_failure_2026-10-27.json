@@ -1,0 +1,1668 @@
+{
+  "date": "2026-10-27",
+  "scope": "Read-only original-run analysis plus isolated header arithmetic and three bounded checkpoint controls; no production change or full scan restart",
+  "configuration": {
+    "source_commit": "578972ad62288997f67430ed082723ca7b8e720e",
+    "temperature_K": 300,
+    "nodes": 2600,
+    "silicon_nodes": 2152,
+    "matrix_dimension": 7801,
+    "resistance_ohm_um": 10000000.0,
+    "backend": "Release / pardiso_mkl, 1 requested thread",
+    "population_protection": "adaptive",
+    "selection_metric": "target_normalized",
+    "derivative_restoration": "automatic",
+    "inner_predictor": "report_only",
+    "evaluation_optimization": "all six enabled",
+    "core_constraint_elimination_in_original_run": false
+  },
+  "full_run": {
+    "complete_BV": false,
+    "timed_out": false,
+    "elapsed_seconds": 1635.4002013100107,
+    "solver_exit_code": 3,
+    "supervisor_exit_code": 4,
+    "accepted_points": 24,
+    "attempts": 65,
+    "updates": 474,
+    "accepted_attempt_updates": 160,
+    "last_accepted": {
+      "diagnostics": {
+        "KCL_A_per_um": 3.387237502136684e-15,
+        "current_A_per_um": 3.0687229684059286e-09,
+        "electron": {
+          "contact_flux_A_per_um": -1.6097961651871243e-10,
+          "gross_contact_scale_A_per_um": 5.976466320312826e-09,
+          "gross_source_scale_A_per_um": 1.6098056605731591e-10,
+          "net_denominator_A_per_um": 1.609805198053628e-10,
+          "qualified": true,
+          "ratio": 5.611155010945742e-06,
+          "signed_mismatch_A_per_um": 9.032866503705117e-16,
+          "source_A_per_um": -1.609805198053628e-10
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -4.0893309113105687e-25,
+          "ledger_rounding_defect_A_per_um": -1.1113197092878682e-30,
+          "ratio": 5.611155001036352e-06,
+          "signed_mismatch_A_per_um": 9.032866487752916e-16,
+          "sum_free_equations_A_per_um": -9.032866491842259e-16
+        },
+        "equation_inf": 2.3476151479533887e-10,
+        "fixed_scaled_residual_inf": 0.00326951619713331,
+        "global_enforced": false,
+        "global_satisfied": true,
+        "hole": {
+          "contact_flux_A_per_um": -1.6097622928121167e-10,
+          "gross_contact_scale_A_per_um": 1.6097622929011094e-10,
+          "gross_source_scale_A_per_um": 1.6098056605731591e-10,
+          "net_denominator_A_per_um": 1.609805198053628e-10,
+          "qualified": true,
+          "ratio": 2.6652443142341586e-05,
+          "signed_mismatch_A_per_um": 4.2905241511370264e-15,
+          "source_A_per_um": -1.609805198053628e-10
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 8.786204355070559e-27,
+          "ledger_rounding_defect_A_per_um": -1.5105180471413388e-31,
+          "ratio": 2.665244314088271e-05,
+          "signed_mismatch_A_per_um": 4.290524150902168e-15,
+          "sum_free_equations_A_per_um": -4.290524150893383e-15
+        },
+        "inner_V": 1.04898413926726,
+        "load_V": 4.0640244058920416e-08,
+        "original_gates_pass": true,
+        "row_max_ratio": 1.5247236261543762,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 399,
+        "rows_enforced": false,
+        "rows_satisfied": false
+      },
+      "fallback_used": false,
+      "inner_V": 1.04898413926726,
+      "outer_V": 1.0796713283110753,
+      "updates": 1
+    },
+    "failure_counts": {
+      "Newton update budget exhausted": 6,
+      "no valid population candidate": 6,
+      "population coordinates require positive densities and slopes": 2,
+      "nonfinite population coordinate derivative": 27
+    },
+    "terminal_attempts": [
+      {
+        "label": "attempt_57_predictor",
+        "target_outer_V": 1.0797505432314052,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_58_accepted_state_retry",
+        "target_outer_V": 1.0797505432314052,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_59_predictor",
+        "target_outer_V": 1.0797109357712402,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_60_accepted_state_retry",
+        "target_outer_V": 1.0797109357712402,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_61_predictor",
+        "target_outer_V": 1.0796911320411577,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_62_accepted_state_retry",
+        "target_outer_V": 1.0796911320411577,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_63_predictor",
+        "target_outer_V": 1.0796813283110753,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      },
+      {
+        "label": "attempt_64_accepted_state_retry",
+        "target_outer_V": 1.0796813283110753,
+        "converged": false,
+        "update_count": 0,
+        "failure": "nonfinite population coordinate derivative"
+      }
+    ]
+  },
+  "earlier_stall": {
+    "attempt": "attempt_14_accepted_state_retry",
+    "target_outer_V": 0.4965313975641662,
+    "result": "40-update budget exhausted; scan later continued",
+    "iteration7": {
+      "iteration": 7,
+      "theta": 1.0,
+      "alpha": 3.093059591342133e-09,
+      "raw_RMS": 2373861.9054026357,
+      "switch": {
+        "actual_decrease": 1.5156040172881191e-09,
+        "after": "full",
+        "bad_steps": 0,
+        "before": "full",
+        "candidate_physical_gates": false,
+        "entry_reason": "full_step_retained",
+        "full_candidate_applied": true,
+        "predicted_decrease": 2.9439908844075546e-10,
+        "ratio_reliable": true,
+        "reason": "full_step_retained",
+        "requested_full": true,
+        "rho": 5.148127412062682,
+        "trial_steps": 0
+      },
+      "population_update": {
+        "minimum_electron_ratio": 0.9999999900179812,
+        "minimum_hole_ratio": 0.010000000000000047,
+        "policy": "fraction_to_boundary",
+        "positivity_alpha": 3.093059591342133e-09,
+        "protected_electrons": 0,
+        "protected_holes": 0,
+        "selection": {
+          "fraction": {
+            "alpha": 3.093059591342133e-09,
+            "joint": false,
+            "merit": 9246479.097742544,
+            "valid": true
+          },
+          "local": {
+            "alpha": 1.0,
+            "joint": false,
+            "merit": 17245470.264540095,
+            "valid": true
+          },
+          "metric": "target_normalized",
+          "reason": "physical_scaled_residual",
+          "selected": "fraction_to_boundary"
+        }
+      },
+      "diagnostics": {
+        "KCL_A_per_um": -2.8556664129840907e-10,
+        "current_A_per_um": 2.201159917147735e-09,
+        "electron": {
+          "contact_flux_A_per_um": 2.8376733826018283e-10,
+          "gross_contact_scale_A_per_um": 4.686087172544572e-09,
+          "gross_source_scale_A_per_um": 9.306645537890142e-12,
+          "net_denominator_A_per_um": 2.8376733826018283e-10,
+          "qualified": true,
+          "ratio": 1.0327967431625666,
+          "signed_mismatch_A_per_um": 2.930739827710272e-10,
+          "source_A_per_um": -9.30664451084434e-12
+        },
+        "electron_mp_ledger": {
+          "all_node_transport_sum_A_per_um": -8.225455626410262e-23,
+          "ledger_rounding_defect_A_per_um": -8.210988012272463e-22,
+          "ratio": 1.0327967431625664,
+          "signed_mismatch_A_per_um": 2.930739827710274e-10,
+          "sum_free_equations_A_per_um": -2.930739827719307e-10
+        },
+        "equation_inf": 0.09246479097742545,
+        "fixed_scaled_residual_inf": 0.17715930263937643,
+        "global_enforced": false,
+        "global_satisfied": false,
+        "hole": {
+          "contact_flux_A_per_um": -1.7993030382260495e-12,
+          "gross_contact_scale_A_per_um": 1.799303050020397e-12,
+          "gross_source_scale_A_per_um": 9.306645537890142e-12,
+          "net_denominator_A_per_um": 9.30664451084434e-12,
+          "qualified": true,
+          "ratio": 0.8066646860606467,
+          "signed_mismatch_A_per_um": 7.50734147261829e-12,
+          "source_A_per_um": -9.30664451084434e-12
+        },
+        "hole_mp_ledger": {
+          "all_node_transport_sum_A_per_um": 1.0343909638579684e-22,
+          "ledger_rounding_defect_A_per_um": 2.5945179459328907e-23,
+          "ratio": 0.8066646860606461,
+          "signed_mismatch_A_per_um": 7.507341472618262e-12,
+          "sum_free_equations_A_per_um": -7.507341472488878e-12
+        },
+        "inner_V": 0.42074651441715505,
+        "load_V": -0.053773283975533825,
+        "original_gates_pass": false,
+        "row_max_ratio": 1.6993107587932728,
+        "row_worst_carrier": "electron",
+        "row_worst_node": 1049,
+        "rows_enforced": false,
+        "rows_satisfied": false
+      },
+      "trials": [
+        {
+          "RMS": 2373861.9054026357,
+          "alpha": 3.093059591342133e-09,
+          "equation_inf": 0.09246479097742545,
+          "fixed_scaled_residual_inf": 0.17715930263937643,
+          "limiting_carrier": 1,
+          "limiting_node": 631,
+          "load_V": -0.053773283975533825,
+          "max_relative_electron_tangent": 15.11127797971538,
+          "max_relative_hole_tangent": 320071427.9062505,
+          "minimum_electron_ratio": 0.9999999900179812,
+          "minimum_hole_ratio": 0.010000000000000047,
+          "model_phi_after": 0.047590265588167854,
+          "negative_electron_raw_candidates": 19,
+          "negative_hole_raw_candidates": 123,
+          "phi_after": 0.047590264366962926,
+          "phi_before": 0.04759026588256694,
+          "population_linear_backward_error": 2.568209525844385e-16,
+          "population_protection": "fraction_to_boundary",
+          "population_roundtrip_relative": 1.3988810110276972e-14,
+          "population_selection": {
+            "fraction": {
+              "alpha": 3.093059591342133e-09,
+              "joint": false,
+              "merit": 9246479.097742544,
+              "valid": true
+            },
+            "local": {
+              "alpha": 1.0,
+              "joint": false,
+              "merit": 17245470.264540095,
+              "valid": true
+            },
+            "metric": "target_normalized",
+            "reason": "physical_scaled_residual",
+            "selected": "fraction_to_boundary"
+          },
+          "positivity_alpha": 3.093059591342133e-09,
+          "protected_electrons": 0,
+          "protected_holes": 0,
+          "qf_mapped_linear_backward_error": 2.2733509899009496e-10,
+          "raw_dfn_inf_V": 0.3801236048849502,
+          "raw_dfp_inf_V": 8274486.436515091,
+          "raw_dpsi_inf_V": 0.05080178557469094,
+          "raw_voltage_V": 0.05080178459299222,
+          "scaled_tangent_roundtrip_error": 1.9527798679032657e-13,
+          "theta": 1.0,
+          "valid": true
+        }
+      ]
+    },
+    "next_accepted_outer_V": 0.4540251020282612,
+    "next_updates": 7
+  },
+  "population_evolution": [
+    {
+      "point": 0,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 2573,
+          "cm3": 1104.9415547069066
+        },
+        {
+          "node": 2566,
+          "cm3": 1104.9415547069066
+        },
+        {
+          "node": 2565,
+          "cm3": 1104.9415547069066
+        }
+      ],
+      "hole": [
+        {
+          "node": 242,
+          "cm3": 165.8161241715771
+        },
+        {
+          "node": 239,
+          "cm3": 165.8161241715771
+        },
+        {
+          "node": 240,
+          "cm3": 165.8161241715771
+        }
+      ]
+    },
+    {
+      "point": 1,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1240,
+          "cm3": 915.2887850731172
+        },
+        {
+          "node": 1234,
+          "cm3": 915.3862184486178
+        },
+        {
+          "node": 1224,
+          "cm3": 915.7336095227839
+        }
+      ],
+      "hole": [
+        {
+          "node": 862,
+          "cm3": 165.3716983988169
+        },
+        {
+          "node": 861,
+          "cm3": 165.53824101186763
+        },
+        {
+          "node": 864,
+          "cm3": 165.65013057379093
+        }
+      ]
+    },
+    {
+      "point": 2,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1240,
+          "cm3": 682.5013272571533
+        },
+        {
+          "node": 1234,
+          "cm3": 682.7154053999872
+        },
+        {
+          "node": 1224,
+          "cm3": 683.4782366430244
+        }
+      ],
+      "hole": [
+        {
+          "node": 801,
+          "cm3": 158.9261624493489
+        },
+        {
+          "node": 800,
+          "cm3": 162.07852375969836
+        },
+        {
+          "node": 865,
+          "cm3": 163.1156732758414
+        }
+      ]
+    },
+    {
+      "point": 3,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1240,
+          "cm3": 429.9719346762914
+        },
+        {
+          "node": 1234,
+          "cm3": 430.3137372350169
+        },
+        {
+          "node": 1224,
+          "cm3": 431.53014467462555
+        }
+      ],
+      "hole": [
+        {
+          "node": 803,
+          "cm3": 136.6560170581691
+        },
+        {
+          "node": 852,
+          "cm3": 136.83815386938312
+        },
+        {
+          "node": 853,
+          "cm3": 140.52026269882157
+        }
+      ]
+    },
+    {
+      "point": 4,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1239,
+          "cm3": 200.01440605971675
+        },
+        {
+          "node": 1233,
+          "cm3": 200.17713643147735
+        },
+        {
+          "node": 1223,
+          "cm3": 200.87870795453625
+        }
+      ],
+      "hole": [
+        {
+          "node": 855,
+          "cm3": 85.6928488528744
+        },
+        {
+          "node": 858,
+          "cm3": 86.77056348142823
+        },
+        {
+          "node": 856,
+          "cm3": 87.0637430609253
+        }
+      ]
+    },
+    {
+      "point": 5,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1239,
+          "cm3": 70.60605811052343
+        },
+        {
+          "node": 1233,
+          "cm3": 70.81431339388898
+        },
+        {
+          "node": 1223,
+          "cm3": 71.68899319076934
+        }
+      ],
+      "hole": [
+        {
+          "node": 943,
+          "cm3": 34.53587974997438
+        },
+        {
+          "node": 857,
+          "cm3": 36.06866986846221
+        },
+        {
+          "node": 946,
+          "cm3": 37.18279990071435
+        }
+      ]
+    },
+    {
+      "point": 6,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 28.00235622128705
+        },
+        {
+          "node": 1136,
+          "cm3": 28.020325574236356
+        },
+        {
+          "node": 737,
+          "cm3": 28.169956216403467
+        }
+      ],
+      "hole": [
+        {
+          "node": 460,
+          "cm3": 9.516630772232018
+        },
+        {
+          "node": 458,
+          "cm3": 9.519607173760656
+        },
+        {
+          "node": 598,
+          "cm3": 9.580022649772689
+        }
+      ]
+    },
+    {
+      "point": 7,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 9.381503928925719
+        },
+        {
+          "node": 1136,
+          "cm3": 9.454693806657675
+        },
+        {
+          "node": 1106,
+          "cm3": 9.793650304726789
+        }
+      ],
+      "hole": [
+        {
+          "node": 477,
+          "cm3": 3.552659385100835
+        },
+        {
+          "node": 459,
+          "cm3": 3.5891134376652647
+        },
+        {
+          "node": 600,
+          "cm3": 3.7185075965958174
+        }
+      ]
+    },
+    {
+      "point": 8,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 740,
+          "cm3": 12.257532712898554
+        },
+        {
+          "node": 1142,
+          "cm3": 12.545693034226149
+        },
+        {
+          "node": 1136,
+          "cm3": 12.70513777928452
+        }
+      ],
+      "hole": [
+        {
+          "node": 966,
+          "cm3": 5.8750432581574
+        },
+        {
+          "node": 952,
+          "cm3": 6.136266564275389
+        },
+        {
+          "node": 963,
+          "cm3": 6.438076320891343
+        }
+      ]
+    },
+    {
+      "point": 9,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 12.287605340991167
+        },
+        {
+          "node": 1136,
+          "cm3": 12.446137280706841
+        },
+        {
+          "node": 1106,
+          "cm3": 12.937902110378754
+        }
+      ],
+      "hole": [
+        {
+          "node": 966,
+          "cm3": 5.9636595005718505
+        },
+        {
+          "node": 963,
+          "cm3": 6.174858196569853
+        },
+        {
+          "node": 940,
+          "cm3": 6.324582246705695
+        }
+      ]
+    },
+    {
+      "point": 10,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 11.100448466334896
+        },
+        {
+          "node": 1136,
+          "cm3": 11.236097209316245
+        },
+        {
+          "node": 1106,
+          "cm3": 11.668550572828387
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.85709882907357
+        },
+        {
+          "node": 940,
+          "cm3": 6.15713925699406
+        },
+        {
+          "node": 944,
+          "cm3": 6.280075658732653
+        }
+      ]
+    },
+    {
+      "point": 11,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 10.355989687748554
+        },
+        {
+          "node": 1136,
+          "cm3": 10.474582990751648
+        },
+        {
+          "node": 1106,
+          "cm3": 10.864687739187808
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.812759196226055
+        },
+        {
+          "node": 940,
+          "cm3": 6.272176805986416
+        },
+        {
+          "node": 944,
+          "cm3": 6.3051413742592155
+        }
+      ]
+    },
+    {
+      "point": 12,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 9.366460419845595
+        },
+        {
+          "node": 1136,
+          "cm3": 9.453484563698863
+        },
+        {
+          "node": 1106,
+          "cm3": 9.775788915555806
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.657219778744344
+        },
+        {
+          "node": 944,
+          "cm3": 6.163865001697088
+        },
+        {
+          "node": 940,
+          "cm3": 6.205191500139521
+        }
+      ]
+    },
+    {
+      "point": 13,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 1142,
+          "cm3": 9.342592486127199
+        },
+        {
+          "node": 1136,
+          "cm3": 9.380336165086272
+        },
+        {
+          "node": 1106,
+          "cm3": 9.606681411141283
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.429411389662315
+        },
+        {
+          "node": 944,
+          "cm3": 5.876305823782141
+        },
+        {
+          "node": 940,
+          "cm3": 6.00229351716714
+        }
+      ]
+    },
+    {
+      "point": 14,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 747,
+          "cm3": 9.36069002286769
+        },
+        {
+          "node": 1142,
+          "cm3": 11.48868698708069
+        },
+        {
+          "node": 1136,
+          "cm3": 11.493535225015858
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.282661145806285
+        },
+        {
+          "node": 944,
+          "cm3": 5.640214471211564
+        },
+        {
+          "node": 940,
+          "cm3": 5.818704361488419
+        }
+      ]
+    },
+    {
+      "point": 15,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 490,
+          "cm3": 0.00020271356880010167
+        },
+        {
+          "node": 747,
+          "cm3": 9.969938436993438
+        },
+        {
+          "node": 1068,
+          "cm3": 15.312382002268023
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 4.969096966928918
+        },
+        {
+          "node": 944,
+          "cm3": 5.065026251859622
+        },
+        {
+          "node": 940,
+          "cm3": 5.2624575600448456
+        }
+      ]
+    },
+    {
+      "point": 16,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 747,
+          "cm3": 12.344730162586751
+        },
+        {
+          "node": 1239,
+          "cm3": 15.908976141785987
+        },
+        {
+          "node": 1233,
+          "cm3": 16.093136837031036
+        }
+      ],
+      "hole": [
+        {
+          "node": 963,
+          "cm3": 5.468266510886486
+        },
+        {
+          "node": 944,
+          "cm3": 5.567831010922285
+        },
+        {
+          "node": 940,
+          "cm3": 6.093780425084337
+        }
+      ]
+    },
+    {
+      "point": 17,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 5.052670762612069e-28
+        },
+        {
+          "node": 532,
+          "cm3": 4.635538012323567e-23
+        },
+        {
+          "node": 533,
+          "cm3": 1.4827229667489438e-21
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 5.827563716475067
+        },
+        {
+          "node": 963,
+          "cm3": 5.961392401298582
+        },
+        {
+          "node": 940,
+          "cm3": 6.663592449855181
+        }
+      ]
+    },
+    {
+      "point": 18,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 1.4124554036027983e-50
+        },
+        {
+          "node": 532,
+          "cm3": 4.248762228597516e-40
+        },
+        {
+          "node": 533,
+          "cm3": 2.7145770115430284e-38
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 5.600908237358933
+        },
+        {
+          "node": 963,
+          "cm3": 5.961897760252011
+        },
+        {
+          "node": 940,
+          "cm3": 6.452077930714107
+        }
+      ]
+    },
+    {
+      "point": 19,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 1.5807577399798718e-86
+        },
+        {
+          "node": 532,
+          "cm3": 1.0046480289063972e-68
+        },
+        {
+          "node": 533,
+          "cm3": 1.6087588357423004e-66
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 5.23788864180687
+        },
+        {
+          "node": 963,
+          "cm3": 5.956887962233876
+        },
+        {
+          "node": 940,
+          "cm3": 6.091311355582373
+        }
+      ]
+    },
+    {
+      "point": 20,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 3.093603724271044e-144
+        },
+        {
+          "node": 532,
+          "cm3": 2.639090942722616e-116
+        },
+        {
+          "node": 533,
+          "cm3": 1.5054519408080454e-113
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 4.884826908081071
+        },
+        {
+          "node": 940,
+          "cm3": 5.775622434620451
+        },
+        {
+          "node": 963,
+          "cm3": 6.089632976835196
+        }
+      ]
+    },
+    {
+      "point": 21,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 3.073719359567809e-231
+        },
+        {
+          "node": 533,
+          "cm3": 3.534727957270464e-184
+        },
+        {
+          "node": 492,
+          "cm3": 1.4733918104837617e-179
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 4.900059819637897
+        },
+        {
+          "node": 940,
+          "cm3": 5.96891794252105
+        },
+        {
+          "node": 964,
+          "cm3": 6.326099966743463
+        }
+      ]
+    },
+    {
+      "point": 22,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 8.59502790827437e-299
+        },
+        {
+          "node": 533,
+          "cm3": 1.594383102971857e-240
+        },
+        {
+          "node": 492,
+          "cm3": 6.185441920467324e-235
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 4.927560458871889
+        },
+        {
+          "node": 940,
+          "cm3": 6.12367283457171
+        },
+        {
+          "node": 964,
+          "cm3": 6.212653410849429
+        }
+      ]
+    },
+    {
+      "point": 23,
+      "active_count": 2152,
+      "electron": [
+        {
+          "node": 498,
+          "cm3": 6.981265876883068e-301
+        },
+        {
+          "node": 533,
+          "cm3": 1.340488954524092e-242
+        },
+        {
+          "node": 492,
+          "cm3": 5.215987158066311e-237
+        }
+      ],
+      "hole": [
+        {
+          "node": 944,
+          "cm3": 4.927757101280151
+        },
+        {
+          "node": 940,
+          "cm3": 6.1240864335364265
+        },
+        {
+          "node": 964,
+          "cm3": 6.212688105355404
+        }
+      ]
+    }
+  ],
+  "node498_state_evolution": [
+    {
+      "point": 14,
+      "psi_498": -0.25270252508089786,
+      "fn_498": 0.25052931343504536,
+      "fp_498": 1.6857743034837114e-08,
+      "n_498_cm3": 123.03081370265738,
+      "p_498_cm3": 615388703884500.1
+    },
+    {
+      "point": 15,
+      "psi_498": -0.24037128463906746,
+      "fn_498": 0.2488956955022141,
+      "fp_498": 2.6148903820022443e-08,
+      "n_498_cm3": 211.16074797140834,
+      "p_498_cm3": 381939969226817.6
+    },
+    {
+      "point": 16,
+      "psi_498": -0.22490609657594315,
+      "fn_498": 0.25711342584084895,
+      "fp_498": 3.918053345652872e-08,
+      "n_498_cm3": 279.48925936222673,
+      "p_498_cm3": 209987021436095.56
+    },
+    {
+      "point": 17,
+      "psi_498": -0.20935088773530244,
+      "fn_498": 2.043153943496579,
+      "fp_498": 7.064143747737006e-08,
+      "n_498_cm3": 5.052670762612069e-28,
+      "p_498_cm3": 115047568425448.72
+    },
+    {
+      "point": 18,
+      "psi_498": -0.20485981557948743,
+      "fn_498": 3.390177093031779,
+      "fp_498": 8.653067876118747e-08,
+      "n_498_cm3": 1.4124554036027983e-50,
+      "p_498_cm3": 96701032280031.22
+    },
+    {
+      "point": 19,
+      "psi_498": -0.1988825371212805,
+      "fn_498": 5.536195546243803,
+      "fp_498": 1.1525641668841402e-07,
+      "n_498_cm3": 1.5807577399798718e-86,
+      "p_498_cm3": 76739299918815.11
+    },
+    {
+      "point": 20,
+      "psi_498": -0.19059441112848546,
+      "fn_498": 8.979658704521533,
+      "fp_498": 1.749749153623359e-07,
+      "n_498_cm3": 3.093603724271044e-144,
+      "p_498_cm3": 55690940418671.76
+    },
+    {
+      "point": 21,
+      "psi_498": -0.17921414232867566,
+      "fn_498": 14.170005027178075,
+      "fp_498": 3.143232368274518e-07,
+      "n_498_cm3": 3.073719359567809e-231,
+      "p_498_cm3": 35859719586744.93
+    },
+    {
+      "point": 22,
+      "psi_498": -0.1714055872401997,
+      "fn_498": 18.19902728079013,
+      "fp_498": 4.523551516144586e-07,
+      "n_498_cm3": 8.59502790827437e-299,
+      "p_498_cm3": 26511316975064.613
+    },
+    {
+      "point": 23,
+      "psi_498": -0.1713951393747497,
+      "fn_498": 18.32346660446211,
+      "fp_498": 4.525598140958653e-07,
+      "n_498_cm3": 6.981265876883068e-301,
+      "p_498_cm3": 26500605029979.863
+    }
+  ],
+  "accepted_protection_history": [
+    {
+      "label": "attempt_0_zero",
+      "target": 0.0,
+      "updates": 0,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_1_predictor",
+      "target": 0.01,
+      "updates": 4,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_2_predictor",
+      "target": 0.023690000000000003,
+      "updates": 3,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_3_predictor",
+      "target": 0.04261870666666667,
+      "updates": 3,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_4_predictor",
+      "target": 0.06879079841777778,
+      "updates": 3,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_5_predictor",
+      "target": 0.10497807727898076,
+      "updates": 3,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_6_predictor",
+      "target": 0.1550130215177374,
+      "updates": 4,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_7_predictor",
+      "target": 0.22351086018059527,
+      "updates": 25,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_8_predictor",
+      "target": 0.29762552161380745,
+      "updates": 7,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_11_predictor",
+      "target": 0.34683765680546036,
+      "updates": 8,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_12_predictor",
+      "target": 0.41151880649235617,
+      "updates": 8,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_15_predictor",
+      "target": 0.4540251020282612,
+      "updates": 7,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_16_predictor",
+      "target": 0.5104734624999431,
+      "updates": 6,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_17_predictor",
+      "target": 0.5862083461327829,
+      "updates": 7,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_20_predictor",
+      "target": 0.6364963088649886,
+      "updates": 5,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_21_predictor",
+      "target": 0.7046532610213714,
+      "updates": 13,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_23_accepted_state_retry",
+      "target": 0.7895768234082243,
+      "updates": 11,
+      "local_protection_498_iterations": []
+    },
+    {
+      "label": "attempt_24_predictor",
+      "target": 0.8745003857950773,
+      "updates": 20,
+      "local_protection_498_iterations": [
+        2,
+        3,
+        5,
+        6,
+        8,
+        10,
+        11,
+        13,
+        14,
+        19,
+        20
+      ]
+    },
+    {
+      "label": "attempt_29_predictor",
+      "target": 0.8989229869448297,
+      "updates": 7,
+      "local_protection_498_iterations": [
+        1,
+        2,
+        3,
+        6,
+        7
+      ]
+    },
+    {
+      "label": "attempt_30_predictor",
+      "target": 0.931356201271701,
+      "updates": 3,
+      "local_protection_498_iterations": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "label": "attempt_31_predictor",
+      "target": 0.9762005256143218,
+      "updates": 4,
+      "local_protection_498_iterations": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "label": "attempt_32_predictor",
+      "target": 1.0375924056393697,
+      "updates": 4,
+      "local_protection_498_iterations": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "label": "attempt_35_predictor",
+      "target": 1.079615147516515,
+      "updates": 4,
+      "local_protection_498_iterations": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "label": "attempt_56_predictor",
+      "target": 1.0796713283110753,
+      "updates": 1,
+      "local_protection_498_iterations": [
+        1
+      ]
+    }
+  ],
+  "last_accepted_update": {
+    "iteration": 1,
+    "theta": 1.0,
+    "alpha": 1.0,
+    "raw_RMS": 0.9846048564156366,
+    "switch": {
+      "actual_decrease": 1.9645357888263003e-08,
+      "after": "full",
+      "bad_steps": 0,
+      "before": "full",
+      "candidate_physical_gates": true,
+      "entry_reason": "carried_full_mode",
+      "full_candidate_applied": true,
+      "predicted_decrease": 1.17644994949144e-05,
+      "ratio_reliable": true,
+      "reason": "full_step_retained",
+      "requested_full": true,
+      "rho": 0.0016698847151768224,
+      "trial_steps": 0
+    },
+    "population_update": {
+      "minimum_electron_ratio": 0.009999999999999998,
+      "minimum_hole_ratio": 0.9997735208657458,
+      "policy": "local_nonpositive",
+      "positivity_alpha": 1.0,
+      "protected_electrons": 10,
+      "protected_holes": 0,
+      "selection": {
+        "fraction": {
+          "alpha": 2.0030640158861406e-05,
+          "joint": false,
+          "merit": 6285.580743828234,
+          "valid": true
+        },
+        "local": {
+          "alpha": 1.0,
+          "joint": true,
+          "merit": 0.040640244058920416,
+          "valid": true
+        },
+        "metric": "target_normalized",
+        "reason": "original_joint_gates",
+        "selected": "local_nonpositive"
+      }
+    },
+    "diagnostics": {
+      "KCL_A_per_um": 3.387237502136684e-15,
+      "current_A_per_um": 3.0687229684059286e-09,
+      "electron": {
+        "contact_flux_A_per_um": -1.6097961651871243e-10,
+        "gross_contact_scale_A_per_um": 5.976466320312826e-09,
+        "gross_source_scale_A_per_um": 1.6098056605731591e-10,
+        "net_denominator_A_per_um": 1.609805198053628e-10,
+        "qualified": true,
+        "ratio": 5.611155010945742e-06,
+        "signed_mismatch_A_per_um": 9.032866503705117e-16,
+        "source_A_per_um": -1.609805198053628e-10
+      },
+      "electron_mp_ledger": {
+        "all_node_transport_sum_A_per_um": -4.0893309113105687e-25,
+        "ledger_rounding_defect_A_per_um": -1.1113197092878682e-30,
+        "ratio": 5.611155001036352e-06,
+        "signed_mismatch_A_per_um": 9.032866487752916e-16,
+        "sum_free_equations_A_per_um": -9.032866491842259e-16
+      },
+      "equation_inf": 2.3476151479533887e-10,
+      "fixed_scaled_residual_inf": 0.00326951619713331,
+      "global_enforced": false,
+      "global_satisfied": true,
+      "hole": {
+        "contact_flux_A_per_um": -1.6097622928121167e-10,
+        "gross_contact_scale_A_per_um": 1.6097622929011094e-10,
+        "gross_source_scale_A_per_um": 1.6098056605731591e-10,
+        "net_denominator_A_per_um": 1.609805198053628e-10,
+        "qualified": true,
+        "ratio": 2.6652443142341586e-05,
+        "signed_mismatch_A_per_um": 4.2905241511370264e-15,
+        "source_A_per_um": -1.609805198053628e-10
+      },
+      "hole_mp_ledger": {
+        "all_node_transport_sum_A_per_um": 8.786204355070559e-27,
+        "ledger_rounding_defect_A_per_um": -1.5105180471413388e-31,
+        "ratio": 2.665244314088271e-05,
+        "signed_mismatch_A_per_um": 4.290524150902168e-15,
+        "sum_free_equations_A_per_um": -4.290524150893383e-15
+      },
+      "inner_V": 1.04898413926726,
+      "load_V": 4.0640244058920416e-08,
+      "original_gates_pass": true,
+      "row_max_ratio": 1.5247236261543762,
+      "row_worst_carrier": "electron",
+      "row_worst_node": 399,
+      "rows_enforced": false,
+      "rows_satisfied": false
+    },
+    "trials": [
+      {
+        "RMS": 0.9846048564156366,
+        "alpha": 1.0,
+        "equation_inf": 2.3476151479533887e-10,
+        "fixed_scaled_residual_inf": 0.00326951619713331,
+        "limiting_carrier": -1,
+        "limiting_node": -1,
+        "load_V": 4.0640244058920416e-08,
+        "max_relative_electron_tangent": 49424.28160799601,
+        "max_relative_hole_tangent": 0.0008097381730534531,
+        "minimum_electron_ratio": 0.009999999999999998,
+        "minimum_hole_ratio": 0.9997735208657458,
+        "model_phi_after": 7.416518856830719e-37,
+        "negative_electron_raw_candidates": 10,
+        "negative_hole_raw_candidates": 0,
+        "phi_after": 1.1744854137026137e-05,
+        "phi_before": 1.17644994949144e-05,
+        "population_linear_backward_error": 2.565285926062653e-16,
+        "population_protection": "local_nonpositive",
+        "population_roundtrip_relative": 1.3300471835009375e-13,
+        "population_selection": {
+          "fraction": {
+            "alpha": 2.0030640158861406e-05,
+            "joint": false,
+            "merit": 6285.580743828234,
+            "valid": true
+          },
+          "local": {
+            "alpha": 1.0,
+            "joint": true,
+            "merit": 0.040640244058920416,
+            "valid": true
+          },
+          "metric": "target_normalized",
+          "reason": "original_joint_gates",
+          "selected": "local_nonpositive"
+        },
+        "positivity_alpha": 1.0,
+        "protected_electrons": 10,
+        "protected_holes": 0,
+        "qf_mapped_linear_backward_error": 4.2827677229515595e-10,
+        "raw_dfn_inf_V": 1277.7165175831408,
+        "raw_dfp_inf_V": 2.0610072352177127e-05,
+        "raw_dpsi_inf_V": 4.6231092290883546e-07,
+        "raw_voltage_V": 2.30595241492716e-09,
+        "scaled_tangent_roundtrip_error": 3.370952607920653e-20,
+        "theta": 1.0,
+        "valid": true
+      }
+    ]
+  },
+  "coordinate_failure": {
+    "density_reference_cm3": 10000000000.0,
+    "V0_equals_VT": true,
+    "VT_V": 0.025851999786435535,
+    "binary64_max": 1.7976931348623157e+308,
+    "low_density_coordinate_limit_cm3": 5.562684646268005e-299,
+    "point22_n_cm3": 8.59502790827437e-299,
+    "point22_b": 1.1634633542461304e+308,
+    "point23_n_cm3": 6.981265876883068e-301,
+    "point23_b_extended": "1.43240497874644905e+310",
+    "point23_physical_inverse_derivative_V_cm3": 3.7030533204642396e+298,
+    "point23_overflow_factor": 79.6801718251105,
+    "relative_reference_control_b": 2.0,
+    "reproducer_output": [
+      "point=21 n=3.07371935956780877e-231 dn_dfn_abs=1.18896773362211831e-229 physical_dfn_dn=8.410657175309211e+228 scaled_coefficient_extended=3.2533874535006986e+240 original=PASS b=3.25338745350069864e+240 relative_control=PASS b=2.0000000000000222",
+      "point=22 n=8.59502790827437009e-299 dn_dfn_abs=3.32470523722662073e-297 physical_dfn_dn=3.00778543854965314e+296 scaled_coefficient_extended=1.16346335424613028e+308 original=PASS b=1.16346335424613035e+308 relative_control=PASS b=2",
+      "point=23 n=6.98126587688306768e-301 dn_dfn_abs=2.7004742126549591e-299 physical_dfn_dn=3.70305332046423982e+298 scaled_coefficient_extended=1.43240497874644905e+310 original=FAIL(nonfinite population coordinate derivative) relative_control=PASS b=2"
+    ],
+    "scope": "header-only coordinate reproduction, not a modified-physics or Newton-convergence control"
+  },
+  "bounded_controls": {
+    "update_budget": 7,
+    "point_current_outer_V": 0.8745003857950773,
+    "target_outer_V": 0.8989229869448297,
+    "cases": [
+      {
+        "name": "predictor_reuse",
+        "exit_code": 0,
+        "seconds": 29.12485676900542,
+        "converged": true,
+        "updates": 7,
+        "failure": null,
+        "initial": {
+          "n498_cm3": 1.4124554036028906e-36,
+          "psi498_V": -0.20487746892621486,
+          "fn498_V": 2.556789429032406
+        },
+        "final": {
+          "n498_cm3": 1.4124554036027983e-50,
+          "psi498_V": -0.20485981557948743,
+          "fn498_V": 3.390177093031779
+        },
+        "last_equation_inf": 7.307459407374036e-11,
+        "last_raw_RMS": 0.3247618338206769,
+        "policies": [
+          "local_nonpositive",
+          "local_nonpositive",
+          "local_nonpositive",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "local_nonpositive",
+          "local_nonpositive"
+        ],
+        "local_protected_node498_iterations": [
+          1,
+          2,
+          3,
+          6,
+          7
+        ]
+      },
+      {
+        "name": "predictor_no_reuse",
+        "exit_code": 0,
+        "seconds": 68.71520054400025,
+        "converged": true,
+        "updates": 7,
+        "failure": null,
+        "initial": {
+          "n498_cm3": 1.4124554036028906e-36,
+          "psi498_V": -0.20487746892621486,
+          "fn498_V": 2.556789429032406
+        },
+        "final": {
+          "n498_cm3": 1.4124554036027983e-50,
+          "psi498_V": -0.20485981557948743,
+          "fn498_V": 3.390177093031779
+        },
+        "last_equation_inf": 7.307459407374036e-11,
+        "last_raw_RMS": 0.3247618338206769,
+        "policies": [
+          "local_nonpositive",
+          "local_nonpositive",
+          "local_nonpositive",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "local_nonpositive",
+          "local_nonpositive"
+        ],
+        "local_protected_node498_iterations": [
+          1,
+          2,
+          3,
+          6,
+          7
+        ]
+      },
+      {
+        "name": "accepted_reuse",
+        "exit_code": 3,
+        "seconds": 29.741959558989038,
+        "converged": false,
+        "updates": 7,
+        "failure": "Newton update budget exhausted",
+        "initial": {
+          "n498_cm3": 5.052670762612069e-28,
+          "psi498_V": -0.20935088773530244,
+          "fn498_V": 2.043153943496579
+        },
+        "final": {
+          "n498_cm3": 5.052670762612458e-42,
+          "psi498_V": -0.2093279352615963,
+          "fn498_V": 2.8765469066229272
+        },
+        "last_equation_inf": 6.712712150319588e-08,
+        "last_raw_RMS": 5153.974898643675,
+        "policies": [
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "fraction_to_boundary",
+          "fraction_to_boundary"
+        ],
+        "local_protected_node498_iterations": []
+      }
+    ],
+    "attempt_records_identical_reuse_on_off": true,
+    "final_fields_bitwise_equal": {
+      "psi": true,
+      "phin": true,
+      "phip": true,
+      "electrons_m3": true,
+      "holes_m3": true
+    },
+    "matrix_rhs_direction_csv_equal": {
+      "physical_bordered.csv": true,
+      "physical_rhs_parameter.csv": true,
+      "iter1_theta1.000000_av1_qf.csv": true,
+      "iter1_theta1.000000_av1_population.csv": true,
+      "coordinate_map.csv": true,
+      "iter1_theta1.000000_av1_direction.csv": true
+    },
+    "worker_exit_code": 0
+  },
+  "weak_direction_checkpoint": {
+    "electron_row": 3098,
+    "rhs": {
+      "row": "3098",
+      "F": "-3.1922214057912576e-15",
+      "dF_dV": "0"
+    },
+    "n498_cm3": 1.4124554036028906e-36,
+    "raw_dn498_cm3": -1.7096812596055077e-33,
+    "raw_relative_dn498": -1210.4320286817224,
+    "qf_direction_internal": 1210.4327267515027,
+    "qf_direction_physical_V": 31.292106593474433,
+    "negative_candidate": true
+  },
+  "integrity": {
+    "source_commit": "578972ad62288997f67430ed082723ca7b8e720e",
+    "frozen_source_unchanged": {
+      "scripts/diagnostics/BvMethodsPopulationNewton.h": true,
+      "scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp": true,
+      "include/vela/physics/experimental/JoyceDixonStatistics.h": true
+    },
+    "binary_unchanged": true,
+    "summary_unchanged": true,
+    "format_version": 2,
+    "temperature_settings": {
+      "temperature_K": 300.0
+    }
+  },
+  "limits": [
+    "The direct termination is reproduced; the physical reason for repeated negative minority directions still needs row-level operator and directional-derivative verification.",
+    "Relative coordinate scaling only demonstrates finite representability; it is not a completed BV repair.",
+    "No-extrapolation control used only seven updates; its budget failure is not proof that the policy can never converge.",
+    "Cache equality was established at this checkpoint, not for every possible full scan trajectory.",
+    "No new complete BV or Sentaurus simulation was run."
+  ]
+}

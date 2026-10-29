@@ -1,0 +1,442 @@
+{
+  "schema": "vela.validation.nonlocalpath.n4_collection.v1",
+  "date": "2026-10-16",
+  "stage": "N4 in progress; native source and full RHS not qualified",
+  "native_version": "T-2022.03-SP2",
+  "production_cpp_changed": false,
+  "units": {
+    "concentration_cm3": 14824351000.0,
+    "thermal_voltage_V": 0.025851995266484913,
+    "length_m": 3.3864920021441314e-05,
+    "basis": "population normalization and explicit 2022 constants; no source factor fit"
+  },
+  "thresholds_changed": false,
+  "cases": {
+    "uniform": {
+      "printed_observer_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_fields_identical": true,
+      "export_fields_checked": 51,
+      "path_maxima": {
+        "centroid_error_over_cell_diameter": 7.545048052411325e-15,
+        "ray_gradient_relative_error": 2.2537141990071972e-14,
+        "straightness_error_over_cell_diameter": 8.84021139076998e-15,
+        "arclength_error_over_cell_diameter": 6.433955224425179e-15
+      },
+      "collection_summary": {
+        "updates": 340,
+        "nonzero_updates": 315,
+        "maximum_pair_imbalance": 1.5527752389744678e-14,
+        "maximum_hole_outside_source_fraction": 0.0,
+        "hole_support_exact_source_vertices": 310,
+        "maximum_hole_vertex_fraction_deviation_from_third": 0.3333333333333351,
+        "hole_support_counts": {
+          "3": 310,
+          "2": 5
+        },
+        "electron_support_counts": {
+          "3": 275,
+          "4": 10,
+          "5": 10,
+          "2": 20
+        }
+      },
+      "normalized_array_vs_export": {
+        "hBand2BandGeneration": {
+          "relative_L1": 3.6476860633874336e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        },
+        "eBand2BandGeneration": {
+          "relative_L1": 3.605134905429314e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        }
+      },
+      "double_arguments": [
+        0.002952908199301394
+      ],
+      "path_audits": 340,
+      "path_rejections": 0,
+      "duplicate_boundary_points": 75,
+      "capture_counts": {
+        "path": 340,
+        "scalar": 340,
+        "update": 340,
+        "constructor": 1
+      },
+      "capture_errors": [],
+      "native_exit": 0,
+      "rhs_binding": {
+        "full_printed_state_identical": true,
+        "outside_carrier_changed_rows": 0,
+        "outside_carrier_absolute_change": 0.0,
+        "full_rhs_qualified": false,
+        "normalizations": {
+          "eDensity": {
+            "concentration_cm3_per_unit": 14824350999.999998,
+            "maximum_relative_spread": 6.661338147750939e-16,
+            "nonzero_samples": 198,
+            "matched_zero_samples": 0,
+            "basis": "physical population divided by printed variable"
+          },
+          "hDensity": {
+            "concentration_cm3_per_unit": 14824351000.000044,
+            "maximum_relative_spread": 5.995204332975845e-15,
+            "nonzero_samples": 198,
+            "matched_zero_samples": 0,
+            "basis": "physical population divided by printed variable"
+          }
+        },
+        "blocks": {
+          "eDensity": {
+            "absolute_source_sum": 3.270180871804268,
+            "absolute_error_sum": 1.3187548293137896e-07,
+            "source_only_relative_L1": 4.03266632951158e-08
+          },
+          "hDensity": {
+            "absolute_source_sum": 3.2689436401000402,
+            "absolute_error_sum": 4.65079363909382e-15,
+            "source_only_relative_L1": 1.4227206557013293e-15
+          }
+        }
+      }
+    },
+    "uniform15": {
+      "printed_observer_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_fields_identical": true,
+      "export_fields_checked": 51,
+      "path_maxima": {
+        "centroid_error_over_cell_diameter": 7.545048052411325e-15,
+        "ray_gradient_relative_error": 2.2537141990071972e-14,
+        "straightness_error_over_cell_diameter": 8.84021139076998e-15,
+        "arclength_error_over_cell_diameter": 6.433955224425179e-15
+      },
+      "collection_summary": {
+        "updates": 340,
+        "nonzero_updates": 315,
+        "maximum_pair_imbalance": 1.5527752389744678e-14,
+        "maximum_hole_outside_source_fraction": 0.0,
+        "hole_support_exact_source_vertices": 310,
+        "maximum_hole_vertex_fraction_deviation_from_third": 0.3333333333333351,
+        "hole_support_counts": {
+          "3": 310,
+          "2": 5
+        },
+        "electron_support_counts": {
+          "3": 275,
+          "4": 10,
+          "5": 10,
+          "2": 20
+        }
+      },
+      "normalized_array_vs_export": {
+        "hBand2BandGeneration": {
+          "relative_L1": 3.6476860633874336e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        },
+        "eBand2BandGeneration": {
+          "relative_L1": 3.605134905429314e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        }
+      },
+      "double_arguments": [
+        0.0004429362298952091
+      ],
+      "path_audits": 340,
+      "path_rejections": 0,
+      "duplicate_boundary_points": 75,
+      "capture_counts": {
+        "path": 340,
+        "scalar": 340,
+        "update": 340,
+        "constructor": 1
+      },
+      "capture_errors": [],
+      "native_exit": 0
+    },
+    "original": {
+      "printed_observer_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_fields_identical": true,
+      "export_fields_checked": 82,
+      "path_maxima": {
+        "centroid_error_over_cell_diameter": 1.0136432044664306e-14,
+        "ray_gradient_relative_error": 1.4293189037252143e-12,
+        "straightness_error_over_cell_diameter": 1.0137669326578546e-14,
+        "arclength_error_over_cell_diameter": 2.1081712711749898e-14
+      },
+      "collection_summary": {
+        "updates": 9,
+        "nonzero_updates": 3,
+        "maximum_pair_imbalance": 8.646719283752322e-16,
+        "maximum_hole_outside_source_fraction": 0.0,
+        "hole_support_exact_source_vertices": 3,
+        "maximum_hole_vertex_fraction_deviation_from_third": 0.07139519258613153,
+        "hole_support_counts": {
+          "3": 3
+        },
+        "electron_support_counts": {
+          "4": 1,
+          "3": 2
+        }
+      },
+      "normalized_array_vs_export": {
+        "hBand2BandGeneration": {
+          "relative_L1": 3.6933695326952164e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        },
+        "eBand2BandGeneration": {
+          "relative_L1": 3.542361983942988e-16,
+          "scope": "last observed update; complete only for uniform controls",
+          "conversion_basis": "L0_cm^2/(C0_cm^-3 * Dref_cm2_per_s), Dref=1"
+        }
+      },
+      "double_arguments": [
+        0.002952908199301394
+      ],
+      "path_audits": 9,
+      "path_rejections": 0,
+      "duplicate_boundary_points": 0,
+      "capture_counts": {
+        "path": 4156,
+        "scalar": 4156,
+        "update": 4156,
+        "constructor": 1
+      },
+      "capture_errors": [],
+      "native_exit": 0,
+      "rhs_binding": {
+        "full_printed_state_identical": true,
+        "outside_carrier_changed_rows": 0,
+        "outside_carrier_absolute_change": 0.0,
+        "full_rhs_qualified": false,
+        "normalizations": {
+          "eDensity": {
+            "concentration_cm3_per_unit": 14824351000.0,
+            "maximum_relative_spread": 4.884981308350689e-15,
+            "nonzero_samples": 2121,
+            "matched_zero_samples": 0,
+            "basis": "physical population divided by printed variable"
+          },
+          "hDensity": {
+            "concentration_cm3_per_unit": 14824351000.0,
+            "maximum_relative_spread": 4.884981308350689e-15,
+            "nonzero_samples": 2121,
+            "matched_zero_samples": 0,
+            "basis": "physical population divided by printed variable"
+          }
+        },
+        "blocks": {
+          "eDensity": {
+            "absolute_source_sum": 63808.1083706819,
+            "absolute_error_sum": 0.0006122885767402595,
+            "source_only_relative_L1": 9.595780103420047e-09
+          },
+          "hDensity": {
+            "absolute_source_sum": 63808.108370681875,
+            "absolute_error_sum": 5.287447172603532e-05,
+            "source_only_relative_L1": 8.286481620622643e-10
+          }
+        }
+      }
+    }
+  },
+  "original_corner_control": [
+    {
+      "cell": 571,
+      "source_vertices": [
+        229,
+        1287,
+        1308
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    },
+    {
+      "cell": 2655,
+      "source_vertices": [
+        233,
+        791,
+        1287
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    },
+    {
+      "cell": 2667,
+      "source_vertices": [
+        791,
+        1287,
+        1308
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    },
+    {
+      "cell": 2722,
+      "source_vertices": [
+        1550,
+        2084,
+        2567
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    },
+    {
+      "cell": 4682,
+      "source_vertices": [
+        2084,
+        2567,
+        2587
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    },
+    {
+      "cell": 4683,
+      "source_vertices": [
+        1546,
+        2567,
+        2587
+      ],
+      "weighted_hole_increment": 0.0,
+      "weighted_electron_increment": 0.0
+    }
+  ],
+  "sampling_controls": {
+    "legacy_uniform": {
+      "centroid": {
+        "signed_integral_relative": 0.0031636255312485592,
+        "weighted_L1": 0.009330342702462467
+      },
+      "vertex_trapezoid": {
+        "signed_integral_relative": -0.017862583779115104,
+        "weighted_L1": 0.027767936806747717
+      },
+      "exact_cell_average": {
+        "signed_integral_relative": -0.0012361590435463307,
+        "weighted_L1": 0.008622625839078251
+      }
+    },
+    "legacy_400": {
+      "centroid": {
+        "signed_integral_relative": 0.0014853354933531211,
+        "weighted_L1": 0.00918070496369195
+      },
+      "vertex_trapezoid": {
+        "signed_integral_relative": -0.008593799751976975,
+        "weighted_L1": 0.028924191795839008
+      },
+      "exact_cell_average": {
+        "signed_integral_relative": -0.0006470576680228505,
+        "weighted_L1": 0.008642913867504598
+      }
+    }
+  },
+  "independent_shape_integrals": {
+    "24": {
+      "signed_integral_relative": -0.0012361593695757176,
+      "per_cell_integral_relative_L1": 0.001385823663131486,
+      "per_cell_vertex_relative_L1": 0.0022477796670669075,
+      "maximum_weight_difference": 0.17455921035652489
+    },
+    "24_centroid_chord": {
+      "signed_integral_relative": -9.694778528185887e-06,
+      "per_cell_integral_relative_L1": 9.69477855671087e-06,
+      "per_cell_vertex_relative_L1": 0.0007131841804930909,
+      "maximum_weight_difference": 0.01590827261177119
+    },
+    "48": {
+      "signed_integral_relative": -0.001236159369575654,
+      "per_cell_integral_relative_L1": 0.00138582366313158,
+      "per_cell_vertex_relative_L1": 0.0022477796670671182,
+      "maximum_weight_difference": 0.17455921035652505
+    },
+    "48_centroid_chord": {
+      "signed_integral_relative": -9.694778528192269e-06,
+      "per_cell_integral_relative_L1": 9.694778556766822e-06,
+      "per_cell_vertex_relative_L1": 0.0007131841804931024,
+      "maximum_weight_difference": 0.01590827261177097
+    }
+  },
+  "native_status": {
+    "diagnostic_off_original_exit": 2,
+    "diagnostic_off_original_scope": "before-Newton fields and RHS1 available; one Newton iteration did not converge",
+    "v1_archive_sha256": "b39caf60322e119b8784630103cb0225c7fa371f74d98a854229c29f44a3261f",
+    "v2_archive_sha256": "404b03aae9cf14552064d811fbbb65176a06a67996c6d22a6f34be6ea2f37f7d",
+    "v1_manifest_files": 102,
+    "v2_manifest_files": 61,
+    "inputs_sha256": {
+      "uniform/input.cmd": "fc8064290b8910cebc96b7f1564533327d42c5ced0aab6a58f9b9792db4395d9",
+      "uniform/input.par": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uniform/mesh_msh.tdr": "577a5a1ed6b89c3f27273236dc647f60ca0560cda31d39f827ff23bb5d9d60a6",
+      "uniform/seed_des.sav": "cedfc931dd4e1e691a259347ae80877dcbf39b05de9ad3f76a476d33b6503c31",
+      "uniform/seed_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "uniform/before_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "uniform15/input.cmd": "fc8064290b8910cebc96b7f1564533327d42c5ced0aab6a58f9b9792db4395d9",
+      "uniform15/input.par": "10d56a4f9ecac7044c68089862da786925df28eab6a7a7a7996616fe030ad1a0",
+      "uniform15/mesh_msh.tdr": "577a5a1ed6b89c3f27273236dc647f60ca0560cda31d39f827ff23bb5d9d60a6",
+      "uniform15/seed_des.sav": "cedfc931dd4e1e691a259347ae80877dcbf39b05de9ad3f76a476d33b6503c31",
+      "uniform15/seed_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "uniform15/before_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "original/input.cmd": "a69f5fa302c1387031e87323cc648c1dd855960f594db70f99d2d73e15d4377d",
+      "original/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+      "original/n1_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+      "original/accepted_0064_des.sav": "2f469a9a1cc2a19ff182aafd1709711d21c7b107b226bf21c6a4aeede513a538",
+      "original/accepted_0064_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+      "original/before_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+    }
+  },
+  "verification": {
+    "local_selected_ctest_passed": 10,
+    "local_collection_tests_passed": 10,
+    "t470p_replay": {
+      "manifest_verified": 5,
+      "tests": 10,
+      "geometry_paths_exactly_replayed": 340,
+      "rhs_bindings_exactly_replayed": [
+        "uniform",
+        "original"
+      ],
+      "rhs_source_only_errors": {
+        "uniform": {
+          "eDensity": 4.03266632951158e-08,
+          "hDensity": 1.4227206557013293e-15
+        },
+        "original": {
+          "eDensity": 9.595780103420047e-09,
+          "hDensity": 8.286481620622643e-10
+        }
+      },
+      "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+      "exit": 0
+    },
+    "source_hashes": {
+      "scripts/audit_nonlocalpath_collection.py": "ab0517a521ef7e77d40dff62931b133a203083f249cb99aedd85a72d1e2bd655",
+      "tests/regression/test_nonlocalpath_collection_audit.py": "a69f45ddaa938da8da8e27ef43e89dd0bc63ae535e1fba1704e660c36d418f7d"
+    }
+  }
+}

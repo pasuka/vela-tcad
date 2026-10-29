@@ -112,7 +112,7 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
           matdb,
           doping,
           bandgapNarrowingConfig,
-          validatedThermalVoltage(temperature_K)))
+          validatedThermalVoltage(temperature_K), carrierStatisticsModel(carrierStatistics)))
     , intrinsicReference_(detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K))
     , niElectron_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),true))
     , niHole_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),false))
@@ -188,7 +188,7 @@ ContactCurrentResult ContactCurrent::computeFromResidual(
     const int N = static_cast<int>(assembler.numNodes());
     const int phinOffset = N;
     const int phipOffset = 2 * N;
-    const VectorXd r = assembler.residual(x, CoupledDDBoundaryConditions{});
+    const VectorXd r = assembler.usesBvMethodsOperator()?assembler.bvMethodsTransportResidual(x):assembler.residual(x, CoupledDDBoundaryConditions{});
     const Real continuityScale = assembler.continuityResidualScale();
     const Real currentLineFactor = scaling_.enabled
         ? scaling_.currentDensityLineIntegralFactor
@@ -219,6 +219,21 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     if (contact == nullptr)
         throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
 
+    if(scaling_.coupledOperator=="bvmethods_tri3_qf") {
+        if(!overrides.holeQuasiFermiDropByEdge.empty() || solution.packedLow.size()!=0)
+            throw std::invalid_argument("BVMethods contact current overrides/split state unqualified");
+        RecombinationModelConfig none;none.mechanisms.clear();
+        auto coordinates=scaling_;
+        if(solution.stateVariables=="potential_density")coordinates.stateVariables="potential_density";
+        CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage_,mobilityConfig_,none,
+            bandgapConfig_,ImpactIonizationModelConfig{},{},{},coordinates,{},carrierStatistics_,electronQuantumPotentialConfig_);
+        const Real vscale=scaling_.enabled?scaling_.V0:1.;VectorXd x;
+        if(assembler.usesPopulationState())x=assembler.packPopulation(solution.psi,solution.n,solution.p);
+        else if(solution.hasConsistentPackedState() && solution.packedPotentialScale_V==vscale){
+            assembler.setQuasiFermiReferenceFields(solution.electronQfReference,solution.holeQfReference);x=solution.packedState;
+        }else{x=assembler.pack({solution.psi/vscale,solution.phin/vscale,solution.phip/vscale});}
+        ContactCurrentDetailedResult result;result.totals=computeFromResidual(assembler,x,contactName);return result;
+    }
     if(solution.packedLow.size()!=0) {
         if(!overrides.holeQuasiFermiDropByEdge.empty())throw std::invalid_argument("Split DD current overrides are unqualified");
         if(!solution.hasConsistentSplitPackedState())throw std::invalid_argument("Stale split current state");

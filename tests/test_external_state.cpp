@@ -424,3 +424,43 @@ TEST_CASE("external state field reader rejects malformed scalar CSVs",
         REQUIRE(run.err.find(malformed.expected) != std::string::npos);
     }
 }
+
+TEST_CASE("single-state terminal output binds an explicit contact without changing solve",
+          "[external_state][current_contact]")
+{
+    RunnerCase c = makeRunnerCase("current_identity");
+    const auto baseline = nlohmann::json::parse(runCase(c.configPath).out);
+    REQUIRE(baseline.at("current_contact_selection") ==
+            "legacy_max_abs_effective_boundary_potential");
+    const auto legacyName = baseline.at("current_contact").get<std::string>();
+    REQUIRE(baseline.at("current_total_A_per_um") ==
+            baseline.at("contact_currents_A_per_um").at(legacyName));
+    const auto initialConfig = nlohmann::json::parse(readFile(c.configPath));
+    for (const std::string name : {"anode", "cathode"}) {
+        auto config = initialConfig;
+        config["current_contact"] = name;
+        writeText(c.configPath, config.dump(2));
+        const auto run = runCase(c.configPath);
+        REQUIRE(run.exitCode == 0);
+        auto status = nlohmann::json::parse(run.out);
+        REQUIRE(status.at("current_contact") == name);
+        REQUIRE(status.at("current_contact_selection") == "explicit");
+        REQUIRE(status.at("current_total_A_per_um") ==
+                status.at("contact_currents_A_per_um").at(name));
+        auto expected = baseline;
+        for (const auto* key : {"current_contact", "current_contact_selection",
+                                "current_total_A_per_um"}) {
+            status.erase(key);
+            expected.erase(key);
+        }
+        REQUIRE(status == expected);
+    }
+    for (const std::string name : {"", "missing_contact"}) {
+        auto config = initialConfig;
+        config["current_contact"] = name;
+        writeText(c.configPath, config.dump(2));
+        const auto run = runCase(c.configPath);
+        REQUIRE(run.exitCode != 0);
+        REQUIRE((run.out + run.err).find("current_contact must name") != std::string::npos);
+    }
+}

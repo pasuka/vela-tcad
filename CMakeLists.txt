@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
+if(POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 project(vela-tcad VERSION 0.1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
@@ -12,14 +18,62 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Dependencies (installed system packages)
 # ---------------------------------------------------------------------------
 
-# Eigen 3 (header-only linear algebra)
-find_package(Eigen3 REQUIRED NO_MODULE)
+# Eigen keeps the Eigen3 package/target names in the 5.x series.
+find_package(Eigen3 5.0.1...<6 QUIET NO_MODULE)
+if(NOT TARGET Eigen3::Eigen)
+    include(FetchContent)
+    FetchContent_Declare(vela_eigen
+        URL https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+        URL_HASH SHA256=e9c326dc8c05cd1e044c71f30f1b2e34a6161a3b6ecf445d56b53ff1669e3dec
+        # The release includes Eigen/Version. Use headers only, without adding
+        # upstream tests, BLAS/LAPACK builds or installation rules.
+        SOURCE_SUBDIR Eigen)
+    FetchContent_MakeAvailable(vela_eigen)
+    add_library(vela_eigen_headers INTERFACE)
+    add_library(Eigen3::Eigen ALIAS vela_eigen_headers)
+    target_include_directories(vela_eigen_headers SYSTEM INTERFACE ${vela_eigen_SOURCE_DIR})
+    target_compile_features(vela_eigen_headers INTERFACE cxx_std_14)
+    message(STATUS "Eigen headers: pinned 5.0.1")
+else()
+    message(STATUS "Eigen headers: installed ${Eigen3_VERSION}")
+endif()
 
 # nlohmann/json (header-only JSON)
 find_package(nlohmann_json REQUIRED)
 
-# Boost.Multiprecision (header-only arbitrary-precision arithmetic)
-find_package(Boost CONFIG REQUIRED)
+# System Boost.Multiprecision and PFR; field-name reflection needs Boost >=1.84.
+# Some distro packages ship PFR headers without a boost_pfr CMake component.
+# Neither PFR nor Multiprecision needs a separately linked library. Check the
+# actual reflection API instead of requiring that optional package metadata.
+find_package(Boost 1.84 CONFIG REQUIRED)
+include(CMakePushCheckState)
+include(CheckCXXSourceCompiles)
+cmake_push_check_state(RESET)
+set(CMAKE_REQUIRED_LIBRARIES Boost::headers)
+# Recheck after dependency/toolchain changes in an existing build directory.
+unset(VELA_BOOST_PFR_HEADERS_WORK CACHE)
+check_cxx_source_compiles([=[
+    #include <boost/pfr/core.hpp>
+    #include <boost/pfr/core_name.hpp>
+    #include <boost/multiprecision/cpp_dec_float.hpp>
+    struct Fields { double value; int count; };
+    static_assert(boost::pfr::get_name<0, Fields>() == "value");
+    int main() {
+        Fields fields{1.0, 2};
+        boost::pfr::for_each_field(fields, [](const auto&, auto) {});
+        boost::multiprecision::cpp_dec_float_50 value = fields.value;
+        return value == 1 ? 0 : 1;
+    }
+]=] VELA_BOOST_PFR_HEADERS_WORK)
+cmake_pop_check_state()
+if(NOT VELA_BOOST_PFR_HEADERS_WORK)
+    message(FATAL_ERROR
+        "System Boost must provide working PFR field-name reflection and Multiprecision headers. "
+        "Install Boost >=1.84 development headers (libboost-dev on Ubuntu 26.04), "
+        "including boost/pfr/core_name.hpp, and use a supported C++20 compiler. "
+        "See the CMake configure log for the compile error; no boost_pfr package config is required.")
+endif()
+message(STATUS "Boost headers and PFR: installed ${Boost_VERSION}")
 
 # spdlog (logging): prefer system package, fallback to FetchContent
 find_package(spdlog CONFIG QUIET)
@@ -41,6 +95,27 @@ endif()
 # Catch2 v3 (unit test framework)
 find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(VELA_SOURCE_REVISION "" CACHE STRING
+    "Verified source commit for source archives or cross-host worktree builds")
+
+# C9 launcher layout: vela[.exe] next to bin/vela_sdevice.pyz. The archive
+# includes schemas and default parameters and needs only Python's stdlib.
+file(GLOB_RECURSE VELA_SDEVICE_ARCHIVE_INPUTS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/vela_sdevice/*.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/schemas/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/configs/schema/*.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/*")
+add_custom_target(vela_sdevice_pyz ALL
+    COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/build_vela_sdevice_pyz.py"
+            --out "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+            --source-revision "${VELA_SOURCE_REVISION}"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+    DEPENDS ${VELA_SDEVICE_ARCHIVE_INPUTS}
+        scripts/build_vela_sdevice_pyz.py scripts/sentaurus_parameter_ir.py
+        scripts/sentaurus_parameter_map.py scripts/compare_sentaurus_tdr_tdx.py
+        scripts/convert_tcad_export.py CMakeLists.txt
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
 
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
@@ -51,6 +126,7 @@ endif()
 option(VELA_ENABLE_GPROF "Instrument Vela targets for GNU gprof" OFF)
 option(VELA_ENABLE_LTO "Enable conservative link-time optimization for Vela targets" OFF)
 option(VELA_ENABLE_UMFPACK "Use SuiteSparse UMFPACK for robust bordered solves when available" ON)
+option(VELA_ENABLE_MKL_PARDISO "Build the opt-in oneMKL PARDISO runtime backend" OFF)
 option(VELA_ENABLE_METIS "Enable optional METIS ordering experiments" ON)
 option(VELA_ENABLE_MUMPS "Enable optional OpenMP MUMPS direct solver" ON)
 option(VELA_ENABLE_SUPERLU_MT "Enable optional OpenMP SuperLU_MT direct solver" ON)
@@ -269,6 +345,7 @@ add_library(vela_core STATIC
     src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
+    src/io/VtuWriter.cpp
     src/io/CSVWriter.cpp
     src/io/CsvUtils.cpp
     src/io/DDSolutionCsv.cpp
@@ -277,6 +354,11 @@ add_library(vela_core STATIC
     src/physics/CarrierStatistics.cpp
     src/physics/DensityGradientQuantumPotential.cpp
     src/physics/BandToBandTunnelingModel.cpp
+    src/physics/NonlocalPathBandToBand.cpp
+    src/physics/NonlocalPathGeometry.cpp
+    src/physics/NonlocalPathPhononKernel.cpp
+    src/physics/NonlocalPathSourceAssembly.cpp
+    src/physics/NonlocalPathCellSource.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
     src/physics/SlotIALMobility.cpp
@@ -286,6 +368,7 @@ add_library(vela_core STATIC
     src/physics/IalInterfaceGeometry.cpp
     src/equation/IalElementMobility.cpp
     src/equation/IalElementAvalanche.cpp
+    src/equation/BvMethodsCoupledRuntime.cpp
     src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
@@ -301,6 +384,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
     src/post/ContactCurrent.cpp
@@ -310,6 +394,7 @@ add_library(vela_core STATIC
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
     src/solver/GlobalContinuityAudit.cpp
+    src/solver/PopulationNewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
@@ -333,7 +418,6 @@ target_link_libraries(vela_core
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
         spdlog::spdlog
-    PRIVATE
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
@@ -371,8 +455,19 @@ target_sources(vela_core PRIVATE src/solver/LinearCapture.cpp)
 target_sources(vela_core PRIVATE src/solver/MumpsBackend.cpp)
 target_sources(vela_core PRIVATE src/solver/SuperLuMtBackend.cpp)
 target_sources(vela_core PRIVATE src/solver/StrumpackBackend.cpp)
-target_sources(vela_core PRIVATE src/solver/MklPardisoBackend.cpp)
-target_link_libraries(vela_core PRIVATE ${CMAKE_DL_LIBS})
+if(VELA_ENABLE_MKL_PARDISO)
+    if(NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        message(FATAL_ERROR "VELA_ENABLE_MKL_PARDISO requires Windows or Linux")
+    endif()
+    target_sources(vela_core PRIVATE src/solver/MklPardisoBackend.cpp)
+    target_link_libraries(vela_core PRIVATE ${CMAKE_DL_LIBS})
+    # Keep optional-backend compile flags out of the physics translation units.
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY
+        COMPILE_DEFINITIONS VELA_HAS_MKL_PARDISO=1)
+    message(STATUS "oneMKL PARDISO runtime backend enabled (explicit runtime path required)")
+else()
+    message(STATUS "oneMKL PARDISO runtime backend disabled")
+endif()
 if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
     find_package(OpenMP REQUIRED COMPONENTS CXX)
     find_library(VELA_BACKEND_BLAS NAMES openblas REQUIRED)
@@ -543,6 +638,96 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# Explicit diagnostic build; not installed or included in normal builds.
+add_executable(vela_bvmethods_profile_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_profile_probe.cpp)
+target_link_libraries(vela_bvmethods_profile_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_full_sweep_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_full_sweep_probe.cpp)
+target_link_libraries(vela_bvmethods_full_sweep_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_qf_direction_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_qf_direction_probe.cpp)
+target_link_libraries(vela_bvmethods_qf_direction_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_probe.cpp)
+target_link_libraries(vela_bvmethods_population_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_weak_row_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_weak_row_probe.cpp)
+target_link_libraries(vela_bvmethods_weak_row_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_jv_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_jv_probe.cpp)
+target_link_libraries(vela_bvmethods_population_jv_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_linearization_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_linearization_probe.cpp)
+target_link_libraries(vela_bvmethods_linearization_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_population_newton_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_population_newton_probe.cpp)
+target_link_libraries(vela_bvmethods_population_newton_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_adaptive_bv_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp)
+target_link_libraries(vela_bvmethods_adaptive_bv_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_restoration_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_restoration_probe.cpp)
+target_link_libraries(vela_bvmethods_restoration_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_switch_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_switch_probe.cpp)
+target_link_libraries(vela_bvmethods_switch_probe PRIVATE vela_core)
+
+add_executable(vela_bvmethods_backend_comparison_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/bvmethods_backend_comparison_probe.cpp)
+target_link_libraries(vela_bvmethods_backend_comparison_probe PRIVATE vela_core)
+
+add_executable(vela_population_operator_probe EXCLUDE_FROM_ALL
+    scripts/diagnostics/population_operator_probe.cpp)
+target_link_libraries(vela_population_operator_probe PRIVATE vela_core)
+
+# ---------------------------------------------------------------------------
+# Native launcher `vela device ...` (sdevice front end, contract C9)
+# ---------------------------------------------------------------------------
+# Configure-time snapshot; reconfigure to refresh after new commits.
+set(VELA_GIT_DESCRIBE "unknown")
+find_package(Git QUIET)
+if(VELA_SOURCE_REVISION)
+    set(VELA_GIT_DESCRIBE "${VELA_SOURCE_REVISION}")
+elseif(Git_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR}
+                describe --tags --always --dirty
+        RESULT_VARIABLE _vela_git_describe_result
+        OUTPUT_VARIABLE _vela_git_describe
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
+    if(_vela_git_describe_result EQUAL 0 AND NOT _vela_git_describe STREQUAL "")
+        set(VELA_GIT_DESCRIBE "${_vela_git_describe}")
+    endif()
+endif()
+add_executable(vela src/tools/vela.cpp)
+add_executable(sd-sim src/tools/vela.cpp)
+target_compile_definitions(sd-sim PRIVATE VELA_DIRECT_DEVICE_CLI=1)
+foreach(_launcher IN ITEMS vela sd-sim)
+    add_dependencies(${_launcher} vela_sdevice_pyz)
+    target_compile_definitions(${_launcher} PRIVATE
+        VELA_VERSION="${PROJECT_VERSION}"
+        VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
+    if(MINGW)
+        # wmain entry point; fully static so the launcher also runs from the
+        # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
+        target_link_options(${_launcher} PRIVATE -municode -static)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(${_launcher} PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+endforeach()
+
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
@@ -578,6 +763,51 @@ if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_executable(sentaurus_import src/tools/sentaurus_import.cpp)
     target_link_libraries(sentaurus_import PRIVATE vela_sentaurus)
 endif()
+
+# WP11: install only the frontend's runtime closure, never reference fixtures.
+# Keep both the documented root launcher and the conventional bin/ entry point.
+set(_vela_distribution_targets vela sd-sim vela_example_runner)
+if(TARGET sentaurus_import)
+    list(APPEND _vela_distribution_targets sentaurus_import)
+endif()
+if(UNIX AND NOT APPLE)
+    set_target_properties(${_vela_distribution_targets} PROPERTIES
+        BUILD_RPATH_USE_ORIGIN TRUE
+        INSTALL_RPATH_USE_LINK_PATH FALSE
+        INSTALL_RPATH "$ORIGIN/../lib")
+    # Each packaged ELF gets its own relative DT_RUNPATH. The packager also
+    # normalizes copied third-party/Python libraries, whose tags CMake cannot set.
+    foreach(_vela_target IN LISTS _vela_distribution_targets)
+        target_link_options(${_vela_target} PRIVATE -Wl,--enable-new-dtags)
+    endforeach()
+endif()
+install(TARGETS ${_vela_distribution_targets}
+    RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+    RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
+install(PROGRAMS "$<TARGET_FILE:vela>" DESTINATION . COMPONENT SDeviceRuntime)
+install(PROGRAMS "$<TARGET_FILE:sd-sim>" DESTINATION . COMPONENT SDeviceRuntime)
+if(WIN32)
+    install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+        DIRECTORIES "${VELA_MINGW_RUNTIME_DIR}"
+        PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+        POST_EXCLUDE_REGEXES ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss][/\\\\].*"
+        RUNTIME DESTINATION bin COMPONENT SDeviceRuntime)
+else()
+    install(RUNTIME_DEPENDENCY_SET vela_distribution_dependencies
+        PRE_EXCLUDE_REGEXES "^ld-linux.*" "^lib(c|m|pthread|dl|rt|resolv)\\.so.*"
+        LIBRARY DESTINATION lib COMPONENT SDeviceRuntime)
+endif()
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bin/vela_sdevice.pyz"
+    DESTINATION bin COMPONENT SDeviceRuntime)
+install(FILES share/vela/materials/models.par share/vela/materials/default_materials.json
+    DESTINATION share/vela/materials COMPONENT SDeviceRuntime)
+install(DIRECTORY schemas/ configs/schema/
+    DESTINATION share/vela/schemas COMPONENT SDeviceRuntime FILES_MATCHING PATTERN "*.json")
+install(DIRECTORY configs/templates/
+    DESTINATION share/vela/templates COMPONENT SDeviceRuntime FILES_MATCHING PATTERN "*.json")
+install(FILES docs/sentaurus_sdevice_workflow.md docs/sdevice_packaging.md
+    DESTINATION share/vela/docs COMPONENT SDeviceRuntime)
+install(FILES LICENSE DESTINATION . COMPONENT SDeviceRuntime)
 
 # ---------------------------------------------------------------------------
 # Tests
@@ -641,11 +871,29 @@ target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_mesh tests/test_mesh.cpp)
 target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_builtin_material_alignment tests/test_builtin_material_alignment.cpp)
+target_link_libraries(test_builtin_material_alignment PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_builtin_material_alignment PRIVATE
+    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/default_materials.json"
+    VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_linear_solver tests/test_linear_solver.cpp)
 target_link_libraries(test_linear_solver PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_mkl_pardiso tests/test_mkl_pardiso.cpp)
+target_link_libraries(test_mkl_pardiso PRIVATE vela_core Catch2::Catch2WithMain)
+if(VELA_ENABLE_MKL_PARDISO)
+    # A deterministic vendor-error fixture; never linked into vela_core.
+    add_library(mkl_pardiso_test_runtime SHARED tests/fixtures/mkl_pardiso_test_runtime.cpp)
+    add_library(mkl_pardiso_no_symbols SHARED tests/fixtures/mkl_pardiso_no_symbols.cpp)
+    add_dependencies(test_mkl_pardiso mkl_pardiso_test_runtime mkl_pardiso_no_symbols)
+    target_compile_definitions(test_mkl_pardiso PRIVATE
+        VELA_HAS_MKL_PARDISO=1
+        VELA_TEST_MKL_LIBRARY="$<TARGET_FILE:mkl_pardiso_test_runtime>"
+        VELA_TEST_MKL_NO_SYMBOLS="$<TARGET_FILE:mkl_pardiso_no_symbols>")
+endif()
 if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
     target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_OPENBLAS_THREAD_CONTROL=1)
 endif()
@@ -720,6 +968,19 @@ target_link_libraries(test_carrier_statistics PRIVATE vela_core Catch2::Catch2Wi
 add_executable(test_slot_population_hold tests/test_slot_population_hold.cpp)
 target_link_libraries(test_slot_population_hold PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_joyce_dixon_contract tests/test_joyce_dixon_contract.cpp)
+target_link_libraries(test_joyce_dixon_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_bvmethods_av_contract tests/test_bvmethods_av_contract.cpp)
+target_link_libraries(test_bvmethods_av_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_bvmethods_population_newton tests/test_bvmethods_population_newton.cpp)
+target_link_libraries(test_bvmethods_population_newton PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_bvmethods_derivative_switch tests/test_bvmethods_derivative_switch.cpp)
+target_link_libraries(test_bvmethods_derivative_switch PRIVATE Catch2::Catch2WithMain)
+target_include_directories(test_bvmethods_derivative_switch PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -735,6 +996,9 @@ add_executable(test_newton_trend_stop tests/test_newton_trend_stop.cpp)
 target_include_directories(test_newton_trend_stop PRIVATE include)
 target_link_libraries(test_newton_trend_stop PRIVATE Catch2::Catch2WithMain)
 add_test(NAME newton_trend_stop COMMAND test_newton_trend_stop)
+
+add_executable(test_update_error_report tests/test_update_error_report.cpp)
+target_link_libraries(test_update_error_report PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_external_state tests/test_external_state.cpp)
 target_link_libraries(test_external_state PRIVATE vela_core Catch2::Catch2WithMain)
@@ -768,6 +1032,28 @@ target_link_libraries(test_bv_process_probe PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_nonlocalpath_contract tests/test_nonlocalpath_contract.cpp)
+target_link_libraries(test_nonlocalpath_contract PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n1_contract COMMAND test_nonlocalpath_contract)
+vela_set_windows_msys2_test_path(nonlocalpath_n1_contract)
+add_executable(test_nonlocalpath_geometry tests/test_nonlocalpath_geometry.cpp)
+target_link_libraries(test_nonlocalpath_geometry PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n2_geometry COMMAND test_nonlocalpath_geometry)
+vela_set_windows_msys2_test_path(nonlocalpath_n2_geometry)
+add_executable(vela_nonlocalpath_geometry_probe EXCLUDE_FROM_ALL src/tools/vela_nonlocalpath_geometry_probe.cpp)
+target_link_libraries(vela_nonlocalpath_geometry_probe PRIVATE vela_core)
+add_executable(test_nonlocalpath_phonon tests/test_nonlocalpath_phonon.cpp)
+target_link_libraries(test_nonlocalpath_phonon PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n3_phonon COMMAND test_nonlocalpath_phonon)
+vela_set_windows_msys2_test_path(nonlocalpath_n3_phonon)
+
+add_executable(test_nonlocalpath_source tests/test_nonlocalpath_source.cpp)
+target_link_libraries(test_nonlocalpath_source PRIVATE vela_core Catch2::Catch2WithMain)
+add_test(NAME nonlocalpath_n4_source COMMAND test_nonlocalpath_source)
+vela_set_windows_msys2_test_path(nonlocalpath_n4_source)
+
+add_executable(vela_nonlocalpath_source_probe EXCLUDE_FROM_ALL src/tools/vela_nonlocalpath_source_probe.cpp)
+target_link_libraries(vela_nonlocalpath_source_probe PRIVATE vela_core)
 add_executable(test_lattice_heat tests/test_lattice_heat.cpp)
 target_link_libraries(test_lattice_heat PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -782,11 +1068,21 @@ target_link_libraries(test_bank_rose PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_dc_sweep_output_contract tests/test_dc_sweep_output_contract.cpp)
+target_link_libraries(test_dc_sweep_output_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_vtu_writer tests/test_vtu_writer.cpp)
+target_link_libraries(test_vtu_writer PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
 target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_coupled_load_line tests/test_coupled_load_line.cpp)
 target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2WithMain)
+
+# Header-only policy test: no solver rebuild or commercial inputs are needed.
+add_executable(test_bvmethods_step_control tests/test_bvmethods_step_control.cpp)
+target_link_libraries(test_bvmethods_step_control PRIVATE Catch2::Catch2WithMain nlohmann_json::nlohmann_json)
 
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
 add_executable(test_stored_charge tests/test_stored_charge.cpp)
@@ -834,10 +1130,14 @@ endfunction()
 
 vela_catch_discover_tests(test_scaling)
 vela_catch_discover_tests(test_mesh)
+vela_catch_discover_tests(test_builtin_material_alignment)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)
 vela_catch_discover_tests(test_slot_population_hold)
+# Preserve the caller's optional MKL loader PATH and Catch2's skip metadata.
+# The Windows presets already supply the UCRT64 runtime PATH.
+catch_discover_tests(test_mkl_pardiso)
 vela_catch_discover_tests(test_performance_profiler)
 vela_catch_discover_tests(test_box_geometry)
 vela_catch_discover_tests(test_csv_utils)
@@ -848,12 +1148,17 @@ vela_catch_discover_tests(test_split_dd_runtime)
 vela_catch_discover_tests(test_permittivity_assembly)
 vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
+vela_catch_discover_tests(test_joyce_dixon_contract)
+vela_catch_discover_tests(test_bvmethods_av_contract)
+vela_catch_discover_tests(test_bvmethods_population_newton)
+vela_catch_discover_tests(test_bvmethods_derivative_switch)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
 vela_catch_discover_tests(test_gummel_high_doping)
 vela_catch_discover_tests(test_device_stability)
 add_test(NAME device_stability COMMAND test_device_stability [device_stability])
 vela_catch_discover_tests(test_newton_solver)
+vela_catch_discover_tests(test_update_error_report)
 vela_catch_discover_tests(test_external_state)
 vela_catch_discover_tests(test_mobility)
 vela_catch_discover_tests(test_phumob)
@@ -870,10 +1175,15 @@ vela_catch_discover_tests(test_line_search_backtrack_failure)
 vela_catch_discover_tests(test_bank_rose)
 vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
+vela_catch_discover_tests(test_dc_sweep_output_contract)
+add_test(NAME dc_sweep_output_contract COMMAND test_dc_sweep_output_contract [output_contract])
+vela_catch_discover_tests(test_vtu_writer)
+add_test(NAME vtu_writer COMMAND test_vtu_writer [vtu_writer])
 vela_catch_discover_tests(test_pseudo_arclength)
 add_test(NAME pseudo_arclength COMMAND test_pseudo_arclength [arclength])
 vela_set_windows_msys2_test_path(pseudo_arclength)
 vela_catch_discover_tests(test_coupled_load_line)
+vela_catch_discover_tests(test_bvmethods_step_control)
 add_test(NAME coupled_load_line COMMAND test_coupled_load_line [coupled_load_line])
 vela_set_windows_msys2_test_path(coupled_load_line)
 vela_catch_discover_tests(test_solution_validation)
@@ -991,6 +1301,11 @@ add_test(NAME pn2d_config_templates
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_config_templates.py)
 vela_set_windows_msys2_test_path(pn2d_config_templates)
+
+add_test(NAME pn2d_external_resistor_control
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_external_resistor_control.py)
+vela_set_windows_msys2_test_path(pn2d_external_resistor_control)
 
 add_test(NAME pn2d_variants
     COMMAND ${Python3_EXECUTABLE}
@@ -1513,6 +1828,176 @@ set_tests_properties(sentaurus_parameter_map PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_parameter_map)
 
+add_test(NAME sdevice_contracts
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_contracts)
+set_tests_properties(sdevice_contracts PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_contracts)
+
+add_test(NAME sdevice_cmd_parser
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_cmd_parser)
+set_tests_properties(sdevice_cmd_parser PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_cmd_parser)
+
+add_test(NAME sdevice_plt_writer
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_plt_writer)
+set_tests_properties(sdevice_plt_writer PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_plt_writer)
+
+add_test(NAME sdevice_reference_artifacts
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_reference_artifacts)
+set_tests_properties(sdevice_reference_artifacts PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_reference_artifacts)
+
+add_test(NAME sdevice_mesh_import
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_mesh_import)
+set_tests_properties(sdevice_mesh_import PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_mesh_import)
+set_property(TEST sdevice_mesh_import APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME sdevice_vela_launcher
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_vela_launcher)
+set_tests_properties(sdevice_vela_launcher PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_vela_launcher)
+set_property(TEST sdevice_vela_launcher APPEND PROPERTY
+    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>" "SD_SIM_LAUNCHER=$<TARGET_FILE:sd-sim>")
+
+add_test(NAME sdevice_materials
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_materials)
+set_tests_properties(sdevice_materials PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_materials)
+
+add_test(NAME wp14_remaining_sources
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_remaining_sources)
+set_tests_properties(wp14_remaining_sources PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_remaining_sources)
+
+add_test(NAME wp14_external_recovery
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_external_recovery)
+set_tests_properties(wp14_external_recovery PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_external_recovery)
+
+add_test(NAME wp14_zero_qs
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_zero_qs)
+set_tests_properties(wp14_zero_qs PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_zero_qs)
+
+add_test(NAME bvmethods_original_reference
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_original_reference)
+set_tests_properties(bvmethods_original_reference PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_original_reference)
+
+add_test(NAME bvmethods_sg_representation_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sg_representation_contract)
+set_tests_properties(bvmethods_sg_representation_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_sg_representation_contract)
+
+add_test(NAME bvmethods_sg_rhs_binding
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sg_rhs_binding)
+set_tests_properties(bvmethods_sg_rhs_binding PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_sg_rhs_binding)
+
+add_test(NAME bvmethods_matched_direction
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_matched_direction)
+set_tests_properties(bvmethods_matched_direction PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_matched_direction)
+
+add_test(NAME bvmethods_nonlocalpath_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_nonlocalpath_contract)
+set_tests_properties(bvmethods_nonlocalpath_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_nonlocalpath_contract)
+
+add_test(NAME bvmethods_nonlocalpath_collection_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_nonlocalpath_collection_audit)
+set_tests_properties(bvmethods_nonlocalpath_collection_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_nonlocalpath_collection_audit)
+
+add_test(NAME wp14_gate_qs
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_wp14_gate_qs)
+set_tests_properties(wp14_gate_qs PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(wp14_gate_qs)
+
+add_test(NAME schottky_reference_workflow
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_schottky_reference_workflow)
+set_tests_properties(schottky_reference_workflow PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(schottky_reference_workflow)
+
+add_test(NAME sdevice_deck_emit
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_deck_emit)
+set_tests_properties(sdevice_deck_emit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_deck_emit)
+set_property(TEST sdevice_deck_emit APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME sdevice_orchestrator
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_orchestrator)
+set_tests_properties(sdevice_orchestrator PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_orchestrator)
+set_property(TEST sdevice_orchestrator APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>"
+    "VELA_LAUNCHER=$<TARGET_FILE:vela>"
+    "VELA_BIN=${CMAKE_CURRENT_BINARY_DIR}/bin")
+
+add_test(NAME sdevice_acceptance_tools
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sdevice_acceptance)
+set_tests_properties(sdevice_acceptance_tools PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_acceptance_tools)
+foreach(_vela_wp11_test package_smoke concurrency)
+    add_test(NAME sdevice_${_vela_wp11_test}
+        COMMAND ${Python3_EXECUTABLE} -m unittest -v tests.regression.test_sdevice_${_vela_wp11_test})
+    set_tests_properties(sdevice_${_vela_wp11_test} PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} LABELS "sdevice;packaging"
+        TIMEOUT 300)
+    vela_set_windows_msys2_test_path(sdevice_${_vela_wp11_test})
+    set_property(TEST sdevice_${_vela_wp11_test} APPEND PROPERTY ENVIRONMENT
+        "VELA_LAUNCHER=$<TARGET_FILE:vela>")
+endforeach()
+foreach(sdevice_case pn2d_0v pn2d_iv pn2d_bv gates)
+    add_test(NAME sdevice_e2e_${sdevice_case}
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
+            --case ${sdevice_case} --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
+            --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
+    set_tests_properties(sdevice_e2e_${sdevice_case} PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
+    vela_set_windows_msys2_test_path(sdevice_e2e_${sdevice_case})
+endforeach()
+
+add_test(NAME sdevice_gate_contact_mapping
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_gate_contact_mapping)
+set_tests_properties(sdevice_gate_contact_mapping PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_gate_contact_mapping)
+set_property(TEST sdevice_gate_contact_mapping APPEND PROPERTY
+    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
 add_test(NAME sentaurus_mesh_builder
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_mesh_builder)
@@ -1532,6 +2017,12 @@ add_test(NAME sentaurus_reference_workflows
 set_tests_properties(sentaurus_reference_workflows PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_reference_workflows)
+
+add_test(NAME bvmethods_stopping_control
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_stopping_control)
+set_tests_properties(bvmethods_stopping_control PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(bvmethods_stopping_control)
 
 add_test(NAME pn2d_bv_process_observability_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -1614,3 +2105,23 @@ endif()
 add_executable(test_population_step_control tests/test_population_step_control.cpp tests/test_bvmethods_population_newton.cpp)
 target_link_libraries(test_population_step_control PRIVATE vela_core Catch2::Catch2WithMain)
 vela_catch_discover_tests(test_population_step_control)
+add_test(NAME bvmethods_profile_inputs
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_profile_inputs.py)
+vela_set_windows_msys2_test_path(bvmethods_profile_inputs)
+
+add_test(NAME linear_constraint_support
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_matrix_support)
+set_tests_properties(linear_constraint_support PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(linear_constraint_support)
+
+add_test(NAME bvmethods_cmd_profile
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_cmd_profile)
+set_tests_properties(bvmethods_cmd_profile PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(bvmethods_cmd_profile)
+
+add_test(NAME bvmethods_precision_reference
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_bvmethods_precision_reference)
+set_tests_properties(bvmethods_precision_reference PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(bvmethods_precision_reference)

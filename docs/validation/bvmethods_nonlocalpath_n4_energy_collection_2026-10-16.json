@@ -1,0 +1,757 @@
+{
+  "schema": "vela.validation.nonlocalpath.n4_energy_collection.v1",
+  "date": "2026-10-16",
+  "stage": "N4 in progress; N5 not started",
+  "native_version": "T-2022.03-SP2",
+  "native_derivative_mode": 0,
+  "production_cpp_changed": false,
+  "thresholds_changed": false,
+  "cases": {
+    "uniform": {
+      "trace_summary": {
+        "counts": {
+          "plain": 340,
+          "rhs": 2,
+          "update": 340,
+          "kernelB": 8611,
+          "kernelA": 17517,
+          "constructor": 1
+        },
+        "errors": [],
+        "exit": 0,
+        "selected_events": 40
+      },
+      "printed_observer_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_arrays_identical": true,
+      "export_arrays_checked": 51,
+      "cells": [
+        {
+          "cell": 0,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -56.76419844964534,
+            "native_upper_kT": -47.09376499091323,
+            "expected_lower_kT": -56.76419844964535,
+            "expected_upper_kT": -47.09376499091323,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 1.4210854715202004e-14,
+            "stack4": 4.263256414560601e-14,
+            "stack8": 1.4210854715202004e-14,
+            "stack9": 1.4210854715202004e-14
+          },
+          "factor_relative_error": 7.771561172376096e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 4.479422915302684e-17,
+              "native_total_per_m_s": 21290115589.405296,
+              "reconstructed_total_per_m_s": 21290115589.405296,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 2.239711457651342e-16,
+              "native_total_per_m_s": 21290115589.405296,
+              "reconstructed_total_per_m_s": 21290115589.405296,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 1,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -47.09376499091323,
+            "native_upper_kT": -37.42333153218113,
+            "expected_lower_kT": -47.09376499091323,
+            "expected_upper_kT": -37.42333153218113,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 3.552713678800501e-15,
+            "stack4": 7.105427357601002e-14,
+            "stack8": 7.105427357601002e-15,
+            "stack9": 7.105427357601002e-15
+          },
+          "factor_relative_error": 7.771561172376096e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 1.3522419827869415e-16,
+              "native_total_per_m_s": 21157625525.885857,
+              "reconstructed_total_per_m_s": 21157625525.88586,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 2.253736637978236e-16,
+              "native_total_per_m_s": 21157625525.885857,
+              "reconstructed_total_per_m_s": 21157625525.885857,
+              "balance": 1.802989310382589e-16,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 7,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -42.258548261547176,
+            "native_upper_kT": -32.588114802815085,
+            "expected_lower_kT": -42.25854826154718,
+            "expected_upper_kT": -32.588114802815085,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 1.4210854715202004e-14,
+            "stack4": 1.4210854715202004e-14,
+            "stack8": 7.105427357601002e-15,
+            "stack9": 7.105427357601002e-15
+          },
+          "factor_relative_error": 7.771561172376096e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 2.120566228890815e-16,
+              "native_total_per_m_s": 17989050347.275967,
+              "reconstructed_total_per_m_s": 17989050347.27597,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 2.650707786113518e-16,
+              "native_total_per_m_s": 17989050347.27597,
+              "reconstructed_total_per_m_s": 17989050347.27597,
+              "balance": 2.1205662288908144e-16,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 34,
+          "path_points": 11,
+          "window": {
+            "native_lower_kT": -158.3037497663325,
+            "native_upper_kT": -148.63331630760038,
+            "expected_lower_kT": -158.30374976633252,
+            "expected_upper_kT": -148.6333163076004,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 5.684341886080802e-14,
+            "stack4": 5.684341886080802e-14,
+            "stack8": 2.842170943040401e-14,
+            "stack9": 2.842170943040401e-14
+          },
+          "factor_relative_error": 4.440892098500626e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 6.271128918824641e-16,
+              "native_total_per_m_s": 21290330022.73198,
+              "reconstructed_total_per_m_s": 21290330022.73197,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 6.719066698740684e-16,
+              "native_total_per_m_s": 21290330022.731987,
+              "reconstructed_total_per_m_s": 21290330022.73197,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 54,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -42.258548261547176,
+            "native_upper_kT": -32.588114802815085,
+            "expected_lower_kT": -42.25854826154718,
+            "expected_upper_kT": -32.588114802815085,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 2.1316282072803006e-14,
+            "stack4": 1.4210854715202004e-14,
+            "stack8": 5.329070518200751e-15,
+            "stack9": 7.105427357601002e-15
+          },
+          "factor_relative_error": 1.2212453270876722e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 2.650707786113518e-16,
+              "native_total_per_m_s": 17989050347.27597,
+              "reconstructed_total_per_m_s": 17989050347.275967,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 1.0602831144454074e-16,
+              "native_total_per_m_s": 17989050347.275967,
+              "reconstructed_total_per_m_s": 17989050347.275967,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 106,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -42.25854826154718,
+            "native_upper_kT": -32.588114802815085,
+            "expected_lower_kT": -42.25854826154718,
+            "expected_upper_kT": -32.588114802815085,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 1.7763568394002505e-15,
+            "stack4": 5.684341886080802e-14,
+            "stack8": 3.552713678800501e-15,
+            "stack9": 7.105427357601002e-15
+          },
+          "factor_relative_error": 8.881784197001252e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 1.5904246716681078e-16,
+              "native_total_per_m_s": 17989050347.276005,
+              "reconstructed_total_per_m_s": 17989050347.276005,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 1.590424671668108e-16,
+              "native_total_per_m_s": 17989050347.276,
+              "reconstructed_total_per_m_s": 17989050347.276005,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 221,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -192.15026687189493,
+            "native_upper_kT": -188.9267890523176,
+            "expected_lower_kT": -192.15026687189493,
+            "expected_upper_kT": -188.92678905231762,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 5.684341886080802e-14,
+            "stack4": 2.842170943040401e-14,
+            "stack8": 5.684341886080802e-14,
+            "stack9": 5.684341886080802e-14
+          },
+          "factor_relative_error": 1.6653345369377348e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 3.3595333493704605e-16,
+              "native_total_per_m_s": 7096776674.243746,
+              "reconstructed_total_per_m_s": 7096776674.243744,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 4.031440019244556e-16,
+              "native_total_per_m_s": 7096776674.24374,
+              "reconstructed_total_per_m_s": 7096776674.243742,
+              "balance": 0.0,
+              "native_nonzero_nodes": 2,
+              "coefficient_nonzero_points": 1
+            }
+          }
+        },
+        {
+          "cell": 263,
+          "path_points": 8,
+          "window": {
+            "native_lower_kT": -192.15026687189493,
+            "native_upper_kT": -188.9267890523176,
+            "expected_lower_kT": -192.15026687189493,
+            "expected_upper_kT": -188.92678905231762,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 5.684341886080802e-14,
+            "stack4": 5.684341886080802e-14,
+            "stack8": 5.684341886080802e-14,
+            "stack9": 5.684341886080802e-14
+          },
+          "factor_relative_error": 6.217248937900877e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 4.703346689118671e-16,
+              "native_total_per_m_s": 3548388337.1218534,
+              "reconstructed_total_per_m_s": 3548388337.121852,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 6.047160028866866e-16,
+              "native_total_per_m_s": 3548388337.1218514,
+              "reconstructed_total_per_m_s": 3548388337.121852,
+              "balance": 0.0,
+              "native_nonzero_nodes": 2,
+              "coefficient_nonzero_points": 1
+            }
+          }
+        },
+        {
+          "cell": 307,
+          "path_points": 11,
+          "window": {
+            "native_lower_kT": -340.43024657245405,
+            "native_upper_kT": -337.20676875287666,
+            "expected_lower_kT": -340.43024657245394,
+            "expected_upper_kT": -337.2067687528764,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 1.1368683772161603e-13,
+            "stack4": 2.2737367544323206e-13,
+            "stack8": 5.684341886080802e-14,
+            "stack9": 5.684341886080802e-14
+          },
+          "factor_relative_error": 7.549516567451064e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 7.390973368614605e-16,
+              "native_total_per_m_s": 7096776674.244138,
+              "reconstructed_total_per_m_s": 7096776674.244139,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 1.2766226727607058e-15,
+              "native_total_per_m_s": 7096776674.24413,
+              "reconstructed_total_per_m_s": 7096776674.244139,
+              "balance": 0.0,
+              "native_nonzero_nodes": 2,
+              "coefficient_nonzero_points": 1
+            }
+          }
+        },
+        {
+          "cell": 339,
+          "path_points": 10,
+          "window": {
+            "native_lower_kT": -342.0419854822428,
+            "native_upper_kT": -338.8185076626654,
+            "expected_lower_kT": -342.0419854822427,
+            "expected_upper_kT": -338.8185076626652,
+            "native_maximum_valence_kT": -32.588114802815085,
+            "native_minimum_conduction_kT": -453.9202677651916,
+            "global_maximum_valence_kT": -32.588114802815085,
+            "global_minimum_conduction_kT": -453.9202677651916
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 5.684341886080802e-14,
+            "stack4": 2.2737367544323206e-13,
+            "stack8": 5.684341886080802e-14,
+            "stack9": 5.684341886080802e-14
+          },
+          "factor_relative_error": 9.992007221626409e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 1.8141480086599857e-15,
+              "native_total_per_m_s": 3548388337.121996,
+              "reconstructed_total_per_m_s": 3548388337.122001,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 1.9485293426348008e-15,
+              "native_total_per_m_s": 3548388337.1219935,
+              "reconstructed_total_per_m_s": 3548388337.1220007,
+              "balance": 1.3438133397481358e-16,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        }
+      ]
+    },
+    "original": {
+      "trace_summary": {
+        "counts": {
+          "plain": 4156,
+          "rhs": 2,
+          "update": 4156,
+          "kernelB": 41913,
+          "kernelA": 85376,
+          "constructor": 1
+        },
+        "errors": [],
+        "exit": 0,
+        "selected_events": 12
+      },
+      "printed_observer_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_arrays_identical": true,
+      "export_arrays_checked": 82,
+      "cells": [
+        {
+          "cell": 559,
+          "path_points": 9,
+          "window": {
+            "native_lower_kT": -160.59382971443748,
+            "native_upper_kT": -148.01097918513997,
+            "expected_lower_kT": -160.5938297144374,
+            "expected_upper_kT": -148.01097918513997,
+            "native_maximum_valence_kT": -3.424096481903632,
+            "native_minimum_conduction_kT": -293.39981815339877,
+            "global_maximum_valence_kT": -3.424096481903626,
+            "global_minimum_conduction_kT": -293.39981815339877
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 4.263256414560601e-14,
+            "stack4": 1.1368683772161603e-13,
+            "stack8": 2.842170943040401e-14,
+            "stack9": 2.842170943040401e-14
+          },
+          "factor_relative_error": 4.9960036108132044e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 1.6549863992212328e-16,
+              "native_total_per_m_s": 3021172864231869.5,
+              "reconstructed_total_per_m_s": 3021172864231869.0,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 8.274931996106165e-17,
+              "native_total_per_m_s": 3021172864231869.0,
+              "reconstructed_total_per_m_s": 3021172864231869.0,
+              "balance": 0.0,
+              "native_nonzero_nodes": 4,
+              "coefficient_nonzero_points": 3
+            }
+          }
+        },
+        {
+          "cell": 979,
+          "path_points": 11,
+          "window": {
+            "native_lower_kT": -142.97752351725012,
+            "native_upper_kT": -135.84952342828012,
+            "expected_lower_kT": -142.9775235172501,
+            "expected_upper_kT": -135.8495234282801,
+            "native_maximum_valence_kT": -3.424096481903632,
+            "native_minimum_conduction_kT": -293.39981815339877,
+            "global_maximum_valence_kT": -3.424096481903626,
+            "global_minimum_conduction_kT": -293.39981815339877
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 4.263256414560601e-14,
+            "stack4": 5.684341886080802e-14,
+            "stack8": 2.842170943040401e-14,
+            "stack9": 2.842170943040401e-14
+          },
+          "factor_relative_error": 5.10702591327572e-15,
+          "collection": {
+            "hole": {
+              "relative_L1": 2.1647450596035147e-16,
+              "native_total_per_m_s": 6929222419727954.0,
+              "reconstructed_total_per_m_s": 6929222419727955.0,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 3.7883038543061507e-16,
+              "native_total_per_m_s": 6929222419727954.0,
+              "reconstructed_total_per_m_s": 6929222419727956.0,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        },
+        {
+          "cell": 2695,
+          "path_points": 10,
+          "window": {
+            "native_lower_kT": -126.45338447859243,
+            "native_upper_kT": -116.8967483200044,
+            "expected_lower_kT": -126.45338447859244,
+            "expected_upper_kT": -116.89674832000445,
+            "native_maximum_valence_kT": -3.424096481903632,
+            "native_minimum_conduction_kT": -293.39981815339877,
+            "global_maximum_valence_kT": -3.424096481903626,
+            "global_minimum_conduction_kT": -293.39981815339877
+          },
+          "point_field_maximum_absolute_errors_kT": {
+            "stack3": 4.263256414560601e-14,
+            "stack4": 5.684341886080802e-14,
+            "stack8": 1.4210854715202004e-14,
+            "stack9": 2.842170943040401e-14
+          },
+          "factor_relative_error": 2.220446049250313e-16,
+          "collection": {
+            "hole": {
+              "relative_L1": 9.984481081554012e-16,
+              "native_total_per_m_s": 3630634351841343.0,
+              "reconstructed_total_per_m_s": 3630634351841346.5,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            },
+            "electron": {
+              "relative_L1": 1.3771698043522763e-16,
+              "native_total_per_m_s": 3630634351841346.0,
+              "reconstructed_total_per_m_s": 3630634351841346.5,
+              "balance": 0.0,
+              "native_nonzero_nodes": 3,
+              "coefficient_nonzero_points": 2
+            }
+          }
+        }
+      ]
+    }
+  },
+  "linear_collection_qualification": "native coefficients supplied; verifies linear support mapping only, not an autonomous kernel or complete RHS",
+  "moment_control": {
+    "tunnel_length_from_bands_m": 1.1077231759987446e-08,
+    "maximum_displacement_error_over_tunnel_length": 0.05321139066606363,
+    "active_cells": 315
+  },
+  "initial_integral_vs_collection": [
+    {
+      "cell": 0,
+      "native_initial_integral": 129.69533544788243,
+      "native_collected_integral": 129.694367810989,
+      "initial_vs_collected_relative": 7.460901423499158e-06,
+      "independent_chord_integral_relative": -1.6941711376950163e-08
+    },
+    {
+      "cell": 1,
+      "native_initial_integral": 129.48610263076802,
+      "native_collected_integral": 128.88726956122932,
+      "initial_vs_collected_relative": 0.004646177016374895,
+      "independent_chord_integral_relative": -1.0550237701881252e-05
+    },
+    {
+      "cell": 7,
+      "native_initial_integral": 124.48218087808603,
+      "native_collected_integral": 109.5850561502367,
+      "initial_vs_collected_relative": 0.13594120632128867,
+      "independent_chord_integral_relative": -0.0003086864831731618
+    },
+    {
+      "cell": 34,
+      "native_initial_integral": 129.69567408829036,
+      "native_collected_integral": 129.69567408829053,
+      "initial_vs_collected_relative": -1.31484922516641e-15,
+      "independent_chord_integral_relative": 1.1571136289355088e-14
+    },
+    {
+      "cell": 54,
+      "native_initial_integral": 124.48218087808606,
+      "native_collected_integral": 109.58505615023671,
+      "initial_vs_collected_relative": 0.13594120632128878,
+      "independent_chord_integral_relative": -0.00030868648317335204
+    },
+    {
+      "cell": 106,
+      "native_initial_integral": 124.48218087808617,
+      "native_collected_integral": 109.58505615023694,
+      "initial_vs_collected_relative": 0.13594120632128748,
+      "independent_chord_integral_relative": -0.0003086864831750632
+    },
+    {
+      "cell": 221,
+      "native_initial_integral": 43.231891362761864,
+      "native_collected_integral": 43.231891362761885,
+      "initial_vs_collected_relative": -4.930684594374223e-16,
+      "independent_chord_integral_relative": 4.134270570050973e-14
+    },
+    {
+      "cell": 263,
+      "native_initial_integral": 43.23189136276161,
+      "native_collected_integral": 43.231891362761615,
+      "initial_vs_collected_relative": -1.6435615314580845e-16,
+      "independent_chord_integral_relative": 4.8092535202634036e-14
+    },
+    {
+      "cell": 307,
+      "native_initial_integral": 43.23189136276436,
+      "native_collected_integral": 43.23189136276442,
+      "initial_vs_collected_relative": -1.4792053783121801e-15,
+      "independent_chord_integral_relative": 1.2053266968077967e-15
+    },
+    {
+      "cell": 339,
+      "native_initial_integral": 43.23189136276352,
+      "native_collected_integral": 43.23189136276356,
+      "initial_vs_collected_relative": -9.861369188748063e-16,
+      "independent_chord_integral_relative": 2.0370021176052157e-14
+    }
+  ],
+  "projection_hypotheses": {
+    "midpoint": {
+      "integral_signed_relative": 0.0025122993180603887,
+      "cell_integral_relative_L1": 0.0025122993180620905,
+      "cell_vertex_relative_L1": 0.003046926915525854
+    },
+    "trapezoid": {
+      "integral_signed_relative": -0.007237937620411273,
+      "cell_integral_relative_L1": 0.007237937620438631,
+      "cell_vertex_relative_L1": 0.007247825005358725
+    },
+    "gauss2_midpoint_weights": {
+      "integral_signed_relative": 0.0004430506358932968,
+      "cell_integral_relative_L1": 0.00044699980198173916,
+      "cell_vertex_relative_L1": 0.002358304809088432
+    },
+    "gauss4_midpoint_weights": {
+      "integral_signed_relative": -8.453028222028935e-06,
+      "cell_integral_relative_L1": 8.453028250754287e-06,
+      "cell_vertex_relative_L1": 0.002212122343936467
+    },
+    "gauss24_midpoint_weights": {
+      "integral_signed_relative": -9.694778528104477e-06,
+      "cell_integral_relative_L1": 9.694778556742168e-06,
+      "cell_vertex_relative_L1": 0.002212536260705137
+    },
+    "gauss48_midpoint_weights": {
+      "integral_signed_relative": -9.694778528200858e-06,
+      "cell_integral_relative_L1": 9.694778556768628e-06,
+      "cell_vertex_relative_L1": 0.0022125362607051287
+    },
+    "gauss48_full_weights": {
+      "integral_signed_relative": -9.694778528189557e-06,
+      "cell_integral_relative_L1": 9.694778556736107e-06,
+      "cell_vertex_relative_L1": 0.0007131841804930869
+    }
+  },
+  "verification": {
+    "local_selected_ctest_passed": 10,
+    "local_collection_tests_passed": 18,
+    "t470p": {
+      "collection_transfers_exactly_replayed": 26,
+      "moment_events_exactly_replayed": 340,
+      "manifest_verified": 7,
+      "tests": 18,
+      "geometry_paths_exactly_replayed": 340,
+      "rhs_bindings_exactly_replayed": [
+        "uniform",
+        "original"
+      ],
+      "rhs_source_only_errors": {
+        "uniform": {
+          "eDensity": 4.03266632951158e-08,
+          "hDensity": 1.4227206557013293e-15
+        },
+        "original": {
+          "eDensity": 9.595780103420047e-09,
+          "hDensity": 8.286481620622643e-10
+        }
+      },
+      "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+      "exit": 0
+    }
+  },
+  "native_attempts": {
+    "v1": {
+      "scope": "selected source updates available; derivative integral entry not called",
+      "archive_sha256": "cec81212cae8591aa7bddf808255a2bfdbc86de2a02f3b6158a7bccdd46b36c7",
+      "verified_files": 41
+    },
+    "v2": {
+      "scope": "partial only; global exp breakpoint too expensive",
+      "run_exits": [
+        124,
+        124
+      ],
+      "archive_sha256": "271e289332ef143da541c7405914c50fbeb90601e27d3dff486fc70fd953b748",
+      "verified_files": 25
+    },
+    "v3": {
+      "run_exits": [
+        0,
+        0
+      ],
+      "archive_sha256": "41660bbcf567adea52806987fc468510152ee4258616b8aadae7f7c4a87a096e",
+      "verified_files": 41,
+      "source_binary_sha256": "c786dbd60dd26ca7e3671518256585fd0ae5bd615eaa7c642cbd80743417f71a"
+    }
+  },
+  "inputs_sha256": {
+    "uniform/input.cmd": "fc8064290b8910cebc96b7f1564533327d42c5ced0aab6a58f9b9792db4395d9",
+    "uniform/input.par": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "uniform/mesh_msh.tdr": "577a5a1ed6b89c3f27273236dc647f60ca0560cda31d39f827ff23bb5d9d60a6",
+    "uniform/seed_des.sav": "cedfc931dd4e1e691a259347ae80877dcbf39b05de9ad3f76a476d33b6503c31",
+    "uniform/seed_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "uniform/before_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "original/input.cmd": "a69f5fa302c1387031e87323cc648c1dd855960f594db70f99d2d73e15d4377d",
+    "original/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "original/n1_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "original/accepted_0064_des.sav": "2f469a9a1cc2a19ff182aafd1709711d21c7b107b226bf21c6a4aeede513a538",
+    "original/accepted_0064_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "original/before_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+  },
+  "public_source_sha256": {
+    "scripts/audit_nonlocalpath_collection.py": "0e92374fe9ead910f990a603e13efe6bb85b4a498054389f3f1c6379377fdd41",
+    "tests/regression/test_nonlocalpath_collection_audit.py": "6da664571049511d237fb7450d9c83d9eba83bf4135aed0e225f105af0221268"
+  }
+}

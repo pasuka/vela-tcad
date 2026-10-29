@@ -1,0 +1,368 @@
+{
+  "status": "matched-input independent staged zero-equilibrium fields agree; finite-update/production qualification not claimed",
+  "temperature_K": 300,
+  "outer_V": 0,
+  "R_ohm_um": 10000000.0,
+  "nodes": 1943,
+  "triangles": 3680,
+  "pure_poisson_dimension": 1943,
+  "coupled_native_dimension": 5762,
+  "coupled_vela_full_dimension": 5830,
+  "native_archive_sha256": "9ec2e61e4e39398aba155e4c229c8229a94624291aa37ff3720aa9adbb4f3585",
+  "native_mesh_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287",
+  "comparisons": {
+    "native_material": {
+      "native_poisson_linear_solves": 5,
+      "native_first_coupled_debug_index": 5,
+      "native_P_to_final_DD_potential_V": {
+        "max_absolute": 9.963985803107533e-09,
+        "rms_absolute": 4.263851073921897e-09,
+        "worst_node": 284
+      },
+      "independent_solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 3886,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 2.247125902477469e-14,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 1943,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 3.620532729127463e-13,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 50.322920582157
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 4.782196619632518
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 0.4960591191650018
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.008687657833521262
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 2.818500488181522e-06
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 3.620532729127463e-13
+            }
+          ],
+          "initial_residual": 247.86330083210487,
+          "iterations": 6,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      },
+      "fields": {
+        "poisson": {
+          "potential_V": {
+            "max_absolute": 9.963984248795299e-09,
+            "rms_absolute": 4.263850458673886e-09,
+            "worst_node": 284
+          }
+        },
+        "coupled": {
+          "potential_V": {
+            "max_absolute": 1.5543122344752192e-15,
+            "rms_absolute": 8.128852582340804e-16,
+            "worst_node": 284
+          },
+          "n_cm3": {
+            "max_log10_error": 3.68594044175552e-14,
+            "rms_log10_error": 1.8265241338507575e-14,
+            "worst_node": 286,
+            "max_relative": 8.448797217397441e-14
+          },
+          "p_cm3": {
+            "max_log10_error": 3.6415315207705135e-14,
+            "rms_log10_error": 1.7425501779771925e-14,
+            "worst_node": 1058,
+            "max_relative": 8.37108160567368e-14
+          }
+        }
+      },
+      "poisson_same_state_operators": {
+        "0": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 6.7668680259606454e-15,
+          "rhs_difference_diag_normalized_L2": 2.1801701037759789e-13,
+          "rhs_native_diag_normalized_L2": 44.27283369872998,
+          "rhs_relative_L2": 4.92439702100776e-15
+        },
+        "1": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 9.740734109117489e-15,
+          "rhs_difference_diag_normalized_L2": 1.0501466152998606e-12,
+          "rhs_native_diag_normalized_L2": 10.292022443204612,
+          "rhs_relative_L2": 1.0203501023195184e-13
+        },
+        "4": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 9.213796507339638e-15,
+          "rhs_difference_diag_normalized_L2": 9.789675438329933e-13,
+          "rhs_native_diag_normalized_L2": 0.001690813094126179,
+          "rhs_relative_L2": 5.789921708282776e-10
+        }
+      },
+      "config_sha256": "da60cd3ff38bdf23848ee28d61e977ad266658ebc85f85382953c2fae2746444",
+      "materials_sha256": "01d361da6fa12998f6825946e5782181cba83515f66b7ad20cec77fc68727548",
+      "field_sha256": {
+        "cold": "942349c3d1a70993832e400e8461c32cb54fabf31d85edbaa838b9fb3cb296db",
+        "poisson": "dba5a5eccb3eb7e0d227eb7df397d26752e9064cb9566371d7ecef6c371f6338",
+        "coupled": "dba5a5eccb3eb7e0d227eb7df397d26752e9064cb9566371d7ecef6c371f6338",
+        "device_coupled": "dba5a5eccb3eb7e0d227eb7df397d26752e9064cb9566371d7ecef6c371f6338"
+      }
+    },
+    "original_material": {
+      "native_poisson_linear_solves": 5,
+      "native_first_coupled_debug_index": 5,
+      "native_P_to_final_DD_potential_V": {
+        "max_absolute": 9.963985803107533e-09,
+        "rms_absolute": 4.263851073921897e-09,
+        "worst_node": 284
+      },
+      "independent_solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 3886,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 3.463218899998932e-14,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 1943,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 4.0014279674304823e-13,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 50.32392643603555
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 4.782329816206233
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 0.4960858118772732
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.008688620439973782
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 2.81913819891307e-06
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 4.0014279674304823e-13
+            }
+          ],
+          "initial_residual": 247.86753847966415,
+          "iterations": 6,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      },
+      "fields": {
+        "poisson": {
+          "potential_V": {
+            "max_absolute": 6.9011049398381985e-06,
+            "rms_absolute": 6.088170962287864e-06,
+            "worst_node": 129
+          }
+        },
+        "coupled": {
+          "potential_V": {
+            "max_absolute": 6.901104939949221e-06,
+            "rms_absolute": 6.090221319039661e-06,
+            "worst_node": 119
+          },
+          "n_cm3": {
+            "max_log10_error": 0.0002318669614131963,
+            "rms_log10_error": 0.0001546226385640153,
+            "worst_node": 119,
+            "max_relative": 0.000533750913182307
+          },
+          "p_cm3": {
+            "max_log10_error": 0.0002318669614131963,
+            "rms_log10_error": 0.00015462263856305306,
+            "worst_node": 1315,
+            "max_relative": 0.0005337509131816409
+          }
+        }
+      },
+      "poisson_same_state_operators": {
+        "0": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 3.826941822458349e-05,
+          "rhs_difference_diag_normalized_L2": 0.005361008770670755,
+          "rhs_native_diag_normalized_L2": 44.27283369872998,
+          "rhs_relative_L2": 0.0001210902560959079
+        },
+        "1": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 3.827013915533861e-05,
+          "rhs_difference_diag_normalized_L2": 0.005180453800566855,
+          "rhs_native_diag_normalized_L2": 10.292022443204612,
+          "rhs_relative_L2": 0.0005033465316612567
+        },
+        "4": {
+          "dimension": 1943,
+          "matrix_max_relative_row_L2": 3.8275601901656285e-05,
+          "rhs_difference_diag_normalized_L2": 0.005154620381499808,
+          "rhs_native_diag_normalized_L2": 0.001690813094126179,
+          "rhs_relative_L2": 3.048604484674719
+        }
+      },
+      "config_sha256": "c74bed8dbf0eb3fdb5fe00dc9d90ff678457b854f8b0c5c72c10364236e93a0b",
+      "materials_sha256": "b5ae0e1fb263abd6b403c89cccbd6236d9ca40daeb79e5a4a48ebce4fb243647",
+      "field_sha256": {
+        "cold": "cd9de323fe80ddc74a62e293ba636b60105cb6ea323e655c65e5e4cd6862acc4",
+        "poisson": "d0e516ae4d8bd0ce79a6e93a0ae3dcaed6fa51bbd3c80ec7f7c46a8738c912b2",
+        "coupled": "d0e516ae4d8bd0ce79a6e93a0ae3dcaed6fa51bbd3c80ec7f7c46a8738c912b2",
+        "device_coupled": "d0e516ae4d8bd0ce79a6e93a0ae3dcaed6fa51bbd3c80ec7f7c46a8738c912b2"
+      }
+    }
+  },
+  "source_sha256": {
+    "scripts/diagnostics/pn2d_staged_zero_probe.cpp": "d49d01ca67c3c6049b452091010b041bf640533d9de90841e7f2536c6636a580",
+    "scripts/compare_pn2d_staged_zero.py": "79e69d2e2abb9b000f18c5ef4f359c21d2b50a6b69828947061094de1ce3f2d3",
+    "src/solver/NewtonSolver.cpp": "a1991963fdfb2ef53d06ee745d5e2caaf783509c0b53bfa4f61bd4da1f46d544",
+    "src/equation/CoupledDDAssembler.cpp": "9143198bef94bc9324ab94d9fa4b6fb797b4274bbfa7bc5b62e854d9038e8ca2"
+  },
+  "baseline_library_sha256": "45d87b354928e9b2bdef5d6c4b996af59a7393a08473176376ec2432c3a5934c",
+  "staged_probe_exe_sha256": "f33a97fd9fce149f9380f06ca58a7f54f7bc4c014f0c81665494a6e66ef4c97b",
+  "link_map_sha256": "31b809ff127a2f2c7ec5511d9b9b0e3cd447d9dd57204cd11939d1e5f09225ec",
+  "link_map_core_selection": {
+    "NewtonSolver": "baseline archive",
+    "CoupledDDAssembler": "baseline archive",
+    "experimental_core_object_references": 0
+  },
+  "checks": {
+    "independent_arms_completed": 2,
+    "Poisson_same_state_indices": [
+      0,
+      1,
+      4
+    ],
+    "field_comparison_tests_passed": 3,
+    "plot_inspected": true
+  },
+  "limitations": [
+    "native-derived material oracle and legacy constants are diagnostics, not repaired production defaults",
+    "coupled Vela accepted at entry with zero Newton updates",
+    "zero qualified carrier rows and unqualified finite-flow closure at equilibrium",
+    "no new native run in this staged comparison",
+    "no nonzero bias or breakdown qualification"
+  ]
+}

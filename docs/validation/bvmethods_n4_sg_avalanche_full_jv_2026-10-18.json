@@ -1,0 +1,215 @@
+{
+  "date": "2026-10-18",
+  "status": "N4 ongoing; independent diagnostics completed, actual assembly gates remain open",
+  "thresholds": {
+    "absolute": 1e-08,
+    "directional": 1e-05,
+    "changed": false
+  },
+  "state": "accepted_0053 Load first RHS; actual population direction",
+  "configuration": {
+    "mesh_nodes": 2600,
+    "Tri3": 5020,
+    "Si_cells": 4156,
+    "free_carrier_nodes": 2121,
+    "unknowns": 6843,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "backend": "Windows Python Decimal; no linear solve; prior Release C++ results reused"
+  },
+  "SG": {
+    "stages": {
+      "canonical": {
+        "disjoint": 0,
+        "max_direction_error": 1.7874348894756375e-11
+      },
+      "rounded_argument": {
+        "disjoint": 35,
+        "max_direction_error": 0.08257560273548374,
+        "edge_step_max_abs": 0.0001239777417379419
+      },
+      "rounded_Bernoulli": {
+        "disjoint": 35,
+        "max_direction_error": 0.08271221279903565,
+        "edge_step_max_abs": 5.338296542316543e-06
+      },
+      "rounded_products": {
+        "disjoint": 36,
+        "max_direction_error": 0.08282034316758838,
+        "edge_step_max_abs": 3.6867929737356877e-06
+      },
+      "length_roundtrip": {
+        "disjoint": 36,
+        "max_direction_error": 0.08282034316758838,
+        "edge_step_max_abs": 2.2737367544323206e-13
+      },
+      "observed_product": {
+        "disjoint": 36,
+        "max_direction_error": 0.08282034320769238
+      }
+    },
+    "observational_consumer_transfer_only": true,
+    "actual_common_gate_conflicts": 36,
+    "additional_product_rounding_node": 2185
+  },
+  "avalanche": {
+    "original_50_refinement": {
+      "sixtyfourth": {
+        "counts": {
+          "pass": 20,
+          "fail": 30
+        },
+        "max_error": 0.00013422891132240362
+      },
+      "fivehundred12": {
+        "counts": {
+          "pass": 47,
+          "fail": 3
+        },
+        "max_error": 1.677796475490461e-05
+      },
+      "fourthousand96": {
+        "counts": {
+          "pass": 50
+        },
+        "max_error": 2.097235449860108e-06
+      }
+    },
+    "actual_old_J_passed": 49,
+    "actual_old_J_max_error": 0.00040305857114291777,
+    "remaining_old_J_node": 1935,
+    "dominant_cell": 3471,
+    "alpha_binary64_to_wide_ratio": "1.000810643907122892779418541307426803194473996331099519646208924655854870796373140832167923355317926",
+    "rounded_alpha_explains_old_J_error": "1.927987125243566865095493077E-9",
+    "whole_source_and_actual_assembly_qualified": false,
+    "extended_range_all_rows_at_1_64": {
+      "pass": 1388,
+      "fail": 368,
+      "zero": 365
+    }
+  },
+  "NonLocalPath": {
+    "independent_all_cell_evaluations": 29092,
+    "independent_summary": {
+      "n": {
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "free_counts": {
+          "zero": 2615,
+          "pass": 1627
+        },
+        "max_error": 3.084945419495882e-11,
+        "event_seeds": 0,
+        "event_supported_rows": 0,
+        "event_seed_ids": [],
+        "pair_J_balance": "2.430073325695419365444287202245823941608883400181762459632178215010176585552684793635446436158855705E-82",
+        "current_Cpp_projected_counts": {
+          "zero": 3561,
+          "pass": 1479,
+          "fail": 160
+        },
+        "current_Cpp_projected_max_error": 0.11547497329538625
+      },
+      "psi": {
+        "counts": {
+          "zero": 5182,
+          "pass": 18
+        },
+        "free_counts": {
+          "zero": 4224,
+          "pass": 18
+        },
+        "max_error": 3.724219777085712e-10,
+        "event_seeds": 0,
+        "event_supported_rows": 0,
+        "event_seed_ids": [],
+        "pair_J_balance": "3.649154515926899768310784735318668336592773665888107104277624902668219741827494645966299844716339544E-81"
+      },
+      "p": {
+        "counts": {
+          "zero": 5188,
+          "pass": 12
+        },
+        "free_counts": {
+          "zero": 4230,
+          "pass": 12
+        },
+        "max_error": 1.0455722028680298e-09,
+        "event_seeds": 0,
+        "event_supported_rows": 0,
+        "event_seed_ids": [],
+        "pair_J_balance": "2.317710419365639584005564315256582675364082802082717634541251357869943338739445269385848401972694554E-81"
+      }
+    },
+    "base_source_max_relative": 4.8859845392013404e-12,
+    "projected_control_evaluations": 12468,
+    "projected_control_counts": {
+      "replayed": {
+        "zero": 3561,
+        "pass": 1639
+      },
+      "actual_Cpp": {
+        "zero": 3561,
+        "pass": 1481,
+        "fail": 158
+      }
+    },
+    "projected_control_max_error": {
+      "replayed": 3.267445320253382e-11,
+      "actual_Cpp": 0.2383520122966389
+    },
+    "precision_control": {
+      "seeds": 19,
+      "rows": 306,
+      "nonzero": 306,
+      "max_J_error": 1.8762888498094648e-75,
+      "over_1e5": 0,
+      "precision": [
+        80,
+        120
+      ]
+    },
+    "actual_assembly_Jv_qualified": false,
+    "augmented_load_KCL_Newton_qualified": false
+  },
+  "verification": {
+    "passed": 30,
+    "math_backend": "Windows MSYS2 Python Decimal 80/100/110/120 digits",
+    "regression_tests": {
+      "matched_direction": 10,
+      "sg_rhs_binding": 7,
+      "sg_representation_contract": 8
+    },
+    "WSL_attempts": 2,
+    "WSL_error": "Wsl/Service/CreateInstance/CreateVm/HCS_E_CONNECTION_TIMEOUT",
+    "private_Cpp_candidate_built": false,
+    "new_native_runs": 0,
+    "new_Vela_Release_runs": 0
+  },
+  "prior_evidence_unchanged": [
+    {
+      "files": 75,
+      "sha256": "04111e9fec259fe60201408206b5e493551faa0e7f8b24103d569daefd310dfc",
+      "unchanged": true
+    },
+    {
+      "files": 278,
+      "sha256": "0d1bc2108aa1812616955d0bd83b86193543cf71a8891e53244fc5060d954893",
+      "unchanged": true
+    },
+    {
+      "files": 296,
+      "sha256": "d46b96368a469d8e123e3dca03f4d205a9dd31e4a851f0105bd3730fabf4e352",
+      "unchanged": true
+    },
+    {
+      "files": 38,
+      "sha256": "e0744dd4957b5b0f7fb2dca7f68f131038c2b9ddeabefce9faadb55ae17db9ac",
+      "unchanged": true
+    }
+  ],
+  "production_changed": false,
+  "N5_started": false
+}

@@ -26,6 +26,93 @@ decks and reference-case workflows. Optional pybind11 bindings expose a thin Pyt
 
 ## Solver Paths
 
+`LinearSolver` performs exact prescribed-row substitution by default before
+backend factorization and recovers the full update afterward. The core
+`ConstraintElimination` API retains the affine boundary RHS and supports acyclic
+contact dependencies. Coupled load-line and population-coordinate drivers identify
+prescribed rows in the device Jacobian before bordering or changing coordinates.
+State/residual arrays retain their original dimensions. The opt-out control and
+backend exceptions are documented in the [configuration schema](config_schema.md).
+
+The explicit `solver.coupled_operator: "bvmethods_tri3_qf"` profile routes
+coupled carrier residuals, Jacobians, ledgers and terminal totals through
+`BvMethodsCoupledRuntime`, retaining existing Poisson and constraint rows.
+Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
+the default and PN2D operators retain their existing paths.
+
+The BVMethods convergence callback requests one stateless physical evaluation
+for its constrained residual, constrained carrier ledger and unconstrained
+closure ledger. Boundary equations remain distinct. Element Lombardi prepares
+node coefficients for the fixed owner mesh/doping/configuration; normal fields
+and mobility tangents remain live. See the
+[performance qualification](validation/bvmethods_t470p_round2_2026-10-29.md).
+
+The explicit `solver.state_variables: "potential_density"` mode stores physical
+n/p as primary state alongside scaled potential. `BvMethodsCoupledRuntime`
+directly seeds population derivatives in the shared Tri3 jets, uses a fixed-n/p
+Poisson block and derives QF only for physical fields. `PopulationNewtonSolver`
+uses the core load-line Newton service with a fixed-voltage scalar row for a
+device-only solve; external-resistor sweeps use the same state and trial callbacks.
+`PopulationState` owns per-trial positivity, while `DerivativeRecovery` optionally
+chooses directly assembled approximate/full Jacobians without changing RHS.
+`ArclengthSystem::predictState` lets this mode extrapolate positive carrier
+populations in logarithmic coordinates independently of Newton's physical n/p
+coordinates; the coupled continuation service retains prediction rollback.
+Population archives store internal n/p alongside SI output fields and their
+conversion scale, so same-unit restores bypass a lossy SI round trip. Both
+C++ and Python codecs validate the optional coordinate bundle. The Poisson
+stage retains its computed n/p when publishing a population checkpoint.
+The explicit experimental `population_sg_current: band_population` path uses
+`BvMethodsPopulationSg` to form population/band SG arguments without subtracting
+node QF values. Transport and AV share paired Bernoulli arithmetic and canonical
+edge direction, retaining live physical AD derivatives. Effective ni supplies the
+band differences under the existing BVMethods contract; GradQF fields still use
+derived QF. The QF-based SG path remains the default. The shared explicit JD kernel uses
+correctly rounded inverse-series coefficients. `BvMethodsPrimitiveState` separately
+defines normalized population, band, reference-energy and AD current contracts;
+this experimental interface has no JSON/CMD dispatch. See the
+[primitive-state follow-up](validation/bvmethods_primitive_contract_2026-10-28.md).
+Equilibrium Poisson initialization remains a separate scalar statistical problem.
+The [implementation record](validation/potential_density_development_2026-10-28.md)
+separates implemented interfaces from passed numerical qualifications; the
+[predictor/archive follow-up](validation/potential_density_predictor_archive_2026-10-28.md)
+records the subsequent fixed-target and restart checks.
+
+The experimental `vela::experimental` NonLocalPath contracts in
+`physics/NonlocalPathBandToBand.h` define SI configuration, actual band-state
+dependencies, path records, separate signed pair-source integrals and versioned
+remote Jacobian support. `NonlocalPathGeometry` adds private autonomous Tri3
+path traversal, endpoint roots and specular reflection. `NonlocalPathPhononKernel`
+evaluates a private homogeneous-Si, isothermal P1 phonon-assisted rate with
+explicit reservoir windows and a unique Keldysh crossover. It preserves signed
+generation/recombination and logarithms for underflow diagnostics.
+`NonlocalPathSourceAssembly` adds geometry-derived vertex-box quadrature,
+separate endpoint scatter and contact ledgers. Its frozen
+`CoupledDDAssembler::experimentalNonlocalResidual` diagnostic adds both sources
+inside the actual residual loop, before gauge/scaling/contact replacement;
+partial path sets cannot enter that diagnostic. Constitutive band identity and
+native window/source collection remain unqualified; derivatives are unevaluated.
+The named private `NonlocalPathCellSource` alternative adds centroid chords,
+Delaunay cell quadrature, band-fraction integrals and first-crossing energy
+collection. It preserves the canonical N3 entry point. Its explicit frozen
+population residual audit retains the strict reconstructed-state gate and
+checks physical temperature; neither audit qualifies production dispatch or
+the full native RHS. See the [C++ N4 record](validation/bvmethods_nonlocalpath_n4_cpp_closure_2026-10-16.md).
+Frozen-density audits now keep ordinary SRH on the actual substituted population,
+while the explicit quantum SRH coupling remains separate. A dedicated Poisson
+observer uses the frozen charge, retains absolute dielectric edge contributions,
+and matches the actual endpoint scaling/subtraction order. Private original-statistics,
+Gamma transport and element-source controls do not add production configuration
+dispatch; see the [actual-assembly follow-up](validation/bvmethods_nonlocalpath_n4_actual_assembly_2026-10-16.md).
+These APIs are not dispatched by simulation configuration. Private entry points
+are `test_nonlocalpath_contract`, `test_nonlocalpath_geometry`,
+`test_nonlocalpath_phonon`, `test_nonlocalpath_source` and the uninstalled
+geometry/source probes. See the [N1 record](validation/bvmethods_nonlocalpath_n1_2026-10-16.md)
+and [N2 geometry record](validation/bvmethods_nonlocalpath_n2_2026-10-16.md), plus
+the [N3 kernel record](validation/bvmethods_nonlocalpath_n3_2026-10-16.md) and
+[N4 source investigation](validation/bvmethods_nonlocalpath_n4_2026-10-16.md).
+The public local E2 model remains in `BandToBandTunnelingModel`.
+
 Poisson-only:
 
 1. Parse config and resolve relative paths from the config file directory.
@@ -56,6 +143,14 @@ Coupled Newton:
 Newton is reachable through `simulation_type: "newton"` for a single configured
 bias point and through `solver.method: "newton"` in DC sweeps. Gummel remains
 the default DC-sweep method when no solver method is specified.
+
+The experimental Newton report collector and independent `NewtonAuditScope`
+are opt-in, bounded observers of existing classical-loop values. They copy
+state, J/R, directions and line-search results without evaluating physics.
+Reports and `ExactValueBits` comparison encoding run outside the solve; the
+encoding preserves every aggregate field and floating-point bit pattern using
+header-only Boost.PFR. It is not a restart format or a new convergence rule.
+Split, quantum, recenter and recovery paths require separate qualification.
 
 ## Unit Scaling Boundary
 

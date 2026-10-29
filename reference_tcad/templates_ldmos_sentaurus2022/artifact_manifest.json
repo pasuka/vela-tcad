@@ -1,0 +1,581 @@
+{
+  "schema": "vela.reference_artifact_manifest.v1",
+  "case": "templates_ldmos_sentaurus2022",
+  "version": "v1",
+  "created_utc": "2026-09-26T14:23:18Z",
+  "store": {
+    "kind": "ssh",
+    "host": "sentaurus",
+    "root": "/home/tcad/vela_reference_artifacts"
+  },
+  "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
+  "deck_matches_repository": false,
+  "origin": {
+    "vm_run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+    "note": "Sentaurus Process mesh n1_fps.tdr (sprocess.cmd) + IdVg/IdVd/BVdss sdevice runs from phase01_original_20260826_02/work. The repository holds no sdevice cmd for this case."
+  },
+  "artifacts": [
+    {
+      "path": "source/IdVg.cmd",
+      "category": "A",
+      "sha256": "e8940258f34e7529761ed46ac2b5c4a29b0827e78b66731bbf840cf61700a825",
+      "bytes": 2042,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/IdVg.cmd"
+      }
+    },
+    {
+      "path": "source/IdVd.cmd",
+      "category": "A",
+      "sha256": "b2b73d60793a17ae3b9ffe777382cce0b6a904d73063837e3da6c80eb3580d80",
+      "bytes": 2998,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/IdVd.cmd"
+      }
+    },
+    {
+      "path": "source/BVdss.cmd",
+      "category": "A",
+      "sha256": "12bb333ded94e26d21dfbaa860bae3ff42cdb6c434180c049f066f166607c267",
+      "bytes": 2058,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/BVdss.cmd"
+      }
+    },
+    {
+      "path": "source/sdevice.par",
+      "category": "A",
+      "sha256": "4d1e8305a16f254875076a2ac6cc79b5d36bd0fbb7315b67d144f0134d619330",
+      "bytes": 65,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/sdevice.par"
+      }
+    },
+    {
+      "path": "source/sprocess.cmd",
+      "category": "A",
+      "sha256": "804775c776171af2208f9210a2d01e75c4d81413209351d42f95dec798e2b948",
+      "bytes": 14578,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/sprocess.cmd"
+      }
+    },
+    {
+      "path": "source/materialization.json",
+      "category": "A",
+      "sha256": "b98c884f50724b8525abd0fd9756a275a9d5b42f0cdca6ff946ff428575fe9e9",
+      "bytes": 2195,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/materialization.json"
+      }
+    },
+    {
+      "path": "mesh/n1_fps.tdr",
+      "category": "C",
+      "sha256": "07af6353c47c03a740583b873bac58e733a377a8bb9fa7e08baa3d30bc2c67f3",
+      "bytes": 9524202,
+      "producer": {
+        "tool": "sprocess",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "sprocess.cmd",
+        "finished_utc": "2026-08-26T06:49:11Z",
+        "cmd_sha256": "9a33e73a70e624aac5adf0b948db1ec5edf3f00653712481ab3f18518883d7ea"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n1_fps.tdr"
+      }
+    },
+    {
+      "path": "plt/IdVg_n2_des.plt",
+      "category": "B",
+      "sha256": "07527d5a109cd6d733c6896cd14ec9871fe0c159521f36272daaf53149dbe71c",
+      "bytes": 25824,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVg.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:55:14Z",
+        "cmd_sha256": "4141ad59cf063c6ca326bd53ea156424c843853b66f79be8bc173e42f2a8c15e"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/IdVg_n2_des.plt"
+      }
+    },
+    {
+      "path": "plt/IdVd_Vg1_n4_des.plt",
+      "category": "B",
+      "sha256": "6af438ace225dc00a27b9ae778b16194ff64c6532dcda4b28d33157604387b90",
+      "bytes": 29649,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:05:25Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/IdVd_Vg1_n4_des.plt"
+      }
+    },
+    {
+      "path": "plt/IdVd_Vg2_n4_des.plt",
+      "category": "B",
+      "sha256": "365f7ede0e3d516d9809d9fca683538d7b33d4a19e38600ccf1a171aaf5a7621",
+      "bytes": 30559,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:10:37Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/IdVd_Vg2_n4_des.plt"
+      }
+    },
+    {
+      "path": "plt/n2_des.plt",
+      "category": "B",
+      "sha256": "b4df153c4788895462e5d6e163545f54a668d16641aa3ee9d4e2c9da4be685d1",
+      "bytes": 13168,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVg.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:53:06Z",
+        "cmd_sha256": "4141ad59cf063c6ca326bd53ea156424c843853b66f79be8bc173e42f2a8c15e"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n2_des.plt"
+      }
+    },
+    {
+      "path": "plt/n4_des.plt",
+      "category": "B",
+      "sha256": "84790f057006abd70885cbcfa362d506059bee5652d2f204b58fd67bd36139cf",
+      "bytes": 29649,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:59:26Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_des.plt"
+      }
+    },
+    {
+      "path": "plt/n6_des.plt",
+      "category": "B",
+      "sha256": "cb802c392a958f26955148fd4c67b76ef5b1c154a9f969a952da1e925ad50a11",
+      "bytes": 88503,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:26:21Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n6_des.plt"
+      }
+    },
+    {
+      "path": "tdr/n2_des.tdr",
+      "category": "D",
+      "sha256": "a78494d2f9d2847ed973aeb3e159ddb04d7d718a7932156e2b498757206c10db",
+      "bytes": 7024058,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVg.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:55:14Z",
+        "cmd_sha256": "4141ad59cf063c6ca326bd53ea156424c843853b66f79be8bc173e42f2a8c15e"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n2_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n4_des.tdr",
+      "category": "D",
+      "sha256": "fdf1d8e2c967a11c324695869619f9b5ad188cfe70d6d4a021eae4919bd48ae3",
+      "bytes": 7322651,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:10:37Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n4_Vg1_des.tdr",
+      "category": "D",
+      "sha256": "ff0400c5467d59cc6119e1dc0f45579c539217868a1410723014e42cbbede69d",
+      "bytes": 7310414,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:05:25Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_Vg1_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n6_des.tdr",
+      "category": "D",
+      "sha256": "2bf41997e8384a970a11f2d8b9ef31f08911f8a0b6acd46843e75b7afba1bdd9",
+      "bytes": 6814549,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:26:21Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n6_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n6_des_12_des.tdr",
+      "category": "D",
+      "sha256": "fd9c9d4cd45271768c1093d7c7239b050f55c16aca7902e553267f48890eeeb5",
+      "bytes": 5708575,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:24:53Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n6_des_12_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n6_des_13_des.tdr",
+      "category": "D",
+      "sha256": "dd38e567932e80a44229f12f625c399db56e3122b46460be05aa87f465f2df4c",
+      "bytes": 5706342,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:20:24Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n6_des_13_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/n4_Vg1_des.sav",
+      "category": "D",
+      "sha256": "8533aec8e91032b63cb7b5b29983cb8f77d788aa86359421e466524a408d51e1",
+      "bytes": 4980267,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:59:02Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_Vg1_des.sav"
+      }
+    },
+    {
+      "path": "tdr/n4_Vg2_des.sav",
+      "category": "D",
+      "sha256": "e6b77b4fcf35984ae8077513ab001f438bc39007cf5791d2d78fc478a854dd56",
+      "bytes": 4980538,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:59:20Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_Vg2_des.sav"
+      }
+    },
+    {
+      "path": "log/n2_des.log",
+      "category": "E",
+      "sha256": "074a01607c863b81cef431cec662a08f35a90d5da203dce2f732c3830e9a8ae3",
+      "bytes": 189747,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVg.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:55:14Z",
+        "cmd_sha256": "4141ad59cf063c6ca326bd53ea156424c843853b66f79be8bc173e42f2a8c15e"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n2_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/n4_des.log",
+      "category": "E",
+      "sha256": "13906b1460069ac850cb2f04efd787910a176366eadb4f3acfbfecfc8ca63ed3",
+      "bytes": 361908,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:10:37Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n4_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/n6_des.log",
+      "category": "E",
+      "sha256": "566f2b334734429d90b806ee241e461f031084daa828a41e9f5eacd1127606a9",
+      "bytes": 305439,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:26:21Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/n6_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/sprocess.log",
+      "category": "E",
+      "sha256": "70ec6b0937fa54385de25fdab0f5f46167e3de7ebcbd9e414d1dffdfdb701b55",
+      "bytes": 350096,
+      "producer": {
+        "tool": "sprocess",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "sprocess.cmd",
+        "finished_utc": "2026-08-26T06:49:12Z",
+        "cmd_sha256": "9a33e73a70e624aac5adf0b948db1ec5edf3f00653712481ab3f18518883d7ea"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/sprocess.log"
+      }
+    },
+    {
+      "path": "log/run_idvg.out",
+      "category": "E",
+      "sha256": "8441799238b5f9658cae391dd7d195cc591dde7714f7638c061502aeda337b20",
+      "bytes": 189938,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T06:55:14Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/run_idvg.out"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_idvd.out",
+      "category": "E",
+      "sha256": "9d8e7af57e3a4a8adec73fc571a39fd6466f8559d4505d0d024fd30e17e7d1ce",
+      "bytes": 362201,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "IdVd.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:10:37Z",
+        "cmd_sha256": "ba80d8c3ac6252503ae0f80eba373a1c3bc48b2f02dfed0411853c04e90ade2a"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/run_idvd.out"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_bv.out",
+      "category": "E",
+      "sha256": "7aae90a689c45a545792e4303e17a3286d0375e315e6c723d1206cd995cb0f31",
+      "bytes": 306518,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "BVdss.cmd",
+        "parameter_file": "sdevice.par",
+        "parameter_sha256": "23f82a6d33be5048fcb17f210e09bef7d074c97f2f434f6333b979a58323bc5f",
+        "finished_utc": "2026-08-26T07:26:21Z",
+        "cmd_sha256": "d05fb20578801b322df090b4497e90e6ef5d077b1cd29c6cb9497c514e6ff2c3"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/run_bv.out"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_sprocess.out",
+      "category": "E",
+      "sha256": "04651b0d34e17448f1af9e432a7864ccf9051cad0672f95e402b499050d42837",
+      "bytes": 382229,
+      "producer": {
+        "tool": "sprocess",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work",
+        "cmd": "sprocess.cmd",
+        "finished_utc": "2026-08-26T06:49:12Z",
+        "cmd_sha256": "9a33e73a70e624aac5adf0b948db1ec5edf3f00653712481ab3f18518883d7ea"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/templates_ldmos/phase01_original_20260826_02/work/run_sprocess.out"
+      }
+    }
+  ]
+}

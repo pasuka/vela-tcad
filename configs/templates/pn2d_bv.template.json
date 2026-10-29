@@ -157,7 +157,7 @@
         "total_impurity",
         "cell_reconstructed_total_impurity"
       ],
-      "default": "net_doping",
+      "default": "total_impurity",
       "type": "string"
     },
     "newton_history_csv": {
@@ -231,5 +231,5 @@
   },
   "template": "pn2d_bv",
   "template_schema": "vela.simulation-template.v1",
-  "version": 3
+  "version": 4
 }

@@ -1,0 +1,370 @@
+{
+  "date": "2026-10-16",
+  "stage": "N4 in progress; N5 not started",
+  "reference_version": "T-2022.03-SP2",
+  "reference_binary_sha256": "c786dbd60dd26ca7e3671518256585fd0ae5bd615eaa7c642cbd80743417f71a",
+  "scope": {
+    "precision": "binary64",
+    "derivative": 0,
+    "uniform": "300K12V; 210 nodes/340 triangles",
+    "original": "terminal accepted state; 2600 nodes/5020 triangles/4156 Si triangles",
+    "observer_identity": "exact at printed/exported precision only",
+    "production_physics_changed": false,
+    "new_self_consistent_scan": false,
+    "production_frontend_nonlocalpath": "E106 unchanged"
+  },
+  "native_capture": {
+    "uniform": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_arrays_checked": 51,
+      "export_arrays_identical": true,
+      "cells": [
+        {
+          "cell": 0,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 2.1915106283428154e-16,
+          "maximum_pair_balance": 2.1915106283428154e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 1,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 2.1949621506061566e-16,
+          "maximum_pair_balance": 2.193002081472387e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 7,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 1.7123962580378883e-16,
+          "maximum_pair_balance": 1.387712825948113e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 34,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 2.1914153752773669e-16,
+          "maximum_pair_balance": 2.1914153752773669e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 54,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 1.6559128771343853e-16,
+          "maximum_pair_balance": 1.6559128771343853e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 106,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 2.209220459770096e-16,
+          "maximum_pair_balance": 2.209220459770096e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 221,
+          "scalar_evaluations": 15,
+          "recursive_calls": 7,
+          "maximum_depth": 2,
+          "maximum_coefficient_relative_L1": 0,
+          "maximum_pair_balance": 0,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 263,
+          "scalar_evaluations": 15,
+          "recursive_calls": 7,
+          "maximum_depth": 2,
+          "maximum_coefficient_relative_L1": 0,
+          "maximum_pair_balance": 0,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 307,
+          "scalar_evaluations": 15,
+          "recursive_calls": 7,
+          "maximum_depth": 2,
+          "maximum_coefficient_relative_L1": 0,
+          "maximum_pair_balance": 0,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 339,
+          "scalar_evaluations": 15,
+          "recursive_calls": 7,
+          "maximum_depth": 2,
+          "maximum_coefficient_relative_L1": 1.7462841271741505e-16,
+          "maximum_pair_balance": 1.643561531458024e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        }
+      ]
+    },
+    "original": {
+      "printed_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "rhs2": true,
+        "matrix": true,
+        "solution": true
+      },
+      "export_arrays_checked": 82,
+      "export_arrays_identical": true,
+      "cells": [
+        {
+          "cell": 559,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 1.8930505670639673e-16,
+          "maximum_pair_balance": 1.8690971524640306e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 979,
+          "scalar_evaluations": 31,
+          "recursive_calls": 15,
+          "maximum_depth": 3,
+          "maximum_coefficient_relative_L1": 8.340174552504474e-17,
+          "maximum_pair_balance": 1.5813631529568098e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        },
+        {
+          "cell": 2695,
+          "scalar_evaluations": 63,
+          "recursive_calls": 31,
+          "maximum_depth": 4,
+          "maximum_coefficient_relative_L1": 1.58584753680191e-16,
+          "maximum_pair_balance": 1.492562387578268e-16,
+          "maximum_tree_sum_error": 0,
+          "rule_mismatches": 0
+        }
+      ]
+    }
+  },
+  "native_archives": [
+    {
+      "attempt": "native",
+      "sha256": "e2d86ca8ecbab0ab2ddbe402db0cf350e33048d2d15b055e6070104bd981909b",
+      "files_verified": 39,
+      "capture_usable": false,
+      "runs": [
+        {
+          "case": "uniform",
+          "exit": 0,
+          "seconds": 36.197707414627075
+        },
+        {
+          "case": "original",
+          "exit": 0,
+          "seconds": 36.982521057128906
+        }
+      ]
+    },
+    {
+      "attempt": "native_v2",
+      "sha256": "bb986ba977adef9a649d7369831ae0b11ca97703406090719c1f8a05290beeb2",
+      "files_verified": 41,
+      "capture_usable": true,
+      "runs": [
+        {
+          "case": "uniform",
+          "exit": 0,
+          "seconds": 81.1620101928711
+        },
+        {
+          "case": "original",
+          "exit": 0,
+          "seconds": 85.83743166923523
+        }
+      ]
+    }
+  ],
+  "partition_rule": "nearest-band-point intervals separated by arithmetic band-energy midpoints; uniform overlap mass within each longitudinal interval",
+  "recursive_control_qualification": {
+    "evaluations": 595,
+    "coefficient_vectors": 1190,
+    "nodes": 291,
+    "subbranches": 582,
+    "observed_maximum_parent_width_kT": 1,
+    "accepted_parent_retains_two_child_midpoint_estimates": true,
+    "error_driven_refinement_below_width_limit_observed": false,
+    "minimum_width_and_depth_controls_qualified": false
+  },
+  "uniform_autonomous": {
+    "input_identity": "uniform300K12V frozen physical mesh/bands/material constants; no native path or coefficient operands used for prediction",
+    "cells": 340,
+    "nonzero_cells": 315,
+    "units": {
+      "concentration_cm3": 14824351000.0,
+      "thermal_voltage_V": 0.025851995266484913,
+      "length_m": 3.3864920021441314e-05,
+      "basis": "population normalization and explicit 2022 constants; no source factor fit"
+    },
+    "controls": {
+      "thermal_voltage_V": 0.025851995266484913,
+      "tunneling_length_m": 1.1077231759987446e-08,
+      "rate_prefactor_per_m3_s": 2.2709685357581012e+27,
+      "valence_decay_per_m": 2571152499.724774,
+      "conduction_decay_per_m": 2571152499.724774
+    },
+    "errors": {
+      "electron": {
+        "signed_integral_relative": 1.6134954612276456e-14,
+        "nodal_relative_L1": 1.8674102813935576e-14,
+        "cell_relative_L1": 2.2037869099732278e-14,
+        "maximum_cell_relative_L1": 4.086528500675852e-13
+      },
+      "hole": {
+        "signed_integral_relative": 1.6128749270711378e-14,
+        "nodal_relative_L1": 1.8214907538120023e-14,
+        "cell_relative_L1": 1.9536671046072453e-14,
+        "maximum_cell_relative_L1": 4.0693209671142535e-13
+      }
+    },
+    "source_gate_passed": true,
+    "full_rhs_qualified": false
+  },
+  "math_control": {
+    "precision_decimal_digits": 60,
+    "equal_decay_limit_evaluated_directly": true,
+    "wolfram_context": "service internal error",
+    "wolfram_evaluator": "service internal error",
+    "controls": [
+      {
+        "interval_m": [
+          0.0,
+          2.5e-09
+        ],
+        "exact_integral_per_m2_s": "4795599298823646615.12662276945190322673489736074504307917469",
+        "exact_first_moment_per_m_s": "6757377101.06045226632366289046311391545476980589218214023456",
+        "Gauss48_relative_errors": [
+          -1.4432899320127035e-15,
+          2.220446049250313e-16
+        ]
+      },
+      {
+        "interval_m": [
+          3.75e-09,
+          6.25e-09
+        ],
+        "exact_integral_per_m2_s": "5677364060990481574.73871328940122808943904426117689147950289",
+        "exact_first_moment_per_m_s": "28386869857.3922174936947069810695132134856698529950760043020",
+        "Gauss48_relative_errors": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "interval_m": [
+          4e-08,
+          4.1e-08
+        ],
+        "exact_integral_per_m2_s": "2270968535758101199.99999999999999999999999999823781617125224",
+        "exact_first_moment_per_m_s": "91974225698.2030985999999999999999999999999999289731449362477",
+        "Gauss48_relative_errors": [
+          0.0,
+          2.220446049250313e-16
+        ]
+      }
+    ]
+  },
+  "verification": {
+    "local_selected_release_ctest_passed": 10,
+    "local_unit_tests_passed": 24,
+    "local_stdlib_replay": {
+      "exit": 0,
+      "manifest_files": 8,
+      "tests": 24,
+      "partition_vectors_exactly_replayed": 1190,
+      "recursive_nodes_replayed": 291,
+      "independent_stdlib_uniform_cells": 340,
+      "nonzero_uniform_cells": 315,
+      "uniform_errors": {
+        "electron": {
+          "signed_integral_relative": 2.0436322859954917e-14,
+          "nodal_relative_L1": 2.1981065075810772e-14,
+          "maximum_cell_relative_L1": 2.6374455986242774e-13
+        },
+        "hole": {
+          "signed_integral_relative": 2.0457944596970726e-14,
+          "nodal_relative_L1": 2.14321832226875e-14,
+          "maximum_cell_relative_L1": 2.6191951842407603e-13
+        }
+      },
+      "full_rhs_qualified": false,
+      "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]"
+    },
+    "t470p": {
+      "exit": 0,
+      "manifest_files": 8,
+      "tests": 24,
+      "partition_vectors_exactly_replayed": 1190,
+      "recursive_nodes_replayed": 291,
+      "independent_stdlib_uniform_cells": 340,
+      "nonzero_uniform_cells": 315,
+      "uniform_errors": {
+        "electron": {
+          "signed_integral_relative": 2.0436322859954917e-14,
+          "nodal_relative_L1": 2.1981065075810772e-14,
+          "maximum_cell_relative_L1": 2.6374455986242774e-13
+        },
+        "hole": {
+          "signed_integral_relative": 2.0457944596970726e-14,
+          "nodal_relative_L1": 2.14321832226875e-14,
+          "maximum_cell_relative_L1": 2.6191951842407603e-13
+        }
+      },
+      "full_rhs_qualified": false,
+      "python": "3.14.8 (main, Oct  2 2026, 15:15:27)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]"
+    },
+    "remote_input_sha256": {
+      "scripts/audit_nonlocalpath_collection.py": "5830e89808e82f485ec5e8e0671d729e085e3b0e188253b1383f1d4dd943ddb1",
+      "test_nonlocalpath_collection_audit.py": "8421bf08f979454f231e48df50dbb0063947d2ac8652775f9de0470a2ab2d909",
+      "moment_payload.json": "3939ff18436412e1f08ce369e7d22e82d23351ec369b6bd5d613ba82ffc3396c",
+      "uniform_input.json": "5c4524bdf102707322deed68707b97c03271a535b058810ccf9523a06ef2034e",
+      "uniform_stdlib.py": "ff81aa49df5aecca3e033ff31d3654e79e8658432fd2f24de56dd0cdf6f1889b",
+      "partition_payload.json": "5c66406df11d72bedffb52071ee9c610ef1ef4ac093bc207b1cbe66b51f7670b",
+      "tree_payload.json": "16ab83d88d188eee7e9959cba2b8e0dcf8633b46a0e5f926fdbfb59a8a24db3b",
+      "replay_worker.py": "f21f521a11b5c3dc0f6ce3bed0b3c4a45ad08a19fb25724bf7e55b1f521615c1"
+    }
+  },
+  "remaining": [
+    "autonomous nonuniform P1 scalar WKB/prefactor/occupation/window kernel",
+    "other four original states",
+    "error-triggered refinement and minimum/depth controls",
+    "contact/corner completeness and signed dual-source ledger",
+    "complete actual RHS gates before N5"
+  ]
+}

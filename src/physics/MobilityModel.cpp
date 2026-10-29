@@ -391,8 +391,9 @@ Real DopingDependentMobility::electronMobility(const Material& material,
         : isMasettiModel(config_.model)
             ? masetti(netDoping, config_.electronMasetti)
             : caugheyThomas(material.mun, netDoping, config_.electronCT);
-    if (isFieldMobilityModel(config_.model))
-        mobility = fieldLimit(mobility, electricField, config_.electronField);
+    // Enormal contributes to the low-field mobility consumed by Canali HFS.
+    // Applying the surface resistance after HFS changes both the constitutive
+    // value and its field derivatives (unlike the PhuMob path below).
     if (isSurfaceMobilityModel(config_))
         mobility = isLombardiModel(config_.model)
             ? lombardiLimit(mobility, netDoping, n, p, surfaceNormalField,
@@ -402,6 +403,8 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                             config_.electronLombardi)
             : surfaceLimit(mobility, surfaceNormalField,
                            config_.surface.thetaElectron, config_.surface);
+    if (isFieldMobilityModel(config_.model))
+        mobility = fieldLimit(mobility, electricField, config_.electronField);
     return mobility;
 }
 
@@ -425,8 +428,7 @@ Real DopingDependentMobility::holeMobility(const Material& material,
         : isMasettiModel(config_.model)
             ? masetti(netDoping, config_.holeMasetti)
             : caugheyThomas(material.mup, netDoping, config_.holeCT);
-    if (isFieldMobilityModel(config_.model))
-        mobility = fieldLimit(mobility, electricField, config_.holeField);
+    // Use the same low-field surface -> high-field ordering for holes.
     if (isSurfaceMobilityModel(config_))
         mobility = isLombardiModel(config_.model)
             ? lombardiLimit(mobility, netDoping, n, p, surfaceNormalField,
@@ -436,6 +438,8 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                             config_.holeLombardi)
             : surfaceLimit(mobility, surfaceNormalField,
                            config_.surface.thetaHole, config_.surface);
+    if (isFieldMobilityModel(config_.model))
+        mobility = fieldLimit(mobility, electricField, config_.holeField);
     return mobility;
 }
 

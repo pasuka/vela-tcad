@@ -1,0 +1,250 @@
+{
+  "schema": "vela.reference_artifact_manifest.v1",
+  "case": "schottky_charon_sentaurus2018",
+  "version": "v1",
+  "created_utc": "2026-09-26T14:23:18Z",
+  "store": {
+    "kind": "ssh",
+    "host": "sentaurus",
+    "root": "/home/tcad/vela_reference_artifacts"
+  },
+  "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
+  "deck_matches_repository": true,
+  "origin": {
+    "vm_run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+    "note": "Deck has no File{Parameter}; Sentaurus ran with built-in defaults."
+  },
+  "artifacts": [
+    {
+      "path": "source/schottky_n_des.cmd",
+      "category": "A",
+      "sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+      "bytes": 1390,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_des.cmd"
+      }
+    },
+    {
+      "path": "source/schottky_n_sde.cmd",
+      "category": "A",
+      "sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "bytes": 1540,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_sde.cmd"
+      }
+    },
+    {
+      "path": "source/schottky_n_msh.cmd",
+      "category": "A",
+      "sha256": "3f03589ab305f24439ed905536fc492356e314c12f29812bf96780726c3ba4f9",
+      "bytes": 692,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_msh.cmd"
+      }
+    },
+    {
+      "path": "mesh/schottky_n_msh.tdr",
+      "category": "C",
+      "sha256": "a4bb8a4c93dcee13d62add4f930697e0c4fa12adb7401563073327f8ba44dcf3",
+      "bytes": 41680,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_msh.cmd",
+        "finished_utc": "2026-08-18T05:05:55Z",
+        "cmd_sha256": "3f03589ab305f24439ed905536fc492356e314c12f29812bf96780726c3ba4f9"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_msh.tdr"
+      }
+    },
+    {
+      "path": "mesh/schottky_n_bnd.tdr",
+      "category": "C",
+      "sha256": "9d8c00f99399253da9b425481e69873cfddbd7354c4f94769a6cf4aa4ca82d00",
+      "bytes": 15272,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_sde.cmd",
+        "finished_utc": "2026-08-18T05:02:43Z",
+        "cmd_sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_bnd.tdr"
+      }
+    },
+    {
+      "path": "mesh/schottky_n_msh.log",
+      "category": "C",
+      "sha256": "d5bb36654d2df040924bbc4d1a2aecad214709f4308b4f8f2b6eeefdb973589b",
+      "bytes": 2964,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_msh.cmd",
+        "finished_utc": "2026-08-18T05:05:55Z",
+        "cmd_sha256": "3f03589ab305f24439ed905536fc492356e314c12f29812bf96780726c3ba4f9"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_msh.log"
+      }
+    },
+    {
+      "path": "mesh/schottky_n_sde.log",
+      "category": "C",
+      "sha256": "2633b03cb731175711e135e46ebd43f41334f29c83e0f44e5a4323573bb3e9cd",
+      "bytes": 2337,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_sde.cmd",
+        "finished_utc": "2026-08-18T05:05:55Z",
+        "cmd_sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_sde.log"
+      }
+    },
+    {
+      "path": "plt/forward_schottky_n_iv_des.plt",
+      "category": "B",
+      "sha256": "96856f299d35affcdfc33532721c4fc15ca35b87b28c01e43317833cfd896eae",
+      "bytes": 10583,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_des.cmd",
+        "finished_utc": "2026-08-18T05:09:22Z",
+        "cmd_sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/forward_schottky_n_iv_des.plt"
+      }
+    },
+    {
+      "path": "plt/schottky_n_iv_des.plt",
+      "category": "B",
+      "sha256": "202a78abcbd76777e7b26d61844975dadd0a922d0198e007a455cde6fae25193",
+      "bytes": 1541,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_des.cmd",
+        "finished_utc": "2026-08-18T05:09:20Z",
+        "cmd_sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_iv_des.plt"
+      }
+    },
+    {
+      "path": "tdr/schottky_n_des.tdr",
+      "category": "D",
+      "sha256": "4707354aa71dafee4622ebb1425d06b819d75f1aa6330130b521e79bdeb304e6",
+      "bytes": 173729,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_des.cmd",
+        "finished_utc": "2026-08-18T05:09:22Z",
+        "cmd_sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_des.tdr"
+      }
+    },
+    {
+      "path": "log/schottky_n_des.log",
+      "category": "E",
+      "sha256": "7fe45760a2e3ffe5e65d87279e9a79ced38d385263aae43dd13795069f724898",
+      "bytes": 52237,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_des.cmd",
+        "finished_utc": "2026-08-18T05:09:22Z",
+        "cmd_sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/schottky_n_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_sdevice.out",
+      "category": "E",
+      "sha256": "e1409deeb7882cd305442221841113dc3668bf8964f23ad23203f9b3857a67a4",
+      "bytes": 52436,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_des.cmd",
+        "finished_utc": "2026-08-18T05:09:22Z",
+        "cmd_sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/run_sdevice.out"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_sde.out",
+      "category": "E",
+      "sha256": "21006af8d60109d81dc935d4efbb553ba5310c9a7422581a1d4b5923484910fb",
+      "bytes": 6574,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818",
+        "cmd": "schottky_n_sde.cmd",
+        "finished_utc": "2026-08-18T05:05:55Z",
+        "cmd_sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/schottky_t2022_refresh_20260818/run_sde.out"
+      }
+    }
+  ]
+}

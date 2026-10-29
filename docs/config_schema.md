@@ -328,6 +328,54 @@ production solver option or a qualification waiver. The original
 
 These diagnostics do not implement `float80` solving or low-density driving
 force interpolation. A successful probe does not qualify a device state.
+## SDevice command entry point and generated v2 decks
+
+`vela device` reads a preprocessed single-device SDevice command file, imports
+its grid and declared `File{Parameter}`, validates them, then emits one
+`format_version: 2` JSON deck per stage. The source `.cmd` owns electrodes,
+physics, goals and filenames; the optional `.vela.json` sidecar owns only the
+documented numerical/diagnostic overrides. `--check` performs those gates and
+writes `stage_plan.json` without starting the solver. It is separate from
+passing a hand-written JSON deck to `vela_example_runner`.
+
+See the [current workflow and executable example](sentaurus_sdevice_workflow.md#210-可执行中性示例与-sidecar),
+[sidecar schema](../schemas/vela.sdevice_sidecar.v1.schema.json), and
+[current package acceptance and limits](validation/sdevice_native_package_e2e_2026-10-05.md).
+The CLI and exit codes are in workflow section 2; deployment targets are
+Windows UCRT64 and Ubuntu 26.04 x86_64.
+
+Other examples using `inputs/...`, `runs/...` or generic filenames below are
+configuration patterns whose paths must be supplied by the caller. The linked
+workflow section 2.10 provides the concrete, executed source-tree example.
+
+Generated decks use the public v2 unit conventions; conversion to internal SI
+belongs to the C++ loader. A `materials_file` is independently schema-tagged
+`vela.templates_ldmos.materials.v1`: its native `_cm3`/`_cm2_V_s` keys are not
+rewritten as deck keys. The frontend always supplies that file. The C++ Si/SiO2
+built-ins match the library's no-BGN 300 K scalar snapshot as of WP13; see
+[material alignment and baseline audit](validation/builtin_material_alignment_2026-10-05.md).
+Decks without `materials_file`, and omitted fields in partial overrides, use
+these defaults. Explicit material fields still take precedence.
+
+For Formula-1 electron DOS masses, an active OldSlotboom constant bandgap
+offset enters both gaps in `mt = a*(Eg(0)+dEg0)/(Eg(T)+dEg0)`, as well as the
+intrinsic-density exponent. Without that model the offset is zero. The emitted
+`bandgap_eV` remains the unshifted Varshni gap; the material report records the
+two effective DOS gaps separately. Constants remain CODATA 2018. See the
+[native parameter audit](validation/bvmethods_material_export_2026-10-23.md).
+
+For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested
+`vtk_fields`, exact `vtk_bias_points`, `vtk_field_data` metadata and
+`csv_all_contacts`. Current-target/BreakCriteria termination uses the documented
+`breakdown.current_{abs,min,max}_A_per_um` plus `current_contact`. These options
+are described under Sweep below. CLI `--threads` takes precedence over
+`Math{NumberOfThreads}`; absence of both means one solver thread.
+
+`vtk_field_data` goal status describes the individual stage, and exit 0 may
+include an incomplete later stage when `ExitOnFailure` is absent. Verify the
+run manifest as well as the exit code. Accepted CSV/PLT and VTU/PVD publication
+does not imply reference-qualified fields at every bias; the PN2D BV scope is
+documented in workflow section 3.3.
 
 Explicit element-box transport and the restricted PhuMob candidate:
 
@@ -492,9 +540,74 @@ independent. Existing decks and global defaults are unchanged.
 
 Newton numerical and geometry controls added for explicit validation profiles:
 
+- `solver.state_variables`: `potential_quasi_fermi` (default) or explicitly
+  `potential_density`. The latter currently requires the qualified 300 K
+  `bvmethods_tri3_qf` physics and Joyce–Dixon statistics; the profile name
+  identifies its physical discretization, while this option selects coordinates.
+  Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
+  semiconductor n/p are authoritative; derived QF fields never overwrite them.
+  Inactive oxide slots are zero and eliminated as constraints. QF caps,
+  references, split coordinates, legacy row scaling and quantum/Gummel recovery
+  combinations are rejected by JSON parsing as well as C++ construction. The
+  population CMD emitter omits inherited QF caps/reference/trust-region options;
+  explicit active QF controls fail preflight. Old merit/stall acceptance, legacy
+  linear equilibration/finite-difference Jacobian selection and active legacy
+  block-filter searches are not implemented by population Newton and fail instead
+  of being silently ignored. Population positivity, physical residuals and
+  configured report/enforce gates remain. See the
+  [coordinate-policy audit](validation/potential_density_policy_audit_2026-10-29.md).
+  PN2D and pseudo-arclength are not qualified for this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
+  for actual validation status.
+  Population-mode coupled load-line secant prediction uses linear ψ/internal
+  voltage and logarithmic n/p extrapolation between accepted states:
+  `c_pred = exp(log(c_current) + ratio*(log(c_current)-log(c_previous)))`.
+  This predicts the next initial state; Newton still solves physical n/p.
+  Zero inactive pairs remain zero, and unchanged carrier slots retain their
+  exact values. Invalid domains, overflow/underflow or a failed predictor guard
+  fall back to the last accepted state; no population floor is introduced.
+  QF-mode prediction retains its existing behavior.
+- `solver.population_sg_current`: `quasi_fermi` (default) or experimental
+  `band_population`. The latter requires `potential_density` and its qualified
+  BVMethods physics. It constructs SG arguments directly from ψ, authoritative
+  n/p, effective ni, DOS and the same Joyce–Dixon statistical law, with paired
+  Bernoulli evaluation and canonical node ordering. Both transport and AV
+  current use that path with complete AD tangents. It does not reconstruct the
+  SG carrier populations through QF. GradQF mobility and avalanche driving fields
+  continue to use derived QF as required by the selected physical models.
+  The ni-based band combination is algebraically equivalent to the previous
+  profile; it does not add a separate material electron-affinity/energy-state
+  contract. This option is an arithmetic experiment, not native zero-bias
+  operator-equivalence qualification or a new global default.
+- `solver.population_update`: population-mode-only object. `protection` is
+  `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
+  only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
+  The latter uniformly scales the coupled update using `fraction_tau` (default
+  0.99). Both fractions must be finite and strictly between zero and one.
+  Every Newton trial repeats the check; invalid predictions fall back to the
+  last accepted state. This policy does not change the configured residual,
+  load-line, KCL or report/enforce gates. RMS diagnostics retain the raw direction.
+- `solver.population_derivative_recovery`: `full` (default) or explicit
+  `automatic`. Automatic mode requires population coordinates, a direct bordered
+  solve and `full_step` acceptance. Its bootstrap directly assembles transport
+  with mobility derivatives frozen and omits AV derivatives, retaining full SRH
+  derivatives and the complete physical RHS. A bounded trial/full controller
+  uses the model response to the actual applied step; invalid candidates or
+  confirmed model failure return to bootstrap with cooldown. Traces distinguish
+  bootstrap, trial and full. This is an approximate Newton policy, not a
+  replacement of the physical equations or a guarantee of BV convergence.
+  The population direct solve audits the original system at componentwise
+  backward error 1e-10 and scaled linear residual 1e-8·max(1,‖b_scaled‖∞), using
+  up to at least three correction solves when needed. Legacy QF defaults remain.
+  CMD selects these options through its Vela sidecar; no Sentaurus keyword is
+  invented. Population HDF5 archives retain SI output fields plus authoritative
+  internal n/p coordinates and their explicit SI conversion factor. Same-unit
+  restores recover the original carrier bits, while cross-unit/legacy restores
+  convert the SI fields. Mesh identity and mixed QF-buffer checks still apply.
+  See the [storage contract](state_archive.md).
 - `solver.linear_refinement_iterations`: integer 0--10, default 0. After the
   direct Newton solve, recompute the linear defect in 100-digit arithmetic and
-  solve each correction with the same row weights and backend. This does not
+  solve each correction with the same row weights, configured L2 row/column
+  equilibration and backend. This does not
   alter nonlinear acceptance criteria or enable refinement in other solvers.
 - `solver.linear_factor_refinement_steps`: integer 0--3, default 0. Opt-in guarded
   refinement for the ordinary three-block Newton loop, separate from the SLOT
@@ -508,6 +621,20 @@ Newton numerical and geometry controls added for explicit validation profiles:
   split state, row scaling and equilibration. Emits `VELA_LINEAR_FACTOR_AUDIT`
   records; does not change nonlinear tolerances, row/closure qualification or
   circuit validation, and does not refine an augmented external-circuit solve.
+- `solver.legacy_edge_jacobian_steps`: optional object with positive finite
+  `transport` (default `1e-6`) and `avalanche` (default `1e-7`). For the legacy
+  edge transport and finite-difference edge avalanche source Jacobian, the
+  physical column perturbation is the configured value times
+  `max(1 V, abs(column potential))`. Smaller values are diagnostic controls
+  requiring a same-direction residual check; they can amplify cancellation.
+  They do not change the physical residual or element-box/GSS derivatives.
+- `newton_step_probe.directional_audit_scale`: positive finite multiplier of
+  the constrained Newton correction, or zero (default) to skip the central
+  residual audit. The probe uses production row scaling, L2 equilibration,
+  refinement, regularization and exact boundary updates. Its CSV includes
+  raw/constrained updates, 100-digit linear defects and per-row backward
+  errors, central residual changes and free continuity-row masks. These
+  diagnostics do not establish nonlinear or external-load convergence.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
@@ -694,6 +821,7 @@ reuse and is an experimental option, not the production default.
 | output_csv | string | Optional | Default CSV output path for DC sweep. Can be overridden by `sweep.csv_file`. |
 | output_vtk | string | Poisson: Yes | Poisson VTK output file path. Optional for `newton` and `newton_solve_from_state`. |
 | output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
+| current_contact | string | Optional for `newton_solve_from_state` | Explicit configured terminal for `current_total_A_per_um`; invalid or empty names fail. Output includes `current_contact` and `current_contact_selection`. Omission preserves legacy largest absolute **effective boundary potential** selection, which may select a metal gate and is not a drain-current contract. This top-level field is separate from `sweep.current_contact`. |
 | output_state_file | string | Optional | Restart-state CSV written by `newton_solve_from_state`. Uses Vela restart format: `node_id,psi,phin,phip,electrons_m3,holes_m3`. |
 | state_fields_dir | string | Required for `newton_solve_from_state` and probe-style external-state tools | Directory containing Sentaurus-export-style scalar field CSVs. |
 | runtime_log | object | Optional | Runtime log control. Default is enabled and writes `<config stem>.log` next to the config file. |
@@ -726,6 +854,22 @@ Avalanche with nonzero offsets is restricted to the audited element IALMob
 GSS-Laux configuration where offsets occur only in non-Si materials outside
 its source support. General heterojunction, electrothermal and nonzero-Si
 avalanche-reference extensions require separate work.
+### Built-in materials
+
+Without `materials_file`, Si/SiO2 use the generated no-BGN **300 K** snapshot
+[`default_materials.json`](../share/vela/materials/default_materials.json).
+Si has `ni=10750176656.471613 cm^-3`, `Nc=2.8566791451911786e19 cm^-3`,
+`Nv=3.104657033455896e19 cm^-3`, `Eg=1.1241592307692307 eV`, `chi=4.05 eV`,
+`mun=1417` and `mup=470.5 cm^2/(V*s)`, with `eps_r=11.7`.
+SiO2 has `eps_r=3.9`, `Eg=9 eV`, `chi=0.9 eV` and zero carrier density/mobility.
+Legacy SI storage converts concentration by `1e6` and mobility by `1e-4`.
+
+Material overrides inherit omitted fields from these built-ins. Pin every
+required scalar explicitly to reproduce an older calibration; see the
+[WP13 audit and frozen baselines](validation/builtin_material_alignment_2026-10-05.md).
+The existing C++ temperature law holds the gap fixed, scales `Nc/Nv` by
+`(T/300)^1.5` and mobility by `(T/300)^-2.2`; equivalence to `.par` emission is
+qualified at 300 K only. Alignment does not activate additional models.
 
 ### Explicit electrothermal DC entry
 
@@ -936,6 +1080,52 @@ Only the long-double SparseLU variant changes factorization/solve precision. Exp
 zeros do not count as couplings. These backends do not cache factors, change
 assembly or acceptance, or become defaults. The selection applies to all shared
 linear solves, including auxiliary Poisson and Woodbury RHS solves.
+The oneMKL PARDISO backend is a compile-time option, disabled by default.
+Configure with `-DVELA_ENABLE_MKL_PARDISO=ON` on Windows or Linux to build it.
+The default `OFF` excludes the adapter, its test runtime libraries and its
+dynamic-loader link dependency; explicitly selecting `pardiso_mkl` then raises
+an error naming the required CMake option. The disabled-build rejection test
+still runs without MKL. GitHub CI explicitly uses `OFF`.
+Existing CMake caches retain an explicit selection; reconfigure with
+`-DVELA_ENABLE_MKL_PARDISO=OFF` to disable a previously enabled build.
+
+In an enabled build, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
+runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
+of the installed MKL runtime; `VELA_MKL_RT_DLL` is a compatibility fallback
+when that variable is unset or empty. The runtime's dependent libraries must
+also be discoverable (on Windows, include their directories in the process
+`PATH`). No MKL headers or link-time libraries are required, and other backends
+do not load MKL. Missing libraries, symbols and failed solves raise errors
+without switching backends. The default preference order is unchanged.
+
+This backend uses LP64, real nonsymmetric binary64, METIS ordering, scaling,
+matching and up to two iterative-refinement steps. `VELA_LINEAR_THREADS`
+accepts `1` (default), `2`, or `4`; each call restores the previous thread-local
+MKL setting. Its reported thread count is the requested setting, not a measured
+worker count. Exact sparse patterns and identical numerical factors are reused.
+Selection applies to shared auxiliary solves too; it does not select the
+separate electrothermal backend or change assembly, nonlinear updates or
+acceptance criteria. This is not extended-precision solving or a guarantee of
+Sentaurus-equivalent results. The core `LinearSolver` now eliminates prescribed
+constraints by default before invoking the backend and recovers the full direction
+afterward. `VELA_CONSTRAINT_ELIMINATION=0` disables this reduction for controls;
+`1` (or unset) enables it. Ordinary calls identify numerical diagonal prescribed
+rows, ignoring stored zeros without a magnitude cutoff. Coupled load-line and
+population-coordinate calls retain the row IDs from the device Jacobian before
+adding the circuit border or changing coordinates, so affine contact dependencies
+are also eliminated. The selected block must have nonzero diagonal and acyclic
+dependencies; unsupported explicit metadata raises an error. The full RHS
+correction and affine back-substitution are retained. Original residual/update
+acceptance gates are unchanged. Explicit QR and emergency alternate factorization
+paths retain their existing policies; changing backend alone does not prove
+Sentaurus matrix agreement.
+An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
+`direct_bordered` load-line matrix and its refinement corrections, including
+the direct path of `auto`; a PARDISO error is returned without backend fallback.
+The explicitly selected `direct_bordered_qr` policy retains its QR preference.
+In an embedding process, MKL must permit LP64 initialization before other MKL
+calls; preinitialized NumPy/MKL and Python API compatibility need separate
+qualification. Runtime paths belong in local environment configuration.
 
 Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
 `mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
@@ -1889,6 +2079,15 @@ Notes:
   If an absolute QF was explicitly edited and is inconsistent with its saved
   pair under the ordinary Newton restart check, the absolute value takes
   precedence. `contact_basin` continues to reset the QF fields intentionally.
+- The explicit BVMethods CMD sidecar profile defaults both QF cap fields to
+  `0`, overriding any implicit cap inherited from warm-start emission. Explicit
+  sidecar cap values remain available for comparisons. This profile rule does
+  not alter the separate load-line inner-voltage update control or the
+  residual-based line search. See the [operator contract](bvmethods_operator_contract.md).
+- In the coupled external-resistor corrector, an active QF cap uniformly
+  scales the full device/inner-voltage direction before residual line search.
+  Setting both caps to zero removes that scaling but retains raw-update
+  diagnostics, line search and the circuit's separate voltage-update control.
 - For `uniform_trust_region`, `quasi_fermi_trust_region_growth_factor` and
   `quasi_fermi_trust_region_max_multiplier` optionally expand the physical
   update radius after a boundary-limited step. Expansion occurs only when the
@@ -2058,7 +2257,10 @@ Notes:
 - `carrier_regularization_scale` is an experimental non-negative Newton
   stabilization knob. When greater than zero, Vela adds
   `sign(diagonal) * scale * carrier_row_abs_sum` to each carrier continuity
-  diagonal before solving the coupled Newton step; the row sum includes the
+  diagonal of each free carrier row before solving the coupled Newton step;
+  carrier Dirichlet identity rows are excluded, so this option can be used with
+  `exact_dirichlet_updates`. The carrier-only diagnostic uses the same boundary
+  exclusion. The row sum includes the
   full coupled carrier row across `psi`, `phin`, and `phip` columns. `0`
   disables the regularization. This is intended for BV branch-stability
   diagnostics and is not enabled by default.
@@ -2185,8 +2387,12 @@ The coupled Newton drift-diffusion solver accepts either form below:
 "carrier_statistics": { "model": "fermi_dirac" }
 ```
 
-Supported values are `boltzmann` (the compatibility default) and
-`fermi_dirac`. The Fermi-Dirac selection is one atomic physics path: carrier
+Supported values are `boltzmann` (the compatibility default),
+`fermi_dirac`, and the explicitly restricted `fermi_dirac_joyce_dixon`.
+The last option requires `solver.coupled_operator: "bvmethods_tri3_qf"`;
+see [the operator contract](bvmethods_operator_contract.md) for its supported
+models, coordinates and diagnostics. `solver.coupled_operator` otherwise
+defaults to `legacy`. The defining-integral Fermi-Dirac selection is one atomic physics path: carrier
 densities use the normalized complete integral `F_{1/2}`, ideal Ohmic contacts
 solve charge neutrality with the same statistics, continuity edges use the
 generalized Einstein/Scharfetter-Gummel operator, and terminal-current
@@ -2308,6 +2514,13 @@ is evaluated from donor/acceptor concentrations and the 300 K density of states.
 Leave it `false` to reproduce Sentaurus `EffectiveIntrinsicDensity(NoFermi)` or
 the historical Vela behavior.
 
+The SDevice frontend emits this flag as `true` for OldSlotboom with `Fermi`
+and as `false` for explicit `EffectiveIntrinsicDensity(NoFermi)`. Without an
+explicit Fermi/NoFermi selection, it omits the flag and retains the C++ default `false`. `NoFermi` does not disable Fermi carrier
+statistics. Direct JSON configuration retains its existing opt-in default.
+Results produced by the older frontend with Fermi + OldSlotboom require a
+new physical baseline; parser/deck golden updates alone do not qualify them.
+
 ### Newton diagnostics and residual options
 
 Newton configs can opt into diagnostic history with either
@@ -2379,6 +2592,16 @@ does not alter residuals, scales, Newton directions, global closure, boundary or
 numerical-validity gates. It is an acceptance-policy change, not a claim that
 weak-row physical error is bounded. The SLOT validation batch opts in explicitly;
 no general/default template is changed.
+The carrier-row ratio is an additional local balance target, not an
+established Sentaurus-equivalent termination criterion. In the BVmethods
+no-BTBT control, all of the first five native accepted nonzero states exceed the
+`0.001` row target under the same source eligibility profile. See the
+[native row-gate audit](validation/bvmethods_native_row_gate_2026-10-21.md).
+The audit's first revision omitted the TCAD current-density/length conversion;
+its source eligibility counts have been corrected. See the
+[full convergence-rule audit](validation/bvmethods_native_convergence_2026-10-21.md).
+Keep reference-state diagnostics distinct from solver acceptance; this finding
+does not change the production defaults or authorize a global threshold increase.
 
 ```json
 "carrier_row_convergence": {
@@ -2540,6 +2763,17 @@ from a previous solution. The default `false` keeps the conservative
 cold-start behavior.
 
 ### band_to_band
+
+NonLocalPath is not a supported public model yet. The experimental C++
+contracts, geometry, phonon kernel and private SI serializer are separate from `solver.band_to_band`;
+they do not enable a nonlocal solver or import native parameter files. See the
+[N1 interface record](validation/bvmethods_nonlocalpath_n1_2026-10-16.md) and
+[N2 geometry record](validation/bvmethods_nonlocalpath_n2_2026-10-16.md), plus the
+[N3 private kernel record](validation/bvmethods_nonlocalpath_n3_2026-10-16.md).
+The kernel requires explicit reservoir windows. Private paired-source assembly
+and frozen actual-residual diagnostics now exist, but native source/window
+fidelity and derivatives remain unqualified; see the
+[N4 investigation](validation/bvmethods_nonlocalpath_n4_2026-10-16.md).
 
 `solver.band_to_band` enables a local electron-hole pair-generation source in
 both Newton and Gummel continuity equations.  The `e2` model implements the
@@ -2982,6 +3216,13 @@ Lombardi `Enormal` coefficients for silicon. The implementation evaluates the
 acoustic-phonon and surface-roughness contributions from Eqs. 278--281 of the
 Sentaurus Device User Guide, applies the `exp(-distance/l_crit)` interface
 damping, and combines them with the bulk mobility using Matthiessen's rule.
+When surface degradation and high-field saturation are both enabled, the
+surface-limited **low-field** mobility is the input to Canali saturation.
+This ordering applies to electrons and holes in the constant, Caughey--Thomas
+and Masetti combinations; the PhuMob combinations already use this order.
+Live field derivatives use the same composition as the residual. The
+2026-10-10 correction changes the constitutive result, so earlier numerical
+trajectory qualifications must be rerun with the corrected core.
 `surface.surface_interface` should identify the semiconductor/insulator pair;
 the normal field is the electric-field projection along that interface normal.
 
@@ -3156,6 +3397,11 @@ Required core fields:
 - initial_step: optional positive magnitude of the first internal voltage
   step. It must lie within `[min_step, max_step]`. When omitted it defaults to
   `abs(step)`, preserving legacy sweep behavior.
+  - min_step: lower bound for adaptive retries. If shrinking a failed step
+    crosses this bound, the controller tries exactly `min_step` once, provided
+    `max_retries` permits another attempt. Failure at the bound terminates
+    retries. A final or mandatory interval shorter than `min_step` may be
+    attempted, but is never enlarged past its target or retried below the bound.
 - bias_points: optional array of explicit biases. When present, the adaptive
   `start`/`stop`/`step` stepping loop is bypassed and Vela solves exactly these
   biases in order. Use a one-element array for a single-bias restart.
@@ -3164,6 +3410,60 @@ Output and current fields:
 - current_contact
 - write_vtk
 - vtk_prefix
+- vtk_format: `legacy` (default) writes the ASCII `.vtk` file with every
+  diagnostic array under Vela's historical names; `vtu` writes an XML
+  UnstructuredGrid `.vtu` file (Float64 arrays, `region_id` Int32 cell data,
+  `FieldData` with `VelaVersion`, `SweepContact`, `Bias_V`, `PointIndex`,
+  `Converged`, per-contact `<name>_TotalCurrent_A_per_um` when
+  `csv_all_contacts` is on, and one `Unit:<array>` string per array). Array
+  names and units follow the Sentaurus TDR data names of the manual's
+  Appendix F (`ElectrostaticPotential` V, `eDensity`/`hDensity` cm^-3,
+  `DopingConcentration`/`DonorConcentration`/`AcceptorConcentration`/
+  `SpaceCharge` cm^-3, `ElectricField` V/cm, `eCurrentDensity`/
+  `hCurrentDensity`/`TotalCurrentDensity`/`ConductionCurrentDensity` A/cm^2,
+  `eMobility`/`hMobility` cm^2/(V*s), `eVelocity`/`hVelocity` cm/s,
+  `srhRecombination`/`AugerRecombination`/`Band2BandGeneration`/
+  `AvalancheGeneration`/`TotalRecombination` cm^-3*s^-1, `eAlphaAvalanche`/
+  `hAlphaAvalanche` cm^-1, `eIonIntegral`/`hIonIntegral`/`MeanIonIntegral`,
+  `BandGap`/`BandgapNarrowing`/`EffectiveBandGap`/`ElectronAffinity`/
+  `ConductionBandEnergy`/`ValenceBandEnergy` eV, `EffectiveIntrinsicDensity`/
+  `eEffectiveStateDensity`/`hEffectiveStateDensity` cm^-3, `eEparallel`/
+  `hEparallel`/`eEnormal`/`hEnormal` V/cm, `eGradQuasiFermi`/`hGradQuasiFermi`
+  V/cm). The authoritative list is `tdrFieldCatalogue()` in
+  `src/io/VtuWriter.cpp` (`VtuWriter.h` declares the catalogue API).
+- vtk_fields: optional array of TDR names for `vtk_format: "vtu"`. `Name`
+  requests the scalar form (the magnitude for vector quantities),
+  `Name/Vector` the three-component array; a vector request supersedes a
+  scalar request for the same name. An empty or absent list writes the whole
+  catalogue. Requested names the build cannot provide are not written; they
+  are listed per point in `DCSweepPoint::skippedVtkFields` and logged as
+  `vtk_fields_skipped`.
+- vtk_binary: `false` (default, ASCII arrays) or `true` (base64 inline binary
+  with a UInt32 header) for `vtk_format: "vtu"`.
+- vtk_field_data: optional object of string or finite numeric values, for
+  example `{"CmdSHA256":"abc","Stage":1,"t":0.25}`. Keys must match
+  `[A-Za-z_][A-Za-z0-9_]*`; booleans, arrays and nested objects are rejected.
+  Built-in names cannot be overridden: `VelaVersion`, `SweepContact`, `Bias_V`,
+  `PointIndex`, `Converged`, `GoalReached`, `goal_reached`, swept-contact
+  `<name>_OuterVoltage_V`/`<name>_InnerVoltage_V`, and any
+  `<name>_TotalCurrent_A_per_um`. FieldData stays readable ASCII in binary VTU.
+  Presence of this object enables per-point `GoalReached`/`goal_reached` (0/1)
+  and swept-contact inner/outer voltages. If `t` is not supplied, it is computed
+  from the voltage interval, or from the measured initial current and final
+  current target for voltage-to-current stages. Goal status is local to this
+  stage, using the existing voltage/current tolerance; it does not change
+  convergence or stopping decisions. Omitting the object preserves the
+  previous VTU bytes and metadata set.
+- vtk_bias_points: optional array of biases the adaptive sweep must land on
+  exactly (to 1e-12 V). Each becomes an additional accepted point with a VTK
+  file even when `write_vtk` is false; the adaptive step size is not changed,
+  so all other visited biases are identical to a run without the list.
+  Points outside `[start, stop]` or equal to a nominal target are ignored.
+  Explicit `bias_points` sweeps do not use this key.
+- csv_all_contacts: when `true`, the sweep CSV gains
+  `contact_<name>_electron_A_per_um`, `contact_<name>_hole_A_per_um` and
+  `contact_<name>_total_A_per_um` for every mesh contact (the monitored
+  `current_contact` columns are unchanged).
 - csv_file
 - initial_state_file: optional `vela.state/2` HDF5 file (`.h5`) used as the initial
   `DDSolution` for the first solved bias.
@@ -3192,6 +3492,16 @@ Output and current fields:
   preserves the baseline cold-start path; `poisson_block` runs one Newton
   Poisson block solve before the first coupled Newton solve and uses that state
   as the first-point handoff.
+- `initialization.poisson_max_iter`: non-negative iteration budget, default `0`.
+  A positive value requires `poisson_block` and solves nonlinear Poisson from
+  the cold state with fixed contact-basin quasi-Fermi potentials before handoff.
+  It retains the configured solver tolerances and aborts if initialization fails.
+  `<sweep csv stem>_poisson_initialization.json` records the budget, iterations,
+  residuals and result, including failures. The command frontend preserves the
+  preceding `Coupled { Poisson }` budget here when merging equilibrium stages.
+  The following frontend Coupled stage uses warm-start Newton to preserve this
+  converged handoff instead of performing another Gummel pass.
+  Zero retains the historical one-block-update behavior for existing JSON decks.
 - `initialization.diagnostic_csv`: optional CSV written only when
   `initialization.mode` is `poisson_block`. It records the first-point
   initialization bias as `bias_V`, plus the cold-state and Poisson-block
@@ -3216,18 +3526,21 @@ and reverse operation:
   Masetti mobility, `cell_reconstructed_total_impurity`, SRH plus Old
   Slotboom, and impact ionization disabled.
 - `configs/templates/pn2d_bv.template.json`: reverse 0---20 V BV,
-  `masetti_field`, `net_doping`, SRH plus Old Slotboom, and
+  `masetti_field`, `total_impurity` (`Nd + Na`), SRH plus Old Slotboom, and
   Van Overstraeten impact ionization.
 
-The PN2D BV version 3 default is the qualified atomic
+PN2D BV version 4 corrects impurity scattering from net doping to total
+impurity. The external-resistor validation entry rejects a net-doping basis.
+Version 4 retains the version-3 atomic
 `element_edge_sg_gss_laux` profile. Rendering it binds element-edge
 SG/GSS-Laux current support, element-vertex box source mapping, Bernoulli
 midpoint density, mixed-Voronoi node volumes, and
 `mesh_geometry.require_non_obtuse=true`. Use the
 `legacy_cell_reconstructed` profile for the complete cell-reconstructed and
 barycentric rollback. The generator rejects partially mixed profiles. This
-template policy does not change the global barycentric parser default or the
-PN2D IV template.
+template policy does not change the global barycentric or mobility parser
+defaults, or the PN2D IV template. Version-3 curve qualification does not by
+itself qualify version 4; see the current PN2D validation reference.
 
 For audited imported meshes that contain obtuse triangles but are Delaunay at
 the assembled interior-edge level, `mesh_geometry.edge_coupling_policy` may be
@@ -3828,13 +4141,42 @@ load line. The supported mode is `series_resistor`. `resistance_ohm_um` uses
 OuterVoltage = InnerVoltage + current_direction * Iterminal * Rseries
 ```
 
-`bias_points` (or `start/stop/step`) are outer/source voltages. The nonlinear
+`bias_points` (or `start/stop/step`) are outer/source voltages. The
+targets may increase or decrease monotonically, including negative PN2D anode
+biases. A reversal of sweep direction within one target list is rejected.
+The nonlinear
 device boundary remains the inner voltage and is solved repeatedly until
 `load_line_residual_V` meets `residual_tolerance_V`. `current_direction` is
 `+1` for the BVmethods NMOS drain convention and may be `-1` for an oppositely
 oriented terminal. `initial_inner_voltage_V`, `max_inner_voltage_step_V`,
 `voltage_tolerance_V`, `max_bracket_steps`, and `max_iterations` control only
 the scalar boundary solve.
+
+For `nested_scalar`, the outer targets are enumerated from `bias_points` or
+`start/stop/step`. By default they retain the direct target schedule, and the
+first bracket probe can move by `max_inner_voltage_step_V` even when the
+requested outer-voltage increment is smaller.
+`boundary_control.adaptive_outer_continuation=true` inserts adaptive outer
+steps using `initial_step`, `min_step`, `max_step`, `growth_factor`,
+`shrink_factor`, and `max_retries`. Growth uses the fixed multiplier.
+The first inner prediction is bounded by both the outer increment and the
+maximum inner step; subsequent predictions use accepted load-line history.
+Only a device-converged, load-line-closed root advances the accepted state.
+Failed trials shrink the outer step; exhaustion reports the last failure.
+The terminal-current stop criterion applies to both schedules. In adaptive
+outer mode the main point's attempted/accepted step diagnostics are outer
+increments; `bias_V` and the nonlinear attempt trace remain inner voltages.
+The flag defaults to false in JSON and is rejected outside a `nested_scalar`
+external circuit. The SDevice frontend enables it for resistor QS decks.
+`boundary_control.adaptive_device_continuation` separately controls device
+continuation inside a bracket evaluation.
+Use `boundary_control.evaluation_csv` and `solver.local_update_diagnostics`
+to inspect bracket evaluations. `sweep.diagnostics.newton_history` now also
+records these device trials, including failed predictors before fallback,
+outer retry numbers, and rejected parent/initial/final states when configured.
+Successful bracket evaluations are device trials, not independently accepted
+outer/load-line points. Earlier behavior and matched-bias probes are documented
+in the [BVmethods controller comparison](validation/bvmethods_loadline_biased_derivatives_2026-10-08.md).
 
 `external_circuit.solver` defaults to `nested_scalar`. The opt-in
 `coupled_newton` mode augments the device unknown vector with the inner
@@ -3869,6 +4211,138 @@ passes the selected residual line search and final equation/load-line tests.
 Fermi-Dirac statistics and electron quantum potential are rejected. This
 experimental globalization option does not replace carrier-row or global
 current-closure qualification of a simulation checkpoint.
+The opt-in `report_only` mode evaluates the `merit` backtracking sequence
+starting at alpha=1 and records `reported_alpha` (zero if no trial qualifies),
+but applies the full alpha=1 step even when merit increases. It ignores
+`coupled_damping_factor`; separate voltage and device update limits still
+apply. A nonfinite or model-invalid full step fails the corrector without
+substituting a damped trial. Final residual, load and physical acceptance
+gates are unchanged. The coupled update diagnostic CSV also records the full
+step merit and raw/limited update sizes. Shadow trial evaluations add cost;
+this mode is intended for controlled nonlinear investigations, not a new default.
+
+`full_step` evaluates and applies only alpha=1, without shadow backtracking.
+It retains the same independent update limits and invalid-state/terminal gates.
+The BVMethods CMD profile now defaults to this mode for Sentaurus
+`LineSearchDamping=1` (also the vendor default) and a `NotDamped` threshold
+at least as large as the effective iteration budget. Math settings are parsed
+and local Coupled settings take precedence. Enabled vendor line search or
+Bank–Rose damping is rejected by this profile because those algorithms are
+not implemented; it is not silently mapped to Vela's merit rule. Explicit
+sidecar modes remain diagnostic overrides. The global C++ default is unchanged.
+
+Scalar coupled convergence is followed by a physical acceptance check at the
+actual packed state and inner bias. The configured `carrier_row_convergence`
+and `global_continuity_closure` modes apply here as in the standard Newton path;
+an enforced failure rejects the point before it advances continuation or writes
+an accepted checkpoint. All terminal currents must be finite and satisfy
+`abs(sum(I)) <= max(1e-12, 1e-5 * abs(Id))` in A/um. The circuit residual is also
+recomputed from the actual extracted terminal current with the configured
+`residual_tolerance_V`. No scalar or inexact device tolerance bypasses these
+checks. The point's carrier/closure and block residual fields contain the actual
+measurements; `validation_diagnostics` includes the JSON
+`coupled_acceptance_checked` flag, enforcement status and KCL/load results.
+Global closure retains the standard source-floor qualification rule; the JSON
+records each carrier's `global_*_qualified` flag. An unqualified carrier does
+not establish a strict independent ratio pass. Commas and quotes in diagnostics
+are escaped as CSV fields so subsequent columns remain aligned.
+
+`sweep.external_circuit.coupled_continuation` explicitly enables a numerical
+continuation option for `solver: coupled_newton`:
+
+```json
+"coupled_continuation": {
+  "enabled": true,
+  "retry_from_accepted": true,
+  "inner_step_control": {"max_step_V": 0.02}
+}
+```
+
+After a failed secant seed, `retry_from_accepted` retries the same external
+voltage from the last accepted state before shrinking the external step.
+Every attempt retains the same Newton, load-line and physical acceptance gates.
+The accepted inner/outer voltage secant bounds the predicted inner increment.
+The cap is resolved from `inner_step_control.max_step_V`, or a normalized
+`max_step_fraction` with explicit device-voltage endpoints, then an explicitly
+provided `max_inner_voltage_step_V`. A resistor sweep's external `MaxStep`
+does not uniquely specify a device-voltage cap. When no applicable value is
+available, the fallback is 0.02 V; this is an empirical default, not a universal
+device scale. Its source and fallback reason are recorded in each accepted
+point's `validation_diagnostics`. See the
+[resolution contract](bvmethods_operator_contract.md) for details. A cap
+requiring a step below the configured external minimum terminates the advance;
+it is not silently exceeded. This option is disabled by default.
+
+`sweep.external_circuit.coupled_update_convergence` is an opt-in classical
+isothermal DD stopping experiment for `solver: coupled_newton`:
+
+```json
+"coupled_update_convergence": {
+  "mode": "report",
+  "digits": 5,
+  "potential_reference_V": 0.025852,
+  "electron_reference_cm3": 1e10,
+  "hole_reference_cm3": 1e10,
+  "contact_reference_V": 0.025852,
+  "diagnostic_csv": "density_update.csv"
+}
+```
+
+Modes are `off` (default), `report` (observations without changing stopping),
+`enforce` (device residual **or** normalized density-update RMS < 1), and
+`enforce_joint` (device residual **and** normalized density-update RMS < 1).
+Joint mode permits a residual-only zero-voltage initial anchor before any update;
+all nonzero accepted points require a valid raw-update report. This additional
+explicit mode retains the historical `enforce` semantics. In particular, a
+residual-only pass with a large reported RMS is not a joint qualification pass.
+Both branches still require the original load-line and terminal KCL checks;
+configured enforced carrier-row/global-closure checks also still apply.
+No conservation mode is automatically changed. To study Newton stopping
+separately, explicitly configure the conservation checks as `report` in the
+experimental input; this does not qualify a formerly rejected state under
+the old enforced contract.
+
+The RMS numerator uses the **raw linear direction before all update
+limits and backtracking**. QF mode transforms it analytically through the
+assembler's actual carrier statistics; `potential_density` uses δn/δp directly,
+without a QF transformation or QF voltage cap. Its denominator uses the accepted
+physical state plus the declared reference. Potential entries include every
+node, carrier entries include free semiconductor nodes, and the active
+contact contributes one voltage entry per contact-node alias. These are metric
+entries, not independent linear unknowns. Density references are always cm^-3;
+potential/contact references are always V. `digits` must be in [0,15], with
+finite positive references. Split DD and quantum formulations are unsupported.
+No accepted update, a failed evaluator or nonfinite operands cannot authorize
+the update branch; tiny applied steps do not shrink its raw numerator.
+
+This follows the observed BVmethods factor-one density/potential error
+composition. The error metric alone does **not** implement native iteration,
+protection, damping or RHS scaling; primary coordinates and population protection
+are selected separately by `state_variables` and `population_update`.
+The residual branch remains Vela's device infinity norm and
+`coupled_equation_tolerance`, not Sentaurus `RhsMin`. Accepted points identify
+`coupled_density_update` versus `coupled_residuals`; the diagnostic CSV records
+per-block RMS, counts and residuals for all attempts. Relative CSV paths resolve
+from the config directory. See the [observed native contract](validation/contracts/bvmethods_update_error_s0.v1.json).
+In that CSV, `iteration=k` identifies the current accepted state (zero is the
+seed). For k>0 its RMS uses the raw direction computed at k-1 and the state at
+k; `accepted_alpha` describes the next transition k to k+1. It is not the alpha
+of the RMS numerator. `convergence_reason` is the final stopping reason of the
+whole attempt, repeated on its rows, not a per-row declaration of convergence.
+
+With global closure reporting enabled, the point CSV additionally records
+`global_{electron,hole}_{absolute_mismatch,net_scale,contact_node_flux_abs_sum,source_abs_sum}`.
+These retain the assembler's continuity-row units. The contact-node sum is not
+the sum of absolute terminal currents. Coupled `validation_diagnostics` separately
+records the latter as `terminal_{electron,hole}_current_abs_sum_A_per_um`.
+The original net-source-normalized ratio and its qualification remain unchanged.
+See the [BVMethods stopping control](validation/bvmethods_stopping_control_2026-10-24.md)
+for the same-state residual-floor test, physical continuity-unit reconstruction,
+and bounded Release scans. These do not establish full native RHS equivalence.
+With `newton_history.rejected_state_directory`, physically rejected coupled
+candidates are saved as `coupled_physical_<attempt>.h5`; these are never seeds
+for accepted continuation. Earlier CSVs without the checked flag do not prove
+carrier or global closure qualification.
 
 `coupled_inexact_device_forcing` is an optional object for locator or branch-
 tracking runs. It is disabled by default. When enabled, the device tolerance
@@ -3928,6 +4402,16 @@ logged as `external_circuit: tangent_predictor`. The SLOT campaign exposes
 `--candidate-state-predictor tangent`, bypasses Python secant extrapolation
 for that candidate and binds `bordered_tangent_v1` into continuation identity.
 Use a fresh evidence directory and revalidated parents when changing this policy.
+The C++ developer API additionally provides
+`CoupledLoadLineConfig::directRefinementSteps` (default `0`, range `0..8`).
+It is not a JSON/frontend option. An explicit direct solver is required when
+enabled. Corrections use a multiprecision defect of the original unscaled
+bordered system and the two-sided scaled LU solve. Each retained correction
+must reduce the worst componentwise backward error; the result must satisfy
+`1e-10` and the existing scaled linear-residual bound. Failure is reported,
+and nonlinear convergence, line search, physical gates and default profiles
+remain unchanged. This control does not certify the device Jacobian or a BV
+trajectory.
 
 Coupled outer-voltage continuation is controlled by
 `coupled_initial_outer_step_V`, `coupled_min_outer_step_V`,
@@ -3936,6 +4420,14 @@ Coupled outer-voltage continuation is controlled by
 do not replace the last accepted coupled state. Every accepted adaptive
 intermediate point is recorded and is eligible for the normal DCSweep state
 checkpoint/restart outputs.
+With `sweep.step_growth_mode: "newton_iterations"` and `solver.method: "newton"`,
+the coupled controller uses its actual accepted update count and
+`external_circuit.max_iterations` as the work budget. Its increment is
+`coupled_outer_growth_factor`; all step magnitudes remain outer volts.
+The ordinary device seed solver's iteration budget is not used for growth.
+The default remains `fixed`. Current break criteria stop coupled continuation
+after an accepted point, including intermediate points before an explicit target.
+This does not change carrier-row or global-closure acceptance.
 
 `sweep.voltage_to_current` first solves the voltage points through the final
 point, which must equal `switch_voltage_V`, and then replaces the voltage
@@ -4068,7 +4560,8 @@ requiring five Newton updates give a next proposal of about `12.7533 mV`.
 
 This mode supports ordinary voltage sweeps with `solver.method: "newton"`
 and a positive `solver.max_iter`, for both range and explicit `bias_points`
-inputs. Other solvers, external-circuit/current-controlled sweeps, and
+inputs. It also supports series resistors with `solver: "coupled_newton"`
+as described above. Other solvers, nested-scalar/current-controlled sweeps, and
 pseudo-arclength continuation are rejected explicitly. It does not change the
 Newton stopping criteria, physical models, or predictor configuration.
 
@@ -4218,6 +4711,21 @@ breakdown (for BV reverse):
 - breakdown.max_electric_field_V_per_m
 - breakdown.current_jump_ratio
 - breakdown.non_convergence
+
+Terminal-current stop criteria (every sweep mode; Sentaurus
+`BreakCriteria{ Current(...) }`):
+- breakdown.current_abs_A_per_um: stop once `|I| >= value` (positive number).
+- breakdown.current_min_A_per_um: stop once the signed current `I <= value`.
+- breakdown.current_max_A_per_um: stop once the signed current `I >= value`.
+- breakdown.current_contact: contact whose total current is tested; defaults
+  to `sweep.current_contact`.
+
+`I` is the total current of that contact in A/um for a 2-D device. The
+criterion is evaluated after each accepted point; the point that triggers it
+is recorded (`breakdown_detected=1`, `criterion` one of `current_abs`,
+`current_min`, `current_max`) and the sweep ends there. When any of these
+criteria is configured the CSV gains `stop_criterion` (empty until the stop
+point) and `stop_current_A_per_um` columns.
 
 In `unit_scaling` mode, BV CSV output keeps `max_electric_field_V_per_m` as a compatibility column name using active internal electric-field values, and
 also appends `max_electric_field_V_per_cm` using the active unit system conversion.

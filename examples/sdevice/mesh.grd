@@ -1,0 +1,68 @@
+DF-ISE text
+
+Info {
+  version = 1.1
+  type = grid
+  dimension = 2
+  nb_vertices = 4
+  nb_edges = 5
+  nb_faces = 0
+  nb_elements = 4
+  nb_regions = 3
+  regions = [ "R.Si" "cathode" "anode" ]
+  materials = [ Silicon Contact Contact ]
+}
+
+Data {
+  CoordSystem {
+    translate = [ 0 0 0 ]
+    transform = [ 1 0 0 0 1 0 0 0 1 ]
+  }
+
+  Vertices (4) {
+ 0.000000000000000e+00 0.000000000000000e+00
+ 1.000000000000000e+00 0.000000000000000e+00
+ 1.000000000000000e+00 1.000000000000000e+00
+ 0.000000000000000e+00 1.000000000000000e+00
+  }
+
+  Edges (5) {
+ 0 1
+ 0 2
+ 0 3
+ 1 2
+ 2 3
+  }
+
+  Locations (5) {
+eieee
+  }
+
+  Elements (4) {
+ 2 0 3 -2
+ 2 1 4 -3
+ 1 1 2
+ 1 0 3
+  }
+
+  Region ("R.Si") {
+    material = Silicon
+    Elements (2) {
+ 0 1
+    }
+  }
+
+  Region ("cathode") {
+    material = Contact
+    Elements (1) {
+ 2
+    }
+  }
+
+  Region ("anode") {
+    material = Contact
+    Elements (1) {
+ 3
+    }
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "schema": "vela.bvmethods.independent-report-audit.v1",
+  "date": "2026-10-19",
+  "scope": "same-host no-band2band classical fixed-internal-bias private report",
+  "production_acceptance_changed": false,
+  "native_runs_added": 0,
+  "bounded_report_noninterference_qualified": true,
+  "stage1_complete": false,
+  "strict_L1_qualified": false,
+  "production_report_deployment_qualified": false,
+  "fixed_drain_internal_bias_V": 0.00524437249039996,
+  "rows0_is_zero_bias": false,
+  "cases": [
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "iterations": 1,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence_line_search_rejected",
+      "final_row_violations": 285,
+      "result_bytes": 701812,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 734334,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 731214,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 730902,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 18,
+      "result_bytes": 812846,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "iterations": 5,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence_line_search_rejected",
+      "final_row_violations": 6,
+      "result_bytes": 470328,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows285",
+      "iterations": 1,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence_line_search_rejected",
+      "final_row_violations": 285,
+      "result_bytes": 701812,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows21",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 734334,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows11",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 731214,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows10",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 16,
+      "result_bytes": 730902,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows5",
+      "iterations": 20,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence",
+      "final_row_violations": 18,
+      "result_bytes": 812846,
+      "all_modes_same": true
+    },
+    {
+      "host": "<private execution metadata; original preserved in ignored archive>",
+      "state": "rows0",
+      "iterations": 5,
+      "converged": false,
+      "failure_reason": "carrier_row_convergence_line_search_rejected",
+      "final_row_violations": 6,
+      "result_bytes": 470328,
+      "all_modes_same": true
+    }
+  ],
+  "process_runs": 84,
+  "verification_checks_passed": 924,
+  "unique_host_iteration_positions": 172,
+  "independent_witness_events": 688,
+  "report_ledgers": 516,
+  "metric_entries_per_iteration": 6764,
+  "complete_equations": false,
+  "newton_result_root_fields": 20,
+  "tests": {
+    "local_newton": {
+      "cases": 145,
+      "assertions": 3304
+    },
+    "local_report": {
+      "cases": 11,
+      "assertions": 104
+    },
+    "t470p_capture": {
+      "cases": 2,
+      "assertions": 157
+    },
+    "t470p_report": {
+      "cases": 11,
+      "assertions": 104
+    }
+  },
+  "evidence_files_sealed": 1950,
+  "evidence_manifest_sha256": "4a4415a1030aa7374871635423839ee792eef6e69bb0ef05603f0741e94bb7fb",
+  "remaining": [
+    "per_element_J",
+    "logical_cache_identity_and_hit_history",
+    "current_state_row_gate_metadata",
+    "best_rejected_error_ledger",
+    "native_0.01V_state_isolated_replay",
+    "production_report_frontend_and_extended_path_qualification"
+  ]
+}

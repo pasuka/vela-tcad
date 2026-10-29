@@ -1,4 +1,5 @@
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/AdaptiveVoltageStepControl.h"
 // CoupledDDAssembler configuration is intentionally constructed in this unit.
 #include "vela/simulation/BoundaryControl.h"
 #include "vela/simulation/CoupledLoadLine.h"
@@ -1713,6 +1714,58 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.writeVtk = j.value("write_vtk", cfg.value("write_vtk", false));
     sweep.csvFile = j.value("csv_file", cfg.value("output_csv", sweep.csvFile));
     sweep.vtkPrefix = j.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep")));
+    sweep.vtkFormat = j.value("vtk_format", sweep.vtkFormat);
+    if (sweep.vtkFormat != "legacy" && sweep.vtkFormat != "vtu")
+        throw std::invalid_argument("DCSweep: sweep.vtk_format must be 'legacy' or 'vtu'.");
+    if (j.contains("vtk_fields")) {
+        const auto& fields = j.at("vtk_fields");
+        if (!fields.is_array())
+            throw std::invalid_argument("DCSweep: sweep.vtk_fields must be an array of strings.");
+        for (const auto& entry : fields) {
+            if (!entry.is_string() || entry.get<std::string>().empty())
+                throw std::invalid_argument("DCSweep: sweep.vtk_fields entries must be non-empty strings.");
+            sweep.vtkFields.push_back(entry.get<std::string>());
+        }
+    }
+    sweep.vtkBinary = j.value("vtk_binary", sweep.vtkBinary);
+    if (j.contains("vtk_field_data")) {
+        const auto& metadata = j.at("vtk_field_data");
+        if (!metadata.is_object())
+            throw std::invalid_argument("DCSweep: sweep.vtk_field_data must be an object.");
+        const std::unordered_set<std::string> reserved = {
+            "VelaVersion", "SweepContact", "Bias_V", "PointIndex", "Converged",
+            "GoalReached", "goal_reached", sweep.contact + "_OuterVoltage_V",
+            sweep.contact + "_InnerVoltage_V"};
+        for (const auto& [name, value] : metadata.items()) {
+            const auto letter = [](unsigned char c) {
+                return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+            };
+            if (name.empty() || !letter(name.front()) ||
+                !std::all_of(name.begin(), name.end(), [&](unsigned char c) {
+                    return letter(c) || (c >= '0' && c <= '9');
+                }) || reserved.contains(name) || name.ends_with("_TotalCurrent_A_per_um"))
+                throw std::invalid_argument("DCSweep: invalid or reserved vtk_field_data key '" + name + "'.");
+            if (value.is_string()) {
+                sweep.vtkFieldDataStrings.emplace_back(name, value.get<std::string>());
+            } else if (value.is_number() && std::isfinite(value.get<Real>())) {
+                sweep.vtkFieldDataValues.emplace_back(name, value.get<Real>());
+            } else {
+                throw std::invalid_argument("DCSweep: vtk_field_data values must be strings or finite numbers.");
+            }
+        }
+        sweep.vtkFieldDataEnabled = true;
+    }
+    if (j.contains("vtk_bias_points")) {
+        const auto& biasPoints = j.at("vtk_bias_points");
+        if (!biasPoints.is_array())
+            throw std::invalid_argument("DCSweep: sweep.vtk_bias_points must be an array of numbers.");
+        for (const auto& entry : biasPoints) {
+            if (!entry.is_number() || !std::isfinite(entry.get<Real>()))
+                throw std::invalid_argument("DCSweep: sweep.vtk_bias_points entries must be finite numbers.");
+            sweep.vtkBiasPoints.push_back(entry.get<Real>());
+        }
+    }
+    sweep.csvAllContacts = j.value("csv_all_contacts", sweep.csvAllContacts);
     sweep.initialStateFile = j.value("initial_state_file", std::string{});
     sweep.writeStateFile = j.value("write_state_file", std::string{});
     sweep.frozenStateComputeCurrent =
@@ -1729,6 +1782,13 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         }
         sweep.initialization.diagnosticCsv =
             init.value("diagnostic_csv", std::string{});
+        sweep.initialization.poissonMaxIter = init.value("poisson_max_iter", 0);
+        if (sweep.initialization.poissonMaxIter < 0 ||
+            (sweep.initialization.poissonMaxIter > 0 &&
+             sweep.initialization.mode != "poisson_block")) {
+            throw std::invalid_argument(
+                "DCSweep: initialization.poisson_max_iter must be non-negative and requires poisson_block.");
+        }
         sweep.initialization.writeStateFile =
             init.value("write_state_file", std::string{});
     }
@@ -1773,6 +1833,22 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.externalResistor.coupledEquationTolerance = circuit.value(
             "coupled_equation_tolerance",
             sweep.externalResistor.coupledEquationTolerance);
+        if (circuit.contains("coupled_update_convergence")) {
+            const auto& metric = circuit.at("coupled_update_convergence");
+            if (!metric.is_object())
+                throw std::invalid_argument("coupled_update_convergence must be an object");
+            auto& update = sweep.externalResistor.coupledUpdateConvergence;
+            update.mode = metric.value("mode", update.mode);
+            update.digits = metric.value("digits", update.digits);
+            update.potentialReference_V = metric.value("potential_reference_V", update.potentialReference_V);
+            update.electronReference_cm3 = metric.value("electron_reference_cm3", update.electronReference_cm3);
+            update.holeReference_cm3 = metric.value("hole_reference_cm3", update.holeReference_cm3);
+            update.contactReference_V = metric.value("contact_reference_V", update.contactReference_V);
+            update.diagnosticCsv = metric.value("diagnostic_csv", update.diagnosticCsv);
+            validateDensityUpdateConvergence(update);
+            if (update.mode != "off" && sweep.externalResistor.solver != "coupled_newton")
+                throw std::invalid_argument("coupled_update_convergence requires coupled_newton");
+        }
         sweep.externalResistor.coupledVoltageCoefficient = circuit.value(
             "coupled_voltage_coefficient",
             sweep.externalResistor.coupledVoltageCoefficient);
@@ -1803,6 +1879,26 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.externalResistor.coupledMaxStepRetries = circuit.value(
             "coupled_max_step_retries",
             sweep.externalResistor.coupledMaxStepRetries);
+        if (circuit.contains("coupled_continuation")) {
+            const auto& continuation = detail::stepObject(circuit, "coupled_continuation");
+            for (const auto& item : continuation.items())
+                if (item.key() != "enabled" && item.key() != "inner_step_control" &&
+                    item.key() != "retry_from_accepted")
+                    throw std::invalid_argument("unknown coupled_continuation setting: " + item.key());
+            sweep.externalResistor.coupledContinuationEnabled = continuation.value("enabled", false);
+            sweep.externalResistor.coupledRetryAcceptedSeed = continuation.value("retry_from_accepted", true);
+            if (sweep.externalResistor.coupledContinuationEnabled) {
+                if (sweep.externalResistor.solver != "coupled_newton")
+                    throw std::invalid_argument("coupled_continuation requires coupled_newton");
+                auto limit = detail::resolveInnerStepLimit(cfg, continuation);
+                const std::string prefix = "manifest.";
+                if (limit.source.rfind(prefix, 0) == 0)
+                    limit.source.replace(0, prefix.size(), "sweep.external_circuit.coupled_continuation.");
+                sweep.externalResistor.coupledPredictedInnerStep_V = limit.volts;
+                sweep.externalResistor.coupledInnerStepSource = std::move(limit.source);
+                sweep.externalResistor.coupledInnerStepReason = std::move(limit.reason);
+            }
+        }
         sweep.externalResistor.coupledApplyDeviceUpdateLimit = circuit.value(
             "coupled_apply_device_update_limit",
             sweep.externalResistor.coupledApplyDeviceUpdateLimit);
@@ -1892,10 +1988,17 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             persistence.value("preferred_max_evaluations", 3);
         sweep.boundaryControl.adaptiveDeviceContinuation = persistence.value(
             "adaptive_device_continuation", false);
+        sweep.boundaryControl.adaptiveOuterContinuation = persistence.value(
+            "adaptive_outer_continuation", false);
     }
     if (sweep.externalResistor.enabled && sweep.voltageToCurrent.enabled)
         throw std::invalid_argument(
             "DCSweep: external_circuit and voltage_to_current are mutually exclusive.");
+    if (sweep.boundaryControl.adaptiveOuterContinuation &&
+        (!sweep.externalResistor.enabled ||
+         sweep.externalResistor.solver != "nested_scalar"))
+        throw std::invalid_argument(
+            "DCSweep: adaptive_outer_continuation requires nested_scalar external_circuit.");
     const auto validateDirection = [](Real value, const char* field) {
         if (!std::isfinite(value) || (value != 1.0 && value != -1.0))
             throw std::invalid_argument(std::string("DCSweep: ") + field + " must be +1 or -1.");
@@ -1935,6 +2038,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                 !std::isfinite(sweep.externalResistor.coupledOuterShrinkFactor) ||
                 sweep.externalResistor.coupledMaxStepRetries < 0 ||
                 (sweep.externalResistor.coupledLineSearchMode != "merit" &&
+                 sweep.externalResistor.coupledLineSearchMode != "report_only" &&
+                 sweep.externalResistor.coupledLineSearchMode != "full_step" &&
                  sweep.externalResistor.coupledLineSearchMode !=
                      "residual_filter") ||
                 (sweep.externalResistor.coupledLinearSolver != "schur" &&
@@ -2418,6 +2523,26 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                     j.value("breakdown_max_electric_field_V_per_m", 0.0)));
     sweep.breakdown.currentJumpRatio = bvCfg.value("current_jump_ratio", j.value("breakdown_current_jump_ratio", 0.0));
     sweep.breakdown.nonConvergenceBreakdown = bvCfg.value("non_convergence", j.value("breakdown_on_non_convergence", true));
+    {
+        auto optionalCriterion = [&](const char* key, Real fallback) {
+            if (!bvCfg.contains(key))
+                return fallback;
+            const auto& entry = bvCfg.at(key);
+            if (!entry.is_number() || !std::isfinite(entry.get<Real>()))
+                throw std::invalid_argument(std::string("DCSweep: sweep.breakdown.") + key + " must be a finite number.");
+            return entry.get<Real>();
+        };
+        sweep.breakdown.currentAbs_A_per_um = optionalCriterion("current_abs_A_per_um", 0.0);
+        if (sweep.breakdown.currentAbs_A_per_um < 0.0)
+            throw std::invalid_argument("DCSweep: sweep.breakdown.current_abs_A_per_um must be non-negative.");
+        sweep.breakdown.currentMin_A_per_um =
+            optionalCriterion("current_min_A_per_um", std::numeric_limits<Real>::quiet_NaN());
+        sweep.breakdown.currentMax_A_per_um =
+            optionalCriterion("current_max_A_per_um", std::numeric_limits<Real>::quiet_NaN());
+        sweep.breakdown.currentContact = bvCfg.value("current_contact", sweep.currentContact);
+        if (sweep.breakdown.hasCurrentCriteria() && sweep.breakdown.currentContact.empty())
+            throw std::invalid_argument("DCSweep: sweep.breakdown current criteria require a current contact.");
+    }
 
     auto resolve = [&](std::string path) {
         std::filesystem::path fp(path);
@@ -2426,6 +2551,9 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         return fp.string();
     };
     sweep.csvFile = resolve(sweep.csvFile);
+    if (!sweep.externalResistor.coupledUpdateConvergence.diagnosticCsv.empty())
+        sweep.externalResistor.coupledUpdateConvergence.diagnosticCsv =
+            resolve(sweep.externalResistor.coupledUpdateConvergence.diagnosticCsv);
     sweep.vtkPrefix = resolve(sweep.vtkPrefix);
     if (!sweep.initialStateFile.empty())
         sweep.initialStateFile = resolve(sweep.initialStateFile);
@@ -2941,12 +3069,25 @@ void canonicalizeSweepContactsInPlace(const DeviceMesh& mesh,
 }
 
 
-std::string vtkFilename(const std::string& prefix, int index, Real voltage)
+std::string vtkFilename(const std::string& prefix, int index, Real voltage,
+                        const std::string& extension = ".vtk")
 {
     std::ostringstream oss;
     oss << prefix << "_" << std::setw(4) << std::setfill('0') << index
-        << "_" << std::setprecision(6) << std::defaultfloat << voltage << "V.vtk";
+        << "_" << std::setprecision(6) << std::defaultfloat << voltage << "V" << extension;
     return oss.str();
+}
+
+/// Criteria that end the sweep at the point where they trigger (as opposed to
+/// BV detections that only annotate the point).
+bool sweepStopRequestedByCriterion(const DCSweepPoint& point)
+{
+    if (!point.breakdownDetected)
+        return false;
+    return point.breakdownCriterion.rfind("path_ionization_integral_rank_", 0) == 0 ||
+        point.breakdownCriterion == "current_abs" ||
+        point.breakdownCriterion == "current_min" ||
+        point.breakdownCriterion == "current_max";
 }
 
 
@@ -3292,6 +3433,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const auto saveBiasState = [&](const std::filesystem::path& path,
                                    const DDSolution& solution, Real bias,
                                    const char* role) {
+#ifdef VELA_ENABLE_HDF5_STATE
         auto metadata = *activeDDStateArchiveMetadata();
         metadata["bias_V"] = bias;
         metadata["bias_contact"] = sweep.contact;
@@ -3299,6 +3441,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         metadata["contact_biases_V"] = baseBiases;
         metadata["contact_biases_V"][sweep.contact] = bias;
         DDStateArchiveScope stateScope(std::move(metadata));
+#endif
         writeDDSolutionState(path, solution, sweep.scaling);
     };
     const auto transportContactBiases = [&](const auto& allBiases) {
@@ -3328,6 +3471,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         parsePoissonChargeVolumePolicy(cfg);
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    if(cfg.value("solver",nlohmann::json::object()).value("state_variables",std::string{"potential_quasi_fermi"})=="potential_density" &&
+       solverMethod!=SolverMethod::Newton && solverMethod!=SolverMethod::PoissonOnly)
+        throw std::invalid_argument("DCSweep: population coordinates require Newton or Poisson initialization");
     if (solverMethod == SolverMethod::FrozenState && sweep.initialStateFile.empty()) {
         throw std::invalid_argument(
             "DCSweep: solver.method='frozen_state' requires sweep.initial_state_file.");
@@ -3400,12 +3546,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     if (sweep.stepGrowthMode == "newton_iterations") {
-        if (solverMethod != SolverMethod::Newton || sweep.externalResistor.enabled ||
+        const bool supportedCircuit = !sweep.externalResistor.enabled ||
+            sweep.externalResistor.solver == "coupled_newton";
+        if (solverMethod != SolverMethod::Newton || !supportedCircuit ||
             sweep.voltageToCurrent.enabled || sweep.continuation.arclength.enabled) {
             throw std::invalid_argument(
                 "DCSweep: sweep.step_growth_mode='newton_iterations' requires "
                 "solver.method='newton' and an ordinary voltage sweep "
-                "without external-circuit, current-control, or arclength continuation.");
+                "without external-circuit, current-control, or arclength continuation, "
+                "except series_resistor solver='coupled_newton'.");
         }
         if (newton.maxIter <= 0) {
             throw std::invalid_argument(
@@ -3547,7 +3696,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     // not inherit ni=0 merely because the insulator cell appears first.
     const std::vector<Real> effectiveNi = detail::buildValidatedEffectiveNodeNi(
         "DCSweep", mesh, matdb, doping, sweepBgnConfig,
-        constants::kb * temperature_K / constants::q);
+        constants::kb * temperature_K / constants::q, carrierStatisticsModel(sweepCarrierStatistics));
     const std::vector<Real> sweepNc =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true);
     const std::vector<Real> sweepNv =
@@ -3604,6 +3753,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
+    ddScaling.coupledOperator = newton.coupledOperator;
+    ddScaling.stateVariables = newton.stateVariables;
+    ddScaling.populationSgCurrent = newton.populationSgCurrent;
     ddScaling.regionResolvedInterfaceAssembly =
         newton.regionResolvedInterfaceAssembly;
     ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
@@ -3631,6 +3783,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ddScaling.currentDensityLineIntegralFactor =
             sweep.scaling.unitSystem().currentDensityAM2PerInternal() *
             sweep.scaling.unitSystem().lengthMPerInternal();
+    }
+    if (newton.coupledOperator == "bvmethods_tri3_qf") {
+        if (sweep.diagnostics.contactEdge.enabled || sweep.diagnostics.contactCurrentQfFloor.enabled)
+            throw std::invalid_argument("BVMethods legacy edge/floor diagnostics are unqualified");
+        if (sweep.writeVtk || !sweep.vtkBiasPoints.empty()) {
+            const std::vector<std::string> stateFields = {"ElectrostaticPotential", "eDensity", "hDensity",
+                                                         "SpaceCharge", "DopingConcentration"};
+            if (sweep.vtkFields.empty() || std::any_of(sweep.vtkFields.begin(), sweep.vtkFields.end(),
+                [&](const std::string& field) { return std::find(stateFields.begin(), stateFields.end(), field) == stateFields.end(); }))
+                throw std::invalid_argument("BVMethods VTK currently supports explicit state fields only; current and source fields remain unqualified");
+        }
     }
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K,
                                   ddScaling, sweepBgnConfig, sweepCarrierStatistics,
@@ -3695,6 +3858,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("global_hole_contact_flux");
         header.push_back("global_electron_integrated_source");
         header.push_back("global_hole_integrated_source");
+        for (const std::string prefix : {"global_electron_", "global_hole_"})
+            for (const std::string suffix : {"absolute_mismatch", "net_scale",
+                    "contact_node_flux_abs_sum", "source_abs_sum"})
+                header.push_back(prefix+suffix);
     }
     const bool writeUnitScaledColumns = sweep.scaling.isUnitScaling();
     if (writeUnitScaledColumns) {
@@ -3788,6 +3955,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("electron_density_jump_p95_abs_dex");
         header.push_back("electron_density_jump_max_abs_dex");
         header.push_back("electron_density_jump_max_node");
+    }
+    std::vector<std::string> allContactNames;
+    if (sweep.csvAllContacts) {
+        for (const Contact& contact : mesh.contacts()) {
+            allContactNames.push_back(contact.name);
+            header.push_back("contact_" + contact.name + "_electron_A_per_um");
+            header.push_back("contact_" + contact.name + "_hole_A_per_um");
+            header.push_back("contact_" + contact.name + "_total_A_per_um");
+        }
+    }
+    const bool currentStopCriteriaEnabled = sweep.breakdown.hasCurrentCriteria();
+    if (currentStopCriteriaEnabled) {
+        header.push_back("stop_criterion");
+        header.push_back("stop_current_A_per_um");
     }
     csv.writeHeader(header);
 
@@ -5579,6 +5760,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             attempt.globalContinuityClosure.electron.integratedSource;
         point.globalHoleIntegratedSource =
             attempt.globalContinuityClosure.hole.integratedSource;
+        const auto& globalElectron = attempt.globalContinuityClosure.electron;
+        const auto& globalHole = attempt.globalContinuityClosure.hole;
+        point.globalAbsoluteMismatch = {std::abs(globalElectron.mismatch), std::abs(globalHole.mismatch)};
+        point.globalNetScale = {globalElectron.netScale, globalHole.netScale};
+        point.globalContactNodeFluxAbsSum = {globalElectron.contactNodeFluxAbsSum, globalHole.contactNodeFluxAbsSum};
+        point.globalSourceAbsSum = {globalElectron.integratedSourceAbsSum, globalHole.integratedSourceAbsSum};
         point.carrierRowRecoveryAttempted = attempt.carrierRowRecoveryAttempted;
         point.carrierRowRecoveryElectronRows = attempt.carrierRowRecoveryElectronRows;
         point.carrierRowRecoveryHoleRows = attempt.carrierRowRecoveryHoleRows;
@@ -5682,6 +5869,55 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 point.breakdownDetected = true;
                 point.breakdownVoltage = point.lastStableBias;
                 point.breakdownCriterion = "last_stable_before_nonconvergence";
+            }
+        }
+        const bool currentsAvailable = converged && solverMethod != SolverMethod::PoissonOnly &&
+            (solverMethod != SolverMethod::FrozenState || sweep.frozenStateComputeCurrent);
+        if (currentsAvailable && (sweep.csvAllContacts || currentStopCriteriaEnabled)) {
+            for (const Contact& contact : mesh.contacts()) {
+                const bool needed = sweep.csvAllContacts ||
+                    contact.name == sweep.breakdown.currentContact;
+                if (!needed)
+                    continue;
+                const ContactCurrentResult contactResult =
+                    contact.name == sweep.currentContact
+                        ? current
+                        : recordContactCurrent.compute(sol, contact.name);
+                point.contactCurrents.emplace_back(
+                    contact.name,
+                    std::array<Real, 3>{contactResult.electronCurrent, contactResult.holeCurrent,
+                                        contactResult.totalCurrent});
+            }
+        }
+        if (currentsAvailable && currentStopCriteriaEnabled && !point.breakdownDetected) {
+            for (const auto& [name, currents] : point.contactCurrents) {
+                if (name != sweep.breakdown.currentContact)
+                    continue;
+                const Real total_A_per_um =
+                    currentPerInternalDepthToAPerUm(sweep.scaling, currents[2]);
+                std::string criterion;
+                if (sweep.breakdown.currentAbs_A_per_um > 0.0 &&
+                    std::abs(total_A_per_um) >= sweep.breakdown.currentAbs_A_per_um) {
+                    criterion = "current_abs";
+                } else if (!std::isnan(sweep.breakdown.currentMin_A_per_um) &&
+                           total_A_per_um <= sweep.breakdown.currentMin_A_per_um) {
+                    criterion = "current_min";
+                } else if (!std::isnan(sweep.breakdown.currentMax_A_per_um) &&
+                           total_A_per_um >= sweep.breakdown.currentMax_A_per_um) {
+                    criterion = "current_max";
+                }
+                if (!criterion.empty()) {
+                    point.breakdownDetected = true;
+                    point.breakdownVoltage = point.bias;
+                    point.breakdownCriterion = criterion;
+                    if (runtimeLog.active()) {
+                        runtimeLogInfo(
+                            "stop_criterion: " + criterion + " contact=" + name +
+                            " bias_V=" + formatReal(point.bias) +
+                            " current_A_per_um=" + formatReal(total_A_per_um));
+                    }
+                }
+                break;
             }
         }
         if (converged && sweep.diagnostics.pathIonizationIntegrals.enabled) {
@@ -6466,6 +6702,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(formatReal(point.globalHoleContactFlux));
             row.push_back(formatReal(point.globalElectronIntegratedSource));
             row.push_back(formatReal(point.globalHoleIntegratedSource));
+            for (int carrier=0; carrier<2; ++carrier) {
+                row.push_back(formatReal(point.globalAbsoluteMismatch[carrier]));
+                row.push_back(formatReal(point.globalNetScale[carrier]));
+                row.push_back(formatReal(point.globalContactNodeFluxAbsSum[carrier]));
+                row.push_back(formatReal(point.globalSourceAbsSum[carrier]));
+            }
         }
         if (writeUnitScaledColumns) {
             row.push_back(formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, point.totalCurrent)));
@@ -6575,6 +6817,32 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(formatReal(point.electronDensityJumpP95AbsDex));
             row.push_back(formatReal(point.electronDensityJumpMaxAbsDex));
             row.push_back(formatIndexOrMinusOne(point.electronDensityJumpMaxNode));
+        }
+        if (sweep.csvAllContacts) {
+            for (const std::string& contactName : allContactNames) {
+                std::array<Real, 3> values{0.0, 0.0, 0.0};
+                for (const auto& [name, currents] : point.contactCurrents) {
+                    if (name == contactName) {
+                        values = currents;
+                        break;
+                    }
+                }
+                for (const Real value : values)
+                    row.push_back(formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, value)));
+            }
+        }
+        if (currentStopCriteriaEnabled) {
+            const bool stopped = point.breakdownCriterion.rfind("current_", 0) == 0 &&
+                point.breakdownCriterion != "current_jump";
+            row.push_back(stopped ? point.breakdownCriterion : std::string());
+            Real stopCurrent = 0.0;
+            for (const auto& [name, currents] : point.contactCurrents) {
+                if (name == sweep.breakdown.currentContact) {
+                    stopCurrent = currents[2];
+                    break;
+                }
+            }
+            row.push_back(formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, stopCurrent)));
         }
         csv.writeRow(row);
 
@@ -7474,11 +7742,59 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 sourceIntegralPerInternalToPerMPerS * PerMeterToPerMicron;
         }
 
-        if (converged && sweep.writeVtk) {
-            point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
+        const bool mandatoryVtkPoint = std::any_of(
+            sweep.vtkBiasPoints.begin(), sweep.vtkBiasPoints.end(),
+            [&](Real bias) { return std::abs(bias - voltage) <= 1.0e-12; });
+        if (converged && (sweep.writeVtk || mandatoryVtkPoint)) {
+            point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage,
+                                          sweep.vtkFormat == "vtu" ? ".vtu" : ".vtk");
             const std::filesystem::path vtkPath(point.outputVtk);
             if (!vtkPath.parent_path().empty())
                 std::filesystem::create_directories(vtkPath.parent_path());
+            DDSolutionVtkOptions vtkOptions;
+            vtkOptions.format = sweep.vtkFormat;
+            vtkOptions.fields = sweep.vtkFields;
+            vtkOptions.binary = sweep.vtkBinary;
+            vtkOptions.skippedFields = &point.skippedVtkFields;
+            vtkOptions.fieldDataStrings.emplace_back("VelaVersion", VELA_VERSION);
+            vtkOptions.fieldDataStrings.emplace_back("SweepContact", sweep.contact);
+            vtkOptions.fieldDataValues.emplace_back("Bias_V", voltage);
+            vtkOptions.fieldDataValues.emplace_back("PointIndex", static_cast<Real>(points.size()));
+            vtkOptions.fieldDataValues.emplace_back("Converged", 1.0);
+            if (sweep.vtkFieldDataEnabled) {
+                vtkOptions.fieldDataStrings.insert(vtkOptions.fieldDataStrings.end(),
+                    sweep.vtkFieldDataStrings.begin(), sweep.vtkFieldDataStrings.end());
+                vtkOptions.fieldDataValues.insert(vtkOptions.fieldDataValues.end(),
+                    sweep.vtkFieldDataValues.begin(), sweep.vtkFieldDataValues.end());
+                const Real outer = boundaryControlEnabled ? boundaryObservation.outerVoltage_V : voltage;
+                Real t = sweep.stop == sweep.start ? 0.0 : (outer - sweep.start) / (sweep.stop - sweep.start);
+                bool reached = std::abs(outer - sweep.stop) <= 1.0e-12;
+                if (sweep.voltageToCurrent.enabled) {
+                    const Real current = sweep.voltageToCurrent.currentDirection *
+                        currentPerInternalDepthToAPerUm(sweep.scaling, point.totalCurrent);
+                    const Real initial = points.empty() ? current : sweep.voltageToCurrent.currentDirection *
+                        currentPerInternalDepthToAPerUm(sweep.scaling, points.front().totalCurrent);
+                    const Real goal = sweep.voltageToCurrent.currentPoints_A_per_um.back();
+                    t = goal == initial ? 0.0 : (current - initial) / (goal - initial);
+                    reached = boundaryObservation.mode == "current" &&
+                        std::abs(current - goal) <= sweep.voltageToCurrent.currentTolerance_A_per_um;
+                }
+                const bool suppliedTime = std::any_of(sweep.vtkFieldDataStrings.begin(), sweep.vtkFieldDataStrings.end(),
+                        [](const auto& item) { return item.first == "t"; }) ||
+                    std::any_of(sweep.vtkFieldDataValues.begin(), sweep.vtkFieldDataValues.end(),
+                        [](const auto& item) { return item.first == "t"; });
+                if (!suppliedTime)
+                    vtkOptions.fieldDataValues.emplace_back("t", t);
+                vtkOptions.fieldDataValues.emplace_back("GoalReached", reached ? 1.0 : 0.0);
+                vtkOptions.fieldDataValues.emplace_back("goal_reached", reached ? 1.0 : 0.0);
+                vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_OuterVoltage_V", outer);
+                vtkOptions.fieldDataValues.emplace_back(sweep.contact + "_InnerVoltage_V", voltage);
+            }
+            for (const auto& [name, currents] : point.contactCurrents) {
+                vtkOptions.fieldDataValues.emplace_back(
+                    name + "_TotalCurrent_A_per_um",
+                    currentPerInternalDepthToAPerUm(sweep.scaling, currents[2]));
+            }
             writeDDSolutionVTK(point.outputVtk,
                                mesh,
                                matdb,
@@ -7490,7 +7806,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                sweepBgnConfig,
                                temperature_K,
                                sweep.scaling,
-                               sweepCarrierStatistics);
+                               sweepCarrierStatistics,
+                               nullptr,
+                               false,
+                               &vtkOptions);
+            if (runtimeLog.active() && !point.skippedVtkFields.empty()) {
+                std::string skipped;
+                for (const std::string& name : point.skippedVtkFields)
+                    skipped += (skipped.empty() ? "" : ",") + name;
+                runtimeLogInfo("vtk_fields_skipped: " + skipped);
+            }
         }
         if (converged && !sweep.writeStateFile.empty())
             saveBiasState(sweep.writeStateFile, sol, voltage, "accepted");
@@ -7579,8 +7904,44 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             fixedChargeSpecs,
             sheetChargeSpecs,
             contactSpecs);
-        const NewtonPoissonBlockInitialization initialization =
+        NewtonPoissonBlockInitialization initialization =
             initializer.buildPoissonBlockInitialization();
+        if (sweep.initialization.poissonMaxIter > 0) {
+            NewtonConfig poissonConfig = *initializationNewton;
+            poissonConfig.maxIter = sweep.initialization.poissonMaxIter;
+            NewtonSolver poissonInitializer(
+                mesh, matdb, doping, initializationBiases, poissonConfig,
+                fixedChargeSpecs, sheetChargeSpecs, contactSpecs);
+            const NewtonResult poisson =
+                poissonInitializer.solvePoissonOnly(initialization.coldInitial);
+            const std::filesystem::path csvPath(sweep.csvFile);
+            const auto reportPath = csvPath.parent_path() /
+                (csvPath.stem().string() + "_poisson_initialization.json");
+            nlohmann::json iterations = nlohmann::json::array();
+            for (const auto& iteration : poisson.trace) {
+                iterations.push_back({{"iteration", iteration.iter},
+                    {"residual_norm", iteration.residualNorm},
+                    {"damping", iteration.dampingFactor},
+                    {"line_search_attempts", iteration.lineSearchAttempts}});
+            }
+            std::ofstream report(reportPath);
+            if (!report)
+                throw std::runtime_error("DCSweep: cannot write Poisson initialization report.");
+            report << nlohmann::json{
+                {"schema", "vela.poisson_initialization.v1"},
+                {"bias_V", initialBias}, {"max_iter", poissonConfig.maxIter},
+                {"iterations", poisson.iters}, {"converged", poisson.converged},
+                {"convergence_reason", poisson.convergenceReason},
+                {"failure_reason", poisson.failureDiagnostics.failureReason},
+                {"initial_residual_norm", poisson.initialResidualNorm},
+                {"final_block_residuals", residualBlockJson(poisson.finalBlockNorms)},
+                {"trace", iterations}}.dump(2) << '\n';
+            if (!poisson.converged)
+                throw std::runtime_error("DCSweep: Poisson initialization failed: " +
+                    poisson.failureDiagnostics.failureReason);
+            initialization.poissonBlockInitial = poisson.solution;
+            initialization.poissonBlockResiduals = poisson.finalBlockNorms;
+        }
         initialState = std::make_unique<DDSolution>(initialization.poissonBlockInitial);
         if (!sweep.initialization.writeStateFile.empty())
             saveBiasState(sweep.initialization.writeStateFile, *initialState, initialBias, "initialization");
@@ -7665,7 +8026,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                        Real predictorPreviousStateVoltage,
                                        Real currentDirection,
                                        const detail::MonotoneBoundaryRootConfig& rootConfig,
-                                       const std::function<Real(Real, Real)>& residual) {
+                                       const std::function<Real(Real, Real)>& residual,
+                                       int outerRetryCount = 0) {
         ScopedPerformanceTimer timer("boundary.controlled_target");
         incrementPerformanceCounter("boundary.controlled_targets");
         ControlledBoundarySolve solved;
@@ -7815,13 +8177,24 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 auto solveWithInitial = [&](const DDSolution* candidate) {
                     SolvePointAttempt candidateAttempt =
                         solvePoint(candidateVoltage, candidate, false);
-                    return enforceQfBounds(
+                    candidateAttempt = enforceQfBounds(
                         candidateVoltage,
                         candidate,
                         false,
                         0,
                         std::move(candidateAttempt),
                         points.size());
+                    candidateAttempt.predictedInitialState =
+                        usedStatePredictor && candidate == &predictedState;
+                    // A boundary evaluation can fail before recordPoint is
+                    // reached. Preserve every device trial (including a failed
+                    // predictor before its constant-state fallback) here.
+                    writeNonlinearTrace(
+                        candidateAttempt, points.size(),
+                        hasEvaluationState ? &evaluationState : nullptr,
+                        evaluationStateVoltage, innerVoltage, candidateVoltage,
+                        candidateVoltage - evaluationStateVoltage, outerRetryCount);
+                    return candidateAttempt;
                 };
                 attempt = solveWithInitial(initial);
                 attempt.predictedInitialState = usedStatePredictor;
@@ -7978,10 +8351,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (outerTargets.empty())
             throw std::invalid_argument(
                 "DCSweep: external-circuit sweep requires at least one outer-voltage point.");
+        const Real outerDirection =
+            outerTargets.back() < outerTargets.front() ? -1.0 : 1.0;
         for (std::size_t i = 1; i < outerTargets.size(); ++i) {
-            if (outerTargets.at(i) < outerTargets.at(i - 1))
+            if (outerDirection * (outerTargets.at(i) - outerTargets.at(i - 1)) < 0.0)
                 throw std::invalid_argument(
-                    "DCSweep: external-circuit outer-voltage points must be nondecreasing.");
+                    "DCSweep: external-circuit outer-voltage points must be monotone.");
         }
 
         if (sweep.externalResistor.solver == "coupled_newton") {
@@ -8032,6 +8407,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const auto coupledStateUnpacker =
                 coupledDeviceSolver.makeArclengthStateUnpacker(
                     &coupledReferenceState);
+            const auto coupledConvergence =
+                coupledDeviceSolver.makeArclengthConvergenceEvaluator(sweep.contact);
             CoupledLoadLineConfig coupledConfig;
             coupledConfig.maxIterations = sweep.externalResistor.maxIterations;
             coupledConfig.equationTolerance =
@@ -8070,6 +8447,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 sweep.externalResistor.coupledLinearizationAudit;
             coupledConfig.diagnosticMinUpdates =
                 sweep.externalResistor.coupledDiagnosticMinUpdates;
+            coupledConfig.updateConvergence = sweep.externalResistor.coupledUpdateConvergence;
+            DensityUpdateErrorEvaluator coupledUpdateError;
+            if (coupledConfig.updateConvergence.mode != "off")
+                coupledUpdateError = coupledDeviceSolver.makeArclengthUpdateErrorEvaluator(
+                    sweep.contact, coupledConfig.updateConvergence);
             const Real coupledCurrentScale =
                 sweep.externalResistor.currentDirection *
                 currentPerInternalDepthToAPerUm(
@@ -8084,7 +8466,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 std::move(coupledDeviceSystem),
                 coupledCurrentValue,
                 coupledConfig,
-                std::move(coupledCurrent));
+                std::move(coupledCurrent), std::move(coupledUpdateError));
 
             ArclengthState coupledState;
             coupledState.x =
@@ -8110,12 +8492,30 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
             Real previousInnerVoltage = coupledState.lambda;
             Real previousOuterVoltage = outerTargets.front();
+            std::optional<Real> previousCoupledOuterVoltage;
+            bool pendingUsedSecant = false;
             CoupledLoadLineResult pendingCoupled;
             bool hasPendingCoupled = false;
+            NewtonStateConvergenceEvaluation pendingConvergence;
+            std::string pendingAcceptanceDiagnostics;
+            std::uint64_t coupledPhysicalRejectionId = 0;
+            std::ofstream coupledUpdateCsv;
+            if (!coupledConfig.updateConvergence.diagnosticCsv.empty()) {
+                const std::filesystem::path path(coupledConfig.updateConvergence.diagnosticCsv);
+                if (!path.parent_path().empty())
+                    std::filesystem::create_directories(path.parent_path());
+                coupledUpdateCsv.open(coupledConfig.updateConvergence.diagnosticCsv);
+                if (!coupledUpdateCsv)
+                    throw std::runtime_error("Cannot open coupled update convergence diagnostic CSV");
+                coupledUpdateCsv << "outer_V,attempted_step_V,retry,iteration,device_residual_inf,load_residual_V,update_valid,update_rms,poisson_rms,electron_rms,hole_rms,contact_rms,poisson_count,electron_count,hole_count,contact_count,accepted_alpha,convergence_reason,reported_alpha,full_step_merit,raw_state_update_inf,raw_inner_update_V,limited_state_update_inf,proposed_inner_update_V,protected_electrons,protected_holes,population_effective_alpha,derivative_mode,derivative_reason\n";
+                coupledUpdateCsv << std::setprecision(17);
+            }
 
-            auto attemptCoupledOuterPoint =
-                [&](Real outerVoltage, Real attemptedOuterStep, int retryCount) {
+            auto attemptCoupledSeed =
+                [&](Real outerVoltage, Real attemptedOuterStep, int retryCount, bool useSecant)
+                    -> detail::DCSweepStepAttemptResult {
                     ArclengthState solveSeed = coupledState;
+                    pendingUsedSecant = false;
                     if (sweep.externalResistor.coupledStatePredictor == "tangent") {
                         const auto prediction = coupledSolver.tangentPredict(
                             coupledState, outerVoltage,
@@ -8129,13 +8529,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             " delta_inner_V=" + formatReal(prediction.voltageIncrement) +
                             " actual_state_update_inf=" + formatReal(prediction.stateIncrementInf) +
                             " device_residual=" + formatReal(prediction.deviceResidual));
-                    } else if (attemptedOuterStep != 0.0 &&
+                    } else if (useSecant && attemptedOuterStep != 0.0 &&
                         previousCoupledState.has_value()) {
                         solveSeed = coupledSolver.secantPredict(
                             *previousCoupledState,
                             coupledState,
                             outerVoltage,
                             sweep.externalResistor.resistance_ohm_um);
+                        pendingUsedSecant = solveSeed.lambda != coupledState.lambda ||
+                            !(solveSeed.x.array() == coupledState.x.array()).all();
                     }
                     if (coupledConfig.linearizationAuditEnabled && !sweep.writeStateFile.empty()) {
                         const std::string seedPath = sweep.writeStateFile +
@@ -8186,6 +8588,124 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 (info.accepted ? "1" : "0") + " state_file=" + path);
                         });
                     hasPendingCoupled = true;
+                    if (coupledUpdateCsv.is_open()) {
+                        for (const auto& trace : pendingCoupled.trace) {
+                            const auto& error = trace.updateError;
+                            coupledUpdateCsv << outerVoltage << ',' << attemptedOuterStep << ','
+                                << retryCount << ',' << trace.iteration << ',' << trace.equationResidualNorm
+                                << ',' << trace.loadLineResidual_V << ',' << error.valid << ',' << error.rms;
+                            for (Real value : error.blockRms) coupledUpdateCsv << ',' << value;
+                            for (auto count : error.counts) coupledUpdateCsv << ',' << count;
+                            coupledUpdateCsv << ',' << trace.acceptedAlpha << ',' << pendingCoupled.convergenceReason
+                                << ',' << trace.reportedAlpha << ',' << trace.fullStepMerit
+                                << ',' << trace.rawStateUpdateNorm << ',' << trace.rawVoltageUpdate_V
+                                << ',' << trace.limitedStateUpdateNorm << ',' << trace.proposedVoltageUpdate_V
+                                << ',' << trace.protectedElectrons << ',' << trace.protectedHoles
+                                << ',' << trace.populationEffectiveAlpha << ',' << trace.derivativeMode
+                                << ',' << trace.derivativeReason << '\n';
+                        }
+                        coupledUpdateCsv.flush();
+                    }
+                    pendingAcceptanceDiagnostics.clear();
+                    if (pendingCoupled.converged) {
+                        pendingConvergence = coupledConvergence(
+                            pendingCoupled.state.x, pendingCoupled.state.lambda);
+                        const DDSolution candidate = coupledStateUnpacker(pendingCoupled.state.x);
+                        long double kcl = 0.0L;
+                        Real electronTerminalAbsSum = 0., holeTerminalAbsSum = 0.;
+                        Real actualDirectedCurrent = std::numeric_limits<Real>::quiet_NaN();
+                        bool finiteCurrents = true;
+                        for (const Contact& contact : mesh.contacts()) {
+                            const auto terminal = contactCurrent.compute(candidate, contact.name);
+                            const Real current = currentPerInternalDepthToAPerUm(
+                                sweep.scaling, terminal.totalCurrent);
+                            electronTerminalAbsSum += std::abs(currentPerInternalDepthToAPerUm(
+                                sweep.scaling, terminal.electronCurrent));
+                            holeTerminalAbsSum += std::abs(currentPerInternalDepthToAPerUm(
+                                sweep.scaling, terminal.holeCurrent));
+                            finiteCurrents = finiteCurrents && std::isfinite(current);
+                            kcl += current;
+                            if (contact.name == sweep.currentContact)
+                                actualDirectedCurrent = sweep.externalResistor.currentDirection * current;
+                        }
+                        const Real kclLimit = std::max(Real{1e-12},
+                            Real{1e-5} * std::abs(actualDirectedCurrent));
+                        const bool rowsPass = !pendingConvergence.carrierRows.enforced ||
+                            pendingConvergence.carrierRows.satisfied;
+                        const bool globalPass = !pendingConvergence.globalContinuity.enforced ||
+                            pendingConvergence.globalContinuity.satisfied;
+                        const bool kclPass = finiteCurrents && std::isfinite(kcl) &&
+                            std::abs(kcl) <= kclLimit;
+                        const Real actualLoadResidual = sweep.externalResistor.coupledVoltageCoefficient *
+                            pendingCoupled.state.lambda + sweep.externalResistor.resistance_ohm_um *
+                            actualDirectedCurrent - outerVoltage;
+                        const bool loadPass = std::isfinite(actualLoadResidual) &&
+                            std::abs(actualLoadResidual) <= sweep.externalResistor.residualTolerance_V;
+                        const bool physicalFinite = std::isfinite(pendingConvergence.blockNorms.psi) &&
+                            std::isfinite(pendingConvergence.blockNorms.phin) &&
+                            std::isfinite(pendingConvergence.blockNorms.phip) &&
+                            std::isfinite(pendingConvergence.carrierRows.maxRatio) &&
+                            std::isfinite(pendingConvergence.globalContinuity.electron.ratio) &&
+                            std::isfinite(pendingConvergence.globalContinuity.hole.ratio);
+                        pendingAcceptanceDiagnostics = nlohmann::json{
+                            {"coupled_acceptance_checked", true},
+                            {"coupled_seed", pendingUsedSecant ? "secant" : "accepted_state"},
+                            {"predicted_inner_step_limit_V", sweep.externalResistor.coupledPredictedInnerStep_V},
+                            {"predicted_inner_step_source", sweep.externalResistor.coupledInnerStepSource},
+                            {"predicted_inner_step_reason", sweep.externalResistor.coupledInnerStepReason},
+                            {"coupled_device_residual_inf", pendingCoupled.equationResidualNorm},
+                            {"newton_stopping_reason", pendingCoupled.convergenceReason},
+                            {"device_residual_identity", "vela_device_infinity_norm_not_native_RhsMin"},
+                            {"density_update_mode", coupledConfig.updateConvergence.mode},
+                            {"density_update_valid", pendingCoupled.updateError.valid},
+                            {"density_update_rms", pendingCoupled.updateError.rms},
+                            {"physical_residuals_finite", physicalFinite},
+                            {"actual_load_line_residual_V", actualLoadResidual},
+                            {"actual_load_line_satisfied", loadPass},
+                            {"carrier_row_enforced", pendingConvergence.carrierRows.enforced},
+                            {"carrier_row_satisfied", pendingConvergence.carrierRows.satisfied},
+                            {"carrier_row_max_ratio", pendingConvergence.carrierRows.maxRatio},
+                            {"global_continuity_enforced", pendingConvergence.globalContinuity.enforced},
+                            {"global_continuity_satisfied", pendingConvergence.globalContinuity.satisfied},
+                            {"global_electron_qualified", pendingConvergence.globalContinuity.electron.qualified},
+                            {"global_hole_qualified", pendingConvergence.globalContinuity.hole.qualified},
+                            {"global_electron_ratio", pendingConvergence.globalContinuity.electron.ratio},
+                            {"global_hole_ratio", pendingConvergence.globalContinuity.hole.ratio},
+                            {"global_electron_absolute_mismatch", std::abs(pendingConvergence.globalContinuity.electron.mismatch)},
+                            {"global_hole_absolute_mismatch", std::abs(pendingConvergence.globalContinuity.hole.mismatch)},
+                            {"global_electron_net_scale", pendingConvergence.globalContinuity.electron.netScale},
+                            {"global_hole_net_scale", pendingConvergence.globalContinuity.hole.netScale},
+                            {"global_electron_contact_node_flux_abs_sum", pendingConvergence.globalContinuity.electron.contactNodeFluxAbsSum},
+                            {"global_hole_contact_node_flux_abs_sum", pendingConvergence.globalContinuity.hole.contactNodeFluxAbsSum},
+                            {"global_electron_source_abs_sum", pendingConvergence.globalContinuity.electron.integratedSourceAbsSum},
+                            {"global_hole_source_abs_sum", pendingConvergence.globalContinuity.hole.integratedSourceAbsSum},
+                            {"terminal_electron_current_abs_sum_A_per_um", electronTerminalAbsSum},
+                            {"terminal_hole_current_abs_sum_A_per_um", holeTerminalAbsSum},
+                            {"terminal_kcl_A_per_um", static_cast<Real>(kcl)},
+                            {"terminal_kcl_limit_A_per_um", kclLimit},
+                            {"terminal_kcl_satisfied", kclPass}}.dump();
+                        runtimeLogInfo("external_circuit: physical acceptance " + pendingAcceptanceDiagnostics);
+                        if (!physicalFinite || !rowsPass || !globalPass || !kclPass || !loadPass) {
+                            pendingCoupled.converged = false;
+                            pendingCoupled.failureReason = "coupled_physical_acceptance: " +
+                                std::string(!physicalFinite ? "nonfinite_residual" :
+                                    !rowsPass ? "carrier_row_convergence" :
+                                    !globalPass ? "global_continuity_closure" :
+                                    !kclPass ? "terminal_kcl" : "actual_load_line");
+                            if (!sweep.diagnostics.newtonHistory.rejectedStateDirectory.empty()) {
+                                const std::filesystem::path directory(
+                                    sweep.diagnostics.newtonHistory.rejectedStateDirectory);
+                                std::filesystem::create_directories(directory);
+                                saveBiasState(directory / ("coupled_physical_" +
+                                    std::to_string(++coupledPhysicalRejectionId) + ".h5"),
+                                    candidate, pendingCoupled.state.lambda,
+                                    "coupled_physical_rejection");
+                            }
+                        } else {
+                            pendingCoupled.directedCurrent_A_per_um = actualDirectedCurrent;
+                            pendingCoupled.loadLineResidual_V = actualLoadResidual;
+                        }
+                    }
                     runtimeLogInfo(
                         "external_circuit: coupled Newton outer_V=" +
                         formatReal(outerVoltage) +
@@ -8249,6 +8769,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 " device_linearization_residual=" +
                                 formatReal(
                                     trace.deviceLinearizationResidualNorm) +
+                                " componentwise_backward_error=" +
+                                formatReal(trace.componentwiseBackwardError) +
                                 " circuit_linearization_residual=" +
                                 formatReal(
                                     trace.circuitLinearizationResidual) +
@@ -8277,9 +8799,33 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 " device_jvp_fd_at_error=" +
                                 formatReal(
                                     trace.deviceJvpFiniteDifferenceAtError));
+                            for (const auto& trial : trace.trials) {
+                                runtimeLogInfo("external_circuit: applied_direction iter=" +
+                                    std::to_string(trace.iteration) + " alpha=" + formatReal(trial.alpha) +
+                                    " accepted=" + (trial.accepted ? "1" : "0") +
+                                    " predicted_device_inf=" + formatReal(trial.predictedDeviceResidual.lpNorm<Eigen::Infinity>()) +
+                                    " actual_device_inf=" + formatReal(trial.actualDeviceResidual.lpNorm<Eigen::Infinity>()) +
+                                    " predicted_load_V=" + formatReal(trial.predictedLoadResidual_V) +
+                                    " actual_load_V=" + formatReal(trial.actualLoadResidual_V));
+                            }
                         }
                     }
-                    return pendingCoupled.converged;
+                    return {pendingCoupled.converged, pendingCoupled.iterations, false};
+                };
+
+            auto attemptCoupledOuterPoint =
+                [&](Real outerVoltage, Real attemptedOuterStep, int retryCount)
+                    -> detail::DCSweepStepAttemptResult {
+                    auto result = attemptCoupledSeed(outerVoltage, attemptedOuterStep, retryCount, true);
+                    if (!result.converged && pendingUsedSecant &&
+                        sweep.externalResistor.coupledContinuationEnabled &&
+                        sweep.externalResistor.coupledRetryAcceptedSeed) {
+                        runtimeLogInfo("external_circuit: retry from accepted state at outer_V=" +
+                                       formatReal(outerVoltage));
+                        result = attemptCoupledSeed(outerVoltage, attemptedOuterStep, retryCount, false);
+                        result.recovered = result.converged;
+                    }
+                    return result;
                 };
 
             auto acceptCoupledOuterPoint =
@@ -8297,10 +8843,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.solverMethod = "coupled_load_line_newton";
                 attempt.handoffStage = "coupled_load_line_newton";
                 attempt.newtonIterations = pendingCoupled.iterations;
+                attempt.solution.iters = pendingCoupled.iterations;
+                attempt.solution.converged = true;
+                attempt.finalBlockResiduals = pendingConvergence.blockNorms;
+                attempt.carrierRowViolations = static_cast<int>(pendingConvergence.carrierRows.violations.size());
+                attempt.carrierRowMaxRatio = pendingConvergence.carrierRows.maxRatio;
+                attempt.globalContinuityClosure = pendingConvergence.globalContinuity;
+                attempt.validationDiagnostics = pendingAcceptanceDiagnostics;
                 attempt.newtonConvergenceReason =
                     pendingCoupled.inexactConvergenceUsed
                     ? "coupled_inexact_device_forcing"
-                    : "coupled_residuals";
+                    : pendingCoupled.convergenceReason;
                 boundaryObservation = {};
                 boundaryObservation.mode = "external_resistor";
                 boundaryObservation.innerVoltage_V = pendingCoupled.state.lambda;
@@ -8316,13 +8869,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     true,
                     pendingCoupled.state.lambda - previousInnerVoltage,
                     acceptedOuterStep,
-                    retryCount);
+                    retryCount, {}, pendingAcceptanceDiagnostics);
 
                 previousSolution = attempt.solution;
                 previousInnerVoltage = pendingCoupled.state.lambda;
-                previousOuterVoltage = outerVoltage;
-                if (acceptedOuterStep != 0.0)
+                if (acceptedOuterStep != 0.0) {
+                    previousCoupledOuterVoltage = previousOuterVoltage;
                     previousCoupledState = coupledState;
+                }
+                previousOuterVoltage = outerVoltage;
                 coupledState = pendingCoupled.state;
                 currentSolutionBias = pendingCoupled.state.lambda;
                 hasCurrentSolutionBias = true;
@@ -8330,7 +8885,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 (void)attemptedOuterStep;
             };
 
-            if (!attemptCoupledOuterPoint(outerTargets.front(), 0.0, 0)) {
+            if (!attemptCoupledOuterPoint(outerTargets.front(), 0.0, 0).converged) {
                 throw std::runtime_error(
                     "DCSweep: coupled external-circuit Newton failed at initial outer " +
                     formatReal(outerTargets.front()) + " V, inner " +
@@ -8347,6 +8902,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             for (std::size_t targetIndex = 1;
                  targetIndex < outerTargets.size();
                  ++targetIndex) {
+                if (sweepStopRequestedByCriterion(points.back()))
+                    break;
                 const Real requestedOuterVoltage = outerTargets.at(targetIndex);
                 if (sameBoundaryValue(previousOuterVoltage, requestedOuterVoltage))
                     continue;
@@ -8375,16 +8932,35 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     initialOuterStep, outerControl.maxStep);
                 outerControl.growthFactor =
                     sweep.externalResistor.coupledOuterGrowthFactor;
+                outerControl.growthMode = sweep.stepGrowthMode;
+                // Count the augmented corrector's work, not the seed solver's.
+                outerControl.newtonIterationLimit = coupledConfig.maxIterations;
                 outerControl.shrinkFactor =
                     sweep.externalResistor.coupledOuterShrinkFactor;
                 outerControl.maxRetries =
                     sweep.externalResistor.coupledMaxStepRetries;
                 outerControl.stopOnFailure = true;
+                if (sweep.externalResistor.coupledContinuationEnabled) {
+                    outerControl.stepLimit = [&](Real proposed, Real remaining) -> std::optional<Real> {
+                        detail::OuterStepControl limits;
+                        limits.minimum = std::min(outerControl.minStep, remaining);
+                        limits.maximum = outerControl.maxStep;
+                        const bool history = previousCoupledState && previousCoupledOuterVoltage;
+                        return detail::guardedOuterStep(proposed, limits,
+                            sweep.externalResistor.coupledPredictedInnerStep_V,
+                            history ? coupledState.lambda - previousCoupledState->lambda : 1.,
+                            history ? previousOuterVoltage - *previousCoupledOuterVoltage : 1.);
+                    };
+                }
+                outerControl.stopRequested = [&]() {
+                    return sweepStopRequestedByCriterion(points.back());
+                };
 
                 detail::runDCSweepStepControl(
                     outerControl,
                     attemptCoupledOuterPoint,
                     [&](const detail::DCSweepStepControlEvent& event) {
+                        logStepGrowth(event);
                         if (event.converged) {
                             acceptCoupledOuterPoint(
                                 event.voltage,
@@ -8396,7 +8972,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     &outerStepState);
 
                 if (!sameBoundaryValue(
-                        previousOuterVoltage, requestedOuterVoltage)) {
+                        previousOuterVoltage, requestedOuterVoltage) &&
+                    !sweepStopRequestedByCriterion(points.back())) {
                     const std::string failureReason =
                         hasPendingCoupled
                             ? pendingCoupled.failureReason
@@ -8444,7 +9021,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     directedCurrent),
                 seedVoltage);
         }
-        for (Real outerVoltage : outerTargets) {
+        std::string lastBoundaryFailure;
+        auto solveOuterPoint = [&](Real outerVoltage, Real outerStep,
+                                   int retryCount) -> bool {
             detail::MonotoneBoundaryRootConfig pointRootConfig = rootConfig;
             if (const auto prediction =
                     detail::predictBoundaryVoltageFromHistory(
@@ -8454,27 +9033,43 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     prediction->curvatureAccelerated
                         ? "boundary.curvature_predictor_uses"
                         : "boundary.secant_predictor_uses");
+            } else if (sweep.boundaryControl.adaptiveOuterContinuation &&
+                       !outerInnerHistory.empty()) {
+                const Real outerDelta = outerVoltage - outerInnerHistory.back().first;
+                pointRootConfig.predictedVoltage = seedVoltage +
+                    std::copysign(std::min(rootConfig.maxStep, std::abs(outerDelta)),
+                                  outerDelta);
             }
-            ControlledBoundarySolve solved = solveControlledBoundary(
-                "external_resistor",
-                outerVoltage,
-                "V",
-                sweep.externalResistor.resistance_ohm_um,
-                seedVoltage,
-                seedState,
-                hasPredictorPreviousSolution
-                    ? &predictorPreviousSolution
-                    : nullptr,
-                predictorPreviousBias,
-                sweep.externalResistor.currentDirection,
-                pointRootConfig,
-                [&](Real innerVoltage, Real directedCurrent) {
-                    return detail::externalResistorLoadLineResidual(
-                        innerVoltage,
-                        outerVoltage,
-                        sweep.externalResistor.resistance_ohm_um,
-                        directedCurrent);
-                });
+            ControlledBoundarySolve solved;
+            try {
+                solved = solveControlledBoundary(
+                    "external_resistor",
+                    outerVoltage,
+                    "V",
+                    sweep.externalResistor.resistance_ohm_um,
+                    seedVoltage,
+                    seedState,
+                    hasPredictorPreviousSolution
+                        ? &predictorPreviousSolution
+                        : nullptr,
+                    predictorPreviousBias,
+                    sweep.externalResistor.currentDirection,
+                    pointRootConfig,
+                    [&](Real innerVoltage, Real directedCurrent) {
+                        return detail::externalResistorLoadLineResidual(
+                            innerVoltage,
+                            outerVoltage,
+                            sweep.externalResistor.resistance_ohm_um,
+                            directedCurrent);
+                    }, retryCount);
+            } catch (const std::runtime_error& error) {
+                if (!sweep.boundaryControl.adaptiveOuterContinuation)
+                    throw;
+                lastBoundaryFailure = error.what();
+                runtimeLogWarn("external_circuit: nested trial rejected outer_V=" +
+                    formatReal(outerVoltage) + " reason=" + lastBoundaryFailure);
+                return false;
+            }
 
             boundaryObservation = {};
             boundaryObservation.mode = "external_resistor";
@@ -8488,9 +9083,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 solved.root.voltage,
                 solved.attempt,
                 true,
-                solved.root.voltage - previousInnerVoltage,
-                solved.root.voltage - previousInnerVoltage,
-                0);
+                sweep.boundaryControl.adaptiveOuterContinuation
+                    ? outerStep : solved.root.voltage - previousInnerVoltage,
+                sweep.boundaryControl.adaptiveOuterContinuation
+                    ? outerStep : solved.root.voltage - previousInnerVoltage,
+                retryCount);
 
             if (seedState != nullptr &&
                 !sameBoundaryValue(seedVoltage, solved.root.voltage)) {
@@ -8504,6 +9101,58 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             outerInnerHistory.emplace_back(outerVoltage, solved.root.voltage);
             currentSolutionBias = solved.root.voltage;
             hasCurrentSolutionBias = true;
+            return true;
+        };
+        if (!sweep.boundaryControl.adaptiveOuterContinuation) {
+            for (Real outerVoltage : outerTargets) {
+                solveOuterPoint(outerVoltage, 0.0, 0);
+                if (sweepStopRequestedByCriterion(points.back()))
+                    break;
+            }
+        } else {
+            if (!solveOuterPoint(outerTargets.front(), 0.0, 0)) {
+                throw std::runtime_error("DCSweep: nested initial outer solve failed: " +
+                    lastBoundaryFailure);
+            }
+            Real acceptedOuter = outerTargets.front();
+            detail::DCSweepStepControlState outerStepState;
+            for (std::size_t index = 1; index < outerTargets.size(); ++index) {
+                if (sweepStopRequestedByCriterion(points.back()))
+                    break;
+                const Real target = outerTargets[index];
+                if (sameBoundaryValue(target, acceptedOuter))
+                    continue;
+                detail::DCSweepStepControlConfig control;
+                control.start = acceptedOuter;
+                control.stop = target;
+                control.step = target - acceptedOuter;
+                const Real span = std::abs(control.step);
+                control.minStep = std::min(sweep.minStep, span);
+                control.maxStep = std::min(sweep.maxStep > 0.0
+                    ? sweep.maxStep : span, span);
+                control.initialStep = std::min(sweep.initialStep > 0.0
+                    ? sweep.initialStep : control.maxStep, control.maxStep);
+                control.growthFactor = sweep.growthFactor;
+                control.shrinkFactor = sweep.shrinkFactor;
+                control.maxRetries = sweep.maxRetries;
+                control.stopOnFailure = true;
+                control.stopRequested = [&]() {
+                    return sweepStopRequestedByCriterion(points.back());
+                };
+                control.mandatoryPoints = sweep.vtkBiasPoints;
+                detail::runDCSweepStepControl(control, solveOuterPoint,
+                    [&](const detail::DCSweepStepControlEvent& event) {
+                        if (event.converged)
+                            acceptedOuter = event.voltage;
+                    }, &outerStepState);
+                if (!sameBoundaryValue(acceptedOuter, target) &&
+                    !sweepStopRequestedByCriterion(points.back())) {
+                    throw std::runtime_error(
+                        "DCSweep: nested continuation failed before outer " +
+                        formatReal(target) + " V; last accepted outer=" +
+                        formatReal(acceptedOuter) + " V: " + lastBoundaryFailure);
+                }
+            }
         }
         return finishResult();
     }
@@ -8786,9 +9435,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
             recordPoint(recordedVoltage, attempt, ok, attemptedStep, acceptedStep, retryCount,
                         failureReason, validationDiagnostics);
-            if (ok && !points.empty() && points.back().breakdownDetected &&
-                points.back().breakdownCriterion.rfind(
-                    "path_ionization_integral_rank_", 0) == 0) {
+            if (ok && !points.empty() && sweepStopRequestedByCriterion(points.back())) {
                 return finishResult();
             }
             if (!ok) {
@@ -9061,9 +9708,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 stepResult.retries,
                 std::string(),
                 attempt.validationDiagnostics);
-            if (!points.empty() && points.back().breakdownDetected &&
-                points.back().breakdownCriterion.rfind(
-                    "path_ionization_integral_rank_", 0) == 0) {
+            if (!points.empty() && sweepStopRequestedByCriterion(points.back())) {
                 return finishResult();
             }
             acceptPredictorHistory(previousSolution, currentSolutionBias, stepResult.state.lambda);
@@ -9100,10 +9745,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     stepControl.shrinkFactor = sweep.shrinkFactor;
     stepControl.maxRetries = sweep.maxRetries;
     stepControl.stopOnFailure = sweep.stopOnFailure;
+    stepControl.mandatoryPoints = sweep.vtkBiasPoints;
     stepControl.stopRequested = [&]() {
-        return !points.empty() && points.back().breakdownDetected &&
-            points.back().breakdownCriterion.rfind(
-                "path_ionization_integral_rank_", 0) == 0;
+        return !points.empty() && sweepStopRequestedByCriterion(points.back());
     };
 
     detail::runDCSweepStepControl(
@@ -9221,6 +9865,8 @@ void validateDCSweepStepControlConfig(const DCSweepStepControlConfig& cfg)
 
     if (cfg.step == 0.0)
         throw std::invalid_argument("DCSweep step control: step must be non-zero.");
+    if (cfg.start != cfg.stop && cfg.start + cfg.step == cfg.start)
+        throw std::invalid_argument("DCSweep step control: nominal step is not representable at start.");
     if ((cfg.stop - cfg.start) * cfg.step < 0.0) {
         throw std::invalid_argument(
             "DCSweep step control: step sign must move start toward stop.");
@@ -9300,16 +9946,31 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             if (remaining <= tolerance)
                 return true;
 
-            const Real stepMagnitude = std::min(trialStep, remaining);
+            Real stepMagnitude = std::min(trialStep, remaining);
+            if (cfg.stepLimit) {
+                const auto limited = cfg.stepLimit(stepMagnitude, remaining);
+                if (!limited || !std::isfinite(*limited) || *limited <= 0.0 ||
+                    *limited > stepMagnitude * (1.0 + 1e-12) ||
+                    *limited < std::min(cfg.minStep, remaining)) {
+                    record({previousVoltage, false, 0.0, 0.0, retryCount,
+                            "state_step_limit_below_minimum_or_invalid"});
+                    return false;
+                }
+                stepMagnitude = std::min(stepMagnitude, *limited);
+            }
             const Real candidate = limitedTarget(target, stepMagnitude);
             const Real attemptedStep = candidate - previousVoltage;
+            if (candidate == previousVoltage) {
+                record({candidate, false, 0.0, 0.0, retryCount, "step_not_representable"});
+                return false;
+            }
             const DCSweepStepAttemptResult outcome = attempt(candidate, attemptedStep, retryCount);
             lastAttempted = attemptedStep;
             lastCandidate = candidate;
 
             if (outcome.converged) {
                 Real growth = cfg.growthFactor;
-                Real growthBase = trialStep;
+                Real growthBase = cfg.stepLimit ? std::abs(attemptedStep) : trialStep;
                 if (cfg.growthMode == "newton_iterations") {
                     if (outcome.newtonIterations < 0) {
                         throw std::invalid_argument(
@@ -9344,7 +10005,11 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             }
 
             const Real shrunken = stepMagnitude * cfg.shrinkFactor;
-            if (shrunken < cfg.minStep - std::numeric_limits<Real>::epsilon()) {
+            // A failed step above the floor still gets one attempt at the
+            // floor, even when geometric shrinking would skip over it. A
+            // clipped final/mandatory interval at or below the floor cannot
+            // be retried at a larger step without crossing its target.
+            if (stepMagnitude <= cfg.minStep) {
                 failureReason = "min_step_exhausted";
                 record({lastCandidate, false, lastAttempted, 0.0, retryCount, failureReason});
                 adaptiveStep = std::max(cfg.minStep,
@@ -9352,14 +10017,54 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                 return false;
             }
 
-            trialStep = shrunken;
+            trialStep = std::max(shrunken, cfg.minStep);
             ++retryCount;
         }
     };
 
     bool blockedByFailedStep = false;
+    // Mandatory landing points are merged into the nominal target sequence
+    // in sweep direction.  A mandatory point only clips the step that would
+    // cross it; the adaptive step size itself is untouched, so the other
+    // targets are reached exactly as without it.
+    std::vector<Real> pendingMandatory;
+    for (const Real point : cfg.mandatoryPoints) {
+        if (!std::isfinite(point))
+            throw std::invalid_argument("DCSweep step control: mandatory points must be finite.");
+        if (direction * (point - cfg.start) > tolerance && direction * (cfg.stop - point) > tolerance)
+            pendingMandatory.push_back(point);
+    }
+    std::sort(pendingMandatory.begin(), pendingMandatory.end(),
+              [&](Real a, Real b) { return direction * a < direction * b; });
+    std::size_t nextMandatory = 0;
+    auto reachNominal = [&](Real target) -> bool {
+        while (direction * (previousVoltage - target) < -tolerance) {
+            if (!advanceToward(target))
+                return false;
+            if (cfg.stopRequested && cfg.stopRequested())
+                return false;
+        }
+        return true;
+    };
+    auto reachMandatoryBefore = [&](Real target) -> bool {
+        while (nextMandatory < pendingMandatory.size() &&
+               direction * (pendingMandatory[nextMandatory] - target) < -tolerance) {
+            const Real point = pendingMandatory[nextMandatory++];
+            if (direction * (point - previousVoltage) <= tolerance)
+                continue;
+            if (!reachNominal(point))
+                return false;
+        }
+        return true;
+    };
     Real nominalTarget = cfg.start + cfg.step;
     while (!blockedByFailedStep && direction * (nominalTarget - cfg.stop) <= tolerance) {
+        if (!reachMandatoryBefore(nominalTarget)) {
+            if (cfg.stopOnFailure || (cfg.stopRequested && cfg.stopRequested()))
+                return;
+            blockedByFailedStep = true;
+            break;
+        }
         while (direction * (previousVoltage - nominalTarget) < -tolerance) {
             if (!advanceToward(nominalTarget)) {
                 if (cfg.stopOnFailure)
@@ -9373,6 +10078,11 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
         nominalTarget += cfg.step;
     }
 
+    if (!blockedByFailedStep && !reachMandatoryBefore(cfg.stop)) {
+        if (cfg.stopOnFailure || (cfg.stopRequested && cfg.stopRequested()))
+            return;
+        blockedByFailedStep = true;
+    }
     while (!blockedByFailedStep && direction * (previousVoltage - cfg.stop) < -tolerance) {
         if (!advanceToward(cfg.stop)) {
             if (cfg.stopOnFailure)

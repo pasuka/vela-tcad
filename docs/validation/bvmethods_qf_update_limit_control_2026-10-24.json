@@ -1,0 +1,519 @@
+{
+  "date": "2026-10-24",
+  "scope": "QF update cap 0.1 V versus disabled, same physics and stopping thresholds; bounded own sweep and frozen imported-state Newton solve",
+  "configuration": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "temperature_K": 300,
+    "R_ohm_um": 10000000.0,
+    "physics": "Fermi/OldSlotboom/Masetti-Lombardi-HFS/SRH/self-consistent avalanche; Band2Band off",
+    "build": "UCRT64 Release -O3 -DNDEBUG, direct_bordered Eigen SparseLU",
+    "frozen_max_iterations": 40,
+    "device_inf_tolerance": 1e-08,
+    "load_tolerance_V": 1e-06,
+    "own_target_outer_V": 0.06,
+    "own_timeout_seconds": 300,
+    "other_controls_retained": "line search, circuit voltage cap, physical model, existing acceptance/report settings"
+  },
+  "rationale": {
+    "cpp_default_V": 0.0,
+    "explicit_case_value_V": 0.1,
+    "thermal_voltages": 3.8681727071833607,
+    "nondegenerate_density_factor_at_fixed_psi": 47.85486129418194,
+    "independent_optimal_value_calibration_found": false
+  },
+  "results": {
+    "frozen": {
+      "frozen_cap": {
+        "execution": {
+          "exit_code": 0,
+          "seconds": 47.67215538024902
+        },
+        "identity": {
+          "accepted_alpha": 1.0,
+          "applied_dinner_V": 0.004396688420427392,
+          "componentwise_backward_error": 1.2924575918796872e-12,
+          "convergence_reason": "coupled_residuals",
+          "current_A_per_um": -1.2793019510187707e-05,
+          "dimension": 7801,
+          "failure": "",
+          "final_device_inf": 3.9534985261914876e-11,
+          "final_kcl_A_per_um": -2.6705704954081963e-17,
+          "final_load_V": -6.15358944355826e-11,
+          "inner_V": -3.8202999347345123e-19,
+          "iterations": 5,
+          "label": "p01_i01",
+          "nodes": 2600,
+          "outer_V": 0.01,
+          "potential_scale_V": 0.025851999786435535,
+          "raw_dinner_V": 0.004175801969035108,
+          "scalar_converged": true
+        },
+        "history": [
+          {
+            "alpha": 1.0,
+            "device_inf": 1.622746635368184,
+            "inner_V": -3.8202999347345123e-19,
+            "iteration": 0,
+            "limited_step_max_V": 0.1,
+            "load_V": -127.94019510187707,
+            "merit": 162274663.53681841,
+            "raw_fp1546_V": 1.9132807496680413,
+            "raw_qf_max_V": 1.9132807496680413,
+            "trials": [
+              {
+                "accepted": true,
+                "alpha": 1.0,
+                "applied_qf_max_V": 0.1,
+                "device_inf": 1.537931611664144,
+                "load_V": -121.25323224666043
+              }
+            ]
+          },
+          {
+            "alpha": 1.0,
+            "device_inf": 1.537931611664144,
+            "inner_V": 0.0002182534878772816,
+            "iteration": 1,
+            "limited_step_max_V": 0.1,
+            "load_V": -121.25323224666043,
+            "merit": 153793161.16641438,
+            "raw_fp1546_V": 0.00589306995886036,
+            "raw_qf_max_V": 0.17133422904062942,
+            "trials": [
+              {
+                "accepted": true,
+                "alpha": 1.0,
+                "applied_qf_max_V": 0.10000000000000002,
+                "device_inf": 0.6402953220432782,
+                "load_V": -50.482883885398756
+              }
+            ]
+          },
+          {
+            "alpha": 1.0,
+            "device_inf": 0.6402953220432782,
+            "inner_V": 0.0025403459617320268,
+            "iteration": 2,
+            "limited_step_max_V": 0.025848083246335904,
+            "load_V": -50.482883885398756,
+            "merit": 64029532.20432782,
+            "raw_fp1546_V": -0.017775570738739675,
+            "raw_qf_max_V": 0.025848083246335904,
+            "trials": [
+              {
+                "accepted": true,
+                "alpha": 1.0,
+                "applied_qf_max_V": 0.0258480832463359,
+                "device_inf": 0.00021973217101765166,
+                "load_V": 0.00015857769521168165
+              }
+            ]
+          },
+          {
+            "alpha": 1.0,
+            "device_inf": 0.00021973217101765166,
+            "inner_V": 0.004357145898369186,
+            "iteration": 3,
+            "limited_step_max_V": 0.029696527074930805,
+            "load_V": 0.00015857769521168165,
+            "merit": 21973.217101765167,
+            "raw_fp1546_V": -0.025988901000776925,
+            "raw_qf_max_V": 0.029696527074930805,
+            "trials": [
+              {
+                "accepted": true,
+                "alpha": 1.0,
+                "applied_qf_max_V": 0.029696527074930805,
+                "device_inf": 1.244615987658369e-07,
+                "load_V": -6.768183348840329e-09
+              }
+            ]
+          },
+          {
+            "alpha": 1.0,
+            "device_inf": 1.244615987658369e-07,
+            "inner_V": 0.004396669428354052,
+            "iteration": 4,
+            "limited_step_max_V": 0.02842283838528975,
+            "load_V": -6.768183348840329e-09,
+            "merit": 12.446159876583689,
+            "raw_fp1546_V": -0.024735473954671874,
+            "raw_qf_max_V": 0.02842283838528975,
+            "trials": [
+              {
+                "accepted": true,
+                "alpha": 1.0,
+                "applied_qf_max_V": 0.02842283838528975,
+                "device_inf": 3.9534985261914876e-11,
+                "load_V": -6.15358944355826e-11
+              }
+            ]
+          },
+          {
+            "alpha": 0.0,
+            "device_inf": 3.9534985261914876e-11,
+            "inner_V": 0.004396688420427392,
+            "iteration": 5,
+            "limited_step_max_V": 0.0,
+            "load_V": -6.15358944355826e-11,
+            "merit": 0.003953498526191488,
+            "raw_fp1546_V": 0.0,
+            "raw_qf_max_V": 0.0,
+            "trials": []
+          }
+        ]
+      },
+      "frozen_no_cap": {
+        "execution": {
+          "exit_code": 0,
+          "seconds": 30.474130392074585
+        },
+        "identity": {
+          "accepted_alpha": 0.5,
+          "applied_dinner_V": 0.002087900984517554,
+          "componentwise_backward_error": 1.2924575918796872e-12,
+          "convergence_reason": "",
+          "current_A_per_um": -1.2793019510187707e-05,
+          "dimension": 7801,
+          "failure": "coupled line search rejected update; proposed_delta_inner_V=2.247714144e-03; best_trial_equation_residual=4.872726399e+03; best_trial_equation_residual_index=2094; best_trial_load_residual_V=-6.395418572e+01; best_trial_merit=4.872726399e+11; raw_state_update_inf=1.892863060e+05; raw_state_update_index=7294; raw_delta_inner_V=2.247714144e-03; limited_state_update_inf=1.892863060e+05",
+          "final_device_inf": 1.0686749651161684,
+          "final_kcl_A_per_um": -1.3461174330017397e-05,
+          "final_load_V": -63.969803372035635,
+          "inner_V": -3.8202999347345123e-19,
+          "iterations": 1,
+          "label": "p01_i01",
+          "nodes": 2600,
+          "outer_V": 0.01,
+          "potential_scale_V": 0.025851999786435535,
+          "raw_dinner_V": 0.004175801969035108,
+          "scalar_converged": false
+        },
+        "history": [
+          {
+            "alpha": 0.5,
+            "device_inf": 1.622746635368184,
+            "inner_V": -3.8202999347345123e-19,
+            "iteration": 0,
+            "limited_step_max_V": 1.9132807496680413,
+            "load_V": -127.94019510187707,
+            "merit": 162274663.53681841,
+            "raw_fp1546_V": 1.9132807496680413,
+            "raw_qf_max_V": 1.9132807496680413,
+            "trials": [
+              {
+                "accepted": false,
+                "alpha": 1.0,
+                "applied_qf_max_V": 1.9132807496680413,
+                "device_inf": 7852.801583233229,
+                "load_V": -441.55169698285675
+              },
+              {
+                "accepted": true,
+                "alpha": 0.5,
+                "applied_qf_max_V": 0.9566403748340206,
+                "device_inf": 1.0686749651161684,
+                "load_V": -63.969803372035635
+              }
+            ]
+          },
+          {
+            "alpha": 0.0,
+            "device_inf": 1.0686749651161684,
+            "inner_V": 0.0020879009845175536,
+            "iteration": 1,
+            "limited_step_max_V": 4893.429543339134,
+            "load_V": -63.969803372035635,
+            "merit": 106867496.51161684,
+            "raw_fp1546_V": -0.028323685277778992,
+            "raw_qf_max_V": 4893.429543339134,
+            "trials": [
+              {
+                "accepted": false,
+                "alpha": 1.0,
+                "applied_qf_max_V": 4893.429543339134,
+                "device_inf": 23029923823.86858,
+                "load_V": -23030748.636777624
+              },
+              {
+                "accepted": false,
+                "alpha": 0.5,
+                "applied_qf_max_V": 2446.714771669567,
+                "device_inf": 8142124764.0386505,
+                "load_V": -7499609.365231873
+              },
+              {
+                "accepted": false,
+                "alpha": 0.25,
+                "applied_qf_max_V": 1223.3573858347836,
+                "device_inf": 2878511980.359202,
+                "load_V": -2246003.8188235806
+              },
+              {
+                "accepted": false,
+                "alpha": 0.125,
+                "applied_qf_max_V": 611.6786929173918,
+                "device_inf": 1017558247.5342335,
+                "load_V": -542424.2348482524
+              },
+              {
+                "accepted": false,
+                "alpha": 0.0625,
+                "applied_qf_max_V": 305.8393464586959,
+                "device_inf": 359620669.09035784,
+                "load_V": -91515.41423380908
+              },
+              {
+                "accepted": false,
+                "alpha": 0.03125,
+                "applied_qf_max_V": 152.91967322934795,
+                "device_inf": 127007276.79954419,
+                "load_V": -324.2972444641891
+              },
+              {
+                "accepted": false,
+                "alpha": 0.015625,
+                "applied_qf_max_V": 76.45983661467397,
+                "device_inf": 44762025.64084841,
+                "load_V": -62.97027713121546
+              },
+              {
+                "accepted": false,
+                "alpha": 0.0078125,
+                "applied_qf_max_V": 38.22991830733699,
+                "device_inf": 15674175.484091416,
+                "load_V": -63.470038533536766
+              },
+              {
+                "accepted": false,
+                "alpha": 0.00390625,
+                "applied_qf_max_V": 19.114959153668494,
+                "device_inf": 5378965.713744726,
+                "load_V": -63.71992095523799
+              },
+              {
+                "accepted": false,
+                "alpha": 0.001953125,
+                "applied_qf_max_V": 9.557479576834247,
+                "device_inf": 1737479.1275108603,
+                "load_V": -63.84486216431757
+              },
+              {
+                "accepted": false,
+                "alpha": 0.0009765625,
+                "applied_qf_max_V": 4.778739788417123,
+                "device_inf": 471907.6936923113,
+                "load_V": -63.90733276833346
+              },
+              {
+                "accepted": false,
+                "alpha": 0.00048828125,
+                "applied_qf_max_V": 2.3893698942085617,
+                "device_inf": 86241.99848745273,
+                "load_V": -63.9385680702508
+              },
+              {
+                "accepted": false,
+                "alpha": 0.000244140625,
+                "applied_qf_max_V": 1.1946849471042809,
+                "device_inf": 4872.726399324933,
+                "load_V": -63.95418572114703
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "own_sweep": {
+      "own_cap": {
+        "execution": {
+          "status": "finished",
+          "exit_code": 124,
+          "seconds": 300.1747782230377,
+          "runner_sha256": "5eaf1b48c59f0ad63cd94eca7a8153a2c55eadc738a2fd3a7b63491ee1c006ef",
+          "config_sha256": "6e5960643afd54eac81479b97ea1c02682e8dc1525d200336db2782beb03c07d"
+        },
+        "complete_accepted_points": [
+          {
+            "outer_voltage_V": "0",
+            "inner_voltage_V": "0",
+            "iterations": "0",
+            "current_total_A_per_um": "0",
+            "newton_convergence_reason": "coupled_residuals"
+          },
+          {
+            "outer_voltage_V": "0.01",
+            "inner_voltage_V": "0.0043966882622946436",
+            "iterations": "10",
+            "current_total_A_per_um": "5.6033118009260148e-10",
+            "newton_convergence_reason": "coupled_residuals"
+          },
+          {
+            "outer_voltage_V": "0.022870000000000001",
+            "inner_voltage_V": "0.010787217181429155",
+            "iterations": "16",
+            "current_total_A_per_um": "1.2082782671211737e-09",
+            "newton_convergence_reason": "coupled_residuals"
+          }
+        ],
+        "iteration_records": 57,
+        "last_iteration_record": {
+          "outer_V": "0.038378350000000006",
+          "attempted_step_V": "0.015508350000000004",
+          "retry": "0",
+          "iteration": "27",
+          "device_residual_inf": "1.1742471913193434e-09",
+          "load_residual_V": "4.5361212008820928e-10",
+          "update_valid": "1",
+          "update_rms": "1.7909443367467164",
+          "poisson_rms": "0.74039217293202197",
+          "electron_rms": "2.6604461303795985",
+          "hole_rms": "1.5104333785717252",
+          "contact_rms": "8.001997135048688",
+          "poisson_count": "2600",
+          "electron_count": "2121",
+          "hole_count": "2121",
+          "contact_count": "11",
+          "accepted_alpha": "0",
+          "convergence_reason": "coupled_residuals"
+        },
+        "saved_state_files": [
+          "state_bias_0p000000.h5",
+          "state_bias_0p004397.h5",
+          "state_bias_0p010787.h5",
+          "state_bias_0p019772.h5"
+        ]
+      },
+      "own_no_cap": {
+        "execution": {
+          "status": "finished",
+          "exit_code": 124,
+          "seconds": 300.25709414482117,
+          "runner_sha256": "5eaf1b48c59f0ad63cd94eca7a8153a2c55eadc738a2fd3a7b63491ee1c006ef",
+          "config_sha256": "b0a58106b22f97806d2ec649ad1e616ea99dfcab6b522083e4a764d53b19d504"
+        },
+        "complete_accepted_points": [
+          {
+            "outer_voltage_V": "0",
+            "inner_voltage_V": "0",
+            "iterations": "0",
+            "current_total_A_per_um": "0",
+            "newton_convergence_reason": "coupled_residuals"
+          },
+          {
+            "outer_voltage_V": "0.01",
+            "inner_voltage_V": "0.0043966882622946436",
+            "iterations": "10",
+            "current_total_A_per_um": "5.6033118009260148e-10",
+            "newton_convergence_reason": "coupled_residuals"
+          },
+          {
+            "outer_voltage_V": "0.022870000000000001",
+            "inner_voltage_V": "0.010787217181429155",
+            "iterations": "16",
+            "current_total_A_per_um": "1.2082782671211737e-09",
+            "newton_convergence_reason": "coupled_residuals"
+          }
+        ],
+        "iteration_records": 57,
+        "last_iteration_record": {
+          "outer_V": "0.038378350000000006",
+          "attempted_step_V": "0.015508350000000004",
+          "retry": "0",
+          "iteration": "27",
+          "device_residual_inf": "1.1742471913193434e-09",
+          "load_residual_V": "4.5361212008820928e-10",
+          "update_valid": "1",
+          "update_rms": "1.7909443367467164",
+          "poisson_rms": "0.74039217293202197",
+          "electron_rms": "2.6604461303795985",
+          "hole_rms": "1.5104333785717252",
+          "contact_rms": "8.001997135048688",
+          "poisson_count": "2600",
+          "electron_count": "2121",
+          "hole_count": "2121",
+          "contact_count": "11",
+          "accepted_alpha": "0",
+          "convergence_reason": "coupled_residuals"
+        },
+        "saved_state_files": [
+          "state_bias_0p000000.h5",
+          "state_bias_0p004397.h5",
+          "state_bias_0p010787.h5",
+          "state_bias_0p019772.h5"
+        ]
+      }
+    },
+    "physical_checkpoint_comparisons": [
+      {
+        "state": "state_bias_0p000000.h5",
+        "physical_dataset_bytes_equal": true,
+        "hashes": {
+          "psi": "c1b3e1582d25e9de6e0041eb09320ce5260195bbcd4c53e8620d8f3ea10846f9",
+          "phin": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+          "phip": "a2b87fecc2b5073f875c100496483aecdef3a54306609f71755e274e4a17a487",
+          "electrons_m3": "c9c30502de1bd16dba5bcedf88301d65d5c9227805a1abb758b5b39e94564087",
+          "holes_m3": "68a192128e8cf2adb87fe720870560235db32041fc0fcdf1594d75ee665381e5"
+        }
+      },
+      {
+        "state": "state_bias_0p004397.h5",
+        "physical_dataset_bytes_equal": true,
+        "hashes": {
+          "psi": "ef062e059c81a331e440e56971e151fc3318f4d8124d7dfa5d7476028c3c220f",
+          "phin": "2f9ff41f138bc3f3915c7f3924767e744644e9436898fef7560e7b6be694d2ef",
+          "phip": "46c8e94ec2c01c503d718a90ccc02d4ad982581b738e2c654b9d70f244a928c5",
+          "electrons_m3": "5523240258b5c31e801d76b9dddcf2d4129731c8e131d6f7623bdd84215abfb8",
+          "holes_m3": "98f40e5f1349138dd000c5df0420dca0bd3bf6bc2ae49cabf2ce8d6aaabe6525"
+        }
+      },
+      {
+        "state": "state_bias_0p010787.h5",
+        "physical_dataset_bytes_equal": true,
+        "hashes": {
+          "psi": "cdb970f23ef2a63e6ac6e590604269961bb3b0c4dec541ff6b6ace47269f73a1",
+          "phin": "0f4c6350d83bce9938ea912e04918b4fc9242537dbcf9739b4b43626ba5710f3",
+          "phip": "53cbea2545ee0eb4ad62efc263d7d5ac86c938aea97acc9a5d03aa7a78736714",
+          "electrons_m3": "f23d255d6bebd9a122a245619d50b0913773fe1f900281a23198714dd42a105b",
+          "holes_m3": "0b760b6ab6da1fc15d125cc30769fdd2a13727c7b5f2179da1f1577bde8304c9"
+        }
+      },
+      {
+        "state": "state_bias_0p019772.h5",
+        "physical_dataset_bytes_equal": true,
+        "hashes": {
+          "psi": "226494eca9d780aa4fa0abde03b545cb1975a0f2c2ab9e9bacf2749091ed12b9",
+          "phin": "6fbb2bc1602e100fffbd4041daf28f4f47187c934e75fe0aa0247850f871db5d",
+          "phip": "f60c88f5aa545aadf3543d7c7e7034265aec28642500ba5f392ca0ddea555b10",
+          "electrons_m3": "4437da94da92321407e3d123a197c144cbf13facbeb61f3e951d6aa50d25c69f",
+          "holes_m3": "a6dada11d0a7801bc1e0240b80080944c73da1c7e5f81253e02be164acf845ec"
+        }
+      }
+    ],
+    "verification": {
+      "same_raw_first_direction": true,
+      "same_frozen_initial_residuals": true,
+      "capped_frozen_load_and_kcl_pass": true,
+      "own_complete_points_equal": true,
+      "own_57_iteration_records_equal": true,
+      "own_physical_HDF5_fields_equal": true
+    },
+    "scope": "only QF cap .1 -> 0; line search, circuit voltage controls, physics and scalar tolerances retained. Own sweep target .06 V, each limited to 300 seconds."
+  },
+  "input_and_tool_sha256": {
+    "build-release/bv_qfcap_20261024/probe.cpp": "66a461e19118f25ef724683367593fbe7c30f67cbdfe2548d2ee36f0da8fb0a0",
+    "build-release/bv_qfcap_20261024/probe.exe": "810aa89a92a361da90b889cba8671b562e1495500d4f912a2ad66d967a5da377",
+    "build-release/bv_qfcap_20261024/run_frozen.py": "5563ec361f03d9d031fa05674fa89cc61eb8f5499c368840881edbbe83ae440d",
+    "build-release/bv_qfcap_20261024/run_own.py": "1a8bf32081baf4f074352b00c5866df28a17612dc36b77c898c65363e7831a62",
+    "build-release/bv_qfcap_20261024/analyze.py": "be1300d35a71985331b6d4fe85657049f2da12ac8a43e14e14d9b76cc2c96030",
+    "build-release/libvela_core.a": "a931204c66d3f95c4d5f034fbf344bc870d8c93e1a1ecec6e0e4946a539f6c49",
+    "build-release/bvmethods_stopping_control_20261023/final_feature_runner.exe": "5eaf1b48c59f0ad63cd94eca7a8153a2c55eadc738a2fd3a7b63491ee1c006ef"
+  },
+  "private_evidence_root": "build-release/bv_qfcap_20261024",
+  "limitations": [
+    "Frozen-state convergence is a Vela scalar/load-line/KCL result, not native equivalence or a BV result.",
+    "Own sweeps timed out. Only three complete point CSV records are available; four physical state datasets and 57 trace records agree. The fourth state is not promoted to a complete terminal acceptance record.",
+    "Parallel execution and compilation competed for resources; timings are not a performance benchmark.",
+    "No evidence establishes 0.1 V as an optimum for the full BV scan."
+  ]
+}

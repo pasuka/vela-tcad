@@ -1,0 +1,1277 @@
+{
+  "scope": "BVMethods installed-library resistor, complete Band2Band disabled; independent Poisson then coupled zero-bias states. No BV or finite-update qualification.",
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "silicon_cells": 4156,
+    "native_free_nodes_per_carrier": 2121,
+    "native_tdr_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+  },
+  "temperature_K": 300,
+  "resistance_ohm_um": 10000000.0,
+  "outer_voltage_V": 0.0,
+  "backend": "UMFPACK, Windows UCRT64 Release, one thread",
+  "native": {
+    "exit_code": 0,
+    "poisson_newton_updates": 7,
+    "coupled_newton_updates": 1,
+    "archive_sha256": "eb8827e258b422065ef81638a50e59668e67cdccf7b5b02e60e3341a18e3a9bd",
+    "P_to_DD_potential": {
+      "nodes": 2600,
+      "max_absolute_V": 3.709255125272648e-13,
+      "rms_V": 2.992767641617735e-14,
+      "worst_node": 300,
+      "pass_1mV": true
+    },
+    "debug_potential_scale_check_max_error_V": 1.3322676295501878e-15,
+    "contact_QF_labels_match_drain_nodes": true
+  },
+  "cases": {
+    "production_operators": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008742078746091952,
+            "rms_V": 0.001246248369261608,
+            "worst_node": 1140,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.3378936509874926,
+            "rms_ln_ratio": 0.05230887722259455,
+            "max_relative": 0.4019913950762888,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.3384258896141894,
+            "rms_ln_ratio": 0.05250673365917157,
+            "max_relative": 0.287108389896524,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008742078746091952,
+            "rms_V": 0.0012462483692634657,
+            "worst_node": 1140,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.337893650987489,
+            "rms_ln_ratio": 0.052308877222668984,
+            "max_relative": 0.4019913950762839,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.33842588961417164,
+            "rms_ln_ratio": 0.05250673365927971,
+            "max_relative": 0.2871083898965112,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 7.119558350589323e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.1469141001198044e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 280.07211423318796
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.06490810201485
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.21001394687794
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9337427537705537
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.0323918896860908
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 5.075187160454939e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.1469141001198044e-10
+            }
+          ],
+          "initial_residual": 2558.76361172871,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      },
+      "operators": {
+        "poisson": {
+          "0": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.13345958168691932,
+            "matrix_worst_node": 3,
+            "rhs_diagonal_normalized_difference_L2_V": 0.058513213190351826,
+            "rhs_reference_L2_V": 4.93798159088307,
+            "rhs_relative_L2": 0.011849621573799301
+          },
+          "3": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.13345958168691932,
+            "matrix_worst_node": 3,
+            "rhs_diagonal_normalized_difference_L2_V": 0.026675611219500076,
+            "rhs_reference_L2_V": 0.02636221367005647,
+            "rhs_relative_L2": 1.0118881347889073
+          },
+          "6": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.13345958168691932,
+            "matrix_worst_node": 3,
+            "rhs_diagonal_normalized_difference_L2_V": 0.027253718071633837,
+            "rhs_reference_L2_V": 1.453450311255784e-07,
+            "rhs_relative_L2": 187510.49045554624
+          }
+        },
+        "coupled_dimensions": {
+          "vela_device": 7800,
+          "vela_augmented": 7801,
+          "native_labeled": 6853,
+          "native_labeled_blocks": {
+            "ElectrostaticPotential": 2600,
+            "QuasiFermiPotential": 11,
+            "eDensity": 2121,
+            "hDensity": 2121
+          },
+          "native_internal": 6843,
+          "eliminated_carrier_constraints": 958,
+          "vela_after_exact_elimination": 6843,
+          "matches_native_internal_dimension": true,
+          "recovery_constraint_relative_L2": 0.0,
+          "reduced_operator_identity_relative_L2": 9.6357097975402e-17,
+          "numeric_matrix_equivalence_claimed": false
+        }
+      }
+    },
+    "old_constants": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008741069086710795,
+            "rms_V": 0.0012461264726357248,
+            "worst_node": 2433,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.3378537154009216,
+            "rms_ln_ratio": 0.052303265511224106,
+            "max_relative": 0.40193540684552764,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.338385636384519,
+            "rms_ln_ratio": 0.05250095764391244,
+            "max_relative": 0.2870796931292474,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008741069086710768,
+            "rms_V": 0.0012461264726375905,
+            "worst_node": 1140,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.337853715400918,
+            "rms_ln_ratio": 0.05230326551129888,
+            "max_relative": 0.40193540684552276,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.33838563638450125,
+            "rms_ln_ratio": 0.052500957644020865,
+            "max_relative": 0.28707969312923476,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 7.119670458860464e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.1450157999047464e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 280.0731187956055
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.064916440474356
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.210042650209623
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9337399987013497
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.0323916175815404
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 5.0750907564375296e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.1450157999047464e-10
+            }
+          ],
+          "initial_residual": 2558.763597577739,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      }
+    },
+    "cell_material": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008742078746091952,
+            "rms_V": 0.001246141454820438,
+            "worst_node": 1140,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.3378936509874926,
+            "rms_ln_ratio": 0.052309253890589574,
+            "max_relative": 0.4019913950762888,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.3384258896141894,
+            "rms_ln_ratio": 0.052506967444338117,
+            "max_relative": 0.287108389896524,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.008742078746091952,
+            "rms_V": 0.001246141454822299,
+            "worst_node": 1140,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.337893650987489,
+            "rms_ln_ratio": 0.05230925389066413,
+            "max_relative": 0.4019913950762839,
+            "worst_node": 1140,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.33842588961417164,
+            "rms_ln_ratio": 0.05250696744445014,
+            "max_relative": 0.2871083898965112,
+            "worst_node": 1140,
+            "pass_1percent": false
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 7.117507283650712e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.1466879005741737e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 280.0720982086895
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.06489890404387
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.21000965841704
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9337409013936698
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.03239170928613694
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 5.07513222406364e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.1466879005741737e-10
+            }
+          ],
+          "initial_residual": 2558.7613794249855,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      }
+    },
+    "signed_charge": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0026606129347782476,
+            "rms_V": 0.0002765543973023372,
+            "worst_node": 724,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.10278912324606893,
+            "rms_ln_ratio": 0.011145012184343292,
+            "max_relative": 0.10810400361934414,
+            "worst_node": 1007,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.10318244434722601,
+            "rms_ln_ratio": 0.011150987945101538,
+            "max_relative": 0.10766808370544312,
+            "worst_node": 724,
+            "pass_1percent": false
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0026606129347782753,
+            "rms_V": 0.00027655439730015803,
+            "worst_node": 724,
+            "pass_1mV": false
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.10278912324606537,
+            "rms_ln_ratio": 0.011145012184254711,
+            "max_relative": 0.10810400361934325,
+            "worst_node": 1007,
+            "pass_1percent": false
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.1031824443472118,
+            "rms_ln_ratio": 0.01115098794516383,
+            "max_relative": 0.10766808370545267,
+            "worst_node": 724,
+            "pass_1percent": false
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 6.295825615110944e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.0340957652228485e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 280.0047917671712
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.06945293813307
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.215067112962773
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9220972253549292
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.03170452888089928
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 4.8874367222061394e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.0340957652228485e-10
+            }
+          ],
+          "initial_residual": 2558.76361172871,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      }
+    },
+    "geometry_combo": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0001918809336620697,
+            "rms_V": 3.634718140507204e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.0005341801755198716,
+            "rms_ln_ratio": 0.00027665767610229414,
+            "max_relative": 0.0005340375266909003,
+            "worst_node": 1209,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.0005622344368987342,
+            "rms_ln_ratio": 0.00038206860395448284,
+            "max_relative": 0.0005620764127343136,
+            "worst_node": 229,
+            "pass_1percent": true
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0001918809336620697,
+            "rms_V": 3.6347181405168545e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.0005341801755047726,
+            "rms_ln_ratio": 0.0002766576764739823,
+            "max_relative": 0.0005340375266762454,
+            "worst_node": 1252,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 0.0005622348138949462,
+            "rms_ln_ratio": 0.0003820686087118902,
+            "max_relative": 0.0005620767895189172,
+            "worst_node": 229,
+            "pass_1percent": true
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 6.297153109849696e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.0426376904894936e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 279.99879453763265
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.063722159895335
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.215074420540912
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9224165941050412
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.03172978921917515
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 4.89516993807796e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.0426376904894936e-10
+            }
+          ],
+          "initial_residual": 2558.761355292132,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      }
+    },
+    "geometry_material": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0001525175817341795,
+            "rms_V": 2.8264687146626802e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 8.628207299032908e-05,
+            "rms_ln_ratio": 2.1801025851273633e-05,
+            "max_relative": 8.6285795395602e-05,
+            "worst_node": 265,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 8.656884440227941e-05,
+            "rms_ln_ratio": 2.3548939287486856e-05,
+            "max_relative": 8.656509742765994e-05,
+            "worst_node": 265,
+            "pass_1percent": true
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.0001525175817341795,
+            "rms_V": 2.8264687146290398e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 8.628206588134901e-05,
+            "rms_ln_ratio": 2.1801025054904268e-05,
+            "max_relative": 8.628578828595579e-05,
+            "worst_node": 265,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 8.65688372826412e-05,
+            "rms_ln_ratio": 2.3548938530429333e-05,
+            "max_relative": 8.656509030902093e-05,
+            "worst_node": 265,
+            "pass_1percent": true
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 6.297514445181382e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.1568787272205175e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 279.9935409738853
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.06220933588174
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.214756111920918
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9223667559750719
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.031727303514525046
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 4.8944144173924214e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.1568787272205175e-10
+            }
+          ],
+          "initial_residual": 2558.718215839961,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      },
+      "operators": {
+        "poisson": {
+          "0": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007486866506187588,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.0013884476138248446,
+            "rhs_reference_L2_V": 4.93798159088307,
+            "rhs_relative_L2": 0.00028117715472822277
+          },
+          "3": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007493830310427639,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.0013883296929610097,
+            "rhs_reference_L2_V": 0.02636221367005647,
+            "rhs_relative_L2": 0.052663623409514526
+          },
+          "6": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007493830310408212,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.0013883297881737704,
+            "rhs_reference_L2_V": 1.453450311255784e-07,
+            "rhs_relative_L2": 9551.959068860433
+          }
+        },
+        "coupled_dimensions": {
+          "vela_device": 7800,
+          "vela_augmented": 7801,
+          "native_labeled": 6853,
+          "native_labeled_blocks": {
+            "ElectrostaticPotential": 2600,
+            "QuasiFermiPotential": 11,
+            "eDensity": 2121,
+            "hDensity": 2121
+          },
+          "native_internal": 6843,
+          "eliminated_carrier_constraints": 958,
+          "vela_after_exact_elimination": 6843,
+          "matches_native_internal_dimension": true,
+          "recovery_constraint_relative_L2": 0.0,
+          "reduced_operator_identity_relative_L2": 1.9271505565610134e-16,
+          "numeric_matrix_equivalence_claimed": false
+        }
+      }
+    },
+    "geometry_material_old_constants": {
+      "fields": {
+        "poisson": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.00015239602585670475,
+            "rms_V": 2.8234013572807074e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 2.2242349594137067e-05,
+            "rms_ln_ratio": 1.1694447759356496e-06,
+            "max_relative": 2.2242596955601712e-05,
+            "worst_node": 229,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 7.981116810640287e-05,
+            "rms_ln_ratio": 8.790444980951137e-06,
+            "max_relative": 7.981435310244755e-05,
+            "worst_node": 796,
+            "pass_1percent": true
+          }
+        },
+        "coupled": {
+          "potential": {
+            "nodes": 2600,
+            "max_absolute_V": 0.00015239602585670475,
+            "rms_V": 2.8234013572812885e-05,
+            "worst_node": 237,
+            "pass_1mV": true
+          },
+          "n_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 2.2242349594137067e-05,
+            "rms_ln_ratio": 1.1694447758958742e-06,
+            "max_relative": 2.2242596955601712e-05,
+            "worst_node": 229,
+            "pass_1percent": true
+          },
+          "p_cm3": {
+            "nodes": 2152,
+            "max_abs_ln_ratio": 7.981113142019325e-05,
+            "rms_ln_ratio": 8.790444618784658e-06,
+            "max_relative": 7.98143164135734e-05,
+            "worst_node": 796,
+            "pass_1percent": true
+          }
+        }
+      },
+      "solver": {
+        "R_ohm_um": 10000000.0,
+        "coupled": {
+          "carrier_rows": {
+            "enabled": true,
+            "enforced": true,
+            "eps_row": 0.001,
+            "ignored_row_count": 5200,
+            "max_ratio": 0.0,
+            "max_ratio_carrier": "",
+            "max_ratio_node": 18446744073709551615,
+            "qualified_row_count": 0,
+            "satisfied": true,
+            "violation_count": 0,
+            "violations": []
+          },
+          "current_A_per_um": 0.0,
+          "device_residual": 6.29243954689412e-11,
+          "failure": "",
+          "global_continuity": {
+            "electron": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "enabled": true,
+            "enforced": true,
+            "hole": {
+              "contact_flux": 0.0,
+              "integrated_source": 0.0,
+              "mismatch": 0.0,
+              "qualified": false,
+              "ratio": 0.0
+            },
+            "satisfied": true
+          },
+          "inner_V": 0.0,
+          "iterations": 0,
+          "load_residual_V": 0.0,
+          "physical_accepted": true,
+          "scalar_converged": true
+        },
+        "coupled_operator_dimension": 7801,
+        "device_coupled": {
+          "converged": true,
+          "failure": "",
+          "iterations": 0,
+          "reason": "initial_abstol"
+        },
+        "n_nodes": 2600,
+        "outer_V": 0.0,
+        "poisson": {
+          "converged": true,
+          "failure": "",
+          "final_residual": 1.1169548263390083e-10,
+          "history": [
+            {
+              "damping": 1.0,
+              "iteration": 1,
+              "residual": 279.99454494841825
+            },
+            {
+              "damping": 1.0,
+              "iteration": 2,
+              "residual": 52.0622169930848
+            },
+            {
+              "damping": 1.0,
+              "iteration": 3,
+              "residual": 9.214785271334417
+            },
+            {
+              "damping": 1.0,
+              "iteration": 4,
+              "residual": 0.9223637139868235
+            },
+            {
+              "damping": 1.0,
+              "iteration": 5,
+              "residual": 0.03172699215039234
+            },
+            {
+              "damping": 1.0,
+              "iteration": 6,
+              "residual": 4.8943096989113954e-05
+            },
+            {
+              "damping": 1.0,
+              "iteration": 7,
+              "residual": 1.1169548263390083e-10
+            }
+          ],
+          "initial_residual": 2558.7182016893107,
+          "iterations": 7,
+          "reason": "poisson_only_contact_basin_converged"
+        }
+      },
+      "operators": {
+        "poisson": {
+          "0": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007473848462980246,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.0013872121875055778,
+            "rhs_reference_L2_V": 4.93798159088307,
+            "rhs_relative_L2": 0.00028092696620553813
+          },
+          "3": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007480811392038231,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.0013871045150026715,
+            "rhs_reference_L2_V": 0.02636221367005647,
+            "rhs_relative_L2": 0.052617148634153385
+          },
+          "6": {
+            "dimension": 2600,
+            "matrix_max_relative_row_L2": 0.0007480811392017656,
+            "matrix_worst_node": 1308,
+            "rhs_diagonal_normalized_difference_L2_V": 0.001387104515002649,
+            "rhs_reference_L2_V": 1.453450311255784e-07,
+            "rhs_relative_L2": 9543.528968693729
+          }
+        },
+        "coupled_dimensions": {
+          "vela_device": 7800,
+          "vela_augmented": 7801,
+          "native_labeled": 6853,
+          "native_labeled_blocks": {
+            "ElectrostaticPotential": 2600,
+            "QuasiFermiPotential": 11,
+            "eDensity": 2121,
+            "hDensity": 2121
+          },
+          "native_internal": 6843,
+          "eliminated_carrier_constraints": 958,
+          "vela_after_exact_elimination": 6843,
+          "matches_native_internal_dimension": true,
+          "recovery_constraint_relative_L2": 0.0,
+          "reduced_operator_identity_relative_L2": 2.525468483172037e-19,
+          "numeric_matrix_equivalence_claimed": false
+        }
+      }
+    }
+  },
+  "test_status": {
+    "unittest_passed": 10,
+    "unittest_failed": 0,
+    "python_compile": "passed",
+    "git_diff_check": "passed",
+    "diagnostic_build": "passed",
+    "pn2d_compatibility_files_byte_identical": [
+      "poisson.csv",
+      "coupled.csv",
+      "summary.json"
+    ]
+  },
+  "limitations": [
+    "Same-state full coupled density/QF operator mapping is not completed.",
+    "Poisson operator gate 1e-8 is not satisfied.",
+    "Zero-flow carrier/global gates are unqualified.",
+    "Diagnostic controls do not change production defaults or provide NonLocalPath qualification."
+  ],
+  "input_hashes": {
+    "build-release/bvmethods_staged_zero_20261023/native_input/n1_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "build-release/bvmethods_staged_zero_20261023/native_input/pp5_des.cmd": "e183be2d0a7b4bf72382191c2276ae17d89a757f2c3a1d5b6fa21e4cc6592251",
+    "build-release/bvmethods_staged_zero_20261023/native_input/pp5_des.par": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+    "build-release/bvmethods_no_btbt_20261019/inputs/full/pp5_des_vela/mesh.json": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+    "build-release/bvmethods_no_btbt_20261019/inputs/full/pp5_des_vela/doping.csv": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+    "build-release/bvmethods_no_btbt_20261019/inputs/full/pp5_des_vela/materials.json": "d3122c1a4ace031c2d7d821e0e01a5de43f0fab3be2bb631e6ad4dd09cac3195",
+    "build-release/bvmethods_staged_zero_20261023/production.json": "506a4d960e0563b68d2df501b7d723a9fd9c8d49d725084b31845ead14a5ac73"
+  },
+  "production_core_archive_sha256": "79d7e0f0126c0898ac9264c0209e5235a8e8a8f285543d35ee9815f290a6a108",
+  "old_constants_baseline_archive_sha256": "45d87b354928e9b2bdef5d6c4b996af59a7393a08473176376ec2432c3a5934c",
+  "native_material_control_sha256": "86f16a21b5ad0b44c495ccc07ccdea6e64b1cfe7f824854dec21e8a636d0704c",
+  "production_probe_excludes_experimental_core_objects": true,
+  "tools_sha256": {
+    "scripts/diagnostics/pn2d_staged_zero_probe.cpp": "99d5494bbe9a3edd8d4bed91ed905eadf60306b63db74b5c5f1202f04862a895",
+    "scripts/compare_bvmethods_staged_zero.py": "31992eaeed1d787f058b46b272df404a98d8faf2fd10e5343993691053214962",
+    "scripts/compare_bvmethods_staged_operators.py": "aaaf508df0d5246eafbef3bc947b81743fdcf82d480bb482767f4080d2007276",
+    "tests/regression/test_bvmethods_staged_zero.py": "547bee927af6c11e25ccc1e78c68310913184eb59693a1678887992828b0e066"
+  }
+}

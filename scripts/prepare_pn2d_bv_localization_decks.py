@@ -35,7 +35,7 @@ def main() -> int:
     base["mesh_file"] = str(reference_root / "vela" / "mesh.json")
     base["node_doping_file"] = str(reference_root / "doping.csv")
     base["materials_file"] = str(
-        reference_root / "vela" / "pn2d_sentaurus2018_iv_materials.json"
+        reference_root / "vela" / "pn2d_sentaurus2018_iv_materials_legacy_300k.json"
     )
     base["output_csv"] = str(out_dir / "iv.csv")
 

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+from generate_legacy_material_baselines import complete
 
 BASE = "build/qf_cap_exp/baseline"
 OUT = "build/qf_cap_exp/residual_probe"
@@ -68,6 +69,12 @@ def main():
     # copy mesh/doping/materials
     for f in ("mesh.json", "doping.csv", "pn2d_sentaurus2018_iv_materials.json"):
         shutil.copy(os.path.join(BASE, f), os.path.join(OUT, f))
+    # This diagnostic replays a historical state; freeze omitted old scalars.
+    material_path = os.path.join(OUT, "pn2d_sentaurus2018_iv_materials.json")
+    with open(material_path) as h:
+        materials = complete(json.load(h), "historical node7 baseline")
+    with open(material_path, "w") as h:
+        json.dump(materials, h, indent=2)
 
     # reuse baseline solver physics
     with open(os.path.join(BASE, "simulation_bv.json")) as h:

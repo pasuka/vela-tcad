@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.stage_plan.v1",
+  "title": "Vela sdevice stage plan v1 (contract C4)",
+  "description": "Ordered execution plan written by the WP4 deck emitter into <stem>_vela/stage_plan.json and consumed by the WP5 orchestrator and the WP8 output writers. Every IR stage of kind initial/sweep becomes one runner invocation with its own deck; state flows through HDF5 files. All paths are ASCII and relative to work_dir because the C++ runner is started with work_dir as its cwd (plan section 13.2).",
+  "type": "object",
+  "required": [
+    "schema",
+    "cmd",
+    "work_dir",
+    "exit_on_failure",
+    "threads",
+    "inputs",
+    "outputs",
+    "electrodes",
+    "stages"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.stage_plan.v1"},
+    "cmd": {
+      "type": "object",
+      "required": ["path", "sha256", "execution_ir"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "description": "Command file basename in the user directory."},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Same normalised hash as execution IR source.sha256."},
+        "execution_ir": {"type": "string", "description": "execution_ir.json basename inside work_dir."}
+      }
+    },
+    "work_dir": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "Intermediate directory name, <stem>_vela, ASCII only."},
+    "exit_on_failure": {"type": "boolean", "description": "Math{ExitOnFailure} or --exit-on-failure."},
+    "threads": {"type": "integer", "minimum": 1},
+    "inputs": {
+      "type": "object",
+      "required": ["mesh_json", "doping_csv", "materials_json", "mesh_qualification"],
+      "additionalProperties": false,
+      "properties": {
+        "mesh_json": {"$ref": "#/definitions/relpath"},
+        "doping_csv": {"$ref": "#/definitions/relpath"},
+        "materials_json": {"$ref": "#/definitions/relpath"},
+        "mesh_qualification": {"$ref": "#/definitions/relpath"},
+        "sidecar": {"type": ["string", "null"], "description": "<stem>.vela.json basename in the user directory when one was applied."}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "description": "User-visible product names in the cmd directory (Appendix C completed; .tdr -> .vtu, .sav -> .h5).",
+      "required": ["log", "final_vtu", "pvd", "plot_final_only", "vtu_binary", "keep_intermediate"],
+      "additionalProperties": false,
+      "properties": {
+        "log": {"type": "string"},
+        "final_vtu": {"type": "string"},
+        "pvd": {"type": "string"},
+        "plot_final_only": {"type": "boolean", "description": "--plot-final-only: do not write a .vtu per accepted bias point."},
+        "vtu_binary": {"type": "boolean"},
+        "keep_intermediate": {"type": "boolean"}
+      }
+    },
+    "electrodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "contact", "initial_voltage_V"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "description": "Electrode name as in the cmd (and in .plt dataset names)."},
+          "contact": {"type": "string", "description": "Mesh contact name it was matched to (identical in stage 1; kept separate for future aliasing)."},
+          "initial_voltage_V": {"type": "number"},
+          "series_resistance_ohm_um": {"type": "number", "minimum": 0}
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/definitions/stage"}
+    }
+  },
+  "definitions": {
+    "relpath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "ASCII basename inside work_dir (no directory separators)."
+    },
+    "t_point_list": {
+      "type": "array",
+      "items": {"type": "number", "minimum": 0, "maximum": 1},
+      "description": "Sorted, de-duplicated t values in [0,1]."
+    },
+    "stage": {
+      "type": "object",
+      "required": [
+        "index",
+        "ir_stage_index",
+        "kind",
+        "deck",
+        "csv",
+        "input_state",
+        "output_state",
+        "electrode_voltages_start_V",
+        "electrode_voltages_goal_V",
+        "current_file",
+        "plt_write",
+        "vtu_write",
+        "required_t"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "ir_stage_index": {"type": "integer", "minimum": 0, "description": "stages[].index of the execution IR this plan entry implements."},
+        "kind": {"enum": ["equilibrium", "sweep", "load"]},
+        "deck": {"$ref": "#/definitions/relpath", "description": "simulation_stageNN.json (format_version 2)."},
+        "csv": {"$ref": "#/definitions/relpath", "description": "Runner output CSV for this stage."},
+        "input_state": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/definitions/relpath"}],
+          "description": "HDF5 state consumed by this stage; null only for the first stage (initialization.mode=poisson_block or none)."
+        },
+        "output_state": {"$ref": "#/definitions/relpath"},
+        "electrode_voltages_start_V": {
+          "type": "object",
+          "additionalProperties": {"type": "number"},
+          "description": "Voltages of every electrode when the stage starts (previous stage's goal or actually reached value, see plan section 4.6)."
+        },
+        "electrode_voltages_goal_V": {
+          "type": "object",
+          "additionalProperties": {"type": "number"},
+          "description": "Voltages when the stage completes its goal; equal to start for equilibrium stages."
+        },
+        "sweep": {
+          "type": "object",
+          "required": ["contact", "start_V", "stop_V", "step_V", "initial_step_V", "min_step_V", "max_step_V", "growth_factor", "shrink_factor"],
+          "additionalProperties": false,
+          "properties": {
+            "contact": {"type": "string"},
+            "mode": {"enum": ["voltage", "current"], "default": "voltage"},
+            "start_V": {"type": "number"},
+            "stop_V": {"type": "number"},
+            "stop_current_A_per_um": {"type": "number", "description": "Goal{Current=} stages (mode current)."},
+            "step_V": {"type": "number", "description": "Nominal output spacing used for the runner sweep grid; |V1-V0| * (CurrentPlot interval or InitialStep) as documented by WP4."},
+            "initial_step_V": {"type": "number", "exclusiveMinimum": 0},
+            "min_step_V": {"type": "number", "exclusiveMinimum": 0},
+            "max_step_V": {"type": "number", "exclusiveMinimum": 0},
+            "growth_factor": {"type": "number", "minimum": 1},
+            "shrink_factor": {"type": "number", "minimum": 1},
+            "t_to_bias": {
+              "type": "object",
+              "required": ["v0", "v1"],
+              "additionalProperties": false,
+              "properties": {
+                "v0": {"type": "number"},
+                "v1": {"type": "number"}
+              },
+              "description": "V(t) = v0 + t (v1 - v0) for converting Plot/CurrentPlot t points to bias values."
+            }
+          }
+        },
+        "current_file": {"type": "string", "description": "User-directory .plt name this stage appends to (NewCurrentPrefix applied)."},
+        "plt_write": {
+          "oneOf": [
+            {"const": "all_accepted_steps"},
+            {"$ref": "#/definitions/t_point_list"}
+          ],
+          "description": "Which points are written to the .plt: every accepted step (sdevice default) or only the CurrentPlot(Time=...) points."
+        },
+        "vtu_write": {
+          "type": "object",
+          "required": ["per_accepted_step", "series"],
+          "additionalProperties": false,
+          "properties": {
+            "per_accepted_step": {"type": "boolean", "description": "Write <plot stem>_NNNN_des.vtu at every accepted step (decision 7; off with --plot-final-only)."},
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["file_prefix", "t", "global_index_start", "pattern"],
+                "additionalProperties": false,
+                "properties": {
+                  "file_prefix": {"type": "string"},
+                  "t": {"$ref": "#/definitions/t_point_list"},
+                  "global_index_start": {"type": "integer", "minimum": 0, "description": "Global plot index of the first file of this series (sdevice numbers plot files globally)."},
+                  "pattern": {"type": "string", "description": "e.g. pn2d_iv_multibias_NNNN_des.vtu"}
+                }
+              }
+            },
+            "after_stage": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Top-level Plot(FilePrefix=) files written once when the stage completes, e.g. bjt_m0_equilibrium_des.vtu."
+            }
+          }
+        },
+        "required_t": {"$ref": "#/definitions/t_point_list", "description": "Union of all Plot/CurrentPlot t points the runner must land on exactly (sweep.vtk_bias_points / bias_points)."},
+        "break": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ionization_integral": {
+              "type": "object",
+              "required": ["rank", "value"],
+              "additionalProperties": false,
+              "properties": {
+                "rank": {"type": "integer", "minimum": 1},
+                "value": {"type": "number", "exclusiveMinimum": 0}
+              }
+            },
+            "current": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["contact"],
+                "additionalProperties": false,
+                "properties": {
+                  "contact": {"type": "string"},
+                  "abs_val_A_per_um": {"type": "number"},
+                  "min_val_A_per_um": {"type": "number"},
+                  "max_val_A_per_um": {"type": "number"}
+                }
+              }
+            }
+          }
+        },
+        "sidecar_overrides": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Dotted deck keys replaced by the sidecar for this stage, for the log and run_manifest."
+        }
+      }
+    }
+  }
+}

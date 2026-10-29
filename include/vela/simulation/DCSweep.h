@@ -11,6 +11,8 @@
 #include "vela/simulation/QfBoundsGuard.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
+#include <array>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -24,6 +26,19 @@ struct BVReverseCriteria {
     Real maxElectricField_V_per_m = 0.0;
     Real currentJumpRatio = 0.0;
     bool nonConvergenceBreakdown = true;
+    /// Terminal-current stop criteria (Sentaurus BreakCriteria{Current(...)}),
+    /// evaluated on `currentContact` in A/um for every sweep mode. Zero (abs)
+    /// or NaN (min/max) disables a criterion.
+    Real currentAbs_A_per_um = 0.0;
+    Real currentMin_A_per_um = std::numeric_limits<Real>::quiet_NaN();
+    Real currentMax_A_per_um = std::numeric_limits<Real>::quiet_NaN();
+    std::string currentContact;
+
+    bool hasCurrentCriteria() const
+    {
+        return currentAbs_A_per_um > 0.0 || !std::isnan(currentMin_A_per_um) ||
+            !std::isnan(currentMax_A_per_um);
+    }
 };
 
 struct ContactEdgeDiagnosticsConfig {
@@ -226,6 +241,7 @@ struct SweepContinuationConfig {
 
 struct SweepInitializationConfig {
     std::string mode = "none";
+    int poissonMaxIter = 0; ///< Positive: complete nonlinear Poisson initialization; zero: legacy single block step.
     std::string diagnosticCsv;
     std::string writeStateFile;
 };
@@ -265,6 +281,12 @@ struct ExternalResistorControlConfig {
     bool coupledInexactZeroConvergedResidual = false;
     bool coupledLinearizationAudit = false;
     int coupledDiagnosticMinUpdates = 0;
+    DensityUpdateConvergenceConfig coupledUpdateConvergence;
+    bool coupledContinuationEnabled = false;
+    bool coupledRetryAcceptedSeed = true;
+    Real coupledPredictedInnerStep_V = 0.0;
+    std::string coupledInnerStepSource;
+    std::string coupledInnerStepReason;
 };
 
 struct VoltageToCurrentControlConfig {
@@ -286,6 +308,7 @@ struct BoundaryControlPersistenceConfig {
     Real predictorMaxStepFactor = 4.0;
     int preferredMaxEvaluations = 3;
     bool adaptiveDeviceContinuation = false;
+    bool adaptiveOuterContinuation = false;
 };
 
 struct DCSweepConfig {
@@ -307,6 +330,21 @@ struct DCSweepConfig {
     std::string currentContact;
     bool writeVtk = false;
     std::string vtkPrefix;
+    /// `legacy` (ASCII .vtk with every diagnostic array) or `vtu` (XML with
+    /// Sentaurus TDR data names, see vela/io/VtuWriter.h).
+    std::string vtkFormat = "legacy";
+    /// TDR field requests for `vtu` output (`Name` or `Name/Vector`); empty = all.
+    std::vector<std::string> vtkFields;
+    bool vtkBinary = false;
+    /// Opt-in frontend metadata; absent preserves the legacy VTU bytes.
+    bool vtkFieldDataEnabled = false;
+    std::vector<std::pair<std::string, std::string>> vtkFieldDataStrings;
+    std::vector<std::pair<std::string, Real>> vtkFieldDataValues;
+    /// Biases the adaptive sweep must land on exactly; a VTK file is written at
+    /// each of them even when `writeVtk` is false.
+    std::vector<Real> vtkBiasPoints;
+    /// Append electron/hole/total current columns for every mesh contact.
+    bool csvAllContacts = false;
     std::string csvFile = "dc_sweep.csv";
     std::string initialStateFile;
     std::string writeStateFile;
@@ -374,6 +412,12 @@ struct DCSweepPoint {
     Real globalHoleContactFlux = 0.0;
     Real globalElectronIntegratedSource = 0.0;
     Real globalHoleIntegratedSource = 0.0;
+    // Additional diagnostic scales retain assembler units, independently of
+    // the physical terminal-current scales recorded in validationDiagnostics.
+    std::array<Real, 2> globalAbsoluteMismatch{};
+    std::array<Real, 2> globalNetScale{};
+    std::array<Real, 2> globalContactNodeFluxAbsSum{};
+    std::array<Real, 2> globalSourceAbsSum{};
     bool carrierRowRecoveryAttempted = false;
     int carrierRowRecoveryElectronRows = 0;
     int carrierRowRecoveryHoleRows = 0;
@@ -395,6 +439,11 @@ struct DCSweepPoint {
     bool breakdownDetected = false;
     Real breakdownVoltage = 0.0;
     std::string breakdownCriterion;
+    /// Contact currents of every mesh contact (internal units) when
+    /// `csv_all_contacts` is on: name -> (electron, hole, total).
+    std::vector<std::pair<std::string, std::array<Real, 3>>> contactCurrents;
+    /// Field names requested for the `.vtu` export that were not written.
+    std::vector<std::string> skippedVtkFields;
     bool failed = false;
     Real lastStableBias = 0.0;
     Real failedBias = 0.0;

@@ -1,4 +1,5 @@
 #include "vela/core/PerformanceProfiler.h"
+#include "vela/core/experimental/CacheAudit.h"
 
 #include <algorithm>
 #include <cmath>
@@ -277,6 +278,7 @@ PerformanceProfiler* activePerformanceProfiler() noexcept
 void incrementPerformanceCounter(std::string_view name,
                                  std::uint64_t amount) noexcept
 {
+    experimental::CacheAuditScope::event(name,amount);
     if (activeProfiler != nullptr)
         activeProfiler->increment(name, amount);
 }

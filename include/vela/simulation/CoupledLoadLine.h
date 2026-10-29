@@ -2,6 +2,9 @@
 
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/LinearRefinement.h"
+#include "vela/solver/DensityUpdateConvergence.h"
+#include "vela/solver/DerivativeRecovery.h"
 
 #include <Eigen/SparseLU>
 
@@ -36,6 +39,8 @@ struct CoupledLoadLineConfig {
     Real maxVoltageUpdate_V = 1.0;
     bool applyDeviceUpdateLimit = true;
     std::string lineSearchMode = "merit";
+    // report_only evaluates the merit backtracking policy for diagnostics,
+    // but applies alpha=1. Separate device/voltage limits remain explicit.
     Real filterGamma = 1.0e-4;
     /// Maximum growth of each residual block relative to its solve-entry
     /// scale. A large circuit residual must never relax the device-PDE cap,
@@ -61,6 +66,11 @@ struct CoupledLoadLineConfig {
     /// extra device Jacobian and two terminal-current residuals per Newton
     /// iteration, so production runs keep it disabled.
     bool linearizationAuditEnabled = false;
+    /// Opt-in correction of the direct bordered solve using a multiprecision
+    /// defect of the original unscaled system. Zero preserves the existing
+    /// solve path. This is a linear accuracy control, not a nonlinear criterion.
+    int directRefinementSteps = 0;
+    DensityUpdateConvergenceConfig updateConvergence;
 };
 
 inline Real coupledEffectiveEquationTolerance(
@@ -169,7 +179,19 @@ struct CoupledLoadLineResult {
     int iterations = 0;
     int lineSearchAttempts = 0;
     std::string failureReason;
+    std::string convergenceReason;
+    DensityUpdateError updateError;
     struct IterationTrace {
+        struct TrialAudit {
+            Real alpha = 0.0;
+            bool accepted = false;
+            VectorXd appliedStateUpdate;
+            Real appliedVoltageUpdate_V = 0.0;
+            VectorXd predictedDeviceResidual;
+            VectorXd actualDeviceResidual;
+            Real predictedLoadResidual_V = 0.0;
+            Real actualLoadResidual_V = 0.0;
+        };
         int iteration = 0;
         Real innerVoltage_V = 0.0;
         Real equationResidualNorm = std::numeric_limits<Real>::infinity();
@@ -183,6 +205,10 @@ struct CoupledLoadLineResult {
         Real rawVoltageUpdate_V = 0.0;
         Real limitedStateUpdateNorm = 0.0;
         Real acceptedAlpha = 0.0;
+        Real reportedAlpha = 0.0;
+        Real fullStepMerit = std::numeric_limits<Real>::infinity();
+        Real populationEffectiveAlpha = 1.;
+        int protectedElectrons = 0, protectedHoles = 0;
         Real bestTrialMerit = std::numeric_limits<Real>::infinity();
         Real bestTrialEquationResidualNorm =
             std::numeric_limits<Real>::infinity();
@@ -213,6 +239,15 @@ struct CoupledLoadLineResult {
             std::numeric_limits<Real>::quiet_NaN();
         Real deviceJvpFiniteDifferenceAtError =
             std::numeric_limits<Real>::quiet_NaN();
+        // Populated only by the opt-in audit. Retain actual representable
+        // differences, not alpha*delta, to expose writeback rounding losses.
+        VectorXd rawStateUpdate;
+        VectorXd rawPredictedDeviceResidual;
+        Real componentwiseBackwardError = std::numeric_limits<Real>::quiet_NaN();
+        std::vector<TrialAudit> trials;
+        DensityUpdateError updateError;
+        std::string derivativeMode="full";
+        std::string derivativeReason;
     };
     std::vector<IterationTrace> trace;
 };
@@ -232,12 +267,20 @@ public:
     CoupledLoadLineNewton(ArclengthSystem system,
                           CurrentFunctional current,
                           CoupledLoadLineConfig config,
-                          ArclengthScalarFunctional currentLinearization = {})
+                          ArclengthScalarFunctional currentLinearization = {},
+                          DensityUpdateErrorEvaluator updateErrorEvaluator = {})
         : system_(std::move(system))
         , current_(std::move(current))
         , config_(std::move(config))
         , currentLinearization_(std::move(currentLinearization))
+        , updateErrorEvaluator_(std::move(updateErrorEvaluator))
     {
+        validateDensityUpdateConvergence(config_.updateConvergence);
+        if(system_.automaticDerivativeRecovery && (!system_.bootstrapJacobian ||
+            config_.linearSolver!="direct_bordered" || config_.lineSearchMode!="full_step"))
+            throw std::invalid_argument("automatic derivative recovery requires bootstrap Jacobian, direct_bordered and full_step");
+        if (config_.updateConvergence.mode != "off" && !updateErrorEvaluator_)
+            throw std::invalid_argument("coupled update convergence requires a density evaluator");
         if (!system_.residual || !system_.parameterDerivative ||
             !system_.solveJacobian || !current_) {
             throw std::invalid_argument(
@@ -249,6 +292,14 @@ public:
             config_.diagnosticMinUpdates > config_.maxIterations) {
             throw std::invalid_argument(
                 "CoupledLoadLineNewton: iteration limits are invalid.");
+        }
+        if (config_.directRefinementSteps < 0 || config_.directRefinementSteps > 8 ||
+            (config_.directRefinementSteps > 0 &&
+             config_.linearSolver != "direct_bordered" &&
+             config_.linearSolver != "direct_bordered_qr")) {
+            throw std::invalid_argument(
+                "CoupledLoadLineNewton: directRefinementSteps requires an explicit "
+                "direct solver and a count in [0,8].");
         }
         requirePositive(config_.equationTolerance, "equationTolerance");
         requirePositive(config_.loadLineTolerance_V, "loadLineTolerance_V");
@@ -264,10 +315,12 @@ public:
                 "CoupledLoadLineNewton: dampingFactor must not exceed 1.");
         }
         if (config_.lineSearchMode != "merit" &&
+            config_.lineSearchMode != "full_step" &&
+            config_.lineSearchMode != "report_only" &&
             config_.lineSearchMode != "residual_filter") {
             throw std::invalid_argument(
                 "CoupledLoadLineNewton: lineSearchMode must be 'merit' or "
-                "'residual_filter'.");
+                "'residual_filter', 'full_step', or 'report_only'.");
         }
         if (config_.linearSolver != "schur" &&
             config_.linearSolver != "direct_bordered" &&
@@ -321,6 +374,7 @@ public:
 
         CoupledLoadLineResult result;
         result.state = initial;
+        derivative_recovery::DerivativeSwitch recovery;
         Real anchoredEquationEnvelopeScale =
             std::numeric_limits<Real>::quiet_NaN();
         Real anchoredLoadEnvelopeScale =
@@ -339,7 +393,7 @@ public:
                     std::string("residual evaluation failed: ") + error.what();
                 return result;
             }
-            result.equationResidualNorm = infinityNorm(f);
+            result.equationResidualNorm = system_.equationNorm?system_.equationNorm(f):infinityNorm(f);
             Eigen::Index maxResidualIndex = -1;
             if (f.size() > 0)
                 f.cwiseAbs().maxCoeff(&maxResidualIndex);
@@ -373,18 +427,39 @@ public:
                 result.failureReason = "non-finite coupled residual";
                 return result;
             }
-            if (iter >= config_.diagnosticMinUpdates &&
-                result.equationResidualNorm <=
-                    result.effectiveEquationTolerance &&
+            result.trace.back().updateError = result.updateError;
+            result.trace.back().derivativeMode=system_.automaticDerivativeRecovery
+                ?derivative_recovery::derivativeModeName(recovery.mode()):"full";
+            result.trace.back().derivativeReason=system_.automaticDerivativeRecovery
+                ?recovery.reason:"configured_full_derivatives";
+            const bool residualConverged = result.equationResidualNorm <=
+                result.effectiveEquationTolerance;
+            const bool updateConverged = config_.updateConvergence.mode == "enforce" &&
+                result.updateError.valid && result.updateError.rms < 1.;
+            const bool joint=config_.updateConvergence.mode=="enforce_joint";
+            const bool zeroAnchor=iter==0&&outerVoltage_V==0.&&initial.lambda==0.;
+            const bool stopping=joint?residualConverged&&(zeroAnchor||
+                (result.updateError.valid&&result.updateError.rms<1.)):(residualConverged||updateConverged);
+            if (iter >= config_.diagnosticMinUpdates && stopping &&
                 std::abs(result.loadLineResidual_V) <=
-                    config_.loadLineTolerance_V) {
+                    config_.loadLineTolerance_V &&
+                (!system_.convergenceSatisfied || system_.convergenceSatisfied(result.state.x,result.state.lambda))) {
                 result.inexactConvergenceUsed =
-                    result.equationResidualNorm > config_.equationTolerance;
+                    residualConverged && result.equationResidualNorm > config_.equationTolerance;
                 result.converged = true;
+                result.convergenceReason = joint?"coupled_residual_and_density_update":
+                    (residualConverged ? "coupled_residuals" : "coupled_density_update");
                 return result;
             }
             if (iter == config_.maxIterations)
                 break;
+
+            const bool fullDerivative=!system_.automaticDerivativeRecovery || recovery.requestFull(
+                residualConverged && std::abs(result.loadLineResidual_V)<=config_.loadLineTolerance_V);
+            result.trace.back().derivativeMode=system_.automaticDerivativeRecovery
+                ?derivative_recovery::derivativeModeName(recovery.mode()):"full";
+            result.trace.back().derivativeReason=system_.automaticDerivativeRecovery?recovery.reason:"configured_full_derivatives";
+            const auto& selectedJacobian=fullDerivative?system_.jacobian:system_.bootstrapJacobian;
 
             VectorXd fLambda;
             try {
@@ -418,13 +493,17 @@ public:
                     linearizedDeviceResidual,
                     fLambda, result.loadLineResidual_V,
                     resistance_ohm_um, deltaState, deltaVoltage,
-                    result.failureReason);
+                    result.failureReason,selectedJacobian);
                 if (!updateSolved &&
                     (config_.linearSolver == "direct_bordered" ||
-                     config_.linearSolver == "direct_bordered_qr")) {
+                     config_.linearSolver == "direct_bordered_qr" ||
+                     LinearSolver::selectedBackend() == "pardiso_mkl")) {
                     if (result.failureReason.empty()) {
                         result.failureReason =
                             "direct bordered coupled Jacobian solve failed";
+                    }
+                    if(system_.automaticDerivativeRecovery && fullDerivative) {
+                        recovery.fullCandidate({});result.failureReason.clear();continue;
                     }
                     return result;
                 }
@@ -442,14 +521,54 @@ public:
                 result.failureReason = "non-finite coupled Newton update";
                 return result;
             }
+            SparseMatrixd auditJacobian;
+            ArclengthScalarLinearization auditCurrent;
+            bool hasAuditLinearization = false;
             if (config_.linearizationAuditEnabled && system_.jacobian &&
                 currentLinearization_.linearize) {
                 try {
                     const SparseMatrixd jacobian =
-                        system_.jacobian(result.state.x, result.state.lambda);
+                        selectedJacobian(result.state.x, result.state.lambda);
                     const ArclengthScalarLinearization currentLinearization =
                         currentLinearization_.linearize(
                             result.state.x, result.state.lambda);
+                    auditJacobian = jacobian;
+                    auditCurrent = currentLinearization;
+                    hasAuditLinearization = true;
+                    result.trace.back().rawStateUpdate = deltaState;
+                    result.trace.back().rawPredictedDeviceResidual =
+                        f + jacobian * deltaState + fLambda * deltaVoltage;
+                    // Evaluate the original, unscaled system in long double.
+                    // This is a diagnostic, never an acceptance override.
+                    std::vector<long double> sums(f.size()), denominators(f.size());
+                    for (Eigen::Index i = 0; i < f.size(); ++i) {
+                        const long double term = static_cast<long double>(fLambda(i)) * deltaVoltage;
+                        sums[i] = static_cast<long double>(linearizedDeviceResidual(i)) + term;
+                        denominators[i] = std::abs(static_cast<long double>(linearizedDeviceResidual(i))) + std::abs(term);
+                    }
+                    for (int k = 0; k < jacobian.outerSize(); ++k)
+                        for (SparseMatrixd::InnerIterator e(jacobian, k); e; ++e) {
+                            const long double term = static_cast<long double>(e.value()) * deltaState(e.col());
+                            sums[e.row()] += term;
+                            denominators[e.row()] += std::abs(term);
+                        }
+                    long double error = 0;
+                    for (Eigen::Index i = 0; i < f.size(); ++i)
+                        if (denominators[i] > 0)
+                            error = std::max(error, std::abs(sums[i]) / denominators[i]);
+                    const long double voltageTerm =
+                        (static_cast<long double>(config_.voltageCoefficient) +
+                         static_cast<long double>(resistance_ohm_um) * currentLinearization.parameterDerivative) * deltaVoltage;
+                    long double loadSum = result.loadLineResidual_V + voltageTerm;
+                    long double loadDenom = std::abs(static_cast<long double>(result.loadLineResidual_V)) + std::abs(voltageTerm);
+                    for (Eigen::Index i = 0; i < deltaState.size(); ++i) {
+                        const long double term = static_cast<long double>(resistance_ohm_um) *
+                            currentLinearization.stateDerivative(i) * deltaState(i);
+                        loadSum += term;
+                        loadDenom += std::abs(term);
+                    }
+                    if (loadDenom > 0) error = std::max(error, std::abs(loadSum) / loadDenom);
+                    result.trace.back().componentwiseBackwardError = static_cast<Real>(error);
                     const VectorXd deviceLinearizationResidual =
                         jacobian * deltaState + fLambda * deltaVoltage +
                         linearizedDeviceResidual;
@@ -531,6 +650,10 @@ public:
                 deltaState.cwiseAbs().maxCoeff(&rawStateUpdateIndex);
             result.trace.back().rawStateUpdateIndex = rawStateUpdateIndex;
             result.trace.back().rawVoltageUpdate_V = deltaVoltage;
+            if(system_.makeTrial)result.trace.back().rawStateUpdate=deltaState;
+            VectorXd rawMetricDirection;
+            const Real rawMetricVoltageDirection = deltaVoltage;
+            if (config_.updateConvergence.mode != "off") rawMetricDirection = deltaState;
             if (std::abs(deltaVoltage) > config_.maxVoltageUpdate_V) {
                 const Real scale =
                     config_.maxVoltageUpdate_V / std::abs(deltaVoltage);
@@ -543,7 +666,11 @@ public:
             result.trace.back().proposedVoltageUpdate_V = deltaVoltage;
 
             bool accepted = false;
-            Real alpha = config_.dampingFactor;
+            const bool reportOnly = config_.lineSearchMode == "report_only";
+            const bool fullStepMode = reportOnly || config_.lineSearchMode == "full_step";
+            ArclengthState fullStep;
+            bool fullStepValid = false;
+            Real alpha = fullStepMode ? 1.0 : config_.dampingFactor;
             for (int lineSearch = 0;
                  lineSearch <= config_.maxLineSearchSteps;
                  ++lineSearch) {
@@ -553,25 +680,41 @@ public:
                 CoupledLoadLineTrial observation;
                 bool evaluated = false;
                 try {
+                    if(system_.makeTrial) {
+                        const auto candidate=system_.makeTrial(result.state,deltaState,deltaVoltage,alpha);
+                        trial=candidate.state;
+                        result.trace.back().populationEffectiveAlpha=candidate.effectiveAlpha;
+                        result.trace.back().protectedElectrons=candidate.protectedElectrons;
+                        result.trace.back().protectedHoles=candidate.protectedHoles;
+                    }
+                    else {
                     trial.x = system_.trialState
                         ? system_.trialState(result.state.x, deltaState, alpha)
                         : VectorXd(result.state.x + alpha * deltaState);
+                    }
                     const VectorXd trialF =
                         system_.residual(trial.x, trial.lambda);
                     const Real trialCurrent = current_(trial.x, trial.lambda);
                     const Real trialLoadResidual = config_.voltageCoefficient *
                         trial.lambda +
                         resistance_ohm_um * trialCurrent - outerVoltage_V;
-                    const Real trialMerit = normalizedMerit(
-                        infinityNorm(trialF), trialLoadResidual);
-                    const Real trialEquationResidual = infinityNorm(trialF);
+                    const Real trialEquationResidual = system_.equationNorm?system_.equationNorm(trialF):infinityNorm(trialF);
+                    const Real trialMerit = normalizedMerit(trialEquationResidual, trialLoadResidual);
+                    if (fullStepMode && lineSearch == 0) {
+                        result.trace.back().fullStepMerit = trialMerit;
+                        fullStepValid = trial.x.allFinite() &&
+                            std::isfinite(trial.lambda) && trialF.allFinite() &&
+                            std::isfinite(trialMerit);
+                        if (!fullStepValid) break;
+                        fullStep = trial;
+                    }
                     if (trialMerit < result.trace.back().bestTrialMerit) {
                         Eigen::Index trialResidualIndex = -1;
                         if (trialF.size() > 0)
                             trialF.cwiseAbs().maxCoeff(&trialResidualIndex);
                         result.trace.back().bestTrialMerit = trialMerit;
                         result.trace.back().bestTrialEquationResidualNorm =
-                            infinityNorm(trialF);
+                            trialEquationResidual;
                         result.trace.back().bestTrialEquationResidualIndex =
                             trialResidualIndex;
                         result.trace.back().bestTrialLoadLineResidual_V =
@@ -601,12 +744,47 @@ public:
                     observation.merit = trialMerit;
                     observation.accepted = std::isfinite(trialMerit) && acceptedByPolicy;
                     evaluated = true;
+                    if (hasAuditLinearization) {
+                        try {
+                            CoupledLoadLineResult::IterationTrace::TrialAudit audit;
+                            audit.alpha = alpha;
+                            audit.accepted = std::isfinite(trialMerit) &&
+                                (fullStepMode ? lineSearch == 0 : acceptedByPolicy);
+                            audit.appliedStateUpdate = trial.x - result.state.x;
+                            audit.appliedVoltageUpdate_V = trial.lambda - result.state.lambda;
+                            audit.predictedDeviceResidual = f + auditJacobian * audit.appliedStateUpdate +
+                                fLambda * audit.appliedVoltageUpdate_V;
+                            audit.actualDeviceResidual = trialF;
+                            audit.predictedLoadResidual_V = result.loadLineResidual_V +
+                                config_.voltageCoefficient * audit.appliedVoltageUpdate_V + resistance_ohm_um *
+                                (auditCurrent.stateDerivative.dot(audit.appliedStateUpdate) +
+                                 auditCurrent.parameterDerivative * audit.appliedVoltageUpdate_V);
+                            audit.actualLoadResidual_V = trialLoadResidual;
+                            result.trace.back().trials.push_back(std::move(audit));
+                        } catch (const std::exception&) {
+                            // Audit allocation must not reject a valid trial.
+                        }
+                    }
+                    if (observation.accepted)
+                        result.trace.back().reportedAlpha = alpha;
                 } catch (const std::exception&) {
+                    if (fullStepMode && lineSearch == 0) break;
                     // Backtracking will try a smaller finite state.
                 }
                 // Do not swallow observer/export errors as numerical rejections.
                 if (evaluated && trialObserver) trialObserver(observation, trial);
+                if (evaluated && fullStepMode &&
+                    (observation.accepted || !reportOnly)) break;
                 if (evaluated && observation.accepted) {
+                    if (config_.updateConvergence.mode != "off") {
+                        try {
+                            result.updateError = updateErrorEvaluator_(result.state.x,
+                                rawMetricDirection, trial.x, trial.lambda, rawMetricVoltageDirection);
+                        } catch (const std::exception&) {
+                            // Invalid reports never authorize update-based convergence.
+                            result.updateError = {};
+                        }
+                    }
                     result.state = std::move(trial);
                     result.trace.back().acceptedAlpha = alpha;
                     accepted = true;
@@ -614,10 +792,53 @@ public:
                 }
                 alpha *= 0.5;
             }
+            if (fullStepMode && fullStepValid) {
+                if(system_.automaticDerivativeRecovery && fullDerivative) {
+                    const auto j=selectedJacobian(result.state.x,result.state.lambda);
+                    const auto port=currentLinearization_.linearize(result.state.x,result.state.lambda);
+                    const VectorXd applied=fullStep.x-result.state.x;
+                    const Real dv=fullStep.lambda-result.state.lambda;
+                    const VectorXd model=f+j*applied+fLambda*dv;
+                    const VectorXd actual=system_.residual(fullStep.x,fullStep.lambda);
+                    const Real actualLoad=config_.voltageCoefficient*fullStep.lambda+
+                        resistance_ohm_um*current_(fullStep.x,fullStep.lambda)-outerVoltage_V;
+                    const Real modelLoad=result.loadLineResidual_V+config_.voltageCoefficient*dv+
+                        resistance_ohm_um*(port.stateDerivative.dot(applied)+port.parameterDerivative*dv);
+                    const auto phi=[&](const VectorXd& r,Real load) {
+                        return .5*(r.squaredNorm()/(config_.equationTolerance*config_.equationTolerance)+
+                            std::pow(load/config_.loadLineTolerance_V,2));
+                    };
+                    derivative_recovery::DerivativeObservation observation;
+                    observation.valid=actual.allFinite()&&std::isfinite(actualLoad);
+                    observation.physicalGates=infinityNorm(actual)<=config_.equationTolerance &&
+                        std::abs(actualLoad)<=config_.loadLineTolerance_V &&
+                        (!system_.convergenceSatisfied||system_.convergenceSatisfied(fullStep.x,fullStep.lambda));
+                    observation.before=phi(f,result.loadLineResidual_V);
+                    observation.after=phi(actual,actualLoad);observation.modelAfter=phi(model,modelLoad);
+                    if(!recovery.fullCandidate(observation)) {
+                        result.trace.back().derivativeReason=recovery.reason;result.updateError={};continue;
+                    }
+                }
+                if (config_.updateConvergence.mode != "off") {
+                    try {
+                        result.updateError = updateErrorEvaluator_(result.state.x,
+                            rawMetricDirection, fullStep.x, fullStep.lambda,
+                            rawMetricVoltageDirection);
+                    } catch (const std::exception&) { result.updateError = {}; }
+                }
+                result.state = std::move(fullStep);
+                result.trace.back().acceptedAlpha = 1.0;
+                accepted = true;
+                if(system_.automaticDerivativeRecovery && !fullDerivative)recovery.bootstrapApplied();
+            }
             if (!accepted) {
+                if(system_.automaticDerivativeRecovery && fullDerivative) {
+                    recovery.fullCandidate({});result.updateError={};continue;
+                }
                 const auto& trace = result.trace.back();
                 result.failureReason =
-                    "coupled line search rejected update; proposed_delta_inner_V=" +
+                    std::string(fullStepMode ? "coupled full step invalid; proposed_delta_inner_V=" :
+                    "coupled line search rejected update; proposed_delta_inner_V=") +
                     diagnosticReal(trace.proposedVoltageUpdate_V) +
                     "; best_trial_equation_residual=" +
                     diagnosticReal(trace.bestTrialEquationResidualNorm) +
@@ -691,7 +912,7 @@ public:
             // Jacobian can be singular on a perfectly regular load-line branch.
             if (!solveDirectBorderedUpdate(parent, VectorXd::Zero(parent.x.size()),
                     system_.parameterDerivative(parent.x, parent.lambda), -du,
-                    resistance, dx, dv, failure)) {
+                    resistance, dx, dv, failure, system_.jacobian)) {
                 result.reason = "linear_solve_failed: " + failure;
                 return result;
             }
@@ -769,6 +990,11 @@ public:
         if (system_.limitUpdate)
             system_.limitUpdate(current.x, stateIncrement, voltageIncrement);
         predicted.x = current.x + stateIncrement;
+        if (system_.predictState) {
+            try { predicted.x=system_.predictState(previous.x,current.x,ratio); }
+            catch(const std::exception&) { return current; }
+            if(predicted.x.size()!=current.x.size())return current;
+        }
         predicted.lambda = current.lambda + voltageIncrement;
         if (!predicted.x.allFinite() || !std::isfinite(predicted.lambda))
             return current;
@@ -882,17 +1108,23 @@ private:
                                    Real resistance,
                                    VectorXd& deltaState,
                                    Real& deltaVoltage,
-                                   std::string& failureReason) const
+                                   std::string& failureReason,
+                                   const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian) const
     {
         if (!system_.jacobian || !currentLinearization_.linearize) {
             failureReason = "direct bordered callbacks are unavailable";
             return false;
         }
         const SparseMatrixd deviceJacobian =
-            system_.jacobian(state.x, state.lambda);
+            selectedJacobian(state.x, state.lambda);
+        const auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
         const ArclengthScalarLinearization currentLinearization =
             currentLinearization_.linearize(state.x, state.lambda);
         const Eigen::Index n = state.x.size();
+        const VectorXd physicalColumns=system_.columnScales?system_.columnScales(state):VectorXd::Ones(n+1);
+        if(physicalColumns.size()!=n+1 || !physicalColumns.allFinite() || (physicalColumns.array()<=0.).any()) {
+            failureReason="invalid physical column scales";return false;
+        }
         if (deviceJacobian.rows() != n || deviceJacobian.cols() != n ||
             f.size() != n || fLambda.size() != n ||
             currentLinearization.stateDerivative.size() != n ||
@@ -953,7 +1185,7 @@ private:
                     return false;
                 }
                 rowMatrixMagnitude(entry.row()) = std::max(
-                    rowMatrixMagnitude(entry.row()), std::abs(entry.value()));
+                    rowMatrixMagnitude(entry.row()), std::abs(entry.value()*physicalColumns[entry.col()]));
             }
         }
         VectorXd rowScale(n + 1);
@@ -974,7 +1206,7 @@ private:
                  entry; ++entry) {
                 columnScale(entry.col()) = std::max(
                     columnScale(entry.col()),
-                    std::abs(rowScale(entry.row()) * entry.value()));
+                    std::abs(rowScale(entry.row()) * entry.value()*physicalColumns[entry.col()]));
             }
         }
         for (Eigen::Index column = 0; column <= n; ++column) {
@@ -984,7 +1216,7 @@ private:
                     std::to_string(column);
                 return false;
             }
-            columnScale(column) = 1.0 / columnScale(column);
+            columnScale(column) = physicalColumns[column] / columnScale(column);
         }
 
         std::vector<Eigen::Triplet<Real>> rowScaledTriplets;
@@ -1049,13 +1281,31 @@ private:
                 backendDiagnostics.emplace_back("spqr_failed");
             }
         }
-        Eigen::SparseLU<SparseMatrixd> lu;
-        if (scaledUpdate.size() != n + 1)
-            lu.compute(augmented);
-        if (scaledUpdate.size() != n + 1 && lu.info() == Eigen::Success) {
-            scaledUpdate = lu.solve(rhs);
-            recordCandidate("eigen_lu", augmented, scaledUpdate);
-        } else if (scaledUpdate.size() != n + 1) {
+        // An explicit PARDISO selection must reach the full bordered matrix,
+        // including refinement solves, rather than only auxiliary device solves.
+        // Keep the historical default and the explicit QR policy unchanged.
+        std::unique_ptr<LinearSolver> pardiso;
+        if (config_.linearSolver != "direct_bordered_qr" &&
+            LinearSolver::selectedBackend() == "pardiso_mkl") {
+            try {
+                pardiso = std::make_unique<LinearSolver>("pardiso_mkl");
+                scaledUpdate = pardiso->solve(augmented, rhs, prescribed);
+                recordCandidate("pardiso_mkl", augmented, scaledUpdate);
+            } catch (const std::exception& error) {
+                failureReason = std::string("direct bordered PARDISO failed: ") + error.what();
+                return false;
+            }
+        }
+        LinearSolver lu("sparselu");
+        if (scaledUpdate.size() != n + 1) {
+            try {
+                scaledUpdate = lu.solve(augmented,rhs,prescribed);
+                recordCandidate("eigen_lu", augmented, scaledUpdate);
+            } catch (const std::exception&) {
+                scaledUpdate.resize(0);
+            }
+        }
+        if (scaledUpdate.size() != n + 1) {
             if (solveUmfPackSystem(augmented, rhs, scaledUpdate)) {
                 const Real umfpackResidual = recordCandidate(
                     "umfpack", augmented, scaledUpdate);
@@ -1162,14 +1412,72 @@ private:
         const Real linearTolerance = 1.0e-8 *
             std::max(Real{1.0}, infinityNorm(rhs));
         if (!std::isfinite(linearResidual) ||
-            linearResidual > linearTolerance) {
-            failureReason = "direct bordered linear solve residual too large: " +
-                std::to_string(linearResidual);
+            (linearResidual > linearTolerance && config_.directRefinementSteps==0 && !system_.makeTrial)) {
+            failureReason = "direct bordered linear solve residual too large: " + diagnosticReal(linearResidual);
             return false;
         }
-        const VectorXd update = updateUsesColumnScaling
+        VectorXd update = updateUsesColumnScaling
             ? VectorXd(columnScale.array() * scaledUpdate.array())
             : scaledUpdate;
+        if (config_.directRefinementSteps > 0 || system_.makeTrial) {
+            // Always measure the original system, including a candidate obtained
+            // from a regularized factorization or the row-scaled QR path.
+            auto defect = linear_refinement::highPrecisionDefect(
+                rawAugmented, -rawRhs, update);
+            constexpr Real backwardTolerance = 1.0e-10;
+            const auto defectScore=[&](const auto& d){return std::max(d.backwardMax/backwardTolerance,
+                infinityNorm(d.values.cwiseProduct(rowScale))/linearTolerance);};
+            if (defectScore(defect)>1.) {
+                LinearSolver correctionLu("sparselu");
+                // Population columns span many decades. Its mandatory
+                // original-system accuracy audit also requires an automatic
+                // correction budget; keep legacy QF defaults unchanged.
+                const int corrections=system_.makeTrial
+                    ? std::max(3,config_.directRefinementSteps):config_.directRefinementSteps;
+                for (int k = 0; k < corrections &&
+                     defectScore(defect)>1.; ++k) {
+                    const VectorXd correctionRhs = -defect.values.cwiseProduct(rowScale);
+                    VectorXd correction;
+                    try {
+                        const auto& constraints=prescribed;
+                        correction = pardiso ? pardiso->solve(augmented, correctionRhs,constraints)
+                                             : correctionLu.solve(augmented,correctionRhs,constraints);
+                    } catch (const std::exception& error) {
+                        failureReason = std::string("direct bordered refinement failed: ") + error.what();
+                        return false;
+                    }
+                    if (!correction.allFinite()) {
+                        failureReason = "direct bordered refinement correction failed";
+                        return false;
+                    }
+                    VectorXd candidate = update + correction.cwiseProduct(columnScale);
+                    if (!candidate.allFinite()) {
+                        failureReason = "direct bordered refinement update is non-finite";
+                        return false;
+                    }
+                    auto next = linear_refinement::highPrecisionDefect(
+                        rawAugmented, -rawRhs, candidate);
+                    if (defectScore(next) >= defectScore(defect))
+                        break;
+                    update = std::move(candidate);
+                    defect = std::move(next);
+                }
+            }
+            if (defect.backwardMax > backwardTolerance) {
+                std::ostringstream detail;
+                detail << "direct bordered refinement did not meet componentwise accuracy: "
+                       << std::scientific << defect.backwardMax;
+                failureReason = detail.str();
+                return false;
+            }
+            const Real refinedScaledResidual =
+                infinityNorm(defect.values.cwiseProduct(rowScale));
+            if (!std::isfinite(refinedScaledResidual) ||
+                refinedScaledResidual > linearTolerance) {
+                failureReason = "direct bordered refined residual exceeds the scaled tolerance";
+                return false;
+            }
+        }
         deltaState = update.head(n);
         deltaVoltage = update(n);
         return true;
@@ -1213,6 +1521,7 @@ private:
     CurrentFunctional current_;
     CoupledLoadLineConfig config_;
     ArclengthScalarFunctional currentLinearization_;
+    DensityUpdateErrorEvaluator updateErrorEvaluator_;
 };
 
 } // namespace vela

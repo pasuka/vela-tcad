@@ -1,0 +1,206 @@
+{
+  "scope": "Production materials emitter mass fix; constants retained. BVMethods independent zero-bias smoke with explicit geometry control, no BV or finite-update qualification.",
+  "material": {
+    "name": "Si",
+    "role": "transport_semiconductor",
+    "eps_r": 11.7,
+    "bandgap_eV": 1.1241592307692307,
+    "electron_affinity_eV": 4.05,
+    "conduction_band_density_of_states_cm3": 2.85827787833203e+19,
+    "valence_band_density_of_states_cm3": 3.104657033455896e+19,
+    "intrinsic_carrier_density_cm3": 14638992771.99692,
+    "temperature_K": 300.0,
+    "electron_mobility_cm2_per_V_s": 1417.0,
+    "hole_mobility_cm2_per_V_s": 470.5,
+    "provenance": "Silicon/Si from pp5_des.par (sha256 618d0467ee26) at 300 K; origins user_global,vela_default; Epsilon/Bandgap/eDOSMass Formula 1/hDOSMass Formula 1/ConstantMobility; ni = sqrt(Nc*Nv)*exp(-(Eg(T)+dEg0)/(2kT)); Nc,v = 2(2 pi m kB T/h^2)^1.5; Formula 1 masses; dEg0(OldSlotboom)=-0.01595 eV applied to electron DOS mass and ni; CODATA 2018 constants"
+  },
+  "fields": {
+    "poisson": {
+      "potential": {
+        "nodes": 2600,
+        "max_absolute_V": 0.0001516543795579972,
+        "rms_V": 2.8093619475339982e-05,
+        "worst_node": 237,
+        "pass_1mV": true
+      },
+      "n_cm3": {
+        "nodes": 2152,
+        "max_abs_ln_ratio": 0.00010469547815183944,
+        "rms_ln_ratio": 3.1160712916995864e-05,
+        "max_relative": 0.00010470095891501607,
+        "worst_node": 265,
+        "pass_1percent": true
+      },
+      "p_cm3": {
+        "nodes": 2152,
+        "max_abs_ln_ratio": 0.00010425577452366497,
+        "rms_ln_ratio": 2.730100366531719e-05,
+        "max_relative": 0.00010426120934581284,
+        "worst_node": 796,
+        "pass_1percent": true
+      }
+    },
+    "coupled": {
+      "potential": {
+        "nodes": 2600,
+        "max_absolute_V": 0.0001516543795579972,
+        "rms_V": 2.8093619474979285e-05,
+        "worst_node": 237,
+        "pass_1mV": true
+      },
+      "n_cm3": {
+        "nodes": 2152,
+        "max_abs_ln_ratio": 0.00010469547104641208,
+        "rms_ln_ratio": 3.116071217506662e-05,
+        "max_relative": 0.00010470095180781236,
+        "worst_node": 1571,
+        "pass_1percent": true
+      },
+      "p_cm3": {
+        "nodes": 2152,
+        "max_abs_ln_ratio": 0.00010425573783745534,
+        "rms_ln_ratio": 2.7300999781009798e-05,
+        "max_relative": 0.0001042611726560505,
+        "worst_node": 796,
+        "pass_1percent": true
+      }
+    }
+  },
+  "solver": {
+    "R_ohm_um": 10000000.0,
+    "coupled": {
+      "carrier_rows": {
+        "enabled": true,
+        "enforced": true,
+        "eps_row": 0.001,
+        "ignored_row_count": 5200,
+        "max_ratio": 0.0,
+        "max_ratio_carrier": "",
+        "max_ratio_node": 18446744073709551615,
+        "qualified_row_count": 0,
+        "satisfied": true,
+        "violation_count": 0,
+        "violations": []
+      },
+      "current_A_per_um": 0.0,
+      "device_residual": 6.294618786778616e-11,
+      "failure": "",
+      "global_continuity": {
+        "electron": {
+          "contact_flux": 0.0,
+          "integrated_source": 0.0,
+          "mismatch": 0.0,
+          "qualified": false,
+          "ratio": 0.0
+        },
+        "enabled": true,
+        "enforced": true,
+        "hole": {
+          "contact_flux": 0.0,
+          "integrated_source": 0.0,
+          "mismatch": 0.0,
+          "qualified": false,
+          "ratio": 0.0
+        },
+        "satisfied": true
+      },
+      "inner_V": 0.0,
+      "iterations": 0,
+      "load_residual_V": 0.0,
+      "physical_accepted": true,
+      "scalar_converged": true
+    },
+    "device_coupled": {
+      "converged": true,
+      "failure": "",
+      "iterations": 0,
+      "reason": "initial_abstol"
+    },
+    "n_nodes": 2600,
+    "outer_V": 0.0,
+    "poisson": {
+      "converged": true,
+      "failure": "",
+      "final_residual": 1.0692998112089594e-10,
+      "history": [
+        {
+          "damping": 1.0,
+          "iteration": 1,
+          "residual": 279.99327809394305
+        },
+        {
+          "damping": 1.0,
+          "iteration": 2,
+          "residual": 52.062137498886194
+        },
+        {
+          "damping": 1.0,
+          "iteration": 3,
+          "residual": 9.214742518947036
+        },
+        {
+          "damping": 1.0,
+          "iteration": 4,
+          "residual": 0.9223646486117877
+        },
+        {
+          "damping": 1.0,
+          "iteration": 5,
+          "residual": 0.031727203097698185
+        },
+        {
+          "damping": 1.0,
+          "iteration": 6,
+          "residual": 4.894384314127268e-05
+        },
+        {
+          "damping": 1.0,
+          "iteration": 7,
+          "residual": 1.0692998112089594e-10
+        }
+      ],
+      "initial_residual": 2558.7161569481805,
+      "iterations": 7,
+      "reason": "poisson_only_contact_basin_converged"
+    }
+  },
+  "checks": {
+    "materials_unittest": {
+      "passed": 35
+    },
+    "ctest_passed": [
+      "sdevice_materials",
+      "wp14_remaining_sources",
+      "sdevice_orchestrator",
+      "sdevice_gate_contact_mapping",
+      "sdevice_acceptance_tools",
+      "pn2d_config_templates",
+      "sdevice_deck_emit"
+    ]
+  },
+  "constants": {
+    "Vela_CODATA2018": {
+      "kb_J_per_K": 1.380649e-23,
+      "q_C": 1.602176634e-19,
+      "h_J_s": 6.62607015e-34,
+      "m0_kg": 9.1093837015e-31
+    },
+    "native_control": {
+      "kb_J_per_K": 1.380662e-23,
+      "q_C": 1.602192e-19,
+      "h_J_s": 6.626176e-34,
+      "m0_kg": 9.109534e-31
+    },
+    "poisson_only_eps0_F_per_m": {
+      "Vela": 8.8541878128e-12,
+      "native_control": 8.8542e-12
+    }
+  },
+  "files_sha256": {
+    "scripts/vela_sdevice/materials/__init__.py": "08ca5d3b6c9ce93c95ec294337fbab841d74abc072023eb191af0a5606057a96",
+    "tests/regression/test_sdevice_materials.py": "489b49512070a206aa47bdaa60c2b3c36aca2c5a635340948d0ce463f3a56d1a",
+    "tests/regression/test_sdevice_deck_emit.py": "a0bf8dc476853107f9c03d47f20d8ad675600f002fab49b523c7ddc9ec5f61a8",
+    "build-release/bvmethods_material_export_20261023/mass_fix_smoke/materials.json": "ab4c4b7a692d5513672fdb29e897d9363e315f41dcf1434f1f3f4122eab08cda",
+    "build-release/bvmethods_material_export_20261023/mass_fix_smoke/config.json": "56a9c238fed216cfe35b19bd7815f965a458cad374b8758f989f05442bb18dc3"
+  }
+}

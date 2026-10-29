@@ -2,7 +2,7 @@
   "_comment": "Ablation B stage B: pseudo-arclength continuation from 0.82 V to 1 V.",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
-  "materials_file": "materials_mu_n_nc_eg_sentaurus2018.json",
+  "materials_file": "materials_mu_n_nc_eg_sentaurus2018_legacy_300k.json",
   "output_csv": "outputs/ablations/mu_n_nc_eg/vela_schottky_iv_arclength.csv",
   "scaling": {
     "mode": "unit_scaling"

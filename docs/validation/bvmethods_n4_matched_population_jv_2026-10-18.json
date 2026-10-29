@@ -1,0 +1,221 @@
+{
+  "date": "2026-10-18",
+  "status": "N4 ongoing; same-state actual-increment Jv investigation completed",
+  "configuration": {
+    "target": "installation BVmethods resistor T-2022.03-SP2",
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "triangles": 5020,
+    "free_carrier_nodes": 2121,
+    "augmented_unknowns": 6843,
+    "load_ohm_um": 10000000.0,
+    "statistics": "Fermi / default Joyce-Dixon / OldSlotboom",
+    "avalanche": "GradQuasiFermi with AvalDerivatives",
+    "btbt": "NonLocalPath; original default derivative contract",
+    "units": "native normalized population and continuity"
+  },
+  "state": "accepted_0053 Load first RHS; separate from prior positive-QS RHS2",
+  "native_new_runs": 0,
+  "vela_release_evaluations": 6,
+  "actual_target_identity": {
+    "base": {
+      "coordinates_bound": 6842,
+      "population_guard_failures": 0,
+      "source_resolved": true,
+      "source_records": 4156,
+      "source_pair_balance": 7.605806845337873e-17
+    },
+    "p5": {
+      "coordinates_bound": 6842,
+      "population_guard_failures": 0,
+      "source_resolved": true,
+      "source_records": 4156,
+      "source_pair_balance": 1.4233623751717954e-16
+    },
+    "m5": {
+      "coordinates_bound": 6842,
+      "population_guard_failures": 0,
+      "source_resolved": true,
+      "source_records": 4156,
+      "source_pair_balance": 9.252207200509746e-17
+    }
+  },
+  "target_transport_passed": {
+    "p5": 41,
+    "m5": 41,
+    "chord": 41
+  },
+  "target_SRH_status": {
+    "p5": {
+      "pass": 41
+    },
+    "m5": {
+      "pass": 39,
+      "zero": 2
+    },
+    "chord": {
+      "pass": 41
+    }
+  },
+  "independent_SG": {
+    "p5": {
+      "edges": 273,
+      "canonical_status": {
+        "pass": 273
+      },
+      "native_status": {
+        "fail": 271,
+        "pass": 2
+      },
+      "canonical_max_error": 2.01527729753824e-14,
+      "reverse_checks": 273
+    },
+    "m5": {
+      "edges": 273,
+      "canonical_status": {
+        "zero": 8,
+        "pass": 265
+      },
+      "native_status": {
+        "zero": 8,
+        "fail": 263,
+        "pass": 2
+      },
+      "canonical_max_error": 1.995853664257791e-14,
+      "reverse_checks": 273
+    },
+    "chord": {
+      "edges": 273,
+      "canonical_status": {
+        "pass": 273
+      },
+      "native_status": {
+        "fail": 265,
+        "pass": 8
+      },
+      "canonical_max_error": 3.2414089082429362e-09,
+      "reverse_checks": 273
+    }
+  },
+  "native_matrix_target_status": {
+    "p5": {
+      "fail": 41
+    },
+    "m5": {
+      "fail": 41
+    },
+    "chord": {
+      "fail": 40,
+      "pass": 1
+    }
+  },
+  "transport_refinement": {
+    "p5": {
+      "h": "1",
+      "status": {
+        "pass": 2086,
+        "fail": 35
+      },
+      "max_error": 0.00033198354686837637,
+      "switches": [
+        {
+          "cell": 4078,
+          "electron": true,
+          "nodes": [
+            2243,
+            2241,
+            2244
+          ],
+          "reference_drive": 0.9804332226331849,
+          "current_drive": 1.05698513101841
+        }
+      ]
+    },
+    "p8": {
+      "h": "1/8",
+      "status": {
+        "pass": 2118,
+        "fail": 3
+      },
+      "max_error": 4.1510307457050725e-05,
+      "switches": []
+    },
+    "p64": {
+      "h": "1/64",
+      "status": {
+        "pass": 2121
+      },
+      "max_error": 5.1889805316801475e-06,
+      "switches": []
+    }
+  },
+  "minus_mobility_switches": [
+    {
+      "cell": 3848,
+      "electron": true,
+      "nodes": [
+        2126,
+        2127,
+        2188
+      ],
+      "reference_drive": 1.0155181409089542,
+      "current_drive": 0.9565503345291039
+    }
+  ],
+  "observer_invariant": true,
+  "native_absolute_target_failures": {
+    "base": {
+      "full_failed": 38,
+      "transport_failed": 38,
+      "full_max_error": 0.000598969438327592
+    },
+    "p5": {
+      "full_failed": 39,
+      "transport_failed": 39,
+      "full_max_error": 0.0005400212680503952
+    },
+    "m5": {
+      "full_failed": 38,
+      "transport_failed": 38,
+      "full_max_error": 0.0004676724087646864
+    }
+  },
+  "SG_endpoint_interval_disjoint": 36,
+  "avalanche_finest_status": {
+    "pass": 1237,
+    "zero": 834,
+    "fail": 50
+  },
+  "limitations": [
+    "full NonLocalPath Jv and augmented load/KCL derivative not qualified",
+    "native absolute and smooth directional contracts remain incompatible in 36 selected SG rows",
+    "original positive-QS state and original 95 failures retained",
+    "fine refinements are autonomous controls, not new native snapshots"
+  ],
+  "tests": {
+    "windows_matched_direction": 10,
+    "ubuntu_matched_direction": 10,
+    "windows_release_CTest": 3,
+    "two_platform_SG_records_equal": 819,
+    "evidence_checks": 35
+  },
+  "old_evidence": {
+    "bvmethods_n4_native_sg_contract_20261018": {
+      "files": 278,
+      "manifest_sha256": "0d1bc2108aa1812616955d0bd83b86193543cf71a8891e53244fc5060d954893"
+    },
+    "bvmethods_n4_paired_live_20261018": {
+      "files": 296,
+      "manifest_sha256": "d46b96368a469d8e123e3dca03f4d205a9dd31e4a851f0105bd3730fabf4e352"
+    },
+    "bvmethods_n4_sg_current_contract_20261018": {
+      "files": 38,
+      "manifest_sha256": "e0744dd4957b5b0f7fb2dca7f68f131038c2b9ddeabefce9faadb55ae17db9ac"
+    }
+  },
+  "private_evidence": {
+    "files": 75,
+    "bytes": 254414976,
+    "manifest_sha256": "04111e9fec259fe60201408206b5e493551faa0e7f8b24103d569daefd310dfc"
+  }
+}

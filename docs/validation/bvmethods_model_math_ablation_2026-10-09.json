@@ -1,0 +1,1996 @@
+{
+  "schema": "vela.bvmethods.model_math_ablation.evidence.v1",
+  "base_revision": "a0ed4e073efee0214c39365d3be90a12be51c624",
+  "working_tree_dirty_before_task": true,
+  "native_root": "/root/sentaurus_runs/bvmethods_native_ablation_20261009",
+  "native_plan": {
+    "schema": "vela.bvmethods.native_ablation.plan.v1",
+    "scope": "Single-factor native sensitivity and failure diagnosis; not original-model qualification or Vela/native agreement",
+    "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+    "parameter_sha256": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+    "baseline_raw_cmd_sha256": "7437dd021495bd6abe56d57defd7a1a23400c2921141a2d63d0fa663553036db",
+    "baseline_lf_cmd_sha256": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "outer_goal_V": 100000,
+    "original_stop_A_per_um": 0.001443,
+    "bv_extraction_A_per_um": 0.0001,
+    "variants": {
+      "baseline": {
+        "section": "control",
+        "removed": "",
+        "replacement": "",
+        "cmd_sha256": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2"
+      },
+      "no_btbt": {
+        "section": "Physics",
+        "removed": "Band2Band(E2)",
+        "replacement": "",
+        "cmd_sha256": "13b8e6ec6caab5631c91d7f89f47ec635bbade118eb76047218311d692149a9e"
+      },
+      "no_enormal": {
+        "section": "Physics",
+        "removed": " Enormal",
+        "replacement": "",
+        "cmd_sha256": "a4a4eecc766280d586e40137de4b2f5e28257572a3c31cc24a45d3a6009dba02"
+      },
+      "no_hfs": {
+        "section": "Physics",
+        "removed": " HighFieldsaturation(GradQuasiFermi)",
+        "replacement": "",
+        "cmd_sha256": "a44ec05c6213594f903cdb11a5f808195314c734d43ad647941b7c83af859407"
+      },
+      "no_bgn": {
+        "section": "Physics",
+        "removed": "EffectiveIntrinsicDensity(OldSlotboom)",
+        "replacement": "EffectiveIntrinsicDensity(NoBandGapNarrowing)",
+        "cmd_sha256": "078eb58a900ef11a376728f883086edd607f4ca8f4bf81b00c22c767b87f0fc3"
+      },
+      "boltzmann": {
+        "section": "Physics",
+        "removed": "  Fermi\n",
+        "replacement": "",
+        "cmd_sha256": "acf076890141b0fc2f687860a7fb4be414ace8dd9feeafc54a98e08babfdb1e0"
+      },
+      "constant_srh": {
+        "section": "Physics",
+        "removed": "SRH(DopingDep)",
+        "replacement": "SRH",
+        "cmd_sha256": "c54e4723b877e6a93c631b1b511845135a6234ba02361502dbe450d05a1dd3d6"
+      },
+      "no_avalanche": {
+        "section": "Physics",
+        "removed": "Avalanche(Eparallel)",
+        "replacement": "",
+        "cmd_sha256": "3fb5983422147de9733413b8a54f3f97bbd42559ad35644dc50f2dd44af682e9"
+      },
+      "no_extrapolate": {
+        "section": "Math",
+        "removed": "  Extrapolate\n",
+        "replacement": "",
+        "cmd_sha256": "15d5ea9217164abab24472dcd7a973a988d1b5a446b06aa2a685f5a998e68f22"
+      },
+      "no_aval_derivatives": {
+        "section": "Math",
+        "removed": "  AvalDerivatives\n",
+        "replacement": "  -AvalDerivatives\n",
+        "cmd_sha256": "ac5ec7e31f7d5e7aeab78143cc3f1764c86d5c99a46094cedf50390de04d4ed3"
+      },
+      "no_mobility_derivatives": {
+        "section": "Math",
+        "removed": "Math {\n",
+        "replacement": "Math {\n  -Derivatives\n",
+        "cmd_sha256": "76f33feb478681a438d3e653ba55d1fe98907e195361d608fd1f41003eb73ff9"
+      }
+    },
+    "base_plan_sha256": "5e1de618f6f010c1738bb7f45f4c796e0db96b49d47f2f89d863f9ffc115624a",
+    "followup_plan_sha256": "48f0adff11981ee5e976405de0a22a555575fd6897521646a647358115be9545"
+  },
+  "native_cases": {
+    "baseline": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T00:46:40Z",
+      "finished_utc": "2026-10-09T00:54:17Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.318403671266191,
+      "criterion_delta_vs_baseline_V": 0.0,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 84,
+        "last": {
+          "outer_voltage_V": 14099.8112219938,
+          "inner_voltage_V": 7.16025522412325,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139544743,
+          "h_current_A_per_um": -1.62987705004477e-08,
+          "total_current_A_per_um": 0.00140926509667693,
+          "Charge": 7.68401338878018e-15
+        },
+        "max_load_line_residual_V": 1.23957478309622e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.433790961362492e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "01ebe10c82c55a4736e126f399a64b71e524569d540a1a174a7ef6abcab4a056",
+        "external_resistor_des.log": "f39e7d908edfbdf35964a68b5d8ea287208c891c94688f4e09b361d261526ff3",
+        "run.out": "5a00614a76b66615f3bac6ed9b5c71148f18901e4156c5d0ea10d6e69ccaf38a",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "e6aa163ae983d3abc1fbc48b75d0246d0dbb87b8f36aeadcdfced571b99f94d5",
+        "finished_utc.txt": "562c35f1b7b002e5c79fbdee00c03a08991eb72a940c7a651b3584f8a280076b"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.36386634092654e-05,
+            "inner_voltage_V": 6.29983365397293,
+            "outer_voltage_V": 942.686467746627
+          },
+          {
+            "current_abs_A_per_um": 0.000114933360765727,
+            "inner_voltage_V": 6.36199714627111,
+            "outer_voltage_V": 1155.69560480354
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 942.686467746627,
+            "inner_voltage_V": 6.29983365397293,
+            "total_current_A_per_um": 9.36386634092654e-05,
+            "conduction_current_A_per_um": 9.36386634092654e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.1368683772161603e-13,
+            "kcl_relative": 2.4250412542260634e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1155.69560480354,
+            "inner_voltage_V": 6.36199714627111,
+            "total_current_A_per_um": 0.000114933360765727,
+            "conduction_current_A_per_um": 0.00011493336076572768,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.1368683772161603e-12,
+            "kcl_relative": 4.373083104958455e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998659599769183e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.318403671266191,
+          "outer_voltage_V": 1006.318403671266,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.340400230847778e-08
+        }
+      }
+    },
+    "no_btbt": {
+      "status": "native_stop_reached_audit_failed",
+      "missing_files": [],
+      "process_exit_code": 0,
+      "started_utc": "2026-10-09T00:46:40Z",
+      "finished_utc": "2026-10-09T00:51:53Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.514858085044539,
+      "criterion_delta_vs_baseline_V": 0.19645441377834771,
+      "avalanche_enabled": true,
+      "minstep_failure": false,
+      "timeout": false,
+      "native_stop_reached": true,
+      "accepted_trajectory_checks_pass": false,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": false,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "fail",
+        "states_checked": 65,
+        "last": {
+          "outer_voltage_V": 15048.3881490714,
+          "inner_voltage_V": 7.30959242609312,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00150412941442904,
+          "h_current_A_per_um": -2.15587645092316e-08,
+          "total_current_A_per_um": 0.00150410785566453,
+          "Charge": 7.65524846754824e-15
+        },
+        "max_load_line_residual_V": 0.000779295131451363,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 5.7916051048291985e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "13b8e6ec6caab5631c91d7f89f47ec635bbade118eb76047218311d692149a9e",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "82c79526b121634b09ef490a4ff34567e53d23c02ea5e743d8d1bdb5c3f4ac25",
+        "external_resistor_des.log": "fe478be6d6902605528a32c30ad9678c635b5a0991ffb3c63ce02c8b226f524b",
+        "run.out": "0c86ff5dccd2f68f225d1a42461322655ac354ce16db4edf8131387df1551db2",
+        "exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "started_utc.txt": "e6aa163ae983d3abc1fbc48b75d0246d0dbb87b8f36aeadcdfced571b99f94d5",
+        "finished_utc.txt": "0f5aae8b89209bdcca30d5f0bab8d4a55e6108fd6f68603836829535fa784f49"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.64910918970356e-05,
+            "inner_voltage_V": 6.51270520816282,
+            "outer_voltage_V": 971.42362417852
+          },
+          {
+            "current_abs_A_per_um": 0.000125829072244495,
+            "inner_voltage_V": 6.53070541158593,
+            "outer_voltage_V": 1264.82142785653
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 971.42362417852,
+            "inner_voltage_V": 6.51270520816282,
+            "total_current_A_per_um": 9.64910918970356e-05,
+            "conduction_current_A_per_um": 9.649109189703566e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.0231815394945443e-12,
+            "kcl_relative": 6.511241090824764e-16
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1264.82142785653,
+            "inner_voltage_V": 6.53070541158593,
+            "total_current_A_per_um": 0.000125829072244495,
+            "conduction_current_A_per_um": 0.00012582907224449486,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 6.139089236967266e-12,
+            "kcl_relative": 1.4196083284514257e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.999236084105648e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.514858085044539,
+          "outer_voltage_V": 1006.5148580850448,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -7.639158943560144e-09
+        }
+      }
+    },
+    "no_enormal": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T00:54:17Z",
+      "finished_utc": "2026-10-09T01:01:03Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.317733639245745,
+      "criterion_delta_vs_baseline_V": -0.0006700320204462429,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": false,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": false,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 84,
+        "last": {
+          "outer_voltage_V": 13883.3725989045,
+          "inner_voltage_V": 7.14378781310665,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00138763869522337,
+          "h_current_A_per_um": -1.5814114272561e-08,
+          "total_current_A_per_um": 0.00138762288110909,
+          "Charge": 7.67742871872859e-15
+        },
+        "max_load_line_residual_V": 7.344717960222624e-05,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.437170501421549e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "a4a4eecc766280d586e40137de4b2f5e28257572a3c31cc24a45d3a6009dba02",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "14a23c95004328e242b847a46c70f956d4cd0eca86e74107c2ae9116e9e5ccab",
+        "external_resistor_des.log": "acc7f368ccdd1409a1045d8cb7d11a8a438344715041a37ab79c5caa0ed880c8",
+        "run.out": "66b18ae01abb5f0368217e887c47c16cd00d5930c271824af9f96fdd96124a14",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "562c35f1b7b002e5c79fbdee00c03a08991eb72a940c7a651b3584f8a280076b",
+        "finished_utc.txt": "e41d04e92931b01b06048db09c67429e38173f1b4b89bb7933963ff3aefe35c5"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.91945403959042e-05,
+            "inner_voltage_V": 6.31540391324262,
+            "outer_voltage_V": 998.260807872285
+          },
+          {
+            "current_abs_A_per_um": 0.000110532097147848,
+            "inner_voltage_V": 6.34819686852255,
+            "outer_voltage_V": 1111.669168347
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 998.260807872285,
+            "inner_voltage_V": 6.31540391324262,
+            "total_current_A_per_um": 9.91945403959042e-05,
+            "conduction_current_A_per_um": 9.919454039590423e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 3.410605131648481e-13,
+            "kcl_relative": 1.4396403308205778e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1111.669168347,
+            "inner_voltage_V": 6.34819686852255,
+            "total_current_A_per_um": 0.000110532097147848,
+            "conduction_current_A_per_um": 0.00011053209714784834,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 2.5011104298755527e-12,
+            "kcl_relative": 6.555654287706238e-16
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998446099884875e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.317733639245745,
+          "outer_voltage_V": 1006.317733639246,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.5539001151111807e-08
+        }
+      }
+    },
+    "no_hfs": {
+      "status": "stop_reached",
+      "missing_files": [],
+      "process_exit_code": 0,
+      "started_utc": "2026-10-09T00:54:17Z",
+      "finished_utc": "2026-10-09T00:59:19Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.282514155253747,
+      "criterion_delta_vs_baseline_V": -0.03588951601244439,
+      "avalanche_enabled": true,
+      "minstep_failure": false,
+      "timeout": false,
+      "native_stop_reached": true,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "pass",
+        "states_checked": 70,
+        "last": {
+          "outer_voltage_V": 15596.8944373661,
+          "inner_voltage_V": 7.02461672613091,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00155899030711733,
+          "h_current_A_per_um": -3.32505332903072e-09,
+          "total_current_A_per_um": 0.001558986982064,
+          "Charge": 7.76060962405566e-15
+        },
+        "max_load_line_residual_V": 1.7926140571944416e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 6.629939391871295e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "a44ec05c6213594f903cdb11a5f808195314c734d43ad647941b7c83af859407",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "2650a4e47ab2cfca74c822368466cecdda5757f71e6f437cc3e21cf78f283224",
+        "external_resistor_des.log": "ed3e3d1c8e54713b991617901a2ccc3bf4e8b9e72e339e4ad713edbf478a43f6",
+        "run.out": "e346fc59988fa5bc461af3d7fb9058abc30802113be58df483b479fde1ce01df",
+        "exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "started_utc.txt": "562c35f1b7b002e5c79fbdee00c03a08991eb72a940c7a651b3584f8a280076b",
+        "finished_utc.txt": "0e52a5db915e5c877ec38dbc659da44bd505d54702dabeff60d10546f99887a3"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.29103092047441e-05,
+            "inner_voltage_V": 6.2612115701136,
+            "outer_voltage_V": 935.364303617555
+          },
+          {
+            "current_abs_A_per_um": 0.000101885330970492,
+            "inner_voltage_V": 6.28817906006781,
+            "outer_voltage_V": 1025.14148876498
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 935.364303617555,
+            "inner_voltage_V": 6.2612115701136,
+            "total_current_A_per_um": 9.29103092047441e-05,
+            "conduction_current_A_per_um": 9.29103092047441e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 4.547473508864641e-13,
+            "kcl_relative": 1.0078197580276865e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1025.14148876498,
+            "inner_voltage_V": 6.28817906006781,
+            "total_current_A_per_um": 0.000101885330970492,
+            "conduction_current_A_per_um": 0.00010188533097049194,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 7.73070496506989e-12,
+            "kcl_relative": 1.816860570580114e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998649584463625e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.282514155253747,
+          "outer_voltage_V": 1006.2825141552478,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.3504155363625176e-08
+        }
+      }
+    },
+    "no_bgn": {
+      "status": "stop_reached",
+      "missing_files": [],
+      "process_exit_code": 0,
+      "started_utc": "2026-10-09T01:01:03Z",
+      "finished_utc": "2026-10-09T01:06:05Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.253173465584115,
+      "criterion_delta_vs_baseline_V": -0.06523020568207638,
+      "avalanche_enabled": true,
+      "minstep_failure": false,
+      "timeout": false,
+      "native_stop_reached": true,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "pass",
+        "states_checked": 76,
+        "last": {
+          "outer_voltage_V": 15303.4299082706,
+          "inner_voltage_V": 7.1763911213378,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00152962541847261,
+          "h_current_A_per_um": -6.67576874972392e-11,
+          "total_current_A_per_um": 0.00152962535171492,
+          "Charge": 7.67836295446288e-15
+        },
+        "max_load_line_residual_V": 3.938945385140169e-10,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 8.329483482805266e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "078eb58a900ef11a376728f883086edd607f4ca8f4bf81b00c22c767b87f0fc3",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "05ef45476a3651a98d7e246a89a81036161f807cbb715d90ddb76ab890dd6513",
+        "external_resistor_des.log": "44664ed23dfaf8c3e1cfcd29ad09a782c0a966d1c77a031cae3ae0a8a7edbf2b",
+        "run.out": "c7fcc63bf5a8aa0f7136ed5311629a9e8d57d3c2425655fb9d9d82952db3e58d",
+        "exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "started_utc.txt": "e41d04e92931b01b06048db09c67429e38173f1b4b89bb7933963ff3aefe35c5",
+        "finished_utc.txt": "1b81ee6d47eee2e14d100edcf73c58aab030cf9190450994fcdb9bebfeb6de62"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 8.4332867203941e-05,
+            "inner_voltage_V": 6.2022072332731,
+            "outer_voltage_V": 849.530879272684
+          },
+          {
+            "current_abs_A_per_um": 0.000102620203937268,
+            "inner_voltage_V": 6.26169716448342,
+            "outer_voltage_V": 1032.46373653716
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 849.530879272684,
+            "inner_voltage_V": 6.2022072332731,
+            "total_current_A_per_um": 8.4332867203941e-05,
+            "conduction_current_A_per_um": 8.433286720394093e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.0231815394945443e-12,
+            "kcl_relative": 3.6596029411634736e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1032.46373653716,
+            "inner_voltage_V": 6.26169716448342,
+            "total_current_A_per_um": 0.000102620203937268,
+            "conduction_current_A_per_um": 0.00010262020393726805,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 3.410605131648481e-12,
+            "kcl_relative": 1.4195284217513922e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.999662104670925e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.253173465584115,
+          "outer_voltage_V": 1006.2531734655814,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -3.3789532909237128e-09
+        }
+      }
+    },
+    "boltzmann": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T01:01:03Z",
+      "finished_utc": "2026-10-09T01:06:58Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.3189600752507635,
+      "criterion_delta_vs_baseline_V": 0.0005564039845724622,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 72,
+        "last": {
+          "outer_voltage_V": 14099.9785536597,
+          "inner_voltage_V": 7.16057900687518,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.0014092989832784,
+          "h_current_A_per_um": -1.71858131425601e-08,
+          "total_current_A_per_um": 0.00140928179746526,
+          "Charge": 7.68401082895975e-15
+        },
+        "max_load_line_residual_V": 5.329638952389359e-10,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 8.84569910351862e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "acf076890141b0fc2f687860a7fb4be414ace8dd9feeafc54a98e08babfdb1e0",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "9063c5685643f0ed74599cb714b5392ad2a29dafbf4479b0b103448066f4c636",
+        "external_resistor_des.log": "88977af2e7e058e834655e18e19a83d66916e999277c1c4c547bb07ec93d4877",
+        "run.out": "4f10aa4a5aed1cf58cfdd7bf708b76ebb7c03954aa5525baa63cad4350820d52",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "e41d04e92931b01b06048db09c67429e38173f1b4b89bb7933963ff3aefe35c5",
+        "finished_utc.txt": "9ec49d820f2be82fd4a3036caf25594742567ee3827e9e590cce0f19ee811827"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.77362290964826e-05,
+            "inner_voltage_V": 6.31305772364085,
+            "outer_voltage_V": 983.675348688465
+          },
+          {
+            "current_abs_A_per_um": 0.000126674862156543,
+            "inner_voltage_V": 6.38850969944165,
+            "outer_voltage_V": 1273.13713126487
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 983.675348688465,
+            "inner_voltage_V": 6.31305772364085,
+            "total_current_A_per_um": 9.77362290964826e-05,
+            "conduction_current_A_per_um": 9.773622909648258e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.9326762412674725e-12,
+            "kcl_relative": 6.053868638364262e-16
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1273.13713126487,
+            "inner_voltage_V": 6.38850969944165,
+            "total_current_A_per_um": 0.000126674862156543,
+            "conduction_current_A_per_um": 0.00012667486215654298,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.5916157281026244e-12,
+            "kcl_relative": 4.4407844344056875e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998667738937867e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.3189600752507635,
+          "outer_voltage_V": 1006.3189600752489,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.3322610621233931e-08
+        }
+      }
+    },
+    "constant_srh": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T01:06:58Z",
+      "finished_utc": "2026-10-09T01:13:13Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.316321371219584,
+      "criterion_delta_vs_baseline_V": -0.002082300046606811,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": false,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": false,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 86,
+        "last": {
+          "outer_voltage_V": 14094.6342409098,
+          "inner_voltage_V": 7.15777648109315,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140881121630084,
+          "h_current_A_per_um": -6.35698579818472e-08,
+          "total_current_A_per_um": 0.00140874764644286,
+          "Charge": 7.68263398557978e-15
+        },
+        "max_load_line_residual_V": 0.0009235185980287497,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 9.547451672942546e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "c54e4723b877e6a93c631b1b511845135a6234ba02361502dbe450d05a1dd3d6",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "47a3522fedee3c6d7d6547c0af466788421eaf8ca428a75c2fc79ff322c44fb2",
+        "external_resistor_des.log": "d1e3e5356bd4f8e78f9ff684af25f4697255d3d9af2b41d49e23216ef6485e23",
+        "run.out": "4a64b33e8975c34940e4e09e93d30609364062807d42137f7a722a7dcaa7d72f",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "9ec49d820f2be82fd4a3036caf25594742567ee3827e9e590cce0f19ee811827",
+        "finished_utc.txt": "78efc34da63e344ffe2ba3d811ed0d7ff4373ac5e1c2a47d4dcce0179deaac47"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 8.84697850461044e-05,
+            "inner_voltage_V": 6.27958909122315,
+            "outer_voltage_V": 890.977439552266
+          },
+          {
+            "current_abs_A_per_um": 0.00010843961393421,
+            "inner_voltage_V": 6.34320779643653,
+            "outer_voltage_V": 1090.73934713854
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 890.977439552266,
+            "inner_voltage_V": 6.27958909122315,
+            "total_current_A_per_um": 8.84697850461044e-05,
+            "conduction_current_A_per_um": 8.84697850461043e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.1368683772161603e-12,
+            "kcl_relative": 1.9222388982425276e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1090.73934713854,
+            "inner_voltage_V": 6.34320779643653,
+            "total_current_A_per_um": 0.00010843961393421,
+            "conduction_current_A_per_um": 0.00010843961393421026,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 3.637978807091713e-12,
+            "kcl_relative": 2.112277747143453e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998660047061147e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.316321371219584,
+          "outer_voltage_V": 1006.3163213712212,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.339952938833713e-08
+        }
+      }
+    },
+    "no_avalanche": {
+      "status": "stop_reached",
+      "missing_files": [],
+      "process_exit_code": 0,
+      "started_utc": "2026-10-09T01:06:58Z",
+      "finished_utc": "2026-10-09T01:11:25Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 9.91573234924905,
+      "criterion_delta_vs_baseline_V": 3.5973286779828584,
+      "avalanche_enabled": false,
+      "minstep_failure": false,
+      "timeout": false,
+      "native_stop_reached": true,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": true,
+          "native_current_stop_reported": true,
+          "native_success": true
+        },
+        "status": "pass",
+        "states_checked": 75,
+        "last": {
+          "outer_voltage_V": 16091.6118597761,
+          "inner_voltage_V": 18.579833702033,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00160730320265437,
+          "h_current_A_per_um": -4.69614946513965e-14,
+          "total_current_A_per_um": 0.00160730320260741,
+          "Charge": 1.30758819365205e-14
+        },
+        "max_load_line_residual_V": 1.2166995130152847e-08,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 8.03074257240911e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "3fb5983422147de9733413b8a54f3f97bbd42559ad35644dc50f2dd44af682e9",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "77353897e1cd22737a981b28ee7a794b9703529f87032d86b4eecd11ac0af4db",
+        "external_resistor_des.log": "e8cfbf9eeee027cbf616c1d7a45aa833111b0b8857479dde3bed0ed7acda96c8",
+        "run.out": "83d6eaa1edf0e74c80f937b32bc1c3d6a9d6aa46aa90c14df825228b15b5a036",
+        "exit_code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "started_utc.txt": "9ec49d820f2be82fd4a3036caf25594742567ee3827e9e590cce0f19ee811827",
+        "finished_utc.txt": "575cb10aa6f37ced68c5827dac579dc745cbf56906def670216feacdcbd434c8"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 9.30224011427395e-05,
+            "inner_voltage_V": 9.76330029981116,
+            "outer_voltage_V": 939.987311727207
+          },
+          {
+            "current_abs_A_per_um": 0.000105183749122238,
+            "inner_voltage_V": 10.0289761052515,
+            "outer_voltage_V": 1061.86646732763
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 939.987311727207,
+            "inner_voltage_V": 9.76330029981116,
+            "total_current_A_per_um": 9.30224011427395e-05,
+            "conduction_current_A_per_um": 9.302240114273951e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 9.094947017729282e-13,
+            "kcl_relative": 1.0036531010887818e-15
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1061.86646732763,
+            "inner_voltage_V": 10.0289761052515,
+            "total_current_A_per_um": 0.000105183749122238,
+            "conduction_current_A_per_um": 0.00010518374912223737,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.3642420526593924e-12,
+            "kcl_relative": 6.5725406682728545e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.997091471565165e-05
+        },
+        "drain": {
+          "inner_voltage_V": 9.91573234924905,
+          "outer_voltage_V": 1009.9157323492486,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -2.908528434792979e-08
+        }
+      }
+    },
+    "no_extrapolate": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T01:13:13Z",
+      "finished_utc": "2026-10-09T01:21:34Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": 6.320316714264015,
+      "criterion_delta_vs_baseline_V": 0.0019130429978240215,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 108,
+        "last": {
+          "outer_voltage_V": 14099.8112222691,
+          "inner_voltage_V": 7.16025510640668,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 0.00140928139548182,
+          "h_current_A_per_um": -1.62987656083726e-08,
+          "total_current_A_per_um": 0.00140926509671621,
+          "Charge": 7.68401337031644e-15
+        },
+        "max_load_line_residual_V": 1.8317223293706775e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 1.0013284311977163e-14,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "15d5ea9217164abab24472dcd7a973a988d1b5a446b06aa2a685f5a998e68f22",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "1bddc463a074647d41b74bed8cdc3cad8492abb07a6c98af4c93a1ff21a22042",
+        "external_resistor_des.log": "106279b73c00260877c9a133749cce551126e7d3aa868fb9b5c5ad7d9cb72ffa",
+        "run.out": "4355097b5ee0a89116826453a78da69283c6133d5751752b35db48d791c2e954",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "78efc34da63e344ffe2ba3d811ed0d7ff4373ac5e1c2a47d4dcce0179deaac47",
+        "finished_utc.txt": "64c718d3e7c8d1cba5f9b912c0dca9e9b467b34571529631550ae9d4292ec1c8"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": [
+          {
+            "current_abs_A_per_um": 8.65463806456862e-05,
+            "inner_voltage_V": 6.2741479563878,
+            "outer_voltage_V": 871.737954413251
+          },
+          {
+            "current_abs_A_per_um": 0.000100698720236598,
+            "inner_voltage_V": 6.32271451106331,
+            "outer_voltage_V": 1013.30991687704
+          }
+        ],
+        "bracket_state_checks": [
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 871.737954413251,
+            "inner_voltage_V": 6.2741479563878,
+            "total_current_A_per_um": 8.65463806456862e-05,
+            "conduction_current_A_per_um": 8.654638064568612e-05,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 1.2505552149377763e-12,
+            "kcl_relative": 1.9554966026968695e-16
+          },
+          {
+            "status": "pass",
+            "checks": {
+              "declared_stop": true,
+              "fixed_resistor_load_line": true,
+              "terminal_kcl": true,
+              "negligible_displacement": true,
+              "current_components": true,
+              "finite_positive_voltage": true
+            },
+            "outer_voltage_V": 1013.30991687704,
+            "inner_voltage_V": 6.32271451106331,
+            "total_current_A_per_um": 0.000100698720236598,
+            "conduction_current_A_per_um": 0.0001006987202365976,
+            "displacement_current_A_per_um": 0.0,
+            "load_line_residual_V": 3.296918293926865e-12,
+            "kcl_relative": 5.58709693381352e-15
+          }
+        ],
+        "bracket_state_checks_pass": true,
+        "gate": {
+          "inner_voltage_V": 0.55,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": 0.0
+        },
+        "substrate": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -9.998659650102939e-05
+        },
+        "drain": {
+          "inner_voltage_V": 6.320316714264015,
+          "outer_voltage_V": 1006.320316714261,
+          "total_current_A_per_um": 0.0001
+        },
+        "source": {
+          "inner_voltage_V": 0.0,
+          "outer_voltage_V": 0.0,
+          "total_current_A_per_um": -1.3403498970088032e-08
+        }
+      }
+    },
+    "no_aval_derivatives": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T01:13:13Z",
+      "finished_utc": "2026-10-09T01:30:05Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": null,
+      "criterion_delta_vs_baseline_V": null,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": true,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": true,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 258,
+        "last": {
+          "outer_voltage_V": 240.364785598808,
+          "inner_voltage_V": 5.75801305426868,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 2.34607802107459e-05,
+          "h_current_A_per_um": -1.02956287760358e-10,
+          "total_current_A_per_um": 2.34606772544581e-05,
+          "Charge": 7.24677911716742e-15
+        },
+        "max_load_line_residual_V": 1.0672731066974084e-09,
+        "max_kcl_relative_above_1e_minus7_A_per_um": 7.016535798633429e-15,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "ac5ec7e31f7d5e7aeab78143cc3f1764c86d5c99a46094cedf50390de04d4ed3",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "17c1bf47105582e3ca6c3eaf1f029ad6bcda8901e1f56eb6abb36dbc1af023a1",
+        "external_resistor_des.log": "9987d8139e9a5265a828a21eff6489b2eabc2e0659a40166afc5bb38a51e1c42",
+        "run.out": "56a8c5c70c2797c8efea183051904eb6d9127c327ac2f9bff129c4cd3f989e84",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "78efc34da63e344ffe2ba3d811ed0d7ff4373ac5e1c2a47d4dcce0179deaac47",
+        "finished_utc.txt": "2b89cf53b9c79a4f998fcbdc5a676b14e666a053a38c1854750d2bac73df73bd"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": null,
+        "bracket_state_checks": null,
+        "bracket_state_checks_pass": false,
+        "gate": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "substrate": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "drain": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "source": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        }
+      }
+    },
+    "no_mobility_derivatives": {
+      "status": "minstep_failure",
+      "missing_files": [],
+      "process_exit_code": 2,
+      "started_utc": "2026-10-09T01:19:50Z",
+      "finished_utc": "2026-10-09T01:36:16Z",
+      "native_version": "T-2022.03-SP2 (0.7745337)",
+      "thread_settings": [
+        "  Number of assembly threads: 1 (default)",
+        "  Number of solver threads: 1 (OMP_NUM_THREADS)"
+      ],
+      "criterion_voltage_V": null,
+      "criterion_delta_vs_baseline_V": null,
+      "avalanche_enabled": true,
+      "minstep_failure": true,
+      "timeout": false,
+      "native_stop_reached": false,
+      "accepted_trajectory_checks_pass": false,
+      "original_model_qualified": false,
+      "trajectory": {
+        "checks": {
+          "finite": true,
+          "starts_at_zero_voltage": true,
+          "starts_below_original_stop": true,
+          "original_fixed_bias_contacts_all_states": true,
+          "monotone_outer_voltage": true,
+          "fixed_resistor_all_states": false,
+          "terminal_kcl_all_states": true,
+          "negligible_displacement_all_states": true,
+          "current_components_all_states": true,
+          "original_stop_reached": false,
+          "native_current_stop_reported": false,
+          "native_success": false
+        },
+        "status": "fail",
+        "states_checked": 319,
+        "last": {
+          "outer_voltage_V": 3.41081839301378,
+          "inner_voltage_V": 3.07295915337739,
+          "QuasiFermiPotential": 0.0,
+          "DisplacementCurrent": 0.0,
+          "e_current_A_per_um": 3.37859041851518e-08,
+          "h_current_A_per_um": 1.97722345143338e-14,
+          "total_current_A_per_um": 3.37859239573863e-08,
+          "Charge": 5.24303633980998e-15
+        },
+        "max_load_line_residual_V": 1.66404297151021e-06,
+        "max_kcl_relative_above_1e_minus7_A_per_um": null,
+        "low_current_kcl_absolute_floor_A_per_um": 1e-12
+      },
+      "sha256": {
+        "external_resistor_sdevice.cmd": "76f33feb478681a438d3e653ba55d1fe98907e195361d608fd1f41003eb73ff9",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+        "external_resistor_des.plt": "a64b8d5725634b6bac0ce202e26571fb8791c75d61b126f1525d6cbdfde9a573",
+        "external_resistor_des.log": "f933997ffe2fd6f0adfccea0caef1e2d7bb8385dfc45f952a562fdaa2d992baa",
+        "run.out": "b3481bc0a59676709601406caf2c7171edd4d2707fb3c732e5d2797535fc2ece",
+        "exit_code.txt": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "started_utc.txt": "837c87f398b78d8127a823fe949a2d38ad1cca29f976f75d515837d1691f47f3",
+        "finished_utc.txt": "6bf55f572e47ac7223eb24472496f9608f25e81011674aa5ca71c1bcfdf34e38"
+      },
+      "physical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "numerical_model_log_excerpt": "<private execution metadata; original preserved in ignored archive>",
+      "threshold_bracket": {
+        "current_abs_A_per_um": 0.0001,
+        "accepted_sample_bracket": null,
+        "bracket_state_checks": null,
+        "bracket_state_checks_pass": false,
+        "gate": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "substrate": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "drain": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        },
+        "source": {
+          "inner_voltage_V": null,
+          "outer_voltage_V": null,
+          "total_current_A_per_um": null
+        }
+      }
+    }
+  },
+  "vela_nodes": {
+    "local": {
+      "cases": {
+        "baseline": {
+          "raw_directory_label": "baseline",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\vela_screen\\baseline",
+          "jacobian_field_derivatives": true,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 19.598757028579712,
+          "first_exit": 1,
+          "first_seconds": 137.3589506149292,
+          "accepted_nonzero": false,
+          "first_config_sha256": "6d33e95190f0c6e18dfbca346e46221fb6cc558c6e0e8584275ce3549b2216de",
+          "zero_config_sha256": "05665bccd93de16fe21591363eb7635726077beee4a503b1567379e2b19bbf71",
+          "iterations": 20,
+          "failure_reason": "carrier_row_convergence",
+          "carrier_row_max_ratio": 1.9856602714240523,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 0.009312179101953186,
+          "global_hole_closure_ratio": 0.009313864905591038,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 0.0,
+              "source": 0.0,
+              "gate": 0.0,
+              "substrate": 0.0
+            },
+            "sum_A_per_um": 0.0,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        },
+        "no_btbt": {
+          "raw_directory_label": "no_btbt",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\vela_screen\\no_btbt",
+          "jacobian_field_derivatives": true,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "none",
+          "zero_exit": 0,
+          "zero_seconds": 11.471450805664062,
+          "first_exit": 1,
+          "first_seconds": 120.91559100151062,
+          "accepted_nonzero": false,
+          "first_config_sha256": "69aefa8c96504fa752dcd7c3d9313e17adc2539370c91f0d884e67ab8f0d507f",
+          "zero_config_sha256": "3c2ca09e13e197a22325e174757c5f36924681a06fc79ba9d909629d7500aaae",
+          "iterations": 20,
+          "failure_reason": "carrier_row_convergence",
+          "carrier_row_max_ratio": 1.9856606930102374,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 0.009312670891338614,
+          "global_hole_closure_ratio": 0.009314356723989019,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 0.0,
+              "source": 0.0,
+              "gate": 0.0,
+              "substrate": 0.0
+            },
+            "sum_A_per_um": 0.0,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        },
+        "no_hfs": {
+          "raw_directory_label": "no_hfs",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\vela_screen_hfs\\no_hfs",
+          "jacobian_field_derivatives": true,
+          "mobility_model": "masetti_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 16.588195323944092,
+          "first_exit": 0,
+          "first_seconds": 59.90117335319519,
+          "accepted_nonzero": true,
+          "first_config_sha256": "7a7b58f9289911631b0c3a13ad46151d1a026e4e0845ae0e8132585dc9d07b77",
+          "zero_config_sha256": "b88cca4329e19aa73a88e33a699f4c2c3c36d3e12d0e35025592e4a4d97db2ab",
+          "iterations": 10,
+          "failure_reason": "",
+          "carrier_row_max_ratio": 7.306848756511964e-05,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 1.943100668479662e-08,
+          "global_hole_closure_ratio": 1.9554981312202543e-08,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 1.2638154496632567e-12,
+              "source": -1.263778212498233e-12,
+              "gate": 0.0,
+              "substrate": -3.723716502182905e-17
+            },
+            "sum_A_per_um": 1.818145660235593e-27,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        },
+        "frozen_hfs_jacobian": {
+          "raw_directory_label": "frozen_hfs_jacobian",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\vela_screen_frozen_hfs\\frozen_hfs_jacobian",
+          "jacobian_field_derivatives": false,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 20.56639862060547,
+          "first_exit": 0,
+          "first_seconds": 152.7124228477478,
+          "accepted_nonzero": true,
+          "first_config_sha256": "d4cba3d7702dbd12cb48a8fbc34169c4fccb778772f552ddb1fb327cfdffa155",
+          "zero_config_sha256": "9f5e9f9a95f70931de5f2385e10d77abaa5a5e5e0dcd2bd77c6cd1cd1253ed37",
+          "iterations": 17,
+          "failure_reason": "",
+          "carrier_row_max_ratio": 0.0009988232617828981,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 1.5964712548672481e-12,
+          "global_hole_closure_ratio": 9.421351150161814e-11,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 1.2638014144093361e-12,
+              "source": -1.263764174837369e-12,
+              "gate": 0.0,
+              "substrate": -3.7239571970174034e-17
+            },
+            "sum_A_per_um": -3.0114456908021024e-27,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        }
+      },
+      "scope": "Fresh zero and prescribed inner 10uV without external resistor; original QS qualification false.",
+      "runner_sha256": "08079d61ee45b32d3d1f8c1d479b75746a623db01eb59b84f8bea78fec01da0f",
+      "environment": {
+        "VELA_LINEAR_SOLVER": "sparselu",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      },
+      "inputs_sha256": {
+        "mesh.json": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+        "doping.csv": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+        "materials.json": "fea40506708b492b61387703295e3584df747a510734d9315549c216eeb4eebe",
+        "simulation_stage00.json": "044620644f48d51ed57277df14995bad86d6d42b23198304215409a0a57e45c6",
+        "simulation_stage01.json": "852954554ecc3677e217fc6a8b3e110fb3d51664447fce6e26b10aca29650b32"
+      },
+      "source_manifest_verified": true
+    },
+    "t470p": {
+      "cases": {
+        "baseline": {
+          "raw_directory_label": "frozen_hfs_jacobian",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\t470p_screen_archive\\model_math_screen_20261009_v1\\frozen_hfs_jacobian",
+          "jacobian_field_derivatives": true,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 11.895451068878174,
+          "first_exit": 1,
+          "first_seconds": 86.01376581192017,
+          "accepted_nonzero": false,
+          "first_config_sha256": "65c89d9aa158e096bbca157a04e821fe64dd255ea2eeba49083abbe32d82eaea",
+          "zero_config_sha256": "a8ca1c6398cffb33aaecf544619a025f250ef38910b71d7fd915c85451765c32",
+          "iterations": 20,
+          "failure_reason": "carrier_row_convergence",
+          "carrier_row_max_ratio": 1.9856614493381577,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 0.00931169385343095,
+          "global_hole_closure_ratio": 0.009313379682530784,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 0.0,
+              "source": 0.0,
+              "gate": 0.0,
+              "substrate": 0.0
+            },
+            "sum_A_per_um": 0.0,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        },
+        "frozen_hfs_jacobian": {
+          "raw_directory_label": "baseline",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\t470p_screen_archive\\model_math_screen_20261009_v1\\baseline",
+          "jacobian_field_derivatives": false,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 10.21969723701477,
+          "first_exit": 0,
+          "first_seconds": 73.55273485183716,
+          "accepted_nonzero": true,
+          "first_config_sha256": "b222192e82bd24076210c8a5c9ff3eeee40c711036936e2e67f712eda0e14683",
+          "zero_config_sha256": "2fbdd251640db035ce910c3f91bd525a5f79b6aa4bd88a0de655d19ac734633a",
+          "iterations": 17,
+          "failure_reason": "",
+          "carrier_row_max_ratio": 0.0009988230731476978,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 4.5331197844615214e-11,
+          "global_hole_closure_ratio": 1.7340383159221702e-10,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 1.2638014144093404e-12,
+              "source": -1.2637641748373712e-12,
+              "gate": 0.0,
+              "substrate": -3.7239571973125384e-17
+            },
+            "sum_A_per_um": -3.943312286997711e-27,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        }
+      },
+      "scope": "Fresh zero and prescribed inner 10uV without external resistor; original QS qualification false.",
+      "runner_sha256": "7a16e2b3a23a72eb5042f60b2f40337cfcaa96e87d17f719e4afcb5c14d2af5f",
+      "environment": {
+        "VELA_LINEAR_SOLVER": "sparselu",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      },
+      "inputs_sha256": {
+        "mesh.json": "c04aff0289cd1962c0e25acee987b0dbd0b218d5e7414817053c0dec0066e714",
+        "doping.csv": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+        "materials.json": "fea40506708b492b61387703295e3584df747a510734d9315549c216eeb4eebe",
+        "simulation_stage00.json": "044620644f48d51ed57277df14995bad86d6d42b23198304215409a0a57e45c6",
+        "simulation_stage01.json": "852954554ecc3677e217fc6a8b3e110fb3d51664447fce6e26b10aca29650b32"
+      },
+      "source_manifest_verified": true,
+      "label_corrections": {
+        "frozen_hfs_jacobian": "baseline",
+        "baseline": "frozen_hfs_jacobian"
+      }
+    },
+    "c560": {
+      "cases": {
+        "baseline": {
+          "raw_directory_label": "frozen_hfs_jacobian",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\c560_screen_archive\\model_math_screen_20261009_v1\\frozen_hfs_jacobian",
+          "jacobian_field_derivatives": true,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 13.965780019760132,
+          "first_exit": 1,
+          "first_seconds": 118.47238206863403,
+          "accepted_nonzero": false,
+          "first_config_sha256": "c525db7719b07c4db1520fc5d0bb92b48278ddad00cec46977d3311bdf335923",
+          "zero_config_sha256": "0a2286deaca580e863b44a891a55261141f277d2a62925aff1dff29090d2d3d9",
+          "iterations": 20,
+          "failure_reason": "carrier_row_convergence",
+          "carrier_row_max_ratio": 1.5848465905159377,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 0.009311683658078345,
+          "global_hole_closure_ratio": 0.00931336950280852,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 0.0,
+              "source": 0.0,
+              "gate": 0.0,
+              "substrate": 0.0
+            },
+            "sum_A_per_um": 0.0,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        },
+        "frozen_hfs_jacobian": {
+          "raw_directory_label": "baseline",
+          "raw_directory": "<WORKTREE>\\build-release\\bvmethods_native_ablation_20261009\\c560_screen_archive\\model_math_screen_20261009_v1\\baseline",
+          "jacobian_field_derivatives": false,
+          "mobility_model": "masetti_field_lombardi",
+          "band_to_band_model": "e2",
+          "zero_exit": 0,
+          "zero_seconds": 12.473969221115112,
+          "first_exit": 0,
+          "first_seconds": 103.05270266532898,
+          "accepted_nonzero": true,
+          "first_config_sha256": "108b7e0374ee8fd64cc5b5c488ba171b966b87868ce33a9ebf6c92b9c484e1a0",
+          "zero_config_sha256": "b731b7daf0dc66907795a3c830f7ef47640e103d986118c3739144ba8efed4e8",
+          "iterations": 17,
+          "failure_reason": "",
+          "carrier_row_max_ratio": 0.0008370674304128299,
+          "carrier_row_limit": 0.001,
+          "global_electron_closure_ratio": 3.043015363202181e-11,
+          "global_hole_closure_ratio": 7.852128188890621e-11,
+          "independent_terminal_kcl": {
+            "currents_A_per_um": {
+              "drain": 1.2638014144067092e-12,
+              "source": -1.2637641748373712e-12,
+              "gate": 0.0,
+              "substrate": -3.723956934023412e-17
+            },
+            "sum_A_per_um": -2.2376470984901543e-27,
+            "limit_A_per_um": 1e-12,
+            "pass": true
+          },
+          "original_model_qualified": false
+        }
+      },
+      "scope": "Fresh zero and prescribed inner 10uV without external resistor; original QS qualification false.",
+      "runner_sha256": "c6b8005de451226f3465aff0e9c117fb3a935eab119e45e6fa016bb65e6e48f0",
+      "environment": {
+        "VELA_LINEAR_SOLVER": "sparselu",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      },
+      "inputs_sha256": {
+        "mesh.json": "dd6e136c105528126217e65c77f69770637a67d3f1d7f0521bff92634d33787c",
+        "doping.csv": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+        "materials.json": "054ba970064fe3c2291b62773aef6dba54a5d0e175540fa1a83ef1a4f2288410",
+        "simulation_stage00.json": "7f4eb7bfda72025cd6d9d4b5ce89c1d5b8b210721e7d313030cbb0f8de7ed81c",
+        "simulation_stage01.json": "5a270b1ea14f71b20e89f954bbeb33d2b1d53416cc2813bf27d34599e84688f8"
+      },
+      "source_manifest_verified": true,
+      "label_corrections": {
+        "frozen_hfs_jacobian": "baseline",
+        "baseline": "frozen_hfs_jacobian"
+      },
+      "os_release": "Ubuntu 26.04.1 LTS; verified from /etc/os-release this task"
+    }
+  },
+  "transfer_receipts": {
+    "c560_screen_receipt.json": {
+      "phase": "completed",
+      "archive": "model_math_screen_20261009_v1.tar.gz",
+      "sha256": "beda24031f291dacca9f87843ffa2cb52e69e46f3c1c2fa42e64e51e0cb2207f",
+      "files": 51
+    },
+    "followup_launch_receipt.json": {
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "case": "no_mobility_derivatives",
+      "launch_output": "d8d159bf7621924777e1408b06ded601f684438a21a8989b5d59396cddaba172  followup_inputs.tar.gz\n93458\n",
+      "inputs_sha256": "d8d159bf7621924777e1408b06ded601f684438a21a8989b5d59396cddaba172",
+      "followup_plan_sha256": "48f0adff11981ee5e976405de0a22a555575fd6897521646a647358115be9545"
+    },
+    "launch_receipt.json": {
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "launch_output": "d473889eeffe677071848b8fa9bc8e88f0db90ea0a7c28e29a6e04b2137fde32  inputs.tar.gz\n82846\n",
+      "inputs_sha256": "d473889eeffe677071848b8fa9bc8e88f0db90ea0a7c28e29a6e04b2137fde32",
+      "plan_sha256": "5e1de618f6f010c1738bb7f45f4c796e0db96b49d47f2f89d863f9ffc115624a"
+    },
+    "local_screen_receipt.json": {
+      "archive": "vela_local_screens.tar.gz",
+      "sha256": "366fbf9580ed1f8c6009bd337b2e7c6de8c08be8d446939bfcc39f1209d9278b",
+      "files": 100
+    },
+    "neutral_inputs_receipt.json": {
+      "archive": "neutral_inputs.tar.gz",
+      "sha256": "d96f7feb9a15f034d5626ff1f0118aa77cc3c7963d2194a7fac3914f5e7df5f4",
+      "files": 7,
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "remote_sha256_verified": true
+    },
+    "partial_01_receipt.json": {
+      "tag": "partial_01",
+      "cases": [
+        "no_btbt"
+      ],
+      "sha256": "262e49bbdcca8d2b40a736906c8afeb79e67c79257b1357470dcc66fa0c778ee",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_01.tar.gz"
+    },
+    "partial_02_receipt.json": {
+      "tag": "partial_02",
+      "cases": [
+        "baseline",
+        "no_btbt"
+      ],
+      "sha256": "6d32193e0d451ed65d0014bdcb1a85116e3769e0dc03bbbd0a7f686fafa5dcf8",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_02.tar.gz"
+    },
+    "partial_03_receipt.json": {
+      "tag": "partial_03",
+      "cases": [
+        "baseline",
+        "no_btbt",
+        "no_enormal",
+        "no_hfs"
+      ],
+      "sha256": "9d2e71d62aa8d75e6ae8a82c11949cbca1e5cc3285a914feec7fa1a119a7f75f",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_03.tar.gz"
+    },
+    "partial_04_receipt.json": {
+      "tag": "partial_04",
+      "cases": [
+        "baseline",
+        "no_btbt",
+        "no_enormal",
+        "no_hfs",
+        "no_bgn",
+        "boltzmann"
+      ],
+      "sha256": "e97de805e98342c7ba80a251c04058fda149eac9c0ece560d70f53e22b76a64e",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_04.tar.gz"
+    },
+    "partial_05_receipt.json": {
+      "tag": "partial_05",
+      "cases": [
+        "baseline",
+        "no_btbt",
+        "no_enormal",
+        "no_hfs",
+        "no_bgn",
+        "boltzmann",
+        "constant_srh",
+        "no_avalanche"
+      ],
+      "sha256": "6a1ed09e00d4caeca9c56590c3100f21c58079954f7809e16dffa5e81caa244a",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_05.tar.gz"
+    },
+    "partial_06_receipt.json": {
+      "tag": "partial_06",
+      "cases": [
+        "baseline",
+        "no_btbt",
+        "no_enormal",
+        "no_hfs",
+        "no_bgn",
+        "boltzmann",
+        "constant_srh",
+        "no_avalanche",
+        "no_extrapolate"
+      ],
+      "sha256": "9992efa88825f12e7b02bd09becc7511690492505d7b43d94db8c423acf19a46",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_06.tar.gz"
+    },
+    "partial_07_receipt.json": {
+      "tag": "partial_07",
+      "cases": [
+        "baseline",
+        "no_btbt",
+        "no_enormal",
+        "no_hfs",
+        "no_bgn",
+        "boltzmann",
+        "constant_srh",
+        "no_avalanche",
+        "no_extrapolate",
+        "no_aval_derivatives",
+        "no_mobility_derivatives"
+      ],
+      "sha256": "16b5f17214a84374e258319bce0cba5c970a17e5cd4050cb38576b4f0048dfbb",
+      "remote_root": "<private execution metadata; original preserved in ignored archive>",
+      "archive": "partial_07.tar.gz"
+    },
+    "sealed_archive_receipt.json": {
+      "root": "<REMOTE_HOME>/vela_reference_artifacts/bvmethods_model_math_ablation/v1",
+      "archive_sha256": "ec7441cc1525313b8f64753848a5d8cfb3a5c47fadfb88a6cf16ff504624dda2",
+      "manifest_sha256": "bb1bf9b64e877116ee9290686b2fa5ffaea35fe8da25ebc59e7ba1944749bd1e",
+      "files": 128,
+      "all_members_verified": true
+    },
+    "t470p_screen_receipt.json": {
+      "phase": "completed",
+      "archive": "model_math_screen_20261009_v1.tar.gz",
+      "sha256": "db06482b970078d6a19c08366f2915c7556e270436e79773e56d161f5c0ca756",
+      "files": 51
+    }
+  },
+  "limits": [
+    "The first remote worker inverted directory labels, not calculation selectors. Raw evidence is preserved. All classifications here use actual config.json selectors.",
+    "Local baseline/noBTBT/noHFS and field-derivative controls share existing Q2/Q3 candidate numerics; not defaults.",
+    "No source solver, model defaults, canonical native script, acceptance thresholds or qualified reference were changed.",
+    "Small shifts from adaptive QS interpolation are sensitivity observations, not precision estimates.",
+    "Native mathematical failures and Vela first-point failures are separate observations."
+  ],
+  "checks": {
+    "ablation_contract_tests": 5,
+    "zero_qs_contract_tests": 9,
+    "runner_target_build": "current Release target no work to do",
+    "full_solver_regression_this_task": false
+  }
+}

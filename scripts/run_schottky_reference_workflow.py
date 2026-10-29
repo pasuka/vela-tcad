@@ -60,6 +60,7 @@ def materialize(output_root: Path) -> tuple[Path, Path]:
     for config in (stage_a, stage_b):
         config["mesh_file"] = _absolute(FIXTURE / "vela" / "mesh.json")
         config["node_doping_file"] = _absolute(FIXTURE / "vela" / "doping.csv")
+        config["materials_file"] = _absolute(FIXTURE / "vela" / config["materials_file"])
         config["solver"]["global_continuity_closure"] = {
             # Retain the global audit columns, but do not make their near-zero
             # source normalization a nonlinear acceptance gate.  Terminal KCL
@@ -94,6 +95,33 @@ def run_stage(runner: Path, config: Path) -> None:
     if result.returncode != 0:
         raise RuntimeError(
             f"runner failed for {config} with {result.returncode}: {result.stderr[-1000:]}")
+
+
+def bind_restart_bias(stage_a_csv: Path, stage_b_config: Path) -> dict[str, float]:
+    """Resume at the accepted parameter, preserving the saved QF frame.
+
+    Decimal sweep addition can end a few ULPs away from the nominal endpoint.
+    Rounding that value on Load changes the contact reference before Newton's
+    first residual, even though the physical bias is effectively unchanged.
+    This binds the exact recorded value; it does not alter convergence gates.
+    """
+    rows = read_csv(stage_a_csv)
+    if not rows or rows[-1].get("converged") != "1":
+        raise ValueError("Schottky restart requires a final accepted stage A point")
+    actual = float(rows[-1]["bias_V"])
+    config = json.loads(stage_b_config.read_text(encoding="utf-8"))
+    nominal = float(config["sweep"]["start"])
+    if not math.isfinite(actual) or abs(actual - nominal) > 1e-12:
+        raise ValueError("Schottky restart bias differs from the declared endpoint")
+    state = Path(config["sweep"]["initial_state_file"])
+    if not state.is_file():
+        raise ValueError("Schottky restart state is missing")
+    config["sweep"]["start"] = actual
+    write_text_lf(stage_b_config, json.dumps(config, indent=2) + "\n")
+    evidence = {"declared_bias_V": nominal, "accepted_bias_V": actual}
+    write_text_lf(stage_b_config.parent / "restart_bias_binding.json",
+                  json.dumps(evidence, indent=2) + "\n")
+    return evidence
 
 
 def merge_curves(stage_a_csv: Path, stage_b_csv: Path, output: Path) -> list[dict[str, float]]:
@@ -303,6 +331,7 @@ def main() -> int:
         if args.runner is None or not args.runner.is_file():
             parser.error("--execute requires an existing --runner")
         run_stage(args.runner, path_a)
+        bind_restart_bias(path_a.parent / "sweep.csv", path_b)
         run_stage(args.runner, path_b)
     result = closeout(args.output_root.resolve())
     if args.publish_json is not None:

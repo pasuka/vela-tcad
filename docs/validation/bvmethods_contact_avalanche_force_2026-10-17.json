@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-17",
+  "profile": "installed_library_BVmethods_300K_binary64",
+  "mesh": {
+    "nodes": 2600,
+    "Tri3_cells": 5020,
+    "Si_nodes": 2152,
+    "Si_cells": 4156
+  },
+  "scope": "private frozen-population actual source assembly; production unchanged",
+  "native_sequence": "Load Plot Coupled one iteration",
+  "native_first_system_identity": {
+    "names": true,
+    "variables": true,
+    "rhs1": true,
+    "matrix": true
+  },
+  "native_coverage": {
+    "gradient_returns": 72,
+    "cell_carrier_pairs": 24,
+    "source_samples": 22,
+    "printed_variable_entries": 6853
+  },
+  "operand_observations": {
+    "symmetric_relative_denominator": "abs(native)+abs(candidate); diagnostic, not a weak-row denominator",
+    "maximum_active_force_difference": 1.100183584126141e-13,
+    "maximum_reconstructed_source_current_difference": 6.092060844518958e-09,
+    "maximum_hole_source_current_difference": 4.3478313280908416e-14,
+    "maximum_representative_mobility_difference": 4.736349176455071e-16,
+    "inactive_scalar_force_samples": 6,
+    "all_source_representatives_match": true
+  },
+  "states": {
+    "zero": {
+      "strict_population_accepted": true,
+      "carrier": {
+        "electron": {
+          "full_RHS_error_over_Vela_absolute_terms": 0.15697575927683086,
+          "avalanche_weighted_L1_error": 0.16882685669106598,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 0.13203080905622525
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 0.08213196103998097
+            }
+          ]
+        },
+        "hole": {
+          "full_RHS_error_over_Vela_absolute_terms": 0.8692403699307144,
+          "avalanche_weighted_L1_error": 0.16882685669106598,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 0.09145541267327545
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 0.7745845202187375
+            }
+          ]
+        }
+      }
+    },
+    "first": {
+      "strict_population_accepted": true,
+      "carrier": {
+        "electron": {
+          "full_RHS_error_over_Vela_absolute_terms": 1.6889192940551362e-07,
+          "avalanche_weighted_L1_error": 9.721792594135333e-08,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 3.6229507704542907e-06
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 1.8289405250765857e-12
+            }
+          ]
+        },
+        "hole": {
+          "full_RHS_error_over_Vela_absolute_terms": 0.018757349418174647,
+          "avalanche_weighted_L1_error": 9.721792594135333e-08,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.3710385995338e-09
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 0.21793359158063208
+            }
+          ]
+        }
+      }
+    },
+    "before_BV": {
+      "strict_population_accepted": false,
+      "carrier": {
+        "electron": {
+          "full_RHS_error_over_Vela_absolute_terms": 2.7207652523242797e-11,
+          "avalanche_weighted_L1_error": 9.073135835871616e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.2201357413280988e-08
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 2.181683508696529e-15
+            }
+          ]
+        },
+        "hole": {
+          "full_RHS_error_over_Vela_absolute_terms": 1.9268561117668717e-13,
+          "avalanche_weighted_L1_error": 9.073135835871616e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.1473400277195706e-12
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 2.484102808115039e-12
+            }
+          ]
+        }
+      }
+    },
+    "after_BV": {
+      "strict_population_accepted": false,
+      "carrier": {
+        "electron": {
+          "full_RHS_error_over_Vela_absolute_terms": 2.739887371852089e-11,
+          "avalanche_weighted_L1_error": 9.191645162348494e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.034202036036585e-07
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 3.185867417627417e-15
+            }
+          ]
+        },
+        "hole": {
+          "full_RHS_error_over_Vela_absolute_terms": 1.414238568986835e-13,
+          "avalanche_weighted_L1_error": 9.191645162348494e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 5.876622771201874e-13
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 1.7586965070580042e-12
+            }
+          ]
+        }
+      }
+    },
+    "last": {
+      "strict_population_accepted": false,
+      "carrier": {
+        "electron": {
+          "full_RHS_error_over_Vela_absolute_terms": 1.377686775568723e-12,
+          "avalanche_weighted_L1_error": 8.426844968652377e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.3675394617424314e-09
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 6.427187231429686e-14
+            }
+          ]
+        },
+        "hole": {
+          "full_RHS_error_over_Vela_absolute_terms": 1.2785844224191182e-14,
+          "avalanche_weighted_L1_error": 8.426844968652377e-16,
+          "weak_rows": [
+            {
+              "node": 2156,
+              "error_over_Vela_absolute_terms": 1.4397544624304348e-14
+            },
+            {
+              "node": 2515,
+              "error_over_Vela_absolute_terms": 1.4258346081212502e-13
+            }
+          ]
+        }
+      }
+    }
+  },
+  "verification": {
+    "cpp_cases": 6,
+    "cpp_assertions": 109,
+    "capture_contract_tests": 8,
+    "evidence_checks": 13,
+    "local_fixed_state_runs": 6,
+    "local_observer_runs": 2
+  },
+  "qualification": {
+    "local_terminal_hole_2156_source_gap_closed": true,
+    "BV_avalanche_source_projection_passed": true,
+    "complete_all_states_RHS_passed": false,
+    "native_absolute_weak_support_qualified": false,
+    "strict_population_qualified": false,
+    "augmented_load_coupling_qualified": false,
+    "production_promoted": false,
+    "N4_complete": false,
+    "N5_started": false
+  },
+  "remaining": [
+    "zero/first residuals and near-zero SG precision",
+    "BV electron 2156 weak rows",
+    "strict constitutive population identity",
+    "native absolute weak-row support",
+    "augmented resistor unknown and derivatives"
+  ],
+  "evidence_directory": "build-release/bvmethods_hole_operands_20261017/"
+}

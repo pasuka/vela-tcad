@@ -1,0 +1,1549 @@
+{
+  "schema": "vela.bvmethods.q0_q3.execution.v1",
+  "date": "2026-10-08",
+  "scope": "User-authorized Q0-Q3 first investigation batch. No Q4 trajectory, Q5 full regression, Q6 release, or Q7 commit qualification.",
+  "result": "One frontend interface defect fixed and regression verified; original native zero-QS still fails near14.1kV; Vela zero initialization remains unqualified after two numerical controls.",
+  "baseline": {
+    "source_revision": "a0ed4e073efee0214c39365d3be90a12be51c624",
+    "source_files": 5500,
+    "source_snapshot_sha256": "e0161eee5a9d8925359d44f793c3ace3a8c914e3b64e69ba38d73fe6e1e1e55a",
+    "source_manifest_sha256": "3654a132f168f8a68aeb395ef488e4f697521383d37342256c850cda43a88733",
+    "preexisting_document_changes": " M docs/README.md\n M docs/superpowers/plans/2026-09-26-sdevice-cmd-direct-run-development-plan.md\n?? docs/superpowers/plans/2026-10-08-bvmethods-zero-qs-followup-plan.md\n",
+    "patch_manifest": {
+      "base": "a0ed4e073efee0214c39365d3be90a12be51c624",
+      "hypothesis": "Front-end Eparallel token is incompatible with runtime; use existing canonical eparallel without model change",
+      "files": [
+        {
+          "path": "scripts/vela_sdevice/cmd_parser/sections.py",
+          "size": 44311,
+          "sha256": "826aff5aa3ded9687463ea36ba0f5ce0a231febd7772b31fb2fd6fe6ad079345"
+        },
+        {
+          "path": "tests/regression/test_sdevice_deck_emit.py",
+          "size": 32171,
+          "sha256": "f2aef03b8487c7fe5d5c11e69b538d867406e9c1647f7ed10c3a95eab80168fe"
+        },
+        {
+          "path": "tests/fixtures/sdevice/bvmethods_sentaurus2018/external_resistor_sdevice.ir.json",
+          "size": 8800,
+          "sha256": "fff021677be19054a37d508b9287f58482de6f7ddd2df02c0e9064eaa4ebf28c"
+        },
+        {
+          "path": "tests/fixtures/sdevice/bvmethods_sentaurus2018/external_resistor_sdevice/expected_stage00.json",
+          "size": 4226,
+          "sha256": "f211ba0375dcd7a965aa65f937b1bc189fb0adaae6411c9bba10420dabc05bca"
+        },
+        {
+          "path": "tests/fixtures/sdevice/bvmethods_sentaurus2018/external_resistor_sdevice/expected_stage01.json",
+          "size": 4970,
+          "sha256": "60fb8dc392ac1db17ff5f00ef5f70407b558b62d2db1a8136d44177c1b57c44d"
+        }
+      ]
+    },
+    "patch_manifest_sha256": "251ad03200a6ea342caa928b8847cb0e2d0488b392ac3406a991b5891ebcb52c",
+    "raw_cmd_sha256": "7437dd021495bd6abe56d57defd7a1a23400c2921141a2d63d0fa663553036db",
+    "frontend_lf_normalized_cmd_sha256": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+    "physical_contract": {
+      "temperature_K": 300,
+      "resistance_ohm_um": 10000000.0,
+      "fixed_other_outer_bias_V": 0,
+      "gate_barrier_eV": -0.55,
+      "outer_goal_V": 100000,
+      "stop_current_abs_A_per_um": 0.001443,
+      "nodes": 2600,
+      "elements": 5020,
+      "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+      "parameter_sha256": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+      "node_volume_policy": "barycentric",
+      "obtuse_elements": 26,
+      "models_changed": false,
+      "acceptance_tolerances_changed": false
+    }
+  },
+  "q0": {
+    "t470p": {
+      "job": "<private execution metadata; original preserved in ignored archive>",
+      "baseline_tests": 7,
+      "baseline_result": "pass after creating source/build scratch directory",
+      "features": [
+        "-- HDF5 library detected via hdf5-static; TDR import option=ON",
+        "-- SuiteSparse SPQR bordered solver enabled",
+        "-- SuiteSparse UMFPACK bordered solver enabled",
+        "-- Independent HDF5/HighFive state archive enabled; no FlatBuffers dependency"
+      ],
+      "configure_log_sha256": "f5d93cad109d6affc80ca78722a5549fb10eaa17af9c7ac99b814b7059d6c298"
+    },
+    "c560": {
+      "job": "<private execution metadata; original preserved in ignored archive>",
+      "baseline_tests": 7,
+      "baseline_result": "pass after creating source/build scratch directory",
+      "features": [
+        "-- HDF5 library detected via HDF5::HDF5; TDR import option=ON",
+        "-- SuiteSparse SPQR bordered solver enabled",
+        "-- SuiteSparse UMFPACK bordered solver enabled",
+        "-- Independent HDF5/HighFive state archive enabled; no FlatBuffers dependency"
+      ],
+      "configure_log_sha256": "c8768bfcfc6b574f2b9f52b019052ac33b29c6642497597c2293b09b543ba9b1"
+    }
+  },
+  "q1": {
+    "native": {
+      "checks": {
+        "finite": true,
+        "starts_at_zero_voltage": true,
+        "starts_below_original_stop": true,
+        "original_fixed_bias_contacts_all_states": true,
+        "monotone_outer_voltage": true,
+        "fixed_resistor_all_states": true,
+        "terminal_kcl_all_states": true,
+        "negligible_displacement_all_states": true,
+        "current_components_all_states": true,
+        "original_stop_reached": false,
+        "native_current_stop_reported": false,
+        "native_success": false
+      },
+      "status": "fail",
+      "states_checked": 84,
+      "last": {
+        "outer_voltage_V": 14099.8112219938,
+        "inner_voltage_V": 7.16025522412325,
+        "QuasiFermiPotential": 0.0,
+        "DisplacementCurrent": 0.0,
+        "e_current_A_per_um": 0.00140928139544743,
+        "h_current_A_per_um": -1.62987705004477e-08,
+        "total_current_A_per_um": 0.00140926509667693,
+        "Charge": 7.68401338878018e-15
+      },
+      "max_load_line_residual_V": 1.23957478309622e-09,
+      "max_kcl_relative_above_1e_minus7_A_per_um": 6.433790961362492e-15,
+      "low_current_kcl_absolute_floor_A_per_um": 1e-12,
+      "source_checks": {
+        "same_physics": true,
+        "same_electrodes_and_fixed_resistor": true,
+        "original_stop": true,
+        "voltage_qs_only": true,
+        "original_final_voltage_goal": true,
+        "original_avalanche_current_approximation": true,
+        "same_parameters": true
+      },
+      "schema": "vela.wp14.zero_qs_validation.v1",
+      "qualified_scope": "native fixed-resistor voltage QS acquisition from zero; field/frontend agreement and branch stability excluded",
+      "sha256": {
+        "external_resistor_sdevice.cmd": "7437dd021495bd6abe56d57defd7a1a23400c2921141a2d63d0fa663553036db",
+        "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+        "external_resistor_des.plt": "01ebe10c82c55a4736e126f399a64b71e524569d540a1a174a7ef6abcab4a056",
+        "external_resistor_des.log": "680d83bfd0c97961ca735b6cb7157bad1a2626555f418faf249f11ff278d9e18"
+      },
+      "archive_sha256": "28299524054e966b934bdb3ecbd1edaf3d5caed06b6e8ffb4b88ab2162266e7d",
+      "files_verified": 11
+    },
+    "vela_original": {
+      "status": {
+        "schema": "vela.qs.q1_reproduction.v1",
+        "pid": "<private execution metadata; original preserved in ignored archive>",
+        "started": 1791424127.8053055,
+        "steps": [
+          {
+            "name": "frontend_check",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "exit": 0,
+            "finished": 1791424128.7321033
+          },
+          {
+            "name": "frontend_zero_qs",
+            "command": "<private execution metadata; original preserved in ignored archive>",
+            "exit": 5,
+            "finished": 1791424129.637891
+          }
+        ],
+        "phase": "completed",
+        "source_revision": "a0ed4e073efee0214c39365d3be90a12be51c624",
+        "runner_sha256": "a14244c35b563866f69c51f462572cea08092171e053033f4ed867f4ab227637",
+        "input_sha256": {
+          "bvmethods_nmos_msh.tdr": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+          "external_resistor_sdevice.cmd": "7437dd021495bd6abe56d57defd7a1a23400c2921141a2d63d0fa663553036db",
+          "models.par": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed"
+        },
+        "finished": 1791424129.6392558,
+        "execution_status": "fail"
+      },
+      "failure": {
+        "stage": 0,
+        "message_id": "E501",
+        "message": "Equilibrium stage failed",
+        "details": {
+          "stderr": "<private execution metadata; original preserved in ignored archive>"
+        },
+        "exit_code": 5
+      },
+      "accepted_points": 0
+    }
+  },
+  "q2": {
+    "material_audit": {
+      "native_dump_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+      "user_parameters_sha256": "22c385551767988acb84a39b8d9462d41f6b4a74497b20ee8889fd9299a3e5ed",
+      "counts": {
+        "equal": 100,
+        "difference": 8,
+        "inert_difference": 0,
+        "not_in_native_dump": 0
+      },
+      "lossy": [],
+      "insulator_dump_subsets": [
+        {
+          "material": "Oxide",
+          "raw_sha256": "8c8ecbe45df1ba3004714e2f736e8eeb57c73b3688cafc6b2affbee032ec22b6",
+          "selected_sections": {
+            "Epsilon": [
+              11,
+              16
+            ],
+            "Bandgap": [
+              434,
+              457
+            ]
+          },
+          "subset_sha256": "0c51453d31697995c883835f565b2b5c7d532b456f8e8a6cd3f4dba9103d12cc",
+          "limitation": "Full dump includes unsupported nested HydrogenAtom/SHE sections; audit only the declared Epsilon/Bandgap sections, without weakening the strict frontend parser."
+        },
+        {
+          "material": "Nitride",
+          "raw_sha256": "905dcb0be4d9d83f9c88e2e6383166d1dec7e1765772a7cb172fff953db87859",
+          "selected_sections": {
+            "Epsilon": [
+              11,
+              16
+            ],
+            "Bandgap": [
+              338,
+              361
+            ]
+          },
+          "subset_sha256": "4f530350cd8095d1c1d61298e1e3dae49a5df8fc21411401f953497a5ca700e0",
+          "limitation": "Full dump includes unsupported nested HydrogenAtom/SHE sections; audit only the declared Epsilon/Bandgap sections, without weakening the strict frontend parser."
+        }
+      ],
+      "temperature_equivalence": [
+        {
+          "material": "Si",
+          "section": "ConstantMobility",
+          "parameter": "Exponent",
+          "native_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "vela_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "explanation": "At T=300 K all (T/300 K)^p factors equal one; exponent differences do not change evaluated mobility, beta or saturation velocity at this frozen temperature."
+        },
+        {
+          "material": "Si",
+          "section": "HighFieldDependence",
+          "parameter": "betaexp",
+          "native_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "vela_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "explanation": "At T=300 K all (T/300 K)^p factors equal one; exponent differences do not change evaluated mobility, beta or saturation velocity at this frozen temperature."
+        },
+        {
+          "material": "Si",
+          "section": "HighFieldDependence",
+          "parameter": "vsatexp",
+          "native_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "vela_factor_300K": [
+            1.0,
+            1.0
+          ],
+          "explanation": "At T=300 K all (T/300 K)^p factors equal one; exponent differences do not change evaluated mobility, beta or saturation velocity at this frozen temperature."
+        }
+      ],
+      "constant_gap_equivalence": [
+        {
+          "material": "SiO2",
+          "native_alpha": 0,
+          "vela_alpha": 0,
+          "explanation": "With alpha=0 the gap equals Eg0 at every temperature; beta/Tpar differences are inactive. No carrier transport is solved inside these insulating materials."
+        },
+        {
+          "material": "Nitride",
+          "native_alpha": 0,
+          "vela_alpha": 0,
+          "explanation": "With alpha=0 the gap equals Eg0 at every temperature; beta/Tpar differences are inactive. No carrier transport is solved inside these insulating materials."
+        }
+      ],
+      "inactive_differences": [
+        {
+          "material": "Si",
+          "section": "Auger",
+          "parameter": "H",
+          "origin": "vela_default",
+          "status": "inactive",
+          "native_resolved_values": [
+            3.46667,
+            8.25688
+          ],
+          "vela_par_values": [
+            0.0,
+            0.0
+          ],
+          "comparison": "difference"
+        }
+      ],
+      "scope": "Declared numeric C3 parameters against complete same-version native Silicon/Oxide/Nitride dumps plus user SRH overrides; numeric equality does not establish discretization equivalence."
+    },
+    "raw_parameter_differences": [
+      {
+        "material": "SiO2",
+        "section": "Bandgap",
+        "parameter": "beta",
+        "origin": "vela_default",
+        "status": "frozen_at_temperature",
+        "native_resolved_values": [
+          0.0
+        ],
+        "vela_par_values": [
+          636.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "SiO2",
+        "section": "Bandgap",
+        "parameter": "Tpar",
+        "origin": "vela_default",
+        "status": "frozen_at_temperature",
+        "native_resolved_values": [
+          0.0
+        ],
+        "vela_par_values": [
+          300.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Si",
+        "section": "ConstantMobility",
+        "parameter": "Exponent",
+        "origin": "vela_default",
+        "status": "exact",
+        "native_resolved_values": [
+          2.5,
+          2.2
+        ],
+        "vela_par_values": [
+          2.2,
+          2.2
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Si",
+        "section": "HighFieldDependence",
+        "parameter": "betaexp",
+        "origin": "vela_default",
+        "status": "exact",
+        "native_resolved_values": [
+          0.66,
+          0.17
+        ],
+        "vela_par_values": [
+          0.0,
+          0.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Si",
+        "section": "HighFieldDependence",
+        "parameter": "vsatexp",
+        "origin": "vela_default",
+        "status": "exact",
+        "native_resolved_values": [
+          0.87,
+          0.52
+        ],
+        "vela_par_values": [
+          0.0,
+          0.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Si",
+        "section": "Auger",
+        "parameter": "H",
+        "origin": "vela_default",
+        "status": "inactive",
+        "native_resolved_values": [
+          3.46667,
+          8.25688
+        ],
+        "vela_par_values": [
+          0.0,
+          0.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Nitride",
+        "section": "Bandgap",
+        "parameter": "beta",
+        "origin": "vela_default",
+        "status": "frozen_at_temperature",
+        "native_resolved_values": [
+          0.0
+        ],
+        "vela_par_values": [
+          636.0
+        ],
+        "comparison": "difference"
+      },
+      {
+        "material": "Nitride",
+        "section": "Bandgap",
+        "parameter": "Tpar",
+        "origin": "vela_default",
+        "status": "frozen_at_temperature",
+        "native_resolved_values": [
+          0.0
+        ],
+        "vela_par_values": [
+          300.0
+        ],
+        "comparison": "difference"
+      }
+    ],
+    "native_signed_slopes": {
+      "schema": "vela.qs.native_branch_slopes.v1",
+      "plt_sha256": "01ebe10c82c55a4736e126f399a64b71e524569d540a1a174a7ef6abcab4a056",
+      "method": "Adjacent accepted native QS states, signed finite differences; not stability or a proof of a fold; no smoothing or extrapolation. Tiny spacings amplify solver/output noise.",
+      "accepted_states": 84,
+      "decreasing_inner_intervals": 11,
+      "last_intervals": [
+        {
+          "state_index": 72,
+          "outer_voltage_V": 13791.4544576404,
+          "inner_voltage_V": 7.1667899368357,
+          "delta_outer_V": 312.5,
+          "delta_inner_V": 0.011112905278849894,
+          "delta_current_A_per_um": 3.1248888709469944e-05,
+          "dI_dVinner_A_per_um_per_V": 0.0028119459246127923,
+          "dVouter_dVinner": 28120.459246129874,
+          "load_slope_from_current": 28120.459246127917,
+          "load_identity_slope_difference": 1.953961224357338e-09
+        },
+        {
+          "state_index": 73,
+          "outer_voltage_V": 13998.9544576404,
+          "inner_voltage_V": 7.16986284883933,
+          "delta_outer_V": 207.5,
+          "delta_inner_V": 0.003072912003629469,
+          "delta_current_A_per_um": 2.074969270880007e-05,
+          "dI_dVinner_A_per_um_per_V": 0.006752452619629932,
+          "dVouter_dVinner": 67525.52619629791,
+          "load_slope_from_current": 67525.52619629932,
+          "load_identity_slope_difference": -1.4151142426843659e-09
+        },
+        {
+          "state_index": 74,
+          "outer_voltage_V": 14067.8444576404,
+          "inner_voltage_V": 7.16769346283279,
+          "delta_outer_V": 68.88999999999942,
+          "delta_inner_V": -0.0021693860065399306,
+          "delta_current_A_per_um": 6.889216938599837e-06,
+          "dI_dVinner_A_per_um_per_V": -0.0031756528888041533,
+          "dVouter_dVinner": -31755.52888804503,
+          "load_slope_from_current": -31755.528888041536,
+          "load_identity_slope_difference": -3.498038797632574e-09
+        },
+        {
+          "state_index": 75,
+          "outer_voltage_V": 14090.7159376404,
+          "inner_voltage_V": 7.16493420399069,
+          "delta_outer_V": 22.871479999999792,
+          "delta_inner_V": -0.002759258842099932,
+          "delta_current_A_per_um": 2.287423925890174e-06,
+          "dI_dVinner_A_per_um_per_V": -0.0008289994004873176,
+          "dVouter_dVinner": -8288.994004851487,
+          "load_slope_from_current": -8288.994004873177,
+          "load_identity_slope_difference": 2.1688962632389026e-08
+        },
+        {
+          "state_index": 76,
+          "outer_voltage_V": 14098.3092690004,
+          "inner_voltage_V": 7.1623861148184,
+          "delta_outer_V": 7.5933313599998655,
+          "delta_inner_V": -0.002548089172289991,
+          "delta_current_A_per_um": 7.595879449099046e-07,
+          "dI_dVinner_A_per_um_per_V": -0.0002981010057145119,
+          "dVouter_dVinner": -2980.010057173811,
+          "load_slope_from_current": -2980.010057145119,
+          "load_identity_slope_difference": -2.869189949639475e-08
+        },
+        {
+          "state_index": 77,
+          "outer_voltage_V": 14099.5697620061,
+          "inner_voltage_V": 7.16109360726781,
+          "delta_outer_V": 1.2604930057004822,
+          "delta_inner_V": -0.0012925075505894057,
+          "delta_current_A_per_um": 1.2617855133997824e-07,
+          "dI_dVinner_A_per_um_per_V": -9.762306710118532e-05,
+          "dVouter_dVinner": -975.2306708967972,
+          "load_slope_from_current": -975.2306710118532,
+          "load_identity_slope_difference": 1.1505605624280201e-07
+        },
+        {
+          "state_index": 78,
+          "outer_voltage_V": 14099.7746971607,
+          "inner_voltage_V": 7.16058429642678,
+          "delta_outer_V": 0.20493515459929768,
+          "delta_inner_V": -0.0005093108410303415,
+          "delta_current_A_per_um": 2.0544446530058533e-08,
+          "dI_dVinner_A_per_um_per_V": -4.0337736554943315e-05,
+          "dVouter_dVinner": -402.3773658238092,
+          "load_slope_from_current": -402.3773655494332,
+          "load_identity_slope_difference": -2.743760359772009e-07
+        },
+        {
+          "state_index": 79,
+          "outer_voltage_V": 14099.8087163963,
+          "inner_voltage_V": 7.1603395789065,
+          "delta_outer_V": 0.03401923559977149,
+          "delta_inner_V": -0.00024471752027999116,
+          "delta_current_A_per_um": 3.4263952098777944e-09,
+          "dI_dVinner_A_per_um_per_V": -1.4001429917880493e-05,
+          "dVouter_dVinner": -139.01430335208005,
+          "load_slope_from_current": -139.01429917880492,
+          "load_identity_slope_difference": -4.173275116516051e-06
+        },
+        {
+          "state_index": 80,
+          "outer_voltage_V": 14099.8101281946,
+          "inner_voltage_V": 7.16030990930029,
+          "delta_outer_V": 0.001411798300978262,
+          "delta_inner_V": -2.966960621009207e-05,
+          "delta_current_A_per_um": 1.441469001453588e-10,
+          "dI_dVinner_A_per_um_per_V": -4.8584028761503236e-06,
+          "dVouter_dVinner": -47.583991879812714,
+          "load_slope_from_current": -47.584028761503234,
+          "load_identity_slope_difference": 3.688169051628647e-05
+        },
+        {
+          "state_index": 81,
+          "outer_voltage_V": 14099.8110849232,
+          "inner_voltage_V": 7.16027265455432,
+          "delta_outer_V": 0.0009567285997036379,
+          "delta_inner_V": -3.725474596993905e-05,
+          "delta_current_A_per_um": 9.939828994609545e-11,
+          "dI_dVinner_A_per_um_per_V": -2.6680705332496478e-06,
+          "dVouter_dVinner": -25.680717309832808,
+          "load_slope_from_current": -25.68070533249648,
+          "load_identity_slope_difference": -1.1977336330974067e-05
+        },
+        {
+          "state_index": 82,
+          "outer_voltage_V": 14099.8111659661,
+          "inner_voltage_V": 7.16026540474945,
+          "delta_outer_V": 8.10429010016378e-05,
+          "delta_inner_V": -7.249804870212984e-06,
+          "delta_current_A_per_um": 8.829199957954836e-12,
+          "dI_dVinner_A_per_um_per_V": -1.2178534617160603e-06,
+          "dVouter_dVinner": -11.17863203941059,
+          "load_slope_from_current": -11.178534617160604,
+          "load_identity_slope_difference": -9.742224998680891e-05
+        },
+        {
+          "state_index": 83,
+          "outer_voltage_V": 14099.8112219938,
+          "inner_voltage_V": 7.16025522412325,
+          "delta_outer_V": 5.6027698519756086e-05,
+          "delta_inner_V": -1.0180626199840503e-05,
+          "delta_current_A_per_um": 6.620909983462431e-12,
+          "dI_dVinner_A_per_um_per_V": -6.503440803637558e-07,
+          "dVouter_dVinner": -5.503364667355516,
+          "load_slope_from_current": -5.503440803637559,
+          "load_identity_slope_difference": 7.613628204227073e-05
+        }
+      ]
+    },
+    "native_branch_fields": {
+      "schema": "vela.qs.native_branch_fields.v1",
+      "scope": "Native existing 13 kV saved branch states loaded and plotted without Newton or QS; no Vela state comparison and no zero-QS qualification",
+      "coordinate_identity": true,
+      "mesh_nodes": 2600,
+      "silicon_region": 3,
+      "states": [
+        {
+          "name": "forward_13000",
+          "outer_voltage_V": 13000.0,
+          "inner_from_load_and_current_V": 7.1342022476401326,
+          "drain_e_quasi_fermi_contact_range_V": [
+            7.134202247671201,
+            7.134202247671201
+          ],
+          "terminal_currents_A_per_um": {
+            "gate": 0.0,
+            "substrate": -0.0012961635508580913,
+            "drain": 0.001299286579775236,
+            "source": -3.1230289171417202e-06
+          },
+          "terminal_kcl_A_per_um": 3.0582124560616514e-18,
+          "native_tdr_current_unit": "A",
+          "terminal_values_source": "Accepted SAV ContactCurrentFlux, not Load/Plot ContactCurrentFlux placeholders",
+          "probe_contact_current_placeholder_values": {
+            "gate": 0.0,
+            "substrate": 0.0,
+            "drain": 0.0,
+            "source": 0.0
+          },
+          "interpretation": "2-D archived accepted terminal currents match PLT A/um; Load/Plot does not recompute closed terminal currents. No new steady-state qualification.",
+          "probe_sha256": "3cc71b5f8be24e07633e40814cff92d2a77373ba9305e58a7f60cf4858c97329"
+        },
+        {
+          "name": "reverse_13000",
+          "outer_voltage_V": 13000.0,
+          "inner_from_load_and_current_V": 6.637744064293656,
+          "drain_e_quasi_fermi_contact_range_V": [
+            6.637744064328384,
+            6.637744064328384
+          ],
+          "terminal_currents_A_per_um": {
+            "gate": 0.0,
+            "substrate": -0.0010254218930937139,
+            "drain": 0.0012993362255935706,
+            "source": -0.00027391433249985306
+          },
+          "terminal_kcl_A_per_um": 3.686287386450715e-18,
+          "native_tdr_current_unit": "A",
+          "terminal_values_source": "Accepted SAV ContactCurrentFlux, not Load/Plot ContactCurrentFlux placeholders",
+          "probe_contact_current_placeholder_values": {
+            "gate": 0.0,
+            "substrate": 0.0,
+            "drain": 0.0,
+            "source": 0.0
+          },
+          "interpretation": "2-D archived accepted terminal currents match PLT A/um; Load/Plot does not recompute closed terminal currents. No new steady-state qualification.",
+          "probe_sha256": "f0c2e7e1301cef8da04d53db50bd426af6be307bff6d79587cd56eedc32fd494"
+        }
+      ],
+      "saved_state_potential_checks": [
+        {
+          "state": "forward_13000",
+          "max_saved_vs_probe_potential_difference_V": 9.43689570931383e-16,
+          "density_note": "Probe eDensity/hDensity are actual loaded fields; Extrapolation density arrays were not used."
+        },
+        {
+          "state": "reverse_13000",
+          "max_saved_vs_probe_potential_difference_V": 9.43689570931383e-16,
+          "density_note": "Probe eDensity/hDensity are actual loaded fields; Extrapolation density arrays were not used."
+        }
+      ],
+      "comparison_method": "Unweighted statistics on identical silicon node support, reverse minus forward; log ratios only at positive finite pairs. Descriptive, not a spatial acceptance gate.",
+      "fields": [
+        {
+          "field": "ElectrostaticPotential",
+          "unit": "V",
+          "nodes": 2152,
+          "forward_range": [
+            -0.445305686446442,
+            7.752310346407478
+          ],
+          "reverse_range": [
+            -0.445305686446442,
+            7.255852163064661
+          ],
+          "max_absolute_difference": 0.9891406053065088,
+          "max_difference_node": 625,
+          "max_difference_coordinate_um": [
+            0.01171875,
+            0.097109375
+          ],
+          "rms_absolute_difference": 0.30483189764114865,
+          "positive_pair_nodes": 1854,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 0.17376714375166333,
+          "log10_reverse_over_forward_max_abs": 2.2303274506855493
+        },
+        {
+          "field": "eDensity",
+          "unit": "cm^-3",
+          "nodes": 2152,
+          "forward_range": [
+            1104.9135882056771,
+            5.090000000000025e+20
+          ],
+          "reverse_range": [
+            1104.9135882056771,
+            5.090000000000025e+20
+          ],
+          "max_absolute_difference": 3.8778147347918275e+18,
+          "max_difference_node": 596,
+          "max_difference_coordinate_um": [
+            0.015625,
+            0.0838671875
+          ],
+          "rms_absolute_difference": 6.50417836724588e+17,
+          "positive_pair_nodes": 2152,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 1.0879110780862244,
+          "log10_reverse_over_forward_max_abs": 3.8984494395159444
+        },
+        {
+          "field": "hDensity",
+          "unit": "cm^-3",
+          "nodes": 2152,
+          "forward_range": [
+            165.81208014586008,
+            5.193503646592934e+19
+          ],
+          "reverse_range": [
+            165.81208014586008,
+            6.346273030206962e+19
+          ],
+          "max_absolute_difference": 2.7126739322273907e+19,
+          "max_difference_node": 137,
+          "max_difference_coordinate_um": [
+            0.0,
+            0.0353125
+          ],
+          "rms_absolute_difference": 1.714056184019022e+18,
+          "positive_pair_nodes": 2152,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 2.293950381186627,
+          "log10_reverse_over_forward_max_abs": 4.950438238808489
+        },
+        {
+          "field": "ImpactIonization",
+          "unit": "cm^-3*s^-1",
+          "nodes": 2152,
+          "forward_range": [
+            0.0,
+            4.297823523252537e+31
+          ],
+          "reverse_range": [
+            0.0,
+            2.601365282590364e+31
+          ],
+          "max_absolute_difference": 1.6964582406621726e+31,
+          "max_difference_node": 1318,
+          "max_difference_coordinate_um": [
+            0.0,
+            0.065
+          ],
+          "rms_absolute_difference": 8.441156607337552e+29,
+          "positive_pair_nodes": 1861,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 29.898503746162028,
+          "log10_reverse_over_forward_max_abs": 252.21797956780574
+        },
+        {
+          "field": "Band2BandGeneration",
+          "unit": "cm^-3*s^-1",
+          "nodes": 2152,
+          "forward_range": [
+            0.0,
+            1.6376637376822155e+31
+          ],
+          "reverse_range": [
+            0.0,
+            5.860817266550423e+30
+          ],
+          "max_absolute_difference": 1.1300854239828553e+31,
+          "max_difference_node": 180,
+          "max_difference_coordinate_um": [
+            0.0,
+            0.0662109375
+          ],
+          "rms_absolute_difference": 4.330048902732729e+29,
+          "positive_pair_nodes": 1312,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 36.603314253413814,
+          "log10_reverse_over_forward_max_abs": 215.60280273529983
+        },
+        {
+          "field": "eQuasiFermiPotential",
+          "unit": "V",
+          "nodes": 2152,
+          "forward_range": [
+            -0.047531705247984876,
+            7.134202247671201
+          ],
+          "reverse_range": [
+            -0.21561211130744123,
+            6.637744064328384
+          ],
+          "max_absolute_difference": 1.0208318647392227,
+          "max_difference_node": 626,
+          "max_difference_coordinate_um": [
+            0.015625,
+            0.097109375
+          ],
+          "rms_absolute_difference": 0.2814213707495603,
+          "positive_pair_nodes": 1960,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 1.2007797283398278,
+          "log10_reverse_over_forward_max_abs": 2.0030303363786723
+        },
+        {
+          "field": "hQuasiFermiPotential",
+          "unit": "V",
+          "nodes": 2152,
+          "forward_range": [
+            0.0,
+            7.900383543824249
+          ],
+          "reverse_range": [
+            0.0,
+            7.344520836073115
+          ],
+          "max_absolute_difference": 0.9589335382568454,
+          "max_difference_node": 625,
+          "max_difference_coordinate_um": [
+            0.01171875,
+            0.097109375
+          ],
+          "rms_absolute_difference": 0.36426773922981925,
+          "positive_pair_nodes": 2132,
+          "log_ratio_note": "Source terms may be extremely small; ratios near zero have no acceptance meaning. Potential ratios are gauge-dependent; use absolute differences.",
+          "log10_reverse_over_forward_rms": 0.1316042187457916,
+          "log10_reverse_over_forward_max_abs": 0.478117135425769
+        }
+      ]
+    },
+    "remaining_evidence_gaps": [
+      "No accepted Vela zero-bias state or matching 13kV/14.1kV field comparison",
+      "No per-iteration line-search history or directional-Jacobian audit for the zero initialization",
+      "Native finite differences do not prove a fold or stability; private native Jacobian unavailable",
+      "Nested/coupled external-controller continuation not reached; ordinary outer-step mapping gap checked in source only"
+    ],
+    "last_native_tdr_identity": {
+      "tdr_sha256": "5e7d9d8644c7c250b983790c583ee431dd0a64b029ae6fc82aff7ac5d3587c10",
+      "drain_e_quasi_fermi_range_V": [
+        7.160255224123252,
+        7.160255224123279
+      ],
+      "matches_last_accepted_inner_voltage_within_V": 1e-10,
+      "min_iteration_tdr_used": false
+    }
+  },
+  "q3": {
+    "retained_fix": "C1 Eparallel maps to existing runtime eparallel; three fixture goldens and biased p-contact real-runner property test updated; no C++ change",
+    "first_runs_backend": "Not explicitly pinned/captured; build enables UMFPACK and default backend preference is UMFPACK. Preserve initial evidence as uncontrolled-backend runs.",
+    "candidates": {
+      "t470p_A": {
+        "status": {
+          "schema": "vela.qs.q3_candidate.v1",
+          "candidate": "A_eparallel_interface",
+          "pid": "<private execution metadata; original preserved in ignored archive>",
+          "started": 1791424430.5607765,
+          "steps": [
+            {
+              "name": "regression",
+              "command": "<private execution metadata; original preserved in ignored archive>",
+              "exit": 0,
+              "finished": 1791424442.124523
+            },
+            {
+              "name": "frontend_zero_qs",
+              "command": "<private execution metadata; original preserved in ignored archive>",
+              "exit": 5,
+              "finished": 1791424448.7000012
+            }
+          ],
+          "patch_manifest_sha256": "251ad03200a6ea342caa928b8847cb0e2d0488b392ac3406a991b5891ebcb52c",
+          "runner_sha256": "a14244c35b563866f69c51f462572cea08092171e053033f4ed867f4ab227637",
+          "phase": "completed",
+          "execution_status": "fail",
+          "finished": 1791424448.701258
+        },
+        "registered_tests": 8,
+        "regression_result": "pass",
+        "attempt": {
+          "accepted_points": 0,
+          "attempt_rows": 1,
+          "csv": {
+            "converged": "0",
+            "iterations": "1",
+            "gummel_iterations": "7",
+            "newton_iterations": "1",
+            "solver_method": "gummel_newton",
+            "failure_reason": "carrier_invalid",
+            "final_psi_residual_norm": "0.0081309874442459344",
+            "final_electron_continuity_residual_norm": "0.00087065903517157754",
+            "final_hole_continuity_residual_norm": "9.1233742506748431e-08"
+          },
+          "diagnostics": {
+            "failed_iteration": 2,
+            "line_search_attempts": 13,
+            "line_search_failure_reason": "carrier_invalid",
+            "step_norm": 2.6774936361950294e+83,
+            "residual_norm": 0.008177469289598985,
+            "block_residuals": {
+              "combined": 0.008177469289598985,
+              "phin": 0.0008706590351715775,
+              "phip": 9.123374250674843e-08,
+              "psi": 0.008130987444245934
+            },
+            "carrier_diagnostics": {
+              "min_electron_density_m3": 0.0,
+              "min_hole_density_m3": 0.0,
+              "nonfinite_electron_count": 0,
+              "nonfinite_hole_count": 0,
+              "nonpositive_electron_count": 0,
+              "nonpositive_hole_count": 0,
+              "positive_finite": true
+            }
+          },
+          "electron_hotspots": [
+            {
+              "abs_residual": 0.00018307824894339035,
+              "node_id": 795,
+              "residual": -0.00018307824894339035,
+              "x_m": 1.5625e-08,
+              "x_um": 0.015625,
+              "y_m": 1.6332031249999998e-07,
+              "y_um": 0.16332031249999998
+            },
+            {
+              "abs_residual": 0.00018307824835205798,
+              "node_id": 2088,
+              "residual": -0.00018307824835205798,
+              "x_m": 1.5625e-08,
+              "x_um": 0.015625,
+              "y_m": -1.6332031249999998e-07,
+              "y_um": -0.16332031249999998
+            }
+          ],
+          "stage00_canonical_sha256": "b7d72594f2540f23d6ec396ecbaeeb677332f41d12f9e10656ed006587b3f186",
+          "raw_files": {
+            "simulation_stage00.json": "d6a98427e3cd76cd5b8660051087edaecf38d2bc796cf6de999f66b25d6a8a97",
+            "stage00.csv": "82dbf786e0d533ad40d41f17810d0e331e604e0bdef303b8efa498636504c94b",
+            "stage00_newton_failure_diagnostics.json": "b29472c512e56dfbb92f268c8041957d808e6a1cba55c78c5ce9de7959727493"
+          }
+        }
+      },
+      "t470p_C": {
+        "status": {
+          "candidate": "C_referenced_newton_budget",
+          "phase": "completed",
+          "pid": "<private execution metadata; original preserved in ignored archive>",
+          "command": "<private execution metadata; original preserved in ignored archive>",
+          "started": 1791424811.7074223,
+          "max_wall_seconds": 1800,
+          "exit": 5,
+          "finished": 1791424861.181692
+        },
+        "attempt": {
+          "accepted_points": 0,
+          "attempt_rows": 1,
+          "csv": {
+            "converged": "0",
+            "iterations": "52",
+            "gummel_iterations": "0",
+            "newton_iterations": "52",
+            "solver_method": "newton",
+            "failure_reason": "line_search_non_decrease",
+            "final_psi_residual_norm": "3.3522407438452143e-06",
+            "final_electron_continuity_residual_norm": "1.1843662339836882e-05",
+            "final_hole_continuity_residual_norm": "1.5355071746856108e-06"
+          },
+          "diagnostics": {
+            "failed_iteration": 53,
+            "line_search_attempts": 13,
+            "line_search_failure_reason": "line_search_non_decrease",
+            "step_norm": 84.72181199404845,
+            "residual_norm": 1.194279125651701e-05,
+            "block_residuals": {
+              "combined": 1.2404339478919356e-05,
+              "phin": 1.1843662339836882e-05,
+              "phip": 1.5355071746856108e-06,
+              "psi": 3.3522407438452143e-06
+            },
+            "carrier_diagnostics": {
+              "min_electron_density_m3": 0.0,
+              "min_hole_density_m3": 0.0,
+              "nonfinite_electron_count": 0,
+              "nonfinite_hole_count": 0,
+              "nonpositive_electron_count": 0,
+              "nonpositive_hole_count": 0,
+              "positive_finite": true
+            }
+          },
+          "electron_hotspots": [
+            {
+              "abs_residual": 5.266684770879851e-06,
+              "node_id": 1446,
+              "residual": -5.266684770879851e-06,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": -1.7656249999999996e-08,
+              "y_um": -0.017656249999999995
+            },
+            {
+              "abs_residual": 5.266684770836965e-06,
+              "node_id": 129,
+              "residual": -5.266684770836965e-06,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": 1.7656249999999996e-08,
+              "y_um": 0.017656249999999995
+            }
+          ],
+          "stage00_canonical_sha256": "218e7daf5ef9c1040f52d355a62be61b440037ab2dd8b71bcf450c6f75da9a2a",
+          "raw_files": {
+            "simulation_stage00.json": "dfb15b5bbb96b0596e2b5f52ce7c6a1f13a3180f2b0f2139a0bc0f6ee03b9f4f",
+            "stage00.csv": "0ec11a0d01d64bd11d135a1c8eb329967dc41d69747a6eeac929074bfee1130b",
+            "stage00_newton_failure_diagnostics.json": "6cf3993c06835258c8586afde26dfa0c2d86e612171413c2943fad8b2bdb419d"
+          }
+        }
+      },
+      "c560_A": {
+        "status": {
+          "schema": "vela.qs.q3_candidate.v1",
+          "candidate": "A_eparallel_interface",
+          "pid": "<private execution metadata; original preserved in ignored archive>",
+          "started": 1791424421.2689843,
+          "steps": [
+            {
+              "name": "regression",
+              "command": "<private execution metadata; original preserved in ignored archive>",
+              "exit": 0,
+              "finished": 1791424429.4523408
+            }
+          ],
+          "patch_manifest_sha256": "251ad03200a6ea342caa928b8847cb0e2d0488b392ac3406a991b5891ebcb52c",
+          "runner_sha256": "d9618f79b83a7a47b19ce8db4dc078887e11c9bf1ffdc128b57460c744f10d34",
+          "phase": "completed",
+          "execution_status": "pass",
+          "finished": 1791424429.453212
+        },
+        "registered_tests": 8,
+        "regression_result": "pass"
+      },
+      "c560_C": {
+        "status": {
+          "candidate": "C_referenced_newton_budget",
+          "phase": "completed",
+          "pid": "<private execution metadata; original preserved in ignored archive>",
+          "command": "<private execution metadata; original preserved in ignored archive>",
+          "started": 1791425093.1336944,
+          "max_wall_seconds": 1800,
+          "exit": 5,
+          "finished": 1791425156.561492
+        },
+        "attempt": {
+          "accepted_points": 0,
+          "attempt_rows": 1,
+          "csv": {
+            "converged": "0",
+            "iterations": "52",
+            "gummel_iterations": "0",
+            "newton_iterations": "52",
+            "solver_method": "newton",
+            "failure_reason": "line_search_non_decrease",
+            "final_psi_residual_norm": "3.3494469899970841e-06",
+            "final_electron_continuity_residual_norm": "1.1843662279210766e-05",
+            "final_hole_continuity_residual_norm": "1.5345273680559968e-06"
+          },
+          "diagnostics": {
+            "failed_iteration": 53,
+            "line_search_attempts": 13,
+            "line_search_failure_reason": "line_search_non_decrease",
+            "step_norm": 85.07444443832904,
+            "residual_norm": 1.1942665250356077e-05,
+            "block_residuals": {
+              "combined": 1.2403463450428407e-05,
+              "phin": 1.1843662279210766e-05,
+              "phip": 1.5345273680559968e-06,
+              "psi": 3.349446989997084e-06
+            },
+            "carrier_diagnostics": {
+              "min_electron_density_m3": 0.0,
+              "min_hole_density_m3": 0.0,
+              "nonfinite_electron_count": 0,
+              "nonfinite_hole_count": 0,
+              "nonpositive_electron_count": 0,
+              "nonpositive_hole_count": 0,
+              "positive_finite": true
+            }
+          },
+          "electron_hotspots": [
+            {
+              "abs_residual": 5.2666847514470565e-06,
+              "node_id": 1446,
+              "residual": -5.2666847514470565e-06,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": -1.7656249999999996e-08,
+              "y_um": -0.017656249999999995
+            },
+            {
+              "abs_residual": 5.266684751372249e-06,
+              "node_id": 129,
+              "residual": -5.266684751372249e-06,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": 1.7656249999999996e-08,
+              "y_um": 0.017656249999999995
+            }
+          ],
+          "stage00_canonical_sha256": "218e7daf5ef9c1040f52d355a62be61b440037ab2dd8b71bcf450c6f75da9a2a",
+          "raw_files": {
+            "simulation_stage00.json": "d8fb4037855e76215fad4fde41e1363abd8bb2e4b0a7677de890d530f0bf6f9b",
+            "stage00.csv": "975a7907aaf8004b882cab84ccc3a1189653d1395105f8d4875c653edf17f0e0",
+            "stage00_newton_failure_diagnostics.json": "3a7b6621db8420d9e500d7471605f6c40ce4e492457dc8f3a5d1e1434e4ef432"
+          }
+        }
+      },
+      "t470p_B": {
+        "status": {
+          "candidate": "B_referenced_newton_from_zero",
+          "phase": "completed",
+          "pid": "<private execution metadata; original preserved in ignored archive>",
+          "command": "<private execution metadata; original preserved in ignored archive>",
+          "started": 1791424629.5213823,
+          "max_wall_seconds": 1800,
+          "exit": 5,
+          "finished": 1791424649.1281796
+        },
+        "attempt": {
+          "accepted_points": 0,
+          "attempt_rows": 1,
+          "csv": {
+            "converged": "0",
+            "iterations": "20",
+            "gummel_iterations": "0",
+            "newton_iterations": "20",
+            "solver_method": "newton",
+            "failure_reason": "max_iterations",
+            "final_psi_residual_norm": "3.3591213817820424e-10",
+            "final_electron_continuity_residual_norm": "3.5260774779049834e-05",
+            "final_hole_continuity_residual_norm": "1.0838689166960748e-08"
+          },
+          "diagnostics": {
+            "failed_iteration": 20,
+            "line_search_attempts": 1,
+            "line_search_failure_reason": "",
+            "step_norm": 84.93414369195177,
+            "residual_norm": 3.526077644488364e-05,
+            "block_residuals": {
+              "combined": 3.526077644648366e-05,
+              "phin": 3.5260774779049834e-05,
+              "phip": 1.0838689166960748e-08,
+              "psi": 3.3591213817820424e-10
+            },
+            "carrier_diagnostics": {
+              "min_electron_density_m3": 0.0,
+              "min_hole_density_m3": 0.0,
+              "nonfinite_electron_count": 0,
+              "nonfinite_hole_count": 0,
+              "nonpositive_electron_count": 0,
+              "nonpositive_hole_count": 0,
+              "positive_finite": true
+            }
+          },
+          "electron_hotspots": [
+            {
+              "abs_residual": 1.5678553611512777e-05,
+              "node_id": 1446,
+              "residual": -1.5678553611512777e-05,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": -1.7656249999999996e-08,
+              "y_um": -0.017656249999999995
+            },
+            {
+              "abs_residual": 1.5678553611144477e-05,
+              "node_id": 129,
+              "residual": -1.5678553611144477e-05,
+              "x_m": 0.0,
+              "x_um": 0.0,
+              "y_m": 1.7656249999999996e-08,
+              "y_um": 0.017656249999999995
+            }
+          ],
+          "stage00_canonical_sha256": "2cc2eba73e61dad417ed12b01472f6ec004db74b3a5bcd5e23d5f07036545ec1",
+          "raw_files": {
+            "simulation_stage00.json": "6c1afbb326859f3ed8a7930c5a09b5d1b42f376fb0a619b0841017781363bdb8",
+            "stage00.csv": "46a58bc9dad70e7338ce902957847925d40b10462ba32e622d55ae1d19450816",
+            "stage00_newton_failure_diagnostics.json": "fbd7c3c10b55d98da952337f36390e8cb7e546b85498cd7762a9d4cbf600fc03"
+          }
+        }
+      }
+    },
+    "explicit_sparselu": {
+      "t470p": {
+        "job": "<private execution metadata; original preserved in ignored archive>",
+        "registered_tests": 8,
+        "regression_result": "pass",
+        "attempts": {
+          "A_original": {
+            "accepted_points": 0,
+            "attempt_rows": 1,
+            "csv": {
+              "converged": "0",
+              "iterations": "1",
+              "gummel_iterations": "7",
+              "newton_iterations": "1",
+              "solver_method": "gummel_newton",
+              "failure_reason": "carrier_invalid",
+              "final_psi_residual_norm": "0.0081309874364744843",
+              "final_electron_continuity_residual_norm": "0.00087065903543225086",
+              "final_hole_continuity_residual_norm": "9.1233734393223991e-08"
+            },
+            "diagnostics": {
+              "failed_iteration": 2,
+              "line_search_attempts": 13,
+              "line_search_failure_reason": "carrier_invalid",
+              "step_norm": 2.677490949542709e+83,
+              "residual_norm": 0.008177469281899462,
+              "block_residuals": {
+                "combined": 0.008177469281899462,
+                "phin": 0.0008706590354322509,
+                "phip": 9.123373439322399e-08,
+                "psi": 0.008130987436474484
+              },
+              "carrier_diagnostics": {
+                "min_electron_density_m3": 0.0,
+                "min_hole_density_m3": 0.0,
+                "nonfinite_electron_count": 0,
+                "nonfinite_hole_count": 0,
+                "nonpositive_electron_count": 0,
+                "nonpositive_hole_count": 0,
+                "positive_finite": true
+              }
+            },
+            "electron_hotspots": [
+              {
+                "abs_residual": 0.00018307824968375974,
+                "node_id": 795,
+                "residual": -0.00018307824968375974,
+                "x_m": 1.5625e-08,
+                "x_um": 0.015625,
+                "y_m": 1.6332031249999998e-07,
+                "y_um": 0.16332031249999998
+              },
+              {
+                "abs_residual": 0.00018307824894338932,
+                "node_id": 2088,
+                "residual": -0.00018307824894338932,
+                "x_m": 1.5625e-08,
+                "x_um": 0.015625,
+                "y_m": -1.6332031249999998e-07,
+                "y_um": -0.16332031249999998
+              }
+            ],
+            "stage00_canonical_sha256": "b7d72594f2540f23d6ec396ecbaeeb677332f41d12f9e10656ed006587b3f186",
+            "raw_files": {
+              "simulation_stage00.json": "d6a98427e3cd76cd5b8660051087edaecf38d2bc796cf6de999f66b25d6a8a97",
+              "stage00.csv": "fc8add3bc48eb422875409d0ce442404a2f51c2daee43220f7b0e96d550a7183",
+              "stage00_newton_failure_diagnostics.json": "e9640a7de29d0c178fa2f592db0625a6f338a992c5c7bdab20c26c56cd42ed60"
+            }
+          },
+          "C_referenced200": {
+            "accepted_points": 0,
+            "attempt_rows": 1,
+            "csv": {
+              "converged": "0",
+              "iterations": "43",
+              "gummel_iterations": "0",
+              "newton_iterations": "43",
+              "solver_method": "newton",
+              "failure_reason": "line_search_non_decrease",
+              "final_psi_residual_norm": "3.2803948994028105e-06",
+              "final_electron_continuity_residual_norm": "1.4564594743327029e-05",
+              "final_hole_continuity_residual_norm": "3.279480855738444e-06"
+            },
+            "diagnostics": {
+              "failed_iteration": 44,
+              "line_search_attempts": 13,
+              "line_search_failure_reason": "line_search_non_decrease",
+              "step_norm": 84.0294771454923,
+              "residual_norm": 1.492925154673844e-05,
+              "block_residuals": {
+                "combined": 1.5285398438265593e-05,
+                "phin": 1.4564594743327029e-05,
+                "phip": 3.279480855738444e-06,
+                "psi": 3.2803948994028105e-06
+              },
+              "carrier_diagnostics": {
+                "min_electron_density_m3": 0.0,
+                "min_hole_density_m3": 0.0,
+                "nonfinite_electron_count": 0,
+                "nonfinite_hole_count": 0,
+                "nonpositive_electron_count": 0,
+                "nonpositive_hole_count": 0,
+                "positive_finite": true
+              }
+            },
+            "electron_hotspots": [
+              {
+                "abs_residual": 6.476437748697362e-06,
+                "node_id": 1446,
+                "residual": -6.476437748697362e-06,
+                "x_m": 0.0,
+                "x_um": 0.0,
+                "y_m": -1.7656249999999996e-08,
+                "y_um": -0.017656249999999995
+              },
+              {
+                "abs_residual": 6.476432262660379e-06,
+                "node_id": 129,
+                "residual": -6.476432262660379e-06,
+                "x_m": 0.0,
+                "x_um": 0.0,
+                "y_m": 1.7656249999999996e-08,
+                "y_um": 0.017656249999999995
+              }
+            ],
+            "stage00_canonical_sha256": "218e7daf5ef9c1040f52d355a62be61b440037ab2dd8b71bcf450c6f75da9a2a",
+            "raw_files": {
+              "simulation_stage00.json": "dfb15b5bbb96b0596e2b5f52ce7c6a1f13a3180f2b0f2139a0bc0f6ee03b9f4f",
+              "stage00.csv": "469144341674d297c6dbb6117af24169eca4ffbb4cb226e5d9ba0308411807b7",
+              "stage00_newton_failure_diagnostics.json": "f7a20b768be4865e895ef957373efadb2af6cd459afd944b70b5a9a47fa16170"
+            }
+          }
+        },
+        "first_control_startup_failure": {
+          "job": "<private execution metadata; original preserved in ignored archive>",
+          "reason": "VELA_BLAS_THREADS requested runtime OpenBLAS API absent from build; removed unsupported task-launcher variable, retaining standard OMP/BLAS environment caps; no runtime edit."
+        }
+      },
+      "c560": {
+        "job": "<private execution metadata; original preserved in ignored archive>",
+        "registered_tests": 8,
+        "regression_result": "pass",
+        "attempts": {
+          "A_original": {
+            "accepted_points": 0,
+            "attempt_rows": 1,
+            "csv": {
+              "converged": "0",
+              "iterations": "1",
+              "gummel_iterations": "7",
+              "newton_iterations": "1",
+              "solver_method": "gummel_newton",
+              "failure_reason": "carrier_invalid",
+              "final_psi_residual_norm": "0.0081309874412342237",
+              "final_electron_continuity_residual_norm": "0.00087065903583891904",
+              "final_hole_continuity_residual_norm": "9.1233733054997259e-08"
+            },
+            "diagnostics": {
+              "failed_iteration": 2,
+              "line_search_attempts": 13,
+              "line_search_failure_reason": "carrier_invalid",
+              "step_norm": 2.6774910845014304e+83,
+              "residual_norm": 0.008177469286675445,
+              "block_residuals": {
+                "combined": 0.008177469286675445,
+                "phin": 0.000870659035838919,
+                "phip": 9.123373305499726e-08,
+                "psi": 0.008130987441234224
+              },
+              "carrier_diagnostics": {
+                "min_electron_density_m3": 0.0,
+                "min_hole_density_m3": 0.0,
+                "nonfinite_electron_count": 0,
+                "nonfinite_hole_count": 0,
+                "nonpositive_electron_count": 0,
+                "nonpositive_hole_count": 0,
+                "positive_finite": true
+              }
+            },
+            "electron_hotspots": [
+              {
+                "abs_residual": 0.00018307824894338938,
+                "node_id": 2088,
+                "residual": -0.00018307824894338938,
+                "x_m": 1.5625e-08,
+                "x_um": 0.015625,
+                "y_m": -1.6332031249999998e-07,
+                "y_um": -0.16332031249999998
+              },
+              {
+                "abs_residual": 0.00018307824887721418,
+                "node_id": 795,
+                "residual": -0.00018307824887721418,
+                "x_m": 1.5625e-08,
+                "x_um": 0.015625,
+                "y_m": 1.6332031249999998e-07,
+                "y_um": 0.16332031249999998
+              }
+            ],
+            "stage00_canonical_sha256": "b7d72594f2540f23d6ec396ecbaeeb677332f41d12f9e10656ed006587b3f186",
+            "raw_files": {
+              "simulation_stage00.json": "ed3bcff0e50ff3881d83f5620e600cc432b1b2d56c62200f643a8534359ff314",
+              "stage00.csv": "bcf9acf41de0d70116b95c3cf5d0b6fd5be0997801aef5407bc3dbf76f687b53",
+              "stage00_newton_failure_diagnostics.json": "7aca244a65e194fb954b22605ce97dbc5972363918d96df7da7146515c4de8cd"
+            }
+          },
+          "C_referenced200": {
+            "accepted_points": 0,
+            "attempt_rows": 1,
+            "csv": {
+              "converged": "0",
+              "iterations": "51",
+              "gummel_iterations": "0",
+              "newton_iterations": "51",
+              "solver_method": "newton",
+              "failure_reason": "line_search_non_decrease",
+              "final_psi_residual_norm": "2.2098779229864609e-06",
+              "final_electron_continuity_residual_norm": "1.2290092996939028e-05",
+              "final_hole_continuity_residual_norm": "1.2227265981396553e-06"
+            },
+            "diagnostics": {
+              "failed_iteration": 52,
+              "line_search_attempts": 13,
+              "line_search_failure_reason": "line_search_non_decrease",
+              "step_norm": 83.76263312347969,
+              "residual_norm": 1.235076954655544e-05,
+              "block_residuals": {
+                "combined": 1.2546912235355394e-05,
+                "phin": 1.2290092996939028e-05,
+                "phip": 1.2227265981396553e-06,
+                "psi": 2.209877922986461e-06
+              },
+              "carrier_diagnostics": {
+                "min_electron_density_m3": 0.0,
+                "min_hole_density_m3": 0.0,
+                "nonfinite_electron_count": 0,
+                "nonfinite_hole_count": 0,
+                "nonpositive_electron_count": 0,
+                "nonpositive_hole_count": 0,
+                "positive_finite": true
+              }
+            },
+            "electron_hotspots": [
+              {
+                "abs_residual": 5.465177506771274e-06,
+                "node_id": 129,
+                "residual": -5.465177506771274e-06,
+                "x_m": 0.0,
+                "x_um": 0.0,
+                "y_m": 1.7656249999999996e-08,
+                "y_um": 0.017656249999999995
+              },
+              {
+                "abs_residual": 5.465177032402122e-06,
+                "node_id": 1446,
+                "residual": -5.465177032402122e-06,
+                "x_m": 0.0,
+                "x_um": 0.0,
+                "y_m": -1.7656249999999996e-08,
+                "y_um": -0.017656249999999995
+              }
+            ],
+            "stage00_canonical_sha256": "218e7daf5ef9c1040f52d355a62be61b440037ab2dd8b71bcf450c6f75da9a2a",
+            "raw_files": {
+              "simulation_stage00.json": "d8fb4037855e76215fad4fde41e1363abd8bb2e4b0a7677de890d530f0bf6f9b",
+              "stage00.csv": "ffe93df525879466c7fe56ce155af979c19308f1970c525ac09cf083feaeca3f",
+              "stage00_newton_failure_diagnostics.json": "b0578c211b3808cbafd5f84082ae386f0815c4b46f1983e830ea2f1ecb00a14a"
+            }
+          }
+        },
+        "first_control_startup_failure": {
+          "job": "<private execution metadata; original preserved in ignored archive>",
+          "reason": "VELA_BLAS_THREADS requested runtime OpenBLAS API absent from build; removed unsupported task-launcher variable, retaining standard OMP/BLAS environment caps; no runtime edit."
+        }
+      },
+      "same_parsed_stage00_configuration": {
+        "A_original": true,
+        "C_referenced200": true
+      }
+    }
+  },
+  "verification": {
+    "local": {
+      "first_eight_registered_tests": "7 pass, wp14_remaining_sources environment failure writing sandbox TEMP",
+      "retry": "Only failed test retried with task-private TEMP; pass",
+      "logs": {
+        "local_candidate_regression.log": "8464a3a701f1ce11020b0aac6e245d180f72c1c6ce9013c72929bc2b78cb9e4d",
+        "local_candidate_regression_temp_retry.log": "49305e63eae25ce1ab9c0a13cc76376730cf47689bb50d60e5585478003d2a02"
+      }
+    },
+    "full_ctest": "Not run; no shared C++ implementation change",
+    "packages": "Not rebuilt or superseded",
+    "job_completion": "All task-specific jobs exited; final runner fingerprints match Q0. Failed initial startup attempts retained separately."
+  },
+  "evidence": {
+    "local_ignored_root": "<WORKTREE>\\build-release\\zero_qs_q0_q3_20261008",
+    "remote_roots": {
+      "t470p": "<REMOTE_WORKSPACE>/zero_qs_q0_q3_20261008",
+      "c560": "<REMOTE_HOME>/vela-ci/zero_qs_q0_q3_20261008",
+      "native": "/root/sentaurus_runs/zero_qs_q0_q3_20261008"
+    },
+    "archives": [
+      {
+        "file": "native_original.tar.gz",
+        "size": 785085,
+        "sha256": "28299524054e966b934bdb3ecbd1edaf3d5caed06b6e8ffb4b88ab2162266e7d",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "q1_evidence.tar.gz",
+        "size": 301412,
+        "sha256": "47b67e3b968990a3bbd54bfcb381ca40695847a190f4f8018af9870fde39a8b8",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "t470p_q3_a_evidence.tar.gz",
+        "size": 305255,
+        "sha256": "4bd80fb6ae8f58efd551b4d9658a3b33f3b497934677540c2b315304da791990",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "c560_q3_a_evidence.tar.gz",
+        "size": 908,
+        "sha256": "8b6f751cb36da34764d384941bde02afbb78444cdba2f11ff10ed62ac8f30fd7",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "t470p_q3_b_evidence.tar.gz",
+        "size": 305889,
+        "sha256": "7d1e62be6c6a9a16e785b2e283268f012a9ebea100e79144c706bc93fa151d53",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "t470p_q3_c_evidence.tar.gz",
+        "size": 306998,
+        "sha256": "f9d7e76f0cb35ae0fd559636b6ccb41afb9fab2af8a0c9ffcc5cba5147dd4b5b",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "c560_q3_c_evidence.tar.gz",
+        "size": 317316,
+        "sha256": "21af7a5bf833a9de9141e220ed2e0e8253b9d51be161a42e171bdd62625adc27",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "field_probes.tar.gz",
+        "size": 2172682,
+        "sha256": "e991cb0d9ed1cc7f574cfed0957e4b2aa844bc429684e8ff61d0343ef62f1ccd",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "t470p_q3_sparselu_evidence.tar.gz",
+        "size": 615452,
+        "sha256": "f87b3936bcfe14fafdf6290f75559639d8e810e1e1f58f08fee32ff6b35b59a2",
+        "remote_local_sha256_match": true
+      },
+      {
+        "file": "c560_q3_sparselu_evidence.tar.gz",
+        "size": 633707,
+        "sha256": "fa2393c608dad5b00e7529b7ab84ee643476bbcf1024859bd53f8e8a218865d9",
+        "remote_local_sha256_match": true
+      }
+    ]
+  }
+}

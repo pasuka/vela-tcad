@@ -1,0 +1,10 @@
+Scharfetter * explicit constant-lifetime control for the A/C ablations:
+{
+  taumin = 1.0000e-07 , 1.0000e-07 # [s]
+  taumax = 1.0000e-07 , 1.0000e-07 # [s]
+  Nref   = 1.0000e+16 , 1.0000e+16 # [cm^(-3)]
+  gamma  = 1 , 1                     # [1]
+  Talpha = 0 , 0                     # [1]
+  Tcoeff = 0 , 0                     # [1]
+  Etrap  = 0.0000e+00                 # [eV]
+}

@@ -1,0 +1,70 @@
+{
+  "scope": "same saved direct-inner failure state; local Release UMFPACK; no solver changes",
+  "floor": 1e-30,
+  "eps_row": 0.001,
+  "min_source_scale": 1e-18,
+  "counts": {
+    "free_rows": 4242,
+    "floor_dominated": 0,
+    "qualified_rows": 1616,
+    "violations": 285,
+    "floor_blocking": 0
+  },
+  "targets": [
+    {
+      "node": 718,
+      "carrier": "hole",
+      "physical_scale": 1.193907544169305e-11,
+      "scale_to_floor": 1.1939075441693049e+19,
+      "residual": -1.2362538622335122e-11,
+      "previous_residual": -1.2362538622335124e-11,
+      "ratio": 1.0354686744974635,
+      "source_qualified": true,
+      "blocks": true
+    },
+    {
+      "node": 723,
+      "carrier": "electron",
+      "physical_scale": 9.798564444709065e-13,
+      "scale_to_floor": 9.798564444709064e+17,
+      "residual": 8.092442450465606e-14,
+      "previous_residual": 8.092442450465601e-14,
+      "ratio": 0.08258804130063446,
+      "source_qualified": true,
+      "blocks": true
+    },
+    {
+      "node": 1546,
+      "carrier": "electron",
+      "physical_scale": 1.62358904471673e-06,
+      "scale_to_floor": 1.6235890447167297e+24,
+      "residual": 6.58053605861153e-15,
+      "previous_residual": 6.58053605861153e-15,
+      "ratio": 4.053079860340919e-09,
+      "source_qualified": true,
+      "blocks": false
+    },
+    {
+      "node": 2084,
+      "carrier": "electron",
+      "physical_scale": 8.070202696005465e-06,
+      "scale_to_floor": 8.070202696005464e+24,
+      "residual": 1.471082612126766e-14,
+      "previous_residual": 1.4710826121267662e-14,
+      "ratio": 1.822857079977573e-09,
+      "source_qualified": false,
+      "blocks": false
+    },
+    {
+      "node": 2587,
+      "carrier": "electron",
+      "physical_scale": 1.0078304627013316e-05,
+      "scale_to_floor": 1.0078304627013315e+25,
+      "residual": -3.860489374583883e-15,
+      "previous_residual": -3.860489374583883e-15,
+      "ratio": 3.830494827707873e-10,
+      "source_qualified": false,
+      "blocks": false
+    }
+  ]
+}

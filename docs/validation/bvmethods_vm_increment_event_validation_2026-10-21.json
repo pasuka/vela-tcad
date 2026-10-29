@@ -1,0 +1,166 @@
+{
+  "scope": "private_no_btbt_five_frozen_states",
+  "production_acceptance_changed": false,
+  "newton_run": false,
+  "native_new_run": false,
+  "rhs_gate": 1e-08,
+  "jv_gate": 1e-05,
+  "checks": {
+    "precision": {
+      "passed": 189,
+      "total": 189
+    },
+    "contact": {
+      "passed": 246,
+      "total": 246
+    },
+    "catch2_assertions": 80,
+    "catch2_cases": 1
+  },
+  "configuration": {
+    "nodes": 2600,
+    "temperature_K": 300,
+    "population_units": "cm^-3",
+    "port_units": "A/um",
+    "resistor_Ohm_um": 10000000.0,
+    "build": "Linux Release -O1 -DNDEBUG",
+    "hdf5_enabled": true,
+    "umfpack_enabled": true,
+    "linear_solve_run": false,
+    "V0_V": 0.025851999786435535,
+    "Vt_V": 0.025851995266484913
+  },
+  "metric": "norm(Jv-FD)/max(norm(Jv),norm(FD),1e-300)",
+  "step_sets": {
+    "nqf": [
+      1e-09,
+      3e-10,
+      1e-10
+    ],
+    "pqf_and_remote": [
+      0.001,
+      0.0003,
+      0.0001,
+      3e-05,
+      1e-05
+    ],
+    "contact": [
+      1e-05,
+      1e-06,
+      1e-07,
+      1e-08
+    ]
+  },
+  "direction_samples": {
+    "precision": 65,
+    "contact": 60,
+    "excluded_zero_directions": 30
+  },
+  "states": [
+    {
+      "state": 1,
+      "population_identity_max": 3.508586373212674e-15,
+      "nqf_charge_h_1e_10": {
+        "raw_relative": 2.765119835946205e-05,
+        "mapped_relative": 2.7651198359686034e-05,
+        "term_relative": 4.048440916294428e-05,
+        "hp_relative": 1.051737567369934e-12
+      },
+      "nqf_hp_three_steps_max": 1.051737567369934e-12,
+      "pqf_hp_three_steps_max": 1.2787718327973437e-09,
+      "pqf_electron_terms_three_steps_max": 1.0337297537894521e-09,
+      "remote_three_steps_raw_blocks_max": 1.990971004654552e-06,
+      "contact_tied_four_steps_raw_blocks_max": 8.697268365870716e-07,
+      "contact_tied_four_steps_load_max": 5.849727490376258e-10,
+      "contact_constraints_max": 3.552713678800501e-15
+    },
+    {
+      "state": 2,
+      "population_identity_max": 3.459705157642741e-15,
+      "nqf_charge_h_1e_10": {
+        "raw_relative": 6.792781041598805e-05,
+        "mapped_relative": 6.792781041747881e-05,
+        "term_relative": 5.249149379441269e-05,
+        "hp_relative": 2.8266371407914116e-13
+      },
+      "nqf_hp_three_steps_max": 2.8266371407914116e-13,
+      "pqf_hp_three_steps_max": 1.285502338815702e-09,
+      "pqf_electron_terms_three_steps_max": 1.0316399794341717e-09,
+      "remote_three_steps_raw_blocks_max": 1.9909710007331535e-06,
+      "contact_tied_four_steps_raw_blocks_max": 8.481312600264268e-07,
+      "contact_tied_four_steps_load_max": 5.849746488148775e-10,
+      "contact_constraints_max": 3.552713678800501e-15
+    },
+    {
+      "state": 3,
+      "population_identity_max": 3.58059484214455e-15,
+      "nqf_charge_h_1e_10": {
+        "raw_relative": 4.040666627336059e-05,
+        "mapped_relative": 4.040666627261092e-05,
+        "term_relative": 4.081263557446476e-05,
+        "hp_relative": 1.1897835151332188e-12
+      },
+      "nqf_hp_three_steps_max": 1.1897835151332188e-12,
+      "pqf_hp_three_steps_max": 1.2861925107844661e-09,
+      "pqf_electron_terms_three_steps_max": 1.0297729054391223e-09,
+      "remote_three_steps_raw_blocks_max": 1.990971006491799e-06,
+      "contact_tied_four_steps_raw_blocks_max": 8.155771900290211e-07,
+      "contact_tied_four_steps_load_max": 5.849809156203098e-10,
+      "contact_constraints_max": 3.552713678800501e-15
+    },
+    {
+      "state": 4,
+      "population_identity_max": 3.4849838028340516e-15,
+      "nqf_charge_h_1e_10": {
+        "raw_relative": 6.55528806601149e-05,
+        "mapped_relative": 6.555288066090001e-05,
+        "term_relative": 4.079837306450139e-05,
+        "hp_relative": 9.487765929214057e-13
+      },
+      "nqf_hp_three_steps_max": 9.487765929214057e-13,
+      "pqf_hp_three_steps_max": 1.2916727811304067e-09,
+      "pqf_electron_terms_three_steps_max": 1.0269472265023176e-09,
+      "remote_three_steps_raw_blocks_max": 1.9909710024360616e-06,
+      "contact_tied_four_steps_raw_blocks_max": 7.722714051308521e-07,
+      "contact_tied_four_steps_load_max": 5.849830752193407e-10,
+      "contact_constraints_max": 7.105427357601002e-15
+    },
+    {
+      "state": 5,
+      "population_identity_max": 3.693777886005928e-15,
+      "nqf_charge_h_1e_10": {
+        "raw_relative": 1.6691466826213577e-05,
+        "mapped_relative": 1.669146682709576e-05,
+        "term_relative": 1.3814805967447568e-05,
+        "hp_relative": 5.344207703087726e-13
+      },
+      "nqf_hp_three_steps_max": 5.344207703087726e-13,
+      "pqf_hp_three_steps_max": 1.2831644898290413e-09,
+      "pqf_electron_terms_three_steps_max": 1.0287419355370598e-09,
+      "remote_three_steps_raw_blocks_max": 1.9909710043157226e-06,
+      "contact_tied_four_steps_raw_blocks_max": 7.082624184125494e-07,
+      "contact_tied_four_steps_load_max": 5.849931901445698e-10,
+      "contact_constraints_max": 3.552713678800501e-15
+    }
+  ],
+  "zero_current_edges": [
+    950,
+    953,
+    2702,
+    2901,
+    4122,
+    4203,
+    4204,
+    4208,
+    4209,
+    4213
+  ],
+  "zero_current_edge_identity": "both endpoints constrained and belong to same drain/source contact in all five states",
+  "remaining": [
+    "Production population and residual accumulation still lose tiny increments.",
+    "Complete native RHS and fixed-qualified-row gates have not passed.",
+    "Contact one-sided cusp tests do not qualify all field/path events.",
+    "No augmented Newton solve, projection, line search or acceptance cycle.",
+    "High-precision control covers fixed 300 K QF perturbations, not all state derivatives."
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "scope": "report arithmetic and frozen-state population/crosshost diagnostics; no acceptance change",
+  "population": {
+    "local": {
+      "rows285": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 3.7077364837312206e-09
+      },
+      "rows21": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows11": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows10": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows5": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows0": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      }
+    },
+    "remote": {
+      "rows285": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 3.7077364837312206e-09
+      },
+      "rows21": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows11": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows10": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows5": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      },
+      "rows0": {
+        "checked": 38178,
+        "identity_failures": 0,
+        "over_1e_minus8": 0,
+        "unresolved": 0,
+        "max_relative": 6.737345068036763e-09
+      }
+    }
+  },
+  "fma": {
+    "rows21": {
+      "cross_mode0": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 0,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "cross_mode1": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_0_vs_1": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 2,
+        "R.f64": 27,
+        "J_values.f64": 294,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_0_vs_1": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 2,
+        "R.f64": 27,
+        "J_values.f64": 298,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_0_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 2,
+        "R.f64": 27,
+        "J_values.f64": 294,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_1_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 0,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_0_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 2,
+        "R.f64": 27,
+        "J_values.f64": 298,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_1_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 0,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      }
+    },
+    "rows285": {
+      "cross_mode0": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 1,
+        "J_values.f64": 8,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "cross_mode1": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 1,
+        "J_values.f64": 10,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_0_vs_1": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 3,
+        "R.f64": 16,
+        "J_values.f64": 274,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_0_vs_1": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 3,
+        "R.f64": 16,
+        "J_values.f64": 276,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_0_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 3,
+        "R.f64": 16,
+        "J_values.f64": 274,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "local_1_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 0,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_0_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 1,
+        "p.f64": 3,
+        "R.f64": 16,
+        "J_values.f64": 276,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      },
+      "remote_1_vs_baseline": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 0,
+        "J_inner.i32": 0,
+        "J_outer.i32": 0
+      }
+    }
+  },
+  "crosshost": {
+    "rows285": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 1,
+        "J_values.f64": 10
+      },
+      "matrix_structure_equal": true
+    },
+    "rows21": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4
+      },
+      "matrix_structure_equal": true
+    },
+    "rows11": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4
+      },
+      "matrix_structure_equal": true
+    },
+    "rows10": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4
+      },
+      "matrix_structure_equal": true
+    },
+    "rows5": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4
+      },
+      "matrix_structure_equal": true
+    },
+    "rows0": {
+      "different": {
+        "x.f64": 0,
+        "n.f64": 0,
+        "p.f64": 0,
+        "R.f64": 0,
+        "J_values.f64": 4
+      },
+      "matrix_structure_equal": true
+    }
+  },
+  "report_tests": {
+    "local_release_ctest": {
+      "selected": 7,
+      "passed": 7
+    },
+    "remote_catch2": {
+      "cases": 7,
+      "assertions": 51
+    }
+  },
+  "strict_L1_passed": false,
+  "L2_completed": false,
+  "production_report_hook_completed": false,
+  "production_off_report_noninterference_passed": false,
+  "new_native_runs": 0,
+  "production_math_changed": false,
+  "acceptance_changed": false
+}

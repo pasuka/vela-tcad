@@ -1,0 +1,368 @@
+{
+  "schema": "vela.validation.bvmethods.nonlocalpath.n4.rhs_diagnosis.v1",
+  "date": "2026-10-16",
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "Si_nodes": 2152,
+    "Si_triangles": 4156,
+    "temperature_K": 300
+  },
+  "configuration": {
+    "target": "installed-library original BVmethods resistor",
+    "native_precision": "ordinary default",
+    "original_statistics": "Fermi default Joyce-Dixon",
+    "control_statistics": "explicit multivalley DensityIntegral(240)",
+    "production_Fermi_statistics": "defining-integral high-accuracy representation",
+    "source_policy": "experimental_cell_fraction_first_crossing",
+    "residual_backend": "fixed-state assembly; no linear solve"
+  },
+  "qualification": {
+    "population_mapping_diagnostic": true,
+    "complete_actual_rhs": false,
+    "native_absolute_transport_denominator": false,
+    "weak_rows": false,
+    "external_load_coupled_to_Vela_probe": false,
+    "N4_complete": false,
+    "N5_started": false
+  },
+  "unit_mapping": {
+    "native_thermal_voltage_V": 0.025851995266484913,
+    "core_thermal_voltage_V": 0.025851999786435535,
+    "relative_delta": 1.7483952685637405e-07,
+    "native_to_previous_probe_carrier_rhs_factor": 10000.0,
+    "applies_only_to_previous_probe_C0_equals_Nref_D0_equals_1": true,
+    "derived_from_physical_integral_units_not_fitted": true
+  },
+  "states": {
+    "zero": {
+      "JD_mapping_max_abs_log_ratio": {
+        "electron": 4.8183679268732955e-14,
+        "hole": 4.485301019485532e-14
+      },
+      "JD_BGN_max_error_eV": 2.220446049250313e-16,
+      "integral240_max_abs_log_ratio": {
+        "electron": 3.290701044988423e-13,
+        "hole": 1.7164047960703446e-13
+      },
+      "integral_switch_BGN_max_change_eV": 0.0,
+      "original_repeat_identity": true,
+      "integral_control_exit": 2,
+      "integral_control_iteration_budget_exhausted": true,
+      "SRH_point_rate_weighted_L1_relative_error": 0.6710117871383159,
+      "SRH_barycentric_prediction_relative_L1": 2.99942408682629e-15,
+      "weak_SRH_volume_ratios": {
+        "2156": 1.2209771646480438,
+        "2515": 1.0000000000000004
+      },
+      "residual_and_term_diagnostics_use_different_electron_SRH_population": true,
+      "source_export_to_native_RHS_relative_L1": {
+        "no_srh": {
+          "electron": 0.04085596272028347,
+          "hole": 2.582795871366503e-05
+        },
+        "no_avalanche": {
+          "electron": 0.0027525257668211804,
+          "hole": 2.4241183681120964e-15
+        }
+      },
+      "source_export_to_native_RHS_resolvable_rows": {
+        "no_srh": {
+          "electron": 1023,
+          "hole": 1632
+        },
+        "no_avalanche": {
+          "electron": 4,
+          "hole": 8
+        }
+      },
+      "previous_Vela_term_vs_native_projection_relative_L1": {
+        "SRH": 0.6758251238520887,
+        "avalanche": 1.0,
+        "nonlocal": 0.8037967504892658
+      },
+      "native_labeled_variables": 6853,
+      "native_actual_matrix_dimension": 6843,
+      "native_QF_alias_count": 11,
+      "native_linear_componentwise_L1_backward_error": 3.0762731615191532e-15,
+      "resistor_diagonal_prediction_relative_error": 2.220446049250313e-16,
+      "QF_alias_physical_inner_voltage_max_error_V": 2.7666074418498733e-16,
+      "post_update_load_error_V": 7.283542365148019e-14,
+      "post_update_KCL_A_per_um": -5.115751414778595e-35,
+      "post_update_is_RHS1": false,
+      "contact_hypothesis_control_groups": 4,
+      "contact_control_carrier_terms_unchanged": true,
+      "Poisson_observer_frozen_charge_reconstruction_max_absolute_error": 4.464314367060517e-12,
+      "Poisson_absolute_edge_denominator_available": false
+    },
+    "first": {
+      "JD_mapping_max_abs_log_ratio": {
+        "electron": 4.9404924595820684e-14,
+        "hole": 4.507505479978034e-14
+      },
+      "JD_BGN_max_error_eV": 4.440892098500626e-16,
+      "integral240_max_abs_log_ratio": {
+        "electron": 3.3018032752346703e-13,
+        "hole": 1.698641227676345e-13
+      },
+      "integral_switch_BGN_max_change_eV": 0.0,
+      "original_repeat_identity": true,
+      "integral_control_exit": 2,
+      "integral_control_iteration_budget_exhausted": true,
+      "SRH_point_rate_weighted_L1_relative_error": 5.72784963034477e-14,
+      "SRH_barycentric_prediction_relative_L1": 3.1968864720731292e-15,
+      "weak_SRH_volume_ratios": {
+        "2156": 1.2209771646480438,
+        "2515": 1.0000000000000004
+      },
+      "residual_and_term_diagnostics_use_different_electron_SRH_population": true,
+      "source_export_to_native_RHS_relative_L1": {
+        "no_srh": {
+          "electron": 1.7060185612235021e-09,
+          "hole": 7.129611351539294e-15
+        },
+        "no_avalanche": {
+          "electron": 4.186138482189048e-05,
+          "hole": 1.584279759560218e-15
+        }
+      },
+      "source_export_to_native_RHS_resolvable_rows": {
+        "no_srh": {
+          "electron": 2089,
+          "hole": 2121
+        },
+        "no_avalanche": {
+          "electron": 6,
+          "hole": 8
+        }
+      },
+      "previous_Vela_term_vs_native_projection_relative_L1": {
+        "SRH": 0.009051338306373663,
+        "avalanche": 24.583840349559964,
+        "nonlocal": 0.00023052101419895974
+      },
+      "native_labeled_variables": 6853,
+      "native_actual_matrix_dimension": 6843,
+      "native_QF_alias_count": 11,
+      "native_linear_componentwise_L1_backward_error": 1.5469675404134923e-16,
+      "resistor_diagonal_prediction_relative_error": 2.220446049250313e-16,
+      "QF_alias_physical_inner_voltage_max_error_V": 3.2873009869760494e-16,
+      "post_update_load_error_V": -7.407963131811357e-14,
+      "post_update_KCL_A_per_um": -2.0679515313825692e-25,
+      "post_update_is_RHS1": false,
+      "contact_hypothesis_control_groups": 4,
+      "contact_control_carrier_terms_unchanged": true,
+      "Poisson_observer_frozen_charge_reconstruction_max_absolute_error": 7.317869609941902e-12,
+      "Poisson_absolute_edge_denominator_available": false
+    },
+    "before_BV": {
+      "JD_mapping_max_abs_log_ratio": {
+        "electron": 5.1958437552458677e-14,
+        "hole": 6.06181771445317e-14
+      },
+      "JD_BGN_max_error_eV": 2.220446049250313e-15,
+      "integral240_max_abs_log_ratio": {
+        "electron": 3.6104452760803573e-13,
+        "hole": 2.4491519923227954e-13
+      },
+      "integral_switch_BGN_max_change_eV": 0.0,
+      "original_repeat_identity": true,
+      "integral_control_exit": 2,
+      "integral_control_iteration_budget_exhausted": true,
+      "SRH_point_rate_weighted_L1_relative_error": 1.1165721443905306e-14,
+      "SRH_barycentric_prediction_relative_L1": 1.247767827454072e-14,
+      "weak_SRH_volume_ratios": {
+        "2156": 1.2209771646480438,
+        "2515": 1.0000000000000004
+      },
+      "residual_and_term_diagnostics_use_different_electron_SRH_population": true,
+      "source_export_to_native_RHS_relative_L1": {
+        "no_srh": {
+          "electron": 2.034167634654273e-12,
+          "hole": 3.5257255274425456e-12
+        },
+        "no_avalanche": {
+          "electron": 1.7485027111243059e-15,
+          "hole": 1.800160680393107e-15
+        }
+      },
+      "source_export_to_native_RHS_resolvable_rows": {
+        "no_srh": {
+          "electron": 2121,
+          "hole": 2121
+        },
+        "no_avalanche": {
+          "electron": 1137,
+          "hole": 1155
+        }
+      },
+      "previous_Vela_term_vs_native_projection_relative_L1": {
+        "SRH": 0.042290560891062035,
+        "avalanche": 0.16138585443907608,
+        "nonlocal": 4.23508617181271e-08
+      },
+      "native_labeled_variables": 6853,
+      "native_actual_matrix_dimension": 6843,
+      "native_QF_alias_count": 11,
+      "native_linear_componentwise_L1_backward_error": 1.679030184683242e-16,
+      "resistor_diagonal_prediction_relative_error": 2.220446049250313e-16,
+      "QF_alias_physical_inner_voltage_max_error_V": 2.220446049250313e-14,
+      "post_update_load_error_V": 3.410605131648481e-13,
+      "post_update_KCL_A_per_um": -6.776263578034403e-20,
+      "post_update_is_RHS1": false,
+      "contact_hypothesis_control_groups": 4,
+      "contact_control_carrier_terms_unchanged": true,
+      "Poisson_observer_frozen_charge_reconstruction_max_absolute_error": 9.19041529822708e-12,
+      "Poisson_absolute_edge_denominator_available": false
+    },
+    "after_BV": {
+      "JD_mapping_max_abs_log_ratio": {
+        "electron": 5.05151476204459e-14,
+        "hole": 6.06181771445317e-14
+      },
+      "JD_BGN_max_error_eV": 1.887379141862766e-15,
+      "integral240_max_abs_log_ratio": {
+        "electron": 3.6237679523758546e-13,
+        "hole": 2.4091839634362994e-13
+      },
+      "integral_switch_BGN_max_change_eV": 0.0,
+      "original_repeat_identity": true,
+      "integral_control_exit": 2,
+      "integral_control_iteration_budget_exhausted": true,
+      "SRH_point_rate_weighted_L1_relative_error": 1.1425202130345847e-14,
+      "SRH_barycentric_prediction_relative_L1": 1.3896751423968741e-14,
+      "weak_SRH_volume_ratios": {
+        "2156": 1.2209771646480438,
+        "2515": 1.0000000000000004
+      },
+      "residual_and_term_diagnostics_use_different_electron_SRH_population": true,
+      "source_export_to_native_RHS_relative_L1": {
+        "no_srh": {
+          "electron": 2.039798391317527e-12,
+          "hole": 3.2373327457309284e-12
+        },
+        "no_avalanche": {
+          "electron": 1.662721680998005e-15,
+          "hole": 1.7647924125979538e-15
+        }
+      },
+      "source_export_to_native_RHS_resolvable_rows": {
+        "no_srh": {
+          "electron": 2121,
+          "hole": 2121
+        },
+        "no_avalanche": {
+          "electron": 1135,
+          "hole": 1159
+        }
+      },
+      "previous_Vela_term_vs_native_projection_relative_L1": {
+        "SRH": 0.04141476838298711,
+        "avalanche": 0.16653451049030238,
+        "nonlocal": 3.682988002066115e-08
+      },
+      "native_labeled_variables": 6853,
+      "native_actual_matrix_dimension": 6843,
+      "native_QF_alias_count": 11,
+      "native_linear_componentwise_L1_backward_error": 1.1801268660566036e-16,
+      "resistor_diagonal_prediction_relative_error": 2.220446049250313e-16,
+      "QF_alias_physical_inner_voltage_max_error_V": 2.5757174171303632e-14,
+      "post_update_load_error_V": 9.094947017729282e-13,
+      "post_update_KCL_A_per_um": -2.981555974335137e-19,
+      "post_update_is_RHS1": false,
+      "contact_hypothesis_control_groups": 4,
+      "contact_control_carrier_terms_unchanged": true,
+      "Poisson_observer_frozen_charge_reconstruction_max_absolute_error": 8.53851533341764e-12,
+      "Poisson_absolute_edge_denominator_available": false
+    },
+    "last": {
+      "JD_mapping_max_abs_log_ratio": {
+        "electron": 5.118128143522103e-14,
+        "hole": 6.905587213168235e-14
+      },
+      "JD_BGN_max_error_eV": 2.220446049250313e-15,
+      "integral240_max_abs_log_ratio": {
+        "electron": 3.6237679523758546e-13,
+        "hole": 2.700062395888016e-13
+      },
+      "integral_switch_BGN_max_change_eV": 0.0,
+      "original_repeat_identity": true,
+      "integral_control_exit": 2,
+      "integral_control_iteration_budget_exhausted": true,
+      "SRH_point_rate_weighted_L1_relative_error": 1.2664162784298003e-14,
+      "SRH_barycentric_prediction_relative_L1": 1.2580789759793766e-14,
+      "weak_SRH_volume_ratios": {
+        "2156": 1.2209771646480438,
+        "2515": 1.0000000000000004
+      },
+      "residual_and_term_diagnostics_use_different_electron_SRH_population": true,
+      "source_export_to_native_RHS_relative_L1": {
+        "no_srh": {
+          "electron": 1.6804929047176082e-12,
+          "hole": 2.8346753824914714e-12
+        },
+        "no_avalanche": {
+          "electron": 1.4244503366626352e-15,
+          "hole": 1.551797446203846e-15
+        }
+      },
+      "source_export_to_native_RHS_resolvable_rows": {
+        "no_srh": {
+          "electron": 2121,
+          "hole": 2121
+        },
+        "no_avalanche": {
+          "electron": 940,
+          "hole": 971
+        }
+      },
+      "previous_Vela_term_vs_native_projection_relative_L1": {
+        "SRH": 0.02978275959964907,
+        "avalanche": 0.28719938608297646,
+        "nonlocal": 1.1594163251942155e-08
+      },
+      "native_labeled_variables": 6853,
+      "native_actual_matrix_dimension": 6843,
+      "native_QF_alias_count": 11,
+      "native_linear_componentwise_L1_backward_error": 1.751056944288699e-16,
+      "resistor_diagonal_prediction_relative_error": 2.220446049250313e-16,
+      "QF_alias_physical_inner_voltage_max_error_V": 2.4868995751603507e-14,
+      "post_update_load_error_V": 3.637978807091713e-12,
+      "post_update_KCL_A_per_um": -9.324138683375338e-18,
+      "post_update_is_RHS1": false,
+      "contact_hypothesis_control_groups": 4,
+      "contact_control_carrier_terms_unchanged": true,
+      "Poisson_observer_frozen_charge_reconstruction_max_absolute_error": 6.87592164263129e-12,
+      "Poisson_absolute_edge_denominator_available": false
+    }
+  },
+  "SG_algebra": {
+    "same_linear_QF_limit": true,
+    "finite_drop_equivalent": false,
+    "edge_reversal_verified": true,
+    "example_relative_differences": {
+      "1e-07": 4.5455117447801285e-09,
+      "1e-05": 4.545511445019912e-07,
+      "0.001": 4.545520547161175e-05,
+      "0.1": 0.004545494437405706,
+      "1.0": 0.044620422358402356
+    },
+    "full_rhs_qualification": false
+  },
+  "verification": {
+    "diagnostic_property_checks": 15,
+    "diagnostic_property_checks_passed": true,
+    "registered_CTest_passed": [
+      "bvmethods_original_reference",
+      "bvmethods_nonlocalpath_contract"
+    ],
+    "native_runs": 20,
+    "native_archive_files_verified": 288,
+    "local_private_probe_runs": 10,
+    "production_core_hash_unchanged": true,
+    "remote_workers_confirmed_absent": 2,
+    "T470p_used": false,
+    "production_behavior_changed": false,
+    "acceptance_budgets_changed": false
+  }
+}

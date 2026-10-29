@@ -98,7 +98,7 @@ NewtonLoadLineIterationEvaluation NewtonSolver::evaluateBoundedSupplyLoadLineIte
         0,current,voltage,supply,resistance,N,splitVoltage?std::optional<Real>(circuit(voltage,voltageLow,current)):std::nullopt);
     out.physicalBordered=physical.full;out.physicalRhs=physical.rhs;
     SparseMatrixd regularized=out.deviceJacobian;
-    addCarrierRowRegularization(regularized,N,cfg_.carrierRegularizationScale);
+    addCarrierRowRegularization(regularized,N,cfg_.carrierRegularizationScale,bcs);
     SparseMatrixd solveJ=regularized;
     VectorXd solveRhs=-f;
     if(cfg_.globalContinuityClosure.linearSystemStabilization=="replace_free_row_sum") {

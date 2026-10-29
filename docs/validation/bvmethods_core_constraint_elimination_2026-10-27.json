@@ -1,0 +1,4186 @@
+{
+  "date": "2026-10-27",
+  "scope": "Core default exact prescribed-row elimination and aligned current-operator Jacobian support comparison; no model or nonlinear gate change",
+  "conditions": {
+    "nodes": 2600,
+    "silicon_nodes": 2152,
+    "triangles": 5020,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "BTBT": false,
+    "backend": "pardiso_mkl",
+    "threads_requested": 1,
+    "build": "Windows UCRT64 GCC16 Release",
+    "native": "T-2022.03-SP2; explicit Blocked/ParDiSo, AvalDerivatives, archived 2026-10-25"
+  },
+  "limits": [
+    "Sentaurus storage counts describe independent debug exports, not a newly captured internal PARDISO CSR allocation.",
+    "No new Sentaurus run.",
+    "No new complete BV convergence qualification.",
+    "Common-coordinate sparse transformations can remove explicit zeros; raw storage and transformed support are separate metrics.",
+    "QR and emergency alternate factorization policies remain separate from default direct solves."
+  ],
+  "core": {
+    "default_enabled": true,
+    "opt_out": "VELA_CONSTRAINT_ELIMINATION=0",
+    "full": 7801,
+    "carrier_only": 6843,
+    "free": 6765,
+    "constraint_block": "acyclic affine, nonzero diagonal; no coefficient threshold",
+    "independent_python_max_matrix_relative_Frobenius": 2.1445336098922302e-16,
+    "independent_python_max_rhs_absolute_internal_units": 2.842170943040401e-14
+  },
+  "raw_assembly_unchanged_from_previous_15_checkpoints": true,
+  "production_direction_equivalence": {
+    "p01_i01": {
+      "on_backward_error": 2.4753603890053113e-16,
+      "off_backward_error": 2.152098360234342e-16,
+      "max_psi_V": 1.1093432769615497e-10,
+      "max_fn_V": 1.1093439274828532e-10,
+      "max_fp_V": 1.1093432249198454e-10,
+      "inner_V": 1.1093432249198454e-10
+    },
+    "p01_i02": {
+      "on_backward_error": 2.2537357768921923e-16,
+      "off_backward_error": 2.0871371792799522e-16,
+      "max_psi_V": 1.1252683951735315e-11,
+      "max_fn_V": 1.136908365302787e-11,
+      "max_fp_V": 1.1252683626474663e-11,
+      "inner_V": 1.1252683572264555e-11
+    },
+    "p01_i03": {
+      "on_backward_error": 2.309531904698422e-16,
+      "off_backward_error": 2.1836398709968931e-16,
+      "max_psi_V": 4.382012381941433e-14,
+      "max_fn_V": 4.382017930007237e-14,
+      "max_fp_V": 4.3820123395897853e-14,
+      "inner_V": 4.3820123395897853e-14
+    },
+    "p02_i01": {
+      "on_backward_error": 2.331382975128673e-16,
+      "off_backward_error": 2.1009543915614788e-16,
+      "max_psi_V": 2.1285682743309164e-11,
+      "max_fn_V": 2.1285706053655873e-11,
+      "max_fp_V": 2.1285680791745254e-11,
+      "inner_V": 2.128568057490482e-11
+    },
+    "p02_i02": {
+      "on_backward_error": 2.170574992426993e-16,
+      "off_backward_error": 2.1587975369288244e-16,
+      "max_psi_V": 1.1940725355507427e-13,
+      "max_fn_V": 1.1942031162674737e-13,
+      "max_fp_V": 1.1940724931990953e-13,
+      "inner_V": 1.1940724931990953e-13
+    },
+    "p02_i03": {
+      "on_backward_error": 2.4130980231139806e-16,
+      "off_backward_error": 2.0244140467258642e-16,
+      "max_psi_V": 6.485752452949859e-16,
+      "max_fn_V": 6.485753511741043e-16,
+      "max_fp_V": 9.663493963363301e-16,
+      "inner_V": 6.485745570807163e-16
+    },
+    "p03_i01": {
+      "on_backward_error": 2.3264806591562193e-16,
+      "off_backward_error": 2.3949738587821353e-16,
+      "max_psi_V": 7.912962819711655e-12,
+      "max_fn_V": 7.913110488047548e-12,
+      "max_fp_V": 9.040421623113248e-12,
+      "inner_V": 7.912961301828614e-12
+    },
+    "p03_i02": {
+      "on_backward_error": 2.4720780322468094e-16,
+      "off_backward_error": 2.267896712368171e-16,
+      "max_psi_V": 8.318460734146362e-13,
+      "max_fn_V": 8.324098111104836e-13,
+      "max_fp_V": 8.48651037681572e-13,
+      "inner_V": 8.31846059862109e-13
+    },
+    "p03_i03": {
+      "on_backward_error": 2.5871549331297043e-16,
+      "off_backward_error": 2.11297706194983e-16,
+      "max_psi_V": 5.802834680324921e-14,
+      "max_fn_V": 5.802837941401768e-14,
+      "max_fp_V": 5.90729722083072e-14,
+      "inner_V": 5.802834510918332e-14
+    },
+    "p04_i01": {
+      "on_backward_error": 2.5347987499016123e-16,
+      "off_backward_error": 2.3236926481897634e-16,
+      "max_psi_V": 8.827117422421926e-11,
+      "max_fn_V": 8.828143424621793e-11,
+      "max_fp_V": 9.295128469005709e-11,
+      "inner_V": 8.827116858636797e-11
+    },
+    "p04_i02": {
+      "on_backward_error": 2.353244311171926e-16,
+      "off_backward_error": 2.6547415217787466e-16,
+      "max_psi_V": 9.257926795514827e-13,
+      "max_fn_V": 9.282624175615053e-13,
+      "max_fp_V": 9.756908822544652e-13,
+      "inner_V": 9.257926185651105e-13
+    },
+    "p04_i03": {
+      "on_backward_error": 2.327067649916027e-16,
+      "off_backward_error": 2.3170346439748186e-16,
+      "max_psi_V": 2.0927643874844946e-14,
+      "max_fn_V": 2.0927652345174418e-14,
+      "max_fp_V": 2.3436547841315658e-14,
+      "inner_V": 2.0927642498416406e-14
+    },
+    "p05_i01": {
+      "on_backward_error": 2.76508923664624e-16,
+      "off_backward_error": 2.4151459028443713e-16,
+      "max_psi_V": 1.0565470894008389e-10,
+      "max_fn_V": 1.0569232381657523e-10,
+      "max_fp_V": 1.3502290951983298e-10,
+      "inner_V": 1.0565470503695606e-10
+    },
+    "p05_i02": {
+      "on_backward_error": 3.117150368297527e-16,
+      "off_backward_error": 2.5437306498400976e-16,
+      "max_psi_V": 3.5448815513842644e-12,
+      "max_fn_V": 3.5612014368229666e-12,
+      "max_fp_V": 3.980995654656594e-12,
+      "inner_V": 3.5448814836216286e-12
+    },
+    "p05_i03": {
+      "on_backward_error": 2.490085051942687e-16,
+      "off_backward_error": 2.2232235066404295e-16,
+      "max_psi_V": 5.135552924148061e-14,
+      "max_fn_V": 5.1355558040600815e-14,
+      "max_fp_V": 6.095644822234902e-14,
+      "inner_V": 5.135552839444766e-14
+    }
+  },
+  "comparison_method": "Physical common QF columns using validated JD tangent transform, each signed diagonal row normalization; support threshold uses common row maximum; no matrix pruning in solve",
+  "cases": {
+    "p01_i01": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 72485
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 79781,
+        "strict_nonzero": 73969
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 77077,
+        "strict_nonzero": 72843
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 76731,
+        "strict_nonzero": 72567
+      },
+      "core_vs_independent_python_relative_Frobenius": 1.7437966730724662e-35,
+      "core_vs_independent_python_rhs_max": 1.3552527156068805e-20,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.4755919168549167e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 4.2911339204199095e-09,
+        "full_backward_error": 2.1519272169845382e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 72858,
+        "right_stored": 71656,
+        "left_strict_nonzero": 72858,
+        "right_strict_nonzero": 71656,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 72858,
+            "right": 71656,
+            "shared": 71654,
+            "left_only": 1204,
+            "right_only": 2
+          },
+          {
+            "relative": 1e-14,
+            "left": 68128,
+            "right": 42723,
+            "shared": 42723,
+            "left_only": 25405,
+            "right_only": 0
+          },
+          {
+            "relative": 1e-12,
+            "left": 66733,
+            "right": 40713,
+            "shared": 40711,
+            "left_only": 26022,
+            "right_only": 2
+          },
+          {
+            "relative": 1e-10,
+            "left": 63690,
+            "right": 40094,
+            "shared": 40094,
+            "left_only": 23596,
+            "right_only": 0
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 1.0675254439623687,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 9.2148511043888e-15,
+        "hole_max_relative": 1.1657341758564144e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fp1546",
+          "column": "psi1546",
+          "vela": 7.276079089516206,
+          "sentaurus": 2.080488243654347e-08
+        },
+        {
+          "side": "left_only",
+          "row": "fp229",
+          "column": "psi229",
+          "vela": 7.27607908951605,
+          "sentaurus": 6.255837665441814e-08
+        },
+        {
+          "side": "left_only",
+          "row": "fp2587",
+          "column": "psi1546",
+          "vela": 6.42122504597249,
+          "sentaurus": 1.835299707758512e-08
+        },
+        {
+          "side": "left_only",
+          "row": "fp1308",
+          "column": "psi229",
+          "vela": 6.4212250459724425,
+          "sentaurus": 5.52137897263822e-08
+        },
+        {
+          "side": "left_only",
+          "row": "fp2587",
+          "column": "psi2587",
+          "vela": 1.1625737369385893,
+          "sentaurus": 3.029318549035035e-09
+        },
+        {
+          "side": "left_only",
+          "row": "fp1308",
+          "column": "psi1308",
+          "vela": 1.1625737369385722,
+          "sentaurus": 8.84785138530996e-09
+        },
+        {
+          "side": "left_only",
+          "row": "fp1546",
+          "column": "psi2587",
+          "vela": 0.671390866159674,
+          "sentaurus": -5.651279275836783e-10
+        },
+        {
+          "side": "left_only",
+          "row": "fp229",
+          "column": "psi1308",
+          "vela": 0.6713908661596497,
+          "sentaurus": 4.144271471258294e-09
+        },
+        {
+          "side": "left_only",
+          "row": "fp2587",
+          "column": "psi2084",
+          "vela": -0.5473335423753581,
+          "sentaurus": -9.505597082956572e-10
+        },
+        {
+          "side": "left_only",
+          "row": "fp1308",
+          "column": "psi791",
+          "vela": -0.5473335423753545,
+          "sentaurus": -2.8332852261872908e-09
+        },
+        {
+          "side": "left_only",
+          "row": "fp791",
+          "column": "psi1308",
+          "vela": 0.25729370622128483,
+          "sentaurus": 1.336938215569236e-09
+        },
+        {
+          "side": "left_only",
+          "row": "fp2084",
+          "column": "psi2587",
+          "vela": 0.2572937062212848,
+          "sentaurus": 4.3126719686961726e-10
+        }
+      ],
+      "significant_only_row_count": 4241,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 12
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 13025
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 12985
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        }
+      ]
+    },
+    "p01_i02": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 76669
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 83935,
+        "strict_nonzero": 78123
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 81231,
+        "strict_nonzero": 76997
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 80860,
+        "strict_nonzero": 76696
+      },
+      "core_vs_independent_python_relative_Frobenius": 1.162532637270668e-35,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.2535258615651296e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 4.397757904367472e-10,
+        "full_backward_error": 2.0869795169395634e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 76696,
+        "right_stored": 76386,
+        "left_strict_nonzero": 76696,
+        "right_strict_nonzero": 76386,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 76696,
+            "right": 76386,
+            "shared": 76386,
+            "left_only": 310,
+            "right_only": 0
+          },
+          {
+            "relative": 1e-14,
+            "left": 72578,
+            "right": 70556,
+            "shared": 70551,
+            "left_only": 2027,
+            "right_only": 5
+          },
+          {
+            "relative": 1e-12,
+            "left": 71530,
+            "right": 67699,
+            "shared": 67686,
+            "left_only": 3844,
+            "right_only": 13
+          },
+          {
+            "relative": 1e-10,
+            "left": 69671,
+            "right": 64396,
+            "shared": 64361,
+            "left_only": 5310,
+            "right_only": 35
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.9368479799778126,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 9.992007221626409e-15,
+        "hole_max_relative": 1.1657341758564144e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652176872061e-06,
+          "sentaurus": 1.8812399541422455e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651803739624e-06,
+          "sentaurus": -1.855874205259995e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.72454959930741e-06,
+          "sentaurus": 3.090155716026012e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549582011e-06,
+          "sentaurus": 8.0059407793178875e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576236533e-06,
+          "sentaurus": -1.7611900138154706e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.7245495706793035e-06,
+          "sentaurus": -1.2808558038710937e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549564905204e-06,
+          "sentaurus": -4.162862907491151e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.7245495477443415e-06,
+          "sentaurus": -3.010092684082371e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2175",
+          "column": "psi2175",
+          "vela": 5.724132792262731e-06,
+          "sentaurus": 5.70787064126349e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn882",
+          "column": "psi882",
+          "vela": 5.724131648120447e-06,
+          "sentaurus": -5.706297943741764e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.72380605732951e-06,
+          "sentaurus": -4.858213425599872e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.7238060488825466e-06,
+          "sentaurus": 1.943469020735354e-15
+        }
+      ],
+      "significant_only_row_count": 1229,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 4
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 1033
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 4
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2801
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 1
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 4
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 8
+        }
+      ]
+    },
+    "p01_i03": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 75344
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 82602,
+        "strict_nonzero": 76790
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 79898,
+        "strict_nonzero": 75664
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 79527,
+        "strict_nonzero": 75363
+      },
+      "core_vs_independent_python_relative_Frobenius": 1.7437990795628873e-35,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.309469205570343e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 1.6950402127909048e-12,
+        "full_backward_error": 2.183178328423372e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 75362,
+        "right_stored": 75071,
+        "left_strict_nonzero": 75362,
+        "right_strict_nonzero": 75071,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 75362,
+            "right": 75071,
+            "shared": 75061,
+            "left_only": 301,
+            "right_only": 10
+          },
+          {
+            "relative": 1e-14,
+            "left": 71145,
+            "right": 69724,
+            "shared": 69704,
+            "left_only": 1441,
+            "right_only": 20
+          },
+          {
+            "relative": 1e-12,
+            "left": 69899,
+            "right": 67144,
+            "shared": 67105,
+            "left_only": 2794,
+            "right_only": 39
+          },
+          {
+            "relative": 1e-10,
+            "left": 67756,
+            "right": 62031,
+            "shared": 61966,
+            "left_only": 5790,
+            "right_only": 65
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.9348897146046797,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.0880185641326534e-14,
+        "hole_max_relative": 1.2323475573339238e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652165847774e-06,
+          "sentaurus": 1.7523010607405864e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.7246518088339235e-06,
+          "sentaurus": -1.764982854026777e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549602995778e-06,
+          "sentaurus": 3.106166866601727e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549582136936e-06,
+          "sentaurus": 7.044942801565966e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.7245495735146845e-06,
+          "sentaurus": -1.2808557893714562e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549570334437e-06,
+          "sentaurus": -3.2021935654232722e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.7245495650158074e-06,
+          "sentaurus": -8.005212725531902e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549550280158e-06,
+          "sentaurus": -3.0581261343563756e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2175",
+          "column": "psi2175",
+          "vela": 5.724132762634753e-06,
+          "sentaurus": 5.390330074741234e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn882",
+          "column": "psi882",
+          "vela": 5.724131678400798e-06,
+          "sentaurus": -5.415481088108515e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806057146762e-06,
+          "sentaurus": -4.858213284437386e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806051834709e-06,
+          "sentaurus": 1.9434690207353534e-15
+        }
+      ],
+      "significant_only_row_count": 1359,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 4
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 4
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 1097
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 1687
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 15
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 8
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 14
+        }
+      ]
+    },
+    "p02_i01": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 76141
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 83372,
+        "strict_nonzero": 77560
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 80668,
+        "strict_nonzero": 76434
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 80297,
+        "strict_nonzero": 76133
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.144498365873083e-16,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.331311289306782e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 8.233678738811534e-10,
+        "full_backward_error": 2.1006806045770608e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 76126,
+        "right_stored": 75841,
+        "left_strict_nonzero": 76126,
+        "right_strict_nonzero": 75841,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 76126,
+            "right": 75841,
+            "shared": 75827,
+            "left_only": 299,
+            "right_only": 14
+          },
+          {
+            "relative": 1e-14,
+            "left": 71520,
+            "right": 69613,
+            "shared": 69591,
+            "left_only": 1929,
+            "right_only": 22
+          },
+          {
+            "relative": 1e-12,
+            "left": 70334,
+            "right": 66308,
+            "shared": 66260,
+            "left_only": 4074,
+            "right_only": 48
+          },
+          {
+            "relative": 1e-10,
+            "left": 68296,
+            "right": 63103,
+            "shared": 63017,
+            "left_only": 5279,
+            "right_only": 86
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.9020848271705146,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 9.880984919163893e-15,
+        "hole_max_relative": 1.3100631690576847e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652411519001e-06,
+          "sentaurus": 4.1852300165593635e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651570560717e-06,
+          "sentaurus": -4.181001795022226e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549646204642e-06,
+          "sentaurus": 6.500530788636477e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549587307549e-06,
+          "sentaurus": 1.088761893918629e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.7245495735477924e-06,
+          "sentaurus": -4.322974791392287e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549572976029e-06,
+          "sentaurus": -1.6007495647346608e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.7245495589519934e-06,
+          "sentaurus": -1.4249888147810916e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.72454950333339e-06,
+          "sentaurus": -7.397147979743989e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806060267978e-06,
+          "sentaurus": 1.6198897223111938e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806054708834e-06,
+          "sentaurus": 1.4576110079391333e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718117929519106e-06,
+          "sentaurus": 5.13146596099916e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117502177896e-06,
+          "sentaurus": 8.41438108953308e-14
+        }
+      ],
+      "significant_only_row_count": 1307,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 946
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 3125
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 29
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 10
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 7
+        }
+      ]
+    },
+    "p02_i02": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 77082
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 84320,
+        "strict_nonzero": 78508
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 81616,
+        "strict_nonzero": 77382
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 81245,
+        "strict_nonzero": 77081
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.3250703591965408e-35,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.1706105182035881e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 4.619383902357364e-12,
+        "full_backward_error": 2.1587208064175259e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 77074,
+        "right_stored": 76771,
+        "left_strict_nonzero": 77074,
+        "right_strict_nonzero": 76771,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 77074,
+            "right": 76771,
+            "shared": 76764,
+            "left_only": 310,
+            "right_only": 7
+          },
+          {
+            "relative": 1e-14,
+            "left": 72355,
+            "right": 70717,
+            "shared": 70707,
+            "left_only": 1648,
+            "right_only": 10
+          },
+          {
+            "relative": 1e-12,
+            "left": 71293,
+            "right": 67384,
+            "shared": 67363,
+            "left_only": 3930,
+            "right_only": 21
+          },
+          {
+            "relative": 1e-10,
+            "left": 69283,
+            "right": 64137,
+            "shared": 64084,
+            "left_only": 5199,
+            "right_only": 53
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.9139885769768122,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 8.548717289613705e-15,
+        "hole_max_relative": 1.2878587085651816e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.72465237576818e-06,
+          "sentaurus": 3.823778364566132e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651599941337e-06,
+          "sentaurus": -3.8322326566655323e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549634959589e-06,
+          "sentaurus": 5.956151669065016e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549581791415e-06,
+          "sentaurus": 1.1047730444920589e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549573287488e-06,
+          "sentaurus": -1.6010785080812535e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570438702e-06,
+          "sentaurus": -2.7218596879907256e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549562161121e-06,
+          "sentaurus": -1.2968996055819755e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549508490771e-06,
+          "sentaurus": -5.892099821017062e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806057843745e-06,
+          "sentaurus": 1.4576110079391333e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806047581512e-06,
+          "sentaurus": 1.6198901719882955e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718117889485042e-06,
+          "sentaurus": 4.696128034357216e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.7181175027274926e-06,
+          "sentaurus": 7.927062515109817e-14
+        }
+      ],
+      "significant_only_row_count": 1241,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 8
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 939
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2980
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 10
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 6
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 5
+        }
+      ]
+    },
+    "p02_i03": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 76262
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 83467,
+        "strict_nonzero": 77655
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 80763,
+        "strict_nonzero": 76529
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 80392,
+        "strict_nonzero": 76228
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.1444988979936736e-16,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.413123220931173e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 3.737982146034824e-14,
+        "full_backward_error": 2.023951122600016e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 76221,
+        "right_stored": 75954,
+        "left_strict_nonzero": 76221,
+        "right_strict_nonzero": 75954,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 76221,
+            "right": 75954,
+            "shared": 75920,
+            "left_only": 301,
+            "right_only": 34
+          },
+          {
+            "relative": 1e-14,
+            "left": 71451,
+            "right": 69281,
+            "shared": 69244,
+            "left_only": 2207,
+            "right_only": 37
+          },
+          {
+            "relative": 1e-12,
+            "left": 70260,
+            "right": 65808,
+            "shared": 65745,
+            "left_only": 4515,
+            "right_only": 63
+          },
+          {
+            "relative": 1e-10,
+            "left": 68251,
+            "right": 62241,
+            "shared": 62152,
+            "left_only": 6099,
+            "right_only": 89
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.9140227996874715,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 8.992806499463768e-15,
+        "hole_max_relative": 1.27675647831893e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.72465236707539e-06,
+          "sentaurus": 3.80898209811022e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.72465161544993e-06,
+          "sentaurus": -3.815322637854862e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.7245496350451415e-06,
+          "sentaurus": 5.956151669065016e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549584748958e-06,
+          "sentaurus": 1.1047730444920589e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549573287488e-06,
+          "sentaurus": -1.6010785080812535e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570441614e-06,
+          "sentaurus": -2.721859687617767e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549561900609e-06,
+          "sentaurus": -1.296899605544624e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549505691108e-06,
+          "sentaurus": -5.892099820979681e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806057843745e-06,
+          "sentaurus": 1.4576110079391333e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.7238060510074016e-06,
+          "sentaurus": 1.6198901756148276e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718117896081858e-06,
+          "sentaurus": 4.701001220103249e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.7181174959481144e-06,
+          "sentaurus": 7.927062515109817e-14
+        }
+      ],
+      "significant_only_row_count": 1416,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 1004
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 3506
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 27
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 27
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 7
+        }
+      ]
+    },
+    "p03_i01": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 77388
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 84605,
+        "strict_nonzero": 78793
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 81901,
+        "strict_nonzero": 77667
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 81530,
+        "strict_nonzero": 77366
+      },
+      "core_vs_independent_python_relative_Frobenius": 0.0,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.3266070200636594e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 3.496991238249869e-10,
+        "full_backward_error": 2.3948536716493293e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 77361,
+        "right_stored": 77090,
+        "left_strict_nonzero": 77361,
+        "right_strict_nonzero": 77090,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 77361,
+            "right": 77090,
+            "shared": 77070,
+            "left_only": 291,
+            "right_only": 20
+          },
+          {
+            "relative": 1e-14,
+            "left": 71907,
+            "right": 70216,
+            "shared": 70188,
+            "left_only": 1719,
+            "right_only": 28
+          },
+          {
+            "relative": 1e-12,
+            "left": 70753,
+            "right": 66912,
+            "shared": 66860,
+            "left_only": 3893,
+            "right_only": 52
+          },
+          {
+            "relative": 1e-10,
+            "left": 68864,
+            "right": 63867,
+            "shared": 63806,
+            "left_only": 5058,
+            "right_only": 61
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8647246817347944,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.2989609388114332e-14,
+        "hole_max_relative": 1.27675647831893e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652646299639e-06,
+          "sentaurus": 6.584338934753006e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651327899725e-06,
+          "sentaurus": -6.594906983930148e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549683484638e-06,
+          "sentaurus": 1.1175786756719433e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549587106076e-06,
+          "sentaurus": 1.6331410134147968e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549573206345e-06,
+          "sentaurus": 2.7219321467420834e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570388044e-06,
+          "sentaurus": -7.20498231268836e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.7245495568195855e-06,
+          "sentaurus": -1.8252676209789974e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549464739038e-06,
+          "sentaurus": -1.099965690115979e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806056999358e-06,
+          "sentaurus": -2.4292541701084792e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806048820673e-06,
+          "sentaurus": 6.478476532787754e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718118233831557e-06,
+          "sentaurus": 8.121977613779993e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117562634999e-06,
+          "sentaurus": 1.3612445883380613e-13
+        }
+      ],
+      "significant_only_row_count": 1248,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 884
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 3004
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 10
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 20
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 9
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 13
+        }
+      ]
+    },
+    "p03_i02": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 78129
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 85363,
+        "strict_nonzero": 79551
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 82659,
+        "strict_nonzero": 78425
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 82288,
+        "strict_nonzero": 78124
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.1445061127420393e-16,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.4725012713333336e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 3.2827287763104174e-11,
+        "full_backward_error": 2.267704832970935e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 78112,
+        "right_stored": 77815,
+        "left_strict_nonzero": 78112,
+        "right_strict_nonzero": 77815,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 78112,
+            "right": 77815,
+            "shared": 77811,
+            "left_only": 301,
+            "right_only": 4
+          },
+          {
+            "relative": 1e-14,
+            "left": 72641,
+            "right": 71238,
+            "shared": 71230,
+            "left_only": 1411,
+            "right_only": 8
+          },
+          {
+            "relative": 1e-12,
+            "left": 71630,
+            "right": 68374,
+            "shared": 68353,
+            "left_only": 3277,
+            "right_only": 21
+          },
+          {
+            "relative": 1e-10,
+            "left": 69802,
+            "right": 64864,
+            "shared": 64820,
+            "left_only": 4982,
+            "right_only": 44
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8926303467645443,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.2656542480726785e-14,
+        "hole_max_relative": 1.1879386363489175e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652573621531e-06,
+          "sentaurus": 5.893141916032321e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.7246514001677925e-06,
+          "sentaurus": -5.893141202465537e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549669506014e-06,
+          "sentaurus": 1.0231128872758139e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549587190069e-06,
+          "sentaurus": 1.505051808827475e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576239314e-06,
+          "sentaurus": -3.201864622076602e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570585539e-06,
+          "sentaurus": -2.4016370439673466e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549553389741e-06,
+          "sentaurus": -1.6811672561361617e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549476954703e-06,
+          "sentaurus": -1.0151065910960496e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.72380605491022e-06,
+          "sentaurus": 2.5912797044636265e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806050605054e-06,
+          "sentaurus": -9.716800374082476e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.71811814748792e-06,
+          "sentaurus": 7.239930993759816e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117548756515e-06,
+          "sentaurus": 1.228044177995782e-13
+        }
+      ],
+      "significant_only_row_count": 1171,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 872
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2400
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 1
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 13
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 5
+        }
+      ]
+    },
+    "p03_i03": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 77428
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 84649,
+        "strict_nonzero": 78837
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 81945,
+        "strict_nonzero": 77711
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 81574,
+        "strict_nonzero": 77410
+      },
+      "core_vs_independent_python_relative_Frobenius": 1.1625413183264777e-35,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.587512788200651e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 2.2850454167722134e-12,
+        "full_backward_error": 2.1129278301406742e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 77404,
+        "right_stored": 77118,
+        "left_strict_nonzero": 77404,
+        "right_strict_nonzero": 77118,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 77404,
+            "right": 77118,
+            "shared": 77104,
+            "left_only": 300,
+            "right_only": 14
+          },
+          {
+            "relative": 1e-14,
+            "left": 71856,
+            "right": 69699,
+            "shared": 69684,
+            "left_only": 2172,
+            "right_only": 15
+          },
+          {
+            "relative": 1e-12,
+            "left": 70702,
+            "right": 66504,
+            "shared": 66461,
+            "left_only": 4241,
+            "right_only": 43
+          },
+          {
+            "relative": 1e-10,
+            "left": 68816,
+            "right": 63249,
+            "shared": 63189,
+            "left_only": 5627,
+            "right_only": 60
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8925273037959714,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.3766765505351941e-14,
+        "hole_max_relative": 1.3766765505351941e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652580054557e-06,
+          "sentaurus": 5.899483173084899e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651399583596e-06,
+          "sentaurus": -5.867776174243308e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.72454966966322e-06,
+          "sentaurus": 1.007101736700177e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549590205054e-06,
+          "sentaurus": 1.505051808827475e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549573123851e-06,
+          "sentaurus": -3.2018646220766026e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570028089e-06,
+          "sentaurus": -2.401637042800556e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549559484878e-06,
+          "sentaurus": -1.681167256019299e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549474078975e-06,
+          "sentaurus": -9.990954405086871e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806059664204e-06,
+          "sentaurus": -9.716800362745273e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806054969559e-06,
+          "sentaurus": 6.478476532787754e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718118147723441e-06,
+          "sentaurus": 7.257799341495241e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117542357794e-06,
+          "sentaurus": 1.2150490160111542e-13
+        }
+      ],
+      "significant_only_row_count": 1328,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 930
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 3306
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 6
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 21
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 7
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 9
+        }
+      ]
+    },
+    "p04_i01": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 78679
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 85811,
+        "strict_nonzero": 79999
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 83107,
+        "strict_nonzero": 78873
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 82736,
+        "strict_nonzero": 78572
+      },
+      "core_vs_independent_python_relative_Frobenius": 0.0,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.534849038101745e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 3.595516218091177e-09,
+        "full_backward_error": 2.324140019255611e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 78541,
+        "right_stored": 78291,
+        "left_strict_nonzero": 78541,
+        "right_strict_nonzero": 78291,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 78541,
+            "right": 78291,
+            "shared": 78285,
+            "left_only": 256,
+            "right_only": 6
+          },
+          {
+            "relative": 1e-14,
+            "left": 72255,
+            "right": 70680,
+            "shared": 70667,
+            "left_only": 1588,
+            "right_only": 13
+          },
+          {
+            "relative": 1e-12,
+            "left": 71142,
+            "right": 67430,
+            "shared": 67404,
+            "left_only": 3738,
+            "right_only": 26
+          },
+          {
+            "relative": 1e-10,
+            "left": 69312,
+            "right": 64447,
+            "shared": 64406,
+            "left_only": 4906,
+            "right_only": 41
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8209838573939948,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.0880185641326534e-14,
+        "hole_max_relative": 1.27675647831893e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652859352915e-06,
+          "sentaurus": 8.679067514417742e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651123479412e-06,
+          "sentaurus": -8.683294310560619e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549716089617e-06,
+          "sentaurus": 1.372155969824066e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.7245495924252905e-06,
+          "sentaurus": 2.0174086271767334e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576100731e-06,
+          "sentaurus": 4.4831587098182105e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.72454957068896e-06,
+          "sentaurus": -7.204982705793634e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549551083913e-06,
+          "sentaurus": -2.36964677983596e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549429498444e-06,
+          "sentaurus": -1.4313965109711895e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806059609876e-06,
+          "sentaurus": -1.6194911986792991e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806058513998e-06,
+          "sentaurus": 3.696955049367223e-20
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.7181175992836175e-06,
+          "sentaurus": 1.7917093290781749e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2404",
+          "column": "psi2404",
+          "vela": 5.718117448244196e-06,
+          "sentaurus": 3.0051449134298085e-14
+        }
+      ],
+      "significant_only_row_count": 1198,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 866
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2867
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 5
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 14
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 7
+        }
+      ]
+    },
+    "p04_i02": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 79246
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 86423,
+        "strict_nonzero": 80611
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 83719,
+        "strict_nonzero": 79485
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 83348,
+        "strict_nonzero": 79184
+      },
+      "core_vs_independent_python_relative_Frobenius": 1.1625476288782153e-35,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.3530348742414694e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 3.7741407221680845e-11,
+        "full_backward_error": 2.654756008744807e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 79184,
+        "right_stored": 78938,
+        "left_strict_nonzero": 79184,
+        "right_strict_nonzero": 78938,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 79184,
+            "right": 78938,
+            "shared": 78935,
+            "left_only": 249,
+            "right_only": 3
+          },
+          {
+            "relative": 1e-14,
+            "left": 72758,
+            "right": 71500,
+            "shared": 71494,
+            "left_only": 1264,
+            "right_only": 6
+          },
+          {
+            "relative": 1e-12,
+            "left": 71775,
+            "right": 69318,
+            "shared": 69307,
+            "left_only": 2468,
+            "right_only": 11
+          },
+          {
+            "relative": 1e-10,
+            "left": 70103,
+            "right": 65329,
+            "shared": 65305,
+            "left_only": 4798,
+            "right_only": 24
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8762252549396324,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.2878587085651816e-14,
+        "hole_max_relative": 1.1546319456101628e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.72465273484514e-06,
+          "sentaurus": 7.461546160345233e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651242738182e-06,
+          "sentaurus": -7.459431697560503e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549691482556e-06,
+          "sentaurus": 1.2280556146436477e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549589927369e-06,
+          "sentaurus": 2.22555358463125e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576145394e-06,
+          "sentaurus": 7.525277318767995e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570671182e-06,
+          "sentaurus": -8.005222938909417e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549551312731e-06,
+          "sentaurus": -1.6171226846073518e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549445682139e-06,
+          "sentaurus": -1.1896281354494312e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806051690782e-06,
+          "sentaurus": 2.1054216916674057e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806047822805e-06,
+          "sentaurus": -4.858223242292505e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.7181183438910665e-06,
+          "sentaurus": 9.210322430377404e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117580067306e-06,
+          "sentaurus": 1.5577964133553102e-13
+        }
+      ],
+      "significant_only_row_count": 1110,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 851
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 1614
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 1
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 7
+        }
+      ]
+    },
+    "p04_i03": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 78592
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 85775,
+        "strict_nonzero": 79963
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 83071,
+        "strict_nonzero": 78837
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 82700,
+        "strict_nonzero": 78536
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.1445177986434693e-16,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.3274055962420275e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 9.065664885454794e-13,
+        "full_backward_error": 2.31697585871525e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 78532,
+        "right_stored": 78278,
+        "left_strict_nonzero": 78532,
+        "right_strict_nonzero": 78278,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 78532,
+            "right": 78278,
+            "shared": 78274,
+            "left_only": 258,
+            "right_only": 4
+          },
+          {
+            "relative": 1e-14,
+            "left": 72012,
+            "right": 70404,
+            "shared": 70393,
+            "left_only": 1619,
+            "right_only": 11
+          },
+          {
+            "relative": 1e-12,
+            "left": 70900,
+            "right": 67329,
+            "shared": 67303,
+            "left_only": 3597,
+            "right_only": 26
+          },
+          {
+            "relative": 1e-10,
+            "left": 69087,
+            "right": 63824,
+            "shared": 63781,
+            "left_only": 5306,
+            "right_only": 43
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8754723877383158,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.1213252548714081e-14,
+        "hole_max_relative": 1.0658141036401503e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652729370328e-06,
+          "sentaurus": 7.457318655643707e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.7246512420115005e-06,
+          "sentaurus": -7.444635431081247e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549694809507e-06,
+          "sentaurus": 1.1800221629167498e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549596027262e-06,
+          "sentaurus": 2.22555358463125e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576145394e-06,
+          "sentaurus": 7.525277318767995e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549567685531e-06,
+          "sentaurus": -8.005222916134569e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549547877622e-06,
+          "sentaurus": -2.4176802130504023e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549448470204e-06,
+          "sentaurus": -1.256874967844403e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806056630052e-06,
+          "sentaurus": -4.858223220232239e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806051690782e-06,
+          "sentaurus": 2.1054216916674057e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn2368",
+          "column": "psi2368",
+          "vela": 5.718118337954374e-06,
+          "sentaurus": 9.177834525404317e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117569894646e-06,
+          "sentaurus": 1.533430484634142e-13
+        }
+      ],
+      "significant_only_row_count": 1269,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 917
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2677
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 1
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 18
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 5
+        }
+      ]
+    },
+    "p05_i01": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 79602
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 86715,
+        "strict_nonzero": 80903
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 84011,
+        "strict_nonzero": 79777
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 83640,
+        "strict_nonzero": 79476
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.1445336098922302e-16,
+      "core_vs_independent_python_rhs_max": 2.842170943040401e-14,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.765041241667648e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 5.222919347014354e-09,
+        "full_backward_error": 2.4149180293434433e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 79472,
+        "right_stored": 79275,
+        "left_strict_nonzero": 79472,
+        "right_strict_nonzero": 79275,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 79472,
+            "right": 79275,
+            "shared": 79268,
+            "left_only": 204,
+            "right_only": 7
+          },
+          {
+            "relative": 1e-14,
+            "left": 72418,
+            "right": 70963,
+            "shared": 70943,
+            "left_only": 1475,
+            "right_only": 20
+          },
+          {
+            "relative": 1e-12,
+            "left": 71351,
+            "right": 67748,
+            "shared": 67727,
+            "left_only": 3624,
+            "right_only": 21
+          },
+          {
+            "relative": 1e-10,
+            "left": 69608,
+            "right": 64823,
+            "shared": 64797,
+            "left_only": 4811,
+            "right_only": 26
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8098595066095761,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.2878587085651816e-14,
+        "hole_max_relative": 1.1657341758564144e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652943815396e-06,
+          "sentaurus": 9.58375352056711e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651036230769e-06,
+          "sentaurus": -9.541477767295477e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549726419875e-06,
+          "sentaurus": 1.6091209983431653e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549601326154e-06,
+          "sentaurus": 2.8019550052741557e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549576476697e-06,
+          "sentaurus": 9.12639237610988e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549567719356e-06,
+          "sentaurus": -2.401637759694406e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.72454955462273e-06,
+          "sentaurus": -2.962059373671346e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.7245494101619725e-06,
+          "sentaurus": -1.537070107034016e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806058360453e-06,
+          "sentaurus": 3.07713771725982e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.7238060501006375e-06,
+          "sentaurus": 4.858933028886842e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117616456765e-06,
+          "sentaurus": 1.9492756681414056e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2404",
+          "column": "psi2404",
+          "vela": 5.718117453938182e-06,
+          "sentaurus": 3.394999772968836e-14
+        }
+      ],
+      "significant_only_row_count": 1180,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 6
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 850
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2765
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 8
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 4
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 7
+        }
+      ]
+    },
+    "p05_i02": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 80487
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 87602,
+        "strict_nonzero": 81790
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 84898,
+        "strict_nonzero": 80664
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 84527,
+        "strict_nonzero": 80363
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.2706155102479594e-38,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 3.116800969470305e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 1.5399178807107283e-10,
+        "full_backward_error": 2.543635949583182e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 80357,
+        "right_stored": 80156,
+        "left_strict_nonzero": 80357,
+        "right_strict_nonzero": 80156,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 80357,
+            "right": 80156,
+            "shared": 80150,
+            "left_only": 207,
+            "right_only": 6
+          },
+          {
+            "relative": 1e-14,
+            "left": 72791,
+            "right": 71632,
+            "shared": 71620,
+            "left_only": 1171,
+            "right_only": 12
+          },
+          {
+            "relative": 1e-12,
+            "left": 71824,
+            "right": 69796,
+            "shared": 69783,
+            "left_only": 2041,
+            "right_only": 13
+          },
+          {
+            "relative": 1e-10,
+            "left": 70183,
+            "right": 65456,
+            "shared": 65432,
+            "left_only": 4751,
+            "right_only": 24
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8672655515719929,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.176836406102666e-14,
+        "hole_max_relative": 1.3100631690576847e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652812100256e-06,
+          "sentaurus": 8.184449464326166e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.724651172381415e-06,
+          "sentaurus": -8.169652489101401e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.724549702102451e-06,
+          "sentaurus": 1.3561448192485533e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.724549595843508e-06,
+          "sentaurus": 2.529765445526153e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.724549579062048e-06,
+          "sentaurus": 1.2809285951343004e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549573701709e-06,
+          "sentaurus": -5.6038676292707925e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.7245495450476156e-06,
+          "sentaurus": -2.7058809399532553e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549438033181e-06,
+          "sentaurus": -1.3001050760579354e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806055404274e-06,
+          "sentaurus": 2.1054216916674065e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.723806047527458e-06,
+          "sentaurus": -4.858224837957715e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117587218461e-06,
+          "sentaurus": 1.6828748474571098e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2404",
+          "column": "psi2404",
+          "vela": 5.718117451336329e-06,
+          "sentaurus": 3.086364675833845e-14
+        }
+      ],
+      "significant_only_row_count": 1092,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 835
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 1203
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 1
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 4
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 4
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 4
+        }
+      ]
+    },
+    "p05_i03": {
+      "native_raw": {
+        "dimension": 6843,
+        "stored": 109823,
+        "strict_nonzero": 79875
+      },
+      "vela_raw": {
+        "dimension": 7801,
+        "stored": 87016,
+        "strict_nonzero": 81204
+      },
+      "core_carrier": {
+        "dimension": 6843,
+        "stored": 84312,
+        "strict_nonzero": 80078
+      },
+      "core_free": {
+        "dimension": 6765,
+        "stored": 83941,
+        "strict_nonzero": 79777
+      },
+      "core_vs_independent_python_relative_Frobenius": 2.270615576059492e-38,
+      "core_vs_independent_python_rhs_max": 1.3877787807814457e-17,
+      "reduction": {
+        "backend": "pardiso_mkl",
+        "backend_dimension": 6765,
+        "backward_error": 2.489928135311385e-16,
+        "carrier_reduced_dimension": 6843,
+        "direction_max_difference": 2.3579055374867153e-12,
+        "full_backward_error": 2.2230176732110154e-16,
+        "full_dimension": 7801,
+        "reduced_dimension": 6765
+      },
+      "common_QF": {
+        "dimension": 6765,
+        "left_stored": 79773,
+        "right_stored": 79571,
+        "left_strict_nonzero": 79773,
+        "right_strict_nonzero": 79571,
+        "thresholds": [
+          {
+            "relative": 0.0,
+            "left": 79773,
+            "right": 79571,
+            "shared": 79562,
+            "left_only": 211,
+            "right_only": 9
+          },
+          {
+            "relative": 1e-14,
+            "left": 72093,
+            "right": 70671,
+            "shared": 70660,
+            "left_only": 1433,
+            "right_only": 11
+          },
+          {
+            "relative": 1e-12,
+            "left": 71017,
+            "right": 67993,
+            "shared": 67973,
+            "left_only": 3044,
+            "right_only": 20
+          },
+          {
+            "relative": 1e-10,
+            "left": 69248,
+            "right": 64115,
+            "shared": 64071,
+            "left_only": 5177,
+            "right_only": 44
+          }
+        ]
+      },
+      "common_QF_relative_Frobenius": 0.8665095372004326,
+      "state_match": {
+        "psi_max_abs_V": 5.551115123125783e-17,
+        "electron_max_relative": 1.4432899320127035e-14,
+        "hole_max_relative": 1.3211653993039363e-14
+      },
+      "top_significant_position_differences": [
+        {
+          "side": "left_only",
+          "row": "fn2176",
+          "column": "psi2176",
+          "vela": 5.724652804632652e-06,
+          "sentaurus": 8.152743179063944e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn883",
+          "column": "psi883",
+          "vela": 5.7246511707953615e-06,
+          "sentaurus": -8.127377442056544e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2366",
+          "column": "psi2366",
+          "vela": 5.72454970875513e-06,
+          "sentaurus": 1.372155969824197e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2367",
+          "column": "psi2367",
+          "vela": 5.7245496019296956e-06,
+          "sentaurus": 2.3696539397919715e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn2402",
+          "column": "psi2402",
+          "vela": 5.7245495729470335e-06,
+          "sentaurus": 1.2809285951342992e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1109",
+          "column": "psi1109",
+          "vela": 5.724549570589913e-06,
+          "sentaurus": -5.6038676266022204e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1074",
+          "column": "psi1074",
+          "vela": 5.724549553962968e-06,
+          "sentaurus": -2.5457694339513615e-14
+        },
+        {
+          "side": "left_only",
+          "row": "fn1073",
+          "column": "psi1073",
+          "vela": 5.724549444157198e-06,
+          "sentaurus": -1.301706191088698e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2403",
+          "column": "psi2403",
+          "vela": 5.723806055461141e-06,
+          "sentaurus": 2.1054216916674057e-15
+        },
+        {
+          "side": "left_only",
+          "row": "fn1110",
+          "column": "psi1110",
+          "vela": 5.7238060533944454e-06,
+          "sentaurus": -4.85822481242896e-16
+        },
+        {
+          "side": "left_only",
+          "row": "fn2369",
+          "column": "psi2369",
+          "vela": 5.718117584198395e-06,
+          "sentaurus": 1.6796260569609695e-13
+        },
+        {
+          "side": "left_only",
+          "row": "fn2404",
+          "column": "psi2404",
+          "vela": 5.7181174514614e-06,
+          "sentaurus": 2.7777295786987004e-14
+        }
+      ],
+      "significant_only_row_count": 1227,
+      "significant_difference_blocks": [
+        {
+          "side": "left_only",
+          "row_block": "Vin",
+          "column_block": "psi",
+          "count": 3
+        },
+        {
+          "side": "left_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 900
+        },
+        {
+          "side": "left_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 2141
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "fn",
+          "count": 3
+        },
+        {
+          "side": "right_only",
+          "row_block": "fn",
+          "column_block": "psi",
+          "count": 12
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "fp",
+          "count": 2
+        },
+        {
+          "side": "right_only",
+          "row_block": "fp",
+          "column_block": "psi",
+          "count": 3
+        }
+      ]
+    }
+  },
+  "prefix": {
+    "resumed_prefix_on": {
+      "exit_code": 0,
+      "seconds": 55.26415999999972,
+      "complete": true,
+      "stop_reason": "outer limit",
+      "failure": null,
+      "poisson": {
+        "converged": true,
+        "iterations": 7,
+        "residual": 1.0785795610509964e-10,
+        "trace": [
+          {
+            "alpha": 1.0,
+            "iteration": 1,
+            "residual": 279.9932780940603
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 2,
+            "residual": 52.06213749884765
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 3,
+            "residual": 9.214742518884695
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 4,
+            "residual": 0.9223646486015865
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 5,
+            "residual": 0.031727203097444326
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 6,
+            "residual": 4.8943843149461974e-05
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 7,
+            "residual": 1.0785795610509964e-10
+          }
+        ]
+      },
+      "points": [
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 0.0,
+            "current_A_per_um": 0.0,
+            "electron": {
+              "contact_flux_A_per_um": 0.0,
+              "gross_contact_scale_A_per_um": 0.0,
+              "gross_source_scale_A_per_um": 0.0,
+              "net_denominator_A_per_um": 2.98739169959099e-19,
+              "qualified": false,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "source_A_per_um": 0.0
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 0.0,
+              "ledger_rounding_defect_A_per_um": 0.0,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "sum_free_equations_A_per_um": 0.0
+            },
+            "equation_inf": 6.295825298780019e-11,
+            "fixed_scaled_residual_inf": 4.789006012352978e-13,
+            "global_enforced": false,
+            "global_satisfied": true,
+            "hole": {
+              "contact_flux_A_per_um": 0.0,
+              "gross_contact_scale_A_per_um": 0.0,
+              "gross_source_scale_A_per_um": 0.0,
+              "net_denominator_A_per_um": 2.98739169959099e-19,
+              "qualified": false,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "source_A_per_um": 0.0
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 0.0,
+              "ledger_rounding_defect_A_per_um": 0.0,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "sum_free_equations_A_per_um": 0.0
+            },
+            "inner_V": 0.0,
+            "load_V": 0.0,
+            "original_gates_pass": true,
+            "row_max_ratio": 0.0,
+            "row_worst_carrier": "",
+            "row_worst_node": 18446744073709551615,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "inner_V": 0.0,
+          "outer_V": 0.0,
+          "updates": 0
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 1.2719861775639686e-15,
+            "current_A_per_um": 4.755744855832378e-10,
+            "electron": {
+              "contact_flux_A_per_um": -2.1482876165440218e-15,
+              "gross_contact_scale_A_per_um": 9.511468228762615e-10,
+              "gross_source_scale_A_per_um": 8.751803267653068e-16,
+              "net_denominator_A_per_um": 2.1482876165440218e-15,
+              "qualified": true,
+              "ratio": 0.5926149423496109,
+              "signed_mismatch_A_per_um": -1.2731073420286183e-15,
+              "source_A_per_um": -8.751802745154034e-16
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -2.551498359429803e-25,
+              "ledger_rounding_defect_A_per_um": 8.851341577659068e-32,
+              "ratio": 0.5926149423440223,
+              "signed_mismatch_A_per_um": -1.2731073419991457e-15,
+              "sum_free_equations_A_per_um": 1.273107341743996e-15
+            },
+            "equation_inf": 2.223842920982712e-11,
+            "fixed_scaled_residual_inf": 3.925290037226112e-15,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -8.763014389277357e-16,
+              "gross_contact_scale_A_per_um": 8.763040360078372e-16,
+              "gross_source_scale_A_per_um": 8.751803267653068e-16,
+              "net_denominator_A_per_um": 8.763014389277357e-16,
+              "qualified": true,
+              "ratio": 0.001279427788803068,
+              "signed_mismatch_A_per_um": -1.1211644123322597e-18,
+              "source_A_per_um": -8.751802745154034e-16
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 8.148421706216294e-32,
+              "ledger_rounding_defect_A_per_um": -1.4392225805352338e-33,
+              "ratio": 0.0012794277888047722,
+              "signed_mismatch_A_per_um": -1.1211644123337526e-18,
+              "sum_free_equations_A_per_um": 1.1211644123338328e-18
+            },
+            "inner_V": 0.00524425280636137,
+            "load_V": -2.3378062524032073e-09,
+            "original_gates_pass": true,
+            "row_max_ratio": 1.2230613487977456e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1097,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.00524425280636137,
+          "outer_V": 0.01,
+          "updates": 4
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 8.404506564959339e-16,
+            "current_A_per_um": 1.0308409012866751e-09,
+            "electron": {
+              "contact_flux_A_per_um": -2.983353543302453e-15,
+              "gross_contact_scale_A_per_um": 2.061678819214119e-09,
+              "gross_source_scale_A_per_um": 2.1420960657925967e-15,
+              "net_denominator_A_per_um": 2.983353543302453e-15,
+              "qualified": true,
+              "ratio": 0.28198387437409067,
+              "signed_mismatch_A_per_um": -8.412575907680972e-16,
+              "source_A_per_um": -2.142095952534356e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -2.63956773619794e-25,
+              "ledger_rounding_defect_A_per_um": -1.1204498666071202e-31,
+              "ratio": 0.2819838744480373,
+              "signed_mismatch_A_per_um": -8.41257591075347e-16,
+              "sum_free_equations_A_per_um": 8.412575908113902e-16
+            },
+            "equation_inf": 2.52490940360282e-11,
+            "fixed_scaled_residual_inf": 3.5978927721322785e-15,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -2.1429028871583187e-15,
+              "gross_contact_scale_A_per_um": 2.142908574453224e-15,
+              "gross_source_scale_A_per_um": 2.1420960657925967e-15,
+              "net_denominator_A_per_um": 2.1429028871583187e-15,
+              "qualified": true,
+              "ratio": 0.00037656145259723354,
+              "signed_mismatch_A_per_um": -8.069346239631423e-19,
+              "source_A_per_um": -2.142095952534356e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -7.185163033447384e-32,
+              "ledger_rounding_defect_A_per_um": 1.106603224751847e-33,
+              "ratio": 0.00037656145259473944,
+              "signed_mismatch_A_per_um": -8.069346239577975e-19,
+              "sum_free_equations_A_per_um": 8.069346239577267e-19
+            },
+            "inner_V": 0.013381587651933823,
+            "load_V": -3.3351994291330733e-09,
+            "original_gates_pass": true,
+            "row_max_ratio": 5.939680376695055e-06,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1095,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.013381587651933823,
+          "outer_V": 0.023690000000000003,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 2.1818192824195032e-15,
+            "current_A_per_um": 1.5982644256645147e-09,
+            "electron": {
+              "contact_flux_A_per_um": -6.203720282797016e-15,
+              "gross_contact_scale_A_per_um": 3.1965226475997692e-09,
+              "gross_source_scale_A_per_um": 4.021161978671576e-15,
+              "net_denominator_A_per_um": 6.203720282797016e-15,
+              "qualified": true,
+              "ratio": 0.351814456526022,
+              "signed_mismatch_A_per_um": -2.182558479731692e-15,
+              "source_A_per_um": -4.021161803065324e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -4.238685451759434e-26,
+              "ledger_rounding_defect_A_per_um": 4.473584672924352e-32,
+              "ratio": 0.35181445652373594,
+              "signed_mismatch_A_per_um": -2.18255847970982e-15,
+              "sum_free_equations_A_per_um": 2.182558479667433e-15
+            },
+            "equation_inf": 2.832003553685845e-11,
+            "fixed_scaled_residual_inf": 9.936353785189337e-13,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -4.021901000377881e-15,
+              "gross_contact_scale_A_per_um": 4.021909977084648e-15,
+              "gross_source_scale_A_per_um": 4.021161978671576e-15,
+              "net_denominator_A_per_um": 4.021901000377881e-15,
+              "qualified": true,
+              "ratio": 0.0001837930154143025,
+              "signed_mismatch_A_per_um": -7.391973125572506e-19,
+              "source_A_per_um": -4.021161803065324e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 4.526048336498905e-31,
+              "ledger_rounding_defect_A_per_um": -9.353675894996937e-34,
+              "ratio": 0.00018379301541065045,
+              "signed_mismatch_A_per_um": -7.391973125425623e-19,
+              "sum_free_equations_A_per_um": 7.39197312543014e-19
+            },
+            "inner_V": 0.026636074215838045,
+            "load_V": 1.1805816518828394e-08,
+            "original_gates_pass": true,
+            "row_max_ratio": 2.514280640952344e-06,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1041,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.026636074215838045,
+          "outer_V": 0.04261870666666667,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": -1.999851902220671e-17,
+            "current_A_per_um": 2.022532460997917e-09,
+            "electron": {
+              "contact_flux_A_per_um": -6.775973238533731e-15,
+              "gross_contact_scale_A_per_um": 4.0450581460109284e-09,
+              "gross_source_scale_A_per_um": 6.79504871315149e-15,
+              "net_denominator_A_per_um": 6.795048490919739e-15,
+              "qualified": true,
+              "ratio": 0.00280722829447037,
+              "signed_mismatch_A_per_um": 1.907525238600808e-17,
+              "source_A_per_um": -6.795048490919739e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -7.58072438150886e-25,
+              "ledger_rounding_defect_A_per_um": 5.604556178273031e-32,
+              "ratio": 0.0028072283319263164,
+              "signed_mismatch_A_per_um": 1.9075252640523073e-17,
+              "sum_free_equations_A_per_um": -1.9075253398595455e-17
+            },
+            "equation_inf": 2.792537785189482e-11,
+            "fixed_scaled_residual_inf": 1.1487118573679935e-11,
+            "global_enforced": false,
+            "global_satisfied": true,
+            "hole": {
+              "contact_flux_A_per_um": -6.79597175729137e-15,
+              "gross_contact_scale_A_per_um": 6.795983423605583e-15,
+              "gross_source_scale_A_per_um": 6.79504871315149e-15,
+              "net_denominator_A_per_um": 6.79597175729137e-15,
+              "qualified": true,
+              "ratio": 0.00013585494534176502,
+              "signed_mismatch_A_per_um": -9.232663716309979e-19,
+              "source_A_per_um": -6.795048490919739e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 1.139802954208281e-30,
+              "ledger_rounding_defect_A_per_um": 1.052759549243864e-33,
+              "ratio": 0.00013585494534083207,
+              "signed_mismatch_A_per_um": -9.232663716246575e-19,
+              "sum_free_equations_A_per_um": 9.232663716257984e-19
+            },
+            "inner_V": 0.04856545483703292,
+            "load_V": -1.8970765694459324e-08,
+            "original_gates_pass": true,
+            "row_max_ratio": 2.5025853233115876e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1137,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.04856545483703292,
+          "outer_V": 0.06879079841777778,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 2.8189995537413207e-15,
+            "current_A_per_um": 2.18995143726984e-09,
+            "electron": {
+              "contact_flux_A_per_um": -1.3023512169734535e-14,
+              "gross_contact_scale_A_per_um": 4.379889851014634e-09,
+              "gross_source_scale_A_per_um": 1.0203417355433508e-14,
+              "net_denominator_A_per_um": 1.3023512169734535e-14,
+              "qualified": true,
+              "ratio": 0.21653875069844747,
+              "signed_mismatch_A_per_um": -2.820095054940343e-15,
+              "source_A_per_um": -1.0203417114794192e-14
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 1.5595597411202205e-25,
+              "ledger_rounding_defect_A_per_um": -3.5070930159264077e-32,
+              "ratio": 0.21653875068446782,
+              "signed_mismatch_A_per_um": -2.8200950547079593e-15,
+              "sum_free_equations_A_per_um": 2.820095054863915e-15
+            },
+            "equation_inf": 8.833291609895963e-11,
+            "fixed_scaled_residual_inf": 5.189376019903967e-12,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -1.0204512615740669e-14,
+              "gross_contact_scale_A_per_um": 1.0204525492870866e-14,
+              "gross_source_scale_A_per_um": 1.0203417355433508e-14,
+              "net_denominator_A_per_um": 1.0204512615740669e-14,
+              "qualified": true,
+              "ratio": 0.00010735455849085793,
+              "signed_mismatch_A_per_um": -1.0955009464772293e-18,
+              "source_A_per_um": -1.0203417114794192e-14
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 6.421108004501095e-31,
+              "ledger_rounding_defect_A_per_um": -1.4007110973914014e-33,
+              "ratio": 0.00010735455849061099,
+              "signed_mismatch_A_per_um": -1.0955009464747092e-18,
+              "sum_free_equations_A_per_um": 1.09550094647535e-18
+            },
+            "inner_V": 0.07866268268186262,
+            "load_V": 1.4659655017679185e-08,
+            "original_gates_pass": true,
+            "row_max_ratio": 5.759736533906282e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1131,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.07866268268186262,
+          "outer_V": 0.100562182394906,
+          "updates": 3
+        }
+      ],
+      "attempt_count": 6
+    },
+    "resumed_prefix_off": {
+      "exit_code": 0,
+      "seconds": 55.34758959999999,
+      "complete": true,
+      "stop_reason": "outer limit",
+      "failure": null,
+      "poisson": {
+        "converged": true,
+        "iterations": 7,
+        "residual": 1.0785652699733497e-10,
+        "trace": [
+          {
+            "alpha": 1.0,
+            "iteration": 1,
+            "residual": 279.9932780940603
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 2,
+            "residual": 52.062137498847655
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 3,
+            "residual": 9.214742518884693
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 4,
+            "residual": 0.9223646486015864
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 5,
+            "residual": 0.03172720309744293
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 6,
+            "residual": 4.894384314844077e-05
+          },
+          {
+            "alpha": 1.0,
+            "iteration": 7,
+            "residual": 1.0785652699733497e-10
+          }
+        ]
+      },
+      "points": [
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 0.0,
+            "current_A_per_um": 0.0,
+            "electron": {
+              "contact_flux_A_per_um": 0.0,
+              "gross_contact_scale_A_per_um": 0.0,
+              "gross_source_scale_A_per_um": 0.0,
+              "net_denominator_A_per_um": 2.98739169959099e-19,
+              "qualified": false,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "source_A_per_um": 0.0
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 0.0,
+              "ledger_rounding_defect_A_per_um": 0.0,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "sum_free_equations_A_per_um": 0.0
+            },
+            "equation_inf": 6.295825298780019e-11,
+            "fixed_scaled_residual_inf": 4.789006012352978e-13,
+            "global_enforced": false,
+            "global_satisfied": true,
+            "hole": {
+              "contact_flux_A_per_um": 0.0,
+              "gross_contact_scale_A_per_um": 0.0,
+              "gross_source_scale_A_per_um": 0.0,
+              "net_denominator_A_per_um": 2.98739169959099e-19,
+              "qualified": false,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "source_A_per_um": 0.0
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 0.0,
+              "ledger_rounding_defect_A_per_um": 0.0,
+              "ratio": 0.0,
+              "signed_mismatch_A_per_um": 0.0,
+              "sum_free_equations_A_per_um": 0.0
+            },
+            "inner_V": 0.0,
+            "load_V": 0.0,
+            "original_gates_pass": true,
+            "row_max_ratio": 0.0,
+            "row_worst_carrier": "",
+            "row_worst_node": 18446744073709551615,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "inner_V": 0.0,
+          "outer_V": 0.0,
+          "updates": 0
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 1.465716550490951e-15,
+            "current_A_per_um": 4.755746793136107e-10,
+            "electron": {
+              "contact_flux_A_per_um": -2.3420179895669853e-15,
+              "gross_contact_scale_A_per_um": 9.511470166066346e-10,
+              "gross_source_scale_A_per_um": 8.751803267654489e-16,
+              "net_denominator_A_per_um": 2.3420179895669853e-15,
+              "qualified": true,
+              "ratio": 0.6263135986084559,
+              "signed_mismatch_A_per_um": -1.46683771505144e-15,
+              "source_A_per_um": -8.751802745155455e-16
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -1.3951564503677538e-25,
+              "ledger_rounding_defect_A_per_um": -5.535646635560507e-32,
+              "ratio": 0.6263135985916416,
+              "signed_mismatch_A_per_um": -1.4668377149460551e-15,
+              "sum_free_equations_A_per_um": 1.4668377148065394e-15
+            },
+            "equation_inf": 2.223842920982712e-11,
+            "fixed_scaled_residual_inf": 3.925290037226112e-15,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -8.763014389277357e-16,
+              "gross_contact_scale_A_per_um": 8.763040360078372e-16,
+              "gross_source_scale_A_per_um": 8.751803267654489e-16,
+              "net_denominator_A_per_um": 8.763014389277357e-16,
+              "qualified": true,
+              "ratio": 0.0012794277886409217,
+              "signed_mismatch_A_per_um": -1.1211644121901705e-18,
+              "source_A_per_um": -8.751802745155455e-16
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 9.9612361089324e-32,
+              "ledger_rounding_defect_A_per_um": -1.5019199856239662e-33,
+              "ratio": 0.001279427788642946,
+              "signed_mismatch_A_per_um": -1.1211644121919441e-18,
+              "sum_free_equations_A_per_um": 1.1211644121920423e-18
+            },
+            "inner_V": 0.005244252806361372,
+            "load_V": -4.005025217718172e-10,
+            "original_gates_pass": true,
+            "row_max_ratio": 1.2273615880610004e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1097,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.005244252806361372,
+          "outer_V": 0.01,
+          "updates": 4
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 1.444814488333775e-15,
+            "current_A_per_um": 1.030841505650507e-09,
+            "electron": {
+              "contact_flux_A_per_um": -3.5877173753568005e-15,
+              "gross_contact_scale_A_per_um": 2.061679423577951e-09,
+              "gross_source_scale_A_per_um": 2.14209606579274e-15,
+              "net_denominator_A_per_um": 3.5877173753568005e-15,
+              "qualified": true,
+              "ratio": 0.4029362604624156,
+              "signed_mismatch_A_per_um": -1.4456214228223017e-15,
+              "source_A_per_um": -2.1420959525344986e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -7.230148538909721e-25,
+              "ledger_rounding_defect_A_per_um": -1.5175066872309737e-31,
+              "ratio": 0.40293626048368275,
+              "signed_mismatch_A_per_um": -1.4456214229500987e-15,
+              "sum_free_equations_A_per_um": 1.4456214222270839e-15
+            },
+            "equation_inf": 2.6008257450282686e-11,
+            "fixed_scaled_residual_inf": 3.5978927721322785e-15,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -2.1429028871583184e-15,
+              "gross_contact_scale_A_per_um": 2.1429085744532245e-15,
+              "gross_source_scale_A_per_um": 2.14209606579274e-15,
+              "net_denominator_A_per_um": 2.1429028871583184e-15,
+              "qualified": true,
+              "ratio": 0.0003765614525303863,
+              "signed_mismatch_A_per_um": -8.06934623819895e-19,
+              "source_A_per_um": -2.1420959525344986e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 1.4140079079901991e-33,
+              "ledger_rounding_defect_A_per_um": 1.1235152080478821e-33,
+              "ratio": 0.00037656145252770105,
+              "signed_mismatch_A_per_um": -8.069346238141408e-19,
+              "sum_free_equations_A_per_um": 8.069346238141433e-19
+            },
+            "inner_V": 0.013381587651933818,
+            "load_V": 2.7084388828924055e-09,
+            "original_gates_pass": true,
+            "row_max_ratio": 3.2890513902713856e-06,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1095,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.013381587651933818,
+          "outer_V": 0.023690000000000003,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 6.426147538544962e-16,
+            "current_A_per_um": 1.5982628864599861e-09,
+            "electron": {
+              "contact_flux_A_per_um": -4.664515754204674e-15,
+              "gross_contact_scale_A_per_um": 3.1965211083952405e-09,
+              "gross_source_scale_A_per_um": 4.021161978671726e-15,
+              "net_denominator_A_per_um": 4.664515754204674e-15,
+              "qualified": true,
+              "ratio": 0.13792513200523962,
+              "signed_mismatch_A_per_um": -6.433539511391995e-16,
+              "source_A_per_um": -4.0211618030654745e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -2.1897643101902023e-25,
+              "ledger_rounding_defect_A_per_um": 1.2077995153058998e-31,
+              "ratio": 0.13792513202802253,
+              "signed_mismatch_A_per_um": -6.433539512624755e-16,
+              "sum_free_equations_A_per_um": 6.433539510434993e-16
+            },
+            "equation_inf": 2.832003553685845e-11,
+            "fixed_scaled_residual_inf": 9.939224047636579e-13,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -4.021901000377881e-15,
+              "gross_contact_scale_A_per_um": 4.021909977084648e-15,
+              "gross_source_scale_A_per_um": 4.021161978671726e-15,
+              "net_denominator_A_per_um": 4.021901000377881e-15,
+              "qualified": true,
+              "ratio": 0.00018379301537686164,
+              "signed_mismatch_A_per_um": -7.391973124066672e-19,
+              "source_A_per_um": -4.0211618030654745e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 6.982556885939671e-31,
+              "ledger_rounding_defect_A_per_um": -9.44769222348204e-34,
+              "ratio": 0.00018379301537349644,
+              "signed_mismatch_A_per_um": -7.391973123931326e-19,
+              "sum_free_equations_A_per_um": 7.3919731239383e-19
+            },
+            "inner_V": 0.026636074215838128,
+            "load_V": -3.586228682073145e-09,
+            "original_gates_pass": true,
+            "row_max_ratio": 2.5144056810576764e-06,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1041,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.026636074215838128,
+          "outer_V": 0.04261870666666667,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 1.8055088584308593e-15,
+            "current_A_per_um": 2.0225342865052946e-09,
+            "electron": {
+              "contact_flux_A_per_um": -8.601480616651673e-15,
+              "gross_contact_scale_A_per_um": 4.045059971518306e-09,
+              "gross_source_scale_A_per_um": 6.795048713151413e-15,
+              "net_denominator_A_per_um": 8.601480616651673e-15,
+              "qualified": true,
+              "ratio": 0.2100140901596554,
+              "signed_mismatch_A_per_um": -1.8064321257320125e-15,
+              "source_A_per_um": -6.7950484909196605e-15
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": -7.843916324979902e-25,
+              "ledger_rounding_defect_A_per_um": -4.302095761932996e-32,
+              "ratio": 0.2100140901279449,
+              "signed_mismatch_A_per_um": -1.8064321253867462e-15,
+              "sum_free_equations_A_per_um": 1.8064321246023546e-15
+            },
+            "equation_inf": 2.7180302367566478e-11,
+            "fixed_scaled_residual_inf": 1.1486814760886646e-11,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -6.79597175729137e-15,
+              "gross_contact_scale_A_per_um": 6.795983423605583e-15,
+              "gross_source_scale_A_per_um": 6.795048713151413e-15,
+              "net_denominator_A_per_um": 6.79597175729137e-15,
+              "qualified": true,
+              "ratio": 0.00013585494535335523,
+              "signed_mismatch_A_per_um": -9.232663717097646e-19,
+              "source_A_per_um": -6.7950484909196605e-15
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 1.5927812834406523e-30,
+              "ledger_rounding_defect_A_per_um": 1.443399965810561e-33,
+              "ratio": 0.00013585494535225883,
+              "signed_mismatch_A_per_um": -9.232663717023135e-19,
+              "sum_free_equations_A_per_um": 9.232663717039076e-19
+            },
+            "inner_V": 0.04856545483703227,
+            "load_V": -7.15692574648763e-10,
+            "original_gates_pass": true,
+            "row_max_ratio": 2.4989439395990893e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1131,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.04856545483703227,
+          "outer_V": 0.06879079841777778,
+          "updates": 3
+        },
+        {
+          "diagnostics": {
+            "KCL_A_per_um": 2.047377847624265e-15,
+            "current_A_per_um": 2.189950665648134e-09,
+            "electron": {
+              "contact_flux_A_per_um": -1.225189046370993e-14,
+              "gross_contact_scale_A_per_um": 4.379889079392928e-09,
+              "gross_source_scale_A_per_um": 1.0203417355435854e-14,
+              "net_denominator_A_per_um": 1.225189046370993e-14,
+              "qualified": true,
+              "ratio": 0.16719651183472173,
+              "signed_mismatch_A_per_um": -2.0484733489133916e-15,
+              "source_A_per_um": -1.0203417114796538e-14
+            },
+            "electron_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 6.418966226195632e-25,
+              "ledger_rounding_defect_A_per_um": -6.747761990732066e-33,
+              "ratio": 0.16719651181471143,
+              "signed_mismatch_A_per_um": -2.0484733486190088e-15,
+              "sum_free_equations_A_per_um": 2.0484733492609053e-15
+            },
+            "equation_inf": 8.83782321280684e-11,
+            "fixed_scaled_residual_inf": 5.18995517131943e-12,
+            "global_enforced": false,
+            "global_satisfied": false,
+            "hole": {
+              "contact_flux_A_per_um": -1.0204512615740669e-14,
+              "gross_contact_scale_A_per_um": 1.0204525492870866e-14,
+              "gross_source_scale_A_per_um": 1.0203417355435854e-14,
+              "net_denominator_A_per_um": 1.0204512615740669e-14,
+              "qualified": true,
+              "ratio": 0.00010735455826095842,
+              "signed_mismatch_A_per_um": -1.0955009441312169e-18,
+              "source_A_per_um": -1.0203417114796538e-14
+            },
+            "hole_mp_ledger": {
+              "all_node_transport_sum_A_per_um": 8.46755747576998e-31,
+              "ledger_rounding_defect_A_per_um": -4.8273598613762e-34,
+              "ratio": 0.00010735455826018782,
+              "signed_mismatch_A_per_um": -1.095500944123353e-18,
+              "sum_free_equations_A_per_um": 1.0955009441241993e-18
+            },
+            "inner_V": 0.07866268268188296,
+            "load_V": 6.9434583083172186e-09,
+            "original_gates_pass": true,
+            "row_max_ratio": 5.754556905392746e-05,
+            "row_worst_carrier": "electron",
+            "row_worst_node": 1030,
+            "rows_enforced": false,
+            "rows_satisfied": true
+          },
+          "fallback_used": false,
+          "inner_V": 0.07866268268188296,
+          "outer_V": 0.100562182394906,
+          "updates": 3
+        }
+      ],
+      "attempt_count": 6
+    }
+  },
+  "verification": {
+    "full_release_build_exit_code": 0,
+    "full_ctest": {
+      "tests": "1146",
+      "failures": "0",
+      "disabled": "0",
+      "skipped": "4",
+      "time": "245",
+      "timestamp": "2026-10-27T19:25:10"
+    },
+    "skipped_tests": [
+      "sdevice_e2e_pn2d_0v",
+      "sdevice_e2e_pn2d_iv",
+      "sdevice_e2e_pn2d_bv",
+      "sdevice_e2e_gates"
+    ],
+    "previous_sandbox_temp_failure_preserved": true,
+    "workspace_temp_control": true,
+    "BLAS_threads": 1,
+    "real_MKL_library_explicit": true,
+    "final_replay_file_hash_comparison": {
+      "cases": 15,
+      "files_per_case": 5,
+      "all_identical": true
+    },
+    "fixture_contract": "Error-injection stub only supports diagonal solves; elimination disabled only for that fixture; installed real MKL and normal solver paths test default elimination.",
+    "targeted_tests": {
+      "tests": "13",
+      "failures": "0",
+      "disabled": "0",
+      "skipped": "0",
+      "time": "0"
+    }
+  },
+  "source_sha256": {
+    "include/vela/solver/ConstraintElimination.h": "067a99c17e7197f021467b8c99697fdd42b528cf80aa8a6261d6123d33073095",
+    "src/solver/ConstraintElimination.cpp": "3892d7e6ec9a0e0641f8e5696a2dbdc4e71aab664b8df035f7ffae018efcb1e1",
+    "include/vela/solver/LinearSolver.h": "7395dda8ea1dceebeefd8fdc2f9e518e9547d05584adc39565674cfd9e14aa23",
+    "src/solver/LinearSolver.cpp": "72b42c0b2fdc8ded66864560d936480e4ff4a216720157be4808208b8180c7c0",
+    "include/vela/simulation/CoupledLoadLine.h": "137ea4877ac9942387ada5f1e24a874c91a1540b47291efed19d5a431a5e2b8c",
+    "src/solver/NewtonSolver.cpp": "b25978f185812c1900bd023395611cd10b0fddc5b5f9406fd2a298ce01a68148",
+    "scripts/diagnostics/bvmethods_adaptive_bv_probe.cpp": "22e9f19f035f2d35091057ea85fb2c84382f8e620d5b8dc516e725e52518cc3b",
+    "scripts/diagnostics/bvmethods_backend_comparison_probe.cpp": "19e97b7aea98b33a071ee1906ec9dae957fa26d2eaa28b28c5e2ed14ad5fc143",
+    "scripts/diagnostics/compare_matrix_support.py": "27d8bbf365d74f50c5d33562fd389b7e61f95ece62434aa026c6ee254bc50226",
+    "tests/test_linear_solver.cpp": "e8f5d80e785185a04c41f48a820abece1ae60ad7946649a51bda858ec2279c05",
+    "tests/test_mkl_pardiso.cpp": "e89c14e73077c1275a408b1aabd791d50cbca3ff81e34777c8aed671c12a7396"
+  }
+}

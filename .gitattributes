@@ -8,6 +8,8 @@ tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 reference_tcad/simplemos_sentaurus2022/engineering/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 # PN2D campaign contracts and paired inputs retain their recorded byte hashes.
+configs/sdevice_acceptance_contract.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.vela.json text eol=lf
 reference_tcad/pn2d_sentaurus2018/variants/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/analyze_pn2d_sections.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/compare_pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
@@ -82,3 +84,14 @@ docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md -text
 # SimpleMOS live script hashes are frozen in LF form in early evidence.
 scripts/*simplemos*.py text eol=lf
 tests/regression/*simplemos*.py text eol=lf
+
+# The generated material snapshot records the parameter library's byte hash.
+share/vela/materials/models.par text eol=lf
+share/vela/materials/default_materials.json text eol=lf
+
+# Native follow-up manifests and evidence retain their recorded byte hashes.
+reference_tcad/bvmethods_sentaurus2018/source/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reference_tcad/bvmethods_sentaurus2018/zero_qs_controls/**/*.cmd text eol=lf
+reference_tcad/bvmethods_sentaurus2018/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+reference_tcad/gate_reference/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/validation/sdevice_followup_2026-10-06.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,5 +1,5 @@
 {
-  "_comment": "Charon-derived n-Si Schottky diode on the exact Sentaurus 2018 TDR mesh. Only SRH and thermionic Robin contact fluxes are enabled.",
+  "_comment": "Charon-derived n-Si Schottky diode on the exact Sentaurus 2018 TDR mesh. Only SRH and thermionic Robin contact fluxes are enabled. WP13: explicit pre-alignment material scalars preserve this calibrated baseline.",
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
   "output_csv": "outputs/vela_schottky_iv.csv",
@@ -56,5 +56,6 @@
   },
   "validation": {
     "check_contact_quasi_fermi_bias": false
-  }
+  },
+  "materials_file": "materials_legacy_builtin_300k.json"
 }

@@ -1,0 +1,1625 @@
+{
+  "date": "2026-10-14",
+  "stage": "Q2/Q3; complete RHS not aligned",
+  "recovery": {
+    "all_verified": true,
+    "runs": {
+      "live_rhs_chain_20261013_v1": 34,
+      "live_rhs_chain_20261013_v2": 259
+    }
+  },
+  "RHS_state_audit": {
+    "scope": "read-only raw evidence audit; no acceptance or model changes",
+    "remote_recovery": {
+      "all_verified": true,
+      "runs": {
+        "live_rhs_chain_20261013_v1": 34,
+        "live_rhs_chain_20261013_v2": 259
+      }
+    },
+    "continuous_rhs_pairs": [
+      {
+        "frame": 0,
+        "next_frame": 1,
+        "loop": 0,
+        "next_loop": 1,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 1,
+        "next_frame": 2,
+        "loop": 1,
+        "next_loop": 2,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 2,
+        "next_frame": 3,
+        "loop": 2,
+        "next_loop": 3,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 3,
+        "next_frame": 4,
+        "loop": 3,
+        "next_loop": 4,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 4,
+        "next_frame": 5,
+        "loop": 4,
+        "next_loop": 5,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 5,
+        "next_frame": 6,
+        "loop": 5,
+        "next_loop": 6,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 9,
+        "next_frame": 10,
+        "loop": 0,
+        "next_loop": 1,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      {
+        "frame": 10,
+        "next_frame": 11,
+        "loop": 1,
+        "next_loop": 2,
+        "RHS2_vs_next_RHS1": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      }
+    ],
+    "qf_controls": {
+      "qf_baseline": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.526813574,
+          "relative_L2": 0.999999997418641,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.603073962022127e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411985,
+            "rhs1_l1": 1345.8534582161005,
+            "rhs2_l1": 2.257924741523945e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.484416641382967e-16,
+            "J_SOL_plus_RHS1_relative": 4.490709774789915e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.22405692,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.280042227267588e-16,
+            "J_SOL_plus_RHS1_relative": 2.128717994855357e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.437313146709,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "e_flat_zero": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11596990.292068921,
+          "difference_L2": 38899696.48268016,
+          "relative_L2": 0.9999998216731263,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.442082127294427e-16,
+            "J_SOL_plus_RHS1_relative": 0.9678437173341258,
+            "rhs1_l1": 1333.4517596965077,
+            "rhs2_l1": 2.3337468416248562e-14,
+            "max_abs_solution": 0.0187244045162645
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07681869262335671,
+            "J_SOL_plus_RHS1_relative": 0.07681869278368539,
+            "rhs1_l1": 23.269714366629394,
+            "rhs2_l1": 127566916.4824725,
+            "max_abs_solution": 0.00456436802106637
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.682488746308575e-16,
+            "J_SOL_plus_RHS1_relative": 8.790934215694139e-16,
+            "rhs1_l1": 2.5022216301556102e-05,
+            "rhs2_l1": 30389158.686244283,
+            "max_abs_solution": 72584092.8434796
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 9.220774898740669e-16,
+            "J_SOL_plus_RHS1_relative": 2.162598247650376e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2491.2147488270834,
+            "max_abs_solution": 13021.3448401718
+          }
+        }
+      },
+      "e_flat_shift": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11596990.371806657,
+          "difference_L2": 38899692.49552572,
+          "relative_L2": 0.9999997125763459,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 7.187498817213545e-16,
+            "J_SOL_plus_RHS1_relative": 0.9678437173912225,
+            "rhs1_l1": 1333.4517651711235,
+            "rhs2_l1": 2.2720986485404204e-14,
+            "max_abs_solution": 0.0187244045301879
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07681869232417193,
+            "J_SOL_plus_RHS1_relative": 0.07681869248450107,
+            "rhs1_l1": 23.269781081034182,
+            "rhs2_l1": 127566917.35965429,
+            "max_abs_solution": 0.00456436804580128
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.3536023552722e-16,
+            "J_SOL_plus_RHS1_relative": 1.6465462990602504e-10,
+            "rhs1_l1": 116.74158969480803,
+            "rhs2_l1": 30389158.581377674,
+            "max_abs_solution": 72584093.0816317
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.0945269028036775e-16,
+            "J_SOL_plus_RHS1_relative": 2.1625958404470594e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2491.214759502166,
+            "max_abs_solution": 13021.3448659324
+          }
+        }
+      },
+      "e_1e-18_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.5268128,
+          "relative_L2": 0.9999999974186208,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.596594875492233e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411985,
+            "rhs1_l1": 1345.8534582161005,
+            "rhs2_l1": 2.265478179006909e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.525835750811649e-16,
+            "J_SOL_plus_RHS1_relative": 4.4902584700384957e-13,
+            "rhs1_l1": 0.3197694104108609,
+            "rhs2_l1": 30820677.22405747,
+            "max_abs_solution": 72584092.8473071
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.278220224117132e-16,
+            "J_SOL_plus_RHS1_relative": 2.1287179907535923e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131464395,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "e_1e-18_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.52681441,
+          "relative_L2": 0.9999999974186621,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.603059784377278e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411985,
+            "rhs1_l1": 1345.8534582161005,
+            "rhs2_l1": 2.2521577812300353e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.459024865403323e-16,
+            "J_SOL_plus_RHS1_relative": 4.491194171288869e-13,
+            "rhs1_l1": 0.31984107626235103,
+            "rhs2_l1": 30820677.224057175,
+            "max_abs_solution": 72584092.8473067
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.280574027155709e-16,
+            "J_SOL_plus_RHS1_relative": 2.1287179934259026e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131467205,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "e_1e-15_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458863853,
+          "difference_L2": 40224852.525971435,
+          "relative_L2": 0.9999999973975854,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.609129075433414e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411987,
+            "rhs1_l1": 1345.8534582161112,
+            "rhs2_l1": 2.283686155826377e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.396501,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.177410236160281e-16,
+            "J_SOL_plus_RHS1_relative": 4.758686295738326e-13,
+            "rhs1_l1": 0.33892250382160993,
+            "rhs2_l1": 30820677.22402974,
+            "max_abs_solution": 72584092.8475451
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 9.180401816157455e-16,
+            "J_SOL_plus_RHS1_relative": 2.1287174586776197e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131492375,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "e_1e-15_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.52766221,
+          "relative_L2": 0.9999999974396977,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.604329639350479e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411983,
+            "rhs1_l1": 1345.8534582160896,
+            "rhs2_l1": 2.2535520018452728e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.279892615380739e-16,
+            "J_SOL_plus_RHS1_relative": 5.003758709972722e-13,
+            "rhs1_l1": 0.35641054311582643,
+            "rhs2_l1": 30820677.224089798,
+            "max_abs_solution": 72584092.8470687
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.979582516396127e-16,
+            "J_SOL_plus_RHS1_relative": 2.1287183030008858e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131474686,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "e_1e-12_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458862351,
+          "difference_L2": 40224851.678215355,
+          "relative_L2": 0.9999999763633366,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.672559683470525e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681414759,
+            "rhs1_l1": 1345.853458226852,
+            "rhs2_l1": 2.326063890738873e-14,
+            "max_abs_solution": 0.0188205156006399
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607720907,
+            "J_SOL_plus_RHS1_relative": 0.07549930607960541,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.3964845,
+            "max_abs_solution": 0.00466060426247882
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.637682246641611e-16,
+            "J_SOL_plus_RHS1_relative": 5.214013095882695e-11,
+            "rhs1_l1": 37.15467013663229,
+            "rhs2_l1": 30820677.19329565,
+            "max_abs_solution": 72584093.0854732
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 6.320994315639572e-16,
+            "J_SOL_plus_RHS1_relative": 2.128721362099182e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131480256,
+            "max_abs_solution": 13199.1712289417
+          }
+        }
+      },
+      "e_1e-12_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.45886325,
+          "difference_L2": 40224853.375436716,
+          "relative_L2": 1.0000000184744111,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.772316655951858e-16,
+            "J_SOL_plus_RHS1_relative": 0.967625568140921,
+            "rhs1_l1": 1345.853458205349,
+            "rhs2_l1": 2.3820443485361703e-14,
+            "max_abs_solution": 0.0188205156006441
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607723511,
+            "J_SOL_plus_RHS1_relative": 0.07549930607963141,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39649439,
+            "max_abs_solution": 0.00466060426247464
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.311788888480026e-16,
+            "J_SOL_plus_RHS1_relative": 5.213657427042466e-11,
+            "rhs1_l1": 37.15221502554462,
+            "rhs2_l1": 30820677.25482317,
+            "max_abs_solution": 72584092.6091406
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.125935145946278e-16,
+            "J_SOL_plus_RHS1_relative": 2.1287219370338536e-10,
+            "rhs1_l1": 0.003426088229112875,
+            "rhs2_l1": 2565.4373131670886,
+            "max_abs_solution": 13199.1712289494
+          }
+        }
+      },
+      "h_flat_zero": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458863553,
+          "difference_L2": 40224852.5268191,
+          "relative_L2": 0.9999999974186413,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.63529272596378e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681655848,
+            "rhs1_l1": 1345.853458218914,
+            "rhs2_l1": 2.1945213365214214e-14,
+            "max_abs_solution": 0.0188205155951701
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930604330417,
+            "J_SOL_plus_RHS1_relative": 0.0754993060457005,
+            "rhs1_l1": 0.348998635202932,
+            "rhs2_l1": 131969029.39649771,
+            "max_abs_solution": 0.00466060426794867
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.546530191751258e-16,
+            "J_SOL_plus_RHS1_relative": 4.490036686738013e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.224003,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.092641036518046e-16,
+            "J_SOL_plus_RHS1_relative": 1.0162921884029698e-13,
+            "rhs1_l1": 1.6358499264748095e-06,
+            "rhs2_l1": 2565.437285484453,
+            "max_abs_solution": 13199.1712142487
+          }
+        }
+      },
+      "h_flat_shift": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458864052,
+          "difference_L2": 40224852.526820764,
+          "relative_L2": 0.9999999974186412,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.614330817001504e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255682134,
+            "rhs1_l1": 1345.853460308001,
+            "rhs2_l1": 2.2361092920726804e-14,
+            "max_abs_solution": 0.0188205155951675
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930604328867,
+            "J_SOL_plus_RHS1_relative": 0.07549930604568499,
+            "rhs1_l1": 0.348998635202932,
+            "rhs2_l1": 131969029.3965032,
+            "max_abs_solution": 0.00466060426795122
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.877200863697072e-16,
+            "J_SOL_plus_RHS1_relative": 4.4901062897249913e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.22400399,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.154416957934649e-16,
+            "J_SOL_plus_RHS1_relative": 6.074153990362817e-09,
+            "rhs1_l1": 0.09776107648470046,
+            "rhs2_l1": 2565.4374052778326,
+            "max_abs_solution": 13199.1723096811
+          }
+        }
+      },
+      "h_1e-18_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458863853,
+          "difference_L2": 40224852.52682006,
+          "relative_L2": 0.9999999974186412,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.59891478164135e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411985,
+            "rhs1_l1": 1345.8534582161005,
+            "rhs2_l1": 2.257094398434474e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.396501,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.499175444026265e-16,
+            "J_SOL_plus_RHS1_relative": 4.490748003314956e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.22405981,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 9.183332570976222e-16,
+            "J_SOL_plus_RHS1_relative": 2.1288058444929395e-10,
+            "rhs1_l1": 0.0034262309327311702,
+            "rhs2_l1": 2565.437313146762,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "h_1e-18_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458865851,
+          "difference_L2": 40224852.52682679,
+          "relative_L2": 0.9999999974186412,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.601830171914884e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411985,
+            "rhs1_l1": 1345.8534582161005,
+            "rhs2_l1": 2.2652461270518194e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.396523,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.479351183463057e-16,
+            "J_SOL_plus_RHS1_relative": 4.4906915537376596e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.22406188,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.088954081654839e-16,
+            "J_SOL_plus_RHS1_relative": 2.128627849412012e-10,
+            "rhs1_l1": 0.003425943072137245,
+            "rhs2_l1": 2565.4373131468615,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "h_1e-15_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.526813574,
+          "relative_L2": 0.999999997418641,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.617172916131177e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411986,
+            "rhs1_l1": 1345.8534582161042,
+            "rhs2_l1": 2.2673362038344506e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722219,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961852,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247672
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.009723535146785e-16,
+            "J_SOL_plus_RHS1_relative": 4.4905568875444665e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.224057555,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.995640650225995e-16,
+            "J_SOL_plus_RHS1_relative": 2.2198237236529554e-10,
+            "rhs1_l1": 0.003572717628040448,
+            "rhs2_l1": 2565.4373131443417,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "h_1e-15_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458865052,
+          "difference_L2": 40224852.5268241,
+          "relative_L2": 0.9999999974186412,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.599154016025269e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681411986,
+            "rhs1_l1": 1345.8534582160992,
+            "rhs2_l1": 2.265154070741834e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722219,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961851,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.3965142,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.229269533988701e-16,
+            "J_SOL_plus_RHS1_relative": 4.4901980630937275e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.224061802,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.741665736837605e-16,
+            "J_SOL_plus_RHS1_relative": 2.1385923930416778e-10,
+            "rhs1_l1": 0.003441981731449253,
+            "rhs2_l1": 2565.437313145663,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "h_1e-12_plus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.458861852,
+          "difference_L2": 40224852.526813574,
+          "relative_L2": 0.999999997418641,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.602996047547977e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681412852,
+            "rhs1_l1": 1345.8534582198242,
+            "rhs2_l1": 2.260467380906881e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722223,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961856,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39647901,
+            "max_abs_solution": 0.00466060426247673
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.484038638832614e-16,
+            "J_SOL_plus_RHS1_relative": 4.4907089155258287e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.224057455,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.278211459422087e-16,
+            "J_SOL_plus_RHS1_relative": 1.0208368403993566e-08,
+            "rhs1_l1": 0.16429942221563434,
+            "rhs2_l1": 2565.437313146882,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      },
+      "h_1e-12_minus": {
+        "loop": 0,
+        "RHS1_vs_own_RHS2": {
+          "max_abs": 11997184.45886325,
+          "difference_L2": 40224852.5268181,
+          "relative_L2": 0.9999999974186412,
+          "bit_identical": false
+        },
+        "linear_closure": {
+          "ElectrostaticPotential": {
+            "rows": 2600,
+            "J_SOL_minus_RHS1_relative": 6.620896116898402e-16,
+            "J_SOL_plus_RHS1_relative": 0.9676255681412852,
+            "rhs1_l1": 1345.8534582198192,
+            "rhs2_l1": 2.2621023630996924e-14,
+            "max_abs_solution": 0.018820515600642
+          },
+          "QuasiFermiPotential": {
+            "rows": 11,
+            "J_SOL_minus_RHS1_relative": 0.07549930607722206,
+            "J_SOL_plus_RHS1_relative": 0.07549930607961838,
+            "rhs1_l1": 0.3489986402743599,
+            "rhs2_l1": 131969029.39649439,
+            "max_abs_solution": 0.00466060426247674
+          },
+          "eDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 7.651408893130268e-16,
+            "J_SOL_plus_RHS1_relative": 4.4900937580560926e-13,
+            "rhs1_l1": 0.31980464052284985,
+            "rhs2_l1": 30820677.224059403,
+            "max_abs_solution": 72584092.8473069
+          },
+          "hDensity": {
+            "rows": 2121,
+            "J_SOL_minus_RHS1_relative": 8.331397651918048e-16,
+            "J_SOL_plus_RHS1_relative": 1.0206108546189221e-08,
+            "rhs1_l1": 0.16426304693340407,
+            "rhs2_l1": 2565.43731314567,
+            "max_abs_solution": 13199.1712289455
+          }
+        }
+      }
+    },
+    "load": {
+      "seed_dataset_names": [
+        "ElectrostaticPotential",
+        "LatticeTemperature",
+        "QuasiFermiPotential",
+        "eQuasiFermiPotential",
+        "hQuasiFermiPotential"
+      ],
+      "seed_vs_native_preupdate": {
+        "ElectrostaticPotential": {
+          "max_abs": 0.00030500956024692716,
+          "difference_L2": 0.0009480072851725012,
+          "relative_L2": 5.1757022052483286e-05,
+          "bit_identical": false
+        },
+        "eQuasiFermiPotential": {
+          "max_abs": 3.67378948830107e-16,
+          "difference_L2": 1.228155092723709e-15,
+          "relative_L2": 7.888393943276663e-12,
+          "bit_identical": false
+        },
+        "hQuasiFermiPotential": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      },
+      "seed_density_missing": [
+        "eDensity",
+        "hDensity"
+      ],
+      "Vela_vs_native_preupdate": {
+        "psi": {
+          "max_abs": 3.430589146091734e-14,
+          "difference_L2": 1.0977154357564917e-13,
+          "relative_L2": 5.993008865318034e-15,
+          "bit_identical": false
+        },
+        "electrons_m3": {
+          "max_abs": 65536.0,
+          "difference_L2": 102214.77406553157,
+          "relative_L2": 2.1506666075328122e-17,
+          "bit_identical": false
+        },
+        "holes_m3": {
+          "max_abs": 128.0,
+          "difference_L2": 483.2119103042669,
+          "relative_L2": 2.5049556321487248e-17,
+          "bit_identical": false
+        },
+        "phin": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        },
+        "phip": {
+          "max_abs": 0.0,
+          "difference_L2": 0.0,
+          "relative_L2": 0.0,
+          "bit_identical": true
+        }
+      }
+    },
+    "weak": {
+      "electron": {
+        "node": 2156,
+        "native_RHS1_flux": 6.198930848075017e-11,
+        "actual_flux": 6.19990204986997e-11,
+        "actual_minus_native": 9.71201794953203e-15,
+        "native_minus_actual_equivalent_QF_shift_V": 4.980613262241169e-20,
+        "equivalent_shift_is_diagnostic_not_correction": true,
+        "known_native_slope": -194996.42791301227,
+        "rebuild": {
+          "export": {
+            "value": 6.199902049870017e-11,
+            "gap": -9.71201794999732e-15
+          },
+          "contact_enforced": {
+            "value": 6.199902049870017e-11,
+            "gap": -9.71201794999732e-15
+          },
+          "reference_increment": {
+            "value": 6.199902049870017e-11,
+            "gap": -9.71201794999732e-15
+          }
+        },
+        "incident_contacts": [
+          1552,
+          1553,
+          1554
+        ],
+        "contact_export_QF_max_abs": 0.0,
+        "reference_increment_vs_physical_QF_max_abs": 0.0,
+        "edges": [
+          {
+            "node0": 1554,
+            "node1": 2156,
+            "kappa_mu": 0.7268445076390706,
+            "drops_V": {
+              "export": 1.607282901131718e-14,
+              "contact_enforced": 1.607282901131718e-14,
+              "reference_increment": 1.607282901131718e-14
+            },
+            "reference0": 0.0,
+            "increment0": 0.0,
+            "reference1": 0.0,
+            "increment1": 1.607282901131718e-14
+          },
+          {
+            "node0": 1553,
+            "node1": 2156,
+            "kappa_mu": 355.418649092093,
+            "drops_V": {
+              "export": 1.607282901131718e-14,
+              "contact_enforced": 1.607282901131718e-14,
+              "reference_increment": 1.607282901131718e-14
+            },
+            "reference0": 0.0,
+            "increment0": 0.0,
+            "reference1": 0.0,
+            "increment1": 1.607282901131718e-14
+          },
+          {
+            "node0": 1552,
+            "node1": 2156,
+            "kappa_mu": 0.0,
+            "drops_V": {
+              "export": 1.607282901131718e-14,
+              "contact_enforced": 1.607282901131718e-14,
+              "reference_increment": 1.607282901131718e-14
+            },
+            "reference0": 0.0,
+            "increment0": 0.0,
+            "reference1": 0.0,
+            "increment1": 1.607282901131718e-14
+          },
+          {
+            "node0": 2154,
+            "node1": 2156,
+            "kappa_mu": 2.9099193323798165,
+            "drops_V": {
+              "export": -1.7496422438033848e-14,
+              "contact_enforced": -1.7496422438033848e-14,
+              "reference_increment": -1.7496422438033848e-14
+            },
+            "reference0": 0.0,
+            "increment0": 3.356925144935103e-14,
+            "reference1": 0.0,
+            "increment1": 1.607282901131718e-14
+          },
+          {
+            "node0": 2156,
+            "node1": 2173,
+            "kappa_mu": 0.7268445076390706,
+            "drops_V": {
+              "export": -5.556606601055369e-15,
+              "contact_enforced": -5.556606601055369e-15,
+              "reference_increment": -5.556606601055369e-15
+            },
+            "reference0": 0.0,
+            "increment0": 1.607282901131718e-14,
+            "reference1": 0.0,
+            "increment1": 1.0516222410261813e-14
+          },
+          {
+            "node0": 2156,
+            "node1": 2157,
+            "kappa_mu": 358.31825257506785,
+            "drops_V": {
+              "export": 1.6577975065958578e-14,
+              "contact_enforced": 1.6577975065958578e-14,
+              "reference_increment": 1.6577975065958578e-14
+            },
+            "reference0": 0.0,
+            "increment0": 1.607282901131718e-14,
+            "reference1": 0.0,
+            "increment1": 3.265080407727576e-14
+          }
+        ]
+      },
+      "hole": {
+        "node": 2515,
+        "native_RHS1_flux": 2.2527462693662576e-13,
+        "actual_flux": 2.2516801134527528e-13,
+        "actual_minus_native": -1.0661559135047716e-16,
+        "native_minus_actual_equivalent_QF_shift_V": 1.6660166881750823e-19,
+        "equivalent_shift_is_diagnostic_not_correction": true,
+        "known_native_slope": 639.9431176602529,
+        "rebuild": {
+          "export": {
+            "value": 2.2516801134527467e-13,
+            "gap": 1.0661559135108301e-16
+          },
+          "contact_enforced": {
+            "value": 2.2516801134527467e-13,
+            "gap": 1.0661559135108301e-16
+          },
+          "reference_increment": {
+            "value": 2.2516801134527467e-13,
+            "gap": 1.0661559135108301e-16
+          }
+        },
+        "incident_contacts": [],
+        "contact_export_QF_max_abs": 0.0,
+        "reference_increment_vs_physical_QF_max_abs": 0.0,
+        "edges": [
+          {
+            "node0": 2512,
+            "node1": 2515,
+            "kappa_mu": 0.0,
+            "drops_V": {
+              "export": 4.592236860376287e-17,
+              "contact_enforced": 4.592236860376287e-17,
+              "reference_increment": 4.592236860376287e-17
+            },
+            "reference0": 0.0,
+            "increment0": 4.133013174338704e-15,
+            "reference1": 0.0,
+            "increment1": 4.178935542942467e-15
+          },
+          {
+            "node0": 2513,
+            "node1": 2515,
+            "kappa_mu": 53.2008627300153,
+            "drops_V": {
+              "export": -2.5257302732069894e-16,
+              "contact_enforced": -2.5257302732069894e-16,
+              "reference_increment": -2.5257302732069894e-16
+            },
+            "reference0": 0.0,
+            "increment0": 4.431508570263166e-15,
+            "reference1": 0.0,
+            "increment1": 4.178935542942467e-15
+          },
+          {
+            "node0": 2514,
+            "node1": 2515,
+            "kappa_mu": 724.6093444010985,
+            "drops_V": {
+              "export": 3.4441776452822547e-16,
+              "contact_enforced": 3.4441776452822547e-16,
+              "reference_increment": 3.4441776452822547e-16
+            },
+            "reference0": 0.0,
+            "increment0": 3.8345177784142415e-15,
+            "reference1": 0.0,
+            "increment1": 4.178935542942467e-15
+          },
+          {
+            "node0": 2515,
+            "node1": 2523,
+            "kappa_mu": 53.200862730015345,
+            "drops_V": {
+              "export": -9.184473720752653e-17,
+              "contact_enforced": -9.184473720752653e-17,
+              "reference_increment": -9.184473720752653e-17
+            },
+            "reference0": 0.0,
+            "increment0": 4.178935542942467e-15,
+            "reference1": 0.0,
+            "increment1": 4.0870908057349405e-15
+          },
+          {
+            "node0": 2515,
+            "node1": 2517,
+            "kappa_mu": 362.30503455889095,
+            "drops_V": {
+              "export": -4.93665462490456e-16,
+              "contact_enforced": -4.93665462490456e-16,
+              "reference_increment": -4.93665462490456e-16
+            },
+            "reference0": 0.0,
+            "increment0": 4.178935542942467e-15,
+            "reference1": 0.0,
+            "increment1": 3.685270080452011e-15
+          },
+          {
+            "node0": 2515,
+            "node1": 2524,
+            "kappa_mu": 0.0,
+            "drops_V": {
+              "export": -5.855101996979825e-16,
+              "contact_enforced": -5.855101996979825e-16,
+              "reference_increment": -5.855101996979825e-16
+            },
+            "reference0": 0.0,
+            "increment0": 4.178935542942467e-15,
+            "reference1": 0.0,
+            "increment1": 3.5934253432444845e-15
+          }
+        ]
+      }
+    },
+    "qf_independent_Load_frames": 17,
+    "qf_cross_arm_temporal_pairing_valid": false,
+    "weak_slope_relative": {
+      "electron": {
+        "native_slope": -194996.42791301227,
+        "original_slope": -194996.43123369053,
+        "decimal100_slope": -194996.43123369067,
+        "original_relative": 1.702943119852307e-08,
+        "decimal100_relative": 1.7029431864656885e-08
+      },
+      "hole": {
+        "native_slope": 639.9431176602529,
+        "original_slope": 639.9431321416934,
+        "decimal100_slope": 639.9431321416932,
+        "original_relative": 2.2629262019790986e-08,
+        "decimal100_relative": 2.2629261575701776e-08
+      }
+    },
+    "complete_RHS_qualified": false
+  },
+  "canonical_linear_systems": {
+    "scope": "canonical actual linear systems; expanded contact-copy rows are not independent unknowns",
+    "systems": [
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.572276408124654e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69265,
+        "linear_componentwise_l1_backward_error": 6.457923452958652e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69279,
+        "linear_componentwise_l1_backward_error": 7.41907490500071e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.62800774545448e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.537938017885668e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 8.979680465433522e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.768669166704074e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.51228553217043e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.83136577754346e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 68451,
+        "linear_componentwise_l1_backward_error": 8.219165636086695e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 68451,
+        "linear_componentwise_l1_backward_error": 9.038086496198903e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 8.820845312675101e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.868670393518086e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 8.964147216072805e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.664076152610914e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 7.538364237361196e-17
+      },
+      {
+        "dimension": 6843,
+        "nonzero_entries": 69361,
+        "linear_componentwise_l1_backward_error": 8.431155236498637e-17
+      }
+    ],
+    "count": 17,
+    "maximum_backward_error": 9.038086496198903e-17,
+    "expanded_labeled_entries": 6853,
+    "expanded_drain_QF_contact_copies": 11,
+    "independent_circuit_unknowns": 1,
+    "expanded_QF_block_is_not_canonical_linear_guard": true
+  },
+  "Load_support": {
+    "ElectrostaticPotential": {
+      "largest": [
+        {
+          "node": 1558,
+          "contact": "source",
+          "difference": 0.00030500956024692716
+        },
+        {
+          "node": 1557,
+          "contact": "source",
+          "difference": 0.00030500956024692716
+        },
+        {
+          "node": 1556,
+          "contact": "source",
+          "difference": 0.00030500956024692716
+        },
+        {
+          "node": 1555,
+          "contact": "source",
+          "difference": 0.00030500956024692716
+        },
+        {
+          "node": 1554,
+          "contact": "source",
+          "difference": 0.00030500956024692716
+        }
+      ],
+      "weak": {
+        "2156": {
+          "seed": 0.6179095766186573,
+          "loaded": 0.6179095766186573,
+          "difference": 0.0
+        },
+        "2515": {
+          "seed": -0.44530542249641686,
+          "loaded": -0.44530542249641686,
+          "difference": 0.0
+        }
+      },
+      "free_max": 0.0,
+      "contact_max": 0.00030500956024692716
+    },
+    "eQuasiFermiPotential": {
+      "largest": [
+        {
+          "node": 1294,
+          "contact": "substrate",
+          "difference": 3.67378948830107e-16
+        },
+        {
+          "node": 1293,
+          "contact": "substrate",
+          "difference": 3.67378948830107e-16
+        },
+        {
+          "node": 1285,
+          "contact": "substrate",
+          "difference": 3.67378948830107e-16
+        },
+        {
+          "node": 1278,
+          "contact": "substrate",
+          "difference": 3.67378948830107e-16
+        },
+        {
+          "node": 1277,
+          "contact": "substrate",
+          "difference": 3.67378948830107e-16
+        }
+      ],
+      "weak": {
+        "2156": {
+          "seed": 1.607282901131718e-14,
+          "loaded": 1.607282901131718e-14,
+          "difference": 0.0
+        },
+        "2515": {
+          "seed": 1.0460428110079299e-07,
+          "loaded": 1.0460428110079299e-07,
+          "difference": 0.0
+        }
+      },
+      "free_max": 0.0,
+      "contact_max": 3.67378948830107e-16
+    },
+    "hQuasiFermiPotential": {
+      "largest": [
+        {
+          "node": 2593,
+          "contact": null,
+          "difference": 0.0
+        },
+        {
+          "node": 2594,
+          "contact": null,
+          "difference": 0.0
+        },
+        {
+          "node": 2595,
+          "contact": null,
+          "difference": 0.0
+        },
+        {
+          "node": 2596,
+          "contact": null,
+          "difference": 0.0
+        },
+        {
+          "node": 2597,
+          "contact": null,
+          "difference": 0.0
+        }
+      ],
+      "weak": {
+        "2156": {
+          "seed": 6.378251457008647e-10,
+          "loaded": 6.378251457008647e-10,
+          "difference": 0.0
+        },
+        "2515": {
+          "seed": 4.178935542942467e-15,
+          "loaded": 4.178935542942467e-15,
+          "difference": 0.0
+        }
+      },
+      "free_max": 0.0,
+      "contact_max": 0.0
+    }
+  },
+  "T470p_identity_controls_v1": {
+    "scope": "fixed-population/frozen-mobility transport-only Load control; no nonlinear updates",
+    "runs": [
+      {
+        "mode": "baseline_replay",
+        "rc": 0,
+        "contact_fields_bit_identical": {
+          "electron_qf_increment_V": true,
+          "electron_qf_reference_V": true,
+          "electron_quantum_potential_V": true,
+          "electrons_m3": true,
+          "hole_qf_increment_V": true,
+          "hole_qf_reference_V": true,
+          "holes_m3": true,
+          "phin": true,
+          "phip": true,
+          "psi": true
+        },
+        "old_rows_byte_identical": true,
+        "weak_flux": {
+          "electron": 6.19990204986997e-11,
+          "hole": 2.2516801134527528e-13
+        },
+        "transport_change": {
+          "electron": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          },
+          "hole": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          }
+        }
+      },
+      {
+        "mode": "loaded_psi_free",
+        "rc": 0,
+        "contact_fields_bit_identical": {
+          "electron_qf_increment_V": true,
+          "electron_qf_reference_V": true,
+          "electron_quantum_potential_V": true,
+          "electrons_m3": true,
+          "hole_qf_increment_V": true,
+          "hole_qf_reference_V": true,
+          "holes_m3": true,
+          "phin": true,
+          "phip": true,
+          "psi": true
+        },
+        "weak_flux": {
+          "electron": 6.19990204986997e-11,
+          "hole": 2.2516801134527528e-13
+        },
+        "transport_change": {
+          "electron": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          },
+          "hole": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          }
+        }
+      },
+      {
+        "mode": "loaded_psi_free_refzero",
+        "rc": 0,
+        "contact_fields_bit_identical": {
+          "electron_qf_increment_V": true,
+          "electron_qf_reference_V": true,
+          "electron_quantum_potential_V": true,
+          "electrons_m3": true,
+          "hole_qf_increment_V": true,
+          "hole_qf_reference_V": true,
+          "holes_m3": true,
+          "phin": true,
+          "phip": true,
+          "psi": true
+        },
+        "weak_flux": {
+          "electron": 6.19990204986997e-11,
+          "hole": 2.2516801134527528e-13
+        },
+        "transport_change": {
+          "electron": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          },
+          "hole": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          }
+        }
+      }
+    ],
+    "completed": true
+  },
+  "changed_state_entries_vs_replay": {
+    "baseline_replay": {
+      "electron_qf_increment_V": 0,
+      "electron_qf_reference_V": 0,
+      "electron_quantum_potential_V": 0,
+      "electrons_m3": 0,
+      "hole_qf_increment_V": 0,
+      "hole_qf_reference_V": 0,
+      "holes_m3": 0,
+      "phin": 0,
+      "phip": 0,
+      "psi": 0
+    },
+    "loaded_psi_free": {
+      "electron_qf_increment_V": 0,
+      "electron_qf_reference_V": 0,
+      "electron_quantum_potential_V": 0,
+      "electrons_m3": 0,
+      "hole_qf_increment_V": 0,
+      "hole_qf_reference_V": 0,
+      "holes_m3": 0,
+      "phin": 0,
+      "phip": 0,
+      "psi": 0
+    },
+    "loaded_psi_free_refzero": {
+      "electron_qf_increment_V": 0,
+      "electron_qf_reference_V": 0,
+      "electron_quantum_potential_V": 0,
+      "electrons_m3": 0,
+      "hole_qf_increment_V": 0,
+      "hole_qf_reference_V": 0,
+      "holes_m3": 0,
+      "phin": 0,
+      "phip": 0,
+      "psi": 0
+    }
+  },
+  "T470p_actual_controls_v2": {
+    "scope": "fixed-population/frozen-mobility transport-only Load control; no nonlinear updates",
+    "runs": [
+      {
+        "mode": "baseline_replay",
+        "rc": 0,
+        "contact_fields_bit_identical": {
+          "electron_qf_increment_V": true,
+          "electron_qf_reference_V": true,
+          "electron_quantum_potential_V": true,
+          "electrons_m3": true,
+          "hole_qf_increment_V": true,
+          "hole_qf_reference_V": true,
+          "holes_m3": true,
+          "phin": true,
+          "phip": true
+        },
+        "old_rows_byte_identical": true,
+        "weak_flux": {
+          "electron": 6.19990204986997e-11,
+          "hole": 2.2516801134527528e-13
+        },
+        "transport_change": {
+          "electron": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          },
+          "hole": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          }
+        }
+      },
+      {
+        "mode": "loaded_psi_all",
+        "rc": 0,
+        "contact_fields_bit_identical": {
+          "electron_qf_increment_V": true,
+          "electron_qf_reference_V": true,
+          "electron_quantum_potential_V": true,
+          "electrons_m3": true,
+          "hole_qf_increment_V": true,
+          "hole_qf_reference_V": true,
+          "holes_m3": true,
+          "phin": true,
+          "phip": true
+        },
+        "weak_flux": {
+          "electron": 6.19990204986997e-11,
+          "hole": 2.2516801134527528e-13
+        },
+        "transport_change": {
+          "electron": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          },
+          "hole": {
+            "max_abs": 0.0,
+            "difference_L2": 0.0
+          }
+        }
+      }
+    ],
+    "completed": true
+  },
+  "all_Si_psi_control_changed_entries": {
+    "electron_qf_increment_V": 0,
+    "electron_qf_reference_V": 0,
+    "electron_quantum_potential_V": 0,
+    "electrons_m3": 0,
+    "hole_qf_increment_V": 0,
+    "hole_qf_reference_V": 0,
+    "holes_m3": 0,
+    "phin": 0,
+    "phip": 0,
+    "psi": 20
+  },
+  "verification": {
+    "parser_tests": 4,
+    "parser_tests_passed": true,
+    "new_zero_update_probes": 5,
+    "new_control_files_verified": 22
+  },
+  "qualification": {
+    "complete_RHS": false,
+    "four_arm_derivative_acceptance_started": false,
+    "Newton_candidate_selected": false,
+    "full_zero_QS": false,
+    "production_changed": false
+  },
+  "raw_provenance_sha256": {
+    "recovered_20261014/download_audit.json": "97009bc9a0d6c78313901960f283313357f5b5e3538814eed5b0e559119fefc1",
+    "recovered_20261014/live_rhs_chain_20261013_v1.manifest.json": "c4df5864b88e7033cde50893a26015e972a04f217ba3dbe11f94822288f3744c",
+    "recovered_20261014/live_rhs_chain_20261013_v2.manifest.json": "216592839df5ab6fd79f9ce7d3a6ce5c005f3087b5e245a97385014d5ca15d02",
+    "load_control_20261014_v1.manifest.json": "35cf1ac3e4a6c7e5d734abbf59f3a3a12413a759379f68212ff613b5b75097e4",
+    "load_control_20261014_v2.manifest.json": "ba14094266c0abb563982e9b8cb11fc7bf31d21bb9007665e8e4084965205525"
+  }
+}

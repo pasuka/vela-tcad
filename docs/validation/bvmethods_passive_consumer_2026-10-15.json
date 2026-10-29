@@ -1,0 +1,151 @@
+{
+  "date": "2026-10-15",
+  "scope": "BVmethods source-off fixed-state passive original-path diagnostics",
+  "configuration": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "temperature_K": 300,
+    "resistor_ohm_um": 10000000.0,
+    "precision": "native binary80; independent Decimal100 and exact rational binary80 rounding",
+    "native_backend": "existing blocked decomposition; one thread",
+    "physical_models": "Fermi, OldSlotboom, DensityIntegral(240), original mobility and contacts; sources disabled"
+  },
+  "connections_restored": {
+    "T470p": true,
+    "Sentaurus_VM": true
+  },
+  "previous_supplement_files_verified": 8,
+  "native_archives": {
+    "consumer": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "4b899fcca6f056c6424c0bf2b652104f7233c15d74c73a248c3c18d0c87c094a"
+    },
+    "consumer_v2": {
+      "all_verified": true,
+      "files": 15,
+      "archive_sha256": "2d27ec44b8fa6e6de16308602abc2f78ed5420443d4ad6e14e64b6cad954f7a2"
+    },
+    "consumer_v3": {
+      "all_verified": true,
+      "files": 31,
+      "archive_sha256": "5400f015704dea3b2520377d2fa6f60ee5b5ea666a2706e1b5a5d867383a573c"
+    },
+    "consumer_v4": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "0f572cf4c0a5aee6e9efebca0a93fca7e1fcfa621a68866d66b98e2130ceb5f7"
+    },
+    "consumer_v5": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "d1a9bd7fcfe1fde6d81e426b2b0b0fdb5fcdc49de65d6447b0a52b9b93234409"
+    },
+    "consumer_v6": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "8e9b1eb6149dbf698223be5c022ab2d2fc5605af6cba7e141eb334dde3c9c2ba"
+    },
+    "consumer_v7": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "de515495fb78168a840f81edf15b991e1c6ae928f61a7c15301164f3eed2effa"
+    },
+    "consumer_v8": {
+      "all_verified": true,
+      "files": 29,
+      "archive_sha256": "859824456532b6ee45abe3eb648c2b2e09c31b6b53ca8cb2c53f8fa36bf556e0"
+    }
+  },
+  "native_files_verified": 220,
+  "first_system_identities": {
+    "consumer": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "consumer_v4": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "consumer_v5": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "consumer_v6": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "consumer_v7": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    },
+    "consumer_v8": {
+      "names": true,
+      "variables": true,
+      "rhs1": true,
+      "matrix": true,
+      "solution": true,
+      "rhs2": true
+    }
+  },
+  "native_identity_is_not_cross_solver_RHS_alignment": true,
+  "consumer_findings": {
+    "FermiDelta_calls_per_carrier": 2,
+    "FermiDelta_phases": [
+      "Plot dependency of VertexMobility",
+      "RHS assembly dependency"
+    ],
+    "QuasiFermiPerT_compute_calls_in_original_control": 0,
+    "actual_current_path": [
+      "e/hCurrentWithoutMobilityComby_ElementEdge",
+      "CurrentOnEdgeComputations::ComputeOnEdge",
+      "DES_Bernoulli"
+    ],
+    "first_RHS_current_recompute_not_observed": true,
+    "samples_are_Load_Plot_state_and_second_RHS_state": true
+  },
+  "bernoulli": {
+    "precision_decimal_digits": 100,
+    "sample_count": 16,
+    "maximum_absolute_error": "1.484552655118454191615161883707662743060046493700774794049293020935017447895840981E-19",
+    "all_B_and_derivative_checks_passed": true
+  },
+  "driver_terms": {
+    "sample_count": 16,
+    "exact_rational_rounding_tests": 3,
+    "split_exact_count": 16,
+    "reverse_split_exact_count": 0,
+    "combined_exact_count": 0
+  },
+  "driver_term_physical_identities_not_qualified": true,
+  "weak_row_reference_increment_not_yet_qualified": true,
+  "failed_controls_preserved": [
+    "v2 breakpoint before executable load: no numerical qualification",
+    "v3 register conversion prevented operands: call stacks only",
+    "v7 two-term interpretation did not reconstruct hole driver",
+    "private retry directory and output encoding failures"
+  ],
+  "Q2_Q3_complete": false,
+  "original_zero_QS_repaired": false,
+  "production_changes": false
+}

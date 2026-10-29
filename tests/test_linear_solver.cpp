@@ -5,6 +5,17 @@
 
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/solver/LinearSolver.h"
+
+TEST_CASE("Selected backend handles a scalar left by exact constraint substitution", "[linear_solver][constraints]") {
+    using namespace vela;
+    SparseMatrixd a(2,2);a.insert(0,0)=2.;a.insert(0,1)=1.;a.insert(1,0)=3.;a.insert(1,1)=4.;
+    VectorXd exact(2);exact<<-3.,5.;
+    LinearSolver solver;
+    REQUIRE((solver.solve(a,a*exact,{0})-exact).norm()<1e-13);
+    REQUIRE(solver.lastReducedDimension()==1);
+    SparseMatrixd scalar(1,1);scalar.insert(0,0)=0.;
+    REQUIRE_THROWS(solver.solve(scalar,VectorXd::Ones(1),{}));
+}
 #include "vela/solver/ElectrothermalPredictorQuality.h"
 #include "vela/solver/ElectrothermalStepControl.h"
 #include "vela/solver/ElectrothermalLocalPrediction.h"
@@ -22,150 +33,68 @@
 
 using namespace vela;
 
-TEST_CASE("Opt-in MKL PARDISO preserves equations and invalidates cached factors", "[linear_solver][mkl]") {
-#if defined(_WIN32) || defined(__linux__)
-    if(!std::getenv("VELA_MKL_RT_DLL") && !std::getenv("VELA_MKL_RT_LIBRARY")) {
-        REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
-        return;
-    }
-    LinearSolver solver("pardiso_mkl");
-    SparseMatrixd a(4,4);
-    a.insert(0,0)=1.00000001; // Non-unit affine constraint.
-    a.insert(1,0)=2.;a.insert(1,1)=4.;a.insert(1,2)=-1.;
-    a.insert(2,0)=-3.;a.insert(2,1)=.5;a.insert(2,2)=6.;a.insert(2,3)=2.;
-    a.insert(3,2)=1.;a.insert(3,3)=5.;a.makeCompressed();
-    VectorXd truth(4);truth<<.25,-2.,3.,1.;
-    auto verify=[&] {
-        VectorXd b=a*truth;auto x=solver.solve(a,b);
-        REQUIRE((x-truth).lpNorm<Eigen::Infinity>()<1e-12);
-        REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
-    };
-    verify();truth<<1.,4.,-2.,.3;verify(); // Same factors, different RHS.
-    a.coeffRef(1,1)=7.;verify(); // Same pattern, changed numerical values.
-    a.coeffRef(0,2)=.2;a.makeCompressed();verify(); // New pattern.
-    SparseMatrixd singular(4,4);singular.insert(0,0)=1.;singular.makeCompressed();
-    REQUIRE_THROWS(solver.solve(singular,truth));
-    verify(); // Recovery must not use stale factors after an error.
-#else
-    REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
-#endif
+TEST_CASE("Constraint elimination preserves affine rows and nonzero boundary RHS", "[linear_solver][constraints]") {
+    SparseMatrixd a(5,5);
+    std::vector<Eigen::Triplet<double>> t={{0,0,2.},{0,4,-3.},
+        {1,0,4.},{1,1,-5.},{1,4,6.},
+        {2,0,2.},{2,1,3.},{2,2,8.},{2,3,-1.},{2,4,.2},
+        {3,0,-1.},{3,2,2.},{3,3,6.},{3,4,.3},
+        {4,0,.2},{4,1,-.5},{4,2,.7},{4,3,1.},{4,4,4.}};
+    a.setFromTriplets(t.begin(),t.end());
+    VectorXd exact(5); exact<<.31,-1.7,2.3,-.6,1.9;
+    const VectorXd rhs=a*exact;
+    const auto r=eliminateLinearConstraints(a,rhs,{1,0});
+    CHECK(r.kept==std::vector<int>{2,3,4}); CHECK(r.matrix.rows()==3);
+    LinearSolver solver("sparselu"); REQUIRE(solver.constraintEliminationEnabled());
+    const auto x=solver.solve(a,rhs,{0,1});
+    CHECK(solver.lastReducedDimension()==3);
+    CHECK((x-exact).lpNorm<Eigen::Infinity>()<2e-15);
+    CHECK((a*x-rhs).lpNorm<Eigen::Infinity>()<2e-14);
+    CHECK((r.recover(solver.solve(r.matrix,r.rhs))-exact).norm()<3e-15);
+    solver.setConstraintElimination(false);
+    CHECK((solver.solve(a,rhs)-x).norm()<3e-15);
+    CHECK(solver.lastReducedDimension()==5);
+    solver.setConstraintElimination(true);
+    CHECK((solver.solve(a,2.*rhs,{0,1})-2.*x).norm()<4e-15);
 }
 
-TEST_CASE("Strict elimination preserves affine constraints and changing systems", "[linear_solver][elimination]") {
-    std::vector<const char*> backends{"sparselu_eliminated", "sparselu_eliminated_long_double"};
-#ifdef VELA_HAS_UMFPACK
-    backends.push_back("umfpack_eliminated");
-#endif
-#if defined(_WIN32) || defined(__linux__)
-    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated");
-#endif
-    for(const auto* backend : backends) {
-        INFO(backend);
-        if(std::string(backend)=="sparselu_eliminated_long_double" &&
-           std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits) continue;
-        LinearSolver solver(backend);
-        SparseMatrixd a(4,4);
-        a.insert(0,0)=1.00000001; a.insert(0,2)=0.;
-        a.insert(1,0)=7.;a.insert(1,1)=4.;a.insert(1,2)=-2.;a.insert(1,3)=3.;
-        a.insert(2,0)=-5.;a.insert(2,1)=1.;a.insert(2,2)=3.;
-        a.insert(3,3)=-2.;a.makeCompressed();
-        VectorXd exact(4);exact<<.25,2.,-3.,-.5;
-        auto verify=[&]() {
-            VectorXd b=a*exact, x=solver.solve(a,b);
-            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
-            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
-        };
-        verify();exact<<0.,-1.,4.,2.;verify();
-        a.coeffRef(0,1)=.1;a.makeCompressed();verify(); // changed constraint set
-        SparseMatrixd diagonal(4,4);diagonal.setIdentity();
-        REQUIRE((solver.solve(diagonal,exact)-exact).norm()==0.);
-        SparseMatrixd zero(4,4);zero.makeCompressed();
-        REQUIRE_THROWS(solver.solve(zero,exact));
-    }
+TEST_CASE("Default constraint elimination ignores stored zeros but preserves tiny couplings", "[linear_solver][constraints]") {
+    SparseMatrixd a(3,3); a.insert(0,0)=2.;a.insert(0,1)=0.;
+    a.insert(1,0)=1.;a.insert(1,1)=3.;a.insert(1,2)=1e-250;
+    a.insert(2,1)=.5;a.insert(2,2)=4.;a.makeCompressed();
+    CHECK(diagonalConstraintRows(a)==std::vector<int>{0});
+    const VectorXd exact=VectorXd::LinSpaced(3,1.,3.);
+    LinearSolver solver("sparselu");
+    CHECK((solver.solve(a,a*exact)-exact).norm()<1e-14);
+    CHECK(solver.lastReducedDimension()==2);
+    SparseMatrixd diagonal(2,2);diagonal.insert(0,0)=2.;diagonal.insert(1,1)=-3.;
+    VectorXd rhs(2);rhs<<6.,12.;
+    const auto all=eliminateLinearConstraints(diagonal,rhs,{0,1});
+    CHECK(all.matrix.rows()==0);CHECK((all.recover(VectorXd{})-solver.solve(diagonal,rhs)).norm()==0.);
+    CHECK(solver.lastReducedDimension()==0);
 }
 
-TEST_CASE("Carrier-only elimination retains affine potential constraints", "[linear_solver][elimination]") {
-    std::vector<const char*> backends{"sparselu_eliminated_keep_psi"};
-#if defined(_WIN32) || defined(__linux__)
-    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated_keep_psi");
-#endif
-    for(const auto* backend:backends) {
-        INFO(backend);
-        LinearSolver solver(backend);
-        // Two nodes per block. Nonzero boundary increments must affect the
-        // coupled free RHS; psi row zero must remain in the factorization.
-        SparseMatrixd a(6,6);
-        a.insert(0,0)=2.;
-        a.insert(1,0)=3.;a.insert(1,1)=8.;a.insert(1,2)=-2.;a.insert(1,4)=1.;
-        a.insert(2,2)=1.00000001;
-        a.insert(3,0)=-1.;a.insert(3,1)=.5;a.insert(3,2)=2.;a.insert(3,3)=5.;
-        a.insert(4,4)=-2.;
-        a.insert(5,1)=2.;a.insert(5,4)=3.;a.insert(5,5)=7.;a.makeCompressed();
-        VectorXd exact(6);exact<<.25,-2.,.7,3.,-.4,2.;
-        auto check=[&](int eliminated) {
-            PerformanceProfiler profiler({true,"unused.json"});
-            VectorXd b=a*exact,x;
-            {ActivePerformanceProfilerScope active(&profiler);x=solver.solve(a,b);}
-            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
-            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
-            const auto obs=profiler.toJson().at("observations");
-            REQUIRE(obs.at("linear.eliminated_dofs").at("last")==eliminated);
-            REQUIRE(obs.at("linear.reduced_dimension").at("last")==6-eliminated);
-            REQUIRE(obs.at("linear.retained_prefix").at("last")==2);
-        };
-        check(2);exact<<-1.,.1,2.,-3.,.5,4.;check(2);
-        a.coeffRef(2,1)=.25;a.makeCompressed();check(1);
-        SparseMatrixd incompatible(4,4);incompatible.setIdentity();
-        REQUIRE_THROWS_AS(solver.solve(incompatible,VectorXd::Ones(4)),std::invalid_argument);
-    }
+TEST_CASE("Constraint substitution rejects cycles singular pivots and invalid metadata", "[linear_solver][constraints]") {
+    SparseMatrixd a(2,2);a.insert(0,0)=2.;a.insert(0,1)=1.;a.insert(1,0)=1.;a.insert(1,1)=3.;
+    const auto b=VectorXd::Ones(2).eval();
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0,1}),std::invalid_argument);
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0,0}),std::invalid_argument);
+    CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{2}),std::invalid_argument);
+    a.coeffRef(0,0)=0.;CHECK_THROWS_AS(eliminateLinearConstraints(a,b,{0}),std::invalid_argument);
+    a.coeffRef(0,0)=std::numeric_limits<double>::infinity();
+    CHECK_THROWS_AS(diagonalConstraintRows(a),std::invalid_argument);
 }
 
-TEST_CASE("Vendor elimination reuses only identical reduced factors", "[linear_solver][elimination]") {
-    std::vector<const char*> backends;
-#ifdef VELA_HAS_UMFPACK
-    backends.push_back("umfpack_eliminated");
-#endif
-    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY"))
-        backends.push_back("pardiso_mkl_eliminated_keep_psi");
-    for(const auto* backend:backends) {
-        INFO(backend);LinearSolver solver(backend);
-        SparseMatrixd a(6,6);a.setIdentity();a.coeffRef(1,0)=2.;a.coeffRef(1,1)=4.;
-        a.coeffRef(1,2)=-1.;a.coeffRef(3,1)=.5;a.coeffRef(3,3)=3.;a.makeCompressed();
-        VectorXd exact(6);exact<<.2,1.,-.3,2.,.7,-1.;
-        PerformanceProfiler profiler({true,"unused.json"});ActivePerformanceProfilerScope scope(&profiler);
-        auto check=[&]{const VectorXd b=a*exact;const auto x=solver.solve(a,b);
-            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);};
-        check();exact*=2.;check(); // Changed affine constraints, same reduced A.
-        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==1);
-        CHECK(profiler.toJson().at("counters").at("linear.factorize_cache_hits")==1);
-        a.coeffRef(1,1)=5.;check();
-        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==2);
-        solver.clearNumericCache();check();
-        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==3);
-        solver.clearPatternCache();check();
-        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==4);
-    }
-}
-
-TEST_CASE("Extended SparseLU solves nonsymmetric systems without stale factors", "[linear_solver][long_double]") {
-    SparseMatrixd a(3,3);
-    a.insert(0,0)=1e-8; a.insert(0,1)=2e-8;
-    a.insert(1,0)=-3.; a.insert(1,1)=7.; a.insert(1,2)=1.;
-    a.insert(2,1)=2e8; a.insert(2,2)=9e8;
-    a.makeCompressed();
-    VectorXd exact(3); exact << 1.25,-2.5,3.75;
-    LinearSolver solver("sparselu_long_double");
-    if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
-        REQUIRE_THROWS_WITH(solver.solve(a,a*exact), Catch::Matchers::ContainsSubstring("wider"));
-    } else {
-        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
-        exact << -4.,2.,1.;
-        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
-        a.coeffRef(1,1)=11.;
-        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
-        SparseMatrixd singular(3,3); singular.insert(0,0)=1.; singular.makeCompressed();
-        REQUIRE_THROWS(solver.solve(singular,exact));
-    }
+TEST_CASE("Constraint validation ignores unused uncompressed sparse capacity", "[linear_solver][constraints]") {
+    SparseMatrixd a(3,3);a.reserve(Eigen::VectorXi::Constant(3,5));
+    a.insert(0,0)=2.;a.insert(1,0)=.1;a.insert(1,1)=3.;a.insert(2,1)=.2;a.insert(2,2)=4.;
+    REQUIRE_FALSE(a.isCompressed());
+    for(int col=0;col<a.outerSize();++col)
+        for(int k=a.outerIndexPtr()[col]+a.innerNonZeroPtr()[col];k<a.outerIndexPtr()[col+1];++k)
+            a.valuePtr()[k]=std::numeric_limits<double>::quiet_NaN();
+    const VectorXd exact=VectorXd::LinSpaced(3,1.,3.);
+    LinearSolver solver("sparselu");
+    CHECK((solver.solve(a,a*exact)-exact).norm()<1e-14);
 }
 
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
@@ -453,6 +382,8 @@ TEST_CASE("UMFPACK retains factors safely and recovers after rejected systems", 
 {
 #if defined(VELA_HAS_UMFPACK)
     LinearSolver solver("umfpack");
+    // This case audits the backend's full-pattern cache; reduction has its own cases.
+    solver.setConstraintElimination(false);
     const VectorXd exact = (VectorXd(3) << 1., -2., 3.).finished();
     auto a = makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{0,1,.7},{2,0,-.3}});
     const auto check = [&](const SparseMatrixd& m) {
@@ -540,16 +471,18 @@ TEST_CASE("LinearSolver re-analyzes when sparse pattern changes", "[linear_solve
     const VectorXd b = (VectorXd(3) << 2.0, 6.0, 12.0).finished();
 
     const VectorXd x1 = solver.solve(diagonal, b);
-    REQUIRE(solver.patternAnalysisCount() == 1);
+    REQUIRE(solver.patternAnalysisCount() == 0);
+    REQUIRE(solver.lastReducedDimension() == 0);
     REQUIRE((diagonal * x1 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 
     const VectorXd x2 = solver.solve(coupled, b);
-    REQUIRE(solver.patternAnalysisCount() == 2);
+    REQUIRE(solver.patternAnalysisCount() == 1);
+    REQUIRE(solver.lastReducedDimension() == 2);
     REQUIRE((coupled * x2 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 
     solver.clearPatternCache();
     const VectorXd x3 = solver.solve(coupled, b);
-    REQUIRE(solver.patternAnalysisCount() == 3);
+    REQUIRE(solver.patternAnalysisCount() == 2);
     REQUIRE((coupled * x3 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 }
 
@@ -843,6 +776,152 @@ TEST_CASE("Electrothermal natural corrector recognizes linear contraction and re
     const auto projected=experimental::electrothermalNaturalTrial(d,20.*d,.4,true);
     CHECK(projected.nextAlpha==.2);
     CHECK_THROWS(experimental::electrothermalNaturalTrial(VectorXd::Zero(2),d,1.));
+}
+
+TEST_CASE("Opt-in MKL PARDISO preserves equations and invalidates cached factors", "[linear_solver][mkl]") {
+#if defined(_WIN32) || defined(__linux__)
+    if(!std::getenv("VELA_MKL_RT_DLL") && !std::getenv("VELA_MKL_RT_LIBRARY")) {
+        REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
+        return;
+    }
+    LinearSolver solver("pardiso_mkl");
+    SparseMatrixd a(4,4);
+    a.insert(0,0)=1.00000001; // Non-unit affine constraint.
+    a.insert(1,0)=2.;a.insert(1,1)=4.;a.insert(1,2)=-1.;
+    a.insert(2,0)=-3.;a.insert(2,1)=.5;a.insert(2,2)=6.;a.insert(2,3)=2.;
+    a.insert(3,2)=1.;a.insert(3,3)=5.;a.makeCompressed();
+    VectorXd truth(4);truth<<.25,-2.,3.,1.;
+    auto verify=[&] {
+        VectorXd b=a*truth;auto x=solver.solve(a,b);
+        REQUIRE((x-truth).lpNorm<Eigen::Infinity>()<1e-12);
+        REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+    };
+    verify();truth<<1.,4.,-2.,.3;verify(); // Same factors, different RHS.
+    a.coeffRef(1,1)=7.;verify(); // Same pattern, changed numerical values.
+    a.coeffRef(0,2)=.2;a.makeCompressed();verify(); // New pattern.
+    SparseMatrixd singular(4,4);singular.insert(0,0)=1.;singular.makeCompressed();
+    REQUIRE_THROWS(solver.solve(singular,truth));
+    verify(); // Recovery must not use stale factors after an error.
+#else
+    REQUIRE_THROWS_AS(LinearSolver("pardiso_mkl"),std::invalid_argument);
+#endif
+}
+
+TEST_CASE("Strict elimination preserves affine constraints and changing systems", "[linear_solver][elimination]") {
+    std::vector<const char*> backends{"sparselu_eliminated", "sparselu_eliminated_long_double"};
+#ifdef VELA_HAS_UMFPACK
+    backends.push_back("umfpack_eliminated");
+#endif
+#if defined(_WIN32) || defined(__linux__)
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated");
+#endif
+    for(const auto* backend : backends) {
+        INFO(backend);
+        if(std::string(backend)=="sparselu_eliminated_long_double" &&
+           std::numeric_limits<long double>::digits<=std::numeric_limits<double>::digits) continue;
+        LinearSolver solver(backend);
+        SparseMatrixd a(4,4);
+        a.insert(0,0)=1.00000001; a.insert(0,2)=0.;
+        a.insert(1,0)=7.;a.insert(1,1)=4.;a.insert(1,2)=-2.;a.insert(1,3)=3.;
+        a.insert(2,0)=-5.;a.insert(2,1)=1.;a.insert(2,2)=3.;
+        a.insert(3,3)=-2.;a.makeCompressed();
+        VectorXd exact(4);exact<<.25,2.,-3.,-.5;
+        auto verify=[&]() {
+            VectorXd b=a*exact, x=solver.solve(a,b);
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
+            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+        };
+        verify();exact<<0.,-1.,4.,2.;verify();
+        a.coeffRef(0,1)=.1;a.makeCompressed();verify(); // changed constraint set
+        SparseMatrixd diagonal(4,4);diagonal.setIdentity();
+        REQUIRE((solver.solve(diagonal,exact)-exact).norm()==0.);
+        SparseMatrixd zero(4,4);zero.makeCompressed();
+        REQUIRE_THROWS(solver.solve(zero,exact));
+    }
+}
+
+TEST_CASE("Carrier-only elimination retains affine potential constraints", "[linear_solver][elimination]") {
+    std::vector<const char*> backends{"sparselu_eliminated_keep_psi"};
+#if defined(_WIN32) || defined(__linux__)
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY")) backends.push_back("pardiso_mkl_eliminated_keep_psi");
+#endif
+    for(const auto* backend:backends) {
+        INFO(backend);
+        LinearSolver solver(backend);
+        // Two nodes per block. Nonzero boundary increments must affect the
+        // coupled free RHS; psi row zero must remain in the factorization.
+        SparseMatrixd a(6,6);
+        a.insert(0,0)=2.;
+        a.insert(1,0)=3.;a.insert(1,1)=8.;a.insert(1,2)=-2.;a.insert(1,4)=1.;
+        a.insert(2,2)=1.00000001;
+        a.insert(3,0)=-1.;a.insert(3,1)=.5;a.insert(3,2)=2.;a.insert(3,3)=5.;
+        a.insert(4,4)=-2.;
+        a.insert(5,1)=2.;a.insert(5,4)=3.;a.insert(5,5)=7.;a.makeCompressed();
+        VectorXd exact(6);exact<<.25,-2.,.7,3.,-.4,2.;
+        auto check=[&](int eliminated) {
+            PerformanceProfiler profiler({true,"unused.json"});
+            VectorXd b=a*exact,x;
+            {ActivePerformanceProfilerScope active(&profiler);x=solver.solve(a,b);}
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);
+            REQUIRE((a*x-b).lpNorm<Eigen::Infinity>()<1e-12);
+            const auto obs=profiler.toJson().at("observations");
+            REQUIRE(obs.at("linear.eliminated_dofs").at("last")==eliminated);
+            REQUIRE(obs.at("linear.reduced_dimension").at("last")==6-eliminated);
+            REQUIRE(obs.at("linear.retained_prefix").at("last")==2);
+        };
+        check(2);exact<<-1.,.1,2.,-3.,.5,4.;check(2);
+        a.coeffRef(2,1)=.25;a.makeCompressed();check(1);
+        SparseMatrixd incompatible(4,4);incompatible.setIdentity();
+        REQUIRE_THROWS_AS(solver.solve(incompatible,VectorXd::Ones(4)),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Vendor elimination reuses only identical reduced factors", "[linear_solver][elimination]") {
+    std::vector<const char*> backends;
+#ifdef VELA_HAS_UMFPACK
+    backends.push_back("umfpack_eliminated");
+#endif
+    if(std::getenv("VELA_MKL_RT_DLL") || std::getenv("VELA_MKL_RT_LIBRARY"))
+        backends.push_back("pardiso_mkl_eliminated_keep_psi");
+    for(const auto* backend:backends) {
+        INFO(backend);LinearSolver solver(backend);
+        SparseMatrixd a(6,6);a.setIdentity();a.coeffRef(1,0)=2.;a.coeffRef(1,1)=4.;
+        a.coeffRef(1,2)=-1.;a.coeffRef(3,1)=.5;a.coeffRef(3,3)=3.;a.makeCompressed();
+        VectorXd exact(6);exact<<.2,1.,-.3,2.,.7,-1.;
+        PerformanceProfiler profiler({true,"unused.json"});ActivePerformanceProfilerScope scope(&profiler);
+        auto check=[&]{const VectorXd b=a*exact;const auto x=solver.solve(a,b);
+            REQUIRE((x-exact).lpNorm<Eigen::Infinity>()<1e-12);};
+        check();exact*=2.;check(); // Changed affine constraints, same reduced A.
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==1);
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_cache_hits")==1);
+        a.coeffRef(1,1)=5.;check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==2);
+        solver.clearNumericCache();check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==3);
+        solver.clearPatternCache();check();
+        CHECK(profiler.toJson().at("counters").at("linear.factorize_calls")==4);
+    }
+}
+
+TEST_CASE("Extended SparseLU solves nonsymmetric systems without stale factors", "[linear_solver][long_double]") {
+    SparseMatrixd a(3,3);
+    a.insert(0,0)=1e-8; a.insert(0,1)=2e-8;
+    a.insert(1,0)=-3.; a.insert(1,1)=7.; a.insert(1,2)=1.;
+    a.insert(2,1)=2e8; a.insert(2,2)=9e8;
+    a.makeCompressed();
+    VectorXd exact(3); exact << 1.25,-2.5,3.75;
+    LinearSolver solver("sparselu_long_double");
+    if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
+        REQUIRE_THROWS_WITH(solver.solve(a,a*exact), Catch::Matchers::ContainsSubstring("wider"));
+    } else {
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        exact << -4.,2.,1.;
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        a.coeffRef(1,1)=11.;
+        REQUIRE((solver.solve(a,a*exact)-exact).norm()<1e-12);
+        SparseMatrixd singular(3,3); singular.insert(0,0)=1.; singular.makeCompressed();
+        REQUIRE_THROWS(solver.solve(singular,exact));
+    }
 }
 
 TEST_CASE("SLOT memory mixed linear guard rejects constrained and material errors", "[slot_population]") {

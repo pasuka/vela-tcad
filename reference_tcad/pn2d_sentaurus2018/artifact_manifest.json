@@ -1,0 +1,229 @@
+{
+  "schema": "vela.reference_artifact_manifest.v1",
+  "case": "pn2d_sentaurus2018",
+  "version": "v1",
+  "created_utc": "2026-09-26T14:23:18Z",
+  "store": {
+    "kind": "ssh",
+    "host": "sentaurus",
+    "root": "/home/tcad/vela_reference_artifacts"
+  },
+  "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
+  "deck_matches_repository": true,
+  "origin": {
+    "vm_run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+    "note": "First batch: pn2d_0v only. pn2d_iv/pn2d_bv have not been run on T-2022.03 yet (decision A-3)."
+  },
+  "artifacts": [
+    {
+      "path": "source/pn2d_0v_sdevice.cmd",
+      "category": "A",
+      "sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+      "bytes": 953,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_0v_sdevice.cmd"
+      }
+    },
+    {
+      "path": "source/pn2d_sde.cmd",
+      "category": "A",
+      "sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "bytes": 3246,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_sde.cmd"
+      }
+    },
+    {
+      "path": "source/pn2d_msh.cmd",
+      "category": "A",
+      "sha256": "beb6cb224dbdbeed64a61685a9d24e99b04b45eff3249c69a21c5b7219e03f07",
+      "bytes": 900,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_msh.cmd"
+      }
+    },
+    {
+      "path": "source/models.par",
+      "category": "A",
+      "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+      "bytes": 107158,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/models.par"
+      }
+    },
+    {
+      "path": "mesh/pn2d_msh.tdr",
+      "category": "C",
+      "sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287",
+      "bytes": 61021,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_msh.cmd",
+        "finished_utc": "2026-08-18T02:23:39Z",
+        "cmd_sha256": "beb6cb224dbdbeed64a61685a9d24e99b04b45eff3249c69a21c5b7219e03f07"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_msh.tdr"
+      }
+    },
+    {
+      "path": "mesh/pn2d_bnd.tdr",
+      "category": "C",
+      "sha256": "8426e65c4f331b3aa58a66e589979e2775a5a97cf09853cf9b84863b34aa69f7",
+      "bytes": 15264,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_sde.cmd",
+        "finished_utc": "2026-08-18T02:20:27Z",
+        "cmd_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_bnd.tdr"
+      }
+    },
+    {
+      "path": "mesh/pn2d_msh.log",
+      "category": "C",
+      "sha256": "c533305e06f619fdbb307a0fbbb48aef52010b58f9795e7c089c4f5603abe91b",
+      "bytes": 2958,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_msh.cmd",
+        "finished_utc": "2026-08-18T02:23:39Z",
+        "cmd_sha256": "beb6cb224dbdbeed64a61685a9d24e99b04b45eff3249c69a21c5b7219e03f07"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_msh.log"
+      }
+    },
+    {
+      "path": "mesh/pn2d_sde.log",
+      "category": "C",
+      "sha256": "de24adb9de1a7c2768030400414901a454fc307254ca0b19e63eeb9cba690181",
+      "bytes": 2676,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_sde.cmd",
+        "finished_utc": "2026-08-18T02:23:39Z",
+        "cmd_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_sde.log"
+      }
+    },
+    {
+      "path": "plt/pn2d_0v.plt",
+      "category": "B",
+      "sha256": "db044268c108ffd86371b80b7419fafa6e00903153b0a0be61e90914ea93f193",
+      "bytes": 1541,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_0v_sdevice.cmd",
+        "finished_utc": "2026-08-18T02:27:03Z",
+        "cmd_sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_0v.plt"
+      }
+    },
+    {
+      "path": "tdr/pn2d_0v_des.tdr",
+      "category": "D",
+      "sha256": "46f56c6be6b6a7e6e7b0b0a327f564484db00f9495e2afde4be50a52140ecd0a",
+      "bytes": 165341,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_0v_sdevice.cmd",
+        "finished_utc": "2026-08-18T02:27:03Z",
+        "cmd_sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_0v_des.tdr"
+      }
+    },
+    {
+      "path": "log/pn2d_0v.log_des.log",
+      "category": "E",
+      "sha256": "db14224f005ab1418d06fbb66b7e93c2ff826826640fc3db2f8fca1423668826",
+      "bytes": 23719,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_0v_sdevice.cmd",
+        "finished_utc": "2026-08-18T02:27:03Z",
+        "cmd_sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/pn2d_0v.log_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/run_pn2d_0v.out",
+      "category": "E",
+      "sha256": "6654f624ca0ec29c461480ad2b388aae0880c9a03218d76052971b26f3bfa8a7",
+      "bytes": 23915,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source",
+        "cmd": "pn2d_0v_sdevice.cmd",
+        "finished_utc": "2026-08-18T02:27:03Z",
+        "cmd_sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/sentaurus2022_license_smoke/source/run_pn2d_0v.out"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    }
+  ]
+}

@@ -1,0 +1,558 @@
+{
+  "schema": "vela.sdevice.support_matrix.v1",
+  "date": "2026-10-23",
+  "runtime_commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+  "runtime_qualification": "validation/sdevice_delivery_revalidation_2026-10-22.json",
+  "original_fixture_qualification": "parser and emission contract only unless explicitly qualified variant below",
+  "fixtures": [
+    {
+      "case": "pn2d_sentaurus2018",
+      "deck": "pn2d_sentaurus2018/pn2d_0v_sdevice.cmd",
+      "origin": "reference_tcad/pn2d_sentaurus2018/source/pn2d_0v_sdevice.cmd",
+      "sha256_lf": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 3,
+        "fatal_ids": [
+          "E301"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Recombination.SRH",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.recombination+=srh"
+        }
+      ]
+    },
+    {
+      "case": "pn2d_sentaurus2018",
+      "deck": "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd",
+      "origin": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
+      "sha256_lf": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 3,
+        "fatal_ids": [
+          "E301"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Recombination.SRH",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.recombination+=srh"
+        }
+      ]
+    },
+    {
+      "case": "pn2d_sentaurus2018",
+      "deck": "pn2d_sentaurus2018/pn2d_bv_sdevice.cmd",
+      "origin": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd",
+      "sha256_lf": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 3,
+        "fatal_ids": [
+          "E301"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Mobility.HighFieldSaturation",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model+=_field"
+        },
+        {
+          "key": "Recombination.Avalanche",
+          "parameters": {
+            "model": "VanOverstraeten"
+          },
+          "status": "supported",
+          "vela": "solver.impact_ionization.model=van_overstraeten"
+        },
+        {
+          "key": "Recombination.SRH",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.recombination+=srh"
+        }
+      ]
+    },
+    {
+      "case": "bvmethods_sentaurus2018",
+      "deck": "bvmethods_sentaurus2018/aba_poisson_sdevice.cmd",
+      "origin": "reference_tcad/bvmethods_sentaurus2018/source/aba_poisson_sdevice.cmd",
+      "sha256_lf": "6fd83bbcb147de0dce160ff3c4578e3d6e72b63ec75be8d01c7468c2c66c97f3",
+      "actual_verdict": {
+        "accepted": true,
+        "exit_code": 0,
+        "fatal_ids": []
+      },
+      "effective_models": [
+        {
+          "key": "Fermi",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.carrier_statistics.model=fermi_dirac"
+        },
+        {
+          "key": "Recombination.Avalanche",
+          "parameters": {
+            "driving_force": "ElectricField"
+          },
+          "status": "supported",
+          "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=electric_field"
+        }
+      ]
+    },
+    {
+      "case": "bvmethods_sentaurus2018",
+      "deck": "bvmethods_sentaurus2018/external_resistor_sdevice.cmd",
+      "origin": "reference_tcad/bvmethods_sentaurus2018/source/external_resistor_sdevice.cmd",
+      "sha256_lf": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+      "actual_verdict": {
+        "accepted": true,
+        "exit_code": 0,
+        "fatal_ids": []
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Fermi",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.carrier_statistics.model=fermi_dirac"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Mobility.Enormal",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model+=_lombardi"
+        },
+        {
+          "key": "Mobility.HighFieldSaturation",
+          "parameters": {
+            "driving_force": "GradQuasiFermi"
+          },
+          "status": "supported",
+          "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"
+        },
+        {
+          "key": "Recombination.Avalanche",
+          "parameters": {
+            "driving_force": "Eparallel"
+          },
+          "status": "supported",
+          "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=eparallel"
+        },
+        {
+          "key": "Recombination.Band2Band",
+          "parameters": {
+            "model": "E2"
+          },
+          "status": "supported",
+          "vela": "solver.band_to_band.model=e2"
+        },
+        {
+          "key": "Recombination.SRH",
+          "parameters": {
+            "doping_dependence": true
+          },
+          "status": "supported",
+          "vela": "solver.recombination+=srh; solver.srh_doping_dependence=true"
+        }
+      ]
+    },
+    {
+      "case": "schottky_charon_sentaurus2018",
+      "deck": "schottky_charon_sentaurus2018/schottky_n_des.cmd",
+      "origin": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_des.cmd",
+      "sha256_lf": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 3,
+        "fatal_ids": [
+          "E301"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "Recombination.SRH",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.recombination+=srh"
+        }
+      ]
+    },
+    {
+      "case": "genius_bjt_sentaurus2022",
+      "deck": "genius_bjt_sentaurus2022/bjt_m0_des.cmd",
+      "origin": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_m0_des.cmd",
+      "sha256_lf": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 3,
+        "fatal_ids": [
+          "E301"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "Recombination.SRH",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.recombination+=srh"
+        }
+      ]
+    },
+    {
+      "case": "singledevice_sentaurus2018",
+      "deck": "singledevice_sentaurus2018/singledevice_sdevice.cmd",
+      "origin": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sdevice.cmd",
+      "sha256_lf": "138da5df58a044caefc6cbacc5536a22ea0f4176f0585faacf440218bddfd1ab",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 1,
+        "fatal_ids": [
+          "E101",
+          "E102"
+        ]
+      },
+      "effective_models": []
+    },
+    {
+      "case": "bvmethods_sentaurus2018",
+      "deck": "bvmethods_sentaurus2018/full_physics_ablation_sdevice.cmd",
+      "origin": "reference_tcad/bvmethods_sentaurus2018/source/full_physics_ablation_sdevice.cmd",
+      "sha256_lf": "7a792768da51aefc49fd27e65250aaecc29eafee6bb7f91104bd4637a223d5cc",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 1,
+        "fatal_ids": [
+          "E107"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Fermi",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.carrier_statistics.model=fermi_dirac"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Mobility.HighFieldSaturation",
+          "parameters": {
+            "driving_force": "GradQuasiFermi"
+          },
+          "status": "supported",
+          "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"
+        },
+        {
+          "key": "Recombination.Avalanche",
+          "parameters": {
+            "driving_force": "Eparallel"
+          },
+          "status": "supported",
+          "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=eparallel"
+        },
+        {
+          "key": "Recombination.Band2Band",
+          "parameters": {
+            "model": "E2"
+          },
+          "status": "supported",
+          "vela": "solver.band_to_band.model=e2"
+        }
+      ]
+    },
+    {
+      "case": "transportmodels_sentaurus2022",
+      "deck": "transportmodels_sentaurus2022/pp6_des.cmd",
+      "origin": "reference_tcad/transportmodels_sentaurus2022/source/pp6_des.cmd",
+      "sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+      "actual_verdict": {
+        "accepted": false,
+        "exit_code": 1,
+        "fatal_ids": [
+          "E105",
+          "E109"
+        ]
+      },
+      "effective_models": [
+        {
+          "key": "EffectiveIntrinsicDensity.OldSlotboom",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.bandgap_narrowing=old_slotboom"
+        },
+        {
+          "key": "Fermi",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.carrier_statistics.model=fermi_dirac"
+        },
+        {
+          "key": "Mobility.DopingDependence",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model=masetti"
+        },
+        {
+          "key": "Mobility.Enormal",
+          "parameters": {},
+          "status": "supported",
+          "vela": "solver.mobility.model+=_lombardi"
+        },
+        {
+          "key": "Mobility.eHighFieldSaturation",
+          "parameters": {
+            "driving_force": "GradQuasiFermi"
+          },
+          "status": "supported",
+          "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"
+        },
+        {
+          "key": "Mobility.hHighFieldSaturation",
+          "parameters": {
+            "driving_force": "GradQuasiFermi"
+          },
+          "status": "supported",
+          "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"
+        },
+        {
+          "key": "Recombination.SRH",
+          "parameters": {
+            "doping_dependence": true,
+            "temperature_dependence": true
+          },
+          "status": "supported",
+          "vela": "solver.recombination+=srh; solver.srh_doping_dependence=true; solver.srh_temperature_dependence=true"
+        }
+      ]
+    }
+  ],
+  "qualified_pn2d_variants": [
+    {
+      "case": "pn2d_0v",
+      "status": "pass",
+      "reference_version": "T-2022.03-SP2 (0.7745337)",
+      "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+      "provenance": {
+        "source_relation": "Parameter inserted and ElectricField/Vector Plot output added; all other tokens identical",
+        "original_sha256": "f4cf96085c77384d1ce57c4090aaba6ee2a7c4e1510b07abe228c87390b279ea",
+        "cmd_sha256": "c2f4e8e51a43f4ba1b0142ffb859b67d7cf58fdcc7963c5a9a63c14db5ded2b4",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "grid_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287"
+      },
+      "mesh": {
+        "nodes": 1943,
+        "cells": 3680
+      },
+      "units": {
+        "length": "um",
+        "density": "cm^-3",
+        "current": "A/um",
+        "field": "V/cm"
+      },
+      "contract_sha256": "99c687d07a395afee506609796390eaa046c9d8f69a74d7b263b0f3a87a1fb9d",
+      "limit": "Named mesh, physics, sidecar and original gates only"
+    },
+    {
+      "case": "pn2d_iv",
+      "status": "pass",
+      "reference_version": "T-2022.03-SP2 (0.7745337)",
+      "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+      "provenance": {
+        "source_relation": "Parameter inserted and ElectricField/Vector Plot output added; all other tokens identical",
+        "original_sha256": "ea1231afa42073b93429ed1c7c3fb3f416b77bbe9a023144fd0224a89fbf76dc",
+        "cmd_sha256": "4b61ebc1c9feaf21307397e2ef732b092a90eb366082016d1a03befc36eb4b2d",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "grid_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287"
+      },
+      "mesh": {
+        "nodes": 1943,
+        "cells": 3680
+      },
+      "units": {
+        "length": "um",
+        "density": "cm^-3",
+        "current": "A/um",
+        "field": "V/cm"
+      },
+      "contract_sha256": "99c687d07a395afee506609796390eaa046c9d8f69a74d7b263b0f3a87a1fb9d",
+      "limit": "IV curve window 0.2-0.3 V only"
+    },
+    {
+      "case": "pn2d_bv",
+      "status": "pass",
+      "reference_version": "T-2022.03-SP2 (0.7745337)",
+      "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+      "provenance": {
+        "source_relation": "Parameter=\"models.par\" inserted; all remaining tokens identical",
+        "original_sha256": "be93c3ad15d25ad72138d742c74ef06452bfa95a14e7acaa9aac0a2350e0f2bc",
+        "cmd_sha256": "e562e5407e60350f64b5fd6c820b4d1f2e7594fb6718cff1abca63fcbe0d6286",
+        "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "grid_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287",
+        "sidecar_sha256": "c4dede17cf459d843c180d70ba0ed2e8be80f27bc74fa4abb4fc67b69b2bece4",
+        "sidecar": {
+          "schema": "vela.sdevice_sidecar.v1",
+          "description": "Explicit PN2D BV atomic current/source/volume bundle qualified by docs/validation/pn2d_bv_validation.md; requires non-obtuse mesh. Native cmd/par models and coefficients remain unchanged.",
+          "avalanche_current_support_profile": "element_edge_sg_gss_laux",
+          "high_field_gradient_discretization": "transport_cell_vector"
+        }
+      },
+      "mesh": {
+        "nodes": 1943,
+        "cells": 3680
+      },
+      "units": {
+        "length": "um",
+        "density": "cm^-3",
+        "current": "A/um",
+        "field": "V/cm"
+      },
+      "contract_sha256": "99c687d07a395afee506609796390eaa046c9d8f69a74d7b263b0f3a87a1fb9d",
+      "limit": "Named mesh, physics, sidecar and original gates only"
+    }
+  ],
+  "package_check_gates": [
+    {
+      "cmd": "schottky_n_des.cmd",
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "pass": true,
+      "reference_archive": "schottky_charon_sentaurus2018",
+      "reference_version": "v1",
+      "reference_manifest_sha256": "41d80836c82a09bed290f0f815d1c50c4d0a0531bd9ecb26104685791ef33fa0",
+      "grid_sha256": "a4bb8a4c93dcee13d62add4f930697e0c4fa12adb7401563073327f8ba44dcf3"
+    },
+    {
+      "cmd": "aba_poisson_sdevice.cmd",
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "pass": true,
+      "reference_archive": "bvmethods_sentaurus2018",
+      "reference_version": "v1",
+      "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+      "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+    },
+    {
+      "cmd": "aba_coupled_sdevice.cmd",
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "pass": true,
+      "reference_archive": "bvmethods_sentaurus2018",
+      "reference_version": "v1",
+      "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+      "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+    },
+    {
+      "cmd": "external_resistor_sdevice.cmd",
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "pass": true,
+      "reference_archive": "bvmethods_sentaurus2018",
+      "reference_version": "v1",
+      "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+      "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+    },
+    {
+      "cmd": "voltage_to_current_sdevice.cmd",
+      "expected_exit_code": 0,
+      "exit_code": 0,
+      "pass": true,
+      "reference_archive": "bvmethods_sentaurus2018",
+      "reference_version": "v1",
+      "reference_manifest_sha256": "5a62b548eb26db2a9cf4714a9352ea1d12b9f173522075cf13f6693a74f63be6",
+      "grid_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+    },
+    {
+      "cmd": "pp6_des.cmd",
+      "expected_exit_code": 1,
+      "exit_code": 1,
+      "pass": true
+    }
+  ],
+  "independent_research": [
+    "Installation-library BVmethods NonLocalPath",
+    "R2 augmented Newton and R3 restart/full pure-QS qualification"
+  ],
+  "known_math_boundary": "Digits/RelErrControl/ErrRef recorded as W201; not mapped to production acceptance",
+  "packages": {
+    "windows": {
+      "commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+      "archive_sha256": "1c7835de896c5cb3db01932a9fce7eab8e96de6f1047bc4b255780057dc353d2",
+      "manifest_sha256": "fc31a98578eb37140615b6ff8bed282f121179eb2826895eb115e093688c4ef0",
+      "status": "pass"
+    },
+    "linux": {
+      "commit": "6a56593bf3917cc213a00aeab4f4a614befa52ca",
+      "archive_sha256": "c57ddc0c10de3986b8676c71598948a20d04507447246616fabb87a867381a23",
+      "manifest_sha256": "36a240171d28e085a2bc04eab94cc4a8f4870b2624be56b18a5a7aafb7b9d2b0",
+      "status": "pass"
+    }
+  }
+}

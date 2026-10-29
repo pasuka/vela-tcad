@@ -1,0 +1,308 @@
+{
+  "date": "2026-10-18",
+  "status": "N4 ongoing; private precision pipeline verified in specified direction; coupled gates open",
+  "thresholds": {
+    "absolute": 1e-08,
+    "directional": 1e-05,
+    "pair_ledger": 1e-12,
+    "changed": false
+  },
+  "configuration": {
+    "state": "accepted_0053 Load first RHS",
+    "temperature_K": 300,
+    "mesh_nodes": 2600,
+    "Tri3": 5020,
+    "Si_cells": 4156,
+    "free_carrier_nodes": 2121,
+    "augmented_unknowns": 6843,
+    "resistor_ohm_um": 10000000.0,
+    "native_version": "T-2022.03-SP2",
+    "backend": "Ubuntu 26.04 private Release C++; no linear solve",
+    "full_evaluations": 17
+  },
+  "SG": {
+    "statistics_stages": {
+      "canonical": {
+        "conflicts": 0,
+        "max_direction_error": 1.7874348894756375e-11
+      },
+      "ratio_round": {
+        "conflicts": 31,
+        "max_direction_error": 0.0789586010162104
+      },
+      "eta_round": {
+        "conflicts": 33,
+        "max_direction_error": 0.13162216417727415
+      },
+      "log_round": {
+        "conflicts": 35,
+        "max_direction_error": 0.13804242619511592
+      },
+      "gamma_round": {
+        "conflicts": 35,
+        "max_direction_error": 0.08257560273548374
+      },
+      "gamma_difference_round": {
+        "conflicts": 35,
+        "max_direction_error": 0.08257560273548374
+      },
+      "band_difference_round": {
+        "conflicts": 35,
+        "max_direction_error": 0.08257560273548374
+      },
+      "final_a": {
+        "conflicts": 35,
+        "max_direction_error": 0.08257560273548374
+      }
+    },
+    "endpoint_replays": 1638,
+    "argument_response_counts": {
+      "nonzero": 269,
+      "erased": 2,
+      "sign_reversed": 2
+    },
+    "base_a_gap_max": "2.1943024860941080600593388431508600305633950234563727274890076809769384159E-15",
+    "observational_transfer_only": true,
+    "actual_common_gate_conflicts": 36,
+    "native_target_absolute_failures": [
+      38,
+      39,
+      38
+    ],
+    "old_positive_QS_95_failures_retained": true
+  },
+  "NonLocalPath": {
+    "stages": {
+      "baseline": {
+        "raw_residual_equal": true,
+        "source_electron_equal": true,
+        "source_hole_equal": true,
+        "projection_equal": true,
+        "other_preserved_blocks_equal": true
+      },
+      "mode1": {
+        "counts": {
+          "zero": 3561,
+          "pass": 1489,
+          "fail": 150
+        },
+        "max_error": 0.2494361217817807,
+        "same_partition": true,
+        "pair_balance_delta": "-5.9322121438258668592718001232346422191200122401354895051029631501928693484223086594224211435246058909376004053E-10",
+        "same_partition_to_legacy": true,
+        "free_counts": {
+          "zero": 2615,
+          "pass": 1488,
+          "fail": 139
+        },
+        "pair_delta_relative": 1.4952192035426025e-18,
+        "absolute_pair_balance": {
+          "minus": 6.550877999573428e-18,
+          "plus": 6.550878012295123e-18
+        }
+      },
+      "mode2": {
+        "counts": {
+          "zero": 3561,
+          "pass": 1535,
+          "fail": 104
+        },
+        "max_error": 0.012144708663762901,
+        "same_partition": true,
+        "pair_balance_delta": "-5.9322122287817040671419254791464652987438081288452764110461123855042829789406992780838625210253615428028205019E-10",
+        "same_partition_to_legacy": true,
+        "free_counts": {
+          "zero": 2615,
+          "pass": 1532,
+          "fail": 95
+        },
+        "pair_delta_relative": 1.4952192245935915e-18,
+        "absolute_pair_balance": {
+          "minus": 6.550877999573428e-18,
+          "plus": 6.550878012295123e-18
+        }
+      },
+      "mode3": {
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "max_error": 3.267976147886408e-11,
+        "same_partition": true,
+        "pair_balance_delta": "-5.9322120622356509869660316651553222836837178641093442462828450169515282672991185331659586051371589318625889077E-10",
+        "same_partition_to_legacy": true,
+        "free_counts": {
+          "zero": 2615,
+          "pass": 1627
+        },
+        "pair_delta_relative": 1.4952191854125403e-18,
+        "baseline_max_change": 1.8464630928669888e-14,
+        "baseline_over_1e8": 0,
+        "absolute_pair_balance": {
+          "minus": 6.550877999573428e-18,
+          "plus": 6.550878012295124e-18
+        }
+      },
+      "mode4": {
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "max_error": 3.085014247778203e-11,
+        "same_partition": true,
+        "pair_balance_delta": "-5.9322120635437258956080415240122861901889920170802143183572396459799438852769381394624972725582143781302235210E-10",
+        "same_partition_to_legacy": true,
+        "free_counts": {
+          "zero": 2615,
+          "pass": 1627
+        },
+        "pair_delta_relative": 1.4952191857981282e-18,
+        "baseline_max_change": 2.3321777120487207e-14,
+        "baseline_over_1e8": 0,
+        "absolute_pair_balance": {
+          "minus": 6.550877999573428e-18,
+          "plus": 6.550878012295124e-18
+        }
+      }
+    },
+    "matched_p5_steps": {
+      "p5": {
+        "h": "1",
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "max_error": 6.2497854028688695e-06,
+        "partition_unchanged": true
+      },
+      "refined64": {
+        "h": "0.015625",
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "max_error": 9.764391117835134e-08,
+        "partition_unchanged": true
+      },
+      "refined4096": {
+        "h": "0.000244140625",
+        "counts": {
+          "zero": 3561,
+          "pass": 1639
+        },
+        "max_error": 1.5159673778167548e-09,
+        "partition_unchanged": true
+      }
+    },
+    "independent_p5_seeds": 4156,
+    "n_direction_qualified_in_private_preserved_source": true,
+    "all_states_and_augmented_Jacobian_qualified": false
+  },
+  "avalanche": {
+    "first_candidate_j_passed": 47,
+    "first_candidate_j_failed_nodes": [
+      1232,
+      1244,
+      1935
+    ],
+    "v2_j": {
+      "passed": 50,
+      "total": 50,
+      "max_error": 3.610170080803862e-12,
+      "base_primitive_identity": true,
+      "base_preserved_identity": true,
+      "base_raw_identity": true
+    },
+    "actual_increment_steps": {
+      "0.015625": {
+        "counts": {
+          "pass": 1388,
+          "fail": 613,
+          "zero": 120
+        },
+        "old50_counts": {
+          "pass": 20,
+          "fail": 30
+        },
+        "old50_max_error": 0.0001342289113223391
+      },
+      "0.000244140625": {
+        "counts": {
+          "pass": 1545,
+          "fail": 455,
+          "zero": 121
+        },
+        "old50_counts": {
+          "pass": 50
+        },
+        "old50_max_error": 2.0972354497955627e-06
+      }
+    },
+    "remaining": {
+      "failed": 455,
+      "below_binary64_min": 455,
+      "max_absolute_observed_response": "4.90473764695017302742693045966853013563927810922602221166960312881205442025197926E-728",
+      "improved": 430,
+      "all_nonzero_same_sign": true
+    },
+    "all_rows_qualified": false
+  },
+  "baseline": {
+    "m0_base": {
+      "local_change_only_max": 1.5088773196095753e-14,
+      "local_change_only_over1e8": 0,
+      "native_target_absolute_failures": 38,
+      "native_target_max": 0.000598969438327592,
+      "population_guard_failures": 0,
+      "source_records": 4156,
+      "resolved": true,
+      "load_change_V": "0E-87"
+    },
+    "m3_base": {
+      "local_change_only_max": 1.5088773196095753e-14,
+      "local_change_only_over1e8": 0,
+      "native_target_absolute_failures": 38,
+      "native_target_max": 0.000598969438327592,
+      "population_guard_failures": 0,
+      "source_records": 4156,
+      "resolved": true,
+      "load_change_V": "-6.33208132478235936166137334148650150112439E-46"
+    },
+    "m4_base": {
+      "local_change_only_max": 1.5088773196095753e-14,
+      "local_change_only_over1e8": 0,
+      "native_target_absolute_failures": 38,
+      "native_target_max": 0.000598969438327592,
+      "population_guard_failures": 0,
+      "source_records": 4156,
+      "resolved": true,
+      "load_change_V": "-8.83846326463271376820229077092946379341819E-46"
+    },
+    "v2_base": {
+      "local_change_only_max": 1.5088773196095753e-14,
+      "local_change_only_over1e8": 0,
+      "native_target_absolute_failures": 38,
+      "native_target_max": 0.000598969438327592,
+      "population_guard_failures": 0,
+      "source_records": 4156,
+      "resolved": true,
+      "load_change_V": "0E-87"
+    }
+  },
+  "verification": {
+    "evidence_checks": 57,
+    "windows_and_linux_each": {
+      "new_test_cases": 7,
+      "assertions": 21
+    },
+    "windows_existing_regressions": 25,
+    "prior_files_unchanged": 790
+  },
+  "production_changed": false,
+  "N5_started": false,
+  "next": [
+    "SG absolute representation and differentiable direction common contract",
+    "455 extended-exponent avalanche responses and branch-local field sensitivity",
+    "NonLocalPath remaining states psi/p remote/contact/event directions then augmented Jv load KCL"
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "schema": "vela.stage_plan.v1",
+  "cmd": {
+    "path": "external_resistor_sdevice.cmd",
+    "sha256": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+    "execution_ir": "execution_ir.json"
+  },
+  "work_dir": "device_vela",
+  "exit_on_failure": false,
+  "threads": 1,
+  "inputs": {
+    "mesh_json": "mesh.json",
+    "doping_csv": "doping.csv",
+    "materials_json": "materials.json",
+    "mesh_qualification": "mesh_qualification.json",
+    "sidecar": null
+  },
+  "outputs": {
+    "log": "external_resistor_des.log",
+    "final_vtu": "external_resistor_des.vtu",
+    "pvd": "external_resistor_des.pvd",
+    "plot_final_only": false,
+    "vtu_binary": false,
+    "keep_intermediate": true
+  },
+  "electrodes": [
+    {
+      "name": "drain",
+      "contact": "drain",
+      "initial_voltage_V": 0.0,
+      "series_resistance_ohm_um": 10000000.0
+    },
+    {
+      "name": "source",
+      "contact": "source",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "gate",
+      "contact": "gate",
+      "initial_voltage_V": 0.0
+    },
+    {
+      "name": "substrate",
+      "contact": "substrate",
+      "initial_voltage_V": 0.0
+    }
+  ],
+  "stages": [
+    {
+      "index": 0,
+      "ir_stage_index": 0,
+      "kind": "equilibrium",
+      "deck": "simulation_stage00.json",
+      "csv": "stage00.csv",
+      "input_state": null,
+      "output_state": "stage00_state.h5",
+      "electrode_voltages_start_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "current_file": "external_resistor_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "break": {
+        "current": [
+          {
+            "contact": "drain",
+            "abs_val_A_per_um": 0.001443
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "ir_stage_index": 2,
+      "kind": "sweep",
+      "deck": "simulation_stage01.json",
+      "csv": "stage01.csv",
+      "input_state": "stage00_state.h5",
+      "output_state": "stage01_state.h5",
+      "electrode_voltages_start_V": {
+        "drain": 0.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "electrode_voltages_goal_V": {
+        "drain": 100000.0,
+        "source": 0.0,
+        "gate": 0.0,
+        "substrate": 0.0
+      },
+      "current_file": "external_resistor_des.plt",
+      "plt_write": "all_accepted_steps",
+      "vtu_write": {
+        "per_accepted_step": true,
+        "series": [],
+        "after_stage": []
+      },
+      "required_t": [],
+      "sidecar_overrides": [],
+      "sweep": {
+        "contact": "drain",
+        "mode": "voltage",
+        "start_V": 0.0,
+        "stop_V": 100000.0,
+        "step_V": 2500.0,
+        "initial_step_V": 0.01,
+        "min_step_V": 1e-05,
+        "max_step_V": 2500.0,
+        "growth_factor": 1.41,
+        "shrink_factor": 2.0,
+        "t_to_bias": {
+          "v0": 0.0,
+          "v1": 100000.0
+        }
+      },
+      "break": {
+        "current": [
+          {
+            "contact": "drain",
+            "abs_val_A_per_um": 0.001443
+          }
+        ]
+      }
+    }
+  ]
+}

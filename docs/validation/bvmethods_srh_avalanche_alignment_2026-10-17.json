@@ -1,0 +1,535 @@
+{
+  "schema": "vela.private-n4.srh-avalanche-summary.v1",
+  "date": "2026-10-17",
+  "scope": "installed-original BVmethods, frozen-state private actual assembly",
+  "row_error_gate": 1e-08,
+  "row_error_denominator": "sum of absolute actual assembly terms; no floor",
+  "math_control": "autonomous GNU/Linux scalar tables and fixed-argument Bernoulli; arbitrary perturbations unsupported",
+  "mesh": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "silicon_nodes": 2152,
+    "silicon_triangles": 4156
+  },
+  "verification": {
+    "native_captures": 4,
+    "actual_matrix_runs": 20,
+    "observer_replays": 2,
+    "successful_actual_assemblies": 22,
+    "cpp_cases": 5,
+    "cpp_assertions": 214,
+    "evidence_tests": 18,
+    "active_remote_jobs": "<private execution metadata; original preserved in ignored archive>"
+  },
+  "qualification": {
+    "five_state_free_carrier_rows": true,
+    "strict_qf_population_five_states": false,
+    "full_rhs": false,
+    "augmented_load": false,
+    "arbitrary_perturbations": false,
+    "cross_platform_production": false,
+    "n4_complete": false,
+    "n5_started": false,
+    "production_promoted": false
+  },
+  "states": {
+    "zero": {
+      "baseline": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 822,
+            "max_error_actual": 1.0530385687875266,
+            "max_error_fixed": 1.0530385687875266,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 1511,
+            "max_error_actual": 1.0530385687875266,
+            "max_error_fixed": 1.0530385687875266,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_windows": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 6,
+            "max_error_actual": 5.496356049786648e-06,
+            "max_error_fixed": 5.496593961925343e-06,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 30,
+            "max_error_actual": 0.17018218485223774,
+            "max_error_fixed": 0.17018218478521774,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_linux": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 6.774535255304494e-11,
+            "max_error_fixed": 6.773827104615992e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 8,
+            "max_error_actual": 0.17018218485223774,
+            "max_error_fixed": 0.17018218478521774,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "combined": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 6.774535255304494e-11,
+            "max_error_fixed": 6.773827104615992e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 2.2225405257868418e-10,
+            "max_error_fixed": 2.2225405257868418e-10,
+            "infinite_error_rows": 0
+          }
+        }
+      }
+    },
+    "first": {
+      "baseline": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.201219386897682e-09,
+            "max_error_fixed": 1.201219386897682e-09,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 87,
+            "max_error_actual": 0.00036311295854741805,
+            "max_error_fixed": 0.00036311295854741805,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_windows": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.231041659523867e-11,
+            "max_error_fixed": 9.231041659523867e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 2,
+            "max_error_actual": 8.28882458969591e-08,
+            "max_error_fixed": 8.28882458969591e-08,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_linux": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.231041659523867e-11,
+            "max_error_fixed": 9.231041659523867e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 2,
+            "max_error_actual": 8.28882458969591e-08,
+            "max_error_fixed": 8.28882458969591e-08,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "combined": {
+        "strict_state_accepted": true,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.231041659523867e-11,
+            "max_error_fixed": 9.231041659523867e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 2.851641923481199e-10,
+            "max_error_fixed": 2.851641923481199e-10,
+            "infinite_error_rows": 0
+          }
+        }
+      }
+    },
+    "before_BV": {
+      "baseline": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.507786498154756e-11,
+            "max_error_fixed": 1.507786498154756e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 4.850145721111365e-11,
+            "max_error_fixed": 4.850145721111365e-11,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_windows": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.507786498154756e-11,
+            "max_error_fixed": 1.507786498154756e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 4.8501429447903857e-11,
+            "max_error_fixed": 4.8501429447903857e-11,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_linux": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.507786498154756e-11,
+            "max_error_fixed": 1.507786498154756e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 4.8501429447903857e-11,
+            "max_error_fixed": 4.8501429447903857e-11,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "combined": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.5078029737940575e-11,
+            "max_error_fixed": 1.507802973794058e-11,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 4.786665717042533e-11,
+            "max_error_fixed": 4.7866657170425334e-11,
+            "infinite_error_rows": 0
+          }
+        }
+      }
+    },
+    "after_BV": {
+      "baseline": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.705204574999142e-12,
+            "max_error_fixed": 9.705204574999142e-12,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3806812132052188e-09,
+            "max_error_fixed": 1.3806812132052188e-09,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_windows": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.705204574999142e-12,
+            "max_error_fixed": 9.705204574999142e-12,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3806812132052188e-09,
+            "max_error_fixed": 1.3806812132052188e-09,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_linux": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.705204574999142e-12,
+            "max_error_fixed": 9.705204574999142e-12,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3806812132052188e-09,
+            "max_error_fixed": 1.3806812132052188e-09,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "combined": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 9.705222764733198e-12,
+            "max_error_fixed": 9.705222764733198e-12,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 6.166542628734961e-11,
+            "max_error_fixed": 6.166542628734962e-11,
+            "infinite_error_rows": 0
+          }
+        }
+      }
+    },
+    "last": {
+      "baseline": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 8.254207487511867e-13,
+            "max_error_fixed": 8.254207487511867e-13,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3538587385341789e-12,
+            "max_error_fixed": 1.3538587385341789e-12,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_windows": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 8.254207487511867e-13,
+            "max_error_fixed": 8.254207487511867e-13,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3538587385341789e-12,
+            "max_error_fixed": 1.3538587385341789e-12,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "srh_linux": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 8.254207487511867e-13,
+            "max_error_fixed": 8.254207487511867e-13,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3538587385341789e-12,
+            "max_error_fixed": 1.3538587385341789e-12,
+            "infinite_error_rows": 0
+          }
+        }
+      },
+      "combined": {
+        "strict_state_accepted": false,
+        "carrier": {
+          "electron": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 8.254621997350017e-13,
+            "max_error_fixed": 8.254621997350017e-13,
+            "infinite_error_rows": 0
+          },
+          "hole": {
+            "free_rows": 2121,
+            "failed": 0,
+            "max_error_actual": 1.3539360349887032e-12,
+            "max_error_fixed": 1.3539360349887034e-12,
+            "infinite_error_rows": 0
+          }
+        }
+      }
+    }
+  },
+  "srh": {
+    "first": {
+      "native_first_system_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "matrix": true
+      },
+      "arms": {
+        "windows": {
+          "nodes": 2152,
+          "exact_source_values": 2125,
+          "different_source_values": 27,
+          "all_target_intrinsic_and_statistics_exact": true
+        },
+        "linux": {
+          "nodes": 2152,
+          "exact_source_values": 2152,
+          "different_source_values": 0,
+          "all_target_intrinsic_and_statistics_exact": true
+        }
+      }
+    },
+    "zero": {
+      "native_first_system_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "matrix": true
+      },
+      "arms": {
+        "windows": {
+          "nodes": 2152,
+          "exact_source_values": 2126,
+          "different_source_values": 26,
+          "all_target_intrinsic_and_statistics_exact": true
+        },
+        "linux": {
+          "nodes": 2152,
+          "exact_source_values": 2152,
+          "different_source_values": 0,
+          "all_target_intrinsic_and_statistics_exact": true
+        }
+      }
+    }
+  },
+  "avalanche": {
+    "first": {
+      "native_first_system_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "matrix": true
+      },
+      "arms": {
+        "srh_linux": {
+          "records": 168,
+          "cell_carriers": 28,
+          "observed_generation_records": 18,
+          "max_current_error": 1.560511976176725e-07,
+          "max_alpha_error": 5.115197403998813e-13,
+          "max_mobility_error": 9.69170487972655e-16,
+          "max_active_force_error": 3.208656542889778e-15,
+          "all_representatives_match": true
+        },
+        "combined": {
+          "records": 168,
+          "cell_carriers": 28,
+          "observed_generation_records": 18,
+          "max_current_error": 1.0241742183875504e-15,
+          "max_alpha_error": 5.115197403998813e-13,
+          "max_mobility_error": 9.69170487972655e-16,
+          "max_active_force_error": 3.208656542889778e-15,
+          "all_representatives_match": true
+        }
+      }
+    },
+    "zero": {
+      "native_first_system_identity": {
+        "names": true,
+        "variables": true,
+        "rhs1": true,
+        "matrix": true
+      },
+      "arms": {
+        "srh_linux": {
+          "records": 168,
+          "cell_carriers": 28,
+          "observed_generation_records": 16,
+          "max_current_error": 0.09814180475682477,
+          "max_alpha_error": 8.172883485384793e-14,
+          "max_mobility_error": 1.057939703316873e-15,
+          "max_active_force_error": 1.7097095210592183e-15,
+          "all_representatives_match": true
+        },
+        "combined": {
+          "records": 168,
+          "cell_carriers": 28,
+          "observed_generation_records": 16,
+          "max_current_error": 3.1311858609932526e-16,
+          "max_alpha_error": 8.172883485384793e-14,
+          "max_mobility_error": 1.057939703316873e-15,
+          "max_active_force_error": 1.7097095210592183e-15,
+          "all_representatives_match": true
+        }
+      }
+    }
+  }
+}

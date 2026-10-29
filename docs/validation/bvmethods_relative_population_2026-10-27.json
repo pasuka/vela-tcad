@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-27",
+  "scope": "diagnostic BVMethods driver; physical populations and RHS unchanged",
+  "source_manifest_sha256": "14d3494113512fb28b6990939267ff4ab4c49e6ddce73251af90e64485f39dfe",
+  "working_changes": true,
+  "backend": "pardiso_mkl",
+  "full_dimension": 7801,
+  "reduced_dimension": 6765,
+  "column_scaling": "relative_population",
+  "local_tests": {
+    "cases": 11,
+    "assertions": 91,
+    "failures": 0
+  },
+  "remote_tests": {
+    "tests": "32",
+    "failures": "0",
+    "skipped": "0",
+    "disabled": "0"
+  },
+  "bounded_controls": [
+    {
+      "case": "earlier_predictor",
+      "converged": true,
+      "updates": [
+        6
+      ],
+      "all_original_gates_pass": true,
+      "next_coordinate_checks_pass": true,
+      "max_population_backward_error": 3.273982374831863e-16,
+      "max_qf_mapped_backward_error": 6.057651564292975e-10,
+      "final_equation_inf": 8.634709981742827e-11,
+      "final_load_V": -1.280283157267803e-08,
+      "final_raw_RMS": 0.3253632390582016,
+      "row_gates_enforced": false,
+      "global_gates_enforced": false
+    },
+    {
+      "case": "final_accepted",
+      "converged": true,
+      "updates": [
+        2,
+        1,
+        1
+      ],
+      "all_original_gates_pass": true,
+      "next_coordinate_checks_pass": true,
+      "max_population_backward_error": 3.0104898615942177e-16,
+      "max_qf_mapped_backward_error": 2.897781910556267e-10,
+      "final_equation_inf": 1.4090666459751753e-10,
+      "final_load_V": -4.5437284157401336e-08,
+      "final_raw_RMS": 0.006668147580970826,
+      "row_gates_enforced": false,
+      "global_gates_enforced": false
+    }
+  ],
+  "full_bv": {
+    "started": true,
+    "complete": false,
+    "wall_limit_seconds": 10800,
+    "result": "numerical_failure",
+    "exit_code": 3,
+    "elapsed_seconds": 7066.9401519989915,
+    "accepted_points": 32,
+    "failure": "minimum outer step or retries exhausted",
+    "followup": "bvmethods_stable_population_failure_2026-10-27.md"
+  }
+}
