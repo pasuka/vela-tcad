@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
+#include "vela/physics/experimental/BvMethodsPrimitiveState.h"
 #include <cmath>
 using namespace vela::experimental;
 using Catch::Approx;
@@ -543,6 +544,8 @@ TEST_CASE("Population continuation restart preserves the physical predictor and 
     NewtonSolver owner(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",0.}},cfg);
     const auto poisson=owner.solvePoissonOnly(owner.buildPoissonBlockInitialization().coldInitial);
     INFO(poisson.failureDiagnostics.failureReason);REQUIRE(poisson.converged);
+    REQUIRE(poisson.solution.stateVariables=="potential_density");
+    REQUIRE(poisson.solution.packedState.size()==0);
     const auto sys=owner.makeArclengthSystem("drain");
     const auto port=owner.makeArclengthContactCurrentFunctional("drain",1e-6);
     CoupledLoadLineConfig control;control.linearSolver="direct_bordered";control.lineSearchMode="full_step";
@@ -551,6 +554,8 @@ TEST_CASE("Population continuation restart preserves the physical predictor and 
     const ArclengthState previous{owner.packArclengthState(poisson.solution),0.};
     const auto first=newton.solve(previous,.001,1e3);
     INFO(first.failureReason);REQUIRE(first.converged);
+    REQUIRE(sys.predictState(previous.x,previous.x,1.)==previous.x);
+    REQUIRE(sys.predictState(previous.x,first.state.x,0.)==first.state.x);
     const auto metadata=nlohmann::json{{"mode","dd"},{"mesh_sha256",std::string(64,'a')},{"potential_origin_V",0.}};
     auto roundtrip=[&](const ArclengthState& state){
         const auto physical=owner.unpackArclengthState(state.x);
@@ -572,4 +577,127 @@ TEST_CASE("Population continuation restart preserves the physical predictor and 
     REQUIRE(std::abs(uninterrupted.state.lambda-restarted.state.lambda)<1e-11);
     REQUIRE(uninterrupted.iterations==restarted.iterations);
     REQUIRE(restarted.updateError.valid);REQUIRE(restarted.updateError.rms<1.);
+}
+
+TEST_CASE("Population log predictor preserves depletion ratios and rejects unrepresentable history", "[population_core]") {
+    using namespace vela;
+    VectorXd previous(6),current(6);previous<<0.,0.,100.,0.,1e-200,0.;current<<1.,2.,10.,0.,1e-100,0.;
+    const auto next=predictPopulation(previous,current,1.);
+    REQUIRE(next[0]==2.);REQUIRE(next[1]==4.);
+    REQUIRE(next[2]==Catch::Approx(1.).epsilon(1e-13));REQUIRE(next[3]==0.);
+    REQUIRE(next[4]==Catch::Approx(1.).epsilon(1e-12));REQUIRE(next[5]==0.);
+    REQUIRE(previous[2]==100.);REQUIRE(current[2]==10.);
+    current[2]=0.;REQUIRE_THROWS(predictPopulation(previous,current,1.));
+    current[2]=1e-300;REQUIRE_THROWS(predictPopulation(previous,current,4.));
+}
+
+
+TEST_CASE("Population paired Bernoulli preserves the zero tangent and reversal", "[population_sg][tri3_ad]") {
+    for(double value:{-1000.,-100.,-10.,-.5,-1e-8,0.,1e-8,.5,10.,100.,1000.}){
+        const auto x=AvJet::variable(value,0);const auto pair=populationBernoulliPair(x);
+        const auto expected=avBernoulli(x),opposite=avBernoulli(-x);
+        REQUIRE(pair[0].value==Approx(expected.value).epsilon(2e-14).margin(1e-300));
+        REQUIRE(pair[1].value==Approx(opposite.value).epsilon(2e-14).margin(1e-300));
+        REQUIRE(pair[0].derivative[0]==Approx(expected.derivative[0]).epsilon(3e-13).margin(1e-300));
+        REQUIRE(pair[1].derivative[0]==Approx(opposite.derivative[0]).epsilon(3e-13).margin(1e-300));
+        const auto forward=populationSgFlux(AvJet(1),AvJet(2e19),AvJet(3e19),x);
+        const auto reverse=populationSgFlux(AvJet(1),AvJet(3e19),AvJet(2e19),-x);
+        REQUIRE(forward.value==-reverse.value);
+        REQUIRE(forward.derivative[0]==-reverse.derivative[0]);
+    }
+}
+
+TEST_CASE("Population band SG retains conservation and complete finite-state Jv", "[population_sg][population_core]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const VectorXd x=f.point();
+    const VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);
+    f.scaling.stateVariables="potential_density";f.scaling.populationSgCurrent="band_population";auto a=f.assembler();
+    const VectorXd y=a->packPopulation(x.head(6),en,hp);
+    const VectorXd old=q->residual(x,{}),now=a->residual(y,{});
+    for(int b=0;b<3;++b)REQUIRE((old-now).segment(b*6,6).norm()<2e-11*std::max(old.segment(b*6,6).norm(),1e-25));
+    VectorXd v=VectorXd::Zero(18);for(int i=0;i<6;++i)v[i]=.01*std::sin(i+.1);
+    for(int i=0;i<4;++i){v[6+i]=en[i]*.03*std::sin(i+.4);v[12+i]=hp[i]*.03*std::cos(i+.8);}
+    const Eigen::MatrixXd J=a->assembleJacobian(y,{});const VectorXd an=J*v;
+    const double h=1e-5;const VectorXd fd=(a->residual(y+h*v,{})-a->residual(y-h*v,{}))/(2*h);
+    for(int b=0;b<3;++b)REQUIRE((an-fd).segment(b*6,6).norm()<2e-6*std::max(an.segment(b*6,6).norm(),1e-25));
+    auto config=nlohmann::json{{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},{"population_sg_current","band_population"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}}};
+    REQUIRE(newtonConfigFromJson(config).populationSgCurrent=="band_population");
+    config["state_variables"]="potential_quasi_fermi";REQUIRE_THROWS(newtonConfigFromJson(config));
+}
+
+
+TEST_CASE("Primitive population state preserves normalized authority and reference origin", "[population_primitive]") {
+    BvMethodsPrimitiveReference r{.02585,1e10,4.07274,178.9,1.108};
+    const double n=1.2345678901234567;const auto a=populationPrimitiveFromNormalized(AvJet(.5),AvJet(n),2e9,2.,r);
+    REQUIRE(a.population_overN0.value==n);
+    auto shifted=r;shifted.energyReference_overVT+=.5;
+    const auto b=populationPrimitiveFromNormalized(AvJet(1.),AvJet(n),2e9,2.,shifted);
+    REQUIRE(primitiveQuasiFermiPotential(a,r,true).value==primitiveQuasiFermiPotential(b,shifted,true).value);
+    REQUIRE_THROWS(populationPrimitiveFromNormalized(AvJet(.5),AvJet(0),2e9,2.,r));
+    auto invalid=r;invalid.concentration_cm3=0.;REQUIRE_THROWS(invalid.validate());
+}
+TEST_CASE("Primitive SG has complete finite-state population tangents and equivalent band drift", "[population_primitive]") {
+    const BvMethodsPrimitiveReference r{.02585,1e10,4.07274,178.9,1.108};
+    const std::array<double,4> initial{.3,.32,1e18,2e18};
+    auto evaluate=[&](const std::array<double,4>& values,bool ad){
+        std::array<AvJet,4> z;for(int k=0;k<4;++k)z[k]=ad?AvJet::variable(values[k],k):AvJet(values[k]);
+        const auto a=populationPrimitiveFromPhysical(z[0],z[2],3e19,.02,r),b=populationPrimitiveFromPhysical(z[1],z[3],3e19,.04,r);
+        const auto argument=primitiveSgArgument(a,b,true);
+        const auto previous=populationSgArgument(z[2],z[3],z[0],z[1],1e10*std::exp(.02/(2*r.thermalVoltage_V)),1e10*std::exp(.04/(2*r.thermalVoltage_V)),3e19,3e19,r.thermalVoltage_V,true);
+        REQUIRE(std::abs(argument.value-previous.value)<1e-13);
+        for(int k=0;k<4;++k)REQUIRE(std::abs(argument.derivative[k]-previous.derivative[k])<=1e-13*std::max(1.,std::abs(previous.derivative[k])));
+        return primitiveSgParticleFlux(a,b,r,1e-5,true);
+    };
+    const auto ad=evaluate(initial,true);const std::array<double,4> direction{.01,-.02,initial[2]*.03,-initial[3]*.04};
+    double tangent=0.;for(int k=0;k<4;++k)tangent+=ad.derivative[k]*direction[k];
+    auto lo=initial,hi=initial;const double h=1e-5;for(int k=0;k<4;++k){lo[k]-=h*direction[k];hi[k]+=h*direction[k];}
+    const double finite=(evaluate(hi,false).value-evaluate(lo,false).value)/(2*h);
+    REQUIRE(std::abs(finite-tangent)<2e-6*std::abs(tangent));
+}
+
+TEST_CASE("Primitive electron and hole QF share the material energy reference", "[population_primitive]") {
+    using namespace vela;
+    const double vt=.02585,nc=3e19,nv=2e19,ni0=1e10,psi=.3,bgn=.04;
+    BvMethodsPrimitiveReference ref{vt,1e10,4.07274,4.07274/vt+std::log(nc/ni0),2*vt*std::log(std::sqrt(nc*nv)/ni0)};
+    CarrierStatisticsConfig stats;stats.model="fermi_dirac_joyce_dixon";
+    const double ni=ni0*std::exp(bgn/(2*vt));
+    const auto en=populationPrimitiveFromPhysical(AvJet(psi),AvJet(1e18),nc,bgn,ref);
+    const auto hp=populationPrimitiveFromPhysical(AvJet(psi),AvJet(2e17),nv,bgn,ref);
+    REQUIRE(std::abs(primitiveQuasiFermiPotential(en,ref,true).value-electronQuasiFermiPotential(ni,nc,psi,1e18,vt,stats))<1e-13);
+    REQUIRE(std::abs(primitiveQuasiFermiPotential(hp,ref,false).value-holeQuasiFermiPotential(ni,nv,psi,2e17,vt,stats))<1e-13);
+}
+
+TEST_CASE("Primitive current preserves canonical reversal and complete triangle tangent", "[population_primitive]") {
+    BvMethodsPrimitiveReference ref{.02585,1e10,4.07274,178.9,1.108};
+    AvTri3Geometry g;g.points_cm={{{0.,0.},{2e-5,0.},{0.,1e-5}}};g.nodeOrder={8,3,5};g.representative=1;
+    g.currentProjection={.9,.1,-.1,1.1};
+    std::array<double,6> z{.3,.32,.29,1e18,2e18,8e17};
+    const std::array<double,6> d{.01,-.02,.03,3e16,-4e16,2e16};
+    auto evaluate=[&](const std::array<double,6>& x,bool ad,bool electron){
+        std::array<BvMethodsPrimitiveCarrier,3> nodes;
+        for(int k=0;k<3;++k)nodes[k]=populationPrimitiveFromPhysical(ad?AvJet::variable(x[k],k):AvJet(x[k]),
+            ad?AvJet::variable(x[3+k],3+k):AvJet(x[3+k]),3e19,.02+.01*k,ref);
+        return primitiveAvCurrent(g,nodes,ref,electron);
+    };
+    for(bool electron:{true,false}){
+        auto lo=z,hi=z;const double h=1e-5;for(int k=0;k<6;++k){lo[k]-=h*d[k];hi[k]+=h*d[k];}
+        const auto ad=evaluate(z,true,electron),a=evaluate(lo,false,electron),b=evaluate(hi,false,electron);
+        for(int axis=0;axis<2;++axis){double v=0.;for(int k=0;k<6;++k)v+=ad[axis].derivative[k]*d[k];
+            REQUIRE(std::abs((b[axis].value-a[axis].value)/(2*h)-v)<2e-6*std::abs(v));}
+        const auto original=evaluate(z,false,electron);g.nodeOrder={0,1,2};const auto reversed=evaluate(z,false,electron);
+        for(int axis=0;axis<2;++axis)REQUIRE(original[axis].value==reversed[axis].value);
+        g.nodeOrder={8,3,5};
+    }
+}
+
+TEST_CASE("Primitive stable statistics preserves dilute gamma and its tangent", "[population_primitive]") {
+    BvMethodsPrimitiveReference ref{.02585,1e10,4.05,178.,1.1};
+    const auto n=AvJet::variable(1e-8,0);const double dos=2e9;
+    const auto old=populationPrimitiveFromNormalized(AvJet(0),n,dos,.1,ref);
+    REQUIRE(old.logGamma.value==populationLogGamma(n,dos).value);
+    ref.stableStatistics=true;
+    const auto stable=populationPrimitiveFromNormalized(AvJet(0),n,dos,.1,ref);
+    REQUIRE(stable.logGamma.value==Approx(-.3535533905932737622*1e-8/dos).epsilon(2e-15));
+    REQUIRE(stable.logGamma.derivative[0]==Approx(-.3535533905932737622/dos).epsilon(2e-15));
+    REQUIRE(stable.logGamma.value<0.);
 }

@@ -144,6 +144,8 @@ struct ArclengthSystem {
         limitUpdate;
     /// Coordinate-aware finite update, evaluated independently for every alpha.
     std::function<ArclengthTrial(const ArclengthState&, const VectorXd&, Real, Real)> makeTrial;
+    /// Optional coordinate-aware secant predictor; invalid output rolls back.
+    std::function<VectorXd(const VectorXd&, const VectorXd&, Real)> predictState;
     std::function<std::vector<int>(const VectorXd&, Real)> prescribedRows;
     std::function<bool(const VectorXd&, Real)> convergenceSatisfied;
     /// Positive physical column scales, including the final parameter column.

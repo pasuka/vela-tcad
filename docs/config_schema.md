@@ -159,6 +159,26 @@ Newton numerical and geometry controls added for explicit validation profiles:
   combinations are rejected. PN2D and pseudo-arclength are not qualified for
   this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
   for actual validation status.
+  Population-mode coupled load-line secant prediction uses linear ψ/internal
+  voltage and logarithmic n/p extrapolation between accepted states:
+  `c_pred = exp(log(c_current) + ratio*(log(c_current)-log(c_previous)))`.
+  This predicts the next initial state; Newton still solves physical n/p.
+  Zero inactive pairs remain zero, and unchanged carrier slots retain their
+  exact values. Invalid domains, overflow/underflow or a failed predictor guard
+  fall back to the last accepted state; no population floor is introduced.
+  QF-mode prediction retains its existing behavior.
+- `solver.population_sg_current`: `quasi_fermi` (default) or experimental
+  `band_population`. The latter requires `potential_density` and its qualified
+  BVMethods physics. It constructs SG arguments directly from ψ, authoritative
+  n/p, effective ni, DOS and the same Joyce–Dixon statistical law, with paired
+  Bernoulli evaluation and canonical node ordering. Both transport and AV
+  current use that path with complete AD tangents. It does not reconstruct the
+  SG carrier populations through QF. GradQF mobility and avalanche driving fields
+  continue to use derived QF as required by the selected physical models.
+  The ni-based band combination is algebraically equivalent to the previous
+  profile; it does not add a separate material electron-affinity/energy-state
+  contract. This option is an arithmetic experiment, not native zero-bias
+  operator-equivalence qualification or a new global default.
 - `solver.population_update`: population-mode-only object. `protection` is
   `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
   only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
@@ -180,8 +200,11 @@ Newton numerical and geometry controls added for explicit validation profiles:
   backward error 1e-10 and scaled linear residual 1e-8·max(1,‖b_scaled‖∞), using
   up to at least three correction solves when needed. Legacy QF defaults remain.
   CMD selects these options through its Vela sidecar; no Sentaurus keyword is
-  invented. Population HDF5 archives identify their authoritative SI fields,
-  retain mesh identity and reject mixed QF packed buffers.
+  invented. Population HDF5 archives retain SI output fields plus authoritative
+  internal n/p coordinates and their explicit SI conversion factor. Same-unit
+  restores recover the original carrier bits, while cross-unit/legacy restores
+  convert the SI fields. Mesh identity and mixed QF-buffer checks still apply.
+  See the [storage contract](state_archive.md).
 - `solver.linear_refinement_iterations`: integer 0--10, default 0. After the
   direct Newton solve, recompute the linear defect in 100-digit arithmetic and
   solve each correction with the same row weights, configured L2 row/column

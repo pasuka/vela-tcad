@@ -45,6 +45,7 @@ using ContactSpecsMap = std::unordered_map<std::string, ContactBoundarySpec>;
  */
 struct DDSolution {
     std::string stateVariables = "potential_quasi_fermi";
+    std::string populationRestoreMode; ///< exact_internal, converted_units, or legacy_si.
     VectorXd psi;   ///< Electrostatic potential [V]
     VectorXd phin;  ///< Electron quasi-Fermi potential [V]
     VectorXd phip;  ///< Hole quasi-Fermi potential [V]

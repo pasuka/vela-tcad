@@ -48,9 +48,28 @@ uses the core load-line Newton service with a fixed-voltage scalar row for a
 device-only solve; external-resistor sweeps use the same state and trial callbacks.
 `PopulationState` owns per-trial positivity, while `DerivativeRecovery` optionally
 chooses directly assembled approximate/full Jacobians without changing RHS.
+`ArclengthSystem::predictState` lets this mode extrapolate positive carrier
+populations in logarithmic coordinates independently of Newton's physical n/p
+coordinates; the coupled continuation service retains prediction rollback.
+Population archives store internal n/p alongside SI output fields and their
+conversion scale, so same-unit restores bypass a lossy SI round trip. Both
+C++ and Python codecs validate the optional coordinate bundle. The Poisson
+stage retains its computed n/p when publishing a population checkpoint.
+The explicit experimental `population_sg_current: band_population` path uses
+`BvMethodsPopulationSg` to form population/band SG arguments without subtracting
+node QF values. Transport and AV share paired Bernoulli arithmetic and canonical
+edge direction, retaining live physical AD derivatives. Effective ni supplies the
+band differences under the existing BVMethods contract; GradQF fields still use
+derived QF. The QF-based SG path remains the default. The shared explicit JD kernel uses
+correctly rounded inverse-series coefficients. `BvMethodsPrimitiveState` separately
+defines normalized population, band, reference-energy and AD current contracts;
+this experimental interface has no JSON/CMD dispatch. See the
+[primitive-state follow-up](validation/bvmethods_primitive_contract_2026-10-28.md).
 Equilibrium Poisson initialization remains a separate scalar statistical problem.
 The [implementation record](validation/potential_density_development_2026-10-28.md)
-separates implemented interfaces from passed numerical qualifications.
+separates implemented interfaces from passed numerical qualifications; the
+[predictor/archive follow-up](validation/potential_density_predictor_archive_2026-10-28.md)
+records the subsequent fixed-target and restart checks.
 
 The experimental `vela::experimental` NonLocalPath contracts in
 `physics/NonlocalPathBandToBand.h` define SI configuration, actual band-state

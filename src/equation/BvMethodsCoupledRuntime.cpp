@@ -62,7 +62,9 @@ struct BvMethodsCoupledRuntime::Impl {
             fail("profile owns GradQF current-source support; cutoffs, interpolation and source overrides unqualified");
         for(Index cid=0;cid<a.mesh_.numCells();++cid)
             if(a.mesh_.getCell(cid).node_ids.size()!=3)fail("requires Tri3 cells");
-        auto legacy=a.scaling_;legacy.coupledOperator="legacy";legacy.stateVariables="potential_quasi_fermi";
+        if((a.scaling_.populationSgCurrent!="quasi_fermi" && a.scaling_.populationSgCurrent!="band_population") ||
+           (a.scaling_.populationSgCurrent!="quasi_fermi"&&!a.usesPopulationState()))fail("invalid population SG arithmetic");
+        auto legacy=a.scaling_;legacy.coupledOperator="legacy";legacy.stateVariables="potential_quasi_fermi";legacy.populationSgCurrent="quasi_fermi";
         auto noAv=av;noAv.model="none";
         poisson=std::make_unique<CoupledDDAssembler>(a.mesh_,a.matdb_,a.doping_,a.Vt_,
             a.mobilityConfig_,a.recombinationConfig_,a.bandgapNarrowingConfig_,noAv,
@@ -82,7 +84,7 @@ struct BvMethodsCoupledRuntime::Impl {
         auto state=makeState(seed);
         const auto& u=context.newton.inputScaling.unitSystem();
         const double line=u.currentDensityAM2PerInternal()*u.lengthMPerInternal()*continuity;
-        element=std::make_unique<detail::BvMethodsTri3Operator>(context,state,a.Nc_,a.Nv_,scale,line,a.Vt_);
+        element=std::make_unique<detail::BvMethodsTri3Operator>(context,state,a.Nc_,a.Nv_,scale,line,a.Vt_,a.ni_,a.scaling_.populationSgCurrent=="band_population");
     }
     void sync()const {
         const auto en=owner.electronQuasiFermiReferenceField(),hp=owner.holeQuasiFermiReferenceField();

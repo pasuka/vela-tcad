@@ -27,6 +27,8 @@ const std::map<std::string, std::string> units{
     {"electron_qf_reference_V", "V"}, {"hole_qf_reference_V", "V"},
     {"packed_psi", "1"}, {"packed_electron_qf_increment", "1"}, {"packed_hole_qf_increment", "1"},
     {"packed_psi_low", "1"}, {"packed_electron_qf_increment_low", "1"}, {"packed_hole_qf_increment_low", "1"},
+    {"population_electrons_internal", "internal_concentration"},
+    {"population_holes_internal", "internal_concentration"},
     {"temperature_K", "K"}};
 [[noreturn]] void bad(const std::string& message) {
     throw std::runtime_error("HDF5 state: " + message);
@@ -97,6 +99,22 @@ void validateStateArchive(const StateArchive& s) {
         if (!units.contains(name) || values.size() != s.nodeCount) bad("unknown or incomplete field " + name);
         if (!std::all_of(values.begin(), values.end(), [](double v) { return std::isfinite(v); }))
             bad("non-finite field " + name);
+    }
+    const bool en=s.fields.contains("population_electrons_internal"), hp=s.fields.contains("population_holes_internal");
+    const bool populationSchema=s.metadata.contains("population_coordinate_schema");
+    const bool concentrationScale=s.metadata.contains("population_concentration_m3_per_internal");
+    if(en!=hp || en!=populationSchema || en!=concentrationScale)bad("incomplete population coordinates");
+    if(en) {
+        if(mode!="dd" || s.metadata.value("state_variables",std::string{})!="potential_density" || packed || split ||
+           s.metadata.at("population_coordinate_schema")!="vela.population-coordinates.v1" ||
+           !s.metadata.at("population_concentration_m3_per_internal").is_number())bad("invalid population coordinate metadata");
+        const double factor=s.metadata.at("population_concentration_m3_per_internal");
+        if(!(factor>0.) || !std::isfinite(factor))bad("invalid population concentration scale");
+        for(const auto& pair:{std::pair{"population_electrons_internal","electrons_m3"},std::pair{"population_holes_internal","holes_m3"}})
+            for(std::size_t i=0;i<s.nodeCount;++i) {
+                const double value=s.fields.at(pair.first)[i],physical=value*factor;
+                if(value<0. || !std::isfinite(physical) || physical!=s.fields.at(pair.second)[i])bad("population coordinates disagree with physical fields");
+            }
     }
     if (split) for (std::size_t i = 0; i < s.nodeCount; ++i) {
         for (const auto& carrier : {std::string("electron"), std::string("hole")}) {

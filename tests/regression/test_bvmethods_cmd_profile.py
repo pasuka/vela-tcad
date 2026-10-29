@@ -19,6 +19,21 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         with self.assertRaises(sv.ValidationError):
             sv.validate(schema, sidecar)
 
+    def test_direct_population_sg_is_explicit_and_validated(self):
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {"solver": {
+            "state_variables": "potential_density", "population_sg_current": "band_population"}})
+        self.assertEqual(d["solver"]["population_sg_current"], "band_population")
+        d["solver"]["mobility"]["doping_concentration_basis"] = "total_impurity"
+        schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
+        schema = {**schema, "required": []}
+        sv.validate(schema, {"solver": d["solver"]})
+        for value in ["bad", "band_population"]:
+            invalid = {"population_sg_current": value}
+            with self.assertRaises(sv.ValidationError):sv.validate(schema, {"solver": invalid})
+            d, ir, stage, _ = self.inputs()
+            with self.assertRaises(ValueError):apply_bvmethods_profile(d, ir, stage, {"solver": invalid})
+
     def test_population_mode_is_explicit_and_emits_independent_protection(self):
         d, ir, stage, _ = self.inputs()
         sidecar = {"solver": {"state_variables": "potential_density",

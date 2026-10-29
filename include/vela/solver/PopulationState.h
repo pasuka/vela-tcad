@@ -25,6 +25,24 @@ inline void validatePopulationUpdate(const PopulationUpdateConfig& c) {
         throw std::invalid_argument("population protection ratios must be finite and between zero and one");
 }
 
+// Predictor coordinates are independent of the Newton unknowns. Compute logs
+// separately to avoid overflow of current/previous; no population floor.
+inline VectorXd predictPopulation(const VectorXd& previous,const VectorXd& current,Real ratio) {
+    if(previous.size()!=current.size() || current.size()==0 || current.size()%3 ||
+       !previous.allFinite() || !current.allFinite() || !std::isfinite(ratio))
+        throw std::invalid_argument("invalid population predictor history");
+    const int n=current.size()/3;
+    VectorXd next=current+ratio*(current-previous);
+    for(int k=n;k<current.size();++k) {
+        if(previous[k]==0. && current[k]==0.){next[k]=0.;continue;}
+        if(!(previous[k]>0.) || !(current[k]>0.))throw std::domain_error("invalid population predictor domain");
+        next[k]=std::exp(std::log(current[k])+ratio*(std::log(current[k])-std::log(previous[k])));
+        if(!(next[k]>0.) || !std::isfinite(next[k]))throw std::domain_error("unrepresentable population prediction");
+    }
+    if(!next.allFinite())throw std::domain_error("nonfinite population prediction");
+    return next;
+}
+
 struct PopulationTrial {
     VectorXd state;
     std::vector<int> protectedElectrons, protectedHoles;

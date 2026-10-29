@@ -1,5 +1,23 @@
 # BVMethods explicit coupled operator
 
+The [precision budget](validation/bvmethods_precision_budget_2026-10-28.md)
+separates statistical tangents, near-zero current directions and affine boundary
+RHS terms. Native `-AvalDerivatives` retains the AV source; its RHS must not be
+labeled a same-physics no-AV comparison against Vela `model=none`. The isolated
+current-value controls diagnose matrix contributions without qualifying an
+autonomous corrected operator.
+
+The [primitive-state and Poisson baseline follow-up](validation/bvmethods_primitive_contract_2026-10-28.md)
+adds an un-dispatched experimental normalized band/state interface and corrects
+the shared explicit JD inverse coefficients from independent series reversion.
+The matched-constant full Poisson residual closes in isolated controls; the
+complete zero-bias AV and weak-hole RHS remain unqualified.
+
+The [population SG arithmetic investigation](validation/bvmethods_population_sg_arithmetic_2026-10-28.md)
+adds explicit `population_sg_current: band_population` for controlled comparison.
+It retains the physical model and derivatives, bypasses QF only in SG flux
+arithmetic, and does not establish complete native zero-bias equivalence.
+
 `solver.coupled_operator: "bvmethods_tri3_qf"` selects an opt-in coupled
 operator. The default remains `"legacy"`. This profile does not change the
 PN2D BV template bundle. Its numerical qualification is recorded in
