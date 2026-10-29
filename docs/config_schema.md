@@ -2,6 +2,10 @@
 
 ## SDevice command entry point and generated v2 decks
 
+DF-ISE Interface line regions are preserved as optional `mesh.json.interfaces`
+metadata (`name`, `node_ids`, `edge_node_ids`, `adjacent_regions` with region names).
+They are not volume regions/materials. See [P2 grid checks](sde_sdevice_checks.md).
+
 `vela device` reads a preprocessed single-device SDevice command file, imports
 its grid and declared `File{Parameter}`, validates them, then emits one
 `format_version: 2` JSON deck per stage. The source `.cmd` owns electrodes,

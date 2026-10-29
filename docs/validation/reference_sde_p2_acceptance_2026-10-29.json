@@ -1,0 +1,506 @@
+{
+  "schema": "vela.reference_sde_p2_acceptance.v1",
+  "date": "2026-10-29",
+  "base_commit": "6af32f61",
+  "status": "passed",
+  "scope": "Three generated SDE mesh families, eight named SDevice check-only commands; no numerical solver qualification.",
+  "checks": {
+    "schema": "vela.reference_sde_checks_run.v1",
+    "status": "passed",
+    "check_contract_sha256": "e330d996d47f7ffc15b5991caf1bf01917a2c4700c60cf4a011624ea5b4ce43d",
+    "p1_manifest_sha256": "20974aad4816edcca358450aa30166c0d5d15c65fe9286bb9c5e1aa9b36c27ba",
+    "launcher_sha256": "eeee0b856ee1d2fb4ea5935998092601bb6ce92771ddc54327b886d53420eb6c",
+    "package_sha256": "bdeb15636b73862e83a030981deb8a298a2ca140923a42730ff51693ee6056de",
+    "p1_summary_sha256": "83afc8e9d4c5727cd43dba6b07376a695904a79b70fada4b731a1d43271a465f",
+    "numerical_qualification": "not_run",
+    "cases": [
+      {
+        "id": "pn2d_0v",
+        "mesh_case": "pn2d",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_0v_sdevice.cmd",
+            "sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+            "sha256_lf": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+          },
+          "parameter": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+            "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+            "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (added; original E301 boundary retained separately)"
+          ],
+          "effective_command_sha256": "f7baac12b0f6a0857709b27570ec0fd6d70549d449c82ad12a6f40e9c9f75a7f",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": false,
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "1c76e362dd01484c566a3a4fed1dc43bf2d04941f64acb07bd4f3dc963955c0e"
+          }
+        ],
+        "grid_sha256": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+        "dat_sha256": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+        "materials_sha256": "b5ae0e1fb263abd6b403c89cccbd6236d9ca40daeb79e5a4a48ebce4fb243647",
+        "node_count": 1482,
+        "cell_count": 2800,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "pn2d_iv",
+        "mesh_case": "pn2d",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
+            "sha256": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17",
+            "sha256_lf": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17"
+          },
+          "parameter": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+            "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+            "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (added; original E301 boundary retained separately)"
+          ],
+          "effective_command_sha256": "90cb343306c9e98227362640a652eaa4b7dafa39d1c8b8d61369ac22a1c1040f",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": false,
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "28d486337edb0e55b4dcddeb004726e751e996193dd5a4da4ca381e7fa4b250e"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "c7fa71b831c27ce043aaa9500fa77d86197e3c62279a4a8faec7cbe696fa38a4"
+          }
+        ],
+        "grid_sha256": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+        "dat_sha256": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+        "materials_sha256": "b5ae0e1fb263abd6b403c89cccbd6236d9ca40daeb79e5a4a48ebce4fb243647",
+        "node_count": 1482,
+        "cell_count": 2800,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "pn2d_bv",
+        "mesh_case": "pn2d",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd",
+            "sha256": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162",
+            "sha256_lf": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162"
+          },
+          "parameter": {
+            "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+            "sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+            "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (added; original E301 boundary retained separately)"
+          ],
+          "effective_command_sha256": "6c00fdc8d467d28f9c321c997c00e44f00e05a4617beb2ea5e2043bc727270cc",
+          "sidecar_sha256": "c4dede17cf459d843c180d70ba0ed2e8be80f27bc74fa4abb4fc67b69b2bece4",
+          "original_verdict": {
+            "accepted": false,
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "467b8b0fce6191fc84f176e21652ab4f15a2a2ff086a08da13a1945a4aef37f0"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "51fdae1e03fac4601cd71c09e2b5158fc7ebdbd171e670aa3e38578555c5696d"
+          }
+        ],
+        "grid_sha256": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+        "dat_sha256": "805244b280a86d0e94afbd88d7f811e2037fc27e8a026010d38a9fa5e2b3f47c",
+        "materials_sha256": "b5ae0e1fb263abd6b403c89cccbd6236d9ca40daeb79e5a4a48ebce4fb243647",
+        "node_count": 1482,
+        "cell_count": 2800,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "gate_barrier_zero",
+        "mesh_case": "gate_reference",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/gate_reference/source/barrier_zero_sdevice.cmd",
+            "sha256": "83c3362fc39f57f24a14d9cfddc75f57396e92ec254ff5bafd08610bb136bede",
+            "sha256_lf": "bbecba8dfdca209a509b9bda4a8fa73e04c9463b89dc9afd8f8d0fc28d048423"
+          },
+          "parameter": {
+            "path": "reference_tcad/gate_reference/source/models.par",
+            "sha256": "471af7fe15c24ffb61361080eb97fbc7c78d2fba162d63e8d06a9573977e19e6",
+            "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (explicitly staged copy)"
+          ],
+          "effective_command_sha256": "00394692e040d585c53214fb805cf4f57a6b4443b6eab70dd5b286b8cff6d852",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": true,
+            "exit_code": 0,
+            "fatal_ids": []
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "320c3afa6bde768d182e11e377e2fa68e1fc48722859fb4517a93c91cd6c2c22"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "0baf4b084a100589d9593d637c58d86f0e1807d3a26cc72069b7b84e031c0043"
+          },
+          {
+            "index": 2,
+            "kind": "sweep",
+            "sha256": "66aae34b68deba855258bde01933be527fc25cba68144683add2d905c14cf8b6"
+          }
+        ],
+        "grid_sha256": "4d05f637fad02fcf2f2b7ceb72d35b02831915c3b503bd4be1022d6ca3836303",
+        "dat_sha256": "e23b442e84947864dc8979151bf491db508bfcf22e1c119bcd6cfe55e71721fa",
+        "materials_sha256": "407636bce69d37056cdf42c1e51af4e4b1262f9bceee72a02078b541ed04aebb",
+        "node_count": 169,
+        "cell_count": 228,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "gate_barrier_positive",
+        "mesh_case": "gate_reference",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/gate_reference/source/barrier_positive_sdevice.cmd",
+            "sha256": "d895ac8d3cf97121c3eefe2d7610a9c64368f444680dc75c7069ceabe8c76949",
+            "sha256_lf": "5a04fc5d82afa78f6b062fc80ebfadf2edc26f48d6922045eb850bd2d6544197"
+          },
+          "parameter": {
+            "path": "reference_tcad/gate_reference/source/models.par",
+            "sha256": "471af7fe15c24ffb61361080eb97fbc7c78d2fba162d63e8d06a9573977e19e6",
+            "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (explicitly staged copy)"
+          ],
+          "effective_command_sha256": "a184046e3b7ac3f50aeaa52f8273ad218959e1dca456bb89d6cd3e1f2aa362c4",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": true,
+            "exit_code": 0,
+            "fatal_ids": []
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "4e32f9ba2efc52cea4a00439ad622806160131685fa11b7f45da56d8bf01db2c"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "ee5a0fc39c4f2d519571b0890559db58e6eedf24cf34f6a39a65ad7b0c632024"
+          },
+          {
+            "index": 2,
+            "kind": "sweep",
+            "sha256": "505f7d66ed1f04433659156da45b183eaa7a292f8195c449a4dfadb01a2bdfdb"
+          }
+        ],
+        "grid_sha256": "4d05f637fad02fcf2f2b7ceb72d35b02831915c3b503bd4be1022d6ca3836303",
+        "dat_sha256": "e23b442e84947864dc8979151bf491db508bfcf22e1c119bcd6cfe55e71721fa",
+        "materials_sha256": "407636bce69d37056cdf42c1e51af4e4b1262f9bceee72a02078b541ed04aebb",
+        "node_count": 169,
+        "cell_count": 228,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "gate_barrier_negative",
+        "mesh_case": "gate_reference",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/gate_reference/source/barrier_negative_sdevice.cmd",
+            "sha256": "5658cd05eba5343302fd6dc67c413d59920280927f39cf341859fd0b48d17a98",
+            "sha256_lf": "2ccf792fd2b5fddafb639247e9efd0f5b78a00134eb57c5a0151cfd8a1cf3f9d"
+          },
+          "parameter": {
+            "path": "reference_tcad/gate_reference/source/models.par",
+            "sha256": "471af7fe15c24ffb61361080eb97fbc7c78d2fba162d63e8d06a9573977e19e6",
+            "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (explicitly staged copy)"
+          ],
+          "effective_command_sha256": "05dc4e7ab17a3d10fc2f222d8b7f0897fcb25a20b2a69678d50f6022c7cd577e",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": true,
+            "exit_code": 0,
+            "fatal_ids": []
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "ff26fc62ec23cabd0a9a51fd03ea2248cbe6f67db6e20f2797bea6f066f43062"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "2dfee0dbba8454f7b2c2f3a0e5ee18010b667fc7a5dbe70c6c837b1bf9010fa3"
+          },
+          {
+            "index": 2,
+            "kind": "sweep",
+            "sha256": "164ba622dc20e4e62a85ccb22d8ef78c0574344ecf49b20d94ec85d8ce5f5efe"
+          }
+        ],
+        "grid_sha256": "4d05f637fad02fcf2f2b7ceb72d35b02831915c3b503bd4be1022d6ca3836303",
+        "dat_sha256": "e23b442e84947864dc8979151bf491db508bfcf22e1c119bcd6cfe55e71721fa",
+        "materials_sha256": "407636bce69d37056cdf42c1e51af4e4b1262f9bceee72a02078b541ed04aebb",
+        "node_count": 169,
+        "cell_count": 228,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "gate_workfunction",
+        "mesh_case": "gate_reference",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/gate_reference/source/workfunction_sdevice.cmd",
+            "sha256": "69158fef7303110f57cb3baf527ffcbdbed0fb0783079c1fd2f76b6af465b2c5",
+            "sha256_lf": "0f6e9d761cede363f66b8f73e8393292e4ac704168ac119d879ed1593561bae4"
+          },
+          "parameter": {
+            "path": "reference_tcad/gate_reference/source/models.par",
+            "sha256": "471af7fe15c24ffb61361080eb97fbc7c78d2fba162d63e8d06a9573977e19e6",
+            "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+          },
+          "parameter_policy": "reference_parameter_file",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (explicitly staged copy)"
+          ],
+          "effective_command_sha256": "f4423d78a0e4234ded51669aefdeb6fc07d9da3cde3a06202053ab69e5dac050",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": true,
+            "exit_code": 0,
+            "fatal_ids": []
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "a44c08d34a595787669a3c312fbce60c6a0fc485d0fedb9450139b160a1f8e71"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "cd8b1341994819099704569827789b9c0fbde446f59e4bf64937b2058bd1ccaa"
+          },
+          {
+            "index": 2,
+            "kind": "sweep",
+            "sha256": "76095e5bdf3445b66cd4a6d8b46b6e488b3c87ee614243627daa66020c555815"
+          }
+        ],
+        "grid_sha256": "4d05f637fad02fcf2f2b7ceb72d35b02831915c3b503bd4be1022d6ca3836303",
+        "dat_sha256": "e23b442e84947864dc8979151bf491db508bfcf22e1c119bcd6cfe55e71721fa",
+        "materials_sha256": "407636bce69d37056cdf42c1e51af4e4b1262f9bceee72a02078b541ed04aebb",
+        "node_count": 169,
+        "cell_count": 228,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      },
+      {
+        "id": "schottky",
+        "mesh_case": "schottky",
+        "inputs": {
+          "source": {
+            "path": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_des.cmd",
+            "sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+            "sha256_lf": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+          },
+          "parameter": {
+            "path": "share/vela/materials/models.par",
+            "sha256": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+            "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983"
+          },
+          "parameter_policy": "explicit_default_for_check_only",
+          "edits": [
+            "Grid=device.grd",
+            "Parameter=models.par (added; original E301 boundary retained separately)"
+          ],
+          "effective_command_sha256": "3606dc1ae93f0a9084c26a796945af252a61c21b1327022e7bf735bbd4268cf8",
+          "sidecar_sha256": null,
+          "original_verdict": {
+            "accepted": false,
+            "exit_code": 3,
+            "fatal_ids": [
+              "E301"
+            ]
+          }
+        },
+        "status": "checked",
+        "stage_decks": [
+          {
+            "index": 0,
+            "kind": "equilibrium",
+            "sha256": "0adff929b41f6909ea8ad0b8f6594380fd5cfe0a061ef91540bd3e1a69220cff"
+          },
+          {
+            "index": 1,
+            "kind": "sweep",
+            "sha256": "98f535511bb1d93a29141fdabbd1a3205bcf1f7e95f9f5ae72e966e8a85289fe"
+          }
+        ],
+        "grid_sha256": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+        "dat_sha256": "ae50355cf4b5d096a71668323bbbdd690038a40b8a04bebdb7f605ce8deafc7f",
+        "materials_sha256": "90757c230f69c96c86fa69c4d2e340ad2f315b80f23fe4fa1403091080e99b15",
+        "node_count": 319,
+        "cell_count": 560,
+        "runtime": {
+          "version": "0.1.0",
+          "commit": "6af32f61c79ac78015bac1ed992e04024c01a5e3"
+        },
+        "numerical_qualification": "not_run"
+      }
+    ]
+  },
+  "code_sha256": {
+    "scripts/check_sde_sdevice_cases.py": "a42e878bdb41d709dd1e7791914dd812583d551379793495e3cf0119ee873a0b",
+    "scripts/vela_sdevice/mesh_import/__init__.py": "3071807936c93f746700f93a15b2b996c4ec3325aca87ada5b6215346d8ddd1c",
+    "scripts/sentaurus_sde_cases.py": "4a11c727b7aab5c0cb085ddcf737b828805d9c6b5f91eb984dccfc580e3b133a"
+  },
+  "interface_fix": "DF-ISE Interface lines are explicit boundary metadata, not volume regions/materials; full edges and two-sided adjacency retained.",
+  "negative_controls": {
+    "E301": 3,
+    "E303": 3,
+    "E401": 4,
+    "E403": 4,
+    "E106": 1,
+    "E409": 4
+  },
+  "validation": {
+    "p2_special_tests": {
+      "run": 17,
+      "passed": 17,
+      "skipped": 0
+    },
+    "related_ctest_entries": {
+      "run": 8,
+      "passed": 8,
+      "seconds": 53.48
+    },
+    "underlying_python_tests": {
+      "run": 162,
+      "passed": 155,
+      "conditional_skips": 7
+    },
+    "release_configure": "passed",
+    "native_sd_sim_and_zipapp_build": "passed",
+    "full_cpp_solver_build": "not run; no C++ source changes",
+    "full_ctest": "not run",
+    "linux": "not run",
+    "live_sde_tdx": "not run",
+    "numerical_iv_bv": "not run"
+  },
+  "pn2d_arms": {
+    "qualified_control": {
+      "artifact_manifest": "reference_tcad/pn2d_sentaurus2018/artifact_manifest_v2.json",
+      "artifact_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
+      "grid_sha256": "920b55f739477e37154aa7d33af5db08bded38377d675172a6f77c7027e8d287",
+      "node_count": 1943,
+      "cell_count": 3680,
+      "qualification": "docs/sdevice_support_matrix.json",
+      "status": "existing qualification retained, not rerun"
+    },
+    "generated_experiment": {
+      "node_count": 1482,
+      "cell_count": 2800,
+      "status": "passed check-only; numerical qualification not inherited"
+    }
+  },
+  "input_policy": "Original files untouched. Only Grid and Parameter are rebound in local copies; Schottky explicitly uses the current Vela default parameter library for check-only legality, not reference physics equivalence.",
+  "repository_policy": "No generated grids, command copies, raw logs or TDR are distributed. This report contains only structured identities and check results."
+}

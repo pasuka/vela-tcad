@@ -66,8 +66,9 @@ a dependency, input identity, contract, determinism or rejection boundary failed
 - Existing independent GRD/DAT, MSH, VTU/VTK and CSV readers check cross-format
   consistency. The consumer `vela_sdevice.mesh_import` independently reads GRD/DAT;
   the batch compares coordinates/IDs, region-labeled topology, materials, full
-  contact edges/nodes/ownership and donor/acceptor/net doping. Zero-cell interface
-  regions are checked separately against the original interface names.
+  contact edges/nodes/ownership and donor/acceptor/net doping. Interface boundary
+  metadata is checked separately against the original interface names and edges;
+  it is not included in volume materials (see the P2 import correction).
 - By default supported cases run twice (`--repeat 2`), including separate native
   imports. PN2D and Schottky require byte-identical GRD/DAT/MSH/mesh JSON/doping CSV.
   The user-approved gate_reference policy is `contract_equivalent`: each run must
@@ -120,3 +121,6 @@ CLI itself fails. CI first runs the mandatory Gmsh probe before CTest.
 
 Keep all generated grids, TDR and raw logs in ignored build directories. Only
 source, small contracts, tests and structured acceptance summaries belong in Git.
+
+The subsequent [P2 check-only workflow](sde_sdevice_checks.md) binds these outputs
+to actual SDevice commands without running a numerical solver.

@@ -101,8 +101,14 @@ def compare_native(original: Path, imported: Path) -> None:
     require({r["name"]: r["material"] for r in a["regions"]} ==
             {r["name"]: r["material"] for r in b["regions"] if r["cell_ids"]}, "native material mismatch")
     bundle = json.loads((original / "mesh_field_bundle.json").read_text())
-    require({r["name"] for r in b["regions"] if not r["cell_ids"]} ==
+    require({r["name"] for r in b.get("interfaces", [])} ==
             {r["name"] for r in bundle["interfaces"]}, "native interface identity mismatch")
+    for interface in bundle["interfaces"]:
+        actual = next(i for i in b["interfaces"] if i["name"] == interface["name"])
+        expected = Counter(tuple(sorted(line["node_ids"])) for line in bundle["lines"]
+            if line["kind"] == "interface" and interface["physical_tag"] in line["physical_curve_tags"])
+        require(expected == Counter(tuple(sorted(pair)) for pair in actual["edge_node_ids"]),
+                "native interface edges mismatch")
     require(contacts(a) == contacts(b), "native contact edges/nodes mismatch")
     fields_a = read_doping_csv(original / "doping.csv")
     with (imported / "doping.csv").open(newline="", encoding="utf-8") as handle:
