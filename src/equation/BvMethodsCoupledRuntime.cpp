@@ -225,6 +225,29 @@ struct BvMethodsCoupledRuntime::Impl {
         SparseMatrixd j(3*n,3*n);if(derivatives)j.setFromTriplets(entries.begin(),entries.end());
         return {r,j};
     }
+    VectorXd residualFrom(const VectorXd& x,const CoupledDDBoundaryConditions& b,const Evaluation& e)const {
+        const int n=active.size();
+        VectorXd r=owner.usesPopulationState()?populationBase(x,b,false).first:poisson->residual(x,b);
+        const auto carrier=e.transport.source+e.av.source+e.srh;
+        for(int i=0;i<n;++i)for(int block:{1,2})if(active[i]&&!constrained(block*n+i,b))r[block*n+i]=carrier[block*n+i];
+        return r;
+    }
+    std::vector<CoupledDDCarrierTermDiagnostic> termsFrom(const Evaluation& e,const VectorXd& r,
+        const CoupledDDBoundaryConditions& b,bool includeImpact)const {
+        const int n=active.size();
+        const auto& u=context.newton.inputScaling.unitSystem();std::vector<CoupledDDCarrierTermDiagnostic> rows(n);
+    for(int i=0;i<n;++i){auto& a=rows[i];a.nodeId=i;a.electronDensity_m3=u.internalConcentrationToM3(e.state.n[i]);a.holeDensity_m3=u.internalConcentrationToM3(e.state.p[i]);
+        a.electronFlux=e.transport.source[n+i];a.holeFlux=e.transport.source[2*n+i];a.electronFluxAbsSum=e.transport.absoluteSource[n+i];a.holeFluxAbsSum=e.transport.absoluteSource[2*n+i];
+        a.electronRecombination=a.holeRecombination=e.srh[n+i];a.electronImpact=a.holeImpact=includeImpact?e.av.source[n+i]:0.;
+        a.impactElectronSource=includeImpact?e.av.electronGeneration[i]:0.;a.impactHoleSource=includeImpact?e.av.holeGeneration[i]:0.;
+        a.impactCombinedSource=-a.electronImpact;a.electronResidual=r[n+i];a.holeResidual=r[2*n+i];
+        a.electronContinuityActive=active[i]&&!b.phin.contains(i);a.holeContinuityActive=active[i]&&!b.phip.contains(i);
+        if(!includeImpact){if(a.electronContinuityActive)a.electronResidual-=e.av.source[n+i];if(a.holeContinuityActive)a.holeResidual-=e.av.source[2*n+i];}
+        if(!active[i]){a.electronGauge=r[n+i];a.holeGauge=r[2*n+i];}
+        if(b.phin.contains(i))a.electronBoundary=r[n+i]-a.electronFlux-a.electronRecombination-a.electronImpact-a.electronGauge;
+        if(b.phip.contains(i))a.holeBoundary=r[2*n+i]-a.holeFlux-a.holeRecombination-a.holeImpact-a.holeGauge;
+    }return rows;
+    }
     void validateBoundary(const CoupledDDBoundaryConditions& b)const {
         if(!b.thermionic.empty())throw std::invalid_argument("bvmethods_tri3_qf: thermionic boundaries unqualified");
     }
@@ -243,10 +266,7 @@ BvMethodsCoupledRuntime::~BvMethodsCoupledRuntime()=default;
 VectorXd BvMethodsCoupledRuntime::residual(const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
     auto& p=*impl_;p.validateBoundary(b);p.sync();
     Impl::Evaluation e;try{e=p.evaluate(x,false);}catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
-    const int n=p.active.size();
-    VectorXd r=p.owner.usesPopulationState()?p.populationBase(x,b,false).first:p.poisson->residual(x,b);const auto carrier=e.transport.source+e.av.source+e.srh;
-    for(int i=0;i<n;++i)for(int block:{1,2})if(p.active[i]&&!p.constrained(block*n+i,b))r[block*n+i]=carrier[block*n+i];
-    return r;
+    return p.residualFrom(x,b,e);
 }
 SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool approximate)const {
     auto& p=*impl_;p.validateBoundary(b);p.sync();auto e=approximate?p.compute(x,true,true):p.evaluate(x,true);const int n=p.active.size();
@@ -259,20 +279,19 @@ SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledD
     SparseMatrixd result(3*n,3*n);result.setFromTriplets(t.begin(),t.end());return result;
 }
 std::vector<CoupledDDCarrierTermDiagnostic> BvMethodsCoupledRuntime::terms(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool includeImpact)const {
-    auto& p=*impl_;p.validateBoundary(b);auto e=p.evaluate(x,false);const int n=p.active.size();
-    auto r=residual(x,b);const auto& u=p.context.newton.inputScaling.unitSystem();std::vector<CoupledDDCarrierTermDiagnostic> rows(n);
-    for(int i=0;i<n;++i){auto& a=rows[i];a.nodeId=i;a.electronDensity_m3=u.internalConcentrationToM3(e.state.n[i]);a.holeDensity_m3=u.internalConcentrationToM3(e.state.p[i]);
-        a.electronFlux=e.transport.source[n+i];a.holeFlux=e.transport.source[2*n+i];a.electronFluxAbsSum=e.transport.absoluteSource[n+i];a.holeFluxAbsSum=e.transport.absoluteSource[2*n+i];
-        a.electronRecombination=a.holeRecombination=e.srh[n+i];a.electronImpact=a.holeImpact=includeImpact?e.av.source[n+i]:0.;
-        a.impactElectronSource=includeImpact?e.av.electronGeneration[i]:0.;a.impactHoleSource=includeImpact?e.av.holeGeneration[i]:0.;
-        a.impactCombinedSource=-a.electronImpact;a.electronResidual=r[n+i];a.holeResidual=r[2*n+i];
-        a.electronContinuityActive=p.active[i]&&!b.phin.contains(i);a.holeContinuityActive=p.active[i]&&!b.phip.contains(i);
-        if(!includeImpact){if(a.electronContinuityActive)a.electronResidual-=e.av.source[n+i];if(a.holeContinuityActive)a.holeResidual-=e.av.source[2*n+i];}
-        if(!p.active[i]){a.electronGauge=r[n+i];a.holeGauge=r[2*n+i];}
-        if(b.phin.contains(i))a.electronBoundary=r[n+i]-a.electronFlux-a.electronRecombination-a.electronImpact-a.electronGauge;
-        if(b.phip.contains(i))a.holeBoundary=r[2*n+i]-a.holeFlux-a.holeRecombination-a.holeImpact-a.holeGauge;
-    }return rows;
+    auto& p=*impl_;p.validateBoundary(b);p.sync();const auto e=p.evaluate(x,false);
+    return p.termsFrom(e,p.residualFrom(x,b,e),b,includeImpact);
 }
+CoupledDDPhysicalDiagnostics BvMethodsCoupledRuntime::physicalDiagnostics(
+    const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
+    auto& p=*impl_;p.validateBoundary(b);p.sync();const auto e=p.evaluate(x,false);
+    CoupledDDPhysicalDiagnostics out;out.residual=p.residualFrom(x,b,e);
+    const bool impact=p.owner.impactIonizationCoupled_;
+    out.constrainedTerms=p.termsFrom(e,out.residual,b,impact);
+    out.unconstrainedTerms=p.termsFrom(e,p.residualFrom(x,{},e),{},impact);
+    return out;
+}
+
 VectorXd BvMethodsCoupledRuntime::avalancheResidual(const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
     auto& p=*impl_;auto e=p.evaluate(x,false);auto r=e.av.source;
     for(int i=0;i<r.size();++i)if(p.constrained(i,b))r[i]=0;return r;
@@ -320,6 +339,11 @@ std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationP
     for(auto& t:rows)t.closureError=t.productionResidual-(t.dielectricFlux+t.electronCharge+t.holeCharge+
         t.dopingCharge+t.fixedInterfaceCharge+t.boundaryReplacement);
     return rows;
+}
+CoupledDDPhysicalDiagnostics CoupledDDAssembler::bvMethodsPhysicalDiagnostics(
+    const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
+    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
+    return r->physicalDiagnostics(x,b);
 }
 VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const {
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);

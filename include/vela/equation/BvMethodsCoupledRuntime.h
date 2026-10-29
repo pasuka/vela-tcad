@@ -16,6 +16,8 @@ public:
     SparseMatrixd jacobian(const VectorXd&, const CoupledDDBoundaryConditions&, bool approximate=false) const;
     std::vector<CoupledDDCarrierTermDiagnostic> terms(
         const VectorXd&, const CoupledDDBoundaryConditions&, bool includeImpact=true) const;
+    CoupledDDPhysicalDiagnostics physicalDiagnostics(
+        const VectorXd&,const CoupledDDBoundaryConditions&) const;
     VectorXd avalancheResidual(const VectorXd&, const CoupledDDBoundaryConditions&) const;
     SparseMatrixd avalancheJacobian(const VectorXd&, const CoupledDDBoundaryConditions&) const;
     std::vector<CoupledDDPoissonTermDiagnostic> populationPoissonTerms(

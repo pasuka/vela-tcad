@@ -728,3 +728,23 @@ TEST_CASE("BVMethods residual values are independent of derivative request and r
         }
     }
 }
+
+
+TEST_CASE("BVMethods fused diagnostics retain constrained and free physical equations", "[bvmethods_profile][population_core]") {
+    using namespace vela;ProfileFixture f;auto qf=f.assembler();const auto x=f.point();
+    for(bool population:{false,true}) {
+        f.scaling.stateVariables=population?"potential_density":"potential_quasi_fermi";
+        auto a=f.assembler();VectorXd y=population?a->packPopulation(x.head(6),qf->electronDensity(x),qf->holeDensity(x)):x;
+        CoupledDDBoundaryConditions b;b.psi[0]=.1;b.phin[0]=.002;b.phip[0]=-.001;
+        for(int trial=0;trial<3;++trial) {
+            if(trial==1)y[7]=std::nextafter(y[7],1.);
+            if(trial==2)b.psi[0]+=.01;
+            const auto fused=a->bvMethodsPhysicalDiagnostics(y,b);
+            REQUIRE(exactValueBits(fused.residual)==exactValueBits(a->residual(y,b)));
+            REQUIRE(exactValueBits(fused.constrainedTerms)==exactValueBits(a->carrierContinuityEquationTermDiagnostics(y,b)));
+            REQUIRE(exactValueBits(fused.unconstrainedTerms)==exactValueBits(a->carrierContinuityEquationTermDiagnostics(y,{})));
+            REQUIRE_FALSE(fused.constrainedTerms[0].electronContinuityActive);
+            REQUIRE(fused.unconstrainedTerms[0].electronContinuityActive);
+        }
+    }
+}

@@ -40,6 +40,13 @@ coupled carrier residuals, Jacobians, ledgers and terminal totals through
 Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
 the default and PN2D operators retain their existing paths.
 
+The BVMethods convergence callback requests one stateless physical evaluation
+for its constrained residual, constrained carrier ledger and unconstrained
+closure ledger. Boundary equations remain distinct. Element Lombardi prepares
+node coefficients for the fixed owner mesh/doping/configuration; normal fields
+and mobility tangents remain live. See the
+[performance qualification](validation/bvmethods_t470p_round2_2026-10-29.md).
+
 The explicit `solver.state_variables: "potential_density"` mode stores physical
 n/p as primary state alongside scaled potential. `BvMethodsCoupledRuntime`
 directly seeds population derivatives in the shared Tri3 jets, uses a fixed-n/p
