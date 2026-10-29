@@ -97,7 +97,25 @@
             "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]},
             "method": {"enum": ["newton", "poisson_only"]},
             "quasi_fermi_reference": {"const": "none"}, "split_dd_state": {"const": false},
-            "quasi_fermi_update_limit_V": {"const": 0}, "quasi_fermi_update_limit_minority_V": {"const": 0}, "max_update": {"const": 0}
+            "quasi_fermi_update_limit_V": {"const": 0}, "quasi_fermi_update_limit_minority_V": {"const": 0}, "max_update": {"const": 0},
+            "quasi_fermi_update_limit_mode": {"const": "componentwise_poisson_recorrect"},
+            "quasi_fermi_trust_region_growth_factor": {"const": 1},
+            "quasi_fermi_trust_region_max_multiplier": {"const": 1},
+            "quasi_fermi_trust_region_expansion_threshold": {"const": 0.75},
+            "quasi_fermi_trust_region_shrink_factor": {"const": 1},
+            "quasi_fermi_trust_region_min_multiplier": {"const": 1},
+            "quasi_fermi_recenter_on_initial_state": {"const": false},
+            "quasi_fermi_recenter_on_stall": {"const": false},
+            "contact_majority_qf_branch_drop_limit_V": {"const": 0},
+            "stable_merit_comparison": {"const": false},
+            "carrier_row_qualified_stall_acceptance": {"const": false},
+            "carrier_regularization_scale": {"const": 0},
+            "continuity_row_scaling": {"properties": {"enabled": {"const": false}}},
+            "carrier_row_convergence": {"properties": {"recovery": {"anyOf": [{"const": false}, {"const": "off"}, {"type": "object", "properties": {"mode": {"const": "off"}}}]}}},
+            "carrier_diagonal_floor": {"anyOf": [{"const": false}, {"type": "object", "properties": {"enabled": {"const": false}}}]},
+            "carrier_diagonal_floor_regularization": {"anyOf": [{"const": false}, {"type": "object", "properties": {"enabled": {"const": false}}}]},
+            "linear_equilibration": {"properties": {"mode": {"const": "off"}}},
+            "jacobian": {"const": "analytic"}
           }}
         ]},
         {"anyOf": [

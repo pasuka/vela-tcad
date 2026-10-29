@@ -156,8 +156,15 @@ Newton numerical and geometry controls added for explicit validation profiles:
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Inactive oxide slots are zero and eliminated as constraints. QF caps,
   references, split coordinates, legacy row scaling and quantum/Gummel recovery
-  combinations are rejected. PN2D and pseudo-arclength are not qualified for
-  this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
+  combinations are rejected by JSON parsing as well as C++ construction. The
+  population CMD emitter omits inherited QF caps/reference/trust-region options;
+  explicit active QF controls fail preflight. Old merit/stall acceptance, legacy
+  linear equilibration/finite-difference Jacobian selection and active legacy
+  block-filter searches are not implemented by population Newton and fail instead
+  of being silently ignored. Population positivity, physical residuals and
+  configured report/enforce gates remain. See the
+  [coordinate-policy audit](validation/potential_density_policy_audit_2026-10-29.md).
+  PN2D and pseudo-arclength are not qualified for this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
   for actual validation status.
   Population-mode coupled load-line secant prediction uses linear ψ/internal
   voltage and logarithmic n/p extrapolation between accepted states:
@@ -2873,9 +2880,10 @@ separately, explicitly configure the conservation checks as `report` in the
 experimental input; this does not qualify a formerly rejected state under
 the old enforced contract.
 
-The RMS numerator uses the **raw linear direction before all voltage/QF
-limits and backtracking**, transformed analytically from QF to density through
-the assembler's actual carrier statistics. Its denominator uses the accepted
+The RMS numerator uses the **raw linear direction before all update
+limits and backtracking**. QF mode transforms it analytically through the
+assembler's actual carrier statistics; `potential_density` uses δn/δp directly,
+without a QF transformation or QF voltage cap. Its denominator uses the accepted
 physical state plus the declared reference. Potential entries include every
 node, carrier entries include free semiconductor nodes, and the active
 contact contributes one voltage entry per contact-node alias. These are metric
@@ -2886,8 +2894,9 @@ No accepted update, a failed evaluator or nonfinite operands cannot authorize
 the update branch; tiny applied steps do not shrink its raw numerator.
 
 This follows the observed BVmethods factor-one density/potential error
-composition, but does **not** implement the native concentration-primary
-iteration, protection scheme, general damping order or native RHS scaling.
+composition. The error metric alone does **not** implement native iteration,
+protection, damping or RHS scaling; primary coordinates and population protection
+are selected separately by `state_variables` and `population_update`.
 The residual branch remains Vela's device infinity norm and
 `coupled_equation_tolerance`, not Sentaurus `RhsMin`. Accepted points identify
 `coupled_density_update` versus `coupled_residuals`; the diagnostic CSV records

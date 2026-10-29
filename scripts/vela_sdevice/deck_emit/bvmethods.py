@@ -6,6 +6,19 @@ GEOMETRY = {"node_volume_policy": "barycentric", "require_non_obtuse": False,
             "poisson_permittivity_policy": "cell_material", "cell_box_policy": "delaunay_transfer"}
 
 
+# These numerical coordinates do not exist in a concentration-primary deck.
+POPULATION_QF_DEFAULTS = {
+    "quasi_fermi_reference": "none", "quasi_fermi_update_limit_V": 0.,
+    "quasi_fermi_update_limit_minority_V": 0., "max_update": 0.,
+    "quasi_fermi_update_limit_mode": "componentwise_poisson_recorrect",
+    "quasi_fermi_trust_region_growth_factor": 1., "quasi_fermi_trust_region_max_multiplier": 1.,
+    "quasi_fermi_trust_region_expansion_threshold": .75,
+    "quasi_fermi_trust_region_shrink_factor": 1., "quasi_fermi_trust_region_min_multiplier": 1.,
+    "quasi_fermi_recenter_on_initial_state": False, "quasi_fermi_recenter_on_stall": False,
+    "contact_majority_qf_branch_drop_limit_V": 0.,
+}
+
+
 def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     solver, sweep = deck["solver"], deck["sweep"]
     mobility, avalanche = solver["mobility"], solver["impact_ionization"]
@@ -52,9 +65,12 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
             solver["population_derivative_recovery"] = recovery
         if "population_update" in requested:
             solver["population_update"] = dict(requested["population_update"])
-        for key in ("quasi_fermi_update_limit_V", "quasi_fermi_update_limit_minority_V", "max_update"):
-            if requested.get(key, 0) != 0:
-                raise ValueError("potential_density does not support QF or packed update caps")
+        for key, default in POPULATION_QF_DEFAULTS.items():
+            if requested.get(key, default) != default:
+                raise ValueError(f"potential_density does not support {key}")
+        for key in ("stable_merit_comparison", "carrier_row_qualified_stall_acceptance"):
+            if requested.get(key, False):
+                raise ValueError(f"potential_density does not support {key}")
 
     solver["quasi_fermi_reference"] = "none"
     solver["continuity_row_scaling"] = {"enabled": False}
@@ -62,6 +78,11 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     # Positive values remain explicit controls for reproducible cap comparisons.
     for key in ("quasi_fermi_update_limit_V", "quasi_fermi_update_limit_minority_V"):
         solver[key] = requested.get(key, 0.0)
+    if variables == "potential_density":
+        # Remove inherited inactive QF controls instead of presenting them as
+        # population update or stopping policies. Explicit active values fail above.
+        for key in POPULATION_QF_DEFAULTS:
+            solver.pop(key, None)
     for key in ("carrier_row_convergence", "global_continuity_closure"):
         if key in requested:
             # Preserve the explicitly selected gate contract, rather than
