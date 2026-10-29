@@ -25,8 +25,21 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     };
     CoupledLoadLineConfig c;
     c.maxIterations=cfg_.maxIter;
+    // Enforced block ceilings replace scalar relative/absolute stopping, as in
+    // ordinary Newton. Do not add an unrelated initial-state-dependent gate.
+    if(cfg_.blockAbsoluteConvergence.mode=="enforce") {
+        const auto block=cfg_.blockAbsoluteConvergence;
+        const int n=mesh_.numNodes();
+        system.equationNorm=[block,n](const VectorXd& f) {
+            if(!f.allFinite())return std::numeric_limits<Real>::infinity();
+            return std::max({f.head(n).cwiseAbs().maxCoeff()/block.psiResidualCeiling,
+                f.segment(n,n).cwiseAbs().maxCoeff()/block.electronResidualCeiling,
+                f.tail(n).cwiseAbs().maxCoeff()/block.holeResidualCeiling});
+        };
+    }
     const double first=system.equationNorm(initialF);
-    c.equationTolerance=std::max(cfg_.abstol,cfg_.reltol*first);
+    c.equationTolerance=cfg_.blockAbsoluteConvergence.mode=="enforce"?1.:
+        std::max(cfg_.abstol,cfg_.reltol*first);
     c.loadLineTolerance_V=1e-12;
     c.dampingFactor=cfg_.dampingFactor;
     c.lineSearchMode=cfg_.lineSearch?"merit":"full_step";

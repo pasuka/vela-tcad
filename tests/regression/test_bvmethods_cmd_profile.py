@@ -74,6 +74,31 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         with self.assertRaises(sv.ValidationError):
             sv.validate(schema, {"solver": d["solver"]})
 
+    def test_population_deck_removes_inherited_qf_controls_but_preserves_physics(self):
+        d, ir, stage, _ = self.inputs()
+        d["solver"].update(quasi_fermi_update_limit_V=.1,
+            quasi_fermi_update_limit_mode="uniform_trust_region",
+            quasi_fermi_trust_region_growth_factor=2.)
+        apply_bvmethods_profile(d, ir, stage, {"solver": {"state_variables": "potential_density"}})
+        for key in ("quasi_fermi_update_limit_V", "quasi_fermi_update_limit_minority_V",
+                    "quasi_fermi_reference", "quasi_fermi_update_limit_mode", "quasi_fermi_trust_region_growth_factor"):
+            self.assertNotIn(key, d["solver"])
+        self.assertEqual(d["solver"]["mobility"]["high_field_driving_force"], "quasi_fermi_gradient")
+        self.assertEqual(d["solver"]["impact_ionization"]["driving_force"], "quasi_fermi_gradient")
+
+    def test_population_qf_policies_fail_in_cmd_and_json_before_execution(self):
+        schema = {**sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json"), "required": []}
+        for option in ({"quasi_fermi_recenter_on_stall": True},
+                       {"quasi_fermi_trust_region_growth_factor": 2.},
+                       {"contact_majority_qf_branch_drop_limit_V": 1e-9},
+                       {"stable_merit_comparison": True}):
+            d, ir, stage, _ = self.inputs()
+            with self.assertRaises(ValueError):
+                apply_bvmethods_profile(d, ir, stage, {"solver": {"state_variables": "potential_density", **option}})
+            with self.assertRaises(sv.ValidationError):
+                sv.validate(schema, {"solver": {"state_variables": "potential_density",
+                    "coupled_operator": "bvmethods_tri3_qf", "carrier_statistics": {"model": "fermi_dirac_joyce_dixon"}, **option}})
+
     def inputs(self):
         deck = {'solver': {'mobility': {'model': 'masetti_field_lombardi',
             'high_field_driving_force': 'quasi_fermi_gradient', 'electron_cr_cm3': 9.68e16},

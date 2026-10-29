@@ -748,3 +748,60 @@ TEST_CASE("BVMethods fused diagnostics retain constrained and free physical equa
         }
     }
 }
+
+
+TEST_CASE("Population numerical policy rejects inactive QF controls before assembly", "[population_core]") {
+    using namespace vela;
+    const nlohmann::json base={{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}}};
+    for(const auto& option:std::vector<nlohmann::json>{
+        {{"quasi_fermi_update_limit_V",.1}},{{"quasi_fermi_update_limit_minority_V",.1}},{{"max_update",1.}},
+        {{"quasi_fermi_update_limit_mode","uniform_trust_region"}},
+        {{"quasi_fermi_trust_region_growth_factor",2.}},{{"quasi_fermi_recenter_on_stall",true}},
+        {{"contact_majority_qf_branch_drop_limit_V",1e-9}},{{"stable_merit_comparison",true}},
+        {{"carrier_row_qualified_stall_acceptance",true}},{{"linear_equilibration",{{"mode","l2_row_column"}}}},
+        {{"jacobian","finite_difference"}}}) {
+        auto c=base;c.update(option);CAPTURE(option.dump());
+        REQUIRE_THROWS_AS(newtonConfigFromJson(c),std::invalid_argument);
+    }
+    ProfileFixture f;
+    auto cfg=newtonConfigFromJson(base);cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
+    for(const auto& change:std::vector<std::function<void(NewtonConfig&)>>{
+        [](auto& c){c.quasiFermiUpdateLimit_V=.1;},[](auto& c){c.maxUpdate=1.;},
+        [](auto& c){c.quasiFermiRecenterOnInitialState=true;},
+        [](auto& c){c.quasiFermiTrustRegionGrowthFactor=2.;},
+        [](auto& c){c.contactMajorityQfBranchDropLimit_V=1e-9;},
+        [](auto& c){c.stableMeritComparison=true;}}) {
+        auto c=cfg;change(c);
+        REQUIRE_THROWS_AS((NewtonSolver(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},c)),std::invalid_argument);
+    }
+    NewtonSolver valid(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    REQUIRE_FALSE(valid.makeArclengthSystem("drain").limitUpdate);
+}
+
+TEST_CASE("Population absolute block stopping replaces scalar tolerances without bypassing blocks", "[population_core]") {
+    using namespace vela;ProfileFixture f;
+    NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";cfg.stateVariables="potential_density";
+    cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
+    cfg.maxIter=1;cfg.reltol=1e-40;cfg.abstol=1e-80;cfg.lineSearch=false;
+    NewtonSolver owner(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    const auto qf=f.assembler();const auto x=f.point();DDSolution state;
+    state.psi=x.head(6);state.n=qf->electronDensity(x);state.p=qf->holeDensity(x);
+    state.phin=x.segment(6,6);state.phip=x.tail(6);
+    const auto y=owner.packArclengthState(state);
+    const auto rhs=owner.makeArclengthSystem("source").residual(y,0.);
+    REQUIRE(rhs.allFinite());REQUIRE(rhs.norm()>0.);
+    cfg.blockAbsoluteConvergence={"enforce",2*std::max(rhs.head(6).cwiseAbs().maxCoeff(),1e-100),
+        2*std::max(rhs.segment(6,6).cwiseAbs().maxCoeff(),1e-100),
+        2*std::max(rhs.tail(6).cwiseAbs().maxCoeff(),1e-100)};
+    NewtonSolver blocks(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    const auto result=blocks.solve(state);
+    INFO(result.failureDiagnostics.failureReason);REQUIRE(result.converged);REQUIRE(result.iters==0);
+    REQUIRE(result.finalResidualNorm<=1.);
+    cfg.blockAbsoluteConvergence.psiResidualCeiling=rhs.head(6).cwiseAbs().maxCoeff()/2;
+    REQUIRE(cfg.blockAbsoluteConvergence.psiResidualCeiling>0.);
+    NewtonSolver strict(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    REQUIRE_FALSE(strict.makeArclengthSystem("source").convergenceSatisfied(y,0.));
+    const auto rejected=strict.solve(state);
+    REQUIRE_FALSE((rejected.converged&&rejected.iters==0));
+}

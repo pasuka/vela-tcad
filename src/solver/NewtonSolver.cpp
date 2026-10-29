@@ -1588,6 +1588,36 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     return result;
 }
 namespace {
+// One coordinate policy for JSON, direct C++ construction and CMD execution.
+// Positive populations and equation gates are not QF trust-region controls.
+void validatePopulationNumerics(const NewtonConfig& c)
+{
+    if(c.stateVariables!="potential_density")return;
+    validatePopulationUpdate(c.populationUpdate);
+    const auto reject=[](bool active,const char* option) {
+        if(active)throw std::invalid_argument(std::string("potential_density does not support ")+option);
+    };
+    reject(c.coupledOperator!="bvmethods_tri3_qf" || c.splitDDState || c.electronQuantumPotential.enabled,
+        "legacy, split or quantum state formulations");
+    reject(c.quasiFermiUpdateLimit_V!=0. || c.quasiFermiUpdateLimitMinority_V!=0.,"QF voltage update caps");
+    reject(c.maxUpdate!=0.,"max_update on mixed potential/concentration units");
+    reject(c.quasiFermiReference!="none" || c.quasiFermiRecenterOnInitialState || c.quasiFermiRecenterOnStall,
+        "QF reference/recentering");
+    reject(c.quasiFermiUpdateLimitMode!="componentwise_poisson_recorrect" ||
+        c.quasiFermiTrustRegionGrowthFactor!=1. || c.quasiFermiTrustRegionMaxMultiplier!=1. ||
+        c.quasiFermiTrustRegionExpansionThreshold!=.75 || c.quasiFermiTrustRegionShrinkFactor!=1. ||
+        c.quasiFermiTrustRegionMinMultiplier!=1.,"QF trust-region controls");
+    reject(c.contactMajorityQfBranchDropLimit_V!=0.,"contact-majority QF branch stopping");
+    reject(c.carrierRowRecovery.mode!="off" || c.continuityRowScaling.enabled ||
+        c.carrierRegularizationScale!=0. || c.carrierDiagonalFloor.enabled,
+        "legacy carrier recovery/scaling/regularization");
+    reject(c.linearEquilibration.mode!="off", "legacy linear_equilibration (population columns have their own scaling)");
+    reject(c.jacobian!="analytic", "legacy finite-difference Jacobian selection");
+    reject(c.stableMeritComparison || c.carrierRowQualifiedStallAcceptance,
+        "legacy merit/stall acceptance");
+    reject(c.lineSearch && c.lineSearchMode!="merit", "legacy block_filter line search");
+}
+
 void validateNumericalPrecisionOptions(const NewtonConfig& cfg)
 {
     if (cfg.poissonResidualPrecision != "double" && cfg.poissonResidualPrecision != "binary128")
@@ -2873,6 +2903,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument("Joyce-Dixon Newton dispatch requires bvmethods_tri3_qf");
     }
 
+    validatePopulationNumerics(cfg);
     validateNumericalPrecisionOptions(cfg);
     return cfg;
 }
@@ -2904,14 +2935,7 @@ NewtonSolver::NewtonSolver(
     if((cfg_.populationDerivativeRecovery!="full"&&cfg_.populationDerivativeRecovery!="automatic") ||
        (cfg_.populationDerivativeRecovery!="full"&&cfg_.stateVariables!="potential_density"))
         throw std::invalid_argument("invalid population derivative recovery mode");
-    if(cfg_.stateVariables=="potential_density") {
-        validatePopulationUpdate(cfg_.populationUpdate);
-        if(cfg_.coupledOperator!="bvmethods_tri3_qf" || cfg_.splitDDState || cfg_.electronQuantumPotential.enabled ||
-           cfg_.quasiFermiReference!="none" || cfg_.quasiFermiUpdateLimit_V!=0. || cfg_.quasiFermiUpdateLimitMinority_V!=0. ||
-           cfg_.maxUpdate!=0. || cfg_.carrierRowRecovery.mode!="off" || cfg_.continuityRowScaling.enabled ||
-           cfg_.carrierRegularizationScale!=0. || cfg_.contactMajorityQfBranchDropLimit_V!=0. || cfg_.quasiFermiRecenterOnStall)
-            throw std::invalid_argument("potential_density requires ordinary BVMethods without QF caps/references, split, quantum or Gummel recovery");
-    }
+    validatePopulationNumerics(cfg_);
     if (!std::isfinite(cfg_.legacyTransportJacobianStep) || cfg_.legacyTransportJacobianStep <= 0.0 ||
         !std::isfinite(cfg_.legacyAvalancheJacobianStep) || cfg_.legacyAvalancheJacobianStep <= 0.0)
         throw std::invalid_argument("NewtonSolver: legacy edge Jacobian steps must be finite and positive");
@@ -3722,8 +3746,8 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 (!g.globalContinuity.enforced || g.globalContinuity.satisfied);
         };
     }
-    if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
-        cfg_.quasiFermiUpdateLimitMinority_V > 0.0) {
+    if (!assembler->usesPopulationState() && (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
+        cfg_.quasiFermiUpdateLimitMinority_V > 0.0)) {
         system.limitUpdate = [self, nodeCount, potentialScale](
             const VectorXd&, VectorXd& deltaX, Real& deltaLambda) {
             // A component-wise quasi-Fermi clip changes the bordered Newton
