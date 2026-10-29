@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [T470p当前核心BVMethods gprof与优化，2026-10-29](validation/bvmethods_t470p_gprof_2026-10-29.md)：
+  显式变量开关确认，节点统计与区域接口判断复用；普通Release短窗口配对、状态与算子一致性。
+
 - [BVMethods自主原始量、边界人口与双机整理，2026-10-29](validation/bvmethods_autonomous_primitives_2026-10-29.md)：
   自主材料／统计／SG原型、完整RHS及Jacobian对照、边界与冷Poisson前五点；零偏弱空穴余差单列。
 

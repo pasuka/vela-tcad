@@ -701,3 +701,30 @@ TEST_CASE("Primitive stable statistics preserves dilute gamma and its tangent", 
     REQUIRE(stable.logGamma.derivative[0]==Approx(-.3535533905932737622/dos).epsilon(2e-15));
     REQUIRE(stable.logGamma.value<0.);
 }
+
+
+TEST_CASE("BVMethods residual values are independent of derivative request and refresh on changed populations", "[bvmethods_profile][population_core]") {
+    using namespace vela;ProfileFixture f;auto a=f.assembler();const auto x=f.point();
+    detail::BvMethodsQfState state{x.head(6),x.segment(6,6),x.tail(6),a->electronDensity(x),a->holeDensity(x)};
+    const auto nc=a->electronDensityOfStates(),nv=a->holeDensityOfStates(),ni=a->intrinsicDensity();
+    detail::BvMethodsTri3Context context{f.mesh,f.materials,f.doping,
+        {f.mobility,f.avalanche,{},CarrierStatisticsModel::FermiDiracJoyceDixon}};
+    for(bool population:{false,true})for(bool direct:{false,true}) {
+        if(direct&&!population)continue;
+        state.populationCoordinates=population;
+        detail::BvMethodsTri3Operator element(context,state,nc,nv,1.,1.,constants::Vt_300,ni,direct);
+        for(int trial=0;trial<2;++trial) {
+            const auto value=element.transport(state,false,true,true),ad=element.transport(state,true,true,true);
+            REQUIRE(exactValueBits(value.source)==exactValueBits(ad.source));
+            REQUIRE(exactValueBits(value.absoluteSource)==exactValueBits(ad.absoluteSource));
+            const auto av=element.evaluate(state,false),avAd=element.evaluate(state,true);
+            REQUIRE(exactValueBits(av.source)==exactValueBits(avAd.source));
+            REQUIRE(exactValueBits(av.electronGeneration)==exactValueBits(avAd.electronGeneration));
+            REQUIRE(exactValueBits(av.holeGeneration)==exactValueBits(avAd.holeGeneration));
+            auto changed=state;changed.n[1]*=1.01;changed.p[2]*=.99;
+            const auto fresh=element.transport(changed,false,true,true);
+            REQUIRE((fresh.source-value.source).norm()>0.);
+            state=changed;
+        }
+    }
+}

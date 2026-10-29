@@ -55,6 +55,20 @@ class BvMethodsTri3Operator {
  };
  std::vector<CellCache> cells_;
  experimental::AvCoefficient electron_,hole_;
+ struct NodeStatistics {double n=0.,p=0.,dn=0.,dp=0.,etaN=0.,etaP=0.;};
+ // Values depend on the node state, not on the cell's local AD slot. Keep
+ // this scratch local to one assembly; no reuse across states or owners.
+ std::vector<NodeStatistics> nodeStatistics(const BvMethodsQfState& state,bool inverse) const {
+  const auto units=problem_.newton.inputScaling.unitSystem();
+  std::vector<NodeStatistics> result(problem_.mesh.numNodes());
+  for(std::size_t i=0;i<result.size();++i)if(electronActive_[i]) {
+   auto& a=result[i];a.n=units.internalConcentrationToM3(state.n[i])/1e6;a.p=units.internalConcentrationToM3(state.p[i])/1e6;
+   a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
+   a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+   if(inverse){a.etaN=experimental::JoyceDixonStatistics::inverseDensity(a.n,nc_[i]);a.etaP=experimental::JoyceDixonStatistics::inverseDensity(a.p,nv_[i]);}
+  }
+  return result;
+ }
 public:
  BvMethodsTri3Operator(const BvMethodsTri3Context& problem,const BvMethodsQfState& initial,
         const std::vector<double>& nc,const std::vector<double>& nv,
@@ -104,12 +118,11 @@ public:
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
+  const auto nodes=nodeStatistics(state,false);
   for(const auto&a:cells_){std::array<AvJet,3> psi,fn,fp,ns,ps;
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
-    const double nd=units.internalConcentrationToM3(state.n[i])/1e6,pd=units.internalConcentrationToM3(state.p[i])/1e6;
-    ns[k]=AvJet(nd);ps[k]=AvJet(pd);
-    const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
-    const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
+    const auto& node=nodes[i];ns[k]=AvJet(node.n);ps[k]=AvJet(node.p);
+    const double dn=node.dn,dp=node.dp;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
     if(state.populationCoordinates){
      // Jets retain the historical final V0 scatter; concentration columns
@@ -163,12 +176,11 @@ public:
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
+  const auto nodes=nodeStatistics(state,true);
   for(const auto&a:cells_){std::array<AvJet,3> psi,fn,fp,ns,ps;
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
-    const double nd=units.internalConcentrationToM3(state.n[i])/1e6,pd=units.internalConcentrationToM3(state.p[i])/1e6;
-    ns[k]=AvJet(nd);ps[k]=AvJet(pd);
-    const double dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(nd,nc_[i])/vt_;
-    const double dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(pd,nv_[i])/vt_;
+    const auto& node=nodes[i];ns[k]=AvJet(node.n);ps[k]=AvJet(node.p);
+    const double dn=node.dn,dp=node.dp;
     ns[k].derivative[k]=dn;ns[k].derivative[3+k]=-dn;ps[k].derivative[k]=-dp;ps[k].derivative[6+k]=dp;
     if(state.populationCoordinates){
      // Jets retain the historical final V0 scatter; concentration columns
@@ -199,7 +211,7 @@ public:
    for(int k=0;k<3;++k){
     mn[k]=mobility(true,en,k);mp[k]=mobility(false,hp,k);
     if(freezeMobilityDerivatives){mn[k].derivative.fill(0.);mp[k].derivative.fill(0.);}
-    const auto i=a.nodes[k];etaN[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ns[k].value,nc_[i]));etaP[k]=AvJet(experimental::JoyceDixonStatistics::inverseDensity(ps[k].value,nv_[i]));
+    const auto i=a.nodes[k];etaN[k]=AvJet(nodes[i].etaN);etaP[k]=AvJet(nodes[i].etaP);
     etaN[k].derivative[k]=1/vt_;etaN[k].derivative[3+k]=-1/vt_;
     etaP[k].derivative[k]=-1/vt_;etaP[k].derivative[6+k]=1/vt_;
     if(state.populationCoordinates){

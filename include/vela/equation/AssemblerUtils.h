@@ -1501,6 +1501,9 @@ inline void updateSurfaceMobilityCellGeometry(
                 }
             }
         }
+        // Applicability depends on the region and fixed interface selectors,
+        // not on the cell. Preserve interface order for nearest-distance ties.
+        std::unordered_map<Index,std::vector<const InterfaceSegment*>> interfacesByRegion;
         for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
             const Region& region = mesh.getRegion(mesh.getCell(cellId).region_id);
             if(usesElementDistanceLombardi(config)) {
@@ -1518,10 +1521,13 @@ inline void updateSurfaceMobilityCellGeometry(
             }
             const auto [cx, cy] = cellCentroid(mesh, cellId);
             Real nearest = std::numeric_limits<Real>::infinity();
-            for (const InterfaceSegment& segment : interfaces) {
-                if (!surfaceMobilityAppliesToRegionPair(
-                        config, region.name, segment.regions))
-                    continue;
+            const Index regionId=mesh.getCell(cellId).region_id;
+            auto [applicable,inserted]=interfacesByRegion.try_emplace(regionId);
+            if(inserted)for(const auto& segment:interfaces)
+                if(surfaceMobilityAppliesToRegionPair(config,region.name,segment.regions))
+                    applicable->second.push_back(&segment);
+            for (const InterfaceSegment* candidate : applicable->second) {
+                const InterfaceSegment& segment=*candidate;
                 const Real abx = segment.bx - segment.ax;
                 const Real aby = segment.by - segment.ay;
                 const Real length2 = abx * abx + aby * aby;
