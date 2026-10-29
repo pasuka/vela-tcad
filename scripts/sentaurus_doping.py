@@ -227,7 +227,7 @@ def _gaussian_value(profile: dict[str, Any], placement: dict[str, Any],
 
 def _evaluate_m2_doping_for_owner(
     device_ir: dict[str, Any], owner: dict[str, Any] | None,
-    rectangles: dict[str, Rect], windows: dict[str, Window], x: float, y: float,
+    rectangles: dict[str, Rect], windows: dict[str, Window], x: float, y: float, diagnostics: dict | None = None,
 ) -> tuple[float, float, dict[str, float]]:
     if owner is None or owner["material"]["vela"] not in SEMICONDUCTOR_MATERIALS:
         return 0.0, 0.0, {}
@@ -243,6 +243,20 @@ def _evaluate_m2_doping_for_owner(
             active = _restriction_active(placement, owner, windows, x, y)
             gaussian_active, value = _gaussian_value(profile, placement, windows, x, y)
             active = active and gaussian_active
+        elif profile["type"] == "general":
+            from sentaurus_general import evaluate
+            active = _restriction_active(placement, owner, windows, x, y)
+            if not active:
+                continue
+            try:
+                value, fallback = evaluate(profile, x, y)
+            except ValueError as error:
+                raise DopingEvaluationError(str(error), {"stage": "doping", "profile": profile["name"]}) from error
+            if diagnostics is not None:
+                key = profile["name"]
+                item = diagnostics.setdefault(key, {"evaluations": 0, "default_evaluations": 0})
+                item["evaluations"] += 1
+                item["default_evaluations"] += int(fallback)
         else:
             raise DopingEvaluationError(
                 f"unsupported profile type {profile['type']!r}",
@@ -289,6 +303,7 @@ def _field(values: list[float], unit: str = "cm^-3") -> dict[str, Any]:
 def evaluate_m2_fields(
     device_ir: dict[str, Any], nodes: list[dict[str, Any]],
     triangles: list[dict[str, Any]], regions: list[dict[str, Any]],
+    diagnostics: dict | None = None,
 ) -> dict[str, Any]:
     """Evaluate fields using T-2022.03 region-local shared-node semantics."""
     profiles = {item["name"]: item for item in device_ir["doping"]["profiles"]}
@@ -318,7 +333,7 @@ def evaluate_m2_fields(
                 )
             local_donor, local_acceptor, local_species = _evaluate_m2_doping_for_owner(
                 device_ir, owner, rectangles, windows,
-                float(node["x"]), float(node["y"]))
+                float(node["x"]), float(node["y"]), diagnostics)
             donor += local_donor
             acceptor += local_acceptor
             for name, value in local_species.items():

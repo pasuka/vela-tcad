@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import math
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,7 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
 import sentaurus_sde_cases as cases
 import sentaurus_gmsh_pipeline as pipeline
-from jsonschema import ValidationError
+from jsonschema import ValidationError, validate
 from tests.regression.gmsh_test_runtime import require_gmsh_runtime
 from vela_sdevice.mesh_import import import_grid
 
@@ -35,8 +37,8 @@ class CaseManifestTest(unittest.TestCase):
         actual = {p.relative_to(REPO).as_posix() for p in REPO.glob("reference_tcad/*/source/*")
                   if p.suffix in {".cmd", ".scm"} and "(sdegeo:create-" in p.read_text(encoding="utf-8")}
         self.assertEqual(actual, {c["source"] for c in data["cases"]})
-        self.assertEqual(3, sum(c["expected"] == "generated" for c in data["cases"]))
-        self.assertEqual(5, sum(c["expected"] == "rejected" for c in data["cases"]))
+        self.assertEqual(5, sum(c["expected"] == "generated" for c in data["cases"]))
+        self.assertEqual(3, sum(c["expected"] == "rejected" for c in data["cases"]))
 
     def test_source_edit_cannot_silently_change_case(self):
         self.data["cases"][0]["source_sha256_lf"] = "0" * 64
@@ -122,7 +124,7 @@ class CorpusIntegrationTest(unittest.TestCase):
         cls.addClassCleanup(cls.temp.cleanup)
         cls.root = Path(cls.temp.name)
         cls.runtime = cls.root / "runtime"
-        cls.output = cls.root / "case outputs with spaces"
+        cls.output = Path(os.environ.get("VELA_REFERENCE_SDE_TEST_OUTPUT", cls.root / "case outputs with spaces"))
         cls.data = cases.load_manifest(cases.DEFAULT_MANIFEST)
         cls.summary = cases.run_suite(cases.DEFAULT_MANIFEST, cls.output, cls.runtime, repeat=2)
 
@@ -131,9 +133,9 @@ class CorpusIntegrationTest(unittest.TestCase):
             "--sde", str(source), "--output-dir", str(output), "--runtime-dir", str(self.runtime)],
             cwd=REPO, text=True, capture_output=True)
 
-    def test_three_exports_native_identity_and_five_rejections(self):
+    def test_five_exports_native_identity_and_three_rejections(self):
         self.assertEqual("passed", self.summary["status"], self.summary)
-        self.assertEqual({"generated": 3, "expected_rejection": 5}, self.summary["counts"])
+        self.assertEqual({"generated": 5, "expected_rejection": 3}, self.summary["counts"])
         for row in self.summary["cases"]:
             with self.subTest(case=row["id"]):
                 self.assertEqual("not_run", row["stages"]["reference"])
@@ -142,6 +144,38 @@ class CorpusIntegrationTest(unittest.TestCase):
                     self.assertEqual(2, row["repeats"])
                 else:
                     self.assertEqual("not_run", row["stages"]["export"])
+
+    def test_bjt_local_variant_refines_authored_local_windows(self):
+        coarse = json.loads((self.output / "bjt/mesh_qualification.json").read_text())
+        local = json.loads((self.output / "bjt_local/mesh_qualification.json").read_text())
+        bounds = {"RefPlace.BaseCollector": [.75,.42,5.25,.88],
+                  "RefPlace.EmitterBaseLeft": [2.52,0,2.98,.55],
+                  "RefPlace.EmitterBaseRight": [4.02,0,4.48,.55]}
+        # Compare both meshes in the same authored windows, independently of field tags.
+        for name, (x0,y0,x1,y1) in bounds.items():
+            spacings=[]
+            for case in ("bjt", "bjt_local"):
+                b=json.loads((self.output / case / "mesh_field_bundle.json").read_text())
+                nodes={n["vela_id"]:n for n in b["nodes"]}
+                edges={tuple(sorted((t["node_ids"][i],t["node_ids"][(i+1)%3]))) for t in b["triangles"] for i in range(3)}
+                lengths=sorted(math.hypot(nodes[a]["x"]-nodes[c]["x"],nodes[a]["y"]-nodes[c]["y"]) for a,c in edges
+                    if x0 <= (nodes[a]["x"]+nodes[c]["x"])/2 <= x1 and y0 <= (nodes[a]["y"]+nodes[c]["y"])/2 <= y1)
+                self.assertTrue(lengths)
+                spacings.append(lengths[math.ceil(.95*len(lengths))-1])
+            self.assertLess(spacings[1],spacings[0],(name,spacings))
+        for q in (coarse,local):
+            validate(q["maxtransdiff"], json.loads((REPO/"schemas/vela.gmsh_maxtransdiff.v1.schema.json").read_text()))
+            self.assertEqual("passed",q["maxtransdiff"]["status"])
+            self.assertGreater(q["maxtransdiff"]["remesh_iterations"],0)
+
+    def test_bjt_integral_and_junction_corruption_are_rejected(self):
+        from sentaurus_bjt_contract import check
+        b=json.loads((self.output/"bjt/mesh_field_bundle.json").read_text())
+        b["fields"]["AcceptorConcentration"]["values"]=[v*1.05 for v in b["fields"]["AcceptorConcentration"]["values"]]
+        self.assertIn("integrated concentration",check(b)["failures"])
+        b=json.loads((self.output/"bjt/mesh_field_bundle.json").read_text())
+        b["fields"]["DopingConcentration"]["values"]=[1e17]*len(b["nodes"])
+        self.assertTrue(any("junction count" in f for f in check(b)["failures"]))
 
     def test_analytic_contract_detects_doping_corruption(self):
         out = self.root / "corrupted field"
@@ -188,7 +222,7 @@ class CorpusIntegrationTest(unittest.TestCase):
         expected_hashes = {name: cases.digest(output / name) for name in cases.PRIMARY}
         note = output / "user-notes.txt"
         note.write_text("keep this")
-        failed_source = REPO / self.data["cases"][3]["source"]
+        failed_source = REPO / self.data["cases"][5]["source"]
         result = self.cli(failed_source, output)
         self.assertEqual(2, result.returncode, result.stderr)
         self.assertFalse((output / "run_manifest.json").exists())

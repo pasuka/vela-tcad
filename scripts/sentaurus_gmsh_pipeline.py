@@ -462,7 +462,13 @@ def run_pipeline(
                 if args.capability_level == "M5":
                     bundle, qualification = builder(
                         gmsh, device_ir, args.mesh_size,
-                        args.mesh_strategy, args.transfinite_diagonal)
+                        args.mesh_strategy, args.transfinite_diagonal,
+                        getattr(args, "maxtransdiff_max_iterations", 12),
+                        getattr(args, "maxtransdiff_max_nodes", 200000))
+                elif args.capability_level == "M3":
+                    bundle, qualification = builder(gmsh, device_ir, args.mesh_size,
+                        getattr(args, "maxtransdiff_max_iterations", 12),
+                        getattr(args, "maxtransdiff_max_nodes", 200000))
                 else:
                     bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
                 write_json(work / "device_ir.json", device_ir)
@@ -518,11 +524,11 @@ def run_pipeline(
                     "supported": ["Rectangle ABA/BAB ownership", "conformal interface",
                                   "insert-vertex pick-point contact",
                                   "ordered Replace/LocalReplace/NoReplace",
-                                  "line-baseline Gaussian"] + (
+                                  "line-baseline Gaussian", "bounded device-coordinate General Both/Eval"] + (
                                       ["Line/Rectangle/Polygon refinement window",
                                        "region/material/window anisotropic placement",
                                        "MaxLenInt DoubleSide/UseRegionNames",
-                                       "auditable Gmsh field DAG"]
+                                       "auditable Gmsh field DAG", "bounded region MaxTransDiff on net doping"]
                                       if args.capability_level in {"M3", "M5"} else []) + (
                                       ["auto Transfinite Rectangle selection",
                                        "first-order right Tri3 structured mesh",
@@ -530,7 +536,7 @@ def run_pipeline(
                                       if args.capability_level == "M5" else []),
                     "fail_closed": ["AB/ABiA/ABiB/XX", "Polygon body",
                                     "contact entity/body/remove/imprint"] + (
-                                        ["MaxTransDiff/MaxGradient phase 4B", "MaxInterval",
+                                        ["MaxGradient phase 4B", "MaxTransDiff outside documented subset", "MaxInterval",
                                          "multibox", "offsetting", "MaxLenInt contact interface"]
                                         if args.capability_level in {"M3", "M5"}
                                         else ["refinement"]) + ([
@@ -582,6 +588,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gmsh-python", type=Path)
     parser.add_argument("--gmsh-library", type=Path)
     parser.add_argument("--gmsh-executable", type=Path)
+    parser.add_argument("--maxtransdiff-max-iterations", type=int, default=12)
+    parser.add_argument("--maxtransdiff-max-nodes", type=int, default=200000)
     parser.add_argument("--mesh-size", type=float, default=0.2)
     parser.add_argument("--capability-level", choices=("M1", "M2", "M3", "M5"), default="M5",
                         help="freeze the accepted semantic subset (default: M5)")

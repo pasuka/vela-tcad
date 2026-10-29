@@ -62,7 +62,7 @@ class M3RefinementUnitTest(unittest.TestCase):
         self.assertFalse(function["double_side"])
         self.assertFalse(function["use_region_names"])
 
-    def test_phase4b_function_is_parsed_then_fails_closed(self) -> None:
+    def test_region_maxtransdiff_function_is_supported(self) -> None:
         ir = self._ir("""
 (sdegeo:create-rectangle (position 0 0 0) (position 1 1 0) "Silicon" "R.Si")
 (sdedr:define-refinement-size "Ref" 0.2 0.2 0.05 0.05)
@@ -73,9 +73,11 @@ class M3RefinementUnitTest(unittest.TestCase):
         function = ir["mesh_control"]["refinement_functions"][0]
         self.assertEqual("DopingConcentration", function["variable"])
         self.assertEqual("MaxTransDiff", function["function"])
+        validate_m3_device_ir(ir)
+        function["variable"] = "UnknownConcentration"
         with self.assertRaises(GmshBackendError) as context:
             validate_m3_device_ir(ir)
-        self.assertEqual("refinement-4b", context.exception.details["capability"])
+        self.assertEqual("maxtransdiff-subset", context.exception.details["capability"])
 
     def test_polygon_requires_closed_counterclockwise_vertices(self) -> None:
         for points in (

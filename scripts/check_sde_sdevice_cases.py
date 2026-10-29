@@ -184,7 +184,7 @@ def run_suite(meshes: Path, output: Path, launcher: Path) -> dict:
     summary = json.loads((meshes / 'case_summary.json').read_text())
     require(summary["status"] == "passed" and summary["manifest_sha256"] == digest(DEFAULT_MANIFEST), "P1 identity mismatch")
     require({r["id"] for r in summary["cases"] if r["status"] == "generated"} ==
-            {c["mesh_case"] for c in cases}, "missing P1 generated case")
+            {c["id"] for c in p1["cases"] if c["expected"] == "generated"}, "missing P1 generated case")
     for row in summary["cases"]:
         if row["status"] == "generated":
             for name in PRIMARY:

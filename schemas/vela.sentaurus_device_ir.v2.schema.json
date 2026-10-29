@@ -23,7 +23,33 @@
     },
     "defines": {
       "type": "object",
-      "additionalProperties": {"type": ["number", "string"]}
+      "additionalProperties": {
+        "oneOf": [
+          {"type": ["number", "string"]},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "body_id", "region", "location"],
+            "properties": {
+              "kind": {"const": "body"},
+              "body_id": {"type": "string", "pattern": "^body:[0-9]+$"},
+              "region": {"type": "string"},
+              "location": {"type": "string"}
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "parameters", "expression", "location"],
+            "properties": {
+              "kind": {"const": "pure_function"},
+              "parameters": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"type": "string"}},
+              "expression": {"type": "string"},
+              "location": {"type": "string"}
+            }
+          }
+        ]
+      }
     },
     "geometry": {
       "type": "object",
@@ -54,7 +80,26 @@
       "required": ["profiles", "placements", "windows"],
       "additionalProperties": false,
       "properties": {
-        "profiles": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "profiles": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {"$ref": "#/definitions/semanticRecord"},
+              {
+                "if": {"properties": {"type": {"const": "general"}}, "required": ["type"]},
+                "then": {
+                  "required": ["expression", "expression_tree", "parameters", "default_value_cm3"],
+                  "properties": {
+                    "expression": {"type": "string", "maxLength": 4096},
+                    "expression_tree": {"$ref": "#/definitions/generalExpression"},
+                    "parameters": {"type": "object", "additionalProperties": {"type": "number"}},
+                    "default_value_cm3": {"type": "number", "minimum": 0}
+                  }
+                }
+              }
+            ]
+          }
+        },
         "placements": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
         "windows": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}}
       }
@@ -87,6 +132,50 @@
     "metadata_only": {"type": "array", "items": {"type": "object"}}
   },
   "definitions": {
+    "generalExpression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "value"],
+          "properties": {"op": {"const": "number"}, "value": {"type": "number"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "name"],
+          "properties": {"op": {"const": "symbol"}, "name": {"type": "string"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "args"],
+          "properties": {
+            "op": {"enum": ["add", "sub", "mul", "div", "pow"]},
+            "args": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {"$ref": "#/definitions/generalExpression"}
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["op", "args"],
+          "properties": {
+            "op": {"enum": ["neg", "pos", "abs", "exp", "sqrt", "log"]},
+            "args": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {"$ref": "#/definitions/generalExpression"}
+            }
+          }
+        }
+      ]
+    },
     "point2d": {
       "type": "array", "minItems": 2, "maxItems": 2,
       "items": {"type": "number"}

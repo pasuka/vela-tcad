@@ -3,7 +3,7 @@
 The P1 corpus is defined in
 [`configs/reference_sde_cases.json`](../configs/reference_sde_cases.json) and its
 [versioned schema](../schemas/vela.reference_sde_cases.v1.schema.json).
-It covers eight current primary source scripts: three generate meshes and five
+Corpus revision 2 covers eight current primary source scripts: five generate meshes and three
 are expected to fail at a specific source location. Archived variants, oracle
 wrappers and retired cases are excluded.
 
@@ -40,8 +40,8 @@ python scripts/sentaurus_gmsh_pipeline.py `
 The primary products are `device.grd`, `device.dat`, `device.msh`; helper files
 include the normalized bundle, Vela mesh/doping, ID mapping and cross-format
 report. The batch writes one case directory per ID and `case_summary.json`.
-Exit 0 means the corpus met its declared expectations; **it means 3 generated
-and 5 expected rejections**, not eight supported device scripts. Exit 2 means
+Exit 0 means the corpus met its declared expectations; **it means 5 generated
+and 3 expected rejections**, not eight supported device scripts. Exit 2 means
 a dependency, input identity, contract, determinism or rejection boundary failed.
 
 ## Contract and evidence
@@ -57,7 +57,10 @@ a dependency, input identity, contract, determinism or rejection boundary failed
   position and complete edge length. Coordinates and shared-window boundaries
   use `1e-12 um` tolerance. Nodal donor/acceptor/net values follow the declared
   analytic constant or PN window profiles, including both placements at the
-  shared junction. Scalar comparisons use `rtol=1e-12, atol=1e-12`.
+  shared junction. These scalar comparisons use `rtol=1e-12, atol=1e-12`.
+  The two BJT cases use the separately frozen [P3 contract](sde_bjt_modeling.md):
+  original General expressions, pointwise relative error <= 1e-6, species
+  integral error <= 1%, and cut junction error within the local minimum y size.
 - Mesh quality additionally requires one connected component, positive triangle
   area/CCW orientation, and the per-region P95 absolute x/y components of unique
   edges within 1.35 times the source max spacing. This retains the existing M3
@@ -71,7 +74,7 @@ a dependency, input identity, contract, determinism or rejection boundary failed
   it is not included in volume materials (see the P2 import correction).
 - By default supported cases run twice (`--repeat 2`), including separate native
   imports. PN2D and Schottky require byte-identical GRD/DAT/MSH/mesh JSON/doping CSV.
-  The user-approved gate_reference policy is `contract_equivalent`: each run must
+  The gate_reference and BJT policy is `contract_equivalent`: each run must
   independently meet the geometry, material, contact, analytic doping and mesh
   quality contracts. The 4.15.2 BAMG wrapper traverses pointer-ordered vertices;
   seed/thread/Reproducible experiments did not give byte-identical results here.
@@ -82,7 +85,7 @@ a dependency, input identity, contract, determinism or rejection boundary failed
 - Each case records parse, model, export, native-import and reference stages.
   Reference is `not_run`: no live SDE/TDX, `sd-sim --check` or physics solve is
   performed. This is P1, not the subsequent full SDevice integration qualification.
-- The five rejections must retain exit 2, `sde_parse`, source basename, exact
+- The three rejections must retain exit 2, `sde_parse`, source basename, exact
   line/column and a diagnostic category. An unexpected generation also fails the
   corpus so that new support receives a reviewed positive contract.
 

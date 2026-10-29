@@ -26,6 +26,8 @@ from typing import Any, Callable, Sequence
 
 from sentaurus_sexp import (
     Atom,
+    BodyHandle,
+    PureFunction,
     Environment,
     Sexp,
     SexpError,
@@ -100,6 +102,7 @@ class DeviceIrBuilder:
     inserted_vertices: list[dict[str, Any]] = field(default_factory=list)
     windows: dict[str, dict[str, Any]] = field(default_factory=dict)
     profiles: dict[str, dict[str, Any]] = field(default_factory=dict)
+    general_parameters: dict[str, float] = field(default_factory=dict)
     placements: list[dict[str, Any]] = field(default_factory=list)
     refinement_sizes: dict[str, dict[str, Any]] = field(default_factory=dict)
     refinement_placements: list[dict[str, Any]] = field(default_factory=list)
@@ -144,12 +147,50 @@ def _rectangle_bounds(lower: Sequence[float],
 
 def _handle_define(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(form, 2, "(define name value)")
-    name_node = args[0]
+    if len(args) != 2:
+        raise SdeParseError(f"{form.location()}: define requires one value/body")
+    name_node, value = args
+    if isinstance(name_node, Sexp):
+        if not isinstance(value, Sexp) or not name_node.items or len(name_node.items) > 9:
+            raise SdeParseError(f"{form.location()}: invalid pure function definition")
+        symbols = name_node.items
+        if any(not isinstance(item, Atom) or not item.is_symbol for item in symbols):
+            raise SdeParseError(f"{form.location()}: pure function names must be symbols")
+        name = str(symbols[0].value)
+        parameters = tuple(str(item.value) for item in symbols[1:])
+        if (len(parameters) != len(set(parameters)) or name in builder.env.functions or
+                name in builder.env or
+                name in {"position", "+", "-", "*", "/", "abs", "sqrt", "exp", "log", "min", "max"}):
+            raise SdeParseError(f"{form.location()}: duplicate/reserved pure function binding")
+        allowed = {"+", "-", "*", "/", "sqrt", "abs", "exp", "log", "min", "max",
+                   "position", "position-2d", name, *builder.env.functions}
+
+        def check(node, depth=0):
+            if depth > 32:
+                raise SdeParseError(f"{form.location()}: pure function expression exceeds nesting budget")
+            if isinstance(node, Sexp):
+                if node.head() not in allowed:
+                    raise SdeParseError(f"{node.location()}: impure/unsupported function body")
+                for item in node.items[1:]:
+                    check(item, depth+1)
+
+        check(value)
+        builder.env.functions[name] = PureFunction(parameters, value, form.location())
+        return
     if not isinstance(name_node, Atom) or not name_node.is_symbol:
-        raise SdeParseError(
-            f"{form.location()}: (define ...) requires a symbol name in "
-            f"'{form.command_text()}'")
-    builder.env.define(str(name_node.value), eval_scalar(args[1], builder.env))
+        raise SdeParseError(f"{form.location()}: define requires a symbol name")
+    if str(name_node.value) in builder.env.functions:
+        raise SdeParseError(f"{form.location()}: cannot replace a pure function with a scalar/body")
+    if isinstance(value, Sexp) and value.head() == "sdegeo:create-rectangle":
+        _handle_create_rectangle(value, builder)
+        body = builder.regions[-1]
+        result = BodyHandle(f"body:{body['order']}", body['name'], value.location())
+    elif (isinstance(value, Atom) and value.is_symbol and str(value.value) in builder.env and
+          isinstance(builder.env.get(str(value.value)), BodyHandle)):
+        result = builder.env.get(str(value.value))
+    else:
+        result = eval_scalar(value, builder.env)
+    builder.env.define(str(name_node.value), result)
 
 
 def _handle_ignore(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -495,6 +536,36 @@ def _keyword_arguments(form: Sexp, nodes: Sequence[Any], builder: DeviceIrBuilde
     return result
 
 
+def _handle_general_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
+    import math
+    from sentaurus_general import initialise, expression_tree
+
+    args = _require_args(
+        form, 6, "(sdedr:define-analytical-profile name species init function default General)")
+    if len(args) != 6 or expect_string(args[5], builder.env, "function kind") != "General":
+        raise SdeParseError(f"{form.location()}: only the six-argument General profile is supported")
+    name = expect_string(args[0], builder.env, "profile name")
+    species = expect_string(args[1], builder.env, "species")
+    if name in builder.profiles or species not in DONOR_SPECIES | ACCEPTOR_SPECIES:
+        raise SdeParseError(f"{form.location()}: duplicate profile or unsupported species")
+    try:
+        parameters = initialise(
+            expect_string(args[2], builder.env, "initializer"), builder.general_parameters)
+        expression = expect_string(args[3], builder.env, "function")
+        tree = expression_tree(expression, set(parameters) | {"x", "y", "z"})
+        default = eval_number(args[4], builder.env)
+        if not math.isfinite(default) or default < 0:
+            raise ValueError("invalid General default")
+    except ValueError as error:
+        raise SdeParseError(f"{form.location()}: {error}") from error
+    builder.profiles[name] = {
+        "name": name, "type": "general", "species": species,
+        "carrier": "donor" if species in DONOR_SPECIES else "acceptor",
+        "parameters": parameters, "expression": expression, "expression_tree": tree,
+        "default_value_cm3": default, "location": form.location(),
+    }
+
+
 def _handle_gaussian_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(
         form, 6, "(sdedr:define-gaussian-profile name species key value ...)")
@@ -613,8 +684,8 @@ def _handle_analytical_profile_placement(form: Sexp, builder: DeviceIrBuilder) -
     direction = expect_string(args[3], builder.env, "placement direction")
     replacement = expect_string(args[4], builder.env, "replacement mode")
     evaluation = expect_string(args[5], builder.env, "evaluation mode")
-    if profile not in builder.profiles or builder.profiles[profile]["type"] != "gaussian":
-        raise SdeParseError(f"{form.location()}: unknown Gaussian profile '{profile}'")
+    if profile not in builder.profiles or builder.profiles[profile]["type"] not in {"gaussian", "general"}:
+        raise SdeParseError(f"{form.location()}: unknown analytical profile '{profile}'")
     if baseline not in builder.windows or builder.windows[baseline]["shape"] != "line":
         raise SdeParseError(f"{form.location()}: '{baseline}' is not a Line window")
     direction = "Both" if direction == "Symm" else direction
@@ -852,6 +923,7 @@ HANDLERS: dict[str, Handler] = {
     "sdedr:define-refinement-window": _handle_refeval_window,
     "sdedr:define-constant-profile": _handle_constant_profile,
     "sdedr:define-gaussian-profile": _handle_gaussian_profile,
+    "sdedr:define-analytical-profile": _handle_general_profile,
     "sdedr:define-constant-profile-placement":
         lambda form, builder: _handle_constant_profile_placement(form, builder, "window"),
     "sdedr:define-constant-profile-region":
@@ -956,7 +1028,9 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
         "schema": DEVICE_IR_SCHEMA,
         "source": builder.source,
         "defines": {
-            key: builder.env.get(key) for key in sorted(builder.env.values)
+            **{key: (value.to_json() if isinstance(value, BodyHandle) else value)
+               for key, value in sorted(builder.env.values.items())},
+            **{key: value.to_json() for key, value in sorted(builder.env.functions.items())}
         },
         "geometry": {
             "regions": regions,

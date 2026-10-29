@@ -157,8 +157,24 @@ def check_contract(output: Path, contract: dict) -> dict:
                 close(node[edge_contract["axis"]], edge_contract["coordinate_um"], "contact location mismatch")
             length += math.hypot(a["x"] - b["x"], a["y"] - b["y"])
         close(length, edge_contract["length_um"], "contact length mismatch")
+        if "span_um" in edge_contract:
+            axis = "x" if edge_contract["axis"] == "y" else "y"
+            positions = [nodes[i][axis] for i in contact["node_ids"]]
+            close(min(positions), edge_contract["span_um"][0], "contact span start mismatch")
+            close(max(positions), edge_contract["span_um"][1], "contact span end mismatch")
+            require(len(positions) >= 2, "contact has too few nodes")
     # Analytic pointwise doping, independent of the mesh backend or the exporter.
-    for node in mesh["nodes"]:
+    bjt_report = None
+    if contract["doping"]["kind"] == "bjt":
+        from sentaurus_bjt_contract import check
+        bjt_report = check(bundle, local=contract["doping"]["local_refined"])
+        require(bjt_report["status"] == "passed", f"BJT contract failed: {bjt_report}")
+        require(q_adaptive := bundle["provenance"].get("maxtransdiff"), "missing adaptive audit")
+        require(q_adaptive["status"] == "passed" and q_adaptive["rounds"][-1]["refineable_nodes"] == 0,
+                "adaptive termination contract failed")
+        require(all(v["default_evaluations"] == 0 for v in bundle["provenance"]["general_evaluation"].values()),
+                "BJT General used a default concentration")
+    for node in mesh["nodes"] if bjt_report is None else []:
         x, y = node["x"], node["y"]
         rule = contract["doping"]
         if rule["kind"] == "pn":
@@ -192,7 +208,9 @@ def check_contract(output: Path, contract: dict) -> dict:
                     f"mesh P95 spacing mismatch: {name}/{axis}")
             measured[name].append(p95)
     return {"node_count": len(nodes), "cell_count": len(mesh["triangles"]),
-            "max_angle_degrees": q["max_angle_degrees"], "region_p95_spacing_um": measured}
+            "max_angle_degrees": q["max_angle_degrees"], "region_p95_spacing_um": measured,
+            **({"bjt": bjt_report, "maxtransdiff": bundle["provenance"]["maxtransdiff"],
+                "refinement_placements": q["refinement"]["placements"]} if bjt_report else {})}
 
 
 def run_case(case: dict, output: Path, runtime: Path, repeat: int) -> dict:

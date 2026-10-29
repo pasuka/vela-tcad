@@ -1,0 +1,1669 @@
+{
+  "schema": "vela.reference_sde_p3_acceptance.v1",
+  "date": "2026-10-29",
+  "status": "passed",
+  "base_commit": "8969f3f7",
+  "branch": "codex/sentaurus2022-sde-workflow",
+  "corpus_revision": 2,
+  "coverage": {
+    "generated": 5,
+    "expected_rejection": 3,
+    "primary_sources": 8
+  },
+  "acceptance_contract": "configs/reference_bjt_acceptance.json",
+  "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+  "frozen_gate_fields": [
+    "pointwise_relative_tolerance=1e-6",
+    "integral_relative_tolerance=0.01",
+    "junction_error<=local_min_y"
+  ],
+  "algorithm_development": {
+    "initial_postview_attempt": "iteration-budget failure; no accepted products",
+    "final_mapping": "conforming local red/green midpoint splits, shared-edge and longest-edge closure",
+    "gate_changes": "none",
+    "native_snmesh_equivalence": false
+  },
+  "case_summary_sha256": "caf6278a26ffa29ed7d3ba1a168db556c3d189b83eb3b73e3a790ce167212f34",
+  "consumer_summary_sha256": "35e4ca4f7483359a9cf8ea7a587eaa97f8755103fbd5ecd9e8da9793a1c15eaf",
+  "producer_source_sha256_lf": {
+    "scripts/sentaurus_sexp.py": "7c75271fc14e62ac773df3ade11cb0ffb0dd69488beca9ab46cb40363a34e4d6",
+    "scripts/sentaurus_device_ir.py": "42da7c8dd9bc92fcf3984b61cf6f3f31f09bc83df0607f42e511c6d4bc4f4e4b",
+    "scripts/sentaurus_general.py": "29ddd553427d445081d55000479396ce138510a5e9abb70d89cee029e9d06ebd",
+    "scripts/sentaurus_doping.py": "12976a2752a7e99de6cb763e3ffdcffc64c8516be5ac774b84a2d4964c2f5bd8",
+    "scripts/sentaurus_adaptive.py": "823a9b138646181249be6c69a79403f20de4869256ba438aca9ae4d5417350a1",
+    "scripts/sentaurus_gmsh_backend.py": "8142dbe52751ca96f52b5e14cd73d39866f5b66a24533b71e7d4501812206b1c",
+    "scripts/sentaurus_gmsh_pipeline.py": "324d51d8d5de627e1835e330d69fc30fc76d4a70cbad43c4b440a3c41b96d3c3",
+    "scripts/sentaurus_mesh_exporters.py": "055aa791d551428ba80ca88ef76f098023d394a70d6b8ad3b6d106c89c779f8d",
+    "scripts/sentaurus_bjt_contract.py": "eca8a241e3c1b263cb1af136639e764ab825b8a5a3984da5b33cfb35a1c2853a",
+    "scripts/sentaurus_sde_cases.py": "29a70bfd383499092218c5757c878771a50419832dd7615c1a47f662d62ba500",
+    "scripts/check_sde_sdevice_cases.py": "76139ccc2ad62e607487b948b51309c6dff31b73aceef5d48ee333dd2e8f4a67"
+  },
+  "cases": [
+    {
+      "id": "pn2d",
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "source_sha256_lf": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "source_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "schottky",
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "source_sha256_lf": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "source_sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "gate_reference",
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd",
+      "source_sha256_lf": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+      "source_sha256": "d7a33f04d5f887e7b65b329fa1d0f63b76a290e3a1527012ad0b0ad2685a69d8",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "4b658d7fd55b9aaabd596e90eb91dada5c126496ef64c70b32f148b6c78967d6",
+            "device.dat": "68f598d7890179d2bb3bab080da3c4e2c8049bc2406200c1ec1196456f85b3e7",
+            "device.msh": "6052c4961ea58ff3ab8aada48e75c6e76d7b4cf83abd1c4bc277d06d473ff7f0",
+            "mesh.json": "d9f009102d4721972a04c27f59e21a9c5c15a0bc721b331e00a49ef8c6b3fc46",
+            "doping.csv": "a3135465707ce43821b2ad3829ae37b438978f6bf7e846f8dda4cd9bbb3a7926"
+          },
+          "mesh_quality": {
+            "node_count": 165,
+            "cell_count": 220,
+            "max_angle_degrees": 135.7775137580009,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.02500000253849653,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "447cc3a75aacbd013db9a604e525adb749db4f8026270303a8d2aceac5185213",
+            "device.dat": "7dcfb6e7a8ef2502037425c737a78ebee8adecbdadc381944e4773849b97457f",
+            "device.msh": "9fc42c650ee79d17635a077c6f6185b5d894e6a42f6d18bae88ea32449f16acf",
+            "mesh.json": "8fe7e6e8949f68e1649fc368a5be9dbf275215648cc870a75a2eb47d3b374207",
+            "doping.csv": "62ebaaffd50e68fd53691e743ace5f8d2455da62de5b50f2575df223d9b879c4"
+          },
+          "mesh_quality": {
+            "node_count": 166,
+            "cell_count": 222,
+            "max_angle_degrees": 135.7775136908344,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.025000003212702973,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bjt",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "source_sha256": "99949a88906c09383490870326e1ac82b9b43c8a9bc2aad1a36c8b8196096f3d",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "6fbcb96e011a20e95da5580cd34031e8bb26f5b5a12b80e033cd32dc3cd844c8",
+            "device.dat": "c78cbf0014618d00e197451fbd5728a957e7aa74944537fc7b9c6466d29384b1",
+            "device.msh": "97fb810c2c4a5b34b55fd699eaa900dadb3b849d49ddf3922beee40aecd02baa",
+            "mesh.json": "dc2dd3a8086f6966ef80e36b7bcf77991fa84faf56c9c93b6d0415277dd79948",
+            "doping.csv": "3af1225a2283c13e9028ccc6654671c53894a59a99e8c751111d8a7f6e177d27"
+          },
+          "mesh_quality": {
+            "node_count": 22133,
+            "cell_count": 44005,
+            "max_angle_degrees": 143.77486902521184,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.05365971883127951,
+                0.035833988325476795
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 3.086655678850485e-10,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2589670527230026e+19,
+                  "relative_error": 0.0009088789558810766
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.1994199955063675e+18,
+                  "relative_error": 0.0005932345414487816
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7001039382200306,
+                      "absolute_error_um": 1.8400884823299712e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.30515373216840586,
+                      "absolute_error_um": 8.058479853362277e-05,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.700084441161422,
+                      "absolute_error_um": 4.43578818365431e-06,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.3706260451333517,
+                      "absolute_error_um": 3.093810351295634e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000829298486059,
+                      "absolute_error_um": 1.948472373525245e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            },
+            "maxtransdiff": {
+              "schema": "vela.gmsh_maxtransdiff.v1",
+              "status": "passed",
+              "transform": "asinh(N_net / (1 cm^-3))",
+              "edge_rule": "absolute endpoint transformed difference > Value",
+              "stop_rule": "both absolute edge components <= smallest applicable directional minima",
+              "mapping": "conforming local red/green midpoint splits of authored BAMG mesh; shared-edge and longest-edge closure",
+              "native_snmesh_equivalence": false,
+              "max_iterations": 12,
+              "max_nodes": 200000,
+              "rounds": [
+                {
+                  "iteration": 0,
+                  "nodes": 3457,
+                  "triangles": 6700,
+                  "marked_edges": 1397,
+                  "edges": 10156,
+                  "max_transformed_difference": 86.24655286155703,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 991,
+                  "closure_edges": 2095
+                },
+                {
+                  "iteration": 1,
+                  "nodes": 5552,
+                  "triangles": 10873,
+                  "marked_edges": 2116,
+                  "edges": 16424,
+                  "max_transformed_difference": 85.18103106320645,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 1586,
+                  "closure_edges": 3142
+                },
+                {
+                  "iteration": 2,
+                  "nodes": 8694,
+                  "triangles": 17146,
+                  "marked_edges": 3805,
+                  "edges": 25839,
+                  "max_transformed_difference": 83.79991936641434,
+                  "minimum_stopped_edges": 18,
+                  "refineable_nodes": 2658,
+                  "closure_edges": 5464
+                },
+                {
+                  "iteration": 3,
+                  "nodes": 14158,
+                  "triangles": 28063,
+                  "marked_edges": 3242,
+                  "edges": 42220,
+                  "max_transformed_difference": 82.49848580159374,
+                  "minimum_stopped_edges": 4181,
+                  "refineable_nodes": 4100,
+                  "closure_edges": 6693
+                },
+                {
+                  "iteration": 4,
+                  "nodes": 20851,
+                  "triangles": 41441,
+                  "marked_edges": 725,
+                  "edges": 62291,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 11948,
+                  "refineable_nodes": 1103,
+                  "closure_edges": 1260
+                },
+                {
+                  "iteration": 5,
+                  "nodes": 22111,
+                  "triangles": 43961,
+                  "marked_edges": 11,
+                  "edges": 66071,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 13375,
+                  "refineable_nodes": 19,
+                  "closure_edges": 22
+                },
+                {
+                  "iteration": 6,
+                  "nodes": 22133,
+                  "triangles": 44005,
+                  "marked_edges": 0,
+                  "edges": 66137,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 13407,
+                  "refineable_nodes": 0
+                }
+              ],
+              "functions": [
+                {
+                  "refinement": "RefDef.Global",
+                  "variable": "DopingConcentration",
+                  "threshold": 0.8,
+                  "source_location": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd:67:1"
+                }
+              ],
+              "remesh_iterations": 6
+            },
+            "refinement_placements": [
+              {
+                "name": "PlaceRef.Global",
+                "target_kind": "region",
+                "target": "R.Silicon",
+                "edge_count": 66137,
+                "requested_max_spacing": [
+                  0.15,
+                  0.1
+                ],
+                "p95_edge_component": [
+                  0.05365971883127951,
+                  0.035833988325476795
+                ],
+                "max_edge_component": [
+                  0.18659385939145423,
+                  0.13504900217323312
+                ],
+                "min_spacing_stop_target": [
+                  0.015,
+                  0.008
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Top",
+                "target_kind": "window",
+                "target": "RefWin.Top",
+                "edge_count": 57959,
+                "requested_max_spacing": [
+                  0.05,
+                  0.035
+                ],
+                "p95_edge_component": [
+                  0.027324447815489705,
+                  0.024399743846622912
+                ],
+                "max_edge_component": [
+                  0.10579954934625069,
+                  0.07796506752630061
+                ],
+                "min_spacing_stop_target": [
+                  0.008,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Bottom",
+                "target_kind": "window",
+                "target": "RefWin.Bottom",
+                "edge_count": 2795,
+                "requested_max_spacing": [
+                  0.1,
+                  0.04
+                ],
+                "p95_edge_component": [
+                  0.10936986300973017,
+                  0.04803366867332559
+                ],
+                "max_edge_component": [
+                  0.13418671505454238,
+                  0.06121148024296663
+                ],
+                "min_spacing_stop_target": [
+                  0.012,
+                  0.004
+                ],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "e5448d2a4eff2f3145aec9125ba9e78d35c799d9d2814014d6753125076f4bf6",
+            "device.dat": "906bf740b516a629951b5a7313a64ed9aff81e7e7abebf94ad63c379e907222f",
+            "device.msh": "806b3c1c4511148e99a8e8c72c904537f4322411b87fcf50777f613f92e0cf89",
+            "mesh.json": "7c72af7e549255bbf680d83da81455b5d568ca9e873e2d2a37c0115e449eec47",
+            "doping.csv": "d75efcba7cc484a86fe32ae1cd77744ef01bf5c908a5c9415ff125cf07fda3d5"
+          },
+          "mesh_quality": {
+            "node_count": 21951,
+            "cell_count": 43639,
+            "max_angle_degrees": 138.96706686070306,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.05392129650682964,
+                0.036020550085528624
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 4.837900127401536e-10,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2588672087458468e+19,
+                  "relative_error": 0.0009394878050815411
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.1992731307227704e+18,
+                  "relative_error": 0.0006391108748281614
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7001171400484144,
+                      "absolute_error_um": 3.1602713207123934e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.30506661358959064,
+                      "absolute_error_um": 6.53378028159235e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7001203434924266,
+                      "absolute_error_um": 4.033811918824348e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.3706303136005879,
+                      "absolute_error_um": 7.362277587519284e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000706417547665,
+                      "absolute_error_um": 7.196629895900308e-06,
+                      "limit_um": 0.004
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            },
+            "maxtransdiff": {
+              "schema": "vela.gmsh_maxtransdiff.v1",
+              "status": "passed",
+              "transform": "asinh(N_net / (1 cm^-3))",
+              "edge_rule": "absolute endpoint transformed difference > Value",
+              "stop_rule": "both absolute edge components <= smallest applicable directional minima",
+              "mapping": "conforming local red/green midpoint splits of authored BAMG mesh; shared-edge and longest-edge closure",
+              "native_snmesh_equivalence": false,
+              "max_iterations": 12,
+              "max_nodes": 200000,
+              "rounds": [
+                {
+                  "iteration": 0,
+                  "nodes": 3459,
+                  "triangles": 6704,
+                  "marked_edges": 1380,
+                  "edges": 10162,
+                  "max_transformed_difference": 86.34077797384822,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 982,
+                  "closure_edges": 2056
+                },
+                {
+                  "iteration": 1,
+                  "nodes": 5515,
+                  "triangles": 10799,
+                  "marked_edges": 2071,
+                  "edges": 16313,
+                  "max_transformed_difference": 85.05578282430659,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 1553,
+                  "closure_edges": 3004
+                },
+                {
+                  "iteration": 2,
+                  "nodes": 8519,
+                  "triangles": 16795,
+                  "marked_edges": 3773,
+                  "edges": 25313,
+                  "max_transformed_difference": 83.62849159175181,
+                  "minimum_stopped_edges": 9,
+                  "refineable_nodes": 2648,
+                  "closure_edges": 5531
+                },
+                {
+                  "iteration": 3,
+                  "nodes": 14050,
+                  "triangles": 27845,
+                  "marked_edges": 3250,
+                  "edges": 41894,
+                  "max_transformed_difference": 82.26653866160551,
+                  "minimum_stopped_edges": 4083,
+                  "refineable_nodes": 3960,
+                  "closure_edges": 6523
+                },
+                {
+                  "iteration": 4,
+                  "nodes": 20573,
+                  "triangles": 40883,
+                  "marked_edges": 799,
+                  "edges": 61455,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 11518,
+                  "refineable_nodes": 1198,
+                  "closure_edges": 1345
+                },
+                {
+                  "iteration": 5,
+                  "nodes": 21918,
+                  "triangles": 43573,
+                  "marked_edges": 10,
+                  "edges": 65490,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 13088,
+                  "refineable_nodes": 17,
+                  "closure_edges": 28
+                },
+                {
+                  "iteration": 6,
+                  "nodes": 21946,
+                  "triangles": 43629,
+                  "marked_edges": 2,
+                  "edges": 65574,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 13115,
+                  "refineable_nodes": 3,
+                  "closure_edges": 5
+                },
+                {
+                  "iteration": 7,
+                  "nodes": 21951,
+                  "triangles": 43639,
+                  "marked_edges": 0,
+                  "edges": 65589,
+                  "max_transformed_difference": 82.20469334187197,
+                  "minimum_stopped_edges": 13122,
+                  "refineable_nodes": 0
+                }
+              ],
+              "functions": [
+                {
+                  "refinement": "RefDef.Global",
+                  "variable": "DopingConcentration",
+                  "threshold": 0.8,
+                  "source_location": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd:67:1"
+                }
+              ],
+              "remesh_iterations": 7
+            },
+            "refinement_placements": [
+              {
+                "name": "PlaceRef.Global",
+                "target_kind": "region",
+                "target": "R.Silicon",
+                "edge_count": 65589,
+                "requested_max_spacing": [
+                  0.15,
+                  0.1
+                ],
+                "p95_edge_component": [
+                  0.05392129650682964,
+                  0.036020550085528624
+                ],
+                "max_edge_component": [
+                  0.19117820053021628,
+                  0.13119505658252895
+                ],
+                "min_spacing_stop_target": [
+                  0.015,
+                  0.008
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Top",
+                "target_kind": "window",
+                "target": "RefWin.Top",
+                "edge_count": 57234,
+                "requested_max_spacing": [
+                  0.05,
+                  0.035
+                ],
+                "p95_edge_component": [
+                  0.02811186315329084,
+                  0.024564473171902246
+                ],
+                "max_edge_component": [
+                  0.10742601637224869,
+                  0.07473130953917462
+                ],
+                "min_spacing_stop_target": [
+                  0.008,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Bottom",
+                "target_kind": "window",
+                "target": "RefWin.Bottom",
+                "edge_count": 2805,
+                "requested_max_spacing": [
+                  0.1,
+                  0.04
+                ],
+                "p95_edge_component": [
+                  0.10977392196245095,
+                  0.04708104967420956
+                ],
+                "max_edge_component": [
+                  0.13936449047881672,
+                  0.058813807911291205
+                ],
+                "min_spacing_stop_target": [
+                  0.012,
+                  0.004
+                ],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "bjt_local",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+      "source_sha256": "ce3f55f004608386e8a1d5b238b2f619371e5c5d7410eef441d3a8c6681793fe",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "e5741a01413f45a1b977bf031a14ce62880d1cf2e99caa3fc368355714d54309",
+            "device.dat": "74067a7aad80e68ae896bd4e8ea34e30d455df7eb719267124592a0f8afe27d4",
+            "device.msh": "3d519286ca2a439412644dcc49e7b04fcdf3df2887b7569c1bc09b761942aae5",
+            "mesh.json": "99fd0f5c23af8352b8387bd987573d444f42b3db7821c8eb314768a40867995f",
+            "doping.csv": "b6386726eb235562b5f367db476753d9989c86b7a8acd299fd79abd8bbbab9ed"
+          },
+          "mesh_quality": {
+            "node_count": 43467,
+            "cell_count": 86628,
+            "max_angle_degrees": 139.6304692369512,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.027294506177951483,
+                0.019366072949827062
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 3.3069814326993485e-09,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2614158218842997e+19,
+                  "relative_error": 0.0001581676148460703
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.199432922215674e+18,
+                  "relative_error": 0.0005891966093379475
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7000860741423579,
+                      "absolute_error_um": 5.368071506195449e-07,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.305076178876241,
+                      "absolute_error_um": 3.031506368766923e-06,
+                      "limit_um": 0.0015
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7000813375418091,
+                      "absolute_error_um": 1.332168570788994e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.37062947057434775,
+                      "absolute_error_um": 6.51925134736997e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.700072172372006,
+                      "absolute_error_um": 8.7272471354094e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            },
+            "maxtransdiff": {
+              "schema": "vela.gmsh_maxtransdiff.v1",
+              "status": "passed",
+              "transform": "asinh(N_net / (1 cm^-3))",
+              "edge_rule": "absolute endpoint transformed difference > Value",
+              "stop_rule": "both absolute edge components <= smallest applicable directional minima",
+              "mapping": "conforming local red/green midpoint splits of authored BAMG mesh; shared-edge and longest-edge closure",
+              "native_snmesh_equivalence": false,
+              "max_iterations": 12,
+              "max_nodes": 200000,
+              "rounds": [
+                {
+                  "iteration": 0,
+                  "nodes": 10129,
+                  "triangles": 20000,
+                  "marked_edges": 2302,
+                  "edges": 30128,
+                  "max_transformed_difference": 84.48170490996716,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 1611,
+                  "closure_edges": 3317
+                },
+                {
+                  "iteration": 1,
+                  "nodes": 13446,
+                  "triangles": 26617,
+                  "marked_edges": 3918,
+                  "edges": 40062,
+                  "max_transformed_difference": 83.16404072759552,
+                  "minimum_stopped_edges": 1,
+                  "refineable_nodes": 2793,
+                  "closure_edges": 5536
+                },
+                {
+                  "iteration": 2,
+                  "nodes": 18982,
+                  "triangles": 37676,
+                  "marked_edges": 7311,
+                  "edges": 56657,
+                  "max_transformed_difference": 82.19401867821222,
+                  "minimum_stopped_edges": 28,
+                  "refineable_nodes": 5070,
+                  "closure_edges": 10388
+                },
+                {
+                  "iteration": 3,
+                  "nodes": 29370,
+                  "triangles": 58441,
+                  "marked_edges": 6274,
+                  "edges": 87810,
+                  "max_transformed_difference": 80.75979342602545,
+                  "minimum_stopped_edges": 8169,
+                  "refineable_nodes": 7719,
+                  "closure_edges": 12210
+                },
+                {
+                  "iteration": 4,
+                  "nodes": 41580,
+                  "triangles": 82854,
+                  "marked_edges": 1034,
+                  "edges": 124433,
+                  "max_transformed_difference": 79.98299300989656,
+                  "minimum_stopped_edges": 22710,
+                  "refineable_nodes": 1597,
+                  "closure_edges": 1849
+                },
+                {
+                  "iteration": 5,
+                  "nodes": 43429,
+                  "triangles": 86552,
+                  "marked_edges": 16,
+                  "edges": 129980,
+                  "max_transformed_difference": 79.98299300989656,
+                  "minimum_stopped_edges": 24724,
+                  "refineable_nodes": 28,
+                  "closure_edges": 38
+                },
+                {
+                  "iteration": 6,
+                  "nodes": 43467,
+                  "triangles": 86628,
+                  "marked_edges": 0,
+                  "edges": 130094,
+                  "max_transformed_difference": 79.98299300989656,
+                  "minimum_stopped_edges": 24766,
+                  "refineable_nodes": 0
+                }
+              ],
+              "functions": [
+                {
+                  "refinement": "RefDef.Global",
+                  "variable": "DopingConcentration",
+                  "threshold": 0.8,
+                  "source_location": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd:62:1"
+                }
+              ],
+              "remesh_iterations": 6
+            },
+            "refinement_placements": [
+              {
+                "name": "PlaceRef.Global",
+                "target_kind": "region",
+                "target": "R.Silicon",
+                "edge_count": 130094,
+                "requested_max_spacing": [
+                  0.15,
+                  0.1
+                ],
+                "p95_edge_component": [
+                  0.027294506177951483,
+                  0.019366072949827062
+                ],
+                "max_edge_component": [
+                  0.20869084352492706,
+                  0.12553059889029916
+                ],
+                "min_spacing_stop_target": [
+                  0.015,
+                  0.008
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Top",
+                "target_kind": "window",
+                "target": "RefWin.Top",
+                "edge_count": 118974,
+                "requested_max_spacing": [
+                  0.05,
+                  0.035
+                ],
+                "p95_edge_component": [
+                  0.020061833541774376,
+                  0.015028310506895237
+                ],
+                "max_edge_component": [
+                  0.06418101087022832,
+                  0.04981313727803538
+                ],
+                "min_spacing_stop_target": [
+                  0.008,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Bottom",
+                "target_kind": "window",
+                "target": "RefWin.Bottom",
+                "edge_count": 2829,
+                "requested_max_spacing": [
+                  0.1,
+                  0.04
+                ],
+                "p95_edge_component": [
+                  0.10911057542499325,
+                  0.046800627539056006
+                ],
+                "max_edge_component": [
+                  0.13988689217474426,
+                  0.05955895341907169
+                ],
+                "min_spacing_stop_target": [
+                  0.012,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.BaseCollector",
+                "target_kind": "window",
+                "target": "RefWin.BaseCollector",
+                "edge_count": 78089,
+                "requested_max_spacing": [
+                  0.025,
+                  0.0175
+                ],
+                "p95_edge_component": [
+                  0.021669421582399373,
+                  0.015649371800872558
+                ],
+                "max_edge_component": [
+                  0.06209201851526336,
+                  0.04759618334622839
+                ],
+                "min_spacing_stop_target": [
+                  0.004,
+                  0.002
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.EmitterBaseLeft",
+                "target_kind": "window",
+                "target": "RefWin.EmitterBaseLeft",
+                "edge_count": 17431,
+                "requested_max_spacing": [
+                  0.015,
+                  0.0125
+                ],
+                "p95_edge_component": [
+                  0.014078045105244463,
+                  0.012143849373434823
+                ],
+                "max_edge_component": [
+                  0.028278912568672432,
+                  0.022363546520778432
+                ],
+                "min_spacing_stop_target": [
+                  0.002,
+                  0.0015
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.EmitterBaseRight",
+                "target_kind": "window",
+                "target": "RefWin.EmitterBaseRight",
+                "edge_count": 16757,
+                "requested_max_spacing": [
+                  0.015,
+                  0.0125
+                ],
+                "p95_edge_component": [
+                  0.014275387393278827,
+                  0.011966849870118978
+                ],
+                "max_edge_component": [
+                  0.029903564536661875,
+                  0.020019296431707634
+                ],
+                "min_spacing_stop_target": [
+                  0.002,
+                  0.0015
+                ],
+                "passed": true
+              }
+            ]
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "e74b765d765fbe12d0785298bf55750b1789804267a8ac8cbf4104a98ba8aa8a",
+            "device.dat": "ff62c6820e1e6058bf4900cc498365ad0055aca8f1fff2fe4feca3bcb7107183",
+            "device.msh": "78becdb81d0afb71aa89cd6b0aaa9f1a44884cd840e973dd75e6556e9c1ab0db",
+            "mesh.json": "a46174707bdf5359b811ec5b24196b3c82648be8f94f43f3ff65d1eefaf5e03f",
+            "doping.csv": "926d44219445a9a3fae5c6b62c888c1a5c005fe9053135409dd4d47e76b3f187"
+          },
+          "mesh_quality": {
+            "node_count": 43426,
+            "cell_count": 86544,
+            "max_angle_degrees": 141.216192968392,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.027241884789304116,
+                0.01916452516797329
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 1.1197972989893669e-10,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2613922401942462e+19,
+                  "relative_error": 0.0001653969782518488
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.1995594437149824e+18,
+                  "relative_error": 0.0005496749327332771
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7000868157738165,
+                      "absolute_error_um": 1.2784386091979627e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.30507975619158995,
+                      "absolute_error_um": 6.608821717712932e-06,
+                      "limit_um": 0.0015
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7000886141340806,
+                      "absolute_error_um": 8.608760842299112e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.37064393633152654,
+                      "absolute_error_um": 2.0985008526153148e-05,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.700070258943061,
+                      "absolute_error_um": 6.813818190343213e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            },
+            "maxtransdiff": {
+              "schema": "vela.gmsh_maxtransdiff.v1",
+              "status": "passed",
+              "transform": "asinh(N_net / (1 cm^-3))",
+              "edge_rule": "absolute endpoint transformed difference > Value",
+              "stop_rule": "both absolute edge components <= smallest applicable directional minima",
+              "mapping": "conforming local red/green midpoint splits of authored BAMG mesh; shared-edge and longest-edge closure",
+              "native_snmesh_equivalence": false,
+              "max_iterations": 12,
+              "max_nodes": 200000,
+              "rounds": [
+                {
+                  "iteration": 0,
+                  "nodes": 10048,
+                  "triangles": 19838,
+                  "marked_edges": 2279,
+                  "edges": 29885,
+                  "max_transformed_difference": 84.76061711492669,
+                  "minimum_stopped_edges": 0,
+                  "refineable_nodes": 1601,
+                  "closure_edges": 3248
+                },
+                {
+                  "iteration": 1,
+                  "nodes": 13296,
+                  "triangles": 26316,
+                  "marked_edges": 3876,
+                  "edges": 39611,
+                  "max_transformed_difference": 83.86112538815455,
+                  "minimum_stopped_edges": 2,
+                  "refineable_nodes": 2763,
+                  "closure_edges": 5464
+                },
+                {
+                  "iteration": 2,
+                  "nodes": 18760,
+                  "triangles": 37231,
+                  "marked_edges": 7267,
+                  "edges": 55990,
+                  "max_transformed_difference": 82.51955282091558,
+                  "minimum_stopped_edges": 53,
+                  "refineable_nodes": 5088,
+                  "closure_edges": 10292
+                },
+                {
+                  "iteration": 3,
+                  "nodes": 29052,
+                  "triangles": 57803,
+                  "marked_edges": 6198,
+                  "edges": 86854,
+                  "max_transformed_difference": 81.10185617386438,
+                  "minimum_stopped_edges": 8168,
+                  "refineable_nodes": 7779,
+                  "closure_edges": 12233
+                },
+                {
+                  "iteration": 4,
+                  "nodes": 41285,
+                  "triangles": 82262,
+                  "marked_edges": 1248,
+                  "edges": 123546,
+                  "max_transformed_difference": 79.86843026759126,
+                  "minimum_stopped_edges": 22211,
+                  "refineable_nodes": 1880,
+                  "closure_edges": 2121
+                },
+                {
+                  "iteration": 5,
+                  "nodes": 43406,
+                  "triangles": 86504,
+                  "marked_edges": 9,
+                  "edges": 129909,
+                  "max_transformed_difference": 79.86843026759126,
+                  "minimum_stopped_edges": 24700,
+                  "refineable_nodes": 18,
+                  "closure_edges": 20
+                },
+                {
+                  "iteration": 6,
+                  "nodes": 43426,
+                  "triangles": 86544,
+                  "marked_edges": 0,
+                  "edges": 129969,
+                  "max_transformed_difference": 79.86843026759126,
+                  "minimum_stopped_edges": 24708,
+                  "refineable_nodes": 0
+                }
+              ],
+              "functions": [
+                {
+                  "refinement": "RefDef.Global",
+                  "variable": "DopingConcentration",
+                  "threshold": 0.8,
+                  "source_location": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd:62:1"
+                }
+              ],
+              "remesh_iterations": 6
+            },
+            "refinement_placements": [
+              {
+                "name": "PlaceRef.Global",
+                "target_kind": "region",
+                "target": "R.Silicon",
+                "edge_count": 129969,
+                "requested_max_spacing": [
+                  0.15,
+                  0.1
+                ],
+                "p95_edge_component": [
+                  0.027241884789304116,
+                  0.01916452516797329
+                ],
+                "max_edge_component": [
+                  0.19951640770860868,
+                  0.12855049843773125
+                ],
+                "min_spacing_stop_target": [
+                  0.015,
+                  0.008
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Top",
+                "target_kind": "window",
+                "target": "RefWin.Top",
+                "edge_count": 118940,
+                "requested_max_spacing": [
+                  0.05,
+                  0.035
+                ],
+                "p95_edge_component": [
+                  0.01991110539202179,
+                  0.015063161186359975
+                ],
+                "max_edge_component": [
+                  0.06856615424049295,
+                  0.04923757555267849
+                ],
+                "min_spacing_stop_target": [
+                  0.008,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.Bottom",
+                "target_kind": "window",
+                "target": "RefWin.Bottom",
+                "edge_count": 2824,
+                "requested_max_spacing": [
+                  0.1,
+                  0.04
+                ],
+                "p95_edge_component": [
+                  0.10826002374870836,
+                  0.04734096772002716
+                ],
+                "max_edge_component": [
+                  0.13592997798405904,
+                  0.057645854736523505
+                ],
+                "min_spacing_stop_target": [
+                  0.012,
+                  0.004
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.BaseCollector",
+                "target_kind": "window",
+                "target": "RefWin.BaseCollector",
+                "edge_count": 77804,
+                "requested_max_spacing": [
+                  0.025,
+                  0.0175
+                ],
+                "p95_edge_component": [
+                  0.021576006087734356,
+                  0.01571706814425644
+                ],
+                "max_edge_component": [
+                  0.06289571626082324,
+                  0.04278870599765483
+                ],
+                "min_spacing_stop_target": [
+                  0.004,
+                  0.002
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.EmitterBaseLeft",
+                "target_kind": "window",
+                "target": "RefWin.EmitterBaseLeft",
+                "edge_count": 17803,
+                "requested_max_spacing": [
+                  0.015,
+                  0.0125
+                ],
+                "p95_edge_component": [
+                  0.01398323657820022,
+                  0.012076051587288972
+                ],
+                "max_edge_component": [
+                  0.029130385688812765,
+                  0.01895179583881479
+                ],
+                "min_spacing_stop_target": [
+                  0.002,
+                  0.0015
+                ],
+                "passed": true
+              },
+              {
+                "name": "PlaceRef.EmitterBaseRight",
+                "target_kind": "window",
+                "target": "RefWin.EmitterBaseRight",
+                "edge_count": 16866,
+                "requested_max_spacing": [
+                  0.015,
+                  0.0125
+                ],
+                "p95_edge_component": [
+                  0.01425341978500061,
+                  0.012145107321788084
+                ],
+                "max_edge_component": [
+                  0.030017135691130292,
+                  0.0235158133565454
+                ],
+                "min_spacing_stop_target": [
+                  0.002,
+                  0.0015
+                ],
+                "passed": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "singledevice",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "source_sha256_lf": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "source_sha256": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "status": "expected_rejection",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 120,
+        "column": 1,
+        "message_contains": "'sdegeo:fillet-2d' rounds corners and changes the device outline, which the rectangle geometry model cannot represent. Offending command: '(sdegeo:fillet-2d (find-vertex-id (position-2d Xpol Ysp)) fillet-radius )'"
+      }
+    },
+    {
+      "id": "transportmodels",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "source_sha256_lf": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "source_sha256": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "status": "expected_rejection",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 120,
+        "column": 1,
+        "message_contains": "'sdegeo:fillet-2d' rounds corners and changes the device outline, which the rectangle geometry model cannot represent. Offending command: '(sdegeo:fillet-2d (find-vertex-id (position-2d Xpol Ysp)) fillet-radius )'"
+      }
+    },
+    {
+      "id": "bvmethods",
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+      "source_sha256": "809d3f22ab2f264d6ce635b1b190802a3c397c763a4671b171ab843b51ec6676",
+      "status": "expected_rejection",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 32,
+        "column": 1,
+        "message_contains": "unsupported SDE material 'PolySi'"
+      }
+    }
+  ],
+  "consumer_checks": {
+    "count": 8,
+    "status": "passed",
+    "mode": "sd-sim --check",
+    "launcher_sha256": "70442b38328232692c517fc96a923b454a2fb91a5cfb1710ecc51dd5d7cdf449",
+    "package_sha256": "73359ba261a9541dceeb33db7897c623a8db4b49da247e0f06b938a5dec29b6a",
+    "inputs": [
+      {
+        "id": "pn2d_0v",
+        "mesh_case": "pn2d",
+        "status": "checked"
+      },
+      {
+        "id": "pn2d_iv",
+        "mesh_case": "pn2d",
+        "status": "checked"
+      },
+      {
+        "id": "pn2d_bv",
+        "mesh_case": "pn2d",
+        "status": "checked"
+      },
+      {
+        "id": "gate_barrier_zero",
+        "mesh_case": "gate_reference",
+        "status": "checked"
+      },
+      {
+        "id": "gate_barrier_positive",
+        "mesh_case": "gate_reference",
+        "status": "checked"
+      },
+      {
+        "id": "gate_barrier_negative",
+        "mesh_case": "gate_reference",
+        "status": "checked"
+      },
+      {
+        "id": "gate_workfunction",
+        "mesh_case": "gate_reference",
+        "status": "checked"
+      },
+      {
+        "id": "schottky",
+        "mesh_case": "schottky",
+        "status": "checked"
+      }
+    ]
+  },
+  "build": {
+    "preset": "windows-ucrt64-release",
+    "targets": [
+      "sd-sim",
+      "vela_sdevice_pyz"
+    ],
+    "toolchain": "MSYS2 UCRT64",
+    "gmsh_version": "4.15.2",
+    "full_solver_build": "not_run"
+  },
+  "tests": [
+    {
+      "name": "sentaurus_sde_frontend",
+      "status": "passed",
+      "python_tests": 32,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_device_e2e_contract",
+      "status": "passed",
+      "python_tests": 16,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_mesh_builder",
+      "status": "passed",
+      "python_tests": 27,
+      "conditional_skips": 1
+    },
+    {
+      "name": "sentaurus_ir_v2_contract",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m1",
+      "status": "passed",
+      "python_tests": 4,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m2",
+      "status": "passed",
+      "python_tests": 9,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m3",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m4",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m5",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_bjt_modeling",
+      "status": "passed",
+      "python_tests": 22,
+      "conditional_skips": 0
+    },
+    {
+      "name": "reference_sde_cases",
+      "status": "passed",
+      "python_tests": 20,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sde_sdevice_checks",
+      "status": "passed",
+      "python_tests": 17,
+      "conditional_skips": 0
+    }
+  ],
+  "test_totals": {
+    "ctest_entries": 12,
+    "python_tests": 169,
+    "conditional_skips": 1
+  },
+  "local_products": {
+    "cases": "build-release/p3 accepted cases",
+    "consumer_checks": "build-release/p3 accepted checks"
+  },
+  "not_run": [
+    "live SDE/TDX",
+    "BJT numerical IV",
+    "full IV/BV qualification",
+    "Linux validation",
+    "full CTest suite"
+  ],
+  "repository_policy": "No TDR, raw logs, generated grids, or private host records added",
+  "next_phase": "P4 SingleDevice/TransportModels curved geometry, shortcut refinements, placeholders and local mirror"
+}

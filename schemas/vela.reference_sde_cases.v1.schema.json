@@ -8,7 +8,10 @@
       "const": "vela.reference_sde_cases.v1"
     },
     "revision": {
-      "const": 1
+      "enum": [
+        1,
+        2
+      ]
     },
     "cases": {
       "type": "array",
@@ -86,6 +89,14 @@
                     "length_um": {
                       "type": "number",
                       "exclusiveMinimum": 0
+                    },
+                    "span_um": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number"
+                      }
                     }
                   },
                   "required": [
@@ -144,6 +155,22 @@
                       "concentration_cm3",
                       "silicon_top_um"
                     ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "kind",
+                      "local_refined"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "bjt"
+                      },
+                      "local_refined": {
+                        "type": "boolean"
+                      }
+                    }
                   }
                 ]
               },

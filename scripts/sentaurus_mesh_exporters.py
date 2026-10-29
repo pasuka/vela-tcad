@@ -319,7 +319,7 @@ Data {{
     blocks = []
     validity = " ".join(f'"{name}"' for name in device_region_names)
     for name, values in datasets.items():
-        value_rows = "\n".join(f" {float(value):.15e}" for value in values)
+        value_rows = "\n".join(f" {float(value):.16e}" for value in values)
         blocks.append(
             f'  Dataset ("{name}") {{\n    function = {name}\n    type = scalar\n'
             f'    dimension = 1\n    location = vertex\n    validity = [ {validity} ]\n'

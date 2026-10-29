@@ -266,19 +266,43 @@ _UNARY_FUNCS = {
 }
 
 
+@dataclass(frozen=True)
+class BodyHandle:
+    body_id: str
+    region: str
+    location: str
+
+    def to_json(self):
+        return {"kind": "body", "body_id": self.body_id, "region": self.region, "location": self.location}
+
+
+@dataclass(frozen=True)
+class PureFunction:
+    parameters: tuple[str, ...]
+    body: Sexp
+    location: str
+
+    def to_json(self):
+        return {"kind": "pure_function", "parameters": list(self.parameters),
+                "expression": self.body.command_text(), "location": self.location}
+
+
 @dataclass
 class Environment:
     """Symbol table produced by ``(define name value)`` forms."""
 
-    values: dict[str, float | str] = field(default_factory=dict)
+    values: dict[str, float | str | BodyHandle] = field(default_factory=dict)
+    functions: dict[str, PureFunction] = field(default_factory=dict)
+    call_depth: int = 0
+    remaining_calls: list[int] = field(default_factory=lambda: [4096])
 
-    def define(self, name: str, value: float | str) -> None:
+    def define(self, name: str, value: float | str | BodyHandle) -> None:
         self.values[name] = value
 
     def __contains__(self, name: object) -> bool:
         return name in self.values
 
-    def get(self, name: str) -> float | str:
+    def get(self, name: str) -> float | str | BodyHandle:
         return self.values[name]
 
 
@@ -288,6 +312,22 @@ def _describe(node: Any) -> str:
     if isinstance(node, Sexp):
         return node.command_text()
     return str(node)
+
+
+def _call_function(node: Sexp, env: Environment):
+    if env.call_depth >= 16:
+        raise SexpError(f"{node.location()}: pure function call depth exceeds 16")
+    if env.remaining_calls[0] <= 0:
+        raise SexpError(f"{node.location()}: pure function call budget exceeds 4096")
+    env.remaining_calls[0] -= 1
+    function = env.functions[node.head()]
+    if len(node.items)-1 != len(function.parameters):
+        raise SexpError(f"{node.location()}: pure function argument count mismatch")
+    child = Environment(values=dict(env.values), functions=env.functions,
+                        call_depth=env.call_depth+1, remaining_calls=env.remaining_calls)
+    for name, argument in zip(function.parameters, node.items[1:]):
+        child.define(name, eval_number(argument, env))
+    return function.body, child
 
 
 def eval_number(node: Any, env: Environment) -> float:
@@ -321,6 +361,9 @@ def eval_number(node: Any, env: Environment) -> float:
                 f"{node.location()}: expected a numeric expression, got "
                 f"'{node.command_text()}'")
         args = node.items[1:]
+        if head in env.functions:
+            body, child = _call_function(node, env)
+            return eval_number(body, child)
         if head in _BINARY_OPS:
             if not args:
                 raise SexpError(
@@ -380,6 +423,9 @@ def expect_string(node: Any, env: Environment, what: str) -> str:
 
 def parse_position(node: Any, env: Environment) -> tuple[float, float, float]:
     """Evaluate a ``(position x y z)`` form to a 3-tuple."""
+    if isinstance(node, Sexp) and node.head() in env.functions:
+        body, child = _call_function(node, env)
+        return parse_position(body, child)
     if not isinstance(node, Sexp) or node.head() not in {"position", "position-2d"}:
         location = node.location() if isinstance(node, (Atom, Sexp)) else "<unknown>"
         raise SexpError(

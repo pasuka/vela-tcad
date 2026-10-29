@@ -87,11 +87,12 @@ class NativeCheckTest(unittest.TestCase):
         if not cls.launcher.is_file():raise unittest.SkipTest('build sd-sim or set VELA_SD_SIM')
         cls.temp=tempfile.TemporaryDirectory(dir=REPO/'build-release',prefix='p2 native paths with spaces ')
         cls.root=Path(cls.temp.name);cls.addClassCleanup(cls.temp.cleanup)
-        cls.meshes=cls.root/'generated meshes'
+        cls.meshes=Path(os.environ.get('VELA_REFERENCE_SDE_CASES_DIR',cls.root/'generated meshes'))
         cls.runtime=cls.root/'gmsh runtime'
-        result=p1.run_suite(p1.DEFAULT_MANIFEST,cls.meshes,cls.runtime,repeat=1)
+        result=(json.loads((cls.meshes/'case_summary.json').read_text()) if os.environ.get('VELA_REFERENCE_SDE_CASES_DIR') else
+                p1.run_suite(p1.DEFAULT_MANIFEST,cls.meshes,cls.runtime,repeat=1))
         if result['status']!='passed':raise AssertionError(result)
-        cls.output=cls.root/'native checks'
+        cls.output=Path(os.environ.get('VELA_REFERENCE_SDEVICE_TEST_OUTPUT',cls.root/'native checks'))
         cls.specs=checks.load_cases()['cases']
         cls.results=checks.run_suite(cls.meshes,cls.output,cls.launcher)
 

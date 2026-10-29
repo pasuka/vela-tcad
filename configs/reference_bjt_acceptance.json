@@ -1,0 +1,31 @@
+{
+  "schema": "vela.bjt_modeling_acceptance.v1",
+  "frozen_before_first_mesh": true,
+  "source": "reference_tcad/genius_bjt_sentaurus2022/contracts/geometry_contract.json",
+  "pointwise_relative_tolerance": 1e-06,
+  "integral_relative_tolerance": 0.01,
+  "junction_error_limit": "local directional minimum mesh size in y",
+  "cuts_x_um": [
+    1.625,
+    2.6,
+    3.5
+  ],
+  "cut_y_range_um": [
+    0,
+    2
+  ],
+  "transform": "asinh(N_net / (1 cm^-3))",
+  "threshold": "source MaxTransDiff Value (0.8)",
+  "stop": "both absolute edge components <= smallest applicable directional minima",
+  "remesh": {
+    "max_iterations": 12,
+    "max_nodes": 200000,
+    "mapping": "conforming local red/green midpoint splits with longest-edge closure on initial authored BAMG mesh"
+  },
+  "native_snmesh_equivalence": false,
+  "repeat_policy": "contract_equivalent",
+  "minimum_total_nodes": 1000,
+  "minimum_contact_nodes": 2,
+  "geometry_tolerance_um": 1e-08,
+  "source_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c"
+}

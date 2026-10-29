@@ -178,12 +178,19 @@ def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
     windows = {item["name"]: item for item in device_ir["doping"]["windows"]}
     profiles = {item["name"]: item for item in device_ir["doping"]["profiles"]}
     for profile in profiles.values():
-        if profile.get("type") not in {"constant", "gaussian"}:
+        if profile.get("type") not in {"constant", "gaussian", "general"}:
             raise GmshBackendError(
                 f"unsupported doping profile type {profile.get('type')!r}",
                 {"stage": "capability", "capability": "doping-profile",
                  "profile": profile.get("name")},
             )
+    for profile in profiles.values():
+        if profile["type"] == "general":
+            from sentaurus_general import validate_profile
+            try:
+                validate_profile(profile)
+            except (ValueError, KeyError, TypeError) as error:
+                raise GmshBackendError(f"invalid General profile: {error}", {"stage": "doping"}) from error
     region_names = {body["region"] for body in bodies}
     material_names = {body["material"]["sde"] for body in bodies}
     for placement in device_ir["doping"]["placements"]:
@@ -219,10 +226,18 @@ def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
                 f"invalid placement target {kind!r}:{target!r}",
                 {"stage": "doping", "placement": placement.get("name")},
             )
-        if profile["type"] == "gaussian" and (
+        if profile["type"] == "general" and (
+                placement.get("direction") != "Both" or placement.get("evaluation") != "Eval" or
+                placement.get("restriction_decay", "none") != "none" or
+                abs(float(placement.get("restriction_decay_length", 0.0))) > GEOM_TOL):
+            source = placement.get("provenance", {}).get("source_location", "<unknown>")
+            raise GmshBackendError(
+                f"{source}: General requires Both/Eval without restriction decay",
+                {"stage": "capability", "capability": "general-placement", "source_location": source})
+        if profile["type"] in {"gaussian", "general"} and (
                 kind != "window" or windows[target].get("shape") != "line"):
             raise GmshBackendError(
-                "M2 Gaussian placement requires a Line baseline window",
+                "M2 analytical placement requires a Line baseline window",
                 {"stage": "doping", "placement": placement.get("name")},
             )
         if profile["type"] == "gaussian" and (
@@ -308,7 +323,11 @@ def validate_m3_device_ir(device_ir: dict[str, Any]) -> None:
                 {"stage": "capability", "capability": "refinement-provenance",
                  "refinement": function["refinement"]},
             )
-        if function["function"] in {"MaxTransDiff", "MaxGradient"}:
+        if function["function"] == "MaxTransDiff":
+            from sentaurus_adaptive import validate
+            validate(device_ir)
+            continue
+        if function["function"] == "MaxGradient":
             raise GmshBackendError(
                 f"{function['function']} belongs to M3 phase 4B and has no "
                 "declared exact Gmsh mapping",
@@ -988,6 +1007,8 @@ def _build_m3_refinement_fields(
             "source_location": placement["provenance"]["source_location"],
         })
     for index, function in enumerate(control["refinement_functions"]):
+        if function["function"] == "MaxTransDiff":
+            continue
         curves = _matching_interface_curves(gmsh, surface_owner, function)
         distance = int(gmsh.model.mesh.field.add("Distance"))
         gmsh.model.mesh.field.setNumbers(distance, "CurvesList", curves)
@@ -1056,7 +1077,7 @@ def _build_m3_refinement_fields(
         "engine": "Gmsh MathEvalAniso/Distance/MinAniso with BAMG",
         "nodes": nodes, "root_field_tag": root,
         "min_spacing_semantics": "refinement stop target, not a hard lower clamp",
-        "unsupported_fail_closed": ["MaxTransDiff", "MaxGradient", "MaxInterval",
+        "unsupported_fail_closed": ["MaxGradient", "MaxInterval",
                                     "multibox", "offsetting"],
     }
 
@@ -1414,7 +1435,8 @@ def _m5_outer_side(gmsh, curve: int,
 
 def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                   capability_level: str, mesh_strategy: str = "unstructured",
-                  transfinite_diagonal: str = "AlternateRight") -> tuple[
+                  transfinite_diagonal: str = "AlternateRight",
+                  maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000) -> tuple[
                       dict[str, Any], dict[str, Any]]:
     """Build OCC geometry, physical groups, Tri3 mesh, and nodal fields."""
     if capability_level == "M1":
@@ -1580,6 +1602,11 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
     else:
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), mesh_size)
     gmsh.model.mesh.generate(2)
+    adaptive_report = None
+    if refinement_field_dag is not None:
+        from sentaurus_adaptive import remesh
+        adaptive_report = remesh(gmsh, device_ir, refinement_field_dag, mesh_size,
+                                 maxtransdiff_max_iterations, maxtransdiff_max_nodes)
     node_tags, coordinates, _ = gmsh.model.mesh.getNodes()
     coords_by_tag = {
         int(tag): (float(coordinates[3 * index]), float(coordinates[3 * index + 1]),
@@ -1641,10 +1668,11 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
             "kind": item["kind"], "physical_curve_tags": item["physical_curve_tags"],
         })
 
+    general_diagnostics = {}
     try:
         fields = (_evaluate_constant_fields(device_ir, nodes, triangles, regions, materials)
                   if capability_level == "M1" else evaluate_m2_fields(
-                      device_ir, nodes, triangles, regions))
+                      device_ir, nodes, triangles, regions, general_diagnostics))
     except DopingEvaluationError as error:
         raise GmshBackendError(str(error), error.details) from error
     bundle = {
@@ -1673,6 +1701,8 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                 body["material"]["sde"]: body["material"]["vela"] for body in bodies
             },
             "refinement_field_dag": refinement_field_dag,
+            "maxtransdiff": adaptive_report,
+            "general_evaluation": general_diagnostics,
             "mesh_strategy": {
                 "requested": mesh_strategy, "actual": actual_strategy,
                 "transfinite_diagonal": transfinite_diagonal,
@@ -1695,6 +1725,7 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
         },
     }
     qualification = validate_bundle(bundle)
+    qualification["maxtransdiff"] = adaptive_report
     qualification["geometry"] = geometry_audit
     qualification["mesh_strategy"] = actual_strategy
     if transfinite_contract is not None:
@@ -1729,17 +1760,22 @@ def build_m2_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
     return _build_bundle(gmsh, device_ir, mesh_size, "M2")
 
 
-def build_m3_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
+def build_m3_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
+                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000
                     ) -> tuple[dict[str, Any], dict[str, Any]]:
-    return _build_bundle(gmsh, device_ir, mesh_size, "M3")
+    return _build_bundle(gmsh, device_ir, mesh_size, "M3",
+                         maxtransdiff_max_iterations=maxtransdiff_max_iterations,
+                         maxtransdiff_max_nodes=maxtransdiff_max_nodes)
 
 
 def build_m5_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                     mesh_strategy: str = "auto",
-                    transfinite_diagonal: str = "AlternateRight"
+                    transfinite_diagonal: str = "AlternateRight",
+                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000
                     ) -> tuple[dict[str, Any], dict[str, Any]]:
     return _build_bundle(
-        gmsh, device_ir, mesh_size, "M5", mesh_strategy, transfinite_diagonal)
+        gmsh, device_ir, mesh_size, "M5", mesh_strategy, transfinite_diagonal,
+        maxtransdiff_max_iterations, maxtransdiff_max_nodes)
 
 
 def _angles(points: list[tuple[float, float]]) -> list[float]:

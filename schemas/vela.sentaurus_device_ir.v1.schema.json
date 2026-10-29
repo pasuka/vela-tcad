@@ -28,9 +28,67 @@
       "type": "object",
       "description": "Symbols bound by (define name value) forms.",
       "additionalProperties": {
-        "type": [
-          "number",
-          "string"
+        "oneOf": [
+          {
+            "type": [
+              "number",
+              "string"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "body_id",
+              "region",
+              "location"
+            ],
+            "properties": {
+              "kind": {
+                "const": "body"
+              },
+              "body_id": {
+                "type": "string",
+                "pattern": "^body:[0-9]+$"
+              },
+              "region": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "parameters",
+              "expression",
+              "location"
+            ],
+            "properties": {
+              "kind": {
+                "const": "pure_function"
+              },
+              "parameters": {
+                "type": "array",
+                "maxItems": 8,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expression": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
         ]
       }
     },
@@ -77,9 +135,14 @@
                 "description": "Creation order; boolean_mode determines overlap ownership."
               },
               "boolean_mode": {
-                "enum": ["ABA", "BAB"]
+                "enum": [
+                  "ABA",
+                  "BAB"
+                ]
               },
-              "location": {"type": "string"}
+              "location": {
+                "type": "string"
+              }
             }
           }
         },
@@ -87,12 +150,22 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["x", "y", "location"],
+            "required": [
+              "x",
+              "y",
+              "location"
+            ],
             "additionalProperties": false,
             "properties": {
-              "x": {"type": "number"},
-              "y": {"type": "number"},
-              "location": {"type": "string"}
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "location": {
+                "type": "string"
+              }
             }
           }
         }
@@ -136,7 +209,9 @@
           "name": {
             "type": "string"
           },
-          "display": {"type": "array"},
+          "display": {
+            "type": "array"
+          },
           "pick_points": {
             "type": "array",
             "description": "Points from (find-edge-id (position ...)) used to select outer boundary edges. May be empty when the SDE file declares a contact set it never assigns; the mesh builder rejects such contacts.",
@@ -155,11 +230,15 @@
                 "y": {
                   "type": "number"
                 },
-                "location": {"type": "string"}
+                "location": {
+                  "type": "string"
+                }
               }
             }
           },
-          "location": {"type": "string"}
+          "location": {
+            "type": "string"
+          }
         }
       }
     },
@@ -187,7 +266,13 @@
               "name": {
                 "type": "string"
               },
-              "type": {"enum": ["constant", "gaussian"]},
+              "type": {
+                "enum": [
+                  "constant",
+                  "gaussian",
+                  "general"
+                ]
+              },
               "species": {
                 "type": "string"
               },
@@ -201,10 +286,49 @@
                 "type": "number",
                 "minimum": 0
               },
-              "parameters": {"type": "object"},
-              "lateral_type": {"enum": ["gauss", "erf"]},
-              "location": {"type": "string"}
-            }
+              "parameters": {
+                "type": "object"
+              },
+              "lateral_type": {
+                "enum": [
+                  "gauss",
+                  "erf"
+                ]
+              },
+              "location": {
+                "type": "string"
+              },
+              "expression": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "expression_tree": {
+                "$ref": "#/definitions/generalExpression"
+              },
+              "default_value_cm3": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "general"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "expression",
+                    "expression_tree",
+                    "parameters",
+                    "default_value_cm3"
+                  ]
+                }
+              }
+            ]
           }
         },
         "placements": {
@@ -263,7 +387,9 @@
                 "type": "number",
                 "exclusiveMinimum": 0
               },
-              "location": {"type": "string"}
+              "location": {
+                "type": "string"
+              }
             }
           }
         },
@@ -287,12 +413,18 @@
                 "type": "string"
               },
               "target_kind": {
-                "enum": ["region", "window", "material"]
+                "enum": [
+                  "region",
+                  "window",
+                  "material"
+                ]
               },
               "target": {
                 "type": "string"
               },
-              "location": {"type": "string"}
+              "location": {
+                "type": "string"
+              }
             }
           }
         },
@@ -300,24 +432,58 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["refinement", "function", "arguments", "location"],
+            "required": [
+              "refinement",
+              "function",
+              "arguments",
+              "location"
+            ],
             "additionalProperties": false,
             "properties": {
-              "refinement": {"type": "string"},
-              "function": {"enum": ["MaxTransDiff", "MaxGradient", "MaxLenInt"]},
-              "arguments": {"type": "array"},
-              "variable": {"type": "string"},
+              "refinement": {
+                "type": "string"
+              },
+              "function": {
+                "enum": [
+                  "MaxTransDiff",
+                  "MaxGradient",
+                  "MaxLenInt"
+                ]
+              },
+              "arguments": {
+                "type": "array"
+              },
+              "variable": {
+                "type": "string"
+              },
               "interface": {
                 "type": "array",
                 "minItems": 2,
                 "maxItems": 2,
-                "items": {"type": "string"}
+                "items": {
+                  "type": "string"
+                }
               },
-              "value": {"type": "number", "exclusiveMinimum": 0},
-              "factor": {"type": ["number", "null"], "minimum": 1},
-              "double_side": {"type": "boolean"},
-              "use_region_names": {"type": "boolean"},
-              "location": {"type": "string"}
+              "value": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "factor": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 1
+              },
+              "double_side": {
+                "type": "boolean"
+              },
+              "use_region_names": {
+                "type": "boolean"
+              },
+              "location": {
+                "type": "string"
+              }
             }
           }
         },
@@ -403,7 +569,11 @@
           "type": "string"
         },
         "shape": {
-          "enum": ["rectangle", "line", "polygon"]
+          "enum": [
+            "rectangle",
+            "line",
+            "polygon"
+          ]
         },
         "lower_left": {
           "$ref": "#/definitions/point2d"
@@ -411,10 +581,22 @@
         "upper_right": {
           "$ref": "#/definitions/point2d"
         },
-        "start": {"$ref": "#/definitions/point2d"},
-        "end": {"$ref": "#/definitions/point2d"},
-        "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}},
-        "location": {"type": "string"}
+        "start": {
+          "$ref": "#/definitions/point2d"
+        },
+        "end": {
+          "$ref": "#/definitions/point2d"
+        },
+        "points": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "$ref": "#/definitions/point2d"
+          }
+        },
+        "location": {
+          "type": "string"
+        }
       }
     },
     "placement": {
@@ -437,7 +619,11 @@
           "type": "string"
         },
         "target_kind": {
-          "enum": ["region", "window", "material"]
+          "enum": [
+            "region",
+            "window",
+            "material"
+          ]
         },
         "target": {
           "type": "string"
@@ -447,17 +633,155 @@
           "minimum": 0,
           "description": "Evaluation order; replacement determines clearing versus accumulation."
         },
-        "replacement": {"enum": ["Replace", "LocalReplace", "NoReplace"]},
-        "decay_length": {"type": "number", "minimum": 0},
-        "decay": {"enum": ["none", "gaussian", "erf"]},
-        "direction": {"enum": ["Positive", "Negative", "Both"]},
-        "evaluation": {"enum": ["Eval", "NoEval"]},
-        "restriction_kind": {"type": ["string", "null"]},
-        "restriction": {"type": ["string", "null"]},
-        "restriction_decay_length": {"type": "number", "minimum": 0},
-        "restriction_decay": {"enum": ["none", "gaussian", "erf"]},
-        "location": {"type": "string"}
+        "replacement": {
+          "enum": [
+            "Replace",
+            "LocalReplace",
+            "NoReplace"
+          ]
+        },
+        "decay_length": {
+          "type": "number",
+          "minimum": 0
+        },
+        "decay": {
+          "enum": [
+            "none",
+            "gaussian",
+            "erf"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "Positive",
+            "Negative",
+            "Both"
+          ]
+        },
+        "evaluation": {
+          "enum": [
+            "Eval",
+            "NoEval"
+          ]
+        },
+        "restriction_kind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "restriction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "restriction_decay_length": {
+          "type": "number",
+          "minimum": 0
+        },
+        "restriction_decay": {
+          "enum": [
+            "none",
+            "gaussian",
+            "erf"
+          ]
+        },
+        "location": {
+          "type": "string"
+        }
       }
+    },
+    "generalExpression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "value"
+          ],
+          "properties": {
+            "op": {
+              "const": "number"
+            },
+            "value": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "name"
+          ],
+          "properties": {
+            "op": {
+              "const": "symbol"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "args"
+          ],
+          "properties": {
+            "op": {
+              "enum": [
+                "add",
+                "sub",
+                "mul",
+                "div",
+                "pow"
+              ]
+            },
+            "args": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/definitions/generalExpression"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "args"
+          ],
+          "properties": {
+            "op": {
+              "enum": [
+                "neg",
+                "pos",
+                "abs",
+                "exp",
+                "sqrt",
+                "log"
+              ]
+            },
+            "args": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "$ref": "#/definitions/generalExpression"
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

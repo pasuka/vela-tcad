@@ -1,6 +1,6 @@
 {
   "schema": "vela.reference_sde_cases.v1",
-  "revision": 1,
+  "revision": 2,
   "cases": [
     {
       "id": "pn2d",
@@ -172,24 +172,138 @@
       "id": "bjt",
       "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
       "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
-      "expected": "rejected",
-      "rejection": {
-        "stage": "sde_parse",
-        "line": 6,
-        "column": 3,
-        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      "expected": "generated",
+      "success_stage": "native_import",
+      "repeat_policy": "contract_equivalent",
+      "contract": {
+        "materials": {
+          "Silicon": "Si"
+        },
+        "materials_sha256": "f05071cf6eb2a74a610950659a8aef882df263a23512695076a28e469ccaef92",
+        "regions": {
+          "R.Silicon": "Si"
+        },
+        "region_area_um2": {
+          "R.Silicon": 12.0
+        },
+        "bounds_um": [
+          0,
+          0,
+          6,
+          2
+        ],
+        "contacts": {
+          "base": {
+            "axis": "y",
+            "coordinate_um": 0,
+            "length_um": 0.75,
+            "span_um": [
+              1.25,
+              2
+            ]
+          },
+          "emitter": {
+            "axis": "y",
+            "coordinate_um": 0,
+            "length_um": 1.5,
+            "span_um": [
+              2.75,
+              4.25
+            ]
+          },
+          "collector": {
+            "axis": "y",
+            "coordinate_um": 2,
+            "length_um": 6,
+            "span_um": [
+              0,
+              6
+            ]
+          }
+        },
+        "doping": {
+          "kind": "bjt",
+          "local_refined": false
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Silicon": [
+              0.15,
+              0.1
+            ]
+          }
+        }
       }
     },
     {
       "id": "bjt_local",
       "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
       "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
-      "expected": "rejected",
-      "rejection": {
-        "stage": "sde_parse",
-        "line": 7,
-        "column": 3,
-        "message_contains": "unsupported SDE expression operator 'sdegeo:create-rectangle'"
+      "expected": "generated",
+      "success_stage": "native_import",
+      "repeat_policy": "contract_equivalent",
+      "contract": {
+        "materials": {
+          "Silicon": "Si"
+        },
+        "materials_sha256": "f05071cf6eb2a74a610950659a8aef882df263a23512695076a28e469ccaef92",
+        "regions": {
+          "R.Silicon": "Si"
+        },
+        "region_area_um2": {
+          "R.Silicon": 12.0
+        },
+        "bounds_um": [
+          0,
+          0,
+          6,
+          2
+        ],
+        "contacts": {
+          "base": {
+            "axis": "y",
+            "coordinate_um": 0,
+            "length_um": 0.75,
+            "span_um": [
+              1.25,
+              2
+            ]
+          },
+          "emitter": {
+            "axis": "y",
+            "coordinate_um": 0,
+            "length_um": 1.5,
+            "span_um": [
+              2.75,
+              4.25
+            ]
+          },
+          "collector": {
+            "axis": "y",
+            "coordinate_um": 2,
+            "length_um": 6,
+            "span_um": [
+              0,
+              6
+            ]
+          }
+        },
+        "doping": {
+          "kind": "bjt",
+          "local_refined": true
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Silicon": [
+              0.15,
+              0.1
+            ]
+          }
+        }
       }
     },
     {
@@ -199,9 +313,9 @@
       "expected": "rejected",
       "rejection": {
         "stage": "sde_parse",
-        "line": 57,
+        "line": 120,
         "column": 1,
-        "message_contains": "(define ...) requires a symbol name"
+        "message_contains": "'sdegeo:fillet-2d' rounds corners and changes the device outline, which the rectangle geometry model cannot represent. Offending command: '(sdegeo:fillet-2d (find-vertex-id (position-2d Xpol Ysp)) fillet-radius )'"
       }
     },
     {
@@ -211,9 +325,9 @@
       "expected": "rejected",
       "rejection": {
         "stage": "sde_parse",
-        "line": 57,
+        "line": 120,
         "column": 1,
-        "message_contains": "(define ...) requires a symbol name"
+        "message_contains": "'sdegeo:fillet-2d' rounds corners and changes the device outline, which the rectangle geometry model cannot represent. Offending command: '(sdegeo:fillet-2d (find-vertex-id (position-2d Xpol Ysp)) fillet-radius )'"
       }
     },
     {

@@ -15,13 +15,13 @@ consumed by license-free tests after review.
 ## Public Gmsh preprocessing milestones
 
 `scripts/sentaurus_gmsh_pipeline.py` is the public, license-free SDE-to-mesh
-path. Its default `--capability-level M3` is a frozen semantic subset, not a
+path. Its default `--capability-level M5` is a frozen semantic subset, not a
 claim that every capability in the broader paired workflow below is already
 available through Gmsh. M4 composes that M3 preprocessor with the SDevice
 execution IR, Vela IV/BV runner and acceptance contract; it does not widen the
 frozen SDE syntax subset.
 
-| Capability | Gmsh M1 | Gmsh M2 | Gmsh M3 (default) | Later milestone |
+| Capability | Gmsh M1 | Gmsh M2 | Gmsh M3 / M5 | Later milestone |
 |---|---:|---:|---:|---:|
 | separated Rectangle + pick contact | yes | yes | yes | - |
 | per-body ABA/BAB and conformal interface groups | fail-closed | yes | yes | - |
@@ -32,7 +32,9 @@ frozen SDE syntax subset.
 | anisotropic region/material/window size placement | fail-closed | fail-closed | yes | - |
 | `MaxLenInt`, `DoubleSide`, `UseRegionNames` | fail-closed | fail-closed | yes | - |
 | auditable MathEvalAniso/Distance/MinAniso field DAG | fail-closed | fail-closed | yes | - |
-| `MaxTransDiff`/`MaxGradient` | fail-closed | fail-closed | fail-closed | M3 phase 4B |
+| device-coordinate General, Both/Eval, restricted AST | fail-closed | yes | yes | other placement modes fail-closed |
+| `MaxTransDiff` net doping, one body / region scope | fail-closed | fail-closed | bounded local remesh | [P3 subset](sde_bjt_modeling.md) |
+| `MaxGradient` | fail-closed | fail-closed | fail-closed | later |
 | nonzero constant or analytical restriction decay | fail-closed | fail-closed | fail-closed | later |
 | Polygon body, AB/ABiA/ABiB/XX, 3-D | fail-closed | fail-closed | fail-closed | excluded/unplanned |
 
@@ -52,7 +54,8 @@ rejects.
 | Parse variable-expanded `.log.eval` | n/a | yes |
 | Record source/evaluated SHA-256, SDE version, command, stdout/stderr and exit | source hash only | yes |
 | Full Elk Scheme | no | delegated to installed SDE |
-| `define` plus numeric expressions | yes | via evaluated log |
+| `define` numeric/string and typed Rectangle body handle | yes | via evaluated log |
+| bounded pure numeric/position helper, <=16 call depth | yes | via evaluated log |
 | `set!`, `if`/`cond`, `do`, `for-each`, `lambda`, `load` | fail-closed with internal-frontend hint | via evaluated log |
 
 Both paths emit `vela.sentaurus_sde_frontend_manifest.v1`. T-2022.03-SP2 does
@@ -98,7 +101,9 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 | Line/Rectangle/Polygon Ref/Eval window | supported | M3 requires closed counterclockwise polygon vertices; boundaries are included |
 | refinement region/material/window placement | supported | M3 uses MinAniso metric intersection, so overlap takes the finest directional constraint |
 | max/min spacing | supported | max_x/max_y map to an anisotropic metric; min remains a stop target, never a hard clamp |
-| MaxTransDiff/MaxGradient | fail-closed in Gmsh M3 | phase 4B requires a frozen variable transform and bounded remesh iteration |
+| General analytical profile | supported subset | device x/y/z (z=0), Both/Eval, restricted numeric AST; explicit default diagnostics |
+| MaxTransDiff | supported subset in Gmsh M3/M5 | one Rectangle / region scope, DopingConcentration, signed asinh, bounded local remesh; [contract](sde_bjt_modeling.md) |
+| MaxGradient | fail-closed | no declared mapping |
 | MaxLenInt, DoubleSide, UseRegionNames | supported | Distance + anisotropic growth metric; omitted factor means the documented one-layer default |
 | MaxInterval, multibox, offsetting | fail-closed | listed here and in source diagnostic |
 
