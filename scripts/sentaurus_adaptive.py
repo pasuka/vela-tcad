@@ -117,6 +117,15 @@ def split_triangles(coordinates, triangles, marked):
     return points,result,midpoint
 
 
+def red_parent_edges(triangles,marked):
+    """Halve the span of each parent containing a requested doping edge."""
+    result=set(marked)
+    for tri in triangles:
+        edges={tuple(sorted((tri[i],tri[(i+1)%3]))) for i in range(3)}
+        if edges & marked:result.update(edges)
+    return result
+
+
 def longest_edge_closure(coordinates, triangles, marked):
     """Split each affected triangle's longest edge to avoid repeated skinny greens."""
     from collections import defaultdict, deque
@@ -217,6 +226,13 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                 values[tag]=cache[key]
             _,metrics=analyse(device_ir,coordinates,cells,values,marked,owner)
             reports.append(metrics)
+        # Integral refinement can reveal nonlinear gradients on new diagonals.
+        # Red-split parents of doping-marked edges so their span actually halves;
+        # repeated green diagonals can otherwise defer the stop beyond the budget.
+        red_added=0
+        if integral_active:
+            red=red_parent_edges(triangles,marked)
+            red_added=len(red)-len(marked);marked=red
         interface_marks=set()
         for node in field_dag.get('nodes',[]):
             if node['id'].startswith('maxlenint:') and node['kind']=='MathEvalAniso':
@@ -240,7 +256,9 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                  'max_transformed_difference':max(m['max_transformed_difference'] for m in reports),
                  'minimum_stopped_edges':sum(m['minimum_stopped_edges'] for m in reports),
                  'refineable_nodes':len({n for e in marked for n in e}), 'maxlenint_marked_edges':len(interface_marks), 'multibox_marked_edges':len(multibox_marks)}
-        if integral_active:metrics['integral_marked_edges']=len(integral_marks)
+        if integral_active:
+            metrics['integral_marked_edges']=len(integral_marks)
+            metrics['maxtransdiff_red_added_edges']=red_added
         report['rounds'].append(dict(iteration=iteration,nodes=len(tags),triangles=len(triangles),marked_edges=len(marked),**metrics))
         gmsh.logger.write(f'MaxTransDiff round {iteration}: {len(tags)} nodes; {len(marked)} edges to split')
         if not marked:

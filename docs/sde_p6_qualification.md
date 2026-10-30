@@ -3,8 +3,10 @@
 This is an independent modeling-tools distribution. Its products are
 `device.grd`, `device.dat` and `device.msh`. The existing SDevice package and
 reserved `sd-sim -d`, `-n`, `--max_threads` interface remain unchanged.
-P6 qualification is in progress; the final evidence record must identify the
-actual source revision, platform runs and CI conclusions before closure.
+P6 local qualification is in progress. The user explicitly selected local
+validation only on 2026-10-30: no push or actual remote CI run is authorized.
+The workflow definition is retained for later qualification; it is not a passed
+CI result. The final local evidence must identify actual source revisions and runs.
 
 ## Build and supply the package
 
@@ -80,7 +82,11 @@ donor and acceptor integrals over semiconductor regions, including polysilicon.
 Degree-five triangle quadrature estimates the local error of the linear nodal
 field. Summed absolute cell errors prevent cancellation; bulk marking selects
 the largest contributors covering 75% of the estimated error, followed by
-conforming longest-edge closure. This is an estimator relative to quadrature,
+conforming longest-edge closure. While integral control is active, parents
+containing MaxTransDiff-marked edges receive red splits so their span halves;
+this prevents a chain of green diagonals from deferring the doping stop past
+the resource limit. The raw profile with integral control disabled is unchanged.
+This is an estimator relative to quadrature,
 not a mathematical bound on the unknown exact integral. Analytic Gaussian
 convergence and resource-exhaustion tests check its behavior independently.
 Source minima still stop MaxTransDiff; independent integral accuracy refinement

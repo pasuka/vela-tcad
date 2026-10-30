@@ -17,6 +17,18 @@ SOURCE='''(sdegeo:create-rectangle (position 0 0 0) (position .1 .2 0) "Silicon"
 
 
 class IntegralTests(unittest.TestCase):
+    def test_red_parent_closure_halves_diameter_and_keeps_neighbors_conforming(self):
+        from sentaurus_adaptive import red_parent_edges,split_triangles
+        points={0:(0.,0.,0.),1:(1.,0.,0.),2:(0.,1.,0.),3:(1.,1.,0.)}
+        parents=[[0,1,2],[1,3,2]]
+        marks=red_parent_edges(parents,{(0,1)})
+        refined,cells,mids=split_triangles(points,parents,marks)
+        first=[t for t in cells if 3 not in t]
+        self.assertEqual(4,len(first))
+        self.assertLessEqual(max(math.dist(refined[a],refined[b]) for t in first for a,b in zip(t,t[1:]+t[:1])),math.sqrt(2)/2)
+        self.assertNotIn([1,3,2],cells)
+        self.assertIn((1,2),mids)
+
     def test_triangle_rule_integrates_a_quadratic_density(self):
         with tempfile.TemporaryDirectory() as temp:
             source=Path(temp)/'input.cmd';source.write_text('(sdegeo:create-rectangle (position 0 0 0) (position 1 1 0) \"Silicon\" \"R\")')

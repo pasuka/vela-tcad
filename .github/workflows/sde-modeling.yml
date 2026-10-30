@@ -99,7 +99,7 @@ jobs:
       - name: Required modeling and package regressions
         run: |
           ctest --test-dir "$P6_BUILD" --output-on-failure --no-tests=error --parallel 2 \
-            -R '^(sde_p6_package|sde_p6_validation|sde_integral_control|reference_sde_cases|sentaurus_sde_frontend|sentaurus_ir_v2_contract|sentaurus_mesh_builder|sentaurus_device_e2e_contract|sentaurus_gmsh_m[1-5]|sdevice_mesh_import|sdevice_vela_launcher|gmsh_python_runtime|pn2d_config_templates)$'
+            -R '^(sde_p6_package|sde_p6_validation|sde_integral_control|sde_sdevice_checks|reference_sde_cases|sentaurus_sde_frontend|sentaurus_ir_v2_contract|sentaurus_mesh_builder|sentaurus_device_e2e_contract|sentaurus_gmsh_m[1-5]|sdevice_mesh_import|sdevice_vela_launcher|gmsh_python_runtime|pn2d_config_templates)$'
       - name: Retain package and structured qualification only
         if: always()
         uses: actions/upload-artifact@v4

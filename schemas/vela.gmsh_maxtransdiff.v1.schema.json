@@ -131,6 +131,10 @@
           "integral_marked_edges": {
             "type": "integer",
             "minimum": 0
+          },
+          "maxtransdiff_red_added_edges": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
