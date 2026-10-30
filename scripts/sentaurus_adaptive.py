@@ -167,10 +167,14 @@ def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines,
 
 
 def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITERATIONS,
-           max_nodes=DEFAULT_MAX_NODES, surface_owner=None):
+           max_nodes=DEFAULT_MAX_NODES, surface_owner=None, integral_relative_target=0.):
     from sentaurus_gmsh_backend import GmshBackendError, _triangles_for_surface, _lines_for_curve
+    from sentaurus_integral import enabled,analyse as integral_analyse
+    if not math.isfinite(integral_relative_target) or not 0<=integral_relative_target<1:
+        raise GmshBackendError('invalid integral relative target')
+    integral_active=enabled(device_ir,integral_relative_target)
     if not (any(f['function'] == 'MaxTransDiff' for f in device_ir['mesh_control']['refinement_functions'])
-            or device_ir['mesh_control'].get('multibox_placements')):
+            or device_ir['mesh_control'].get('multibox_placements') or integral_active):
         return None
     validate(device_ir)
     if type(max_iterations) is not int or type(max_nodes) is not int or max_iterations < 0 or max_nodes < 3:
@@ -189,6 +193,7 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
     body = device_ir['geometry']['bodies'][0]
     rectangles, windows = _rectangles(device_ir), _windows(device_ir)
     cache = {}
+    integral_cache = {}
     classification = None
     lines = None
     surface = None
@@ -225,10 +230,17 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                   if n['kind']=='inactive-multibox'}
         multibox_marks=marked_edges(device_ir,coordinates,triangles,mesh_size,inactive)
         marked.update(multibox_marks)
+        integral_marks=set()
+        if integral_active:
+            integral_marks,integral_report=integral_analyse(device_ir,coordinates,by_surface,surface_owner,
+                                                           integral_relative_target,integral_cache)
+            marked.update(integral_marks)
+            report['integral_control']=integral_report
         metrics={'edges':sum(m['edges'] for m in reports),
                  'max_transformed_difference':max(m['max_transformed_difference'] for m in reports),
                  'minimum_stopped_edges':sum(m['minimum_stopped_edges'] for m in reports),
                  'refineable_nodes':len({n for e in marked for n in e}), 'maxlenint_marked_edges':len(interface_marks), 'multibox_marked_edges':len(multibox_marks)}
+        if integral_active:metrics['integral_marked_edges']=len(integral_marks)
         report['rounds'].append(dict(iteration=iteration,nodes=len(tags),triangles=len(triangles),marked_edges=len(marked),**metrics))
         gmsh.logger.write(f'MaxTransDiff round {iteration}: {len(tags)} nodes; {len(marked)} edges to split')
         if not marked:

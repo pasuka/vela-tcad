@@ -1,0 +1,113 @@
+name: SDE modeling qualification
+
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths:
+      - '.github/workflows/sde-modeling.yml'
+      - '.github/scripts/**'
+      - 'scripts/**'
+      - 'schemas/**'
+      - 'configs/**'
+      - 'tests/**'
+      - 'reference_tcad/**/source/**'
+      - 'CMakeLists.txt'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      VELA_LINEAR_THREADS: '1'
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Windows UCRT64
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-boost
+            mingw-w64-ucrt-x86_64-eigen3 mingw-w64-ucrt-x86_64-nlohmann-json
+            mingw-w64-ucrt-x86_64-catch mingw-w64-ucrt-x86_64-spdlog
+            mingw-w64-ucrt-x86_64-hdf5 mingw-w64-ucrt-x86_64-suitesparse
+            mingw-w64-ucrt-x86_64-python-jsonschema mingw-w64-ucrt-x86_64-python-numpy
+            mingw-w64-ucrt-x86_64-python-h5py mingw-w64-ucrt-x86_64-python-pillow
+      - name: Configure Windows tools
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          echo "$(cygpath -m /ucrt64/bin)" >> "$GITHUB_PATH"
+          echo "P6_PYTHON=$(cygpath -m /ucrt64/bin/python.exe)" >> "$GITHUB_ENV"
+          echo "P6_BUILD=build-release" >> "$GITHUB_ENV"
+          echo "P6_ARCHIVE=vela-sde-win64.zip" >> "$GITHUB_ENV"
+          cmake --preset windows-ucrt64-release \
+            -DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)" \
+            -DVELA_ENABLE_MKL_PARDISO=OFF -DVELA_ENABLE_MUMPS=OFF \
+            -DVELA_ENABLE_SUPERLU_MT=OFF -DVELA_ENABLE_STRUMPACK=OFF
+      - name: Install Ubuntu build tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ pkg-config \
+            libboost-dev libeigen3-dev libspdlog-dev nlohmann-json3-dev catch2 \
+            libhdf5-dev libsuitesparse-dev libmetis-dev libglu1-mesa patchelf \
+            python3-venv python3-jsonschema python3-numpy python3-h5py python3-pil
+          echo 'P6_PYTHON=/usr/bin/python3' >> "$GITHUB_ENV"
+          echo 'P6_BUILD=build-p6' >> "$GITHUB_ENV"
+          echo 'P6_ARCHIVE=vela-sde-ubuntu26.04.tar.gz' >> "$GITHUB_ENV"
+          cmake -S . -B build-p6 -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DPython3_EXECUTABLE=/usr/bin/python3 -DVELA_ENABLE_MKL_PARDISO=OFF \
+            -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF -DVELA_ENABLE_STRUMPACK=OFF
+      - name: Build runtime programs independently
+        run: cmake --build "$P6_BUILD" --target sd-sim vela vela_example_runner sentaurus_import --parallel 2
+      - name: Fetch hash-locked offline build inputs
+        run: '"$P6_PYTHON" scripts/prepare_sde_offline_assets.py --assets "$P6_BUILD/p6-assets"'
+      - name: Prepare separately supplied Gmsh runtime
+        run: '"$P6_PYTHON" scripts/prepare_sde_external_gmsh.py --assets "$P6_BUILD/gmsh-inputs" --runtime "$P6_BUILD/external-gmsh"'
+      - name: Bind Windows CTest to the explicit SDK paths
+        if: runner.os == 'Windows'
+        run: cmake --preset windows-ucrt64-release
+      - name: Assemble package without network access
+        run: '"$P6_PYTHON" scripts/package_sde_modeling.py --assets "$P6_BUILD/p6-assets" --output "$P6_BUILD/packages/$P6_ARCHIVE"'
+      - name: Relocate extracted package
+        run: |
+          "$P6_PYTHON" -c 'import os,tarfile,zipfile,pathlib; b=pathlib.Path(os.environ["P6_BUILD"]); p=b/"packages"/os.environ["P6_ARCHIVE"]; d=b/"relocated tools"; d.mkdir(); (zipfile.ZipFile(p).extractall(d) if p.suffix==".zip" else tarfile.open(p).extractall(d,filter="data"))'
+          "$P6_PYTHON" -c 'import os,pathlib; f=pathlib.Path(os.environ["GITHUB_ENV"]); b=pathlib.Path(os.environ["P6_BUILD"]); f.open("a").write("VELA_P6_PACKAGE="+str((b/"relocated tools/vela-sde").resolve())+"\nVELA_REFERENCE_SDE_TEST_OUTPUT="+str((b/"baseline-corpus").resolve())+"\n")'
+      - name: Eight sources twice in the isolated package
+        run: |
+          "$P6_PYTHON" scripts/qualify_sde_package.py --package-root "$VELA_P6_PACKAGE" \
+            --output-dir "$P6_BUILD/package-corpus" --gmsh-python "$VELA_GMSH_PYTHON" \
+            --gmsh-library "$VELA_GMSH_LIBRARY" --gmsh-executable "$VELA_GMSH_EXECUTABLE"
+      - name: Required modeling and package regressions
+        run: |
+          ctest --test-dir "$P6_BUILD" --output-on-failure --no-tests=error --parallel 2 \
+            -R '^(sde_p6_package|sde_p6_validation|sde_integral_control|reference_sde_cases|sentaurus_sde_frontend|sentaurus_ir_v2_contract|sentaurus_mesh_builder|sentaurus_device_e2e_contract|sentaurus_gmsh_m[1-5]|sdevice_mesh_import|sdevice_vela_launcher|gmsh_python_runtime|pn2d_config_templates)$'
+      - name: Retain package and structured qualification only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sde-qualification-${{ matrix.os }}
+          path: |
+            ${{ env.P6_BUILD }}/packages/*
+            ${{ env.P6_BUILD }}/package-corpus/qualification.json
+            ${{ env.P6_BUILD }}/baseline-corpus/case_summary.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -471,11 +471,13 @@ def run_pipeline(
                         gmsh, device_ir, args.mesh_size,
                         args.mesh_strategy, args.transfinite_diagonal,
                         getattr(args, "maxtransdiff_max_iterations", 12),
-                        getattr(args, "maxtransdiff_max_nodes", 200000))
+                        getattr(args, "maxtransdiff_max_nodes", 200000),
+                        getattr(args,"integral_relative_target",0.))
                 elif args.capability_level == "M3":
                     bundle, qualification = builder(gmsh, device_ir, args.mesh_size,
                         getattr(args, "maxtransdiff_max_iterations", 12),
-                        getattr(args, "maxtransdiff_max_nodes", 200000))
+                        getattr(args, "maxtransdiff_max_nodes", 200000),
+                        getattr(args,"integral_relative_target",0.))
                 else:
                     bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
                 if device_ir['mesh_control'].get('operations'):
@@ -615,6 +617,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--maxtransdiff-max-iterations", type=int, default=12)
     parser.add_argument("--maxtransdiff-max-nodes", type=int, default=200000)
     parser.add_argument("--parameter", action="append", default=[], help="Explicit SDE placeholder NAME=VALUE")
+    parser.add_argument("--integral-relative-target",type=float,default=0.,
+                        help="Gaussian C0 integral convergence target (0 disables; M3/M5 unstructured)")
     parser.add_argument("--mesh-size", type=float, default=0.2)
     parser.add_argument("--capability-level", choices=("M1", "M2", "M3", "M5"), default="M5",
                         help="freeze the accepted semantic subset (default: M5)")

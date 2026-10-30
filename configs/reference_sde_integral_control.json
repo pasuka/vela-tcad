@@ -1,0 +1,12 @@
+{
+  "schema": "vela.sde_integral_control.v1",
+  "implementation_target": 0.00025,
+  "acceptance_comparative_integral_limit": 0.01,
+  "profile": "Gaussian-containing unstructured models",
+  "base_pipeline_default": 0,
+  "offline_package_default": 0.00025,
+  "quadrature": "degree-five Dunavant",
+  "source_minima": "remain MaxTransDiff stop targets; independent accuracy refinement may be finer",
+  "physics_or_source_modified": false,
+  "resource_budget": "existing adaptive iteration/node budgets; fail closed on exhaustion"
+}

@@ -127,6 +127,10 @@
           "multibox_marked_edges": {
             "type": "integer",
             "minimum": 0
+          },
+          "integral_marked_edges": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
@@ -156,6 +160,66 @@
           },
           "source_location": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "integral_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relative_target",
+        "relative_errors",
+        "linear_integrals_cm3_um2",
+        "quadrature_integrals_cm3_um2",
+        "mapping",
+        "applicability",
+        "relative_error_bounds"
+      ],
+      "properties": {
+        "relative_target": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "relative_errors": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "linear_integrals_cm3_um2": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        "quadrature_integrals_cm3_um2": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number"
+          }
+        },
+        "mapping": {
+          "type": "string"
+        },
+        "applicability": {
+          "type": "string"
+        },
+        "relative_error_bounds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
           }
         }
       }

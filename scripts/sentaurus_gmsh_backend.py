@@ -1500,7 +1500,8 @@ def _m5_outer_side(gmsh, curve: int,
 def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                   capability_level: str, mesh_strategy: str = "unstructured",
                   transfinite_diagonal: str = "AlternateRight",
-                  maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000) -> tuple[
+                  maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000,
+                  integral_relative_target: float = 0.) -> tuple[
                       dict[str, Any], dict[str, Any]]:
     """Build OCC geometry, physical groups, Tri3 mesh, and nodal fields."""
     if capability_level == "M1":
@@ -1688,7 +1689,7 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
     if refinement_field_dag is not None:
         from sentaurus_adaptive import remesh
         adaptive_report = remesh(gmsh, device_ir, refinement_field_dag, mesh_size,
-                                 maxtransdiff_max_iterations, maxtransdiff_max_nodes, surface_owner)
+                                 maxtransdiff_max_iterations, maxtransdiff_max_nodes, surface_owner, integral_relative_target)
     node_tags, coordinates, _ = gmsh.model.mesh.getNodes()
     coords_by_tag = {
         int(tag): (float(coordinates[3 * index]), float(coordinates[3 * index + 1]),
@@ -1851,21 +1852,23 @@ def build_m2_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
 
 
 def build_m3_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
-                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000
+                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000,
+                    integral_relative_target: float = 0.
                     ) -> tuple[dict[str, Any], dict[str, Any]]:
     return _build_bundle(gmsh, device_ir, mesh_size, "M3",
                          maxtransdiff_max_iterations=maxtransdiff_max_iterations,
-                         maxtransdiff_max_nodes=maxtransdiff_max_nodes)
+                         maxtransdiff_max_nodes=maxtransdiff_max_nodes,integral_relative_target=integral_relative_target)
 
 
 def build_m5_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                     mesh_strategy: str = "auto",
                     transfinite_diagonal: str = "AlternateRight",
-                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000
+                    maxtransdiff_max_iterations: int = 12, maxtransdiff_max_nodes: int = 200000,
+                    integral_relative_target: float = 0.
                     ) -> tuple[dict[str, Any], dict[str, Any]]:
     return _build_bundle(
         gmsh, device_ir, mesh_size, "M5", mesh_strategy, transfinite_diagonal,
-        maxtransdiff_max_iterations, maxtransdiff_max_nodes)
+        maxtransdiff_max_iterations, maxtransdiff_max_nodes,integral_relative_target)
 
 
 def _angles(points: list[tuple[float, float]]) -> list[float]:

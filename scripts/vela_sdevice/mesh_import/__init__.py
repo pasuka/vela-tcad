@@ -280,6 +280,10 @@ def _doping_from_datasets(datasets: dict, vertex_count: int):
 # --- TDR path ------------------------------------------------------------------------------
 
 def _load_tdr(tdr_path: Path, importer: Optional[str], work_dir: Path) -> dict:
+    with tdr_path.open("rb") as stream:
+        if stream.read(5) == b"Ogawa":
+            raise MeshImportError("E402", "Ogawa TDR is unsupported; convert to DF-ISE GRD/DAT with TDX. "
+                                  "The native importer supports HDF5 TDR.")
     command = find_importer(importer)
     if command is None:
         raise MeshImportError("E402", "no sentaurus_import executable available for .tdr grids "
