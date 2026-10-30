@@ -3,7 +3,8 @@
 Both unchanged primary sources are supported by the offline Gmsh pipeline:
 `singledevice_sentaurus2018/source/singledevice_sde.cmd` and
 `transportmodels_sentaurus2022/source/nMOS_dvs.cmd`, under `reference_tcad/`.
-Corpus revision 3 has seven generated cases and one expected BVmethods rejection.
+P4 established corpus revision 3 with seven generated cases. Current revision 4
+adds BVmethods; see [P5](sde_bv_modeling.md).
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
@@ -104,7 +105,7 @@ that attempt is not counted as validation. No T470p/Linux qualification or
 numerical MOS solve is claimed. Raw transcripts and private job/path information
 remain outside version control. No proprietary implementation source is included.
 
-The next source-modeling scope is P5: PolySi aliases, creation-state body
+[P5](sde_bv_modeling.md) now supplies PolySi aliases, creation-state body
 contacts/removal and multibox for BVmethods. P4 does not unblock its numerical
 NonLocalPath/external-resistor qualifications.
 

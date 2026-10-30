@@ -1,0 +1,1362 @@
+{
+  "schema": "vela.reference_sde_p5_acceptance.v1",
+  "date": "2026-10-30",
+  "status": "passed",
+  "base_commit": "356ff985e13f05804e9a1f2e340a31e2ea79af45",
+  "scope": "SDE modeling, half/full GRD/DAT/MSH, independent native imports, live controlled SDE semantic oracles; no BV solver qualification",
+  "coverage": {
+    "primary_sources": 8,
+    "generated": 8,
+    "expected_rejection": 0,
+    "corpus_revision": 4,
+    "repeats_per_case": 2
+  },
+  "manifest_sha256": "fe30c70751015a0aa90d42679f53450a124ec5587cafa247a51aac0cc9e41315",
+  "numerical_gates": {
+    "schema": "vela.bv_modeling_acceptance.v1",
+    "date": "2026-10-30",
+    "fillet_radius_um": 0.08,
+    "chord_error_um": 1e-05,
+    "pointwise_relative_tolerance": 1e-06,
+    "geometry_tolerance_um": 1e-08,
+    "area_error_rule": "arc_length * chord_error_um",
+    "repeat_policy": "contract_equivalent",
+    "multibox_edge_component_envelope": 1.35,
+    "multibox_ratio_one": "maximum size: live U-2022.12 ratio=1/max/min controls",
+    "multibox_mapping": "continuous geometric-layer interpolation",
+    "native_topology_equivalence": false,
+    "numerical_solver_qualification": false,
+    "placeholder_parameters": {
+      "node": "0"
+    }
+  },
+  "cases": [
+    {
+      "id": "pn2d",
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "source_sha256_lf": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "mesh_quality": {
+            "node_count": 1482,
+            "cell_count": 2800,
+            "max_angle_degrees": 90.00000000000077,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.05000000000000021,
+                0.020000000000000018
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "schottky",
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "source_sha256_lf": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "mesh_quality": {
+            "node_count": 319,
+            "cell_count": 560,
+            "max_angle_degrees": 90.00000000000033,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.0500000000000001,
+                0.10000000000000009
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "gate_reference",
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd",
+      "source_sha256_lf": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "b08ca9c34b95e65f3ecbeea7de86a141cac67551d4423d5e001695084ffb846a",
+            "device.dat": "68f598d7890179d2bb3bab080da3c4e2c8049bc2406200c1ec1196456f85b3e7",
+            "device.msh": "d53185fd94c4b24b7bd32157d923d5954743186a6ec498b2ec7d9924f75a49a6",
+            "mesh.json": "b3ba97949dc69878e5fcf59c99bec8842ed580c673e9d91721aaa74e76bc1ec3",
+            "doping.csv": "c745719e0d9570096a55851a51775cac354243cdada0e9479c8ac8368ba19ecb"
+          },
+          "mesh_quality": {
+            "node_count": 165,
+            "cell_count": 220,
+            "max_angle_degrees": 135.7775136908344,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.025000003237358483,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "bce166d15930717652c6670a06da50d39f8e2c45c83cc2a999458d8966a2fb96",
+            "device.dat": "68f598d7890179d2bb3bab080da3c4e2c8049bc2406200c1ec1196456f85b3e7",
+            "device.msh": "0f27db41176ef8e6bd430c7103ab2745078028d7f4a9eb5a8beb6a33f6c32698",
+            "mesh.json": "58a0863b6b99b571a0e444cc64b9f84d886664562bb669a650483fd4bd22d9ed",
+            "doping.csv": "3fc122e262565f6385c4c04ac49d4539d837e85a02bf667f9f6e5c61aa47e979"
+          },
+          "mesh_quality": {
+            "node_count": 165,
+            "cell_count": 220,
+            "max_angle_degrees": 135.7775137580009,
+            "region_p95_spacing_um": {
+              "R.Si": [
+                0.025000002564373514,
+                0.02000000044703487
+              ],
+              "R.Ox": [
+                0.02500000000000002,
+                0.0050000001363235125
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bjt",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "ac7ee58246b77a7e78c55180848a7937a4d30c34ebbc944c8fd78a3273f89f3e",
+            "device.dat": "412a1c544b089fe23e341cd272b5f3115b374da7c22ffacd760e6670d2fedbda",
+            "device.msh": "b17bd059d5ade3870d69a78de9f97cd5bc17aae57cdb7ba5a91f5aa7a2844734",
+            "mesh.json": "3dc4d331fcc00226fe5c580cf9ab7583869501d51f1bb089daba83d108ef7518",
+            "doping.csv": "5a8ef85d67e051611cd51ebdd25eb9c708bf0abc78326f1e4fbc3b47b4f981ba"
+          },
+          "mesh_quality": {
+            "node_count": 22605,
+            "cell_count": 44945,
+            "max_angle_degrees": 143.5311742845756,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.05364678973225656,
+                0.035450372988671486
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 3.319678920793799e-11,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2588381482891244e+19,
+                  "relative_error": 0.0009483967764872536
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.1991334355668787e+18,
+                  "relative_error": 0.0006827476227687417
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7000992613790606,
+                      "absolute_error_um": 1.3724043853358125e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.3050703023226593,
+                      "absolute_error_um": 2.8450472129293303e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7001175967502512,
+                      "absolute_error_um": 3.7591377012868854e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.3706366670553449,
+                      "absolute_error_um": 1.3715732344543596e-05,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000795228599302,
+                      "absolute_error_um": 1.6077735059627507e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "8c82d49f21a8b03d7020721f599191a8849de07e52f92752e9b30be8c13e1c33",
+            "device.dat": "579e4f481f1d7eb6a1aaf2ca8e3fd8d8c233f2786919dee92d98a352bb5a9b05",
+            "device.msh": "9697a2f65b9a522cadc855a81c6b1798e53a8d2a03a8cdf6f1cd13d7cb9415ae",
+            "mesh.json": "4b93cd73e760b6da2f446fbb54e9370de80020d98a4ed603d9cb91c2074ec33f",
+            "doping.csv": "d4a4b73da8ac6c2a72f1119ce68ec19dbe272da4676cc6175ce7aff48d45b3df"
+          },
+          "mesh_quality": {
+            "node_count": 22630,
+            "cell_count": 44999,
+            "max_angle_degrees": 140.36704981034637,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.053221497870058254,
+                0.03570945601702791
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 3.276818460790252e-11,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2588422830367494e+19,
+                  "relative_error": 0.0009471292001131671
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.199114059135845e+18,
+                  "relative_error": 0.0006888002624011986
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.700104273366817,
+                      "absolute_error_um": 1.8736031609734027e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.30508701443108494,
+                      "absolute_error_um": 1.3867061212702314e-05,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7001262044435382,
+                      "absolute_error_um": 4.619907029990156e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.37062704762979504,
+                      "absolute_error_um": 4.096306794654225e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000874028767525,
+                      "absolute_error_um": 2.3957751881908962e-05,
+                      "limit_um": 0.004
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "bjt_local",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "d55fbca360751a3ed5fad8d20cabf6fdca927fc7407e30d05d0ef92f1bd72f8c",
+            "device.dat": "c1f27039b22a9e91d640fa6737477c94845b03727eb89a68fb5e2a8b2cb8830b",
+            "device.msh": "9a9f79300ae237bd514e85a7264a8bff699e03ac4fcee036e071c3ca1025026c",
+            "mesh.json": "8743591041f395655cd56435a5f26af491395168dd132f14bea65308f56b52ea",
+            "doping.csv": "671f8023ad68c851b705090ba289ebbeafb9b3ea54b3a2b60bcd28f6b2139aba"
+          },
+          "mesh_quality": {
+            "node_count": 45600,
+            "cell_count": 90893,
+            "max_angle_degrees": 140.53094586669476,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.026427651344979708,
+                0.018949598121116518
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 1.1322444251257782e-09,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.261521727972593e+19,
+                  "relative_error": 0.00012570032359505463
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.19964554042331e+18,
+                  "relative_error": 0.0005227807978879016
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7000886655958803,
+                      "absolute_error_um": 3.1282606730576035e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.30507965519545277,
+                      "absolute_error_um": 6.5078255805373075e-06,
+                      "limit_um": 0.0015
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7000809531983273,
+                      "absolute_error_um": 9.478250889705109e-07,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.37062495607306,
+                      "absolute_error_um": 2.0047500596254153e-06,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000654879291401,
+                      "absolute_error_um": 2.042804269519749e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            }
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "c7f4f72753c7ae6c1fbdc551503f5b0f8b3585da9a660946a4adee0043b2d298",
+            "device.dat": "cd1f543e44fdcb0fa88cc9c63b438d0eeb380c5fc0440e52726c3b345118b6db",
+            "device.msh": "7c2589db05e07420409dc60ed002f11003f0c66a2d95b07ffcc428f61c956415",
+            "mesh.json": "a758a7b7157212f4c890dab71838c78f50d2301f3c1e0092f8c35d81c32a9d1f",
+            "doping.csv": "d82afe966f85b9467f78af83c8eafc80c6419c97f643d450f614fae9aea8fc57"
+          },
+          "mesh_quality": {
+            "node_count": 43853,
+            "cell_count": 87399,
+            "max_angle_degrees": 140.8549891169421,
+            "region_p95_spacing_um": {
+              "R.Silicon": [
+                0.02702949474459171,
+                0.019254037073872632
+              ]
+            },
+            "bjt": {
+              "schema": "vela.bjt_modeling_check.v1",
+              "status": "passed",
+              "acceptance_sha256": "209f4f7f7d98afa5d2798ff81b8ecb9bb82acaf366d85c1ed0c737e768beb65a",
+              "geometry_contract_sha256_lf": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+              "maximum_node_relative_error": 9.848871115972209e-11,
+              "integrals": {
+                "donor": {
+                  "analytic_cm3_um2": 3.2619317538495967e+19,
+                  "mesh_linear_cm3_um2": 3.2611277755566408e+19,
+                  "relative_error": 0.00024647305756999156
+                },
+                "acceptor": {
+                  "analytic_cm3_um2": 3.201319128591649e+18,
+                  "mesh_linear_cm3_um2": 3.1992640095698217e+18,
+                  "relative_error": 0.0006419600606113821
+                }
+              },
+              "cuts": [
+                {
+                  "x_um": 1.625,
+                  "analytic_count": 1,
+                  "mesh_count": 1,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.7000855373352073,
+                      "mesh_linear_y_um": 0.7000951965605363,
+                      "absolute_error_um": 9.659225329028409e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 2.6,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.30507314736987223,
+                      "mesh_linear_y_um": 0.3050744487877986,
+                      "absolute_error_um": 1.301417926369286e-06,
+                      "limit_um": 0.0015
+                    },
+                    {
+                      "analytic_y_um": 0.7000800053732383,
+                      "mesh_linear_y_um": 0.7000829219854201,
+                      "absolute_error_um": 2.916612181769196e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                },
+                {
+                  "x_um": 3.5,
+                  "analytic_count": 2,
+                  "mesh_count": 2,
+                  "junctions": [
+                    {
+                      "analytic_y_um": 0.3706229513230004,
+                      "mesh_linear_y_um": 0.3706455701281433,
+                      "absolute_error_um": 2.261880514292658e-05,
+                      "limit_um": 0.004
+                    },
+                    {
+                      "analytic_y_um": 0.7000634451248706,
+                      "mesh_linear_y_um": 0.7000717178615065,
+                      "absolute_error_um": 8.272736635839273e-06,
+                      "limit_um": 0.002
+                    }
+                  ]
+                }
+              ],
+              "failures": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "singledevice",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "source_sha256_lf": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "0583336327fc2a98238c0d249bb0d34b6a16425da7080d8b55008106c636e960",
+            "device.dat": "709cb531cb3eb7ec53c1da9562a56fb2ca6be8eb76026b5bcddab40fbbfad96b",
+            "device.msh": "90d5d0b7d9cd212f35dddc59b9773fda4e39d8db1fc500b4c1ee673c4d3a4cb2",
+            "mesh.json": "5e5c53aa892fbbff6d8c7fd53a564a6f4498d4df4a48cf7f050cb712a41fcc23",
+            "doping.csv": "3666a2fd3744156457b045df24f358309df1e53be9bbb30e7af2b1cc1c07a6c4"
+          },
+          "mesh_quality": {
+            "node_count": 13415,
+            "cell_count": 26630,
+            "max_angle_degrees": 177.07428989112404,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.004681664805885305,
+                0.0027024127776515555
+              ],
+              "R.Gateox": [
+                0.00027579700999830214,
+                0.0005532816082430003
+              ],
+              "R.Polygate": [
+                0.003402672744189636,
+                0.004257157955171918
+              ],
+              "R.PolyReox": [
+                0.005571957231077947,
+                0.002981077194345181
+              ],
+              "R.PolyReox_mirrored": [
+                0.005571957231077947,
+                0.002981077194345181
+              ],
+              "R.Spacer": [
+                0.037755325503266005,
+                0.034585786847631
+              ],
+              "R.Spacer_mirrored": [
+                0.037755325503266005,
+                0.034585786847631
+              ]
+            },
+            "mos": {
+              "schema": "vela.mos_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 5.287103394340234e-11,
+              "maximum_chord_error_um": 9.637975896779893e-06,
+              "arc_edge_count": 80,
+              "node_count": 13415,
+              "triangle_count": 26630,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "8e43533747503e49187104e9268e684eb412a4e7dcd771228e9342171ed7b6e2",
+            "half_device.dat": "6900db496b594a8fb31c6ae9f22e0eb0bb5c1868d7b07d27dab3731043633d58",
+            "half_device.msh": "ce59c2ed7fc9d0dd707de3b58dd07f25c7d158855dab202ae0ceae112ada1fcb",
+            "half_mesh_field_bundle.json": "48819ec714c09849e7380aefee61cb3066ed28317b08e5218fca52e2c24812e2"
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "daf6e3c9942b32d6bf395371654fffb0cf8084331d6ea8cb268becc4481083e6",
+            "device.dat": "715d99304a0192aa92489c0ab3c7cb47cc2e48f9f722ef433cf6246fae024c50",
+            "device.msh": "2ca6bf651b59af11f82bef84870e92e3aa22a3acf35fd6c38c6270bc46580288",
+            "mesh.json": "3f80b59ebf76eb6f8f94710565f98056b1e786d8fb9ac9a8cb6c237d00f6d0eb",
+            "doping.csv": "66d98a7d4e021ac12caf3a0c89aca6fd5868d5cfa52fa6135e9b8925e60b141f"
+          },
+          "mesh_quality": {
+            "node_count": 13862,
+            "cell_count": 27522,
+            "max_angle_degrees": 177.54083625219926,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.004510944333906641,
+                0.0025732236241984147
+              ],
+              "R.Gateox": [
+                0.00027239887907161967,
+                0.0005803577477776906
+              ],
+              "R.Polygate": [
+                0.0031839146184481637,
+                0.0038411009070103506
+              ],
+              "R.PolyReox": [
+                0.005582238062726907,
+                0.002728956683082557
+              ],
+              "R.PolyReox_mirrored": [
+                0.005582238062726907,
+                0.002728956683082557
+              ],
+              "R.Spacer": [
+                0.03692665802000468,
+                0.03472746500352453
+              ],
+              "R.Spacer_mirrored": [
+                0.03692665802000468,
+                0.03472746500352453
+              ]
+            },
+            "mos": {
+              "schema": "vela.mos_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 2.7430457533000364e-10,
+              "maximum_chord_error_um": 9.637975896779893e-06,
+              "arc_edge_count": 80,
+              "node_count": 13862,
+              "triangle_count": 27522,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "7b4b83a59138f2bfa8fc9b173d37ec92462012465e7107398d63d38bb231c03f",
+            "half_device.dat": "e42b7ed279ccdb70b3ef41d57dc29f3529a1a975e8e17caa1b919ef52a63ee3e",
+            "half_device.msh": "959fe1fcfd21d4d060fd2bbf507368845a31c61ce38eb0014a6f98f23482e55e",
+            "half_mesh_field_bundle.json": "4f4efda36d139d9defad360dc9f33b21c611cec42063d884668242e755d815d6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "transportmodels",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "source_sha256_lf": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "8f17e6edd29443199b4561d398306634cfb1b1ef969ebeff0f3860ca83424e37",
+            "device.dat": "a12c917849f8c5490d9d10239cdd0a77ae59866cea22ab331afc3596fe1912b5",
+            "device.msh": "63969faff344ce7b9e5a9c166a3957901e7b842b4d67b9a5d627bfbceb417958",
+            "mesh.json": "10012baf27440bb6cc7f63ecd333214889194068ef9c1f277d4e243e6ce2aac7",
+            "doping.csv": "0cc6b5ff4e90e0dae2ab2db08724659358b441d976dbccbe8aba4118619adf6d"
+          },
+          "mesh_quality": {
+            "node_count": 13474,
+            "cell_count": 26768,
+            "max_angle_degrees": 177.65702877756286,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.0017489648494500853,
+                0.0033992652095946735
+              ],
+              "R.Gateox": [
+                0.00024172188371754356,
+                0.0006499869772151889
+              ],
+              "R.Polygate": [
+                0.002203804669510624,
+                0.0013330550001931021
+              ],
+              "R.PolyReox": [
+                0.049999999999999996,
+                0.004708606308815637
+              ],
+              "R.PolyReox_mirrored": [
+                0.049999999999999996,
+                0.004708606308815637
+              ],
+              "R.Spacer": [
+                0.037019651256345015,
+                0.03462112205963197
+              ],
+              "R.Spacer_mirrored": [
+                0.037019651256345015,
+                0.03462112205963197
+              ]
+            },
+            "mos": {
+              "schema": "vela.mos_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 1.881737735624451e-11,
+              "maximum_chord_error_um": 9.637975896779893e-06,
+              "arc_edge_count": 80,
+              "node_count": 13474,
+              "triangle_count": 26768,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "5c048e3f9febfdd504e53f82563d7c8c253e17f28e8cd1da5b0cbfb78f6514f1",
+            "half_device.dat": "2fa4ae9d8cd186bd5478ee8e32fdfa686cd7922eaf985a999e0ccb0574fe8d64",
+            "half_device.msh": "6017db2557f081c0980cbc6f675fd744b839a9d4e6504645fbffb17249991547",
+            "half_mesh_field_bundle.json": "57447fd1da6258ac062c993e0b4bc55477e74d8073b4f795089fe4d40c0baed7"
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "ffe4ace78a4073fb38218e874c7de7578708d2c486e8a559b0384658c8927b1d",
+            "device.dat": "63dd09a3d5f860a69cf88131c1af0b1a2b63c193aaf22222ca4aa95107220cb7",
+            "device.msh": "4842c9d4209c2c4ea99b47dbe0823424f715c9d5bed5a4bc24f2c8aaaf2df831",
+            "mesh.json": "875f273cee28eb3be208a9c6245bb16ec65837dfb83abd98f435a59bd9a0088e",
+            "doping.csv": "6168cb440e4955e502bd255dc98881b01d4e0cd245311a2d3f79919417c66621"
+          },
+          "mesh_quality": {
+            "node_count": 14146,
+            "cell_count": 28116,
+            "max_angle_degrees": 178.77367162005172,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.0015915021382120614,
+                0.0029198409809881795
+              ],
+              "R.Gateox": [
+                0.0002410783157950091,
+                0.0006401812845350172
+              ],
+              "R.Polygate": [
+                0.00863048788285306,
+                0.0013746261256113446
+              ],
+              "R.PolyReox": [
+                0.049999999999999996,
+                0.004695113234669632
+              ],
+              "R.PolyReox_mirrored": [
+                0.049999999999999996,
+                0.004695113234669632
+              ],
+              "R.Spacer": [
+                0.03695620801326681,
+                0.03469376394422871
+              ],
+              "R.Spacer_mirrored": [
+                0.03695620801326681,
+                0.03469376394422871
+              ]
+            },
+            "mos": {
+              "schema": "vela.mos_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 2.0671819541932766e-11,
+              "maximum_chord_error_um": 9.637975896779893e-06,
+              "arc_edge_count": 80,
+              "node_count": 14146,
+              "triangle_count": 28116,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "22226559f1bddf607bfa6e02ecbef2265e9dc55e1b5fe3fa8e0648954d48a69a",
+            "half_device.dat": "1f1695ca46ebe217e011d58c695d41cfc1c42a991e9182fe775006548acb1a4f",
+            "half_device.msh": "406d7eca38b2186cbb1161649ad445502b138e3314134662f848ec8e2904c652",
+            "half_mesh_field_bundle.json": "8331100a31f4da28048e359a80a1423e1eba6f5ea4c729b7d22a545acfdeb7c2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bvmethods",
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "cbc0a3e2d2493640150c34cab5aed532f02927c350fe3919ca07e7cdae476ec5",
+            "device.dat": "9b41c63adc94ef4ba7942c4228efa2d9ab1a0d2a81c8087a490290b785711df8",
+            "device.msh": "2380eada30a97ea0dfc09f32aac48401b50052e1eeace8b1a36db60f4c932dd8",
+            "mesh.json": "caf68d90ca50434188b12d0f5ffcba4c40d21ff7d938e7450429dc71c94e0648",
+            "doping.csv": "e02793cfdf3d5ab0d455afe9839db37f03593833a1897f992f4fc1f89521059a"
+          },
+          "mesh_quality": {
+            "node_count": 2345,
+            "cell_count": 4508,
+            "max_angle_degrees": 179.03152161982322,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.03384744397837686,
+                0.01427909157545168
+              ],
+              "R.Gateox": [
+                0.0457660764666028,
+                0.0005091551067430129
+              ],
+              "R.PolyReox": [
+                0.009999999999999995,
+                0.20000000000000004
+              ],
+              "R.PolyReox_mirrored": [
+                0.009999999999999995,
+                0.20000000000000004
+              ],
+              "R.Spacer": [
+                0.053252617760830095,
+                0.06178032922579341
+              ],
+              "R.Spacer_mirrored": [
+                0.053252617760830095,
+                0.06178032922579341
+              ]
+            },
+            "bvmethods": {
+              "schema": "vela.bv_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 0.0,
+              "maximum_chord_error_um": 9.869401467174632e-06,
+              "arc_edge_count": 100,
+              "node_count": 2345,
+              "triangle_count": 4508,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "9a99b96fcd8ad55f082d277d1ccb6effd23ed53a94fb0545f511e3cfb83c55d9",
+            "half_device.dat": "6ec7fc39d1e3ce82800b6d730fbf2fff224586fa5524a4f7cbca4429dc2d5096",
+            "half_device.msh": "cd8ef63d188a9c65ab0bbf1b9d397d9dbd7b23a7ea2495d9d33de560856bb64d",
+            "half_mesh_field_bundle.json": "6d1d949f23428abd0f984c944961946b9f6dbae390040167948f8449247e72a4"
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "4380941f216dc06add4015e858f1be7e06871036441544372c95b0611f73c86e",
+            "device.dat": "3a67cc5805286b2af0e061f4d97ee0ef7630899b67fd7da760fdea154cdeacb4",
+            "device.msh": "b32e9f3d3e70e8d86821fafb18a8ad54976f3848bf44bf4a0fbe21a7062d5552",
+            "mesh.json": "1d60716d5ff17de14e070e62f579069afe467ed643931b2e692bffd78cb549b2",
+            "doping.csv": "d8282b0a1837e4362457e77543a960d62f39c861124068db903d7e5a374be072"
+          },
+          "mesh_quality": {
+            "node_count": 2347,
+            "cell_count": 4512,
+            "max_angle_degrees": 178.7641517505361,
+            "region_p95_spacing_um": {
+              "R.Substrate": [
+                0.03411437242749321,
+                0.013914376232285863
+              ],
+              "R.Gateox": [
+                0.050475504850526834,
+                0.0005000007469113923
+              ],
+              "R.PolyReox": [
+                0.009999999999999995,
+                0.20000000000000004
+              ],
+              "R.PolyReox_mirrored": [
+                0.009999999999999995,
+                0.20000000000000004
+              ],
+              "R.Spacer": [
+                0.05342262021408495,
+                0.061836696643659775
+              ],
+              "R.Spacer_mirrored": [
+                0.05342262021408495,
+                0.061836696643659775
+              ]
+            },
+            "bvmethods": {
+              "schema": "vela.bv_modeling_check.v1",
+              "status": "passed",
+              "maximum_node_relative_error": 0.0,
+              "maximum_chord_error_um": 9.869401467174632e-06,
+              "arc_edge_count": 100,
+              "node_count": 2347,
+              "triangle_count": 4512,
+              "failures": [],
+              "half_native_import": "passed"
+            }
+          },
+          "half_sha256": {
+            "half_device.grd": "11a4e6dbef04e243e177b5af48ec9e5de0e11dc1d39fd595daa9d58b7efe46aa",
+            "half_device.dat": "79017ce71f2fafb4d05fa72e603a3f4377f0b83d424cfdb0702fc264c85ecfec",
+            "half_device.msh": "9a98cc4e7a68716167ad4c13011143266318710b1ff78bed49a4887a436c58d1",
+            "half_mesh_field_bundle.json": "684f0ec376189660c2c072f6bd800d421dffe79ad9139ae84dd7d0ee990e881c"
+          }
+        }
+      ]
+    }
+  ],
+  "bv_half_region_area_um2": {
+    "R.Gateox": 0.00032999999999999994,
+    "R.PolyReox": 0.001999999999999999,
+    "R.Spacer": 0.016625721452500533,
+    "R.Substrate": 0.565
+  },
+  "bv_multibox": [
+    {
+      "name": "MBPlace.Gate",
+      "ratio": [
+        1.0,
+        -1.35
+      ],
+      "window_um": [
+        [
+          0.0,
+          -0.202
+        ],
+        [
+          0.065,
+          -0.002
+        ]
+      ],
+      "edge_count": 2,
+      "mapping": "continuous geometric-layer interpolation",
+      "active": false,
+      "reason": "window has no surviving volume",
+      "passed": true
+    },
+    {
+      "name": "MBPlace.Channel",
+      "ratio": [
+        1.0,
+        1.35
+      ],
+      "window_um": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.13,
+          0.12
+        ]
+      ],
+      "edge_count": 1237,
+      "mapping": "continuous geometric-layer interpolation",
+      "active": true,
+      "maximum_normalized_component": 1.3315198058339246,
+      "passed": true
+    }
+  ],
+  "bv_inactive_region_references": [
+    {
+      "kind": "doping",
+      "name": "PlaceCD.Gate",
+      "target": "R.Polygate",
+      "reason": "authored region removed before meshing"
+    }
+  ],
+  "tests": [
+    {
+      "name": "sdevice_mesh_import",
+      "status": "passed",
+      "python_tests": 8,
+      "conditional_skips": 2
+    },
+    {
+      "name": "sentaurus_device_e2e_contract",
+      "status": "passed",
+      "python_tests": 16,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m4",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m1",
+      "status": "passed",
+      "python_tests": 4,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m3",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m2",
+      "status": "passed",
+      "python_tests": 9,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m5",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_bjt_modeling",
+      "status": "passed",
+      "python_tests": 22,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_bv_modeling",
+      "status": "passed",
+      "python_tests": 13,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sde_sdevice_checks",
+      "status": "passed",
+      "python_tests": 17,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_mos_modeling",
+      "status": "passed",
+      "python_tests": 8,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus2022_sde_semantics",
+      "status": "passed",
+      "python_tests": 8,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_sde_frontend",
+      "status": "passed",
+      "python_tests": 32,
+      "conditional_skips": 0
+    },
+    {
+      "name": "gmsh_python_runtime",
+      "status": "passed",
+      "python_tests": 4,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_ir_v2_contract",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "pn2d_config_templates",
+      "status": "passed",
+      "python_tests": 14,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_mesh_builder",
+      "status": "passed",
+      "python_tests": 27,
+      "conditional_skips": 1
+    }
+  ],
+  "additional_regression": {
+    "name": "test_reference_sde_cases",
+    "python_tests": 20,
+    "status": "passed"
+  },
+  "test_totals": {
+    "ctest_entries": 17,
+    "ctest_passed": 17,
+    "python_tests_reported": 224,
+    "conditional_skips": 3,
+    "repeated_verification_runs_counted_once": true
+  },
+  "conditional_skip_reasons": [
+    "mesh load smoke: vela_example_runner not built",
+    "negative no-importer control: importer executable is available",
+    "legacy mesh-builder smoke: vela_example_runner not built"
+  ],
+  "consumer_positive": {
+    "status": "passed",
+    "count": 8,
+    "mode": "sd-sim --check",
+    "solver_invoked": false,
+    "launcher_sha256": "e37c1abb90476e6616b36d096e9dca3a743ab00fbe64d7a690c894af4e6f2334",
+    "package_sha256": "a22c7fd86ae7626edd7da81f200727f5987580376626493fd6f6add60855b8de"
+  },
+  "consumer_expected_rejections": {
+    "status": "passed",
+    "mode": "check_only",
+    "solver_invoked": false,
+    "cases": [
+      {
+        "id": "singledevice",
+        "status": "expected_rejection",
+        "exit_code": 4,
+        "diagnostic_ids": [
+          "E403"
+        ],
+        "grid_sha256": "daf6e3c9942b32d6bf395371654fffb0cf8084331d6ea8cb268becc4481083e6",
+        "data_sha256": "715d99304a0192aa92489c0ab3c7cb47cc2e48f9f722ef433cf6246fae024c50",
+        "source_sha256_lf": "db15f2bdd62c1fd1e8616e86170b680748d912e5eb6b45a62a2beddc9f28928f",
+        "effective_command_sha256": "267f7d1ea67762f34995bc848316a42050dd6b771f18aaabf40d0884d41d23fa"
+      },
+      {
+        "id": "transportmodels",
+        "status": "expected_rejection",
+        "exit_code": 1,
+        "diagnostic_ids": [
+          "E105",
+          "E109"
+        ],
+        "grid_sha256": "ffe4ace78a4073fb38218e874c7de7578708d2c486e8a559b0384658c8927b1d",
+        "data_sha256": "63dd09a3d5f860a69cf88131c1af0b1a2b63c193aaf22222ca4aa95107220cb7",
+        "source_sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+        "effective_command_sha256": "5f191f2e9cb83eda98ebe5b9509fdfc25258a913884968d70c5348a06e98fd28"
+      }
+    ]
+  },
+  "build": {
+    "preset": "windows-ucrt64-release",
+    "targets": [
+      "sd-sim",
+      "vela_sdevice_pyz"
+    ],
+    "status": "passed",
+    "toolchain": "MSYS2 UCRT64 GCC 16.2.0",
+    "gmsh_version": "4.15.2",
+    "hdf5_detected": "hdf5-static",
+    "umfpack_detected": true,
+    "numerical_solver_invoked": false
+  },
+  "commercial_oracle": {
+    "schema": "vela.sde_p5_native_oracle.v1",
+    "vendor_version": "U-2022.12",
+    "status": "passed",
+    "context": {
+      "bv_source_modified": false,
+      "wrapper_defines": {
+        "+z": "+z"
+      },
+      "raw_source_execution": "rejected: unbound +z"
+    },
+    "native_topology_equivalence": false,
+    "tests": {
+      "native_erf": {
+        "vertices": 153,
+        "triangles": 256,
+        "volume_area_um2": {
+          "R.Si": 0.01999999999999993
+        },
+        "checked_region_local_values": 306,
+        "maximum_peak_normalized_error": 4.352e-15,
+        "maximum_absolute_error_cm3": 4352.0
+      },
+      "native_removed": {
+        "vertices": 265,
+        "triangles": 452,
+        "volume_area_um2": {
+          "R.Base": 0.8199999999999994
+        }
+      },
+      "native_bv": {
+        "vertices": 2707,
+        "triangles": 5186,
+        "volume_area_um2": {
+          "R.Gateox": 0.0006599999999999969,
+          "R.PolyReox": 0.001999999999999999,
+          "R.PolyReox_mirrored": 0.0019999999999999996,
+          "R.Substrate": 1.13000000000001,
+          "R.Spacer": 0.016569340366,
+          "R.Spacer_mirrored": 0.016569340366
+        },
+        "checked_region_local_values": 8532,
+        "maximum_peak_normalized_error": 5.24288e-15,
+        "maximum_absolute_error_cm3": 2621440.0
+      },
+      "native_ratio": {
+        "vertices": 25,
+        "triangles": 32,
+        "volume_area_um2": {
+          "R.Si": 0.10239999999999998
+        }
+      },
+      "native_min": {
+        "vertices": 576,
+        "triangles": 1058,
+        "volume_area_um2": {
+          "R.Si": 0.10240000000000027
+        }
+      },
+      "native_max": {
+        "vertices": 25,
+        "triangles": 32,
+        "volume_area_um2": {
+          "R.Si": 0.10239999999999998
+        }
+      }
+    },
+    "input_sha256": {
+      "native_erf.grd": "18b7f0b30e46d6498557233bb21776b878bfb7484b1915d37a62382ba8ac4ad8",
+      "native_erf.dat": "c3c4c9c23a1c7575cf4ad448efb0c7f044ad26eb9247b90d01e190d71d0549bb",
+      "native_removed.grd": "a834f93e649b3b0a8cf6d829b4926013851409a0e2673395006c794cc6b4e553",
+      "native_removed.dat": "89e69472a5f8e5e215a6ff7c28f3c2b624ea53991d30e01c8ff6e2d987dc7477",
+      "native_bv.grd": "5d4328b70db3db88d66736fe915fd3d5e07433c4e43b38120e480c641eb5ee9a",
+      "native_bv.dat": "23d180857a47365b286d9c66caef00e8363e074a4ea6b4a5d65e2249cb229a84",
+      "native_ratio.grd": "a12a8098dd21f1a1950ae08dd6fe12363be04e09f58a0123190edcf1b526dfea",
+      "native_ratio.dat": "4255d078a40251fa1957d950f72590498c1f974596b94b0ba0b00b316a791f2c",
+      "native_min.grd": "5f34a95c98ea6594eddd357a103f6fdc8c6cf4740879a9a063f5cef72b04a750",
+      "native_min.dat": "5dd39d95822a92aff6e5108daf1c37d3ef2187dbca4a0788eab32ad88f5fd514",
+      "native_max.grd": "a12a8098dd21f1a1950ae08dd6fe12363be04e09f58a0123190edcf1b526dfea",
+      "native_max.dat": "4255d078a40251fa1957d950f72590498c1f974596b94b0ba0b00b316a791f2c"
+    },
+    "ratio_one_rule": "maximum size (live controls)",
+    "implementation_source_copied": false
+  },
+  "owned_control_sources": {
+    "tests/fixtures/sentaurus_p5/body_remove.scm": "45aae9fae860c3310b5d4bdb4758f87a7bb9ddf1226c11c2bbfbed76ec98658f",
+    "tests/fixtures/sentaurus_p5/erf.scm": "1c5e42cafbb786c27d33a82852788330784abd2b528c3d547880ccf968fcb618",
+    "tests/fixtures/sentaurus_p5/ratio_one.scm": "b2517cd847b239c6876dff201d5b399b253518dd4de7bca1ddf6c052bc7907df"
+  },
+  "local_products": "build-release/p5 corpus/{case-id}",
+  "not_run": [
+    "T470p/Linux Vela build qualification",
+    "full C++ solver build/full CTest suite",
+    "BV/MOS IV or NonLocalPath qualification",
+    "external resistor R2/R3"
+  ],
+  "repository_policy": "No generated GRD/DAT/MSH/TDR, raw logs, license files or private host/job records committed",
+  "next_phase": "P6 independent cross-platform/runtime/packaging qualification",
+  "surviving_polysi_alias_native_roundtrip": "passed: authored PolySi retained in IR; neutral PolySilicon material and doping retained through export/import"
+}

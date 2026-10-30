@@ -3,8 +3,8 @@
 The P1 corpus is defined in
 [`configs/reference_sde_cases.json`](../configs/reference_sde_cases.json) and its
 [versioned schema](../schemas/vela.reference_sde_cases.v1.schema.json).
-Corpus revision 3 covers eight current primary source scripts: seven generate meshes and one
-is expected to fail at a specific source location. Archived variants, oracle
+Corpus revision 4 covers eight current primary source scripts: all eight generate
+meshes and pass independent native imports. Archived variants, oracle
 wrappers and retired cases are excluded.
 
 ## Run from the checkout root
@@ -40,8 +40,8 @@ python scripts/sentaurus_gmsh_pipeline.py `
 The primary products are `device.grd`, `device.dat`, `device.msh`; helper files
 include the normalized bundle, Vela mesh/doping, ID mapping and cross-format
 report. The batch writes one case directory per ID and `case_summary.json`.
-Exit 0 means the corpus met its declared expectations; **it means 7 generated
-and 1 expected rejection**, not eight supported device scripts. Exit 2 means
+Exit 0 means all eight sources met their modeling, export and native-import
+contracts. Expected-rejection handling remains tested with owned invalid inputs. Exit 2 means
 a dependency, input identity, contract, determinism or rejection boundary failed.
 
 ## Contract and evidence
@@ -130,3 +130,6 @@ to actual SDevice commands without running a numerical solver.
 
 P4 adds the two complete MOS meshes with explicit `node=0` parameters, certified
 fillet chords and independently imported half/full outputs. See [P4](sde_mos_modeling.md).
+P5 adds the complete BVmethods device, preserving radius 0.08 um, absent gate
+volume, multi-region gate contact, signed multibox metrics and corrected lateral
+Erf convolution. See [P5](sde_bv_modeling.md).

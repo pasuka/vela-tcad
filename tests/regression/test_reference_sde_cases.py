@@ -37,8 +37,8 @@ class CaseManifestTest(unittest.TestCase):
         actual = {p.relative_to(REPO).as_posix() for p in REPO.glob("reference_tcad/*/source/*")
                   if p.suffix in {".cmd", ".scm"} and "(sdegeo:create-" in p.read_text(encoding="utf-8")}
         self.assertEqual(actual, {c["source"] for c in data["cases"]})
-        self.assertEqual(7, sum(c["expected"] == "generated" for c in data["cases"]))
-        self.assertEqual(1, sum(c["expected"] == "rejected" for c in data["cases"]))
+        self.assertEqual(8, sum(c["expected"] == "generated" for c in data["cases"]))
+        self.assertEqual(0, sum(c["expected"] == "rejected" for c in data["cases"]))
 
     def test_source_edit_cannot_silently_change_case(self):
         self.data["cases"][0]["source_sha256_lf"] = "0" * 64
@@ -133,9 +133,9 @@ class CorpusIntegrationTest(unittest.TestCase):
             "--sde", str(source), "--output-dir", str(output), "--runtime-dir", str(self.runtime), "--parameter", "node=0"],
             cwd=REPO, text=True, capture_output=True)
 
-    def test_seven_exports_native_identity_and_one_rejection(self):
+    def test_eight_exports_and_native_identity(self):
         self.assertEqual("passed", self.summary["status"], self.summary)
-        self.assertEqual({"generated": 7, "expected_rejection": 1}, self.summary["counts"])
+        self.assertEqual({"generated": 8}, self.summary["counts"])
         for row in self.summary["cases"]:
             with self.subTest(case=row["id"]):
                 self.assertEqual("not_run", row["stages"]["reference"])
@@ -222,7 +222,8 @@ class CorpusIntegrationTest(unittest.TestCase):
         expected_hashes = {name: cases.digest(output / name) for name in cases.PRIMARY}
         note = output / "user-notes.txt"
         note.write_text("keep this")
-        failed_source = REPO / self.data["cases"][7]["source"]
+        failed_source = self.root / 'unsupported.cmd'
+        failed_source.write_text('(unsupported:command)')
         result = self.cli(failed_source, output)
         self.assertEqual(2, result.returncode, result.stderr)
         self.assertFalse((output / "run_manifest.json").exists())

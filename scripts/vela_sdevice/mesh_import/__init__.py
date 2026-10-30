@@ -29,8 +29,9 @@ Two input paths:
   import fails closed (E402).
 
 Material names follow ``src/io/SentaurusTdrReader.cpp``: ``Silicon -> Si``,
-``Oxide -> SiO2``; anything else is passed through verbatim and recorded in
-``regions[].source_material``.
+``Oxide -> SiO2`` and ``PolySi -> PolySilicon``; other names pass through.
+The internal region model retains ``source_material``; solver output uses the
+normalized material name.
 """
 
 from __future__ import annotations
@@ -53,7 +54,8 @@ if str(_SCRIPTS) not in sys.path:
 from compare_sentaurus_tdr_tdx import parse_dat, parse_grd  # noqa: E402
 
 SCHEMA_ID = "vela.mesh_qualification.v1"
-MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2"}
+MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2",
+                "polysi": "PolySilicon", "polysilicon": "PolySilicon"}
 DOPING_COLUMNS = ["node_id", "donors_cm3", "acceptors_cm3"]
 PLAUSIBLE_EXTENT_UM = (1e-3, 1e4)
 DONOR_DATASETS = ("DonorConcentration", "PhosphorusActiveConcentration", "ArsenicActiveConcentration",
@@ -357,7 +359,8 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
     for index, contact in enumerate(model["contacts"]):
         adjacent = sorted(contact["adjacent_regions"])
         contacts_out.append({"id": index, "name": contact["name"], "region_id": adjacent[0] if adjacent else 0,
-                             "node_ids": contact["node_ids"], "edge_node_ids": contact["edge_node_ids"]})
+                             "node_ids": contact["node_ids"], "edge_node_ids": contact["edge_node_ids"],
+                             **({'adjacent_regions':adjacent} if len(adjacent)>1 else {})})
     mesh = {
         "nodes": [{"id": node_id, "x": xy[0], "y": xy[1]} for node_id, xy in sorted(coords.items())],
         "triangles": triangles,

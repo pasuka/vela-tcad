@@ -123,13 +123,17 @@
           "maxlenint_marked_edges": {
             "type": "integer",
             "minimum": 0
+          },
+          "multibox_marked_edges": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
     },
     "functions": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "items": {
         "type": "object",
         "additionalProperties": false,

@@ -1,0 +1,6 @@
+(sde:clear)
+(sdegeo:create-rectangle (position 0 0 0) (position 0.32 0.32 0) "Silicon" "R.Si")
+(sdedr:define-refeval-window "W" "Rectangle" (position 0 0 0) (position .32 .32 0))
+(sdedr:define-multibox-size "M" .08 .08 .02 .02 1 1)
+(sdedr:define-multibox-placement "P" "M" "W")
+(sde:build-mesh "ratio_one")

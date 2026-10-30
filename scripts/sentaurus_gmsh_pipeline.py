@@ -546,20 +546,22 @@ def run_pipeline(
                     "supported": ["Rectangle ABA/BAB ownership", "conformal interface",
                                   "insert-vertex pick-point contact",
                                   "ordered Replace/LocalReplace/NoReplace",
-                                  "line-baseline Gaussian", "bounded device-coordinate General Both/Eval"] + (
+                                  "line-baseline Gaussian/Erf/Symm", "bounded device-coordinate General Both/Eval",
+                                  "live Rectangle body contact/remove", "convex fillet-2d", "local x/y mirror"] + (
                                       ["Line/Rectangle/Polygon refinement window",
                                        "region/material/window anisotropic placement",
                                        "MaxLenInt DoubleSide/UseRegionNames",
-                                       "auditable Gmsh field DAG", "bounded region MaxTransDiff on net doping"]
+                                       "auditable Gmsh field DAG", "bounded region MaxTransDiff on net doping",
+                                       "signed Rectangle multibox with ratio=1 maximum size"]
                                       if args.capability_level in {"M3", "M5"} else []) + (
                                       ["auto Transfinite Rectangle selection",
                                        "first-order right Tri3 structured mesh",
                                        "Left/Right/AlternateLeft/AlternateRight diagonals"]
                                       if args.capability_level == "M5" else []),
                     "fail_closed": ["AB/ABiA/ABiB/XX", "Polygon body",
-                                    "contact entity/body/remove/imprint"] + (
+                                    "partially overwritten or curved body/remove, contact entity/imprint"] + (
                                         ["MaxGradient phase 4B", "MaxTransDiff outside documented subset", "MaxInterval",
-                                         "multibox", "offsetting", "MaxLenInt contact interface"]
+                                         "3-D or non-Rectangle multibox", "offsetting", "MaxLenInt contact interface"]
                                         if args.capability_level in {"M3", "M5"}
                                         else ["refinement"]) + ([
                                         "Transfinite multi-body/insert-vertex/function mapping"]

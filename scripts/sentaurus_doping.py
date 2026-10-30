@@ -115,11 +115,9 @@ def _owner_body(device_ir: dict[str, Any], rectangles: dict[str, Rect],
                        key=lambda item: item["creation_order"]):
         if not rectangles[body["region"]].contains(x, y):
             continue
-        if body['geometry'].get('fillets'):
-            from sentaurus_curved import contains
-            if not contains(body,(x,y)):continue
         if owner is None or body["boolean_mode"] == "ABA":
-            owner = body
+            from sentaurus_curved import contains
+            owner = None if body.get('removed') or not contains(body,(x,y)) else body
         elif body["boolean_mode"] != "BAB":
             raise DopingEvaluationError(
                 f"unsupported boolean mode {body['boolean_mode']!r}",
@@ -216,15 +214,21 @@ def _gaussian_value(profile: dict[str, Any], placement: dict[str, Any],
         float(params["Dose"]) / (math.sqrt(2.0 * math.pi) * sigma * 1.0e-4))
     value = peak_value * math.exp(-0.5 * ((coordinate - peak_position) / sigma) ** 2)
     lateral_distance = max(0.0, -along, along - length)
+    if profile.get("lateral_type") == "erf":
+        # U-2022.12 controlled oracle: finite baseline convolution, including
+        # half amplitude at an isolated endpoint. Factor multiplies sigma.
+        scale = abs(float(params.get("Factor", 1.0))) * sigma
+        if scale == 0.0:
+            weight = 1.0 if 0.0 < along < length else 0.5 if along in (0.0,length) else 0.0
+        else:
+            weight = 0.5 * (math.erf(along/scale) - math.erf((along-length)/scale))
+        return True, value * max(0.0, weight)
     if lateral_distance > 0.0:
         base_scale = params.get("StdDev", params.get("Length", sigma * math.sqrt(2.0)))
         lateral_scale = abs(float(params.get("Factor", 1.0))) * abs(float(base_scale))
         if lateral_scale <= 0.0:
             return False, 0.0
-        if profile.get("lateral_type") == "erf":
-            value *= 0.5 * math.erfc(lateral_distance / lateral_scale)
-        else:
-            value *= math.exp(-(lateral_distance / lateral_scale) ** 2)
+        value *= math.exp(-(lateral_distance / lateral_scale) ** 2)
     return True, value
 
 

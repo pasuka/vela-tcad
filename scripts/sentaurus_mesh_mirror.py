@@ -4,7 +4,7 @@ import hashlib
 import json
 
 
-def reflect(half,operation):
+def _reflect_y(half,operation):
     from sentaurus_gmsh_backend import _groups, validate_bundle
     if operation['axis']!='y' or operation['coordinate_um']!=0:
         raise ValueError('only y=0 reflection is supported')
@@ -105,3 +105,19 @@ def load_discrete(gmsh,bundle):
         lines=[line for line in bundle['lines'] if group['physical_tag'] in line['physical_curve_tags']]
         gmsh.model.mesh.addElementsByType(curve,1,[line['gmsh_tag'] for line in lines],[i+1 for line in lines for i in line['node_ids']])
         gmsh.model.addPhysicalGroup(1,[curve],group['physical_tag']);gmsh.model.setPhysicalName(1,group['physical_tag'],group['physical_name'])
+
+
+def reflect(half,operation):
+    if operation['axis']=='y':return _reflect_y(half,operation)
+    if operation['axis']!='x':raise ValueError('unsupported reflection axis')
+    swapped=copy.deepcopy(half)
+    for n in swapped['nodes']:n['x'],n['y']=n['y'],n['x']
+    for t in swapped['triangles']:t['node_ids'][1],t['node_ids'][2]=t['node_ids'][2],t['node_ids'][1]
+    op=dict(operation,axis='y');full=_reflect_y(swapped,op)
+    for n in full['nodes']:n['x'],n['y']=n['y'],n['x']
+    for t in full['triangles']:t['node_ids'][1],t['node_ids'][2]=t['node_ids'][2],t['node_ids'][1]
+    full['provenance']['mirror']['axis']='x'
+    full['provenance']['mirror']['half_bundle_sha256']=hashlib.sha256(json.dumps(half,sort_keys=True).encode()).hexdigest()
+    from sentaurus_gmsh_backend import validate_bundle
+    validate_bundle(full)
+    return full

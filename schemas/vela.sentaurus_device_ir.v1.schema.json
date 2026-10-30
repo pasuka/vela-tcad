@@ -172,6 +172,27 @@
                     }
                   }
                 }
+              },
+              "removed": {
+                "type": "object",
+                "required": [
+                  "location",
+                  "contact",
+                  "creation_order"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "location": {
+                    "type": "string"
+                  },
+                  "contact": {
+                    "type": "string"
+                  },
+                  "creation_order": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
               }
             }
           }
@@ -268,6 +289,12 @@
           },
           "location": {
             "type": "string"
+          },
+          "body_boundaries": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         }
       }
@@ -566,7 +593,10 @@
                 "const": "mirror"
               },
               "axis": {
-                "const": "y"
+                "enum": [
+                  "x",
+                  "y"
+                ]
               },
               "coordinate_um": {
                 "const": 0
@@ -581,6 +611,76 @@
                 "type": "string"
               },
               "output": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "multibox_sizes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "max_x",
+              "max_y",
+              "min_x",
+              "min_y",
+              "ratio_x",
+              "ratio_y",
+              "location"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "max_x": {
+                "type": "number"
+              },
+              "max_y": {
+                "type": "number"
+              },
+              "min_x": {
+                "type": "number"
+              },
+              "min_y": {
+                "type": "number"
+              },
+              "ratio_x": {
+                "type": "number"
+              },
+              "ratio_y": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "multibox_placements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "multibox",
+              "window",
+              "location"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "multibox": {
+                "type": "string"
+              },
+              "window": {
                 "type": "string"
               },
               "location": {

@@ -66,8 +66,8 @@ def validate_m1_device_ir(device_ir: dict[str, Any]) -> None:
                 f"M1 supports Rectangle bodies only, got {body.get('shape')!r}",
                 {"stage": "capability", "body": body["id"], "shape": body.get("shape")},
             )
-        if body['geometry'].get('fillets'):
-            raise GmshBackendError('M1 refuses fillets; use M3')
+        if body['geometry'].get('fillets') or body.get('removed'):
+            raise GmshBackendError('M1 refuses fillet/lifecycle geometry; use M3')
         rectangles.append((body, _rectangle(body)))
     for index, (first, a) in enumerate(rectangles):
         for second, b in rectangles[index + 1:]:
@@ -88,7 +88,8 @@ def validate_m1_device_ir(device_ir: dict[str, Any]) -> None:
                 )
 
     mesh_control = device_ir["mesh_control"]
-    if mesh_control["refinement_functions"] or mesh_control["refinement_placements"]:
+    if (mesh_control["refinement_functions"] or mesh_control["refinement_placements"]
+            or mesh_control.get('multibox_placements')):
         raise GmshBackendError(
             "M1 does not support SDE refinement placements or functions; use M3",
             {"stage": "capability", "capability": "refinement"},
@@ -164,6 +165,8 @@ def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
                  "body": body["id"], "shape": body.get("shape")},
             )
         _rectangle(body)
+        if body.get('removed') and body['geometry'].get('fillets'):
+            raise GmshBackendError('body/remove supports unfilleted Rectangle bodies only')
         if body.get("boolean_mode") not in {"ABA", "BAB"}:
             raise GmshBackendError(
                 f"boolean mode {body.get('boolean_mode')!r} is unsupported in M2",
@@ -172,7 +175,8 @@ def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
             )
 
     mesh_control = device_ir["mesh_control"]
-    if mesh_control["refinement_functions"] or mesh_control["refinement_placements"]:
+    if (mesh_control["refinement_functions"] or mesh_control["refinement_placements"]
+            or mesh_control.get('multibox_placements')):
         raise GmshBackendError(
             "M2 does not support refinement placements or functions; use M3",
             {"stage": "capability", "capability": "refinement"},
@@ -258,9 +262,14 @@ def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
                 f"contact {contact['name']!r} has no assignment",
                 {"stage": "contact", "contact": contact["name"]},
             )
-        if any(item["kind"] != "pick_point" for item in contact["assignments"]):
+        for assignment in contact['assignments']:
+            if assignment['kind']=='body_boundary':
+                matches=[b for b in bodies if assignment['entity_ids']==[b['creation_order']]]
+                if len(matches)!=1 or not matches[0].get('removed') or matches[0]['removed']['contact']!=contact['name']:
+                    raise GmshBackendError('body_boundary requires one matching removed Rectangle')
+        if any(item["kind"] not in {"pick_point","body_boundary"} for item in contact["assignments"]):
             raise GmshBackendError(
-                "M2 supports pick-point contact assignments only",
+                "M2 supports pick points and bounded Rectangle body/remove contacts only",
                 {"stage": "capability", "capability": "contact-entity-list",
                  "contact": contact["name"]},
             )
@@ -271,6 +280,7 @@ def validate_m3_device_ir(device_ir: dict[str, Any]) -> None:
     core = copy.deepcopy(device_ir)
     core["mesh_control"]["refinement_placements"] = []
     core["mesh_control"]["refinement_functions"] = []
+    core["mesh_control"]["multibox_placements"] = []
     validate_m2_device_ir(core)
 
     control = device_ir["mesh_control"]
@@ -296,6 +306,8 @@ def validate_m3_device_ir(device_ir: dict[str, Any]) -> None:
                     {"stage": "refinement", "refinement": size["name"],
                      "axis": maximum[-1]},
                 )
+    from sentaurus_multibox import validate
+    validate(device_ir)
     for placement in control["refinement_placements"]:
         if placement.get("provenance", {}).get("status") != "known":
             raise GmshBackendError(
@@ -381,6 +393,8 @@ def _m5_transfinite_eligibility(device_ir: dict[str, Any]) -> dict[str, Any]:
             "code": "body_shape", "message": "requires an axis-aligned Rectangle body",
             "actual": bodies[0].get("shape"),
         })
+    if device_ir['mesh_control'].get('multibox_placements'):
+        reasons.append({'code':'multibox','message':'graded metrics require unstructured mesh'})
     if any(b['geometry'].get('fillets') for b in bodies):
         reasons.append({'code':'fillets','message':'curved outline requires unstructured mesh'})
     if device_ir["geometry"].get("inserted_vertices"):
@@ -491,17 +505,17 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
         dict[int, dict[str, Any]], dict[str, Any]]:
     """Fragment all source rectangles, audit the map, then replay ABA/BAB."""
     source_tags = []
+    clip_tags=[]
     bounds_by_id = {}
     for body in bodies:
-        x0, y0, x1, y1 = _rectangle(body)
-        bounds_by_id[body["id"]] = (x0, y0, x1, y1)
+        x0,y0,x1,y1=_rectangle(body)
+        bounds_by_id[body['id']]=(x0,y0,x1,y1)
+        source_tags.append(gmsh.model.occ.addRectangle(x0,y0,0,x1-x0,y1-y0))
         if body['geometry'].get('fillets'):
             from sentaurus_curved import polygon
             points=[gmsh.model.occ.addPoint(x,y,0) for x,y in polygon(body)]
             lines=[gmsh.model.occ.addLine(a,b) for a,b in zip(points,points[1:]+points[:1])]
-            source_tags.append(gmsh.model.occ.addPlaneSurface([gmsh.model.occ.addCurveLoop(lines)]))
-        else:
-            source_tags.append(gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0))
+            clip_tags.append(gmsh.model.occ.addPlaneSurface([gmsh.model.occ.addCurveLoop(lines)]))
     point_tags = []
     for record in inserted_vertices:
         x, y = map(float, record["position"])
@@ -522,14 +536,14 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
                  "source_location": record["provenance"].get("source_location")},
             )
         point_tags.append(gmsh.model.occ.addPoint(x, y, 0.0))
-    if len(source_tags) == 1 and not point_tags:
+    if len(source_tags) == 1 and not point_tags and not clip_tags:
         mapped = [[(2, source_tags[0])]]
         output = [(2, source_tags[0])]
     else:
         output, mapped = gmsh.model.occ.fragment(
             [(2, source_tags[0])],
             ([(2, tag) for tag in source_tags[1:]] +
-             [(0, tag) for tag in point_tags]),
+             [(0, tag) for tag in point_tags]+[(2,tag) for tag in clip_tags]),
             removeObject=True, removeTool=True,
         )
     gmsh.model.occ.synchronize()
@@ -558,7 +572,7 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
     for index, body in enumerate(bodies):
         x0, y0, x1, y1 = bounds_by_id[body["id"]]
         from sentaurus_curved import area as body_area
-        source_area = body_area(body)
+        source_area = (x1-x0)*(y1-y0)
         mapped_area = sum(areas[surface] for surface in mapped_surfaces[index])
         tolerance = 1.0e-8 * max(1.0, source_area)
         if abs(mapped_area - source_area) > tolerance:
@@ -569,7 +583,7 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
             )
         for surface in surfaces:
             from sentaurus_curved import contains
-            contained = all(contains(body, point, 1e-7) for point in vertices[surface])
+            contained = all(_point_in_rectangle(bounds_by_id[body['id']],point) for point in vertices[surface])
             mapped_candidate = surface in mapped_surfaces[index]
             if contained != mapped_candidate:
                 raise GmshBackendError(
@@ -585,6 +599,7 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
             "fragments": sorted(mapped_surfaces[index]),
         })
     surface_owner: dict[int, dict[str, Any]] = {}
+    discarded=[]
     for surface, member_indices in memberships.items():
         if not member_indices:
             raise GmshBackendError(
@@ -595,14 +610,20 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
         for index in sorted(member_indices):
             candidate = bodies[index]
             if owner is None or candidate["boolean_mode"] == "ABA":
-                owner = candidate
+                from sentaurus_curved import contains
+                owner = None if candidate.get('removed') or not all(
+                    contains(candidate,point,1e-7) for point in vertices[surface]) else candidate
             elif candidate["boolean_mode"] != "BAB":
                 raise GmshBackendError(
                     f"unsupported boolean mode {candidate['boolean_mode']!r}",
                     {"stage": "geometry", "body": candidate["id"]},
                 )
-        assert owner is not None
-        surface_owner[surface] = owner
+        if owner is None:
+            discarded.append(surface)
+        else:surface_owner[surface] = owner
+    if discarded:
+        gmsh.model.occ.remove([(2,t) for t in discarded],recursive=True)
+        gmsh.model.occ.synchronize()
     for record in inserted_vertices:
         x, y = map(float, record["position"])
         endpoint_curves = []
@@ -916,8 +937,9 @@ def _ownership_conditions(device_ir: dict[str, Any]) -> tuple[
             available = condition
         else:
             available = f"({condition})*step(0.5-({occupied}))"
-        regions[region] = _union_conditions((regions.get(region, "0"), available))
-        occupied = _union_conditions((occupied, condition))
+        if not body.get('removed'):
+            regions[region] = _union_conditions((regions.get(region, "0"), available))
+        occupied = _union_conditions(regions.values())
     materials: dict[str, str] = defaultdict(str)
     for region, condition in regions.items():
         material = material_for_region[region]
@@ -940,9 +962,9 @@ def _target_condition(placement: dict[str, Any], size: dict[str, Any],
                       regions: dict[str, str], materials: dict[str, str]) -> str:
     kind, target = placement["target_kind"], placement["target"]
     if kind == "region":
-        return regions[target]
+        return regions.get(target,"0")
     if kind == "material":
-        return materials[target]
+        return materials.get(target,"0")
     line_width = max(float(size["max_x"]), float(size["max_y"]))
     if windows[target]["shape"] == "line":
         # A zero-measure field does not constrain adjacent 2-D triangles.
@@ -1076,6 +1098,30 @@ def _build_m3_refinement_fields(
             "condition": scope,
             "source_location": function["provenance"]["source_location"],
         })
+    for placement in control.get('multibox_placements',[]):
+        size=next(s for s in control['multibox_sizes'] if s['name']==placement['multibox'])
+        window=windows[placement['window']];x0,y0=window['lower_left'];x1,y1=window['upper_right']
+        active=False
+        for surface in surface_owner:
+            points=_surface_vertices(gmsh,surface)
+            xs=[p[0] for p in points];ys=[p[1] for p in points]
+            if min(x1,max(xs))-max(x0,min(xs))>1e-10 and min(y1,max(ys))-max(y0,min(ys))>1e-10:active=True
+        if not active:
+            nodes.append({'id':'multibox:'+placement['name'],'kind':'inactive-multibox','reason':'window has no surviving volume','definition':size,'window':window})
+            continue
+        condition=_window_condition(window)
+        expressions=[]
+        for axis,lo,hi in [('x',x0,x1),('y',y0,y1)]:
+            ratio=size['ratio_'+axis];minimum=size['min_'+axis];maximum=size['max_'+axis]
+            if ratio==0:h=_number(mesh_size)
+            elif abs(ratio)==1:h=_number(maximum)
+            else:
+                distance=f'({axis}-({_number(lo)}))' if ratio>0 else f'(({_number(hi)})-{axis})'
+                h=f'min({_number(maximum)},{_number(minimum)}+{_number(abs(ratio)-1)}*max(0,{distance}))'
+            metric=f'({_number(coarse_metric)})+(1/(({h})^2)-({_number(coarse_metric)}))*({condition})'
+            expressions.append(metric)
+        tag=_add_metric_field(gmsh,*expressions);tags.append(tag)
+        nodes.append({'id':'multibox:'+placement['name'],'kind':'MathEvalAniso','gmsh_field_tag':tag,'definition':size,'window':window,'spacing_expressions':expressions})
     root = int(gmsh.model.mesh.field.add("MinAniso"))
     gmsh.model.mesh.field.setNumbers(root, "FieldsList", tags)
     gmsh.model.mesh.field.setAsBackgroundMesh(root)
@@ -1088,8 +1134,7 @@ def _build_m3_refinement_fields(
         "engine": "Gmsh MathEvalAniso/Distance/MinAniso with BAMG",
         "nodes": nodes, "root_field_tag": root,
         "min_spacing_semantics": "refinement stop target, not a hard lower clamp",
-        "unsupported_fail_closed": ["MaxGradient", "MaxInterval",
-                                    "multibox", "offsetting"],
+        "unsupported_fail_closed": ["MaxGradient", "MaxInterval", "offsetting"],
     }
 
 
@@ -1103,7 +1148,8 @@ def _point_owner(device_ir: dict[str, Any], x: float, y: float) -> dict[str, Any
         if not inside:
             continue
         if owner is None or body["boolean_mode"] == "ABA":
-            owner = body
+            from sentaurus_curved import contains
+            owner = None if body.get('removed') or not contains(body,(x,y)) else body
     return owner
 
 
@@ -1192,6 +1238,9 @@ def _qualify_m3_refinement(
                     device_ir, placement, size, windows, midpoint[0], midpoint[1]):
                 selected.append((abs(a[0] - b[0]), abs(a[1] - b[1])))
         if not selected:
+            if placement['target_kind']=='region' and any(b['region']==placement['target'] and b.get('removed') for b in device_ir['geometry']['bodies']):
+                reports.append({'name':placement['name'],'active':False,'reason':'region removed before meshing'})
+                continue
             failures.append(f"refinement placement {placement['name']} selected no mesh edges")
             continue
         p95_x = _percentile([value[0] for value in selected], 0.95)
@@ -1234,7 +1283,11 @@ def _qualify_m3_refinement(
             "line_element_count": len(lengths), "requested_length": node["value"],
             "max_interface_edge_length": maximum, "passed": passed,
         })
+    from sentaurus_multibox import qualify
+    multibox = qualify(device_ir,coordinates,triangles,field_dag)
+    failures.extend(multibox['failures'])
     return {
+        "multibox": multibox['placements'],
         "status": "passed" if not failures else "failed",
         "field_dag_schema": field_dag["schema"],
         "root_field_tag": field_dag["root_field_tag"],
@@ -1548,6 +1601,24 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
     contact_owner: dict[str, set[str]] = defaultdict(set)
     for contact in device_ir["contacts"]:
         for assignment in contact["assignments"]:
+            if assignment['kind']=='body_boundary':
+                selected_id=assignment['entity_ids'][0]
+                removed_body=next(b for b in bodies if b['creation_order']==selected_id)
+                x0,y0,x1,y1=_rectangle(removed_body)
+                for curve in _boundary_curves(gmsh,surface_owner):
+                    lo,hi=gmsh.model.getParametrizationBounds(1,curve)
+                    value=gmsh.model.getValue(1,curve,[(float(lo[0])+float(hi[0]))/2])
+                    x,y=map(float,value[:2])
+                    if not (x0-1e-8<=x<=x1+1e-8 and y0-1e-8<=y<=y1+1e-8 and
+                            min(abs(x-x0),abs(x-x1),abs(y-y0),abs(y-y1))<=1e-8):continue
+                    up,_=gmsh.model.getAdjacencies(1,curve)
+                    adjacent=[int(t) for t in up if int(t) in surface_owner]
+                    if len(adjacent)!=1:continue
+                    old=curve_contact.get(curve)
+                    if old is not None and old!=contact['name']:raise GmshBackendError('conflicting body boundary contact')
+                    curve_contact[curve]=contact['name'];contact_curves[contact['name']].add(curve)
+                    contact_owner[contact['name']].add(surface_owner[adjacent[0]]['region'])
+                continue
             x, y = map(float, assignment["position"])
             candidates: list[tuple[int, bool]] = []
             for curve in _boundary_curves(gmsh, surface_owner):
@@ -1711,6 +1782,14 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
             "material_aliases": {
                 body["material"]["sde"]: body["material"]["vela"] for body in bodies
             },
+            **({'inactive_region_references': [
+                {'kind': kind, 'name': p['name'], 'target': p['target'],
+                 'reason': 'authored region removed before meshing'}
+                for kind, placements in [('doping',device_ir['doping']['placements']),
+                                         ('refinement',device_ir['mesh_control']['refinement_placements'])]
+                for p in placements if p['target_kind']=='region' and
+                any(b['region']==p['target'] and b.get('removed') for b in bodies)]}
+               if any(b.get('removed') for b in bodies) else {}),
             "refinement_field_dag": refinement_field_dag,
             "maxtransdiff": adaptive_report,
             "general_evaluation": general_diagnostics,

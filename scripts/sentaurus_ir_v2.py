@@ -93,6 +93,7 @@ def migrate_device_ir_v1(document: dict[str, Any]) -> dict[str, Any]:
                 "upper_right": copy.deepcopy(region["upper_right"]),
                 **({"fillets": copy.deepcopy(region["fillets"])} if region.get("fillets") else {}),
             },
+            **({'removed':copy.deepcopy(region['removed'])} if region.get('removed') else {}),
             "creation_order": region["order"],
             "boolean_mode": region["boolean_mode"],
             "provenance": provenance,
@@ -129,6 +130,9 @@ def migrate_device_ir_v1(document: dict[str, Any]) -> dict[str, Any]:
             if provenance["status"] == "unknown":
                 unknown_paths.append(
                     f"/contacts/{contact_index}/assignments/{pick_index}/provenance")
+        for boundary in contact.get('body_boundaries',[]):
+            assignments.append({'kind':'body_boundary','entity_ids':[boundary['creation_order']],
+                                'provenance':_known(boundary['location'])})
         contact_location = contact.get("location")
         contact_provenance = (
             _known(contact_location)

@@ -79,7 +79,7 @@ def mesh_with_edges(output: Path) -> dict:
 
 def contacts(mesh: dict) -> dict:
     names = {r["id"]: r["name"] for r in mesh["regions"]}
-    return {c["name"]: (names[c["region_id"]], set(c["node_ids"]),
+    return {c["name"]: (tuple(names[i] for i in c.get('adjacent_regions',[c['region_id']])), set(c["node_ids"]),
             Counter(tuple(sorted(edge)) for edge in c["edge_node_ids"])) for c in mesh["contacts"]}
 
 
@@ -155,8 +155,16 @@ def check_contract(output: Path, contract: dict) -> dict:
         length = 0.0
         for edge in contact["edge_node_ids"]:
             a, b = [nodes[i] for i in edge]
-            for node in (a, b):
-                close(node[edge_contract["axis"]], edge_contract["coordinate_um"], "contact location mismatch")
+            if 'segments_um' in edge_contract:
+                def on_segment(point,segment):
+                    u,v=segment;px,py=point['x'],point['y']
+                    return (min(u[0],v[0])-1e-8<=px<=max(u[0],v[0])+1e-8 and
+                            min(u[1],v[1])-1e-8<=py<=max(u[1],v[1])+1e-8 and
+                            abs((px-u[0])*(v[1]-u[1])-(py-u[1])*(v[0]-u[0]))<=1e-10)
+                require(any(on_segment(a,s) and on_segment(b,s) for s in edge_contract['segments_um']), 'contact segment mismatch')
+            else:
+                for node in (a, b):
+                    close(node[edge_contract["axis"]], edge_contract["coordinate_um"], "contact location mismatch")
             length += math.hypot(a["x"] - b["x"], a["y"] - b["y"])
         close(length, edge_contract["length_um"], "contact length mismatch")
         if "span_um" in edge_contract:
@@ -176,11 +184,14 @@ def check_contract(output: Path, contract: dict) -> dict:
                 "adaptive termination contract failed")
         require(all(v["default_evaluations"] == 0 for v in bundle["provenance"]["general_evaluation"].values()),
                 "BJT General used a default concentration")
-    mos_report=None
-    if contract['doping']['kind']=='mos':
-        from sentaurus_mos_contract import check
-        mos_report=check(bundle)
-        require(mos_report['status']=='passed',f'MOS contract failed: {mos_report}')
+    curved_report=None
+    if contract['doping']['kind'] in {'mos','bvmethods'}:
+        if contract['doping']['kind']=='mos':
+            from sentaurus_mos_contract import check
+        else:
+            from sentaurus_bv_contract import check
+        curved_report=check(bundle)
+        require(curved_report['status']=='passed',f'curved device contract failed: {curved_report}')
         # Read the authored half through the native consumer on every repeat.
         import shutil
         from sentaurus_mesh_exporters import bundle_to_vela_mesh, write_doping_csv
@@ -196,8 +207,8 @@ def check_contract(output: Path, contract: dict) -> dict:
             for extension in ('grd','dat'):shutil.copy2(output/('half_device.'+extension),stage/('device.'+extension))
             import_grid(stage/'device.grd',Path(temp)/'native')
             compare_native(stage,Path(temp)/'native')
-        mos_report['half_native_import']='passed'
-    for node in mesh["nodes"] if bjt_report is None and mos_report is None else []:
+        curved_report['half_native_import']='passed'
+    for node in mesh["nodes"] if bjt_report is None and curved_report is None else []:
         x, y = node["x"], node["y"]
         rule = contract["doping"]
         if rule["kind"] == "pn":
@@ -232,7 +243,7 @@ def check_contract(output: Path, contract: dict) -> dict:
             measured[name].append(p95)
     return {"node_count": len(nodes), "cell_count": len(mesh["triangles"]),
             "max_angle_degrees": q["max_angle_degrees"], "region_p95_spacing_um": measured,
-            **({'mos':mos_report} if mos_report else {}),
+            **({('mos' if contract['doping']['kind']=='mos' else 'bvmethods'):curved_report} if curved_report else {}),
             **({"bjt": bjt_report, "maxtransdiff": bundle["provenance"]["maxtransdiff"],
                 "refinement_placements": q["refinement"]["placements"]} if bjt_report else {})}
 
@@ -278,7 +289,7 @@ def run_case(case: dict, output: Path, runtime: Path, repeat: int) -> dict:
             runs.append({"sha256": hashes, "mesh_quality": quality,
                          **({'half_sha256':{name:digest(output/name) for name in
                             ('half_device.grd','half_device.dat','half_device.msh','half_mesh_field_bundle.json')}}
-                            if case['contract']['doping']['kind']=='mos' else {})})
+                            if case['contract']['doping']['kind'] in {'mos','bvmethods'} else {})})
             if first is not None and case["repeat_policy"] == "byte_identical":
                 require(first == hashes, "repeat output digest mismatch")
             if first is None:

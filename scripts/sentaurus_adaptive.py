@@ -169,7 +169,8 @@ def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines,
 def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITERATIONS,
            max_nodes=DEFAULT_MAX_NODES, surface_owner=None):
     from sentaurus_gmsh_backend import GmshBackendError, _triangles_for_surface, _lines_for_curve
-    if not any(f['function'] == 'MaxTransDiff' for f in device_ir['mesh_control']['refinement_functions']):
+    if not (any(f['function'] == 'MaxTransDiff' for f in device_ir['mesh_control']['refinement_functions'])
+            or device_ir['mesh_control'].get('multibox_placements')):
         return None
     validate(device_ir)
     if type(max_iterations) is not int or type(max_nodes) is not int or max_iterations < 0 or max_nodes < 3:
@@ -219,10 +220,15 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                         if math.dist(coordinates[edge[0]],coordinates[edge[1]])>float(node['value']):
                             interface_marks.add(tuple(sorted(edge)))
         marked.update(interface_marks)
+        from sentaurus_multibox import marked_edges
+        inactive={n['id'].removeprefix('multibox:') for n in field_dag.get('nodes',[])
+                  if n['kind']=='inactive-multibox'}
+        multibox_marks=marked_edges(device_ir,coordinates,triangles,mesh_size,inactive)
+        marked.update(multibox_marks)
         metrics={'edges':sum(m['edges'] for m in reports),
                  'max_transformed_difference':max(m['max_transformed_difference'] for m in reports),
                  'minimum_stopped_edges':sum(m['minimum_stopped_edges'] for m in reports),
-                 'refineable_nodes':len({n for e in marked for n in e}), 'maxlenint_marked_edges':len(interface_marks)}
+                 'refineable_nodes':len({n for e in marked for n in e}), 'maxlenint_marked_edges':len(interface_marks), 'multibox_marked_edges':len(multibox_marks)}
         report['rounds'].append(dict(iteration=iteration,nodes=len(tags),triangles=len(triangles),marked_edges=len(marked),**metrics))
         gmsh.logger.write(f'MaxTransDiff round {iteration}: {len(tags)} nodes; {len(marked)} edges to split')
         if not marked:

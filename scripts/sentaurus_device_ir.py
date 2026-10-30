@@ -61,6 +61,7 @@ ACCEPTOR_SPECIES = {
 MATERIAL_ALIASES = {
     "Silicon": "Si",
     "PolySilicon": "PolySilicon",
+    "PolySi": "PolySilicon",
     "SiO2": "SiO2",
     "Oxide": "SiO2",
     "Nitride": "Nitride",
@@ -109,6 +110,8 @@ class DeviceIrBuilder:
     refinement_functions: list[dict[str, Any]] = field(default_factory=list)
     mesh_build: dict[str, Any] | None = None
     mesh_operations: list[dict[str, Any]] = field(default_factory=list)
+    multibox_sizes: dict[str,dict] = field(default_factory=dict)
+    multibox_placements: list[dict] = field(default_factory=list)
     metadata_only: list[MetadataOnlyRecord] = field(default_factory=list)
 
     def note_metadata_only(self, form: Sexp, reason: str) -> None:
@@ -350,8 +353,48 @@ def _handle_define_2d_contact(form: Sexp, builder: DeviceIrBuilder) -> None:
         })
 
 
+def _handle_body_contact_remove(form: Sexp, builder: DeviceIrBuilder) -> None:
+    from sentaurus_curved import contains
+    query=form.items[1]
+    if len(query.items)!=2:raise SdeParseError(f'{form.location()}: find-body-id requires one position')
+    x,y,z=parse_position(query.items[1],builder.env)
+    owner=None
+    for body in builder.regions:
+        if contains(body,(x,y)) and (owner is None or body['boolean_mode']=='ABA'):
+            owner=None if body.get('removed') else body
+    if z!=0 or owner is None:raise SdeParseError(f'{form.location()}: body pick has no live owner')
+    if owner.get('fillets'):
+        raise SdeParseError(f'{form.location()}: body/remove requires an unfilleted Rectangle')
+    x0,y0=owner['lower_left'];x1,y1=owner['upper_right']
+    if not (x0+1e-10<x<x1-1e-10 and y0+1e-10<y<y1-1e-10):
+        raise SdeParseError(f'{form.location()}: body/remove requires an interior pick')
+    if any(b['order']>owner['order'] and min(x1,b['upper_right'][0])>max(x0,b['lower_left'][0])+1e-10 and min(y1,b['upper_right'][1])>max(y0,b['lower_left'][1])+1e-10 for b in builder.regions):
+        raise SdeParseError(f'{form.location()}: body/remove with later overlapping bodies is outside the bounded subset')
+    xs=sorted({x0,x1}|{b[k][0] for b in builder.regions for k in ('lower_left','upper_right') if x0<b[k][0]<x1})
+    ys=sorted({y0,y1}|{b[k][1] for b in builder.regions for k in ('lower_left','upper_right') if y0<b[k][1]<y1})
+    for a,b in zip(xs,xs[1:]):
+        for c,d in zip(ys,ys[1:]):
+            live=None
+            for item in builder.regions:
+                if contains(item,((a+b)/2,(c+d)/2)) and (live is None or item['boolean_mode']=='ABA'):
+                    live=None if item.get('removed') else item
+            if live is not owner:
+                raise SdeParseError(f'{form.location()}: partially overwritten body/remove is outside the bounded subset')
+    name=expect_string(form.items[2],builder.env,'contact name')
+    if name not in builder.contact_sets:
+        builder.contact_sets[name]={'name':name,'pick_points':[],'display':[],'location':form.location()}
+        builder.contact_order.append(name)
+    builder.contact_sets[name].setdefault('body_boundaries',[]).append(
+        {'body_id':f"body:{owner['order']}",'creation_order':owner['order'],'location':form.location()})
+    owner['removed']={'location':form.location(),'contact':name,'creation_order':owner['order']}
+    builder.current_contact=name
+
+
 def _handle_set_contact(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(form, 1, "(sdegeo:set-contact entities [name])")
+    if (len(args)==3 and isinstance(args[0],Sexp) and args[0].head()=='find-body-id'
+            and expect_string(args[2],builder.env,'operation')=='remove'):
+        return _handle_body_contact_remove(form,builder)
     if len(args) >= 3:
         operation = expect_string(args[2], builder.env, "contact operation")
         raise SdeParseError(
@@ -867,10 +910,22 @@ def _handle_refinement_function(form: Sexp, builder: DeviceIrBuilder) -> None:
 
 
 def _handle_multibox(form: Sexp, builder: DeviceIrBuilder) -> None:
-    raise SdeParseError(
-        f"{form.location()}: '{form.head()}' multibox refinement is not "
-        f"implemented by the Vela mesh generator. Offending command: "
-        f"'{form.command_text()}'")
+    import math
+    args=form.items[1:]
+    if form.head()=='sdedr:define-multibox-size':
+        if len(args)!=7:raise SdeParseError(f'{form.location()}: multibox supports six 2-D size/ratio values')
+        name=expect_string(args[0],builder.env,'multibox name')
+        values=[eval_number(n,builder.env) for n in args[1:]]
+        hx,hy,lx,ly,rx,ry=values
+        if name in builder.multibox_sizes or not all(math.isfinite(v) for v in values) or not(0<lx<=hx and 0<ly<=hy) or any(0<abs(r)<1 for r in (rx,ry)):
+            raise SdeParseError(f'{form.location()}: invalid/duplicate multibox sizes or ratios')
+        builder.multibox_sizes[name]=dict(zip(['max_x','max_y','min_x','min_y','ratio_x','ratio_y'],values),name=name,location=form.location())
+    else:
+        if len(args)!=3:raise SdeParseError(f'{form.location()}: multibox placement expects name/definition/window')
+        name,definition,window=[expect_string(a,builder.env,'multibox argument') for a in args]
+        if definition not in builder.multibox_sizes or window not in builder.windows or builder.windows[window]['shape']!='rectangle' or any(p['name']==name for p in builder.multibox_placements):
+            raise SdeParseError(f'{form.location()}: invalid multibox placement')
+        builder.multibox_placements.append({'name':name,'multibox':definition,'window':window,'location':form.location()})
 
 
 def _handle_fillet(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -885,6 +940,18 @@ def _handle_fillet(form: Sexp, builder: DeviceIrBuilder) -> None:
         x0,y0=body['lower_left'];x1,y1=body['upper_right']
         if any(math.hypot(x-a,y-b)<1e-10 for a,b in [(x0,y0),(x1,y0),(x1,y1),(x0,y1)]):
             candidates.append(body)
+    live=[]
+    from sentaurus_curved import contains
+    for candidate in candidates:
+        cx=(candidate['lower_left'][0]+candidate['upper_right'][0])/2
+        cy=(candidate['lower_left'][1]+candidate['upper_right'][1])/2
+        probe=(x+ (1e-8 if cx>x else -1e-8),y+(1e-8 if cy>y else -1e-8))
+        owner=None
+        for item in builder.regions:
+            if contains(item,probe,1e-12) and (owner is None or item['boolean_mode']=='ABA'):
+                owner=None if item.get('removed') else item
+        if owner is candidate:live.append(candidate)
+    candidates=live
     if len(candidates)!=1 or z!=0 or not math.isfinite(radius) or radius<=0:
         raise SdeParseError(f"{form.location()}: fillet requires an unambiguous convex rectangle corner and positive radius")
     body=candidates[0];x0,y0=body['lower_left'];x1,y1=body['upper_right']
@@ -945,11 +1012,11 @@ def _handle_mesh_mirror(form: Sexp, builder: DeviceIrBuilder) -> None:
     import re
     args=_require_args(form,1,'(system:command known-tdx-mirror)')
     text=expect_string(args[0],builder.env,'mirror command')
-    match=re.fullmatch(r'tdx\s+-mtt\s+-y\s+-M\s+0\s+-S\s+0\s+-ren\s+drain=source\s+([A-Za-z0-9_@.-]+)\s+([A-Za-z0-9_@.-]+)',text)
-    if len(args)!=1 or not match or builder.mesh_build is None or match[1]!=builder.mesh_build['prefix']:
+    match=re.fullmatch(r'tdx\s+-mtt\s+-([xy])\s+-M\s+0\s+-S\s+0\s+-ren\s+drain=source\s+([A-Za-z0-9_@.-]+)\s+([A-Za-z0-9_@.-]+)',text)
+    if len(args)!=1 or not match or builder.mesh_build is None or match[2]!=builder.mesh_build['prefix']:
         raise SdeParseError(f"{form.location()}: unsupported system command; only matching local y=0 mesh reflection is allowed")
-    builder.mesh_operations.append({'kind':'mirror','axis':'y','coordinate_um':0.0,'rename':{'drain':'source'},
-                                    'input':match[1],'output':match[2],'location':form.location()})
+    builder.mesh_operations.append({'kind':'mirror','axis':match[1],'coordinate_um':0.0,'rename':{'drain':'source'},
+                                    'input':match[2],'output':match[3],'location':form.location()})
 
 
 def _handle_build_mesh(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -1077,6 +1144,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             "boolean_mode": region["boolean_mode"],
             "location": region["location"],
             **({"fillets": region["fillets"]} if region.get("fillets") else {}),
+            **({'removed':region['removed']} if region.get('removed') else {}),
         }
         for region in builder.regions
     ]
@@ -1097,6 +1165,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
                 for point in builder.contact_sets[name]["pick_points"]
             ],
             "location": builder.contact_sets[name]["location"],
+            **({'body_boundaries':builder.contact_sets[name]['body_boundaries']} if builder.contact_sets[name].get('body_boundaries') else {}),
         }
         for name in builder.contact_order
     ]
@@ -1114,6 +1183,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
         "windows": doping["windows"],
         "build": builder.mesh_build,
         **({"operations": builder.mesh_operations} if builder.mesh_operations else {}),
+        **({'multibox_sizes':list(builder.multibox_sizes.values()),'multibox_placements':builder.multibox_placements} if builder.multibox_sizes else {}),
     }
     return {
         "schema": DEVICE_IR_SCHEMA,

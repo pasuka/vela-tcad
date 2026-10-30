@@ -1,6 +1,6 @@
 {
   "schema": "vela.reference_sde_cases.v1",
-  "revision": 3,
+  "revision": 4,
   "cases": [
     {
       "id": "pn2d",
@@ -556,15 +556,142 @@
       "id": "bvmethods",
       "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
       "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
-      "expected": "rejected",
-      "rejection": {
-        "stage": "sde_parse",
-        "line": 32,
-        "column": 1,
-        "message_contains": "unsupported SDE material 'PolySi'"
-      },
+      "expected": "generated",
       "parameters": {
         "node": "0"
+      },
+      "success_stage": "native_import",
+      "repeat_policy": "contract_equivalent",
+      "contract": {
+        "materials": {
+          "Silicon": "Si",
+          "Oxide": "SiO2",
+          "Nitride": "Nitride"
+        },
+        "materials_sha256": "eb091cef0b3973d8f2ad0472fa393f55556888076fc28b726154362b640326a6",
+        "regions": {
+          "R.Substrate": "Si",
+          "R.Gateox": "SiO2",
+          "R.PolyReox": "SiO2",
+          "R.PolyReox_mirrored": "SiO2",
+          "R.Spacer": "Nitride",
+          "R.Spacer_mirrored": "Nitride"
+        },
+        "region_area_um2": {
+          "R.Substrate": 1.13,
+          "R.Gateox": 0.00066,
+          "R.PolyReox": 0.002,
+          "R.PolyReox_mirrored": 0.002,
+          "R.Spacer": 0.016626548245743666,
+          "R.Spacer_mirrored": 0.016626548245743666
+        },
+        "region_area_error_um2": {
+          "R.Spacer": 1.2566370614359175e-06,
+          "R.Spacer_mirrored": 1.2566370614359175e-06
+        },
+        "bounds_um": [
+          -0.565,
+          -0.202,
+          0.565,
+          1.0
+        ],
+        "contacts": {
+          "drain": {
+            "axis": "y",
+            "coordinate_um": 0.0,
+            "length_um": 0.4,
+            "span_um": [
+              0.165,
+              0.565
+            ]
+          },
+          "source": {
+            "axis": "y",
+            "coordinate_um": 0.0,
+            "length_um": 0.4,
+            "span_um": [
+              -0.565,
+              -0.165
+            ]
+          },
+          "substrate": {
+            "axis": "y",
+            "coordinate_um": 1.0,
+            "length_um": 1.13,
+            "span_um": [
+              -0.565,
+              0.565
+            ]
+          },
+          "gate": {
+            "length_um": 0.53,
+            "segments_um": [
+              [
+                [
+                  -0.065,
+                  -0.202
+                ],
+                [
+                  -0.065,
+                  -0.002
+                ]
+              ],
+              [
+                [
+                  -0.065,
+                  -0.002
+                ],
+                [
+                  0.065,
+                  -0.002
+                ]
+              ],
+              [
+                [
+                  0.065,
+                  -0.002
+                ],
+                [
+                  0.065,
+                  -0.202
+                ]
+              ]
+            ]
+          }
+        },
+        "doping": {
+          "kind": "bvmethods"
+        },
+        "mesh_quality": {
+          "connected_components": 1,
+          "spacing_p95_factor": 1.35,
+          "region_max_spacing_um": {
+            "R.Substrate": [
+              0.2825,
+              0.125
+            ],
+            "R.Gateox": [
+              0.2825,
+              0.0005
+            ],
+            "R.PolyReox": [
+              0.2,
+              0.2
+            ],
+            "R.PolyReox_mirrored": [
+              0.2,
+              0.2
+            ],
+            "R.Spacer": [
+              0.2,
+              0.2
+            ],
+            "R.Spacer_mirrored": [
+              0.2,
+              0.2
+            ]
+          }
+        }
       }
     }
   ]

@@ -5,6 +5,9 @@
 DF-ISE Interface line regions are preserved as optional `mesh.json.interfaces`
 metadata (`name`, `node_ids`, `edge_node_ids`, `adjacent_regions` with region names).
 They are not volume regions/materials. See [P2 grid checks](sde_sdevice_checks.md).
+Contacts spanning several volume regions additionally retain `adjacent_regions`
+as sorted numeric region IDs. Their legacy `region_id` is the smallest adjacent
+ID; edge/node sets remain authoritative. See [P5 modeling](sde_bv_modeling.md).
 
 `vela device` reads a preprocessed single-device SDevice command file, imports
 its grid and declared `File{Parameter}`, validates them, then emits one

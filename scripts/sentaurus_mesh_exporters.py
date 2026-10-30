@@ -65,12 +65,13 @@ def bundle_to_vela_mesh(bundle: dict[str, Any]) -> dict[str, Any]:
         lines = _contact_lines(bundle, contact)
         node_ids = sorted({node for line in lines for node in line["node_ids"]})
         owners = contact_owners.get(contact["name"], [])
-        if len(owners) != 1 or owners[0] not in region_id_by_name:
+        if not owners or any(owner not in region_id_by_name for owner in owners):
             raise ValueError(
                 f"contact {contact['name']!r} has no unique adjacency-audited region owner")
         contacts.append({
             "id": contact["id"], "name": contact["name"],
-            "region_id": region_id_by_name[owners[0]], "node_ids": node_ids,
+            "region_id": min(region_id_by_name[n] for n in owners), "node_ids": node_ids,
+            **({'adjacent_regions': sorted(region_id_by_name[n] for n in owners)} if len(owners)>1 else {}),
         })
     return {
         "_comment": "Derived from vela.mesh_field_bundle.v1; coordinates are micrometres.",
