@@ -1,0 +1,136 @@
+{
+  "schema": "vela.reference_sde_audit.v1",
+  "date": "2026-10-29",
+  "main_commit": "87fc8f56",
+  "development_before_merge": "2bef915d",
+  "scope": "reference_tcad/*/source/* containing SDE geometry; archived variants and oracle wrappers excluded",
+  "device_source_count": 8,
+  "device_source_generated": 3,
+  "device_source_failed": 5,
+  "native_grd_dat_import_passed": 3,
+  "cases": [
+    {
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "sha256": "809d3f22ab2f264d6ce635b1b190802a3c397c763a4671b171ab843b51ec6676",
+      "exit_code": 2,
+      "stage": "sde_parse",
+      "status": "failed",
+      "message": "reference_tcad\\bvmethods_sentaurus2018\\source\\bvmethods_nmos_sde.cmd:32:1: unsupported SDE material 'PolySi' in '(sdegeo:create-rectangle (position 0.0 Ygox 0.0) (position Xg Ypol 0.0) \"PolySi\" \"R.Polygate\")'; supported materials: Nitride, Oxide, PolySilicon, SiO2, Silicon",
+      "cross_format": null,
+      "node_count": null,
+      "cell_count": null
+    },
+    {
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd",
+      "sha256": "d7a33f04d5f887e7b65b329fa1d0f63b76a290e3a1527012ad0b0ad2685a69d8",
+      "exit_code": 0,
+      "stage": null,
+      "status": "generated",
+      "message": "",
+      "cross_format": "passed",
+      "node_count": 166,
+      "cell_count": 222
+    },
+    {
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "sha256": "99949a88906c09383490870326e1ac82b9b43c8a9bc2aad1a36c8b8196096f3d",
+      "exit_code": 2,
+      "stage": "sde_parse",
+      "status": "failed",
+      "message": "reference_tcad\\genius_bjt_sentaurus2022\\source\\bjt_sde.cmd:6:3: unsupported SDE expression operator 'sdegeo:create-rectangle' in '(sdegeo:create-rectangle (position 0.0 0.0 0.0) (position 6.0 2.0 0.0) \"Silicon\" \"R.Silicon\")'",
+      "cross_format": null,
+      "node_count": null,
+      "cell_count": null
+    },
+    {
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "sha256": "ce3f55f004608386e8a1d5b238b2f619371e5c5d7410eef441d3a8c6681793fe",
+      "exit_code": 2,
+      "stage": "sde_parse",
+      "status": "failed",
+      "message": "reference_tcad\\genius_bjt_sentaurus2022\\source\\bjt_sde_local_refined.cmd:7:3: unsupported SDE expression operator 'sdegeo:create-rectangle' in '(sdegeo:create-rectangle (position 0.0 0.0 0.0) (position 6.0 2.0 0.0) \"Silicon\" \"R.Silicon\")'",
+      "cross_format": null,
+      "node_count": null,
+      "cell_count": null
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "exit_code": 0,
+      "stage": null,
+      "status": "generated",
+      "message": "",
+      "cross_format": "passed",
+      "node_count": 1482,
+      "cell_count": 2800
+    },
+    {
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "exit_code": 0,
+      "stage": null,
+      "status": "generated",
+      "message": "",
+      "cross_format": "passed",
+      "node_count": 319,
+      "cell_count": 560
+    },
+    {
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "sha256": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "exit_code": 2,
+      "stage": "sde_parse",
+      "status": "failed",
+      "message": "reference_tcad\\singledevice_sentaurus2018\\source\\singledevice_sde.cmd:57:1: (define ...) requires a symbol name in '(define (position-2d x y) (position x y 0) )'",
+      "cross_format": null,
+      "node_count": null,
+      "cell_count": null
+    },
+    {
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "sha256": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "exit_code": 2,
+      "stage": "sde_parse",
+      "status": "failed",
+      "message": "reference_tcad\\transportmodels_sentaurus2022\\source\\nMOS_dvs.cmd:57:1: (define ...) requires a symbol name in '(define (position-2d x y) (position x y 0) )'",
+      "cross_format": null,
+      "node_count": null,
+      "cell_count": null
+    }
+  ],
+  "validation": {
+    "cmake_release_configure": "passed",
+    "eigen": "5.0.1",
+    "boost": "1.92.0",
+    "hdf5": "hdf5-static enabled",
+    "mkl_pardiso": "disabled",
+    "launchers_and_sdevice_pyz_build": "passed",
+    "primary_python_tests": {
+      "run": 104,
+      "passed": 100,
+      "skipped": 4
+    },
+    "supplemental_python_tests": {
+      "run": 109,
+      "passed": 107,
+      "skipped": 2
+    },
+    "full_solver_build": "not run",
+    "full_ctest": "not run",
+    "linux_ci": "not run",
+    "live_sde_tdx": "not run",
+    "full_numerical_iv_bv": "not run",
+    "yaml_parser": "not installed; manual CI merge and step consistency checked",
+    "plan_links_and_contract_source_paths": "passed",
+    "gmsh_install_bash_syntax": "passed",
+    "selected_ctest_registrations": 8,
+    "sd_sim_help": "passed",
+    "diff_relative_to_main_check": "passed",
+    "whole_merge_diff_check": "reports inherited historical whitespace; sampled offending CSV/report blobs identical to main; raw evidence not reformatted"
+  },
+  "notes": [
+    "Current SDevice package qualification is tied to its own named grid/material/profile, not inherited by generated meshes.",
+    "No input source scripts or numerical thresholds were changed.",
+    "Only structured audit data is versioned; raw logs/TDR and generated grids stay ignored."
+  ]
+}

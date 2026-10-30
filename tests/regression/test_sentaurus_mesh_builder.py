@@ -232,7 +232,7 @@ class MeshQualificationGateTest(unittest.TestCase):
         )
 
     def test_existing_mesh_with_noncontiguous_node_ids_fails_closed(self) -> None:
-        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE))
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
         generated.mesh["nodes"][-1]["id"] += 1
         with self.assertRaises(MeshQualificationError) as ctx:
             qualify_mesh(generated.mesh)

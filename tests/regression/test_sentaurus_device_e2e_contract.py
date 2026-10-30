@@ -274,11 +274,12 @@ class ContractGateTest(unittest.TestCase):
 
     def test_checked_in_contract_is_consumed_and_can_accept_a_curve(self) -> None:
         contract = MODULE.load_e2e_contract()
-        case = contract["cases"]["pn2d_sentaurus2018_coarse7x3_iv"]
+        case = contract["cases"]["pn2d_sentaurus2018_iv"]
         qualification = {
-            "node_count": 21, "cell_count": 24, "max_angle_degrees": 90.0,
+            "node_count": case["mesh"]["min_nodes"],
+            "cell_count": case["mesh"]["min_cells"], "max_angle_degrees": 90.0,
             "node_volume_policy": "mixed_voronoi",
-            "contacts": [{"node_count": 3}, {"node_count": 3}],
+            "contacts": [{"node_count": case["mesh"]["min_contact_nodes"]}] * 2,
         }
         with tempfile.TemporaryDirectory(prefix="vela_contract_") as tmp:
             curve = Path(tmp) / "iv.csv"
@@ -308,7 +309,7 @@ class ContractGateTest(unittest.TestCase):
                     writer.writerow({"bias_V": bias, "contact": "Cathode",
                                      "I_sgflux_A_per_um": -index * 1e-9})
             report = MODULE.evaluate_e2e_acceptance(
-                "pn2d_sentaurus2018_coarse7x3_iv", case, "iv",
+                "pn2d_sentaurus2018_iv", case, "iv",
                 qualification, curve, terminal)
         self.assertEqual("accepted", report["status"])
 
@@ -358,7 +359,7 @@ class ContractGateTest(unittest.TestCase):
             subprocess.run([
                 sys.executable, str(REPO / "scripts" / "sentaurus_import.py"),
                 "device", "--sde",
-                str(REPO / "reference_tcad" / "pn2d_sentaurus2018_coarse7x3" /
+                str(REPO / "reference_tcad" / "pn2d_sentaurus2018" /
                     "source" / "pn2d_sde.cmd"),
                 "--sdevice",
                 str(REPO / "reference_tcad" / "pn2d_sentaurus2018" /
@@ -368,8 +369,8 @@ class ContractGateTest(unittest.TestCase):
             deck = json.loads((Path(tmp) / "simulation.json").read_text())
             manifest = json.loads((Path(tmp) / "run_manifest.json").read_text())
         self.assertEqual(0.3, deck["sweep"]["stop"])
-        self.assertEqual(0.01, deck["sweep"]["initial_step"])
-        self.assertEqual(0.25, deck["sweep"]["max_step"])
+        self.assertEqual(0.02, deck["sweep"]["initial_step"])
+        self.assertEqual(0.02, deck["sweep"]["max_step"])
         self.assertEqual("e2e_contract", manifest["sweep_stop_source"])
 
 
