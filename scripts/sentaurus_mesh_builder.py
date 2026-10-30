@@ -688,6 +688,8 @@ def build_mesh_and_doping(device_ir: dict[str, Any],
             {"stage": "input", "schema": device_ir.get("schema")},
         )
 
+    if any(b.get('fillets') for b in device_ir['geometry']['regions']) or device_ir['mesh_control'].get('operations'):
+        raise MeshQualificationError('tensor-legacy cannot represent fillet/mirror operations; use Gmsh',{'stage':'capability'})
     region_list = _region_rects(device_ir)
     if not region_list:
         raise MeshQualificationError(

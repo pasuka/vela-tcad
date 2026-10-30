@@ -109,11 +109,79 @@
       "required": ["refinement_sizes", "refinement_placements", "refinement_functions", "windows", "build"],
       "additionalProperties": false,
       "properties": {
-        "refinement_sizes": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
-        "refinement_placements": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
-        "refinement_functions": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
-        "windows": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
-        "build": {"type": ["object", "null"]}
+        "refinement_sizes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/semanticRecord"
+          }
+        },
+        "refinement_placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/semanticRecord"
+          }
+        },
+        "refinement_functions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/semanticRecord"
+          }
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/semanticRecord"
+          }
+        },
+        "build": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "operations": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "axis",
+              "coordinate_um",
+              "rename",
+              "input",
+              "output",
+              "location"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "mirror"
+              },
+              "axis": {
+                "const": "y"
+              },
+              "coordinate_um": {
+                "const": 0
+              },
+              "rename": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "input": {
+                "type": "string"
+              },
+              "output": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
+        }
       }
     },
     "capability_manifest": {
@@ -218,9 +286,49 @@
         "geometry": {
           "type": "object",
           "properties": {
-            "lower_left": {"$ref": "#/definitions/point2d"},
-            "upper_right": {"$ref": "#/definitions/point2d"},
-            "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}}
+            "lower_left": {
+              "$ref": "#/definitions/point2d"
+            },
+            "upper_right": {
+              "$ref": "#/definitions/point2d"
+            },
+            "points": {
+              "type": "array",
+              "minItems": 3,
+              "items": {
+                "$ref": "#/definitions/point2d"
+              }
+            },
+            "fillets": {
+              "type": "array",
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "corner",
+                  "radius_um",
+                  "location"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "corner": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "radius_um": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "location": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           },
           "additionalProperties": false,
           "oneOf": [

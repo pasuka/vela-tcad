@@ -144,7 +144,9 @@ def check_contract(output: Path, contract: dict) -> dict:
         require(area > 0, "nonpositive triangle area")
         areas[region_names[tri["region_id"]]] += area
     for name, area in contract["region_area_um2"].items():
-        close(areas[name], area, f"region area mismatch: {name}")
+        if name in contract.get('region_area_error_um2',{}):
+            require(abs(areas[name]-area)<=contract['region_area_error_um2'][name],f'curved area mismatch: {name}')
+        else:close(areas[name], area, f"region area mismatch: {name}")
     for i, value in enumerate((min(n["x"] for n in nodes.values()), min(n["y"] for n in nodes.values()),
                                max(n["x"] for n in nodes.values()), max(n["y"] for n in nodes.values()))):
         close(value, contract["bounds_um"][i], "device bounds mismatch")
@@ -174,7 +176,28 @@ def check_contract(output: Path, contract: dict) -> dict:
                 "adaptive termination contract failed")
         require(all(v["default_evaluations"] == 0 for v in bundle["provenance"]["general_evaluation"].values()),
                 "BJT General used a default concentration")
-    for node in mesh["nodes"] if bjt_report is None else []:
+    mos_report=None
+    if contract['doping']['kind']=='mos':
+        from sentaurus_mos_contract import check
+        mos_report=check(bundle)
+        require(mos_report['status']=='passed',f'MOS contract failed: {mos_report}')
+        # Read the authored half through the native consumer on every repeat.
+        import shutil
+        from sentaurus_mesh_exporters import bundle_to_vela_mesh, write_doping_csv
+        half=json.loads((output/'half_mesh_field_bundle.json').read_text())
+        count=len(half['nodes'])
+        require(all(a['x']==b['x'] and abs(a['y']-b['y'])<=1e-8 for a,b in zip(half['nodes'],bundle['nodes'][:count])),
+                'full device does not retain authored half nodes')
+        with tempfile.TemporaryDirectory(prefix='mos-half-native-') as temp:
+            stage=Path(temp)/'half';stage.mkdir()
+            (stage/'mesh_field_bundle.json').write_text(json.dumps(half))
+            (stage/'mesh.json').write_text(json.dumps(bundle_to_vela_mesh(half)))
+            write_doping_csv(stage/'doping.csv',half)
+            for extension in ('grd','dat'):shutil.copy2(output/('half_device.'+extension),stage/('device.'+extension))
+            import_grid(stage/'device.grd',Path(temp)/'native')
+            compare_native(stage,Path(temp)/'native')
+        mos_report['half_native_import']='passed'
+    for node in mesh["nodes"] if bjt_report is None and mos_report is None else []:
         x, y = node["x"], node["y"]
         rule = contract["doping"]
         if rule["kind"] == "pn":
@@ -209,6 +232,7 @@ def check_contract(output: Path, contract: dict) -> dict:
             measured[name].append(p95)
     return {"node_count": len(nodes), "cell_count": len(mesh["triangles"]),
             "max_angle_degrees": q["max_angle_degrees"], "region_p95_spacing_um": measured,
+            **({'mos':mos_report} if mos_report else {}),
             **({"bjt": bjt_report, "maxtransdiff": bundle["provenance"]["maxtransdiff"],
                 "refinement_placements": q["refinement"]["placements"]} if bjt_report else {})}
 
@@ -222,7 +246,7 @@ def run_case(case: dict, output: Path, runtime: Path, repeat: int) -> dict:
     try:
         for _ in range(repeat if case["expected"] == "generated" else 1):
             proc = subprocess.run([sys.executable, str(REPO / "scripts/sentaurus_gmsh_pipeline.py"),
-                    "--sde", str(source), "--output-dir", str(output), "--runtime-dir", str(runtime)],
+                    "--sde", str(source), "--output-dir", str(output), "--runtime-dir", str(runtime)]+[arg for key,value in case.get('parameters',{}).items() for arg in ('--parameter',key+'='+value)],
                     capture_output=True, text=True)
             if proc.returncode:
                 require("output_safety" not in proc.stderr, proc.stderr.strip())
@@ -251,7 +275,10 @@ def run_case(case: dict, output: Path, runtime: Path, repeat: int) -> dict:
                 compare_native(output, Path(tmp))
             row["stages"]["native_import"] = "passed"
             hashes = {name: digest(output / name) for name in PRIMARY}
-            runs.append({"sha256": hashes, "mesh_quality": quality})
+            runs.append({"sha256": hashes, "mesh_quality": quality,
+                         **({'half_sha256':{name:digest(output/name) for name in
+                            ('half_device.grd','half_device.dat','half_device.msh','half_mesh_field_bundle.json')}}
+                            if case['contract']['doping']['kind']=='mos' else {})})
             if first is not None and case["repeat_policy"] == "byte_identical":
                 require(first == hashes, "repeat output digest mismatch")
             if first is None:

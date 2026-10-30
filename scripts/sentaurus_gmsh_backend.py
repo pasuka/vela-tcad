@@ -66,6 +66,8 @@ def validate_m1_device_ir(device_ir: dict[str, Any]) -> None:
                 f"M1 supports Rectangle bodies only, got {body.get('shape')!r}",
                 {"stage": "capability", "body": body["id"], "shape": body.get("shape")},
             )
+        if body['geometry'].get('fillets'):
+            raise GmshBackendError('M1 refuses fillets; use M3')
         rectangles.append((body, _rectangle(body)))
     for index, (first, a) in enumerate(rectangles):
         for second, b in rectangles[index + 1:]:
@@ -379,6 +381,8 @@ def _m5_transfinite_eligibility(device_ir: dict[str, Any]) -> dict[str, Any]:
             "code": "body_shape", "message": "requires an axis-aligned Rectangle body",
             "actual": bodies[0].get("shape"),
         })
+    if any(b['geometry'].get('fillets') for b in bodies):
+        reasons.append({'code':'fillets','message':'curved outline requires unstructured mesh'})
     if device_ir["geometry"].get("inserted_vertices"):
         reasons.append({
             "code": "inserted_vertices",
@@ -491,7 +495,13 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
     for body in bodies:
         x0, y0, x1, y1 = _rectangle(body)
         bounds_by_id[body["id"]] = (x0, y0, x1, y1)
-        source_tags.append(gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0))
+        if body['geometry'].get('fillets'):
+            from sentaurus_curved import polygon
+            points=[gmsh.model.occ.addPoint(x,y,0) for x,y in polygon(body)]
+            lines=[gmsh.model.occ.addLine(a,b) for a,b in zip(points,points[1:]+points[:1])]
+            source_tags.append(gmsh.model.occ.addPlaneSurface([gmsh.model.occ.addCurveLoop(lines)]))
+        else:
+            source_tags.append(gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0))
     point_tags = []
     for record in inserted_vertices:
         x, y = map(float, record["position"])
@@ -547,7 +557,8 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
     source_audit = []
     for index, body in enumerate(bodies):
         x0, y0, x1, y1 = bounds_by_id[body["id"]]
-        source_area = (x1 - x0) * (y1 - y0)
+        from sentaurus_curved import area as body_area
+        source_area = body_area(body)
         mapped_area = sum(areas[surface] for surface in mapped_surfaces[index])
         tolerance = 1.0e-8 * max(1.0, source_area)
         if abs(mapped_area - source_area) > tolerance:
@@ -557,8 +568,8 @@ def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
                  "source_area": source_area, "mapped_area": mapped_area},
             )
         for surface in surfaces:
-            contained = all(_point_in_rectangle(bounds_by_id[body["id"]], point)
-                            for point in vertices[surface])
+            from sentaurus_curved import contains
+            contained = all(contains(body, point, 1e-7) for point in vertices[surface])
             mapped_candidate = surface in mapped_surfaces[index]
             if contained != mapped_candidate:
                 raise GmshBackendError(
@@ -1606,7 +1617,7 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
     if refinement_field_dag is not None:
         from sentaurus_adaptive import remesh
         adaptive_report = remesh(gmsh, device_ir, refinement_field_dag, mesh_size,
-                                 maxtransdiff_max_iterations, maxtransdiff_max_nodes)
+                                 maxtransdiff_max_iterations, maxtransdiff_max_nodes, surface_owner)
     node_tags, coordinates, _ = gmsh.model.mesh.getNodes()
     coords_by_tag = {
         int(tag): (float(coordinates[3 * index]), float(coordinates[3 * index + 1]),

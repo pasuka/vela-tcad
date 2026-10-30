@@ -1,5 +1,9 @@
 # BJT source modeling (P3)
 
+This records the qualified BJT subset. [P4](sde_mos_modeling.md) extends adaptive
+refinement to multiple CAD surfaces and region/material/window scopes; the BJT
+numerical gates remain unchanged.
+
 The two unmodified sources `genius_bjt_sentaurus2022/source/bjt_sde.cmd`
 and `bjt_sde_local_refined.cmd` under `reference_tcad/` are supported by the
 offline Gmsh preprocessor. Corpus revision 2 contains five generated cases and

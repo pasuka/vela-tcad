@@ -1,0 +1,602 @@
+{
+  "schema": "vela.reference_sde_p4_acceptance.v1",
+  "date": "2026-10-30",
+  "status": "passed",
+  "base_commit": "45dc027e",
+  "scope": "SDE modeling, independent half/full native import, positive P2 controls and user-approved original MOS command rejections",
+  "coverage": {
+    "generated": 7,
+    "expected_rejection": 1
+  },
+  "primary_sources": 8,
+  "corpus_revision": 3,
+  "numerical_gates": {
+    "schema": "vela.mos_modeling_acceptance.v1",
+    "date": "2026-10-30",
+    "chord_error_um": 1e-05,
+    "fillet_radius_um": 0.05,
+    "pointwise_relative_tolerance": 1e-06,
+    "geometry_tolerance_um": 1e-08,
+    "area_error_rule": "arc_length * chord_error_um",
+    "repeat_policy": "contract_equivalent",
+    "placeholder_parameters": {
+      "node": "0"
+    },
+    "numerical_solver_qualification": false,
+    "consumer_boundaries": [
+      {
+        "id": "singledevice",
+        "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_deep_off_sdevice.cmd",
+        "source_sha256_lf": "db15f2bdd62c1fd1e8616e86170b680748d912e5eb6b45a62a2beddc9f28928f",
+        "exit_code": 4,
+        "diagnostic_ids": [
+          "E403"
+        ]
+      },
+      {
+        "id": "transportmodels",
+        "source": "reference_tcad/transportmodels_sentaurus2022/source/pp6_des.cmd",
+        "source_sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+        "exit_code": 1,
+        "diagnostic_ids": [
+          "E105",
+          "E109"
+        ]
+      }
+    ],
+    "consumer_policy": "user_approved_expected_rejections_after_positive_native_import"
+  },
+  "source_sha256_lf": {
+    "scripts/sentaurus_curved.py": "0bf2a664b51f57901fd95e671cd8b6db7ba31e080c6b1b9d54aef280b07cb594",
+    "scripts/sentaurus_mesh_mirror.py": "ebff22e33770c232ccd661735b5451362fb7e1249e1b13b01b30886485a03168",
+    "scripts/sentaurus_mos_contract.py": "3c5e46a24c87684babf1304b79e3817eaaff0d86ac50d998a200147ab5759dc1",
+    "scripts/sentaurus_device_ir.py": "274fb32bfcd7cf5926b6ff064f2ea6aa05b86e8b40be3918f0698b668b36e130",
+    "scripts/sentaurus_ir_v2.py": "e03179aaecb5f8ff03fc500ffc988a229f635cedbb9f8b95ed80d43331661f15",
+    "scripts/sentaurus_gmsh_backend.py": "d7cc169c09a6c0f0c49b8bc49ecadbec1594a8e9ed56b21906a29694539db73a",
+    "scripts/sentaurus_gmsh_pipeline.py": "0fb6508b4a43acf348a138577ab0a678a3f4d944c374cb46f3bf2f06def2f218",
+    "scripts/sentaurus_adaptive.py": "e6ee4a69a8ef0d61ef5adb579b70ecb40597def9f136e1688702b2330c8bbe47",
+    "scripts/sentaurus_doping.py": "c024b180588891d0c05de391e30b77b377fee69be5779a4264e6237fe8f766c3",
+    "scripts/sentaurus_sde_cases.py": "78347c269d7147bb188c5165bea3009a83eaa378752da8d6017ea05c9ebbd53f",
+    "scripts/sentaurus_mesh_builder.py": "9dbabfd50cb62db8e551d773bb1ca8f322797700552521affcc425132c701d26",
+    "scripts/sentaurus_sde_frontend.py": "61c76cefcf5d9c80ae5f119d843e84f33512b692b5ad21e76b8084239afcdad8",
+    "scripts/sentaurus_import.py": "cc4377f54846f3cbc9a54a627f9c76c8718908b0ab2b37cd18a60eaa1a0e88f3"
+  },
+  "case_summary_sha256": "b680dc642fae5e04a4090891f67e2e73650da43ff2a35533361af4737db34f21",
+  "consumer_summary_sha256": "80e096c64f4758b048d8d385d1f031bf41bce325c3175f1175785a1f320fd94c",
+  "cases": [
+    {
+      "id": "pn2d",
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "source_sha256_lf": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "node_count": 1482,
+          "triangle_count": 2800,
+          "max_angle_degrees": 90.00000000000077
+        },
+        {
+          "sha256": {
+            "device.grd": "7f19e47eb1bce2479867fc2a065300f1d7bb369c05c14937288ca8e4f62ea170",
+            "device.dat": "da4d3ff45e174dbd8d27a0446f56dd8e536ce9945f2e9d171061d9d4a5fa6573",
+            "device.msh": "2275e77ef4f4126bd51185296cac72db7cf136a65a2939d68c9f8ba676479cdb",
+            "mesh.json": "5751dbea708f0e8ba1a25ec2e3d501bdc0f557fa47aca33dbe766f0bfc8eeb53",
+            "doping.csv": "8131a2265621e79a4e6fa83fe3211042c1fad4837c6bf96d7c0dc6aa330db61d"
+          },
+          "node_count": 1482,
+          "triangle_count": 2800,
+          "max_angle_degrees": 90.00000000000077
+        }
+      ]
+    },
+    {
+      "id": "schottky",
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "source_sha256_lf": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "byte_identical",
+      "byte_identical_observed": true,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "node_count": 319,
+          "triangle_count": 560,
+          "max_angle_degrees": 90.00000000000033
+        },
+        {
+          "sha256": {
+            "device.grd": "9c5c8983a0a1bbe8d354c52ce2f14bb7983c08c7a277d321511fc339e8b67aaa",
+            "device.dat": "be3de2cb822bb5d38f1ee6ce642bbd6d2d18f2023ef4a2aba7a0b0706c46bedd",
+            "device.msh": "0fbf2669cadccb3270ab04f313280164f21f1c7336bdefcfab4febf48c3253b3",
+            "mesh.json": "908171d6c1c1b7d9412778ea49c1609692fa88f41777974980b06ed82991e848",
+            "doping.csv": "a551019bc9a6c319eb7f1d737ab39d854ffe1868602c45aecd76be6048b999f0"
+          },
+          "node_count": 319,
+          "triangle_count": 560,
+          "max_angle_degrees": 90.00000000000033
+        }
+      ]
+    },
+    {
+      "id": "gate_reference",
+      "source": "reference_tcad/gate_reference/source/gate_sde.cmd",
+      "source_sha256_lf": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "e1f942ddc39e564f6df4b4a8c772e8f236f50504c7ab4fc1e9f271a6782a45cc",
+            "device.dat": "7dcfb6e7a8ef2502037425c737a78ebee8adecbdadc381944e4773849b97457f",
+            "device.msh": "6f3b57c88d94210a699d2d581cab9256199aec178704826bec6ce15a7abf65ea",
+            "mesh.json": "3e42972c730b4522b5f9cf8f8ba70264c184be3e84631730bf787e7695875626",
+            "doping.csv": "95e9ec9a4cab8fa5b5c79a371f1a2c8d6158ce953364df891f62c3dd160ad2a6"
+          },
+          "node_count": 166,
+          "triangle_count": 222,
+          "max_angle_degrees": 135.7775137580009
+        },
+        {
+          "sha256": {
+            "device.grd": "07f1b6c648d9f2faf2f9705057122a9ad3b29be4e9f237680727eae5312adef3",
+            "device.dat": "68f598d7890179d2bb3bab080da3c4e2c8049bc2406200c1ec1196456f85b3e7",
+            "device.msh": "a016b3d4d49a7bf16294e3ab0b86f9a3227f8b248f6db1f24d0af4804b4c5df4",
+            "mesh.json": "4c4772a146b9da0dc199cb5f84d212b08e8dbb81705aca07c0b6a7efe86f4e8b",
+            "doping.csv": "5a257f7e36f649d612149ed640af3edea1956bef2bc75b28187a57bad9b18062"
+          },
+          "node_count": 165,
+          "triangle_count": 220,
+          "max_angle_degrees": 135.7775136908344
+        }
+      ]
+    },
+    {
+      "id": "bjt",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "7e5a5b9ef9f7a914258b8328b234a39dfe931b95f9527a450e8fffdcee38e4bb",
+            "device.dat": "51a9314d2acd77452833b3f63a16f7d72cf062b7f34f61a276242c3203e3e040",
+            "device.msh": "ebf696dc8f57bba0450bb1473fcef445ea13b2d4e48e3a3c1114079148d9a3cc",
+            "mesh.json": "277902f09b9563a9876eada0a80f0e41546aa6e82550f776ed5be128b5f8b801",
+            "doping.csv": "d1124bacb10c7c1e0c39c3a386e010dcdd0fc9b119aa0ea549cd4858869fdc51"
+          },
+          "node_count": 22992,
+          "triangle_count": 45719,
+          "max_angle_degrees": 137.6903016573668
+        },
+        {
+          "sha256": {
+            "device.grd": "62475a1a03da60e950704ccea776143aee9534355ece5b852e0d07d1997dc30f",
+            "device.dat": "aa4a5453ccfdc22a6e56fb518c78f34574817880e8381c84f0311a770dad1f8c",
+            "device.msh": "8d9bf2531877e13e19c21e9ff5f666407cec4d24f0ed7b193b61dd560b5b6333",
+            "mesh.json": "8352e705330a274181a2c596e53ac38df321d490e1e811a8008518b668d0f739",
+            "doping.csv": "c79ba182b8a6b6cbc89941d621592cc4800ae407efe8faa784dce3a43e6c2281"
+          },
+          "node_count": 21687,
+          "triangle_count": 43115,
+          "max_angle_degrees": 142.1018081122745
+        }
+      ]
+    },
+    {
+      "id": "bjt_local",
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "88faf0cd0d677bf81bc6692a4de7a80385dafa413a4283a08f58f7b395b41d14",
+            "device.dat": "35cfc7cbdaa6b34ae6c3d5124563c17c52b6c55070a075d824a2e841e17e1ee0",
+            "device.msh": "5a502288c540347054100f99ae323939494e32f6024db81f3f2197e2fbfb820c",
+            "mesh.json": "39b23d1d0a01b731e260c3e2fb91d7134ad1d7c54be350a52789831485a74dad",
+            "doping.csv": "73eded16dd7f19bb7652593609325bf052f66fc0db57b286c147b9a0c56ed379"
+          },
+          "node_count": 43800,
+          "triangle_count": 87294,
+          "max_angle_degrees": 138.84883990964792
+        },
+        {
+          "sha256": {
+            "device.grd": "305310a89523c570d2a539f650c7ca94f7f4da3939e86b6418ef69496b4a4975",
+            "device.dat": "1e4e8bae0fa5feb873ed9138388aec4dc38c285a3d6655da0a4a73ef59591b4e",
+            "device.msh": "0e8ba63fcd29d29618fc471ccf21eb0a5bdf368e6c2ced3b9aa428caebdb8fe5",
+            "mesh.json": "77a2bb723f31a0f47c86092dddd47b20fe460e546fdd1bf3229b4cdd8cc3f7b6",
+            "doping.csv": "374e71afa54ca671a7787731010974e9af215c0d8114414ef3f467cc7c0ddf6a"
+          },
+          "node_count": 44280,
+          "triangle_count": 88253,
+          "max_angle_degrees": 150.83792429560503
+        }
+      ]
+    },
+    {
+      "id": "singledevice",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "source_sha256_lf": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "156d54a946611d2dbe99263f78b940f3c26b428357319a9915cc8cf5b2cd95f8",
+            "device.dat": "b790e6a5613421e52f2875cc617dbe570a758f595c5fb45cfc9dc2659d0e37c2",
+            "device.msh": "56d50430bad54754042fa77434d360e280ccd6e09170746b9343fbe06ca3e510",
+            "mesh.json": "cce678a58d0a61a4f8f705c5843c63dbe9b62dc344f28417e56ae5ec7d452e0d",
+            "doping.csv": "c588fcfda036b084560fbf4d3e4dd12b9dc09e446ea18365cb57edb62c9dc3a5"
+          },
+          "node_count": 13820,
+          "triangle_count": 27438,
+          "max_angle_degrees": 176.81312103905734,
+          "mos_contract": {
+            "schema": "vela.mos_modeling_check.v1",
+            "status": "passed",
+            "maximum_node_relative_error": 4.580106404192022e-12,
+            "maximum_chord_error_um": 9.637975896779893e-06,
+            "arc_edge_count": 80,
+            "node_count": 13820,
+            "triangle_count": 27438,
+            "failures": [],
+            "half_native_import": "passed"
+          },
+          "half_sha256": {
+            "half_device.grd": "cb0f0b6a5fe13efc4b562a70c2db72cfedf2e1b168baf11f8b87f6fc1a55dcd4",
+            "half_device.dat": "26101c340bff955eb4e8f8705b4e2875bd0659b60ff0856e166b6b3ff64d1c4c",
+            "half_device.msh": "3191894c71cca660b72d2463588a76bedde26bbc5121347b69f827529829eaa2",
+            "half_mesh_field_bundle.json": "d41ffed153e37062482b81315eeafbda8057e4383eb8f9ec4434559e1c9c7c31"
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "8b207dc23d3b408d580fd9c406fad996a4850f8bdb2777f9cc2037d840c57056",
+            "device.dat": "61c885586831504ca36a8de68217fbcb05090b8e4f3d08d39b56bc881a0a7e78",
+            "device.msh": "689239c6fbbca5718a42b410f0eff36f7bbd7cb31bdd59a5365f4cb23bc0db32",
+            "mesh.json": "fc237247b92cd787bb74c84bc5d1c62b39456cd5e58af2d6ad3d03a82fb2b4ae",
+            "doping.csv": "8cb1e8a046029a96235c7dbae2c324af038669eff5935695385ef572c5e8984a"
+          },
+          "node_count": 13683,
+          "triangle_count": 27162,
+          "max_angle_degrees": 177.56215349805854,
+          "mos_contract": {
+            "schema": "vela.mos_modeling_check.v1",
+            "status": "passed",
+            "maximum_node_relative_error": 1.2521647788947572e-11,
+            "maximum_chord_error_um": 9.637975896779893e-06,
+            "arc_edge_count": 80,
+            "node_count": 13683,
+            "triangle_count": 27162,
+            "failures": [],
+            "half_native_import": "passed"
+          },
+          "half_sha256": {
+            "half_device.grd": "6da72167c98a81315c145c50b12a32b52f2c2d057a9d9fec65c41e7e231c4995",
+            "half_device.dat": "095c26536ae6b8f437d65c945835380b71a540eba6e67d174651d6978394e844",
+            "half_device.msh": "2b16127ff52c5dc5af1407d6346fe4fcb767dedeb0bb318e1d8317f7acedb918",
+            "half_mesh_field_bundle.json": "43123b31b36fd8133a738ad6c08cbf455543dcc5936c77ba8646b94d8ebcabd9"
+          }
+        }
+      ]
+    },
+    {
+      "id": "transportmodels",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "source_sha256_lf": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "status": "generated",
+      "stages": {
+        "parse": "passed",
+        "model": "passed",
+        "export": "passed",
+        "native_import": "passed",
+        "reference": "not_run"
+      },
+      "repeats": 2,
+      "repeat_policy": "contract_equivalent",
+      "byte_identical_observed": false,
+      "runs": [
+        {
+          "sha256": {
+            "device.grd": "1b5e0a4060b86818e3d9df2ce3701f0b4491e12728d74b8d6fe2fe59971ee07d",
+            "device.dat": "2c4d393f7197d694f5d23c2787505cbbe6e111f2245bebc67600454469848897",
+            "device.msh": "6b25a8a1e6c94bea80fcdea81e8769398e7335d69d8ac1e31e6769ccc7f0e544",
+            "mesh.json": "671d999758c2de1554502319260cbe44e8abb6a3fb73165bf39382eaad276b1e",
+            "doping.csv": "5134604b0435d3426eaf3ca7ef3377b3b10b6f2fa7373c311b8ab9783f96e8a1"
+          },
+          "node_count": 13940,
+          "triangle_count": 27702,
+          "max_angle_degrees": 177.64749969732466,
+          "mos_contract": {
+            "schema": "vela.mos_modeling_check.v1",
+            "status": "passed",
+            "maximum_node_relative_error": 2.2041874093767393e-11,
+            "maximum_chord_error_um": 9.637975896779893e-06,
+            "arc_edge_count": 80,
+            "node_count": 13940,
+            "triangle_count": 27702,
+            "failures": [],
+            "half_native_import": "passed"
+          },
+          "half_sha256": {
+            "half_device.grd": "88445e37f913a33b3cdc8eaf800709f9ea10149238e1478a07dc1bad6569e003",
+            "half_device.dat": "e6df598cce57b320a525b4fa9ccca59f49075627e8ce05d9895dca6ba13f2580",
+            "half_device.msh": "59d4ea6c0e14748ecf4522244a5c006cdd4598030d750873955471e7bbaed5d7",
+            "half_mesh_field_bundle.json": "3f0f49ee56394bfb8c27049f6e0df47009cdbfbceca2b203699ffd33ca1b4633"
+          }
+        },
+        {
+          "sha256": {
+            "device.grd": "4cadbf4b9c50809f0538b656d291c97f6a33cd7e8e57a284bddc4e72aa7eaa73",
+            "device.dat": "5c32ee06b6be0d4de115fe40b5d63bdf3ed02b60bcd3fb0db98a103d8f2fd6cc",
+            "device.msh": "b7c70d631a61be25c8814bf39a57d911370f189e838859577bc0fe0cd154e004",
+            "mesh.json": "d250c7690ad3bd906a02efb19baafa2427bd03134de63dc3654b15319c06fbcd",
+            "doping.csv": "b6035471a8dd1065333d15fc589ea3f4e732143139176ba8bdbd707730ba2e9d"
+          },
+          "node_count": 13488,
+          "triangle_count": 26800,
+          "max_angle_degrees": 177.68184066077484,
+          "mos_contract": {
+            "schema": "vela.mos_modeling_check.v1",
+            "status": "passed",
+            "maximum_node_relative_error": 5.809876290744414e-11,
+            "maximum_chord_error_um": 9.637975896779893e-06,
+            "arc_edge_count": 80,
+            "node_count": 13488,
+            "triangle_count": 26800,
+            "failures": [],
+            "half_native_import": "passed"
+          },
+          "half_sha256": {
+            "half_device.grd": "f7b998ae5377fe7a9867fc7718294344e4f26a7e0b4df057a421ef4ca5fc78b9",
+            "half_device.dat": "4a3a99a2ad75587189c616304b4a68cfe28061fd54aad4acc5c0566a1bebc2e2",
+            "half_device.msh": "34f55a7ecc11c4876494fb595eb0725602bc0875213656aaebef45bf9bc6ebc0",
+            "half_mesh_field_bundle.json": "551d606d9a4d2857e88af5cec70a27b038bf6d356b0848913e624b7d4e578b09"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bvmethods",
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+      "status": "expected_rejection",
+      "stages": {
+        "parse": "expected_rejection",
+        "model": "not_run",
+        "export": "not_run",
+        "native_import": "not_run",
+        "reference": "not_run"
+      },
+      "rejection": {
+        "stage": "sde_parse",
+        "line": 32,
+        "column": 1,
+        "message_contains": "unsupported SDE material 'PolySi'"
+      }
+    }
+  ],
+  "tests": [
+    {
+      "name": "pn2d_config_templates",
+      "status": "passed",
+      "python_tests": 14,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_sde_frontend",
+      "status": "passed",
+      "python_tests": 32,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_device_e2e_contract",
+      "status": "passed",
+      "python_tests": 16,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_mesh_builder",
+      "status": "passed",
+      "python_tests": 27,
+      "conditional_skips": 1
+    },
+    {
+      "name": "sentaurus_ir_v2_contract",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m1",
+      "status": "passed",
+      "python_tests": 4,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m2",
+      "status": "passed",
+      "python_tests": 9,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m3",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m4",
+      "status": "passed",
+      "python_tests": 5,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_gmsh_m5",
+      "status": "passed",
+      "python_tests": 6,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_bjt_modeling",
+      "status": "passed",
+      "python_tests": 22,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sentaurus_mos_modeling",
+      "status": "passed",
+      "python_tests": 8,
+      "conditional_skips": 0
+    },
+    {
+      "name": "sde_sdevice_checks",
+      "status": "passed",
+      "python_tests": 17,
+      "conditional_skips": 0
+    }
+  ],
+  "additional_regression": {
+    "name": "test_reference_sde_cases",
+    "python_tests": 20,
+    "status": "passed"
+  },
+  "test_totals": {
+    "ctest_entries": 13,
+    "python_tests": 191,
+    "conditional_skips": 1
+  },
+  "consumer_positive": {
+    "count": 8,
+    "status": "passed",
+    "mode": "sd-sim --check",
+    "launcher_sha256": "a3ab999a8c619df70164c742f8b80dd99acb627f4babc51e993fff943451b01a",
+    "package_sha256": "052f3e7e5b70cbcfdd6601bfa95d76a988264a9efc1bd646f63ed1e71338fd77"
+  },
+  "consumer_expected_rejections": {
+    "status": "passed",
+    "mode": "check_only",
+    "solver_invoked": false,
+    "cases": [
+      {
+        "id": "singledevice",
+        "status": "expected_rejection",
+        "exit_code": 4,
+        "diagnostic_ids": [
+          "E403"
+        ],
+        "grid_sha256": "8b207dc23d3b408d580fd9c406fad996a4850f8bdb2777f9cc2037d840c57056",
+        "data_sha256": "61c885586831504ca36a8de68217fbcb05090b8e4f3d08d39b56bc881a0a7e78",
+        "source_sha256_lf": "db15f2bdd62c1fd1e8616e86170b680748d912e5eb6b45a62a2beddc9f28928f",
+        "effective_command_sha256": "267f7d1ea67762f34995bc848316a42050dd6b771f18aaabf40d0884d41d23fa"
+      },
+      {
+        "id": "transportmodels",
+        "status": "expected_rejection",
+        "exit_code": 1,
+        "diagnostic_ids": [
+          "E105",
+          "E109"
+        ],
+        "grid_sha256": "4cadbf4b9c50809f0538b656d291c97f6a33cd7e8e57a284bddc4e72aa7eaa73",
+        "data_sha256": "5c32ee06b6be0d4de115fe40b5d63bdf3ed02b60bcd3fb0db98a103d8f2fd6cc",
+        "source_sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+        "effective_command_sha256": "5f191f2e9cb83eda98ebe5b9509fdfc25258a913884968d70c5348a06e98fd28"
+      }
+    ]
+  },
+  "build": {
+    "preset": "windows-ucrt64-release",
+    "targets": [
+      "sd-sim",
+      "vela_sdevice_pyz"
+    ],
+    "gmsh_version": "4.15.2"
+  },
+  "commercial_oracle": {
+    "status": "not_qualified",
+    "reason": "license unavailable",
+    "implementation_source_copied": false,
+    "defaults_basis": "public official Structure Editor command manual"
+  },
+  "local_products": "build-release/p4 accepted cases/{singledevice,transportmodels}",
+  "not_run": [
+    "T470p/Linux qualification",
+    "live SDE numerical geometry parity",
+    "MOS IV/BV",
+    "full C++ solver build",
+    "full CTest suite"
+  ],
+  "repository_policy": "No generated grids, TDR, raw logs or private machine/job records committed",
+  "next_phase": "P5 BVmethods source modeling"
+}

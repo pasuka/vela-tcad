@@ -92,6 +92,7 @@ GENERATED_FILES = frozenset({
     "device.msh", "device.grd", "device.dat", "device.vtu", "device.vtk",
     "mesh.json", "doping.csv", "mesh_field_bundle.json", "id_mapping.json",
     "device_ir.json", "mesh_qualification.json", "cross_format_report.json",
+    "half_mesh_field_bundle.json", "half_device.grd", "half_device.dat", "half_device.msh", "half_mesh_qualification.json",
     "gmsh_runtime_manifest.json", "refinement_field_dag.json", "transfinite_mesh_contract.json",
 })
 
@@ -437,7 +438,13 @@ def run_pipeline(
         runtime["versions"]["library"] = library_version
         if device_ir_override is None:
             try:
-                v1 = parse_sde_device_ir(args.sde.resolve())
+                parameters={}
+                for entry in getattr(args,'parameter',[]):
+                    if '=' not in entry:raise ValueError('parameter must be NAME=VALUE')
+                    key,value=entry.split('=',1)
+                    if key in parameters:raise ValueError('duplicate preprocessing parameter')
+                    parameters[key]=value
+                v1 = parse_sde_device_ir(args.sde.resolve(), parameters=parameters)
                 device_ir = migrate_device_ir_v1(v1)
             except (SdeParseError, ValueError) as error:
                 raise PipelineError(str(error), "sde_parse") from error
@@ -471,6 +478,20 @@ def run_pipeline(
                         getattr(args, "maxtransdiff_max_nodes", 200000))
                 else:
                     bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
+                if device_ir['mesh_control'].get('operations'):
+                    from sentaurus_mesh_mirror import reflect, load_discrete
+                    from sentaurus_gmsh_backend import validate_bundle
+                    write_json(work/'half_mesh_field_bundle.json',bundle)
+                    write_json(work/'half_mesh_qualification.json',qualification)
+                    write_dfise(work/'half_device.grd',work/'half_device.dat',bundle)
+                    write_msh_with_node_data(gmsh,work/'half_device.msh',bundle)
+                    half_qualification=qualification
+                    bundle=reflect(bundle,device_ir['mesh_control']['operations'][0])
+                    qualification=validate_bundle(bundle)
+                    qualification['half_mesh']=half_qualification
+                    qualification['mirror']=bundle['provenance']['mirror']
+                    qualification['geometry']=bundle['provenance']['geometry_audit']
+                    load_discrete(gmsh,bundle)
                 write_json(work / "device_ir.json", device_ir)
                 write_json(work / "mesh_field_bundle.json", bundle)
                 write_json(work / "id_mapping.json", bundle["id_mapping"])
@@ -509,6 +530,7 @@ def run_pipeline(
                 "schema": RUN_SCHEMA, "status": "generated",
                 "milestone": args.capability_level,
                 "sde": str(args.sde.resolve()), "sde_sha256": _file_sha256(args.sde.resolve()),
+                "parameters": getattr(args,"parameter",[]),
                 "mesh_backend": "gmsh", "gmsh_version": EXPECTED_GMSH_VERSION,
                 "mesh_strategy": bundle["provenance"].get("mesh_strategy"),
                 "frontend": frontend_manifest,
@@ -590,6 +612,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gmsh-executable", type=Path)
     parser.add_argument("--maxtransdiff-max-iterations", type=int, default=12)
     parser.add_argument("--maxtransdiff-max-nodes", type=int, default=200000)
+    parser.add_argument("--parameter", action="append", default=[], help="Explicit SDE placeholder NAME=VALUE")
     parser.add_argument("--mesh-size", type=float, default=0.2)
     parser.add_argument("--capability-level", choices=("M1", "M2", "M3", "M5"), default="M5",
                         help="freeze the accepted semantic subset (default: M5)")

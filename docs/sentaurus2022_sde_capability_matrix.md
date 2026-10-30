@@ -33,7 +33,7 @@ frozen SDE syntax subset.
 | `MaxLenInt`, `DoubleSide`, `UseRegionNames` | fail-closed | fail-closed | yes | - |
 | auditable MathEvalAniso/Distance/MinAniso field DAG | fail-closed | fail-closed | yes | - |
 | device-coordinate General, Both/Eval, restricted AST | fail-closed | yes | yes | other placement modes fail-closed |
-| `MaxTransDiff` net doping, one body / region scope | fail-closed | fail-closed | bounded local remesh | [P3 subset](sde_bjt_modeling.md) |
+| `MaxTransDiff` net doping, region/material/window scope | fail-closed | fail-closed | bounded multi-surface local splits | [P4 subset](sde_mos_modeling.md) |
 | `MaxGradient` | fail-closed | fail-closed | fail-closed | later |
 | nonzero constant or analytical restriction decay | fail-closed | fail-closed | fail-closed | later |
 | Polygon body, AB/ABiA/ABiB/XX, 3-D | fail-closed | fail-closed | fail-closed | excluded/unplanned |
@@ -44,6 +44,11 @@ decay-length positional slot first; use `0 "LocalReplace"` or `0 "Replace"`
 when no decay is intended. The offline parser rejects the tempting but invalid
 literal `"NoReplace"` form rather than accepting a deck that official SDE
 rejects.
+
+P4 adds one convex fillet per Rectangle (certified 1e-5 um chords), explicit
+placeholder parameters, the three source shortcut forms and a restricted local
+y=0 mesh mirror. See [P4 scope and consumer boundaries](sde_mos_modeling.md).
+General Polygon bodies and arbitrary system commands remain unsupported.
 
 ## Frontends and provenance
 
@@ -102,7 +107,7 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 | refinement region/material/window placement | supported | M3 uses MinAniso metric intersection, so overlap takes the finest directional constraint |
 | max/min spacing | supported | max_x/max_y map to an anisotropic metric; min remains a stop target, never a hard clamp |
 | General analytical profile | supported subset | device x/y/z (z=0), Both/Eval, restricted numeric AST; explicit default diagnostics |
-| MaxTransDiff | supported subset in Gmsh M3/M5 | one Rectangle / region scope, DopingConcentration, signed asinh, bounded local remesh; [contract](sde_bjt_modeling.md) |
+| MaxTransDiff | supported subset in Gmsh M3/M5 | Rectangle bodies / region/material/window scope, DopingConcentration, signed asinh, bounded local remesh; [contract](sde_bjt_modeling.md) |
 | MaxGradient | fail-closed | no declared mapping |
 | MaxLenInt, DoubleSide, UseRegionNames | supported | Distance + anisotropic growth metric; omitted factor means the documented one-layer default |
 | MaxInterval, multibox, offsetting | fail-closed | listed here and in source diagnostic |

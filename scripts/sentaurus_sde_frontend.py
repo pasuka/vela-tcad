@@ -23,9 +23,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def offline_static_frontend(source: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+def offline_static_frontend(source: Path, parameters: dict[str,str] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     source = source.resolve()
-    ir = parse_sde_device_ir(source)
+    ir = parse_sde_device_ir(source, parameters=parameters)
     return ir, {
         "schema": MANIFEST_SCHEMA,
         "frontend": "offline-static",

@@ -17,37 +17,49 @@ def validate(device_ir):
         placements = [p for p in control['refinement_placements'] if p['refinement'] == function['refinement']]
         size = sizes.get(function['refinement'], {})
         arguments = function.get('arguments', [])
-        if (len(device_ir['geometry']['bodies']) != 1 or not placements or
-                device_ir['geometry']['bodies'][0].get('shape') != 'rectangle' or
-                any(p['target_kind'] != 'region' or p['target'] != device_ir['geometry']['bodies'][0]['region'] for p in placements) or
+        if (not placements or
+                any(p['target_kind'] not in {'region','material','window'} for p in placements) or
                 function.get('variable') != 'DopingConcentration' or len(arguments) != 1 or
-                type(arguments[0]) not in (int, float) or not math.isfinite(arguments[0]) or arguments[0] <= 0 or
-                not all(k in size for k in ('min_x', 'min_y'))):
-            raise GmshBackendError('MaxTransDiff requires one Rectangle, region placement, DopingConcentration, positive Value and directional minima',
-                                   {'stage': 'capability', 'capability': 'maxtransdiff-subset', 'function': function})
+                type(arguments[0]) not in (int,float) or not math.isfinite(arguments[0]) or arguments[0]<=0 or
+                not all(k in size for k in ('min_x','min_y'))):
+            raise GmshBackendError('MaxTransDiff requires a placed net doping function with positive Value and directional minima',
+                                   {'stage':'capability','capability':'maxtransdiff-subset','function':function})
 
 
-def analyse(device_ir, coordinates, triangles, values, edge_marks=None):
+def _active(device_ir, placement, size, windows, x, y, owner):
+    from sentaurus_gmsh_backend import _placement_active_at
+    if owner is not None and placement['target_kind'] in {'region','material'}:
+        value=owner['region'] if placement['target_kind']=='region' else owner['material']['sde']
+        return value==placement['target']
+    return _placement_active_at(device_ir,placement,size,windows,x,y)
+
+
+def analyse(device_ir, coordinates, triangles, values, edge_marks=None, owner=None):
     """Pure edge qualification shared by remeshing and tests (coordinates in um)."""
     from sentaurus_gmsh_backend import _placement_active_at
     control = device_ir['mesh_control']
     sizes = {s['name']: s for s in control['refinement_sizes']}
     windows = {w['name']: w for w in control['windows']}
     functions = [f for f in control['refinement_functions'] if f['function'] == 'MaxTransDiff']
-    threshold = min(float(f['arguments'][0]) for f in functions)
+    placements=control['refinement_placements']
     edges = {tuple(sorted((t[i], t[(i+1) % 3]))) for t in triangles for i in range(3)}
     marked_nodes = set()
     stopped = 0
     maximum = 0.0
     for a, b in sorted(edges):
         pa, pb = coordinates[a], coordinates[b]
+        x,y=(pa[0]+pb[0])/2,(pa[1]+pb[1])/2
+        selected=[f for f in functions if any(p['refinement']==f['refinement'] and
+                  _active(device_ir,p,sizes[p['refinement']],windows,x,y,owner) for p in placements)]
+        if not selected:continue
+        threshold=min(float(f['arguments'][0]) for f in selected)
         defect = abs(math.asinh(values[a]) - math.asinh(values[b]))
         maximum = max(maximum, defect)
         if defect <= threshold:
             continue
         x, y = (pa[0]+pb[0])/2, (pa[1]+pb[1])/2
         active = [sizes[p['refinement']] for p in control['refinement_placements']
-                  if _placement_active_at(device_ir, p, sizes[p['refinement']], windows, x, y)]
+                  if _active(device_ir,p,sizes[p['refinement']],windows,x,y,owner)]
         min_x = min(float(s['min_x']) for s in active if 'min_x' in s)
         min_y = min(float(s['min_y']) for s in active if 'min_y' in s)
         dx, dy = abs(pa[0]-pb[0]), abs(pa[1]-pb[1])
@@ -126,7 +138,7 @@ def longest_edge_closure(coordinates, triangles, marked):
     return result
 
 
-def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines, surface):
+def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines, edge_surface):
     from collections import defaultdict
     # Preserve CAD entity classification and every curve, including non-contact edges.
     updated_lines = {}
@@ -139,8 +151,8 @@ def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines,
             else:
                 classification[m] = (1,curve)
                 updated_lines[curve].extend([[a,m],[m,b]])
-    for m in midpoint.values():
-        classification.setdefault(m,(2,surface))
+    for edge,m in midpoint.items():
+        classification.setdefault(m,(2,edge_surface[edge]))
     grouped = defaultdict(list)
     for tag,entity in classification.items():
         grouped[entity].append(tag)
@@ -149,12 +161,13 @@ def _replace_mesh(gmsh, coordinates, triangles, midpoint, classification, lines,
         gmsh.model.mesh.addNodes(dimension,entity,tags,[v for tag in tags for v in coordinates[tag]])
     for curve,edges in updated_lines.items():
         gmsh.model.mesh.addElementsByType(curve,1,[],[tag for e in edges for tag in e])
-    gmsh.model.mesh.addElementsByType(surface,2,[],[tag for t in triangles for tag in t])
+    for surface, cells in triangles.items():
+        gmsh.model.mesh.addElementsByType(surface,2,[],[tag for t in cells for tag in t])
     return updated_lines
 
 
 def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITERATIONS,
-           max_nodes=DEFAULT_MAX_NODES):
+           max_nodes=DEFAULT_MAX_NODES, surface_owner=None):
     from sentaurus_gmsh_backend import GmshBackendError, _triangles_for_surface, _lines_for_curve
     if not any(f['function'] == 'MaxTransDiff' for f in device_ir['mesh_control']['refinement_functions']):
         return None
@@ -184,15 +197,32 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
         if len(tags) > max_nodes:
             report.update(status='failed', reason='node_budget', observed_nodes=len(tags))
             raise GmshBackendError('MaxTransDiff node budget exhausted', report)
-        triangles = [t for _, e in gmsh.model.getEntities(2) for _, t in _triangles_for_surface(gmsh, e)]
-        values = {}
-        for tag,point in coordinates.items():
-            if point not in cache:
-                nd,na,_ = _evaluate_m2_doping_for_owner(device_ir,body,rectangles,windows,*point[:2])
-                cache[point] = nd-na
-            values[tag] = cache[point]
-        marked = set()
-        _marked_nodes,metrics = analyse(device_ir,coordinates,triangles,values,marked)
+        by_surface={e:[t for _,t in _triangles_for_surface(gmsh,e)] for _,e in gmsh.model.getEntities(2)}
+        triangles=[t for cells in by_surface.values() for t in cells]
+        marked=set();reports=[]
+        for entity,cells in by_surface.items():
+            owner=surface_owner[entity] if surface_owner is not None else body
+            values={}
+            for tag in {n for t in cells for n in t}:
+                point=coordinates[tag];key=(owner['id'],point)
+                if key not in cache:
+                    nd,na,_=_evaluate_m2_doping_for_owner(device_ir,owner,rectangles,windows,*point[:2])
+                    cache[key]=nd-na
+                values[tag]=cache[key]
+            _,metrics=analyse(device_ir,coordinates,cells,values,marked,owner)
+            reports.append(metrics)
+        interface_marks=set()
+        for node in field_dag.get('nodes',[]):
+            if node['id'].startswith('maxlenint:') and node['kind']=='MathEvalAniso':
+                for curve in node['curves']:
+                    for _,edge in _lines_for_curve(gmsh,curve):
+                        if math.dist(coordinates[edge[0]],coordinates[edge[1]])>float(node['value']):
+                            interface_marks.add(tuple(sorted(edge)))
+        marked.update(interface_marks)
+        metrics={'edges':sum(m['edges'] for m in reports),
+                 'max_transformed_difference':max(m['max_transformed_difference'] for m in reports),
+                 'minimum_stopped_edges':sum(m['minimum_stopped_edges'] for m in reports),
+                 'refineable_nodes':len({n for e in marked for n in e}), 'maxlenint_marked_edges':len(interface_marks)}
         report['rounds'].append(dict(iteration=iteration,nodes=len(tags),triangles=len(triangles),marked_edges=len(marked),**metrics))
         gmsh.logger.write(f'MaxTransDiff round {iteration}: {len(tags)} nodes; {len(marked)} edges to split')
         if not marked:
@@ -213,11 +243,10 @@ def remesh(gmsh, device_ir, field_dag, mesh_size, max_iterations=DEFAULT_MAX_ITE
                 entity_nodes,_,_ = gmsh.model.mesh.getNodes(dim,entity)
                 classification.update({int(tag):(dim,entity) for tag in entity_nodes})
             lines = {curve:[edge for _,edge in _lines_for_curve(gmsh,curve)] for _,curve in gmsh.model.getEntities(1)}
-            surfaces = gmsh.model.getEntities(2)
-            if len(surfaces) != 1:
-                raise GmshBackendError('MaxTransDiff requires one final CAD surface')
-            surface = surfaces[0][1]
-        points,split,midpoint = split_triangles(coordinates,triangles,marked)
-        lines = _replace_mesh(gmsh,points,split,midpoint,classification,lines,surface)
+        edge_surface={tuple(sorted((t[i],t[(i+1)%3]))):entity for entity,cells in by_surface.items() for t in cells for i in range(3)}
+        split={}
+        for entity,cells in by_surface.items():
+            points,split[entity],midpoint=split_triangles(coordinates,cells,marked)
+        lines=_replace_mesh(gmsh,points,split,midpoint,classification,lines,edge_surface)
         field_dag['nodes'].append({'id':f'maxtransdiff:{iteration}','kind':'conforming-edge-split',
                                    'marked_edges':len(marked),'added_nodes':len(midpoint)})

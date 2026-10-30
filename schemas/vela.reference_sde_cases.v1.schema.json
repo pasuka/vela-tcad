@@ -10,7 +10,8 @@
     "revision": {
       "enum": [
         1,
-        2
+        2,
+        3
       ]
     },
     "cases": {
@@ -171,6 +172,18 @@
                         "type": "boolean"
                       }
                     }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "const": "mos"
+                      }
+                    }
                   }
                 ]
               },
@@ -203,6 +216,13 @@
                       }
                     }
                   }
+                }
+              },
+              "region_area_error_um2": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0
                 }
               }
             },
@@ -252,6 +272,12 @@
               "byte_identical",
               "contract_equivalent"
             ]
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         },
         "required": [

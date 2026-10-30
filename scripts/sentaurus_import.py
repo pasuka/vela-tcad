@@ -2148,7 +2148,7 @@ def device_command(args: argparse.Namespace) -> None:
                 build_mesh=(args.sde_build_mesh or args.mesh_backend == "official-tdr"),
             )
         else:
-            device_ir, frontend_manifest = offline_static_frontend(args.sde)
+            device_ir, frontend_manifest = offline_static_frontend(args.sde, parameters=parse_template_vars(args.template_var))
     except (SdeParseError, RuntimeError) as error:
         _write_fail_report(output_dir, "sde_parse", str(error))
         raise

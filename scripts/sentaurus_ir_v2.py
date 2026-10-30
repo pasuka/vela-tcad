@@ -91,6 +91,7 @@ def migrate_device_ir_v1(document: dict[str, Any]) -> dict[str, Any]:
             "geometry": {
                 "lower_left": copy.deepcopy(region["lower_left"]),
                 "upper_right": copy.deepcopy(region["upper_right"]),
+                **({"fillets": copy.deepcopy(region["fillets"])} if region.get("fillets") else {}),
             },
             "creation_order": region["order"],
             "boolean_mode": region["boolean_mode"],

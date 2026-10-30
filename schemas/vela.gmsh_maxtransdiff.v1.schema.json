@@ -119,6 +119,10 @@
           "max_transformed_difference": {
             "type": "number",
             "minimum": 0
+          },
+          "maxlenint_marked_edges": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

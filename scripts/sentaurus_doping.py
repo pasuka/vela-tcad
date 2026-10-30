@@ -115,6 +115,9 @@ def _owner_body(device_ir: dict[str, Any], rectangles: dict[str, Rect],
                        key=lambda item: item["creation_order"]):
         if not rectangles[body["region"]].contains(x, y):
             continue
+        if body['geometry'].get('fillets'):
+            from sentaurus_curved import contains
+            if not contains(body,(x,y)):continue
         if owner is None or body["boolean_mode"] == "ABA":
             owner = body
         elif body["boolean_mode"] != "BAB":

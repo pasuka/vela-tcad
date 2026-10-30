@@ -142,6 +142,36 @@
               },
               "location": {
                 "type": "string"
+              },
+              "fillets": {
+                "type": "array",
+                "maxItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "corner",
+                    "radius_um",
+                    "location"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "corner": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "radius_um": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "location": {
+                      "type": "string"
+                    }
+                  }
+                }
               }
             }
           }
@@ -515,6 +545,49 @@
               }
             }
           ]
+        },
+        "operations": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "axis",
+              "coordinate_um",
+              "rename",
+              "input",
+              "output",
+              "location"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "mirror"
+              },
+              "axis": {
+                "const": "y"
+              },
+              "coordinate_um": {
+                "const": 0
+              },
+              "rename": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "input": {
+                "type": "string"
+              },
+              "output": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

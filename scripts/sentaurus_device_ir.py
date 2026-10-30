@@ -108,6 +108,7 @@ class DeviceIrBuilder:
     refinement_placements: list[dict[str, Any]] = field(default_factory=list)
     refinement_functions: list[dict[str, Any]] = field(default_factory=list)
     mesh_build: dict[str, Any] | None = None
+    mesh_operations: list[dict[str, Any]] = field(default_factory=list)
     metadata_only: list[MetadataOnlyRecord] = field(default_factory=list)
 
     def note_metadata_only(self, form: Sexp, reason: str) -> None:
@@ -873,10 +874,82 @@ def _handle_multibox(form: Sexp, builder: DeviceIrBuilder) -> None:
 
 
 def _handle_fillet(form: Sexp, builder: DeviceIrBuilder) -> None:
-    raise SdeParseError(
-        f"{form.location()}: 'sdegeo:fillet-2d' rounds corners and changes the "
-        f"device outline, which the rectangle geometry model cannot represent. "
-        f"Offending command: '{form.command_text()}'")
+    import math
+    args = _require_args(form, 2, "(sdegeo:fillet-2d (find-vertex-id position) radius)")
+    if len(args) != 2 or not isinstance(args[0], Sexp) or args[0].head() != "find-vertex-id" or len(args[0].items) != 2:
+        raise SdeParseError(f"{form.location()}: fillet requires one explicit vertex pick")
+    x,y,z = parse_position(args[0].items[1], builder.env)
+    radius = eval_number(args[1], builder.env)
+    candidates=[]
+    for body in builder.regions:
+        x0,y0=body['lower_left'];x1,y1=body['upper_right']
+        if any(math.hypot(x-a,y-b)<1e-10 for a,b in [(x0,y0),(x1,y0),(x1,y1),(x0,y1)]):
+            candidates.append(body)
+    if len(candidates)!=1 or z!=0 or not math.isfinite(radius) or radius<=0:
+        raise SdeParseError(f"{form.location()}: fillet requires an unambiguous convex rectangle corner and positive radius")
+    body=candidates[0];x0,y0=body['lower_left'];x1,y1=body['upper_right']
+    if radius>min(x1-x0,y1-y0)+1e-12 or body.get('fillets'):
+        raise SdeParseError(f"{form.location()}: overlapping or oversized fillet is unsupported")
+    body['fillets']=[{'corner':[x,y], 'radius_um':radius,'location':form.location()}]
+
+
+def _handle_shortcut(form: Sexp, builder: DeviceIrBuilder) -> None:
+    import math
+    args=form.items[1:]
+    tag=f"Shortcut.{len(builder.refinement_sizes)}"
+    location=form.location()
+    head=form.head()
+    extent=max(max(abs(v) for v in b['lower_left']+b['upper_right']) for b in builder.regions)*4+1
+    size={'name':tag,'max_x':extent,'max_y':extent,'location':location}
+    if head=='sdedr:refine-box':
+        if len(args) not in {4,6}:raise SdeParseError(f"{location}: refine-box expects scalar or three directional spacings")
+        tag='Shortcut.'+expect_string(args[0],builder.env,'refinement name')
+        start=parse_position(args[1],builder.env);end=parse_position(args[2],builder.env)
+        if start[2]!=0 or end[2]!=0:raise SdeParseError(f'{location}: refine-box is 2-D only')
+        h=[eval_number(a,builder.env) for a in args[3:]]
+        if any(not math.isfinite(v) or v<=0 for v in h):raise SdeParseError(f'{location}: invalid directional spacing')
+        if len(h)==1:h=h*3
+        builder.windows[tag]={'name':tag,'shape':'rectangle',**_rectangle_bounds(start,end),'location':location}
+        size.update(name=tag,max_x=h[0],max_y=h[1])
+        placement={'name':tag,'refinement':tag,'target_kind':'window','target':tag,'location':location}
+    elif head=='sdedr:refine-doping':
+        # P4 supports the source scalar form; other optional syntax stays explicit.
+        if len(args)!=1:raise SdeParseError(f"{location}: refine-doping supports scalar spacing only")
+        h=eval_number(args[0],builder.env)
+        size.update(min_x=h,min_y=h)
+        placement={'name':tag,'refinement':tag,'target_kind':'material','target':'Silicon','location':location}
+        builder.refinement_functions.append({'refinement':tag,'function':'MaxTransDiff','variable':'DopingConcentration','arguments':[1.0],'location':location})
+    else:
+        if len(args) not in {5,7}:raise SdeParseError(f"{location}: unsupported refine-interface arguments")
+        kind=expect_string(args[0],builder.env,'scope')
+        first=expect_string(args[1],builder.env,'first interface');second=expect_string(args[2],builder.env,'second interface')
+        if kind not in {'region','material'} or expect_string(args[3],builder.env,'hlocal')!='hlocal':
+            raise SdeParseError(f"{location}: refine-interface requires region/material and hlocal")
+        value=eval_number(args[4],builder.env);factor=2.0
+        if len(args)==7:
+            if expect_string(args[5],builder.env,'factor')!='factor':raise SdeParseError(f"{location}: expected factor")
+            factor=eval_number(args[6],builder.env)
+        if not math.isfinite(value) or value<=0 or not math.isfinite(factor) or factor<1:
+            raise SdeParseError(f"{location}: invalid interface spacing/factor")
+        placement={'name':tag,'refinement':tag,'target_kind':kind,'target':first,'location':location}
+        builder.refinement_functions.append({'refinement':tag,'function':'MaxLenInt','arguments':[first,second,value,factor],
+            'interface':[first,second],'value':value,'factor':factor,'double_side':False,'use_region_names':kind=='region','location':location})
+    if tag in builder.refinement_sizes or any(not math.isfinite(float(size[k])) or float(size[k])<=0 for k in ('max_x','max_y')):
+        raise SdeParseError(f"{location}: duplicate or invalid shortcut sizing")
+    if 'min_x' in size and (not math.isfinite(size['min_x']) or size['min_x']<=0):raise SdeParseError(f"{location}: invalid minimum spacing")
+    builder.refinement_sizes[tag]=size
+    builder.refinement_placements.append(placement)
+
+
+def _handle_mesh_mirror(form: Sexp, builder: DeviceIrBuilder) -> None:
+    import re
+    args=_require_args(form,1,'(system:command known-tdx-mirror)')
+    text=expect_string(args[0],builder.env,'mirror command')
+    match=re.fullmatch(r'tdx\s+-mtt\s+-y\s+-M\s+0\s+-S\s+0\s+-ren\s+drain=source\s+([A-Za-z0-9_@.-]+)\s+([A-Za-z0-9_@.-]+)',text)
+    if len(args)!=1 or not match or builder.mesh_build is None or match[1]!=builder.mesh_build['prefix']:
+        raise SdeParseError(f"{form.location()}: unsupported system command; only matching local y=0 mesh reflection is allowed")
+    builder.mesh_operations.append({'kind':'mirror','axis':'y','coordinate_um':0.0,'rename':{'drain':'source'},
+                                    'input':match[1],'output':match[2],'location':form.location()})
 
 
 def _handle_build_mesh(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -908,6 +981,7 @@ HANDLERS: dict[str, Handler] = {
     "load": _handle_evaluated_wrapper_control,
     "sde:clear": _handle_ignore,
     "sde:build-mesh": _handle_build_mesh,
+    "system:command": _handle_mesh_mirror,
     "sde:set-process-up-direction": _handle_process_up_direction,
     "sdegeo:create-rectangle": _handle_create_rectangle,
     "sdegeo:create-polygon": _handle_create_polygon,
@@ -931,6 +1005,9 @@ HANDLERS: dict[str, Handler] = {
     "sdedr:define-constant-profile-material":
         lambda form, builder: _handle_constant_profile_placement(form, builder, "material"),
     "sdedr:define-analytical-profile-placement": _handle_analytical_profile_placement,
+    "sdedr:refine-box": _handle_shortcut,
+    "sdedr:refine-doping": _handle_shortcut,
+    "sdedr:refine-interface": _handle_shortcut,
     "sdedr:define-refinement-size": _handle_refinement_size,
     "sdedr:define-refinement-placement":
         lambda form, builder: _handle_refinement_placement(form, builder, "window"),
@@ -945,15 +1022,27 @@ HANDLERS: dict[str, Handler] = {
 
 
 def parse_sde_device_ir(path: Path,
-                        frontend: str = "offline-static") -> dict[str, Any]:
+                        frontend: str = "offline-static",
+                        parameters: dict[str,str] | None = None) -> dict[str, Any]:
     """Parse an SDE ``.cmd`` file into ``vela.sentaurus_device_ir.v1``."""
     source = Path(path)
-    forms = parse_file(source)
+    import re
+    from sentaurus_sexp import parse_forms
+    text=source.read_text(encoding='utf-8-sig')
+    used=set(re.findall(r'@([A-Za-z_][A-Za-z_0-9]*)@',text))
+    parameters=parameters or {}
+    if used-set(parameters):raise SdeParseError(f"{source}: unresolved preprocessing parameters: {sorted(used-set(parameters))}")
+    if any(not re.fullmatch(r'[A-Za-z0-9_.-]+',str(v)) for v in (parameters[name] for name in used)):
+        raise SdeParseError(f"{source}: unsafe preprocessing parameter value")
+    for name in used:text=text.replace('@'+name+'@',str(parameters[name]))
+    forms = parse_forms(text,str(source))
     if frontend not in {"offline-static", "sentaurus2022-evaluated"}:
         raise ValueError(f"unknown SDE frontend '{frontend}'")
     builder = DeviceIrBuilder(source=str(source), frontend=frontend)
 
     for form in forms:
+        if builder.mesh_operations:
+            raise SdeParseError(f"{form.location()}: commands after final mesh reflection are unsupported")
         head = form.head()
         if head is None:
             raise SdeParseError(
@@ -987,6 +1076,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             "order": region["order"],
             "boolean_mode": region["boolean_mode"],
             "location": region["location"],
+            **({"fillets": region["fillets"]} if region.get("fillets") else {}),
         }
         for region in builder.regions
     ]
@@ -1023,6 +1113,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
         "refinement_functions": list(builder.refinement_functions),
         "windows": doping["windows"],
         "build": builder.mesh_build,
+        **({"operations": builder.mesh_operations} if builder.mesh_operations else {}),
     }
     return {
         "schema": DEVICE_IR_SCHEMA,

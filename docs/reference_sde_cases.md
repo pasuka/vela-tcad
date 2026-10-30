@@ -3,8 +3,8 @@
 The P1 corpus is defined in
 [`configs/reference_sde_cases.json`](../configs/reference_sde_cases.json) and its
 [versioned schema](../schemas/vela.reference_sde_cases.v1.schema.json).
-Corpus revision 2 covers eight current primary source scripts: five generate meshes and three
-are expected to fail at a specific source location. Archived variants, oracle
+Corpus revision 3 covers eight current primary source scripts: seven generate meshes and one
+is expected to fail at a specific source location. Archived variants, oracle
 wrappers and retired cases are excluded.
 
 ## Run from the checkout root
@@ -40,8 +40,8 @@ python scripts/sentaurus_gmsh_pipeline.py `
 The primary products are `device.grd`, `device.dat`, `device.msh`; helper files
 include the normalized bundle, Vela mesh/doping, ID mapping and cross-format
 report. The batch writes one case directory per ID and `case_summary.json`.
-Exit 0 means the corpus met its declared expectations; **it means 5 generated
-and 3 expected rejections**, not eight supported device scripts. Exit 2 means
+Exit 0 means the corpus met its declared expectations; **it means 7 generated
+and 1 expected rejection**, not eight supported device scripts. Exit 2 means
 a dependency, input identity, contract, determinism or rejection boundary failed.
 
 ## Contract and evidence
@@ -74,7 +74,7 @@ a dependency, input identity, contract, determinism or rejection boundary failed
   it is not included in volume materials (see the P2 import correction).
 - By default supported cases run twice (`--repeat 2`), including separate native
   imports. PN2D and Schottky require byte-identical GRD/DAT/MSH/mesh JSON/doping CSV.
-  The gate_reference and BJT policy is `contract_equivalent`: each run must
+  The gate_reference, BJT and MOS policy is `contract_equivalent`: each run must
   independently meet the geometry, material, contact, analytic doping and mesh
   quality contracts. The 4.15.2 BAMG wrapper traverses pointer-ordered vertices;
   seed/thread/Reproducible experiments did not give byte-identical results here.
@@ -85,7 +85,7 @@ a dependency, input identity, contract, determinism or rejection boundary failed
 - Each case records parse, model, export, native-import and reference stages.
   Reference is `not_run`: no live SDE/TDX, `sd-sim --check` or physics solve is
   performed. This is P1, not the subsequent full SDevice integration qualification.
-- The three rejections must retain exit 2, `sde_parse`, source basename, exact
+- The remaining rejection must retain exit 2, `sde_parse`, source basename, exact
   line/column and a diagnostic category. An unexpected generation also fails the
   corpus so that new support receives a reviewed positive contract.
 
@@ -127,3 +127,6 @@ source, small contracts, tests and structured acceptance summaries belong in Git
 
 The subsequent [P2 check-only workflow](sde_sdevice_checks.md) binds these outputs
 to actual SDevice commands without running a numerical solver.
+
+P4 adds the two complete MOS meshes with explicit `node=0` parameters, certified
+fillet chords and independently imported half/full outputs. See [P4](sde_mos_modeling.md).

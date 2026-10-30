@@ -1,0 +1,36 @@
+{
+  "schema": "vela.mos_modeling_acceptance.v1",
+  "date": "2026-10-30",
+  "chord_error_um": 1e-05,
+  "fillet_radius_um": 0.05,
+  "pointwise_relative_tolerance": 1e-06,
+  "geometry_tolerance_um": 1e-08,
+  "area_error_rule": "arc_length * chord_error_um",
+  "repeat_policy": "contract_equivalent",
+  "placeholder_parameters": {
+    "node": "0"
+  },
+  "numerical_solver_qualification": false,
+  "consumer_boundaries": [
+    {
+      "id": "singledevice",
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_deep_off_sdevice.cmd",
+      "source_sha256_lf": "db15f2bdd62c1fd1e8616e86170b680748d912e5eb6b45a62a2beddc9f28928f",
+      "exit_code": 4,
+      "diagnostic_ids": [
+        "E403"
+      ]
+    },
+    {
+      "id": "transportmodels",
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/pp6_des.cmd",
+      "source_sha256_lf": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+      "exit_code": 1,
+      "diagnostic_ids": [
+        "E105",
+        "E109"
+      ]
+    }
+  ],
+  "consumer_policy": "user_approved_expected_rejections_after_positive_native_import"
+}
