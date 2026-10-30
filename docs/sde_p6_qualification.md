@@ -3,10 +3,69 @@
 This is an independent modeling-tools distribution. Its products are
 `device.grd`, `device.dat` and `device.msh`. The existing SDevice package and
 reserved `sd-sim -d`, `-n`, `--max_threads` interface remain unchanged.
-P6 local qualification is in progress. The user explicitly selected local
-validation only on 2026-10-30: no push or actual remote CI run is authorized.
-The workflow definition is retained for later qualification; it is not a passed
-CI result. The final local evidence must identify actual source revisions and runs.
+P6 local qualification passed on 2026-10-30; see the
+[structured acceptance record](validation/reference_sde_p6_acceptance_2026-10-30.json).
+The user explicitly selected local validation only: no push or actual remote CI
+run was performed. The workflow definition remains available for later execution.
+
+## Actual local results
+
+Modeling-package source: `e1b83fd3e7cebf549d917aaf1c876db138bb0f0e`.
+Both packages were assembled from a clean source tree. The final modeling
+payload hashes still match the source modules and schemas in the worktree. Windows UCRT64
+GCC 16.2.0 and Ubuntu 26.04.1 GCC 15.2.0 independently built the runtime targets;
+Eigen 5.0.1, HDF5 and SuiteSparse UMFPACK/SPQR were enabled. The isolated
+CPython versions are 3.12.10 (Windows) and 3.12.12 (Linux).
+
+Each final package ran all eight primary sources twice: **32/32** modeling,
+cross-format and independent GRD/DAT-import contracts passed. Each of those
+32 meshes also passed the commercial geometry/contact/field/integral/cut/size
+comparison. The eight native SDE+TDX source runs all returned zero. Different
+unstructured runs retain their individual hashes, without byte-determinism claims.
+
+| Case | Windows full-device nodes (two runs) | Ubuntu full-device nodes (two runs) | Worst donor/acceptor integral difference |
+| --- | --- | --- | --- |
+| pn2d | 1482 | 1482 | 0.1089% |
+| schottky | 319 | 319 | 0.0000% |
+| gate_reference | 163–165 | 163–164 | 0.0000% |
+| bjt | 22413–22443 | 22366–22912 | 0.0295% |
+| bjt_local | 42854–43130 | 44113–44117 | 0.0165% |
+| singledevice | 60417–63048 | 58042–59839 | 0.8858% |
+| transportmodels | 43061–47128 | 46073–47055 | 0.1633% |
+| bvmethods | 43175–45257 | 44235–44571 | 0.3149% |
+
+Across both platforms/runs, native pointwise relative error was at most
+`2.65825e-12` and comparative integral error at most `0.885824%`, within
+the frozen 1e-6 and 1% gates. Nonempty source-derived cut junctions passed their
+local-spacing limits. Original radii, own chord limit and geometric/contact
+tolerances were retained.
+
+The final Windows second-run GRD/DAT pairs completed **8/8** licensed TDX
+encode/decode loops. The mapped topology, materials, contacts, interfaces and
+stored scalar/species fields passed; worst stored-field relative error was
+`5.70112e-16`. Input and readback hashes identify these exact final meshes.
+TDR and raw execution records remain private/ignored.
+
+The final source revision passed **18 distinct CTest tests per platform**
+(17/17 related checks plus P2 1/1). The final P6 selection is 3/3 CTest, covering 19 unit tests
+on each platform. P2's eight real command checks and rejection tests passed on
+both independently built consumers. One no-importer negative case conditionally
+skips because the explicitly built importer is available; required Gmsh corpus
+checks did not skip. The initial Linux old-package identity failure was corrected
+and rechecked. An initial 1.069% integral failure motivated the Gaussian accuracy
+control; a later BV iteration failure motivated local red closure. Neither
+acceptance tolerances nor the 12-round/200000-node budget were relaxed.
+
+Windows additionally generated the PN2D mesh with the package and outputs in
+Unicode directories. Workflow YAML structure was checked locally; **actual CI
+was not run**, following the user's no-push decision. Full C++ CTest and new
+IV/BV/NonLocalPath/R2/R3 numerical qualification were not performed.
+
+The final archives and checksum/manifest sidecars are local ignored products:
+`build-release/p6/packages/vela-sde-p6-final-win64.zip` and
+`build-release/p6/packages/vela-sde-p6-final-ubuntu26.04.tar.gz`.
+Their exact hashes are in the structured record.
+
 
 ## Build and supply the package
 
