@@ -619,7 +619,9 @@ The isolated acceleration study uses `openblas_set_num_threads` and records the
 runtime query. The shared runner also offers the opt-in experiment
 `VELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON` (CMake default OFF) with
 `VELA_BLAS_THREADS=1`, `2`, or `4`. It requires OpenBLAS, verifies the reported
-thread count after every solve, and records `linear.openblas_threads`. Other
+thread count after every solve, and records one `linear.openblas_threads`
+observation per successful solve, including fully prescribed systems. Constructor
+checks do not add observations. Other
 requested values are rejected. MUMPS, SuperLU_MT and STRUMPACK additionally record
 their OpenMP thread configuration and restrict active nesting to one level.
 Without the environment switch the shared runner does not set BLAS threads.

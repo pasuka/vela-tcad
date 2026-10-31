@@ -127,38 +127,47 @@ TEST_CASE("Explicit BLAS thread control is opt-in and observable", "[linear_solv
     guard.set("1");
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
     SparseMatrixd a(3,3);a.insert(0,0)=2.;a.insert(0,1)=.3;a.insert(1,1)=4.;a.insert(2,0)=-.2;a.insert(2,2)=5.;a.makeCompressed();
-    VectorXd exact(3);exact<<1.,-2.,3.;const VectorXd b=a*exact;
-    LinearSolver solver("sparselu");REQUIRE(openblas_get_num_threads()==1);
-    PerformanceProfiler profiler({true,"unused.json"});
-    {
-        ActivePerformanceProfilerScope active(&profiler);
-        REQUIRE((solver.solve(a,b)-exact).norm()<1e-14);
-        REQUIRE((solver.solve(a,2.*b)-2.*exact).norm()<1e-14);
-    }
-    const auto observation=profiler.toJson().at("observations").at("linear.openblas_threads");
-    REQUIRE(observation.at("min")==1);REQUIRE(observation.at("max")==1);
-    REQUIRE(observation.at("count")==2);
-    openblas_set_num_threads(2);REQUIRE_THROWS(solver.solve(a,b));
-    guard.set(nullptr);LinearSolver noControl("sparselu");REQUIRE(openblas_get_num_threads()==2);
-    for(const char* count : {"2", "4"}) {
-        guard.set(count);
-#if defined(VELA_HAS_UMFPACK)
-        LinearSolver threaded("umfpack");
-#else
-        LinearSolver threaded("sparselu");
-#endif
-        const int expected=std::atoi(count);
-        REQUIRE(openblas_get_num_threads()==expected);
+    SparseMatrixd diagonal(3,3);diagonal.insert(0,0)=2.;diagonal.insert(1,1)=4.;diagonal.insert(2,2)=5.;
+    VectorXd exact(3);exact<<1.,-2.,3.;
+    const auto exercise = [&](const std::string& backend, int count,
+                              bool eliminate, const SparseMatrixd& matrix) {
+        INFO("backend=" << backend << ", threads=" << count << ", eliminate=" << eliminate
+             << ", nonzeros=" << matrix.nonZeros());
+        const auto requested=std::to_string(count);
+        guard.set(requested.c_str());
+        const VectorXd b=matrix*exact;
+        const double tolerance=backend=="sparselu"?1e-14:1e-13;
         PerformanceProfiler measured({true,"unused.json"});
         {
             ActivePerformanceProfilerScope active(&measured);
-            REQUIRE((threaded.solve(a,b)-exact).norm()<1e-13);
-            REQUIRE((threaded.solve(a,2.*b)-2.*exact).norm()<1e-13);
+            LinearSolver solver(backend);
+            solver.setConstraintElimination(eliminate);
+            REQUIRE(openblas_get_num_threads()==count);
+            REQUIRE_FALSE(measured.toJson().at("observations").contains("linear.openblas_threads"));
+            REQUIRE((solver.solve(matrix,b)-exact).norm()<tolerance);
+            REQUIRE((solver.solve(matrix,2.*b)-2.*exact).norm()<tolerance);
+            const auto seen=measured.toJson().at("observations").at("linear.openblas_threads");
+            REQUIRE(seen.at("min")==count);REQUIRE(seen.at("max")==count);
+            REQUIRE(seen.at("count")==2);
+            const int changed=count==1?2:1;
+            openblas_set_num_threads(changed);
+            REQUIRE_THROWS(solver.solve(matrix,b));
+            REQUIRE(measured.toJson().at("observations").at("linear.openblas_threads").at("count")==2);
+            guard.set(nullptr);
+            LinearSolver noControl("sparselu");
+            REQUIRE(openblas_get_num_threads()==changed);
         }
-        const auto seen=measured.toJson().at("observations").at("linear.openblas_threads");
-        REQUIRE(seen.at("min")==expected);REQUIRE(seen.at("max")==expected);
-        REQUIRE(seen.at("count")==2);
-        openblas_set_num_threads(1);REQUIRE_THROWS(threaded.solve(a,b));
+    };
+    std::vector<std::string> backends{"sparselu"};
+#if defined(VELA_HAS_UMFPACK)
+    backends.emplace_back("umfpack");
+#endif
+    for(const auto& backend : backends) {
+        for(const int count : {1,2,4}) {
+            exercise(backend,count,false,a);
+            exercise(backend,count,true,a);
+            exercise(backend,count,true,diagonal);
+        }
     }
 #else
     REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);

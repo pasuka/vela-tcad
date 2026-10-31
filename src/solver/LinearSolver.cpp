@@ -52,13 +52,13 @@ int requestedBlasThreads() {
     if(std::strcmp(value,"4")==0) return 4;
     throw std::invalid_argument("VELA_BLAS_THREADS must be 1, 2 or 4");
 }
-void verifyBlasThreads() {
+void verifyBlasThreads([[maybe_unused]] bool recordObservation = true) {
     const int requested=requestedBlasThreads();
     if(!requested) return;
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
     const int actual=openblas_get_num_threads();
     if(actual!=requested) throw std::runtime_error("OpenBLAS thread configuration changed during solve");
-    observePerformanceValue("linear.openblas_threads",actual);
+    if (recordObservation) observePerformanceValue("linear.openblas_threads",actual);
 #else
     throw std::invalid_argument("OpenBLAS thread control unavailable in this build");
 #endif
@@ -68,11 +68,11 @@ void configureBlasThreads() {
     if(!requested) return;
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
     openblas_set_num_threads(requested);
-    verifyBlasThreads();
+    verifyBlasThreads(false);
     static std::atomic<bool> logged{false};
     if(!logged.exchange(true)) std::fprintf(stderr,"VELA_BLAS_THREADS_VERIFIED requested=%d actual=%d\n",requested,requested);
 #else
-    verifyBlasThreads();
+    verifyBlasThreads(false);
 #endif
 }
 
@@ -580,7 +580,9 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b,
     } catch (const std::exception& error) {
         throw std::runtime_error(std::string(error.what())+"; original system"+sparseMatrixDiagnostics(A,b));
     }
-    verifyBlasThreads();
+    // The backend already recorded this solve; fully prescribed systems never
+    // enter it. Keep the outer check without double-counting reduced solves.
+    verifyBlasThreads(reduced.matrix.rows() == 0);
     return reduced.recover(direction);
 }
 
