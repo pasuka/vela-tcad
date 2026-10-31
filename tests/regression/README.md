@@ -12,7 +12,7 @@ for CMake/CTest so that it sees the apt-installed modules. The C/C++ HDF5
 development library alone does not provide the Python `h5py` module.
 
 SDE modeling regressions additionally need the external Gmsh 4.15.2 Python
-wrapper, shared library and CLI. Both CI workflows prepare them with
+wrapper, shared library and CLI. Both jobs in `.github/workflows/ci.yml` prepare them with
 `scripts/prepare_sde_external_gmsh.py` using the versions and SHA-256 hashes in
 `configs/sde_external_runtimes.json`; this exports `VELA_GMSH_PYTHON`,
 `VELA_GMSH_LIBRARY` and `VELA_GMSH_EXECUTABLE` to later CI steps. On Ubuntu,
@@ -23,7 +23,7 @@ the isolated offline package instead uses the six pinned wheels in
 `configs/sde_offline_inputs.json`. No additional C++ link dependency is required
 for this modeling path.
 
-On Windows CI, install the UCRT64 `python-numpy`, `python-pillow`, and
+For local Windows regression builds, install the UCRT64 `python-numpy`, `python-pillow`, and
 `python-h5py` and `python-jsonschema` packages and pass
 `-DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)"` to CMake from the
 MSYS2 shell. Check imports with `/ucrt64/bin/python.exe` as well: an unpinned

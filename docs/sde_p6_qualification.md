@@ -195,12 +195,19 @@ python3 scripts/audit_sde_tdx_readback.py --original-root <corpus-output> \
   --readback-root <private-tdx-readback> --output <private-readback-audit.json>
 ```
 
-[The CI workflow](../.github/workflows/sde-modeling.yml) independently builds
-Windows/UCRT64 and Ubuntu 26.04 programs, assembles and relocates the isolated
+[The CI workflow's SDE job](../.github/workflows/ci.yml) independently builds
+Ubuntu 26.04 programs, assembles and relocates the isolated
 package, runs the eight-source corpus twice and required regressions. It
 retains package archives and structured summaries. Commercial tools and their
 licenses are not dependencies of public CI. Actual workflow/run results must
 be recorded separately from this workflow definition.
+
+The single GitHub workflow `ci.yml` runs both jobs only on Ubuntu 26.04. The
+`build-and-test` job runs the Debug build and full CTest suite; the `sde-modeling`
+job supplies the extracted offline
+package needed for package-relocation tests and the eight-source repeated
+qualification. Windows/UCRT64 validation remains a local workflow; the earlier
+two-platform results above are historical local evidence.
 
 TDR, raw logs, runtime paths, remote jobs and generated meshes stay in ignored
 local evidence. Public evidence contains statistics, source/output hashes and
