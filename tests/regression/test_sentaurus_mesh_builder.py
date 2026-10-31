@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -184,7 +185,7 @@ class GeneratedMeshTest(unittest.TestCase):
         self.assertEqual(set(), anode & cathode)
 
     def test_declared_but_unassigned_contact_fails_at_mesh_time(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_") as tmp:
             path = build_sde(Path(tmp), """
 (sdegeo:create-rectangle
   (position 0.0 0.0 0.0)
@@ -201,7 +202,7 @@ class GeneratedMeshTest(unittest.TestCase):
             self.assertEqual("Anode", ctx.exception.report["contact"])
 
     def test_region_free_input_fails_at_mesh_time(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_") as tmp:
             path = build_sde(Path(tmp), "(define L 2.0)\n(define H 0.5)")
             with self.assertRaises(MeshQualificationError) as ctx:
                 build_mesh_and_doping(parse_sde_device_ir(path))
@@ -310,7 +311,7 @@ class NodeDopingTest(unittest.TestCase):
 
     def test_region_placement_follows_effective_aba_geometry(self) -> None:
         """A profile does not leak through area removed from a region by ABA."""
-        with tempfile.TemporaryDirectory(prefix="vela_doping_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_doping_") as tmp:
             path = build_sde(Path(tmp), """
 (define L 2.0)
 (define H 0.5)
@@ -340,7 +341,7 @@ class NodeDopingTest(unittest.TestCase):
 class MeshFileContractTest(unittest.TestCase):
     def test_written_files_match_the_vela_file_contract(self) -> None:
         generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_io_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_io_") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)
             write_doping_csv(root / "doping.csv", generated.doping_rows)
@@ -365,11 +366,11 @@ class MeshFileContractTest(unittest.TestCase):
 
     def test_generated_mesh_loads_in_the_vela_runner(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
-        runner = REPO / "build" / exe_name
+        runner = Path(os.environ.get("VELA_EXAMPLE_RUNNER", REPO / "build" / exe_name))
         if not runner.exists():
             self.skipTest("vela_example_runner has not been built")
         generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_run_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_run_") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)
             write_doping_csv(root / "doping.csv", generated.doping_rows)

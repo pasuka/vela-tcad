@@ -8,6 +8,9 @@ tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 *.yml text eol=lf
 *.yaml text eol=lf
 
+# Preserve the exact SDE bytes recorded by the M2 commercial oracle.
+tests/fixtures/sentaurus_gmsh_m2/m2_core_sde.cmd text eol=lf
+
 # The SimpleMOS delivery copies preserve the frozen Windows CRLF bytes.
 reference_tcad/simplemos_sentaurus2022/engineering/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 

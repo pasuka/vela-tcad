@@ -1907,6 +1907,8 @@ add_test(NAME sentaurus_mesh_builder
 set_tests_properties(sentaurus_mesh_builder PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
+set_property(TEST sentaurus_mesh_builder APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
 add_test(NAME gmsh_python_runtime
     COMMAND ${Python3_EXECUTABLE} -m unittest

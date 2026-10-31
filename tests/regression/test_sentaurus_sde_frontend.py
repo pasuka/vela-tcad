@@ -61,14 +61,14 @@ def validate_against_schema(testcase: unittest.TestCase,
 
 class SdeSexpFrontendTest(unittest.TestCase):
     def test_tokenizer_reports_location_for_unbalanced_input(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_") as tmp:
             path = write_sde(Path(tmp), "(define L 2.0")
             with self.assertRaises(SexpError) as ctx:
                 parse_file(path)
             self.assertIn("case_sde.cmd", str(ctx.exception))
 
     def test_tokenizer_skips_line_and_block_comments(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_") as tmp:
             path = write_sde(Path(tmp), """
 ; leading line comment
 #| block
@@ -80,7 +80,7 @@ class SdeSexpFrontendTest(unittest.TestCase):
             self.assertEqual("define", forms[0].head())
 
     def test_nested_arithmetic_is_evaluated(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_") as tmp:
             path = write_sde(Path(tmp), """
 (define H 0.5)
 (define XJ 1.0)
@@ -96,7 +96,7 @@ class SdeSexpFrontendTest(unittest.TestCase):
             self.assertAlmostEqual(1.3, region["upper_right"][0])
 
     def test_undefined_symbol_fails_closed(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_sexp_") as tmp:
             path = write_sde(Path(tmp), """
 (sdegeo:create-rectangle
   (position 0.0 0.0 0.0)
@@ -223,7 +223,7 @@ class SdeFailClosedTest(unittest.TestCase):
 """
 
     def parse_body(self, body: str) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_fail_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_fail_") as tmp:
             parse_sde_device_ir(write_sde(Path(tmp), self.HEADER + body))
 
     FAIL_CLOSED = (SdeParseError, SexpError)
@@ -259,7 +259,7 @@ class SdeFailClosedTest(unittest.TestCase):
         self.assertIn("Unobtainium", str(ctx.exception))
 
     def test_unknown_material_fails_closed(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_sde_fail_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_fail_") as tmp:
             path = write_sde(Path(tmp), """
 (sdegeo:create-rectangle
   (position 0.0 0.0 0.0)
