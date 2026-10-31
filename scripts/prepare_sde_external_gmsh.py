@@ -9,12 +9,18 @@ import zipfile
 from package_vela import distribution_platform,safe_member
 from prepare_sde_offline_assets import download
 
+# Keep the matching download URLs and SHA-256 hashes in the runtime lock updated.
+GMSH_VERSION = '4.15.2'
+GMSH_ABI_VERSION = '.'.join(GMSH_VERSION.split('.')[:2])
+
 REPO=Path(__file__).resolve().parents[1]
 
 
 def prepare(assets,runtime):
     platform=distribution_platform()
     lock=json.loads((REPO/'configs/sde_external_runtimes.json').read_text())
+    if lock['version'] != GMSH_VERSION:
+        raise ValueError(f'Gmsh runtime lock version {lock["version"]} does not match GMSH_VERSION {GMSH_VERSION}')
     archive=download(lock[platform],assets)
     if runtime.exists():raise ValueError('use a fresh external runtime directory')
     if os.name=='nt':
@@ -28,11 +34,11 @@ def prepare(assets,runtime):
             paths=list(runtime.rglob(pattern))
             if len(paths)!=1:raise ValueError('ambiguous SDK component: '+pattern)
             return paths[0]
-        components=[unique('gmsh.py'),unique('gmsh-4.15.dll'),unique('gmsh.exe')]
+        components=[unique('gmsh.py'),unique(f'gmsh-{GMSH_ABI_VERSION}.dll'),unique('gmsh.exe')]
     else:
         subprocess.run([sys.executable,'-m','venv','--system-site-packages',str(runtime)],check=True)
         subprocess.run([str(runtime/'bin/python'),'-m','pip','install','--no-index','--no-deps',str(archive)],check=True)
-        components=[next(runtime.rglob('gmsh.py')),next(runtime.rglob('libgmsh.so.4.15')),runtime/'bin/gmsh']
+        components=[next(runtime.rglob('gmsh.py')),next(runtime.rglob(f'libgmsh.so.{GMSH_ABI_VERSION}')),runtime/'bin/gmsh']
     result=dict(zip(('VELA_GMSH_PYTHON','VELA_GMSH_LIBRARY','VELA_GMSH_EXECUTABLE'),map(lambda p:str(p.resolve()),components)))
     (runtime/'external-paths.json').write_text(json.dumps(result,indent=2)+'\n')
     if os.environ.get('GITHUB_ENV'):

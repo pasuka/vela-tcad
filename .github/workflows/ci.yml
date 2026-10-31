@@ -11,8 +11,6 @@ jobs:
     permissions:
       contents: read
     env:
-      GMSH_VERSION: "4.15.2"
-      GMSH_LINUX_WHEEL_SHA256: "4076a948ce22625330d1413d4982e22b5c69fc2f0f7951f5df64c778cf54108c"
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
       VELA_LINEAR_THREADS: '1'
@@ -32,7 +30,7 @@ jobs:
           gcc --version
           g++ --version
 
-      - name: Install C++ build dependencies
+      - name: Install build and regression dependencies
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -40,6 +38,7 @@ jobs:
             cmake \
             ninja-build \
             pkg-config \
+            patchelf \
             libsuitesparse-dev \
             libopenblas-pthread-dev \
             libmetis-dev \
@@ -58,15 +57,19 @@ jobs:
             python3-jsonschema
 
       - name: Check regression Python dependencies
-        run: /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; print(h5py.version.info)"
+        run: |
+          /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; jsonschema.Draft202012Validator({'type': 'object'}).validate({}); print(h5py.version.info)"
+          patchelf --version
 
       - name: Install pinned Gmsh Python API runtime
-        shell: bash
-        run: bash .github/scripts/install-gmsh-linux.sh
+        # Share configs/sde_external_runtimes.json with the SDE qualification job.
+        run: |
+          /usr/bin/python3 scripts/prepare_sde_external_gmsh.py \
+            --assets build/gmsh-inputs --runtime build/external-gmsh
 
       - name: Probe pinned Gmsh runtime
         run: |
-          python3 scripts/probe_gmsh_python.py \
+          /usr/bin/python3 scripts/probe_gmsh_python.py \
             --output-dir build/gmsh-probe \
             --runtime-dir build/gmsh-python-runtime
 
