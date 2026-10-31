@@ -47,7 +47,7 @@ class InputContractTest(unittest.TestCase):
 
 class InterfaceImportTest(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory(dir=REPO/'build-release',prefix='p2 interface ')
+        self.temp=tempfile.TemporaryDirectory(prefix='p2 interface ')
         self.root=Path(self.temp.name);self.addCleanup(self.temp.cleanup)
 
     def grid(self,record='1 2 0'):
@@ -85,7 +85,7 @@ class NativeCheckTest(unittest.TestCase):
         require_gmsh_runtime()
         cls.launcher=Path(os.environ.get('VELA_SD_SIM',REPO/'build-release'/('sd-sim.exe' if os.name=='nt' else 'sd-sim')))
         if not cls.launcher.is_file():raise unittest.SkipTest('build sd-sim or set VELA_SD_SIM')
-        cls.temp=tempfile.TemporaryDirectory(dir=REPO/'build-release',prefix='p2 native paths with spaces ')
+        cls.temp=tempfile.TemporaryDirectory(prefix='p2 native paths with spaces ')
         cls.root=Path(cls.temp.name);cls.addClassCleanup(cls.temp.cleanup)
         cls.meshes=Path(os.environ.get('VELA_REFERENCE_SDE_CASES_DIR',cls.root/'generated meshes'))
         cls.runtime=cls.root/'gmsh runtime'
