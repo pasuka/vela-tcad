@@ -1,7 +1,8 @@
 # reference_tcad SDE 建模与 GRD/DAT/MSH 导出开发计划
 
-更新日期：2026-10-30。当前状态：P1–P5 已完成并验收；P6 本地跨平台、离线包及商业对照已通过。
-2026-10-30 用户选择仅本地验证、不推送；真实远程 CI 尚未执行。
+更新日期：2026-11-01。当前状态：P1–P5 完成；P6 建模与交付主范围完成。
+main `72a5b129` 的实际 Ubuntu CI 两个 job 已通过，当前离线包及校验清单已本地归档。
+现行交付与未完成扩展见 [交付说明](../../sde_delivery.md)；历史商业对照仍对应 `e1b83fd3`。
 本文件替代 2026-09-05 版本的待办顺序和覆盖统计。旧实测保留在
 [9 月审计](../../validation/reference_sde_audit_2026-09-05.json)，不作为当前资格。
 
@@ -11,9 +12,9 @@
 `device.grd`、`device.dat`、`device.msh`。建模入口只需要 SDE；商业 SDE/TDX、TDR 和日志
 仅作内部验证。DAT 的当前必交付是掺杂场，求解场导出另行安排。
 
-- 开发分支：`codex/sentaurus2022-sde-workflow`；更新前 `2bef915d`。
-- 本次合入本地 main：`87fc8f56`；合并前主线独有 198 个提交、开发分支独有 22 个提交。
-- 工作从本任务既有开发 worktree 进行，不把开发分支合回 main，不推送。
+- 历史开发分支：`codex/sentaurus2022-sde-workflow`；早期合并基线 `87fc8f56`。
+- 开发提交已 cherry-pick 到 main，独立合并修复收束于 `9aa5b942`；当前验收基线为 `72a5b129`。
+- 当前收尾工作在 main checkout 进行；本轮更新文档并归档既有 CI 产物，不推送或发布 Release。
 - 当前规范以 [文档索引](../../README.md)、[架构](../../architecture.md)、
   [配置合同](../../config_schema.md)、[回归指南](../../../tests/regression/README.md)、
   [PN2D BV 政策](../../validation/pn2d_bv_validation.md) 为准。
@@ -81,7 +82,8 @@ profile 的 0.02/0.02；不更改生成器或验收阈值。保留分支完整 P
 它仍须在新合并树上重新取得数值证据，不能因合同文件存在而报已 qualified。
 
 退出条件：main 是祖先、无冲突标记、CMake 配置成功、受影响回归通过、变更检查通过。
-完整 C++ 求解器构建和全量双平台数值回归独立列为后续集成门禁。
+整合后的 main 已通过 C++ 构建及 Ubuntu 全量 CTest（4 项条件跳过）；
+Windows 全量回归与新的器件数值资格不由该 CI 结果覆盖。
 
 ### P1：三个现有案例的可重复产品入口（已完成，2026-10-29）
 
@@ -168,10 +170,11 @@ P2 八份命令仍正向通过；原 MOS 命令按 E403、E105/E109 明确拒绝
 退出条件：主案例 8/8 原脚本直接建模导出。该结果不解除 NonLocalPath、外电阻 R2/R3、
 纯 QS 轨迹或原生接受过程的独立限制；不得删除不支持命令或简化源脚本来报完成。
 
-### P6：资格、发行和扩展（本地通过；真实 CI 未执行）
+### P6：资格、发行和扩展（建模与交付主范围完成；扩展待规划）
 
-Windows UCRT64 与 Ubuntu 26.04 独立构建，保留双平台 CI 工作流；本轮依用户选择不推送，
-不把工作流定义视为真实 CI 通过。确认 Gmsh runtime
+历史本地验收完成 Windows UCRT64 与 Ubuntu 26.04 独立构建。按用户后续选择，
+GitHub 仅保留 `ci.yml`，两个 job 均使用 Ubuntu 26.04；main 实际 CI 已通过，
+Windows 不列为 GitHub CI 要求。确认 Gmsh runtime
 版本、加载路径、许可/通知与离线依赖，现有 SDevice 包不自动包含新增建模工具和 Gmsh。
 保持 `sd-sim` 已预留的 `-d`、`-n`、`--max_threads` 等状态，遵循其独立 CLI 计划。
 内部 TDX 仅校验自产 GRD/DAT；官方 SDE 几何/掺杂对比按面积、界面、截面、积分和尺寸
@@ -179,8 +182,8 @@ Windows UCRT64 与 Ubuntu 26.04 独立构建，保留双平台 CI 工作流；�
 先完成 8 份主案例，再按用户优先级登记 SimpleMOS/LDMOS、Polygon body、其他布尔模式、
 非零 decay 等扩展；3D、ACIS、完整 Elk Scheme 不在本轮承诺范围。
 
-P1–P6 串行工作量约 31–48 工作日，包含重新确认语义的不确定性，不是交付日期承诺；
-P2/P3 后按实测重新估算。旧计划 Polygon/skewed-Tri3 优先阶段已撤出关键路径。
+旧版对 P1–P6 的 31–48 工作日估算仅为历史规划，不再作为当前待办工期。
+新增扩展应按各自合同重新估算；Polygon/skewed-Tri3 的旧优先顺序不恢复为当前任务队列。
 
 ## 证据与仓库政策
 
@@ -188,7 +191,8 @@ TDR、`.log*`、stdout/stderr 和原始运行记录只写 ignored build/ 或用�
 公共仓库保留源、schema、小型自有 fixture、结构化审计摘要与哈希；不得改扩展名或将原始
 日志完整嵌入 JSON 绕过排除规则。生成 GRD/DAT/MSH 是产品输出，默认同样现场生成而不提交。
 旧 Git 对象中的历史原件本轮不重写；本计划不新提交 TDR/原始日志。
-私有主机、地址、用户、安装路径和 job ID 不写公共计划。P5 按用户请求执行商业语义对照；P6 的远程构建/数值资格未自动启动。
+私有主机、地址、用户、安装路径和 VM job ID 不写公共计划。P5 按用户请求执行商业语义对照；
+实际公共 CI 链接和产物哈希另行记录，未启动新的商业或 IV/BV 数值资格任务。
 
 ## 本轮实际验证与下一步
 
@@ -215,6 +219,13 @@ Ubuntu 26.04 独立构建通过；两份最终离线包各八例、各两次，3
 Gaussian 积分控制和局部 red 闭包修复了实测积分/轮数失败；1% 门槛和原资源预算未放宽。
 每平台相关 18 项 CTest 分阶段通过，最终 P6 专项含 19 项单测，P2 八份命令检查持续通过。
 
-按用户 2026-10-30 的明确选择，本轮仅本地验证、不推送，真实 CI 未执行。已登记
-SimpleMOS/LDMOS、Polygon、其他布尔模式和非零 decay 的后续合同需求，等待用户确定优先级；
-不把这些登记项视为已实现。BVmethods 的 NonLocalPath、外电阻 R2/R3 和新数值资格仍属独立门禁。
+2026-10-30 的本地验收当时未运行 CI；后续 main 的
+[实际 CI](https://github.com/pasuka/vela-tcad/actions/runs/41193813343) 已通过，记录在
+[main 验收摘要](../../validation/reference_sde_main_acceptance_2026-11-01.json)。
+1190 项全量选择中 1186 通过、4 项条件跳过、0 失败；SDE 专项 18/18 通过。
+当前 Ubuntu 离线包八例各两次通过，归档文件、SHA-256、4996 项载荷哈希和版本身份已核对。
+该 CI 不重新签发历史商业对照或 Windows 当前版本资格。
+
+本轮文档与交付证据收尾完成。后续仅保留待确定优先级的 SimpleMOS/LDMOS、Polygon、
+其他布尔模式和非零 decay；这些登记项尚未实现。BVmethods 的 NonLocalPath、外电阻
+R2/R3、新网格 IV/BV、MOS 材料/求解前端支持仍属独立门禁，不阻塞已交付的八例建模。

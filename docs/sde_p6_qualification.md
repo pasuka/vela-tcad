@@ -3,16 +3,26 @@
 This is an independent modeling-tools distribution. Its products are
 `device.grd`, `device.dat` and `device.msh`. The existing SDevice package and
 reserved `sd-sim -d`, `-n`, `--max_threads` interface remain unchanged.
-P6 local qualification passed on 2026-10-30; see the
-[structured acceptance record](validation/reference_sde_p6_acceptance_2026-10-30.json).
-The user explicitly selected local validation only: no push or actual remote CI
-run was performed. The workflow definition remains available for later execution.
+P6's modeling and delivery gates are closed for main source `72a5b129`.
+The actual [CI run](https://github.com/pasuka/vela-tcad/actions/runs/41193813343)
+completed successfully on 2026-10-31. Both Ubuntu 26.04 jobs passed; the Debug
+suite selected 1190 tests (1186 passed, 4 conditional skips, 0 failures), and the
+SDE selection passed 18/18. Its newly assembled package passed eight sources
+twice. The artifact was downloaded and all 4996 package payload hashes verified
+on 2026-11-01. See the [current delivery guide](sde_delivery.md) and
+[main acceptance record](validation/reference_sde_main_acceptance_2026-11-01.json).
 
-## Actual local results
+The earlier [local acceptance record](validation/reference_sde_p6_acceptance_2026-10-30.json)
+remains immutable historical evidence for `e1b83fd3`, including Windows and
+licensed commercial comparisons. Those commercial comparisons were not rerun
+by the current public CI. Registered extensions and numerical solver gates
+remain separate.
+
+## Historical local results (2026-10-30)
 
 Modeling-package source: `e1b83fd3e7cebf549d917aaf1c876db138bb0f0e`.
-Both packages were assembled from a clean source tree. The final modeling
-payload hashes still match the source modules and schemas in the worktree. Windows UCRT64
+Both historical packages were assembled from a clean source tree and their
+payload hashes identify that frozen source snapshot. Windows UCRT64
 GCC 16.2.0 and Ubuntu 26.04.1 GCC 15.2.0 independently built the runtime targets;
 Eigen 5.0.1, HDF5 and SuiteSparse UMFPACK/SPQR were enabled. The isolated
 CPython versions are 3.12.10 (Windows) and 3.12.12 (Linux).
@@ -57,11 +67,12 @@ control; a later BV iteration failure motivated local red closure. Neither
 acceptance tolerances nor the 12-round/200000-node budget were relaxed.
 
 Windows additionally generated the PN2D mesh with the package and outputs in
-Unicode directories. Workflow YAML structure was checked locally; **actual CI
-was not run**, following the user's no-push decision. Full C++ CTest and new
-IV/BV/NonLocalPath/R2/R3 numerical qualification were not performed.
+Unicode directories. At that local acceptance, workflow YAML was checked but
+actual CI and full C++ CTest were not run. Subsequent main CI is recorded above.
+New IV/BV/NonLocalPath/R2/R3 numerical qualification remains outside this evidence.
 
-The final archives and checksum/manifest sidecars are local ignored products:
+The historical archives and checksum/manifest sidecars remain ignored products
+in the original development worktree:
 `build-release/p6/packages/vela-sde-p6-final-win64.zip` and
 `build-release/p6/packages/vela-sde-p6-final-ubuntu26.04.tar.gz`.
 Their exact hashes are in the structured record.

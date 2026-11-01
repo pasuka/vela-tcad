@@ -1,5 +1,7 @@
 # Vela Documentation
 
+- [SDE 当前交付与验收，2026-11-01](sde_delivery.md)：main 八例建模、Ubuntu CI、离线包归档与历史商业证据边界。
+
 - [人口主变量限制与停止条件审查，2026-10-29](validation/potential_density_policy_audit_2026-10-29.md)：
   清理QF专用配置，统一入口校验，修正独立人口Newton的权威分块停止契约。
 - [T470p BVMethods第二轮热点优化，2026-10-29](validation/bvmethods_t470p_round2_2026-10-29.md)：

@@ -1,0 +1,311 @@
+{
+  "schema": "vela.reference_sde_main_acceptance.v1",
+  "recorded_date": "2026-11-01",
+  "source_commit": "72a5b1294ab29bdc55731f4920329cbcee0093ac",
+  "source_tree_dirty_at_package_build": false,
+  "integration_commit": "9aa5b9427fa990cc1032a8383bfc0e945d79a84e",
+  "workflow": {
+    "repository": "pasuka/vela-tcad",
+    "path": ".github/workflows/ci.yml",
+    "run_id": 41193813343,
+    "url": "https://github.com/pasuka/vela-tcad/actions/runs/41193813343",
+    "runner": "ubuntu-26.04",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 124515829741,
+        "name": "build-and-test",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 124515829888,
+        "name": "SDE modeling qualification",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "ctest": {
+    "build_and_test": {
+      "selected": 1190,
+      "passed": 1186,
+      "failed": 0,
+      "skipped": 4,
+      "seconds": 673.22,
+      "skipped_tests": [
+        "sdevice_e2e_pn2d_0v",
+        "sdevice_e2e_pn2d_iv",
+        "sdevice_e2e_pn2d_bv",
+        "sdevice_e2e_gates"
+      ]
+    },
+    "sde_modeling": {
+      "selected": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 220.84
+    }
+  },
+  "artifact": {
+    "id": 13040705264,
+    "name": "sde-qualification-ubuntu26.04",
+    "size_in_bytes": 34159167,
+    "digest": "sha256:0e6b0a0ee5533885a3b104da9c7dec7a53892f10913fbe73555fcaa81e248ce7",
+    "created_at": "2026-10-31T11:02:36Z",
+    "expires_at": "2026-11-14T11:02:33Z"
+  },
+  "package": {
+    "filename": "vela-sde-ubuntu26.04.tar.gz",
+    "size_in_bytes": 34185184,
+    "sha256": "33a0b2540c64890c2a61a1247e55afcf521196eaab671aa3a6a498cc642b16e6",
+    "manifest_sha256": "c15d3989589f6b34317bc96be48c3ef697753a623bd27b044a6a0752de8a19a7",
+    "platform": "ubuntu26.04-x86_64",
+    "python_version": "3.12.12",
+    "gmsh_profile": "explicit external 4.15.2 (not bundled)",
+    "verified_payload_files": 4996,
+    "payload_hashes_verified": true,
+    "embedded_manifest_matches_sidecar": true,
+    "no_simulation_outputs_bundled": true
+  },
+  "qualification": {
+    "schema": "vela.sde_package_qualification.v1",
+    "status": "passed",
+    "cases": [
+      {
+        "id": "pn2d",
+        "source_sha256_lf": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "e40e6a88ec5ee9b5101d6f21aba2609b75b380dd4b8393700194f84aa0c51735",
+              "device.dat": "03491ca7834b4c7538b9203ec9a44ebe1df4438ed7a65c0301228c0a31be7616",
+              "device.msh": "032118655abb26d05a7f916c835d3f583ee5e15f7080d3393d1dcbf10afe44e4"
+            },
+            "contract": "passed",
+            "nodes": 1482,
+            "triangles": 2800
+          },
+          {
+            "sha256": {
+              "device.grd": "e40e6a88ec5ee9b5101d6f21aba2609b75b380dd4b8393700194f84aa0c51735",
+              "device.dat": "03491ca7834b4c7538b9203ec9a44ebe1df4438ed7a65c0301228c0a31be7616",
+              "device.msh": "032118655abb26d05a7f916c835d3f583ee5e15f7080d3393d1dcbf10afe44e4"
+            },
+            "contract": "passed",
+            "nodes": 1482,
+            "triangles": 2800
+          }
+        ]
+      },
+      {
+        "id": "schottky",
+        "source_sha256_lf": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "7e793796de8fa59cb935b99ad5b8100df1d8280b4eb260f3a87bb8cfa88f5518",
+              "device.dat": "39783fb0b4fe3aaae12e02718e70779d89e3658bbcca3ffba8eb492c3802822b",
+              "device.msh": "fd503d91b2fb0ff21a61db2626a8fb08d3f07eb382cf26c2bca1ba2c538aeb92"
+            },
+            "contract": "passed",
+            "nodes": 319,
+            "triangles": 560
+          },
+          {
+            "sha256": {
+              "device.grd": "7e793796de8fa59cb935b99ad5b8100df1d8280b4eb260f3a87bb8cfa88f5518",
+              "device.dat": "39783fb0b4fe3aaae12e02718e70779d89e3658bbcca3ffba8eb492c3802822b",
+              "device.msh": "fd503d91b2fb0ff21a61db2626a8fb08d3f07eb382cf26c2bca1ba2c538aeb92"
+            },
+            "contract": "passed",
+            "nodes": 319,
+            "triangles": 560
+          }
+        ]
+      },
+      {
+        "id": "gate_reference",
+        "source_sha256_lf": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "f1dc6587f96d9097585e5a1d4af576c4b2bb609c3b8c2f206122f28ee17f7e7d",
+              "device.dat": "5eb2658e95efb929380d1942849576c07eac258ae6939d6a7e4aa1d7794e69cc",
+              "device.msh": "e84d661d5a54f878b2d08be307be178fbbb75fff6f7e773efa47b60c5a8ed296"
+            },
+            "contract": "passed",
+            "nodes": 164,
+            "triangles": 218
+          },
+          {
+            "sha256": {
+              "device.grd": "e445d6856888236b911e53ffe0d95fceb9122826c4c47f631e1aee5a2dd23b1c",
+              "device.dat": "202a4ac517252168c649c38dcd39c78a9dba29c7e594998d4b8ec9d927308851",
+              "device.msh": "3c107aea2734e9ffb8fb099fc7873d63486a7d8ee68aae0a520b35454634b333"
+            },
+            "contract": "passed",
+            "nodes": 163,
+            "triangles": 216
+          }
+        ]
+      },
+      {
+        "id": "bjt",
+        "source_sha256_lf": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "049ae8d4f79c217c65ceab5034eb46a93b73bd911d4c0079adb71e1615542ce8",
+              "device.dat": "cc072896bff2008b2c9d57fcca11434697f588362d3066ec52c523b2248ca636",
+              "device.msh": "ebac9f459664e9ae211d776c9941fe35841c5d57fd55ab1b89d6dc5845a4aa9c"
+            },
+            "contract": "passed",
+            "nodes": 22715,
+            "triangles": 45169
+          },
+          {
+            "sha256": {
+              "device.grd": "36e3f76217ac6449cdb6e1895c23e00e1118eed15e968e84e44190e4f7615dde",
+              "device.dat": "2e824b70d50ae15806d65006c5dc21137b986e30310466b3f0c1d3bea3499278",
+              "device.msh": "061eb39a1f791ce60495ed179566942b0ba593576bee54842564a3bbd1765ba3"
+            },
+            "contract": "passed",
+            "nodes": 22344,
+            "triangles": 44426
+          }
+        ]
+      },
+      {
+        "id": "bjt_local",
+        "source_sha256_lf": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "f1c2e1337ac06bb06a765bb5e83d38c010907aac2d35c4415fcbcc927c418c63",
+              "device.dat": "d8ec7cf02a2c4d067627b12a896294183a35e77b549dcd2747e7984d16967d84",
+              "device.msh": "f938a3cd67fc93c06007670645eed592c93c6554665338f56897f8a809453253"
+            },
+            "contract": "passed",
+            "nodes": 44612,
+            "triangles": 88917
+          },
+          {
+            "sha256": {
+              "device.grd": "9135ed4976e50b721da78e92482502c06480523719d93b6534012c87f0ffd668",
+              "device.dat": "d56883e515b3625e573b1b74ed7e045a37f11959af3f088cf4fc8d363750b9b2",
+              "device.msh": "73c9d074e30a332d7b412740e99fbaed55d8ceb525ceb677ae7e343d7cdc7691"
+            },
+            "contract": "passed",
+            "nodes": 43738,
+            "triangles": 87170
+          }
+        ]
+      },
+      {
+        "id": "singledevice",
+        "source_sha256_lf": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "5baa326141614a42e8877ad824188e3e50636279c8b5839b1019fa514811a300",
+              "device.dat": "2884036d8ce56fc72d35b8994345f31b48ef7bae04dec218e73c564eff7ed378",
+              "device.msh": "c0c3b514894bdd38adba7c410268aba2f31b32fef7a1a40408e6f27aaae1bc30"
+            },
+            "contract": "passed",
+            "nodes": 61510,
+            "triangles": 122292
+          },
+          {
+            "sha256": {
+              "device.grd": "361e3cee630357b5328c5730c3b07a55f3055a55f77dfcb6d27907c1a634285e",
+              "device.dat": "16f1c98cd3e740eff41b2005eeb81260f5571325004d2b983e4e0c107a581ce4",
+              "device.msh": "8a1eff9d6edeffb8e7001bf7b3ed91e741b76cc838258cf1d6f0e73a624f98ec"
+            },
+            "contract": "passed",
+            "nodes": 60643,
+            "triangles": 120538
+          }
+        ]
+      },
+      {
+        "id": "transportmodels",
+        "source_sha256_lf": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "c9ee4b643c500013dafdfa7678e11577af9b1d55487f5d8ea16b890e32660cdb",
+              "device.dat": "29ea326e4a244ba35b4dc4ab43073c27173dccc9001576433012d62a84f31e03",
+              "device.msh": "99313aa72e23403fe192356dc9558eec646c57c7ebe0f78a8a344bc4ee176235"
+            },
+            "contract": "passed",
+            "nodes": 43367,
+            "triangles": 86144
+          },
+          {
+            "sha256": {
+              "device.grd": "542be375046c473ad2281887c983ea26f721aa93a41c841ed790abe199965d49",
+              "device.dat": "e8306cd93fb6b8e8487a1d72aecaf69c303d1e05b1a7342f7925fb9f370b3a51",
+              "device.msh": "a6f9294ac4aa000cb170a4e7affd1126dabb71cc2b5b823c294eb3ec0abf2371"
+            },
+            "contract": "passed",
+            "nodes": 46446,
+            "triangles": 92294
+          }
+        ]
+      },
+      {
+        "id": "bvmethods",
+        "source_sha256_lf": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+        "runs": [
+          {
+            "sha256": {
+              "device.grd": "e85bb462a2e94617e152a685dc5be85007c3b552d51506115a6d0c1273face96",
+              "device.dat": "801500aa64f390ff8788510ecd92e6943cd635163e071fdfe197ff379a30b26b",
+              "device.msh": "55f5f9656f4e998bb710b05075593df74ea42118b3681a62b4a74e93d84fe2a1"
+            },
+            "contract": "passed",
+            "nodes": 41899,
+            "triangles": 83066
+          },
+          {
+            "sha256": {
+              "device.grd": "1988a3ab730660c70512366a804e0f281fb8a4744b81da467a74a0148932118a",
+              "device.dat": "4acf8a7ee19582efd1a573d848ddb7355549b4e64115c59bb8ccb0176ff34019",
+              "device.msh": "b9835cbfb03bc2f474ca7e19facd5d08fea6be5b668809f676266438fa292249"
+            },
+            "contract": "passed",
+            "nodes": 45603,
+            "triangles": 90448
+          }
+        ]
+      }
+    ],
+    "isolated_python": true,
+    "poisoned_pythonpath_ignored": true,
+    "external_gmsh": true
+  },
+  "source_regression_corpus": {
+    "status": "passed",
+    "counts": {
+      "generated": 8
+    },
+    "repeat_per_case": 2
+  },
+  "historical_commercial_evidence": {
+    "source_commit": "e1b83fd3e7cebf549d917aaf1c876db138bb0f0e",
+    "record": "reference_sde_p6_acceptance_2026-10-30.json",
+    "rerun_in_current_ci": false
+  },
+  "remaining_scope": [
+    "SimpleMOS/LDMOS original SDE expansion",
+    "Polygon body",
+    "other boolean modes",
+    "nonzero decay",
+    "new IV/BV numerical qualification",
+    "NonLocalPath",
+    "external resistor R2/R3"
+  ],
+  "local_archive_policy": "Archives, package manifests, generated grids and raw logs remain ignored; public record contains hashes and aggregate qualification only."
+}
