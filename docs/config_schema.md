@@ -154,6 +154,19 @@ Newton numerical and geometry controls added for explicit validation profiles:
   identifies its physical discretization, while this option selects coordinates.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
+  Population DDSolution retains the original normalized psi separately from QF
+  packed coordinates. Optional HDF5 `population_psi_normalized` requires
+  `population_potential_schema: vela.population-potential.v1`, positive
+  `population_potential_scale_V`, `population_potential_unit: V` and
+  `population_potential_origin_V` matching the archive reference origin. It also
+  requires the existing population internal-density bundle. Same-scale restores
+  reuse normalized psi; changed scales use one physical conversion. Incomplete,
+  stale or mixed QF/population coordinate bundles are rejected. Legacy archives
+  remain readable through their physical fields. Reference changes require an
+  explicit seed translation; changing metadata alone is invalid. The Python
+  archive translator rebases population normalized psi from its authoritative
+  value in extended precision, rounds once, updates the physical output and
+  binds the new origin. It preserves n/p; QF packed translation remains rejected.
   Inactive oxide slots are zero and eliminated as constraints. QF caps,
   references, split coordinates, legacy row scaling and quantum/Gummel recovery
   combinations are rejected by JSON parsing as well as C++ construction. The
@@ -186,6 +199,17 @@ Newton numerical and geometry controls added for explicit validation profiles:
   profile; it does not add a separate material electron-affinity/energy-state
   contract. This option is an arithmetic experiment, not native zero-bias
   operator-equivalence qualification or a new global default.
+- `solver.population_sg_bootstrap_linearization`: `unchanged` (default) or
+  experimental `floor_adjacent_edges`. Requires BVMethods `potential_density`,
+  `quasi_fermi` SG and a positive configured minimum density. Only approximate
+  bootstrap matrices freeze population feedback in both the SG prefactor and
+  argument on a carrier edge with either endpoint at that density floor
+  (16 machine epsilons allow unit-conversion rounding). Potential derivatives,
+  direct population terms, SRH, full Jacobian, physical RHS and port derivatives
+  remain unchanged. Edge selection is recomputed per state and per carrier;
+  full-derivative recovery restores all feedback, and an edge above the floor
+  also restores it. This does not change the automatic recovery controller or
+  guarantee convergence. It has no mutable cross-stage selection history.
 - `solver.population_update`: population-mode-only object. `protection` is
   `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
   only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).
@@ -201,7 +225,12 @@ Newton numerical and geometry controls added for explicit validation profiles:
   derivatives and the complete physical RHS. A bounded trial/full controller
   uses the model response to the actual applied step; invalid candidates or
   confirmed model failure return to bootstrap with cooldown. Traces distinguish
-  bootstrap, trial and full. This is an approximate Newton policy, not a
+  bootstrap, trial and full. A failed bootstrap bordered solve probes the full
+  Jacobian once at the same state and target, without spending an update or
+  changing acceptance gates. Failure of both solves returns to continuation;
+  a rejected full candidate does not renew the probe until a step is applied.
+  The update CSV marks this event with `bootstrap_linear_retry`.
+  This is an approximate Newton policy, not a
   replacement of the physical equations or a guarantee of BV convergence.
   The population direct solve audits the original system at componentwise
   backward error 1e-10 and scaled linear residual 1e-8·max(1,‖b_scaled‖∞), using
@@ -2816,14 +2845,78 @@ an enforced failure rejects the point before it advances continuation or writes
 an accepted checkpoint. All terminal currents must be finite and satisfy
 `abs(sum(I)) <= max(1e-12, 1e-5 * abs(Id))` in A/um. The circuit residual is also
 recomputed from the actual extracted terminal current with the configured
-`residual_tolerance_V`. No scalar or inexact device tolerance bypasses these
-checks. The point's carrier/closure and block residual fields contain the actual
+`residual_tolerance_V`. For `coupled_newton`, the explicit
+`load_line_convergence_mode` selects `enforce` (default) or `report`. Report
+keeps the scalar load-line equation, its Jacobian, merit contribution and
+measured residual. The main residual branch always checks the complete
+bordered residual: `max(device_norm / effective_device_tolerance,
+abs(load_residual_V) / residual_tolerance_V) <= 1`. Report removes only the
+additional independent load tolerance gate, including final extracted-current
+acceptance; it does not remove the circuit row from the main residual branch.
+The OR update branch still requires a valid update actually applied during the
+current solve. Its density RMS includes the active circuit voltage through the
+contact aliases, scaled by `contact_reference_V`; no extra sample is added.
+A new target may accept zero updates only if its complete coupled residual is
+already satisfied. Nonfinite load residuals, terminal
+KCL and configured enforced carrier/closure checks still reject the point.
+`nested_scalar` requires `enforce`. No scalar or inexact device tolerance
+bypasses the remaining checks. The point's carrier/closure and block residual fields contain the actual
 measurements; `validation_diagnostics` includes the JSON
 `coupled_acceptance_checked` flag, enforcement status and KCL/load results.
 Global closure retains the standard source-floor qualification rule; the JSON
 records each carrier's `global_*_qualified` flag. An unqualified carrier does
 not establish a strict independent ratio pass. Commas and quotes in diagnostics
 are escaped as CSV fields so subsequent columns remain aligned.
+
+`sweep.external_circuit.coupled_step_control` selects the coupled resistor's
+outer-voltage stepping policy:
+
+- `quasistationary`: use outer voltage only. The controller takes the ordinary
+  sweep's `initial_step`, `min_step`, `max_step`, `growth_factor`, and
+  `shrink_factor` (all steps in outer volts), unless explicit `coupled_*outer*`
+  controls are supplied. Growth uses the accepted augmented Newton update count
+  and `external_circuit.max_iterations`; failure divides the step by Decrement
+  (`shrink_factor` is its reciprocal). If the divided step is below MinStep the
+  sweep exits, rather than inventing an extra trial at the floor. There is no
+  fixed Newton inner-voltage limit, predicted-inner limit, or extra retry at the
+  same outer target from the accepted state. The default retry budget is
+  unbounded by a separate count; an explicit `coupled_max_step_retries` remains
+  an optional work safeguard. Physical/linear/nonlinear acceptance is unchanged.
+- `legacy_inner_guard`: retain the existing explicit inner-voltage corrector,
+  predictor and retry controls described below.
+
+Unguarded coupled JSON decks default to `quasistationary`. To preserve historical
+JSON trajectories, a missing selector resolves to `legacy_inner_guard` when
+`max_inner_voltage_step_V` is present or `coupled_continuation.enabled` is true.
+An explicitly selected `quasistationary` rejects these conflicting settings,
+including `inner_step_control` and enabled `retry_from_accepted`; remove them
+rather than silently ignoring them. `nested_scalar` is unchanged and cannot
+select a coupled policy. This selector does not change device physics, state
+coordinates, density protection, or convergence tolerances.
+
+The qualified BVMethods CMD profile emits `quasistationary` by default. Its
+Quasistationary dimensionless steps are converted by the **external** voltage
+span, and Decrement is converted to its reciprocal. An existing sidecar that
+requests inner guards must explicitly select `legacy_inner_guard`. This is a
+compatibility contract for documented stepping, not a promise of identical
+Sentaurus nonlinear trajectories or proprietary solver internals.
+
+For example, to migrate a coupled deck:
+
+```json
+"external_circuit": {
+  "solver": "coupled_newton",
+  "resistance_ohm_um": 1e7,
+  "coupled_step_control": "quasistationary"
+}
+```
+
+Keep the existing physical/acceptance settings, and remove
+`max_inner_voltage_step_V` and the old `coupled_continuation` object. Each
+accepted coupled point records `external_step_control` and
+`newton_inner_voltage_limit_enabled`; a disabled predicted limit is recorded
+as zero, not as an active zero-volt constraint. Sweep steps are separate from
+Newton line search and from the update RMS stopping criterion.
 
 `sweep.external_circuit.coupled_continuation` explicitly enables a numerical
 continuation option for `solver: coupled_newton`:
@@ -2873,7 +2966,7 @@ Joint mode permits a residual-only zero-voltage initial anchor before any update
 all nonzero accepted points require a valid raw-update report. This additional
 explicit mode retains the historical `enforce` semantics. In particular, a
 residual-only pass with a large reported RMS is not a joint qualification pass.
-Both branches still require the original load-line and terminal KCL checks;
+Both branches retain the configured load-line mode and terminal KCL checks;
 configured enforced carrier-row/global-closure checks also still apply.
 No conservation mode is automatically changed. To study Newton stopping
 separately, explicitly configure the conservation checks as `report` in the
@@ -2981,7 +3074,8 @@ the coupled controller uses its actual accepted update count and
 `external_circuit.max_iterations` as the work budget. Its increment is
 `coupled_outer_growth_factor`; all step magnitudes remain outer volts.
 The ordinary device seed solver's iteration budget is not used for growth.
-The default remains `fixed`. Current break criteria stop coupled continuation
+The ordinary sweep/legacy default remains `fixed`; the `quasistationary` policy
+selects `newton_iterations`. Current break criteria stop coupled continuation
 after an accepted point, including intermediate points before an explicit target.
 This does not change carrier-row or global-closure acceptance.
 
@@ -3449,3 +3543,35 @@ assembled areas, global continuity-volume flags, disabled SRH, and enabled
 Auger are rejected. This option changes SRH residuals, Jacobian entries and
 split-state source evaluation together; mesh volumes, Poisson charge, edge
 transport, BTBT and avalanche measures are unchanged. It is not a global default.
+
+
+### Opt-in population lower bound and predictor cutoff
+
+For `solver.state_variables: potential_density`, the following controls are
+independent and default to zero (disabled), preserving existing trajectories:
+
+- `solver.population_update.minimum_density_cm3`: finite nonnegative lower
+  bound applied after each free-carrier candidate update and its existing
+  nonpositive protection. Convert cm^-3 to the configured internal concentration
+  units at the solver callback. Contact prescribed slots and inactive oxide slots
+  are not clipped. It does not change the original update RMS or residual gates.
+- `solver.population_predictor_low_density_limit_cm3`: finite nonnegative
+  cutoff for logarithmic population extrapolation. At a node whose most recent
+  accepted concentration is at or below the cutoff, retain that concentration;
+  do not raise it to the cutoff. Other nodes retain the existing log predictor.
+  Potential and circuit-voltage prediction are unchanged.
+
+These explicit experimental controls support separate Sentaurus compatibility
+validation. T-2022.03 documents default `DensLowLimit=1e-100 cm^-3` for Newton
+updates and `Extrapolate(LowDensityLimit=1e-100)` for extrapolation. The current
+Vela zero defaults do not claim those native defaults. The exact native mixed
+history/equality boundary and boundary-slot behavior require separate evidence;
+using these fields alone is not a claim of complete native equivalence.
+Candidate floor and predictor-cutoff events are recorded in the runtime log;
+these include rejected candidates and are not counts of accepted updates.
+
+The standard deck canonicalizer converts the physical `*_cm3` keys above to
+`minimum_density_m3` and `population_predictor_low_density_limit_m3`. These are parser spellings, not a numeric SI conversion: format v2 keeps
+cm^-3 values and its field parser uses the supplied scaling context. Legacy
+SI decks use m^-3 values (1 cm^-3 = 1e6 m^-3). Specifying both spellings for
+the same control is rejected. Internal callback conversion remains separate.

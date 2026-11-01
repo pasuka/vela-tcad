@@ -1,4 +1,6 @@
 #pragma once
+#include <optional>
+#include <stdexcept>
 
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
@@ -70,8 +72,28 @@ struct DDSolution {
     Real splitPotentialAt(int block,int node) const;
     Real splitQuasiFermiDifferenceAt(int node) const;
     Real packedPotentialScale_V = 0.0;
-    VectorXd n;     ///< Electron concentration [m^-3]
-    VectorXd p;     ///< Hole concentration [m^-3]
+    // Distinct from QF packedState: only psi is normalized; n/p keep internal units.
+    VectorXd populationPsi;
+    Real populationPotentialScale_V = 0.;
+    std::optional<Real> populationPotentialOrigin_V; ///< Bound by the archive reference identity.
+    bool hasConsistentPopulationPotential() const {
+        if (stateVariables != "potential_density" || psi.size()==0 ||
+            populationPsi.size()!=psi.size() || !populationPsi.allFinite() ||
+            !(populationPotentialScale_V>0.) || !std::isfinite(populationPotentialScale_V) ||
+            (populationPotentialOrigin_V && !std::isfinite(*populationPotentialOrigin_V))) return false;
+        for(int i=0;i<psi.size();++i)
+            if(!std::isfinite(psi[i]) || psi[i]!=populationPsi[i]*populationPotentialScale_V) return false;
+        return true;
+    }
+    VectorXd normalizedPopulationPotential(Real targetScale_V) const {
+        if(!(targetScale_V>0.) || !std::isfinite(targetScale_V))
+            throw std::invalid_argument("invalid population potential scale");
+        if(hasConsistentPopulationPotential() && populationPotentialScale_V==targetScale_V)
+            return populationPsi;
+        return psi/targetScale_V;
+    }
+    VectorXd n;     ///< Electron concentration in the configured internal unit.
+    VectorXd p;     ///< Hole concentration in the configured internal unit.
     int      iters = 0; ///< Number of Gummel iterations performed
     bool     converged = false; ///< True if the Gummel convergence criteria were met
 

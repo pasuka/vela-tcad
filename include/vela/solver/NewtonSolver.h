@@ -246,7 +246,10 @@ struct NewtonConfig {
     std::string stateVariables = "potential_quasi_fermi";
     std::string populationDerivativeRecovery = "full";
     std::string populationSgCurrent = "quasi_fermi";
+    std::string populationSgBootstrapLinearization = "unchanged";
     PopulationUpdateConfig populationUpdate;
+    Real populationMinimumDensity_cm3 = 0.;
+    Real populationPredictorLowDensity_cm3 = 0.;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
     ///< Optional Sentaurus eQuantumPotential outer iteration.

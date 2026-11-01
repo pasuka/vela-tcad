@@ -12,6 +12,27 @@
 // A resistor's external voltage span does not define a device-voltage span.
 namespace vela::detail {
 
+// Old JSON decks with explicit inner guards retain their reproducible policy.
+// New unguarded coupled decks use outer-voltage Quasistationary stepping.
+inline std::string externalResistorStepControl(const nlohmann::json& circuit)
+{
+    const auto continuation = circuit.value("coupled_continuation", nlohmann::json::object());
+    const bool guarded = circuit.contains("max_inner_voltage_step_V") ||
+        continuation.value("enabled", false);
+    const auto mode = circuit.value("coupled_step_control",
+        std::string(guarded ? "legacy_inner_guard" : "quasistationary"));
+    if (mode != "quasistationary" && mode != "legacy_inner_guard")
+        throw std::invalid_argument("coupled_step_control must be quasistationary or legacy_inner_guard");
+    if (mode == "quasistationary" &&
+        (guarded || continuation.contains("inner_step_control") ||
+         continuation.value("retry_from_accepted", false)))
+        throw std::invalid_argument("quasistationary step control does not accept inner voltage guards or retry_from_accepted; use legacy_inner_guard explicitly");
+    if (circuit.value("solver", std::string("nested_scalar")) != "coupled_newton" &&
+        circuit.contains("coupled_step_control"))
+        throw std::invalid_argument("coupled_step_control requires coupled_newton");
+    return mode;
+}
+
 inline constexpr double defaultPredictedInnerStep_V = 0.02;
 
 struct InnerStepLimit {

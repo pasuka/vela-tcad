@@ -85,6 +85,7 @@ struct ArclengthScalarLinearization {
 struct ArclengthScalarFunctional {
     std::function<Real(const VectorXd&, Real)> value;
     std::function<ArclengthScalarLinearization(const VectorXd&, Real)> linearize;
+    std::function<ArclengthScalarLinearization(const VectorXd&,Real,const VectorXd&)> linearizeInColumns;
 };
 
 /// Outcome of a single attempted arclength step.
@@ -126,6 +127,10 @@ struct ArclengthSystem {
     /// only needs solveJacobian, while a circuit border must be able to retain
     /// J inside one augmented sparse matrix even when J itself is singular.
     std::function<SparseMatrixd(const VectorXd& x, Real lambda)> jacobian;
+    /// Assemble J diag(columns) directly, retaining the physical state x.
+    /// Used only for depleted population columns in the bordered solve.
+    std::function<SparseMatrixd(const VectorXd&,Real,const VectorXd&)> jacobianInColumns;
+    std::function<SparseMatrixd(const VectorXd&,Real,const VectorXd&)> bootstrapJacobianInColumns;
     /// Solve J(x, lambda) * y = b where J = dF/dx. Writes the solution into y and
     /// returns false if the Jacobian is singular or the solve otherwise failed.
     std::function<bool(const VectorXd& x, Real lambda, const VectorXd& b, VectorXd& y)>

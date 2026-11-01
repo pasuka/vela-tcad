@@ -884,6 +884,9 @@ if(TARGET PkgConfig::VELA_MUMPS)
 endif()
 
 # Diagnostic replay of frozen Newton systems through the shared linear backend.
+add_executable(vela_coupled_frozen_replay EXCLUDE_FROM_ALL scripts/diagnostics/coupled_frozen_replay.cpp)
+target_link_libraries(vela_coupled_frozen_replay PRIVATE vela_core)
+
 add_executable(linear_solver_replay EXCLUDE_FROM_ALL src/tools/linear_solver_replay.cpp)
 target_link_libraries(linear_solver_replay PRIVATE vela_core)
 add_executable(linear_solver_strategy_study EXCLUDE_FROM_ALL src/tools/linear_solver_strategy_study.cpp)

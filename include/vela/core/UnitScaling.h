@@ -69,6 +69,11 @@ public:
     {
         return value * concentrationM3PerInternal_;
     }
+    // Combine conversion factors before touching the value: TCAD cm^-3 is an
+    // exact identity, including subnormal populations, not (n*1e6)/1e6.
+    Real internalConcentrationToCm3(Real value) const {
+        return value * (concentrationM3PerInternal_ / 1e6);
+    }
     Real m3ToInternalConcentration(Real value) const
     {
         return value / concentrationM3PerInternal_;

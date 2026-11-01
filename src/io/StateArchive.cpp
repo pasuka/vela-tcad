@@ -27,6 +27,7 @@ const std::map<std::string, std::string> units{
     {"electron_qf_reference_V", "V"}, {"hole_qf_reference_V", "V"},
     {"packed_psi", "1"}, {"packed_electron_qf_increment", "1"}, {"packed_hole_qf_increment", "1"},
     {"packed_psi_low", "1"}, {"packed_electron_qf_increment_low", "1"}, {"packed_hole_qf_increment_low", "1"},
+    {"population_psi_normalized", "1"},
     {"population_electrons_internal", "internal_concentration"},
     {"population_holes_internal", "internal_concentration"},
     {"temperature_K", "K"}};
@@ -115,6 +116,23 @@ void validateStateArchive(const StateArchive& s) {
                 const double value=s.fields.at(pair.first)[i],physical=value*factor;
                 if(value<0. || !std::isfinite(physical) || physical!=s.fields.at(pair.second)[i])bad("population coordinates disagree with physical fields");
             }
+    }
+    const bool potential=s.fields.contains("population_psi_normalized");
+    for(const char* name:{"population_potential_schema","population_potential_scale_V",
+                         "population_potential_origin_V","population_potential_unit"})
+        if(potential!=s.metadata.contains(name))bad("incomplete population potential coordinates");
+    if(potential) {
+        if(!en || s.metadata.at("population_potential_schema")!="vela.population-potential.v1" ||
+           s.metadata.at("population_potential_unit")!="V" ||
+           !s.metadata.at("population_potential_scale_V").is_number() ||
+           !s.metadata.at("population_potential_origin_V").is_number())bad("invalid population potential identity");
+        const double v0=s.metadata.at("population_potential_scale_V"),origin=s.metadata.at("population_potential_origin_V");
+        if(!(v0>0.) || !std::isfinite(v0) || origin!=s.metadata.at("potential_origin_V").get<double>())
+            bad("invalid population potential reference or scale");
+        for(std::size_t i=0;i<s.nodeCount;++i) {
+            const double physical=s.fields.at("population_psi_normalized")[i]*v0;
+            if(!std::isfinite(physical) || physical!=s.fields.at("psi")[i])bad("population potential disagrees with physical field");
+        }
     }
     if (split) for (std::size_t i = 0; i < s.nodeCount; ++i) {
         for (const auto& carrier : {std::string("electron"), std::string("hole")}) {

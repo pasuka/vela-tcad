@@ -24,6 +24,7 @@ SPLIT = {'electron_qf_increment_V', 'hole_qf_increment_V',
 PACKED = ('packed_psi', 'packed_electron_qf_increment', 'packed_hole_qf_increment')
 PACKED_LOW = tuple(name+'_low' for name in PACKED)
 UNITS.update({name:'1' for name in PACKED+PACKED_LOW})
+UNITS['population_psi_normalized'] = '1'
 POPULATION = ('population_electrons_internal', 'population_holes_internal')
 UNITS.update({name:'internal_concentration' for name in POPULATION})
 
@@ -115,7 +116,21 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
                 fields[inc][i]=math.fsum((a,-subtract,-new,b)) if live else 0.
         for key in ('psi','phin','phip'):
             fields[key][i]=float(fields[key][i])-subtract if key=='psi' or live else 0.
+    if 'population_psi_normalized' in fields:
+        # Explicit frame conversion starts from authoritative normalized psi,
+        # not its rounded physical output. A changed frame incurs one final
+        # binary64 rounding; matching-frame read/write still preserves bits.
+        scale = metadata['population_potential_scale_V']
+        with localcontext() as ctx:
+            ctx.prec = 100
+            v0, offset = Decimal.from_float(float(scale)), Decimal.from_float(float(subtract))
+            for i, raw in enumerate(fields['population_psi_normalized']):
+                normalized = float((Decimal.from_float(float(raw))*v0-offset)/v0)
+                fields['population_psi_normalized'][i] = normalized
+                fields['psi'][i] = normalized * scale
     metadata['potential_origin_V'] += subtract
+    if 'population_psi_normalized' in fields:
+        metadata['population_potential_origin_V'] = metadata['potential_origin_V']
     # Saved DD bias values are expressed in the solver reference frame.
     # Physical terminal bias = stored bias + potential_origin_V.
     if 'bias_V' in metadata: metadata['bias_V'] -= subtract
@@ -186,6 +201,23 @@ def validate(fields, metadata):
             if (np.any(values < 0) or not np.all(np.isfinite(converted))
                     or not np.array_equal(converted, np.asarray(fields[physical], dtype='<f8'))):
                 raise ValueError('Population coordinates disagree with physical fields')
+    potential = 'population_psi_normalized' in fields
+    identity = ('population_potential_schema', 'population_potential_scale_V',
+                'population_potential_origin_V', 'population_potential_unit')
+    if any(potential != (key in metadata) for key in identity):
+        raise ValueError('Incomplete population potential coordinates')
+    if potential:
+        scale = metadata['population_potential_scale_V']
+        origin = metadata['population_potential_origin_V']
+        if (not population[0] or metadata['population_potential_schema'] != 'vela.population-potential.v1'
+                or metadata['population_potential_unit'] != 'V' or type(scale) not in (int,float)
+                or not math.isfinite(scale) or scale <= 0 or type(origin) not in (int,float)
+                or not math.isfinite(origin) or origin != metadata['potential_origin_V']):
+            raise ValueError('Invalid population potential identity')
+        with np.errstate(over='ignore', under='ignore'):
+            physical = np.asarray(fields['population_psi_normalized'], dtype='<f8') * scale
+        if not np.all(np.isfinite(physical)) or not np.array_equal(physical, np.asarray(fields['psi'], dtype='<f8')):
+            raise ValueError('Population potential disagrees with physical field')
     if SPLIT <= fields.keys():
         for carrier, qf in (('electron', 'phin'), ('hole', 'phip')):
             combined = np.asarray(fields[carrier+'_qf_reference_V']) + np.asarray(fields[carrier+'_qf_increment_V'])

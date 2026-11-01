@@ -53,6 +53,9 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     zero.linearize=[](const VectorXd& x,Real){
         ArclengthScalarLinearization out;out.stateDerivative=VectorXd::Zero(x.size());return out;
     };
+    zero.linearizeInColumns=[](const VectorXd& x,Real,const VectorXd&){
+        ArclengthScalarLinearization out;out.stateDerivative=VectorXd::Zero(x.size());return out;
+    };
     const auto solved=CoupledLoadLineNewton(system,zero.value,c,zero,
         makeArclengthUpdateErrorEvaluator(contact,c.updateConvergence)).solve({y,bias->second},bias->second,1.);
     NewtonResult out;

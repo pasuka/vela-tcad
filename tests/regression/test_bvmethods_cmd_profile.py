@@ -9,6 +9,20 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class BVMethodsCmdProfileTests(unittest.TestCase):
+    def test_load_report_and_or_stopping_are_independent_schema_controls(self):
+        for mode, load in [("enforce", "enforce"), ("enforce_joint", "report"), ("enforce", "report")]:
+            controls = {"solver": "coupled_newton",
+                "load_line_convergence_mode": load, "coupled_update_convergence": {"mode": mode}}
+            for name, value in [("schemas/vela.sdevice_sidecar.v1.schema.json",
+                                 {"schema": "vela.sdevice_sidecar.v1", "sweep": {"external_circuit": controls}}),
+                                ("configs/schema/vela-simulation.schema.json", {"sweep": {"external_circuit": controls}})]:
+                schema = sv.load_schema(REPO / name)["properties"]["sweep"]["properties"]["external_circuit"]
+                schema = {**schema, "required": []}
+                sv.validate(schema, controls)
+                controls["load_line_convergence_mode"] = "bad"
+                with self.assertRaises(sv.ValidationError):sv.validate(schema, controls)
+                controls["load_line_convergence_mode"] = load
+
     def test_joint_density_stop_is_valid_through_real_sidecar_schema(self):
         schema = sv.load_schema(REPO / "schemas/vela.sdevice_sidecar.v1.schema.json")
         sidecar = {"schema": "vela.sdevice_sidecar.v1", "solver": {
@@ -33,6 +47,32 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
             with self.assertRaises(sv.ValidationError):sv.validate(schema, {"solver": invalid})
             d, ir, stage, _ = self.inputs()
             with self.assertRaises(ValueError):apply_bvmethods_profile(d, ir, stage, {"solver": invalid})
+
+    def test_statistical_bootstrap_schema_requires_compatible_population_floor(self):
+        import copy
+        schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
+        schema = {**schema, "required": []}
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {"solver": {"state_variables": "potential_density"}})
+        solver = d["solver"]
+        solver["mobility"]["doping_concentration_basis"] = "total_impurity"
+        solver["population_sg_bootstrap_linearization"] = "floor_adjacent_edges"
+        solver["population_update"] = {"minimum_density_cm3": 1e-100}
+        sv.validate(schema, {"solver": solver})
+        forwarded, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(forwarded, ir, stage, {"solver": {
+            "state_variables": "potential_density", "population_sg_bootstrap_linearization": "floor_adjacent_edges",
+            "population_update": {"minimum_density_cm3": 1e-100}}})
+        self.assertEqual(forwarded["solver"]["population_sg_bootstrap_linearization"], "floor_adjacent_edges")
+        for control in [{"population_sg_bootstrap_linearization": "bad"},
+                        {"population_sg_bootstrap_linearization": "floor_adjacent_edges"}]:
+            bad, ir, stage, _ = self.inputs()
+            with self.assertRaises(ValueError):apply_bvmethods_profile(bad, ir, stage, {"solver": control})
+        for key, value in [("population_update", {}), ("population_update", {"minimum_density_cm3": 0}),
+                           ("population_sg_current", "band_population"),
+                           ("population_sg_bootstrap_linearization", "bad")]:
+            bad = copy.deepcopy(solver); bad[key] = value
+            with self.assertRaises(sv.ValidationError):sv.validate(schema, {"solver": bad})
 
     def test_population_mode_is_explicit_and_emits_independent_protection(self):
         d, ir, stage, _ = self.inputs()
@@ -122,6 +162,9 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         self.assertEqual(d['sweep']['external_circuit']['resistance_ohm_um'],1e7)
         self.assertEqual(d['sweep']['external_circuit']['coupled_max_outer_step_V'],2500.)
         self.assertEqual(d['sweep']['external_circuit']['coupled_initial_outer_step_V'],.01)
+        self.assertEqual(d['sweep']['external_circuit']['coupled_step_control'],'quasistationary')
+        self.assertNotIn('coupled_continuation',d['sweep']['external_circuit'])
+        self.assertNotIn('max_inner_voltage_step_V',d['sweep']['external_circuit'])
         self.assertEqual(d['sweep']['step'],100000.)
         self.assertEqual(stage['sweep']['step_V'],100000.)
         self.assertNotIn('boundary_control',d['sweep'])
@@ -207,8 +250,10 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
                        'global_continuity_closure':{'mode':'report'}},
             'sweep':{'external_circuit':{'solver':'coupled_newton',
                 'coupled_line_search_mode':'report_only',
+                'load_line_convergence_mode':'report',
                 'coupled_update_convergence':{'mode':'off','diagnostic_csv':'updates.csv'},
                 'coupled_equation_tolerance':1e-8, 'coupled_max_step_retries':20,
+                'coupled_step_control':'legacy_inner_guard',
                 'coupled_continuation':{'enabled':True,'retry_from_accepted':True}}}}
         sv.validate(sv.load_schema(REPO/'schemas/vela.sdevice_sidecar.v1.schema.json'), sidecar)
         result = emit(ir, mesh_qualification=qualification(ir, ('Si','SiO2')),
@@ -220,6 +265,7 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         self.assertEqual(scan['sweep']['initial_state_file'],zero['sweep']['write_state_file'])
         self.assertEqual(scan['sweep']['external_circuit']['resistance_ohm_um'],1e7)
         self.assertEqual(scan['sweep']['external_circuit']['coupled_line_search_mode'],'report_only')
+        self.assertEqual(scan['sweep']['external_circuit']['load_line_convergence_mode'],'report')
         self.assertEqual(scan['sweep']['external_circuit']['coupled_update_convergence'],
                          {'mode':'off','diagnostic_csv':'updates.csv'})
         self.assertEqual(scan['sweep']['external_circuit']['coupled_max_outer_step_V'],2500)
@@ -230,6 +276,19 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
             self.assertEqual(deck['solver']['quasi_fermi_update_limit_minority_V'],0.)
             sv.validate(sv.load_schema(REPO/'configs/schema/vela-simulation.schema.json'),deck)
         sv.validate(sv.load_schema(REPO/'schemas/vela.stage_plan.v1.schema.json'),result.stage_plan)
+
+    def test_native_external_policy_rejects_custom_guards(self):
+        for guard in ({'max_inner_voltage_step_V':.5},
+                      {'coupled_continuation':{'enabled':True}},
+                      {'coupled_continuation':{'retry_from_accepted':True}}):
+            d,ir,stage,_=self.inputs()
+            d['sweep']['external_circuit'].update(guard)
+            with self.assertRaises(ValueError):apply_bvmethods_profile(d,ir,stage,{})
+            d,ir,stage,_=self.inputs()
+            d['sweep']['external_circuit'].update(guard)
+            d['sweep']['external_circuit']['coupled_step_control']='legacy_inner_guard'
+            apply_bvmethods_profile(d,ir,stage,{})
+            self.assertEqual(d['sweep']['external_circuit']['coupled_step_control'],'legacy_inner_guard')
 
     def test_sidecar_cannot_override_cmd_outer_adaptation(self):
         schema = sv.load_schema(REPO/'schemas/vela.sdevice_sidecar.v1.schema.json')

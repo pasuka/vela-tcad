@@ -30,7 +30,14 @@ inline AvJet avLogRatio(const AvJet& numerator,const AvJet& denominator)
     const double ratio=numerator.value/denominator.value;
     if(ratio>=std::sqrt(std::numeric_limits<double>::min()) &&
        ratio<=std::sqrt(std::numeric_limits<double>::max()))
-        return avLog(numerator/denominator);
+    {
+        const auto quotient=numerator/denominator;
+        bool finite=true;
+        for(double d:quotient.derivative)finite=finite&&std::isfinite(d);
+        if(finite)return avLog(quotient);
+        // The quotient can be ordinary while its intermediate tangent
+        // overflows. d log(a/b)=da/a-db/b remains representable.
+    }
     return avLog(numerator)-avLog(denominator);
 }
 

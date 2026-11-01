@@ -1171,8 +1171,12 @@ CoupledDDAssembler::fixedJacobianOffset(int row, int col) const
 VectorXd CoupledDDAssembler::pack(const CoupledDDState& state) const
 {
     if (usesPopulationState()) {
-        const Real scale=scaling_.enabled ? scaling_.V0 : 1.;
-        return packPopulation((state.psi*scale).eval(),state.n,state.p);
+        const int n=mesh_.numNodes();
+        if(state.psi.size()!=n || state.n.size()!=n || state.p.size()!=n)
+            throw std::invalid_argument("invalid normalized population pack contract");
+        VectorXd x(3*n);x.head(n)=state.psi;x.segment(n,n)=state.n;x.tail(n)=state.p;
+        (void)populationPhysicalFields(x);
+        return x;
     }
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N)
@@ -1201,21 +1205,10 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
     state.psi = x.segment(psiOffset(), N);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     if (usesPopulationState()) {
-        if (!x.allFinite()) throw std::domain_error("nonfinite population state");
-        state.n=x.segment(N,N); state.p=x.tail(N);
-        state.phin=VectorXd::Zero(N); state.phip=VectorXd::Zero(N);
-        for (int i=0;i<N;++i) {
-            if (ni_[i]<=0.) {
-                if (state.n[i]!=0. || state.p[i]!=0.)
-                    throw std::domain_error("inactive population slots must be zero");
-                continue;
-            }
-            if (!(state.n[i]>0.) || !(state.p[i]>0.))
-                throw std::domain_error("positive population state required");
-            const Real psi=state.psi[i]*potentialScale;
-            state.phin[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],psi,state.n[i],Vt_,carrierStatistics_)/potentialScale;
-            state.phip[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],psi,state.p[i],Vt_,carrierStatistics_)/potentialScale;
-        }
+        const auto physical=populationPhysicalFields(x);
+        state.n=physical.n;state.p=physical.p;
+        state.phin=physical.phin_V/potentialScale;
+        state.phip=physical.phip_V/potentialScale;
         return state;
     }
     state.phin.resize(N);
@@ -1228,6 +1221,27 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
             + holeQuasiFermiReferenceAt(node) / potentialScale;
     }
     return state;
+}
+
+PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const VectorXd& x) const {
+    const int n=mesh_.numNodes();
+    if(!usesPopulationState() || x.size()!=3*n)
+        throw std::invalid_argument("invalid population physical-field contract");
+    if(!x.allFinite())throw std::domain_error("nonfinite population state");
+    PopulationPhysicalFields s;
+    s.psi_V=x.head(n)*(scaling_.enabled?scaling_.V0:1.);
+    s.n=x.segment(n,n);s.p=x.tail(n);
+    s.phin_V=VectorXd::Zero(n);s.phip_V=VectorXd::Zero(n);
+    for(int i=0;i<n;++i) {
+        if(ni_[i]<=0.) {
+            if(s.n[i]!=0. || s.p[i]!=0.)throw std::domain_error("inactive population slots must be zero");
+            continue;
+        }
+        if(!(s.n[i]>0.) || !(s.p[i]>0.))throw std::domain_error("positive population state required");
+        s.phin_V[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],s.psi_V[i],s.n[i],Vt_,carrierStatistics_);
+        s.phip_V[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],s.psi_V[i],s.p[i],Vt_,carrierStatistics_);
+    }
+    return s;
 }
 
 VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd& n,

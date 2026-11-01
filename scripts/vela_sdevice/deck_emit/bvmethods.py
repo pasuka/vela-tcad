@@ -1,5 +1,6 @@
 """Explicit numerical profile for the qualified BVMethods Tri3 operator."""
 from __future__ import annotations
+import math
 
 STATE_FIELDS = {"ElectrostaticPotential", "eDensity", "hDensity", "SpaceCharge", "DopingConcentration"}
 GEOMETRY = {"node_volume_policy": "barycentric", "require_non_obtuse": False,
@@ -52,6 +53,20 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     sg = requested.get("population_sg_current", "quasi_fermi")
     if sg not in ("quasi_fermi", "band_population") or (sg != "quasi_fermi" and variables != "potential_density"):
         raise ValueError("invalid population_sg_current")
+    statistical = requested.get("population_sg_bootstrap_linearization", "unchanged")
+    if statistical not in ("unchanged", "floor_adjacent_edges"):
+        raise ValueError("invalid population_sg_bootstrap_linearization")
+    if statistical == "floor_adjacent_edges":
+        limits = requested.get("population_update", {})
+        if not isinstance(limits, dict):
+            raise ValueError("statistical bootstrap requires population_update")
+        values = [limits[k] for k in ("minimum_density_cm3", "minimum_density_m3") if k in limits]
+        if (variables != "potential_density" or sg != "quasi_fermi" or len(values) != 1 or
+                isinstance(values[0], bool) or not isinstance(values[0], (int, float)) or
+                not math.isfinite(values[0]) or values[0] <= 0):
+            raise ValueError("statistical bootstrap requires population quasi_fermi SG and a positive density floor")
+    if "population_sg_bootstrap_linearization" in requested:
+        solver["population_sg_bootstrap_linearization"] = statistical
     recovery = requested.get("population_derivative_recovery", "full")
     if recovery not in ("full", "automatic") or (recovery != "full" and variables != "potential_density"):
         raise ValueError("invalid population_derivative_recovery")
@@ -121,7 +136,16 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
                                ("coupled_outer_growth_factor", "growth_factor"),
                                ("coupled_outer_shrink_factor", "shrink_factor")):
             circuit.setdefault(target, sweep[source])
-        circuit.setdefault("coupled_continuation", {"enabled": True, "retry_from_accepted": True})
+        mode = circuit.setdefault("coupled_step_control", "quasistationary")
+        if mode not in ("quasistationary", "legacy_inner_guard"):
+            raise ValueError("unsupported external circuit coupled_step_control")
+        if mode == "quasistationary":
+            extra = circuit.get("coupled_continuation", {})
+            if ("max_inner_voltage_step_V" in circuit or extra.get("enabled", False)
+                    or "inner_step_control" in extra or extra.get("retry_from_accepted", False)):
+                raise ValueError("quasistationary does not accept inner voltage guards or retry_from_accepted; select legacy_inner_guard explicitly")
+        else:
+            circuit.setdefault("coupled_continuation", {"enabled": True, "retry_from_accepted": True})
         sweep["step_growth_mode"] = "newton_iterations"
         boundary = sweep.get("boundary_control", {})
         boundary.pop("adaptive_outer_continuation", None)

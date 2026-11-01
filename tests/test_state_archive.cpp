@@ -283,3 +283,29 @@ TEST_CASE("Population archive preserves internal carrier bits across SI transpor
     auto legacy=a;legacy.fields.erase("population_electrons_internal");legacy.fields.erase("population_holes_internal");legacy.metadata.erase("population_coordinate_schema");legacy.metadata.erase("population_concentration_m3_per_internal");
     const auto old=restoreDDSolution(legacy,scaling);REQUIRE(old.populationRestoreMode=="legacy_si");REQUIRE(old.n[0]!=s.n[0]);
 }
+
+TEST_CASE("Population potential archive retains nonzero normalized bits and validates its reference", "[state_archive][population_core]") {
+    using namespace vela;Workspace w;DDSolution s;s.stateVariables="potential_density";
+    s.populationPotentialScale_V=.025851999786435535;
+    s.populationPsi.resize(3);s.populationPsi<<21.200072448909626,-17.200072448909626,0.;
+    s.psi=s.populationPsi*s.populationPotentialScale_V;
+    REQUIRE(s.psi[0]/s.populationPotentialScale_V!=s.populationPsi[0]);
+    s.phin=VectorXd::Zero(3);s.phip=s.phin;s.n=VectorXd::Ones(3);s.p=s.n;
+    REQUIRE(s.hasConsistentPopulationPotential());
+    auto a=archiveDDSolution(s,example().metadata);
+    writeStateArchive(w.root/"potential.h5",a);
+    auto out=restoreDDSolution(readStateArchive(w.root/"potential.h5",3,std::string(64,'a')));
+    REQUIRE(out.hasConsistentPopulationPotential());
+    REQUIRE(out.populationPotentialScale_V==s.populationPotentialScale_V);
+    for(int i=0;i<3;++i)REQUIRE(std::bit_cast<std::uint64_t>(out.populationPsi[i])==std::bit_cast<std::uint64_t>(s.populationPsi[i]));
+    for(const char* key:{"population_potential_schema","population_potential_scale_V","population_potential_origin_V","population_potential_unit"}) {
+        auto bad=a;bad.metadata.erase(key);REQUIRE_THROWS(validateStateArchive(bad));
+    }
+    auto bad=a;bad.metadata["potential_origin_V"]=1.;REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.metadata["population_potential_unit"]="mV";REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.metadata["population_potential_scale_V"]=0.;REQUIRE_THROWS(validateStateArchive(bad));
+    bad=a;bad.fields["population_psi_normalized"][0]+=1.;REQUIRE_THROWS(validateStateArchive(bad));
+    auto shifted=example().metadata;shifted["potential_origin_V"]=out.populationPotentialOrigin_V.value()+1.;
+    REQUIRE_THROWS(archiveDDSolution(out,shifted));
+    s.psi[0]+=1.;REQUIRE_FALSE(s.hasConsistentPopulationPotential());REQUIRE_THROWS(archiveDDSolution(s,example().metadata));
+}

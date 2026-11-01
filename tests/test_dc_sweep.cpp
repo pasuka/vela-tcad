@@ -12,6 +12,7 @@
 #include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/QfBoundsGuard.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/simulation/AdaptiveVoltageStepControl.h"
 #include "vela/post/TerminalCharge.h"
 
 #include <algorithm>
@@ -1330,6 +1331,12 @@ TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops 
     {std::ofstream f(path); f<<cfg.dump(2);}
     const auto result=DCSweep().runWithResult(path.string());
     REQUIRE(result.points.size()>=3);
+    for(const auto& point:result.points) {
+        const auto diagnostic=nlohmann::json::parse(point.validationDiagnostics);
+        REQUIRE(diagnostic.at("external_step_control")=="quasistationary");
+        REQUIRE_FALSE(diagnostic.at("newton_inner_voltage_limit_enabled").get<bool>());
+        REQUIRE(diagnostic.at("predicted_inner_step_limit_V")==0.);
+    }
     REQUIRE(result.points.back().outerVoltage_V==Catch::Approx(.02));
     for(std::size_t i=1;i+1<result.points.size();++i) {
         const auto& p=result.points[i];
@@ -1347,6 +1354,32 @@ TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops 
     {std::ofstream f(path); f<<cfg.dump(2);}
     const auto stopped=DCSweep().runWithResult(path.string());
     REQUIRE(stopped.points.size()<result.points.size());
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="report";
+    cfg["sweep"]["external_circuit"]["residual_tolerance_V"]=1e-30;
+    cfg["sweep"]["external_circuit"]["coupled_update_convergence"]={{"mode","enforce"}};
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    const auto reported=DCSweep().runWithResult(path.string());
+    REQUIRE(reported.points.size()>=2);
+    for(const auto& point:reported.points) {
+        const auto d=nlohmann::json::parse(point.validationDiagnostics);
+        REQUIRE(d.at("load_line_convergence_mode")=="report");
+        REQUIRE_FALSE(d.at("load_line_enforced").get<bool>());
+        REQUIRE(d.at("terminal_kcl_satisfied").get<bool>());
+        if(!d.at("actual_load_line_satisfied").get<bool>()) {
+            REQUIRE(d.at("density_update_valid").get<bool>());
+            REQUIRE(d.at("density_update_rms").get<Real>()<1.);
+        }
+    }
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="invalid";
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    REQUIRE_THROWS_WITH(DCSweep().runWithResult(path.string()),
+        Catch::Matchers::ContainsSubstring("load_line_convergence_mode"));
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="report";
+    cfg["sweep"]["external_circuit"].erase("coupled_update_convergence");
+    cfg["sweep"]["external_circuit"]["solver"]="nested_scalar";
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    REQUIRE_THROWS_WITH(DCSweep().runWithResult(path.string()),
+        Catch::Matchers::ContainsSubstring("report requires coupled_newton"));
 }
 
 TEST_CASE("DCSweep: coupled scalar convergence cannot mask failed physical closure",
@@ -1380,7 +1413,7 @@ TEST_CASE("DCSweep: coupled scalar convergence cannot mask failed physical closu
          {"initial_state_file", statePath.string()},
          {"external_circuit", {{"mode", "series_resistor"}, {"solver", "coupled_newton"},
              {"resistance_ohm_um", 1e7}, {"coupled_equation_tolerance", 1e100},
-             {"residual_tolerance_V", 1e100}}}},
+             {"residual_tolerance_V", 1e100}, {"load_line_convergence_mode", "report"}}}},
         {{"method", "newton"}, {"warm_start", true}, {"recombination", {"srh"}},
          {"global_continuity_closure", {{"mode", "enforce"}, {"tolerance", .01}, {"source_floor", 1e-30}}}});
     REQUIRE_THROWS_WITH(DCSweep().runWithResult(config.string()),
@@ -6930,4 +6963,34 @@ TEST_CASE("DCSweep state step cap limits accepted advances and respects the mini
     REQUIRE(events.size()==1);
     REQUIRE_FALSE(events.front().converged);
     REQUIRE(events.front().failureReason=="state_step_limit_below_minimum_or_invalid");
+}
+
+TEST_CASE("External resistor step policy distinguishes native and explicit inner guards", "[dc_sweep][quasistationary]") {
+    using detail::externalResistorStepControl;
+    nlohmann::json c={{"solver","coupled_newton"}};
+    REQUIRE(externalResistorStepControl(c)=="quasistationary");
+    c["max_inner_voltage_step_V"]=.5;
+    REQUIRE(externalResistorStepControl(c)=="legacy_inner_guard");
+    c["coupled_step_control"]="quasistationary";
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+    c.erase("max_inner_voltage_step_V");
+    c["coupled_continuation"]={{"enabled",true}};
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+    c["coupled_step_control"]="legacy_inner_guard";
+    REQUIRE(externalResistorStepControl(c)=="legacy_inner_guard");
+    c["coupled_step_control"]="unknown";
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+}
+
+TEST_CASE("Quasistationary failed outer steps stop when division crosses MinStep", "[dc_sweep][quasistationary]") {
+    detail::DCSweepStepControlConfig c;
+    c.start=0.;c.stop=1.;c.step=1.;c.initialStep=.3;c.minStep=.1;c.maxStep=1.;c.shrinkFactor=.5;c.maxRetries=20;c.stopBelowMinimum=true;
+    std::vector<Real> attempted;
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(c,[&](Real,Real step,int){attempted.push_back(step);return false;},[&](const auto& e){events.push_back(e);});
+    REQUIRE(attempted.size()==2);
+    REQUIRE(attempted[0]==Catch::Approx(.3));
+    REQUIRE(attempted[1]==Catch::Approx(.15));
+    REQUIRE(events.back().failureReason=="min_step_exhausted");
+    REQUIRE_FALSE(events.back().converged);
 }

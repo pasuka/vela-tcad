@@ -35,6 +35,19 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
         s.metadata["population_coordinate_schema"]="vela.population-coordinates.v1";
         s.metadata["population_concentration_m3_per_internal"]=units.internalConcentrationToM3(1.);
         s.metadata["authoritative_fields"]={"psi","population_electrons_internal","population_holes_internal"};
+        if(solution.populationPsi.size()) {
+            if(!solution.hasConsistentPopulationPotential())
+                throw std::invalid_argument("stale population potential coordinates");
+            const double origin=s.metadata.at("potential_origin_V");
+            if(solution.populationPotentialOrigin_V && *solution.populationPotentialOrigin_V!=origin)
+                throw std::invalid_argument("population potential reference changed without translation");
+            field("population_psi_normalized",solution.populationPsi);
+            s.metadata["population_potential_schema"]="vela.population-potential.v1";
+            s.metadata["population_potential_scale_V"]=solution.populationPotentialScale_V;
+            s.metadata["population_potential_origin_V"]=origin;
+            s.metadata["population_potential_unit"]="V";
+            s.metadata["authoritative_fields"]={"population_psi_normalized","population_electrons_internal","population_holes_internal"};
+        }
     }
     for (const char* name : {"electrons_m3", "holes_m3"})
         for (auto& v : s.fields.at(name)) v = units.internalConcentrationToM3(v);
@@ -110,6 +123,12 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
                 s.populationRestoreMode="exact_internal";
             } else s.populationRestoreMode="converted_units";
         }
+    }
+    if(archive.fields.contains("population_psi_normalized")) {
+        field("population_psi_normalized",s.populationPsi);
+        s.populationPotentialScale_V=archive.metadata.at("population_potential_scale_V");
+        s.populationPotentialOrigin_V=archive.metadata.at("population_potential_origin_V").get<double>();
+        if(!s.hasConsistentPopulationPotential())throw std::invalid_argument("inconsistent population potential coordinates");
     }
     s.electronQuantumPotential = VectorXd::Zero(s.psi.size());
     if (archive.fields.contains("electron_quantum_potential_V")) field("electron_quantum_potential_V", s.electronQuantumPotential);

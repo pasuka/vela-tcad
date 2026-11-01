@@ -59,8 +59,23 @@ chooses directly assembled approximate/full Jacobians without changing RHS.
 populations in logarithmic coordinates independently of Newton's physical n/p
 coordinates; the coupled continuation service retains prediction rollback.
 Population archives store internal n/p alongside SI output fields and their
-conversion scale, so same-unit restores bypass a lossy SI round trip. Both
-C++ and Python codecs validate the optional coordinate bundle. The Poisson
+conversion scale, so same-unit restores bypass a lossy SI round trip. Population
+solutions also retain original normalized psi separately from QF packedState.
+The C++ load-line validation flag `bootstrapModelGuardEnabled` is off by default.
+When explicitly enabled with automatic recovery/full-step, it evaluates the
+protected bootstrap prediction with multiprecision accumulation and requests
+one same-state full-Jacobian review if no reliable decrease is predicted outside
+the original physical gates. The linear-failure and model-failure paths share
+one allowance until an actual update. JSON/CMD do not enable this experiment.
+`CoupledLoadLineNewton::solve` also accepts optional caller-owned derivative
+history and returns a copied final history. Ordinary calls still reset per solve;
+experiments may carry only from an accepted state with matching numerical
+contracts, and must not overwrite accepted history with a failed attempt.
+
+The optional population potential archive bundle binds V0, the voltage unit and
+reference origin to the mesh-qualified physical output. Matching restores reuse
+psi bits; changed scales convert explicitly and stale bindings cannot be archived.
+Both C++ and Python codecs validate the optional coordinate bundles. The Poisson
 stage retains its computed n/p when publishing a population checkpoint.
 The explicit experimental `population_sg_current: band_population` path uses
 `BvMethodsPopulationSg` to form population/band SG arguments without subtracting
@@ -72,6 +87,19 @@ correctly rounded inverse-series coefficients. `BvMethodsPrimitiveState` separat
 defines normalized population, band, reference-energy and AD current contracts;
 this experimental interface has no JSON/CMD dispatch. See the
 [primitive-state follow-up](validation/bvmethods_primitive_contract_2026-10-28.md).
+For extreme BVMethods population columns, `ArclengthSystem::jacobianInColumns`
+and `bootstrapJacobianInColumns` assemble J diag(T) directly in the element,
+SRH, Poisson and boundary contracts. The matching terminal callback uses the
+same basis. T is fixed for one linearization; the core returns T times the
+linear direction to physical n/p before trial protection and raw update RMS.
+The ordinary-state path retains its established arithmetic. Absolute Jacobian
+APIs remain available for diagnostics, but may be unrepresentable for extreme
+positive densities; they must not be multiplied by T after overflowing.
+`ScaledProduct` rescues avoidable intermediate range loss in equilibration,
+and diagnostics distinguish absent support from weighted underflow/overflow.
+The opt-in `vela_coupled_frozen_replay` target tests archived linear systems
+through the actual bordered-Newton core without requiring a full device scan.
+
 Equilibrium Poisson initialization remains a separate scalar statistical problem.
 The [implementation record](validation/potential_density_development_2026-10-28.md)
 separates implemented interfaces from passed numerical qualifications; the

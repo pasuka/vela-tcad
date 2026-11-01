@@ -7,6 +7,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <limits>
 #include <filesystem>
 #include <fstream>
 
@@ -560,4 +561,13 @@ TEST_CASE("Legacy decks are not rewritten", "[scaling][format_version]")
         {"solver", {{"auger_cn_m6_per_s", 1.0e-42}}},
     };
     REQUIRE(canonicalizeDeck(deck) == deck);
+}
+
+TEST_CASE("Concentration conversion to cm3 preserves an identity and finite range", "[scaling][population_core]") {
+    const auto tcad=PhysicalUnitSystem::tcadInternal(),si=PhysicalUnitSystem::legacySI();
+    for(double n:{std::numeric_limits<double>::denorm_min(),1e-300,1.2345678901234567,1e20,std::numeric_limits<double>::max()}) {
+        REQUIRE(tcad.internalConcentrationToCm3(n)==n);
+        REQUIRE(std::isfinite(tcad.internalConcentrationToCm3(n)));
+    }
+    REQUIRE(si.internalConcentrationToCm3(1e26)==Catch::Approx(1e20));
 }

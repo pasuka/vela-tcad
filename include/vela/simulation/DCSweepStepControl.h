@@ -21,6 +21,8 @@ struct DCSweepStepControlConfig {
     Real shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;
+    /// Quasistationary exits when division by Decrement crosses MinStep.
+    bool stopBelowMinimum = false;
     std::function<bool()> stopRequested;
     /// Optional state-dependent cap on the proposed step magnitude. Empty
     /// means no representable step respecting both state and minimum limits.

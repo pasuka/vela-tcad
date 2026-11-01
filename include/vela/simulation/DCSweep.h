@@ -253,6 +253,7 @@ struct ExternalResistorControlConfig {
     Real currentDirection = 1.0;
     Real initialInnerVoltage_V = 0.0;
     Real residualTolerance_V = 1.0e-6;
+    std::string loadLineConvergenceMode = "enforce";
     Real coupledVoltageCoefficient = 1.0;
     Real voltageTolerance_V = 1.0e-8;
     Real maxInnerVoltageStep_V = 0.1;
@@ -262,6 +263,7 @@ struct ExternalResistorControlConfig {
     Real currentDirectionalStep = 1.0e-5;
     Real coupledDampingFactor = 1.0;
     int coupledMaxLineSearchSteps = 12;
+    std::string coupledStepControl = "quasistationary";
     Real coupledInitialOuterStep_V = 0.0;
     Real coupledMinOuterStep_V = 1.0e-6;
     Real coupledMaxOuterStep_V = 0.0;

@@ -76,6 +76,11 @@
               "minimum": 1,
               "type": "integer"
             },
+            "load_line_convergence_mode": {
+              "enum": ["enforce", "report"],
+              "default": "enforce",
+              "description": "Coupled Newton load-line stopping gate; report retains the equation and finite residual diagnostics."
+            },
             "residual_tolerance_V": {
               "exclusiveMinimum": 0.0,
               "type": "number"
@@ -149,6 +154,10 @@
             "coupled_max_step_retries": {
               "type": "integer",
               "minimum": 0
+            },
+            "coupled_step_control": {
+              "type": "string",
+              "enum": ["quasistationary", "legacy_inner_guard"]
             },
             "coupled_continuation": {
               "type": "object",
