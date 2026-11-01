@@ -897,3 +897,51 @@ TEST_CASE("Recovery history is explicit, copied and independent of the model gua
     s.automaticDerivativeRecovery=false;
     REQUIRE_THROWS_AS(CoupledLoadLineNewton(s,p.value,c,p).solve(first.state,.6,1.,&history),std::invalid_argument);
 }
+
+
+TEST_CASE("Full model quality reports do not select or alter candidates",
+          "[coupled_load_line][model_report]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x[0]*x[0]-2.);};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    system.jacobian=[](const VectorXd& x,Real){SparseMatrixd j(1,1);j.insert(0,0)=2.*x[0];return j;};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    CoupledLoadLineConfig config;config.maxIterations=1;config.linearSolver="direct_bordered";
+    config.lineSearchMode="full_step";config.applyVoltageUpdateLimit=false;config.applyDeviceUpdateLimit=false;
+    const auto initial=ArclengthState{VectorXd::Constant(1,.1),0.};
+    const auto off=CoupledLoadLineNewton(system,port.value,config,port).solve(initial,0.,1.);
+    config.reportModelQuality=true;
+    const auto on=CoupledLoadLineNewton(system,port.value,config,port).solve(initial,0.,1.);
+    REQUIRE(on.state.x[0]==off.state.x[0]);REQUIRE(on.state.lambda==off.state.lambda);
+    REQUIRE(on.failureReason==off.failureReason);REQUIRE(on.iterations==off.iterations);
+    REQUIRE(on.trace.front().modelReportValid);REQUIRE(on.trace.front().modelReportReliable);
+    REQUIRE(on.trace.front().modelReportRatio<0.);
+    REQUIRE_FALSE(on.trace.front().candidateRejectedByRecovery);
+    REQUIRE(on.trace.front().acceptedAlpha==1.);
+}
+
+TEST_CASE("Full model report uses the coupled circuit prediction",
+          "[coupled_load_line][model_report]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    system.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    ArclengthScalarFunctional port;port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    system.makeTrial=[](const ArclengthState& x,const VectorXd& dx,Real dv,Real alpha){
+        ArclengthTrial t;t.state={x.x+alpha*dx,x.lambda+alpha*dv};return t;};
+    CoupledLoadLineConfig config;config.maxIterations=1;config.linearSolver="direct_bordered";
+    config.lineSearchMode="full_step";config.applyVoltageUpdateLimit=false;config.reportModelQuality=true;
+    const auto result=CoupledLoadLineNewton(system,port.value,config,port).solve({VectorXd::Zero(1),0.},.5,1.);
+    REQUIRE(result.converged);REQUIRE(result.trace.front().modelReportReliable);
+    REQUIRE(result.trace.front().modelReportRatio==Catch::Approx(1.));
+    REQUIRE(result.trace.front().modelReportPredicted==Catch::Approx(0.));
+    REQUIRE(result.trace.front().modelReportBefore>0.);
+    REQUIRE(result.trace.front().linearGateAbsolute<=result.trace.front().linearGateAbsoluteTolerance);
+    REQUIRE(result.trace.front().linearGateBackward<=result.trace.front().linearGateBackwardTolerance);
+    REQUIRE(result.trace.front().linearGateBackwardTolerance==1e-10);
+}

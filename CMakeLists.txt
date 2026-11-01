@@ -616,6 +616,10 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# Independent validation entry; experiment controls are not simulation-schema options.
+add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
+target_link_libraries(vela_bvmethods_experiment PRIVATE vela_core)
+
 # Explicit diagnostic build; not installed or included in normal builds.
 add_executable(vela_bvmethods_profile_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_profile_probe.cpp)
@@ -817,6 +821,10 @@ add_custom_target(check_ascii
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Checking tests/src/include for non-ASCII bytes"
     VERBATIM)
+
+add_test(NAME bvmethods_full_ablation_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_full_ablation.py)
+set_tests_properties(bvmethods_full_ablation_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_test(NAME ascii_sources
     COMMAND ${CMAKE_COMMAND}

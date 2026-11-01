@@ -32,6 +32,8 @@ struct CoupledLoadLineConfig {
     /// Explicit validation control: review protected bootstrap models before applying.
     /// Does not change the physical RHS, population protection or stopping gates.
     bool bootstrapModelGuardEnabled = false;
+    /// Read-only candidate model diagnostics. Never participates in selection.
+    bool reportModelQuality = false;
     /// Coefficient of the continuation voltage in the scalar boundary row:
     /// voltageCoefficient * lambda + R * I - outer = 0.  The default 1
     /// recovers a physical series resistor; 0 gives a directly augmented
@@ -246,6 +248,15 @@ struct CoupledLoadLineResult {
         std::string derivativeMode="full";
         std::string derivativeReason;
         std::string bootstrapLinearFailureReason;
+        Real linearGateAbsolute = std::numeric_limits<Real>::quiet_NaN();
+        Real linearGateAbsoluteTolerance = std::numeric_limits<Real>::quiet_NaN();
+        Real linearGateBackward = std::numeric_limits<Real>::quiet_NaN();
+        Real linearGateBackwardTolerance = std::numeric_limits<Real>::quiet_NaN();
+        bool modelReportValid = false, modelReportReliable = false;
+        Real modelReportBefore = std::numeric_limits<Real>::quiet_NaN();
+        Real modelReportPredicted = std::numeric_limits<Real>::quiet_NaN();
+        Real modelReportActual = std::numeric_limits<Real>::quiet_NaN();
+        Real modelReportRatio = std::numeric_limits<Real>::quiet_NaN();
         bool bootstrapModelRetry = false;
         Real bootstrapModelBefore = std::numeric_limits<Real>::quiet_NaN();
         Real bootstrapModelAfter = std::numeric_limits<Real>::quiet_NaN();
@@ -499,7 +510,7 @@ public:
                     linearizedDeviceResidual,
                     fLambda, result.loadLineResidual_V,
                     resistance_ohm_um, deltaState, deltaVoltage,
-                    result.failureReason,selectedJacobian,fullDerivative);
+                    result.failureReason,selectedJacobian,fullDerivative,config_.reportModelQuality?&result.trace.back():nullptr);
                 if (!updateSolved && system_.automaticDerivativeRecovery && !fullDerivative &&
                     recovery.probeAfterBootstrapLinearFailure()) {
                     auto& trace=result.trace.back();
@@ -513,7 +524,7 @@ public:
                     updateSolved=solveDirectBorderedUpdate(result.state,
                         linearizedDeviceResidual,fLambda,result.loadLineResidual_V,
                         resistance_ohm_um,deltaState,deltaVoltage,
-                        result.failureReason,selectedJacobian,true);
+                        result.failureReason,selectedJacobian,true,config_.reportModelQuality?&result.trace.back():nullptr);
                     if(!updateSolved) {
                         result.failureReason="bootstrap linear solve failed: "+trace.bootstrapLinearFailureReason+
                             "; full Jacobian retry failed: "+result.failureReason;
@@ -814,6 +825,22 @@ public:
                     catch(const std::exception&) { candidateError={}; }
                 }
                 result.trace.back().candidateUpdateError=candidateError;
+                if(config_.reportModelQuality) {
+                    // Independent observation; diagnostic failure cannot reject or apply a step.
+                    auto& trace=result.trace.back();
+                    try {
+                        const auto observation=protectedBootstrapObservation(result.state,fullStep,f,fLambda,
+                            result.loadLineResidual_V,fullStepResidual,fullStepLoad,resistance_ohm_um,
+                            selectedJacobian,fullDerivative);
+                        const auto quality=derivative_recovery::derivativeQuality(observation,.1);
+                        trace.modelReportBefore=observation.before;
+                        trace.modelReportPredicted=observation.modelAfter;
+                        trace.modelReportActual=observation.after;
+                        trace.modelReportValid=observation.valid;
+                        trace.modelReportReliable=quality.reliable;
+                        if(quality.reliable)trace.modelReportRatio=quality.ratio;
+                    } catch(const std::exception&) { /* report unavailable, numerical policy unchanged */ }
+                }
                 if(system_.automaticDerivativeRecovery && !fullDerivative && config_.bootstrapModelGuardEnabled) {
                     auto& trace=result.trace.back();
                     bool needsReview=true;
@@ -998,29 +1025,39 @@ private:
         const ArclengthState& before,const ArclengthState& candidate,
         const VectorXd& f,const VectorXd& fVoltage,Real load,
         const VectorXd& actual,Real actualLoad,Real resistance,
-        const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian) const
+        const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian,
+        bool fullDerivative=false) const
     {
         const auto coordinates=linearizationCoordinates(before);
         const bool relative=(coordinates.array()!=1.).any();
-        const auto j=relative?system_.bootstrapJacobianInColumns(before.x,before.lambda,coordinates.head(before.x.size())):
+        const auto& columns=fullDerivative?system_.jacobianInColumns:system_.bootstrapJacobianInColumns;
+        const auto j=relative?columns(before.x,before.lambda,coordinates.head(before.x.size())):
             selectedJacobian(before.x,before.lambda);
         const auto port=relative?currentLinearization_.linearizeInColumns(before.x,before.lambda,coordinates.head(before.x.size())):
             currentLinearization_.linearize(before.x,before.lambda);
         const VectorXd applied=(candidate.x-before.x).cwiseQuotient(coordinates.head(before.x.size()));
         const Real dv=candidate.lambda-before.lambda;
-        // Preserve the original assembled coefficients. Accumulate F+A*applied in
-        // multiprecision: ordinary sparse products lose meaningful residuals here.
-        using MP=linear_refinement::MP;
-        std::vector<MP> sums(f.size());
-        for(Eigen::Index i=0;i<f.size();++i)sums[i]=MP(f[i])+MP(fVoltage[i])*MP(dv);
-        for(int c=0;c<j.outerSize();++c)for(SparseMatrixd::InnerIterator z(j,c);z;++z)
-            sums[z.row()]+=MP(z.value())*MP(applied[z.col()]);
-        VectorXd model(f.size());
-        for(Eigen::Index i=0;i<f.size();++i)model[i]=static_cast<Real>(sums[i]);
-        const VectorXd circuit=resistance*port.stateDerivative;
-        MP modelLoad=MP(load)+MP(config_.voltageCoefficient+resistance*port.parameterDerivative)*MP(dv);
-        for(Eigen::Index i=0;i<applied.size();++i)modelLoad+=MP(circuit[i])*MP(applied[i]);
-        const Real predictedLoad=static_cast<Real>(modelLoad);
+        VectorXd model;
+        Real predictedLoad;
+        if(fullDerivative) {
+            // Match the existing automatic Full-candidate formula and arithmetic.
+            model=f+j*applied+fVoltage*dv;
+            predictedLoad=load+config_.voltageCoefficient*dv+
+                resistance*(port.stateDerivative.dot(applied)+port.parameterDerivative*dv);
+        } else {
+            // Preserve assembled coefficients; weak bootstrap rows require stable accumulation.
+            using MP=linear_refinement::MP;
+            std::vector<MP> sums(f.size());
+            for(Eigen::Index i=0;i<f.size();++i)sums[i]=MP(f[i])+MP(fVoltage[i])*MP(dv);
+            for(int c=0;c<j.outerSize();++c)for(SparseMatrixd::InnerIterator z(j,c);z;++z)
+                sums[z.row()]+=MP(z.value())*MP(applied[z.col()]);
+            model.resize(f.size());
+            for(Eigen::Index i=0;i<f.size();++i)model[i]=static_cast<Real>(sums[i]);
+            const VectorXd circuit=resistance*port.stateDerivative;
+            MP modelLoad=MP(load)+MP(config_.voltageCoefficient+resistance*port.parameterDerivative)*MP(dv);
+            for(Eigen::Index i=0;i<applied.size();++i)modelLoad+=MP(circuit[i])*MP(applied[i]);
+            predictedLoad=static_cast<Real>(modelLoad);
+        }
         const auto phi=[&](const VectorXd& r,Real l){return .5*(r.squaredNorm()/(config_.equationTolerance*config_.equationTolerance)+
             std::pow(l/config_.loadLineTolerance_V,2));};
         if(!model.allFinite() || !std::isfinite(predictedLoad))
@@ -1128,8 +1165,14 @@ private:
                                    VectorXd& deltaState,
                                    Real& deltaVoltage,
                                    std::string& failureReason,
-                                   const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian,bool fullDerivative) const
+                                   const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian,bool fullDerivative,
+                                   CoupledLoadLineResult::IterationTrace* report=nullptr) const
     {
+        if(report) {
+            report->linearGateAbsolute=report->linearGateAbsoluteTolerance=
+                report->linearGateBackward=report->linearGateBackwardTolerance=
+                    std::numeric_limits<Real>::quiet_NaN();
+        }
         if (!system_.jacobian || !currentLinearization_.linearize) {
             failureReason = "direct bordered callbacks are unavailable";
             return false;
@@ -1448,6 +1491,11 @@ private:
             : infinityNorm(rowScaledAugmented * scaledUpdate - rhs);
         const Real linearTolerance = 1.0e-8 *
             std::max(Real{1.0}, infinityNorm(rhs));
+        if(report) {
+            report->linearGateAbsolute=linearResidual;
+            report->linearGateAbsoluteTolerance=linearTolerance;
+            report->linearGateBackward=report->linearGateBackwardTolerance=std::numeric_limits<Real>::quiet_NaN();
+        }
         if (!std::isfinite(linearResidual) ||
             (linearResidual > linearTolerance && config_.directRefinementSteps==0 && !system_.makeTrial)) {
             failureReason = "direct bordered linear solve residual too large: " + diagnosticReal(linearResidual);
@@ -1462,6 +1510,14 @@ private:
             auto defect = linear_refinement::highPrecisionDefect(
                 rawAugmented, -rawRhs, update);
             constexpr Real backwardTolerance = 1.0e-10;
+            const auto reportDefect=[&]() {
+                if(report) {
+                    report->linearGateAbsolute=infinityNorm(defect.values.cwiseProduct(rowScale));
+                    report->linearGateBackward=defect.backwardMax;
+                    report->linearGateBackwardTolerance=backwardTolerance;
+                }
+            };
+            reportDefect();
             const auto defectScore=[&](const auto& d){return std::max(d.backwardMax/backwardTolerance,
                 infinityNorm(d.values.cwiseProduct(rowScale))/linearTolerance);};
             if (defectScore(defect)>1.) {
@@ -1498,6 +1554,7 @@ private:
                         break;
                     update = std::move(candidate);
                     defect = std::move(next);
+                    reportDefect();
                 }
             }
             if (defect.backwardMax > backwardTolerance) {

@@ -61,6 +61,18 @@ coordinates; the coupled continuation service retains prediction rollback.
 Population archives store internal n/p alongside SI output fields and their
 conversion scale, so same-unit restores bypass a lossy SI round trip. Population
 solutions also retain original normalized psi separately from QF packedState.
+The independent `vela_bvmethods_experiment` entry accepts `--experiment` and
+`--checkpoint` requests outside the simulation JSON schema. All groups share its
+binary; its scoped C++ sweep controls can enable the protected-model review,
+read-only model-quality reports and authoritative packed initial states. The
+standard entry never installs this scope. Diagnostics write separate attempt and
+Newton ledgers, including intermediate failed retries and target clipping.
+`reportModelQuality` cannot accept, reject, or replace a candidate; its Full
+formula matches the automatic Full-candidate observation. Ordinary calls and
+numerical defaults remain unchanged. The portable diagnostics supervisor checks
+entry/report-only trajectory parity before P0 and explicitly qualifies outputs
+before any bounded P1 run. Host paths and receipts are request data outside Git.
+
 The C++ load-line validation flag `bootstrapModelGuardEnabled` is off by default.
 When explicitly enabled with automatic recovery/full-step, it evaluates the
 protected bootstrap prediction with multiprecision accumulation and requests

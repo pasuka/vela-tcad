@@ -1,5 +1,8 @@
 # Vela Documentation
 
+- [BVMethods始终完整Jacobian消融与完整BV资格，2026-11-01](validation/bvmethods_full_jacobian_ablation_2026-11-01.md)：
+  同二进制三组P0、只报告ρ、入口逐位核验与有界P1资格。
+
 - [BVMethods bootstrap保护后模型复核与显式历史验证，2026-11-01](validation/bvmethods_bootstrap_model_review_2026-11-01.md)：
   显式C++复核、共享探测额度、真实历史分组及VM窗口资格。
 

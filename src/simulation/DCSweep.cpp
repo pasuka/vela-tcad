@@ -1,4 +1,5 @@
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/DCSweepExperiment.h"
 #include "vela/simulation/AdaptiveVoltageStepControl.h"
 // CoupledDDAssembler configuration is intentionally constructed in this unit.
 #include "vela/simulation/BoundaryControl.h"
@@ -7757,10 +7758,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             runtimeLog.finish(failureCount == 0, successCount, failureCount);
         }
         performanceProfiler.observe("dc.points", static_cast<double>(points.size()));
-        performanceProfiler.recordStage(
-            "dc_sweep.total",
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::steady_clock::now() - performanceRunStarted));
+        const auto dcElapsed=std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now()-performanceRunStarted);
+        performanceProfiler.recordStage("dc_sweep.total",dcElapsed);
+        if(const auto* experiment=experimental::activeDCSweepExperiment();experiment&&!experiment->directory.empty()) {
+            const auto profile=performanceProfiler.toJson();
+            std::int64_t attempts=0,records=0;
+            for(const auto& stage:profile["stages"]) {
+                if(stage["name"]=="experiment.coupled_attempt")attempts=stage["total_ns"].get<std::int64_t>();
+                if(stage["name"]=="dc.record_point")records=stage["total_ns"].get<std::int64_t>();
+            }
+            std::ofstream partition(std::filesystem::path(experiment->directory)/"partition.json");
+            partition<<nlohmann::json{{"dc_sweep_total_ns",dcElapsed.count()},
+                {"attempt_ns",attempts},{"record_point_ns",records},
+                {"other_ns",dcElapsed.count()-attempts-records},
+                {"inclusive_substages_must_not_be_summed",true}}.dump(2);
+        }
         performanceProfiler.writeJson();
         return DCSweepResult{
             std::move(mesh),
@@ -8270,6 +8283,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const auto coupledConvergence =
                 coupledDeviceSolver.makeArclengthConvergenceEvaluator(sweep.contact);
             CoupledLoadLineConfig coupledConfig;
+            const auto* experiment=experimental::activeDCSweepExperiment();
+            if(experiment) {
+                coupledConfig.bootstrapModelGuardEnabled=experiment->bootstrapModelGuardEnabled;
+                coupledConfig.reportModelQuality=experiment->reportModelQuality;
+            }
+            std::ofstream experimentNewton,experimentAttempts;
+            if(experiment&&!experiment->directory.empty()) {
+                std::filesystem::create_directories(experiment->directory);
+                experimentNewton.open(std::filesystem::path(experiment->directory)/"newton.csv");
+                experimentAttempts.open(std::filesystem::path(experiment->directory)/"attempts.csv");
+                if(!experimentNewton||!experimentAttempts)throw std::runtime_error("cannot open experiment diagnostics");
+                experimentNewton<<std::setprecision(17)<<"outer_V,step_V,retry,iteration,mode,reason,device_residual,load_V,update_valid,rms,raw_dv,applied_alpha,protected_n,protected_p,linear_absolute_defect,linear_absolute_tolerance,linear_componentwise_error,linear_backward_tolerance,phi_before,phi_model,phi_actual,rho_reliable,rho,model_report_valid,rejected,model_review,linear_review,converged,failure\n";
+                experimentAttempts<<std::setprecision(17)<<"outer_V,step_V,nominal_step_V,target_clipped,retry,iterations,growth,next_step_V,recovered,converged,failure\n";
+            }
             coupledConfig.maxIterations = sweep.externalResistor.maxIterations;
             coupledConfig.equationTolerance =
                 sweep.externalResistor.coupledEquationTolerance;
@@ -8323,6 +8350,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 coupledDeviceSolver.makeArclengthContactCurrentFunctional(
                     sweep.currentContact, coupledCurrentScale);
             const auto coupledCurrentValue = coupledCurrent.value;
+            const auto experimentResidual=coupledDeviceSystem.residual;
             CoupledLoadLineNewton coupledSolver(
                 std::move(coupledDeviceSystem),
                 coupledCurrentValue,
@@ -8334,6 +8362,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 coupledDeviceSolver.packArclengthState(coupledSeed);
             coupledState.lambda =
                 sweep.externalResistor.initialInnerVoltage_V;
+            if(experiment&&!experiment->initialPackedStateFile.empty()) {
+                const auto x=experimental::readPackedExperiment(experiment->initialPackedStateFile);
+                if(x.size()!=coupledState.x.size())throw std::runtime_error("experiment packed dimensions differ");
+                coupledState.x=x;coupledState.lambda=experiment->initialInnerVoltage_V;
+            }
+            if(experiment&&!experiment->directory.empty()) {
+                experimental::writePackedExperiment(std::filesystem::path(experiment->directory)/"initial.bin",coupledState.x);
+                experimental::writePackedExperiment(std::filesystem::path(experiment->directory)/"initial_rhs.bin",
+                    experimentResidual(coupledState.x,coupledState.lambda));
+            }
             std::optional<ArclengthState> previousCoupledState;
             if (!sweep.continuation.arclength.initialSecantStateFile.empty() &&
                 std::isfinite(
@@ -8374,6 +8412,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             auto attemptCoupledSeed =
                 [&](Real outerVoltage, Real attemptedOuterStep, int retryCount, bool useSecant)
                     -> detail::DCSweepStepAttemptResult {
+                    std::optional<ScopedPerformanceTimer> experimentAttemptTimer;
+                    if(experiment)experimentAttemptTimer.emplace("experiment.coupled_attempt");
                     ArclengthState solveSeed = coupledState;
                     pendingUsedSecant = false;
                     if (useSecant && attemptedOuterStep != 0.0 &&
@@ -8414,6 +8454,23 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 << ',' << !trace.bootstrapLinearFailureReason.empty() << '\n';
                         }
                         coupledUpdateCsv.flush();
+                    }
+                    if(experimentNewton.is_open()) {
+                        for(const auto& t:pendingCoupled.trace)experimentNewton
+                            <<outerVoltage<<','<<attemptedOuterStep<<','<<retryCount<<','<<t.iteration
+                            <<','<<t.derivativeMode<<','<<t.derivativeReason
+                            <<','<<t.equationResidualNorm<<','<<t.loadLineResidual_V
+                            <<','<<t.updateError.valid<<','<<t.updateError.rms
+                            <<','<<t.rawVoltageUpdate_V<<','<<t.acceptedAlpha
+                            <<','<<t.protectedElectrons<<','<<t.protectedHoles
+                            <<','<<t.linearGateAbsolute<<','<<t.linearGateAbsoluteTolerance
+                            <<','<<t.linearGateBackward<<','<<t.linearGateBackwardTolerance
+                            <<','<<t.modelReportBefore<<','<<t.modelReportPredicted<<','<<t.modelReportActual
+                            <<','<<t.modelReportReliable<<','<<t.modelReportRatio<<','<<t.modelReportValid
+                            <<','<<t.candidateRejectedByRecovery<<','<<t.bootstrapModelRetry
+                            <<','<<!t.bootstrapLinearFailureReason.empty()<<','<<pendingCoupled.converged
+                            <<','<<boundaryCsvToken(pendingCoupled.failureReason)<<'\n';
+                        experimentNewton.flush();
                     }
                     pendingAcceptanceDiagnostics.clear();
                     if (pendingCoupled.converged) {
@@ -8625,6 +8682,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             }
                         }
                     }
+                    if(experimentAttempts.is_open()&&attemptedOuterStep==0.) {
+                        experimentAttempts<<outerVoltage<<",0,0,0,"<<retryCount<<','<<pendingCoupled.iterations
+                            <<",1,0,0,"<<pendingCoupled.converged<<','<<boundaryCsvToken(pendingCoupled.failureReason)<<'\n';
+                        experimentAttempts.flush();
+                    }
                     return {pendingCoupled.converged, pendingCoupled.iterations, false};
                 };
 
@@ -8769,6 +8831,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             history ? previousOuterVoltage - *previousCoupledOuterVoltage : 1.);
                     };
                 }
+                bool experimentFirstObserved=true;
+                const Real experimentEntryProposed=std::min(maxOuterStep,
+                    outerStepState.initialized?outerStepState.adaptiveStep:initialOuterStep);
+                if(experimentAttempts.is_open())outerControl.attemptObserved=[&](const detail::DCSweepStepControlEvent& event) {
+                    experimentAttempts<<event.voltage<<','<<event.attemptedStep<<','
+                        <<(experimentFirstObserved?experimentEntryProposed:event.proposedStepMagnitude)
+                        <<','<<(event.targetClipped||(experimentFirstObserved&&event.proposedStepMagnitude<experimentEntryProposed))<<','<<event.retryCount
+                        <<','<<event.newtonIterations<<','<<event.growthFactor<<','<<event.nextStepMagnitude
+                        <<','<<event.recovered<<','<<event.converged
+                        <<','<<boundaryCsvToken(pendingCoupled.failureReason)<<'\n';
+                    experimentFirstObserved=false;
+                    experimentAttempts.flush();
+                };
                 outerControl.stopRequested = [&]() {
                     return sweepStopRequestedByCriterion(points.back());
                 };
@@ -8777,6 +8852,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     outerControl,
                     attemptCoupledOuterPoint,
                     [&](const detail::DCSweepStepControlEvent& event) {
+
                         logStepGrowth(event);
                         if (event.converged) {
                             acceptCoupledOuterPoint(
@@ -9798,13 +9874,23 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                 const Real nextStep = cfg.growthMode == "newton_iterations"
                     ? std::clamp(growthBase * growth, cfg.minStep, cfg.maxStep)
                     : std::min(cfg.maxStep, growthBase * growth);
-                record({candidate, true, attemptedStep, attemptedStep, retryCount, {},
-                        outcome.newtonIterations, growth, nextStep});
+                DCSweepStepControlEvent event{candidate,true,attemptedStep,attemptedStep,retryCount,{},
+                    outcome.newtonIterations,growth,nextStep,trialStep,remaining<trialStep,outcome.recovered};
+                if(cfg.attemptObserved)cfg.attemptObserved(event);
+                record(event);
                 previousVoltage = candidate;
                 adaptiveStep = nextStep;
                 return true;
             }
 
+            if(cfg.attemptObserved) {
+                const Real next=stepMagnitude*cfg.shrinkFactor;
+                const bool blocked=retryCount>=cfg.maxRetries || stepMagnitude<=cfg.minStep ||
+                    (cfg.stopBelowMinimum&&next<cfg.minStep);
+                cfg.attemptObserved({candidate,false,attemptedStep,0.,retryCount,"non_convergence",
+                    outcome.newtonIterations,1.,blocked?0.:std::max(next,cfg.minStep),
+                    trialStep,remaining<trialStep,outcome.recovered});
+            }
             std::string failureReason;
             if (retryCount >= cfg.maxRetries) {
                 failureReason = "non_convergence";

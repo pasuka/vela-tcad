@@ -12,12 +12,14 @@
 #include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/QfBoundsGuard.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/simulation/DCSweepExperiment.h"
 #include "vela/simulation/AdaptiveVoltageStepControl.h"
 #include "vela/post/TerminalCharge.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -6993,4 +6995,43 @@ TEST_CASE("Quasistationary failed outer steps stop when division crosses MinStep
     REQUIRE(attempted[1]==Catch::Approx(.15));
     REQUIRE(events.back().failureReason=="min_step_exhausted");
     REQUIRE_FALSE(events.back().converged);
+}
+
+
+TEST_CASE("Attempt observers see failed clipped trials without changing the controller",
+          "[dc_sweep][step_control][experiment]") {
+    detail::DCSweepStepControlConfig c;c.start=0.;c.stop=.2;c.step=.2;c.initialStep=.3;
+    c.minStep=.01;c.maxStep=.3;c.growthFactor=1.;c.shrinkFactor=.5;c.maxRetries=4;
+    std::vector<Real> off,on;int calls=0;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){off.push_back(v);return detail::DCSweepStepAttemptResult(++calls>1,4);},[](const auto&){});
+    std::vector<detail::DCSweepStepControlEvent> observed;
+    c.attemptObserved=[&](const auto& event){observed.push_back(event);};calls=0;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){on.push_back(v);return detail::DCSweepStepAttemptResult(++calls>1,4);},[](const auto&){});
+    REQUIRE(off==on);REQUIRE(observed.size()==on.size());REQUIRE(observed.size()==3);
+    REQUIRE_FALSE(observed.front().converged);REQUIRE(observed.front().targetClipped);
+    REQUIRE(observed.front().proposedStepMagnitude==Catch::Approx(.3));
+    REQUIRE(observed.front().nextStepMagnitude==Catch::Approx(.1));
+    REQUIRE(observed[1].retryCount==1);REQUIRE(observed.back().converged);
+}
+
+TEST_CASE("Experimental sweep scopes restore previous controls and packed bits",
+          "[dc_sweep][experiment]") {
+    using namespace experimental;
+    REQUIRE(activeDCSweepExperiment()==nullptr);
+    DCSweepExperiment first,second;first.reportModelQuality=true;
+    {
+        DCSweepExperimentScope a(first);REQUIRE(activeDCSweepExperiment()==&first);
+        {DCSweepExperimentScope b(second);REQUIRE(activeDCSweepExperiment()==&second);}
+        REQUIRE(activeDCSweepExperiment()==&first);
+    }
+    REQUIRE(activeDCSweepExperiment()==nullptr);
+    const auto file=std::filesystem::temp_directory_path()/("vela_experiment_packed_"+
+        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"_"+
+        std::to_string(std::random_device{}())+".bin");
+    VectorXd v(3);v<<std::nextafter(.1,1.),1e-200,-.0;
+    writePackedExperiment(file,v);const auto copy=readPackedExperiment(file.string());
+    REQUIRE(copy.size()==v.size());REQUIRE(std::memcmp(copy.data(),v.data(),v.size()*sizeof(Real))==0);
+    {std::ofstream corrupt(file,std::ios::binary);corrupt<<'x';}
+    REQUIRE_THROWS_AS(readPackedExperiment(file.string()),std::runtime_error);
+    std::filesystem::remove(file);
 }
