@@ -822,6 +822,14 @@ add_custom_target(check_ascii
     COMMENT "Checking tests/src/include for non-ASCII bytes"
     VERBATIM)
 
+add_test(NAME bvmethods_or_full_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_or_full.py)
+set_tests_properties(bvmethods_or_full_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(NAME bvmethods_stopping_counterfactual
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_stopping_counterfactual.py)
+set_tests_properties(bvmethods_stopping_counterfactual PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_test(NAME bvmethods_full_ablation_qualification
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_full_ablation.py)
 set_tests_properties(bvmethods_full_ablation_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,0 +1,32 @@
+# BVMethods：两组OR策略完整BV（2026-11-01）
+
+## 授权与对照
+
+用户要求在vela VM同步执行始终Full+OR及automatic+保护后模型复核+OR两组完整BV。沿用本轮P1八小时上限：每组从其冷Poisson求解器启动起严格28800秒，构建、输入核验和冷窗口预检不计时。两组独立输出、各MKL PARDISO单线程，并行执行。原G2 AND八小时扫描保持原配置与时限，单独继续监测，不混用组别或接受态。
+
+## 数值与控制契约
+
+使用数值提交c33d0fb590b53a4e57b1717166e0b1fadba26088的已验证独立实验二进制，SHA256为00e1b4b17763a2284db9afedef3c0dc00814a3d9758659942bf0fc500aa75333；原6130文件源码清单SHA256为9a9d8ba8b335a67279de67f7d863b197ab1ed87b38919018150fcaf15c37ef37。新增Python控制器独立入库，启动前核验源码清单及二进制，复用已有Release构建，不改写原运行目录或数值C++。
+
+| 组 | 导数策略 | 保护后模型复核 | 主停止 | 独立负载线 |
+|---|---|---|---|---|
+| G1 / Full_OR | 始终完整Jacobian | 关闭，rho只报告 | OR | enforce |
+| G2 / Automatic_guard_OR | automatic，每目标重置 | 开启 | OR | enforce |
+
+两组均使用同一DCSweep实验入口。无Full历史继承，无生产JSON模型复核开关。`enforce`表示设备/电路残差分支或有效实际更新RMS<1；残差分支包含设备F≤1e-8及电路|L|≤1e-6 V，独立负载线enforce始终保留。OR允许某一分支未通过，必须如实记录。新控制器逐点核验OR以及原KCL、非有限与其余配置强制门，不调用旧AND布尔结论替代OR科学资格。报告型载流子行和全局连续性另列。
+
+共同2600节点/5020 Tri3、300 K/JD/OldSlotboom、总杂质迁移率、SRH+GradQF AV、BTBT关闭、R=1e7 Ωμm，potential_density/quasi_fermi SG、局部非正保留1%、浓度下限1e-100 cm^-3、精确消元、对数人口外推、full_step、40轮，原SG局部bootstrap配置保留。Quasistationary外压控制保持原InitialStep/MinStep/MaxStep/Increment/Decrement及反馈预算，无额外预测内压或单次Newton内压上限。求解尝试、输出和细分性能计时沿用原入口，两组共享VM时不把墙钟比称为独占加速比。
+
+## 流程与判据
+
+先验证独立Python控制器与原监督器回归，再校验冻结源码和同一二进制；两组各自冷Poisson 0→0.01 V窗口均达到目标并通过OR及其他配置强制门，才同时进入完整冷Poisson扫描。预检不计入八小时。远端监督器只管理自己启动的进程组，超时停止自有求解器；临时SSH断线不代表退出。
+
+完整成功要求求解器退出0、未超时、达到|Id|≥1.3e-3 A/μm、每个接受点通过OR与原独立强制门，以及在|Id|=1e-4 A/μm处相邻接受点内压线性插值所得BV与关闭BTBT的6.673833 V参考相差≤0.5%。插值内压间隔、多电流内压及报告型守恒只报告，不额外放宽或收紧。短窗口工具的requested_reached（是否走到100000 V）不作为停流完成要求。超时或未停流均不能称完整BV通过。
+
+## 启动与监测
+
+当前为准备阶段；启动后的实际起止时间与终态在本节补记。用户此前每15分钟状态查询延续为AND基线及两组OR的联合监测，分别报告阶段、实际用时/截止、接受点/外压/内压/电流及最近尝试、RMS/导数/保护/复核/负载线。精确作业回执、私有路径、运行配置及小型状态保存在ignored的build-release/bvmethods_vm_or_full_20261101，不写入公共报告。
+
+## 局部证据边界
+
+[OR暖态与历史轨迹复核](bvmethods_or_stopping_review_2026-11-01.md)证明特定A暖态Full+OR仅3轮接受，Full+AND 40轮失败；automatic+OR可在RMS约1083时通过残差分支。该局部证据不代替OR全程资格，也不证明Vela残差尺度已与Sentaurus原生范数等价。本轮不修改上述正负结论。

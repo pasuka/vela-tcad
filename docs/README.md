@@ -1,5 +1,11 @@
 # Vela Documentation
 
+- [BVMethods两组OR策略完整BV，2026-11-01](validation/bvmethods_or_full_2026-11-01.md)：
+  同二进制Full/自动复核并行OR、逐点独立强制门与八小时监督。
+
+- [BVMethods OR停止与历史AND轨迹复核，2026-11-01](validation/bvmethods_or_stopping_review_2026-11-01.md)：
+  相同Full二进制与packed初态的AND/OR实测、残差/更新两分支及历史轨迹的反事实边界。
+
 - [BVMethods始终完整Jacobian消融与完整BV资格，2026-11-01](validation/bvmethods_full_jacobian_ablation_2026-11-01.md)：
   同二进制三组P0、只报告ρ、入口逐位核验与有界P1资格。
 
