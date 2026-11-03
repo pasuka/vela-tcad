@@ -7074,21 +7074,18 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             const Real dNormalizedSplitting[3] = {
                 Real{0.0}, -1.0 / Vt_, 1.0 / Vt_};
 
-            const auto excessDerivative = [&](
-                const GeneralizedSrhCarrierState& state,
-                Real dGammaN,
-                Real dGammaHole,
-                Real dSplitting) {
-                const Real normalized = std::clamp(
-                    dPhi / Vt_, Real{-500.0}, Real{500.0});
-                const Real dEquilibrium = ni * ni * (
-                    state.holeDegeneracy * dGammaN +
-                    state.electronDegeneracy * dGammaHole);
-                const Real activeSplittingDerivative =
-                    std::abs(dPhi / Vt_) < 500.0 ? dSplitting : Real{0.0};
-                return dEquilibrium * std::expm1(normalized) +
-                    state.equilibriumProduct * std::exp(normalized) *
-                    activeSplittingDerivative;
+            const auto logDegeneracyDerivativeEta=[&](Real density,Real slope) {
+                return usesFermiDirac_ && density>0.?slope/density-1.:0.;
+            };
+            const Real lnN=logDegeneracyDerivativeEta(nSrh,dnSrhDeta)/Vt_;
+            const Real lnA=logDegeneracyDerivativeEta(n(ii),dnDeta)/Vt_;
+            const Real lnP=logDegeneracyDerivativeEta(p(ii),dpDeta)/Vt_;
+            const Real dLogGammaNSrh[3]={lnN,-lnN,0.};
+            const Real dLogGammaNAuger[3]={lnA,-lnA,0.};
+            const Real dLogGammaP[3]={-lnP,0.,lnP};
+            const auto excessDerivative = [&](const GeneralizedSrhCarrierState& state,
+                Real dLogN,Real dLogP,Real dSplitting) {
+                return generalizedSrhExcessDirectionalDerivative(state,dLogN,dLogP,dSplitting);
             };
 
             const auto srhDerivatives =
@@ -7097,9 +7094,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     srhState.electronDegeneracy,
                     srhState.holeDegeneracy,
                     dopingConcentration);
+            const auto classicalAuger=classicalAugerProduct(n(ii),p(ii),ni);
             const Real augerExcessProduct =
                 recombination_.usesClassicalAugerExcessProduct()
-                ? n(ii) * p(ii) - ni * ni
+                ? classicalAuger.value
                 : augerState.excessProduct;
             const auto augerDerivatives =
                 recombination_.augerRateDerivativesFromExcessProduct(
@@ -7116,11 +7114,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 Real derivative = 0.0;
                 if (recombination_.srhEnabled()) {
                     const Real dExcess = excessDerivative(
-                        srhState, dGammaNSrh[k], dGammaP[k],
+                        srhState, dLogGammaNSrh[k], dLogGammaP[k],
                         dNormalizedSplitting[k]);
                     derivative += srhDerivatives.dRateDn * dnSrh[k]
                         + srhDerivatives.dRateDp * dp[k]
-                        + srhDerivatives.dRateDExcess * dExcess
+                        + (srhDerivatives.dRateDExcess == 0. ? 0. : srhDerivatives.dRateDExcess * dExcess)
                         + srhDerivatives.dRateDElectronDegeneracy *
                             dGammaNSrh[k]
                         + srhDerivatives.dRateDHoleDegeneracy * dGammaP[k];
@@ -7128,13 +7126,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 if (recombination_.augerEnabled()) {
                     const Real dExcess =
                         recombination_.usesClassicalAugerExcessProduct()
-                        ? p(ii) * dnTransport[k] + n(ii) * dp[k]
+                        ? classicalAuger.dN * dnTransport[k] + classicalAuger.dP * dp[k]
                         : excessDerivative(
-                            augerState, dGammaNAuger[k], dGammaP[k],
+                            augerState, dLogGammaNAuger[k], dLogGammaP[k],
                             dNormalizedSplitting[k]);
                     derivative += augerDerivatives.dRateDn * dnTransport[k]
                         + augerDerivatives.dRateDp * dp[k]
-                        + augerDerivatives.dRateDExcess * dExcess;
+                        + (augerDerivatives.dRateDExcess == 0. ? 0. : augerDerivatives.dRateDExcess * dExcess);
                 }
                 add(phinOffset() + ii, columns[k],
                     derivative * srhVol_[i] * sourceIntegralFactor);

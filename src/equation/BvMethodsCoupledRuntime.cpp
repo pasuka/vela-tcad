@@ -1,5 +1,6 @@
 #include "vela/equation/BvMethodsCoupledRuntime.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
+#include "vela/physics/experimental/PopulationRecombination.h"
 #include <algorithm>
 #include <stdexcept>
 #include <cstring>
@@ -148,7 +149,7 @@ struct BvMethodsCoupledRuntime::Impl {
         const double sourceFactor=u.continuitySourceIntegralFactor()/continuity;
         for(int i=0;i<n;++i)if(active[i]&&owner.recombination_.srhEnabled()) {
             using detail::BvMethodsQfState;using experimental::AvJet;
-            const auto model=owner.carrierStatisticsModel_;const double vt=owner.Vt_;
+            const double vt=owner.Vt_;
             const double tangentN=columns?(*columns)[n+i]:(owner.usesPopulationState() && s.n[i]<std::sqrt(std::numeric_limits<double>::min())?s.n[i]:1.);
             const double tangentP=columns?(*columns)[2*n+i]:(owner.usesPopulationState() && s.p[i]<std::sqrt(std::numeric_limits<double>::min())?s.p[i]:1.);
             auto population=[&](bool electron){
@@ -161,8 +162,8 @@ struct BvMethodsCoupledRuntime::Impl {
             const auto nj=population(true),pj=population(false);
             auto gamma=[&](const AvJet& p,double dos){
                 if(p.value/dos<std::numeric_limits<double>::min())return AvJet(1.);
-                const double eta=inverseFermiDiracHalf(p.value/dos,model);
-                AvJet g(std::exp(std::log(p.value/dos)-eta));
+                const double logGamma=experimental::JoyceDixonStatistics::primitiveLogGamma(p.value/dos);
+                AvJet g(std::exp(logGamma));
                 // Preserve the qualified value path, but differentiate the JD
                 // log-gamma primitive directly. In the dilute limit the old
                 // 1/n - 1/(Nc*F'(eta)) loses the entire tangent to cancellation.
@@ -172,15 +173,17 @@ struct BvMethodsCoupledRuntime::Impl {
                 return g;
             };
             const auto gn=gamma(nj,owner.Nc_[i]),gp=gamma(pj,owner.Nv_[i]);
-            AvJet fn=AvJet::variable(s.phin[i],1),fp=AvJet::variable(s.phip[i],2);
+            AvJet excess;
             if(owner.usesPopulationState()) {
-                fn.derivative.fill(0.);fp.derivative.fill(0.);
-                fn.derivative[0]=fp.derivative[0]=1.;
-                fn.derivative[1]=columns?-(tangentN/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.n[i],owner.Nc_[i]))*vt/scale:-(vt*tangentN)/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.n[i],owner.Nc_[i])/scale;
-                fp.derivative[2]=columns?(tangentP/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.p[i],owner.Nv_[i]))*vt/scale:(vt*tangentP)/experimental::JoyceDixonStatistics::densitySlopeFromPopulation(s.p[i],owner.Nv_[i])/scale;
+                excess=experimental::populationRecombinationExcess(nj,pj,gn,gp,owner.ni_[i]);
+            } else {
+                const auto fn=AvJet::variable(s.phin[i],1),fp=AvJet::variable(s.phip[i],2);
+                const auto splitting=(fp-fn)/AvJet(vt);
+                // Positive splitting must not materialize exp(+splitting).
+                excess=splitting.value>=0.
+                    ? nj*pj*(-detail::dualExpm1(-splitting))
+                    : gn*gp*AvJet(owner.ni_[i]*owner.ni_[i])*detail::dualExpm1(splitting);
             }
-            const auto splitting=(fp-fn)/AvJet(vt);
-            const auto excess=gn*gp*AvJet(owner.ni_[i]*owner.ni_[i])*detail::dualExpm1(splitting);
             const double dop=owner.recombination_.srhDopingConcentration(owner.doping_.donors(i),owner.doping_.acceptors(i));
             const double rate=owner.recombination_.srhRateGeneralizedFromExcessProduct(excess.value,nj.value,pj.value,
                 owner.ni_[i],owner.ni_[i],gn.value,gp.value,dop);
@@ -188,7 +191,7 @@ struct BvMethodsCoupledRuntime::Impl {
             if(jac){const auto d=owner.recombination_.srhRateGeneralizedDerivativesFromExcessProduct(excess.value,
                 nj.value,pj.value,owner.ni_[i],owner.ni_[i],gn.value,gp.value,dop);
                 for(int k=0;k<3;++k){const double value=((d.dRateDn*nj.derivative[k]+d.dRateDp*pj.derivative[k]+
-                    d.dRateDExcess*excess.derivative[k]+d.dRateDElectronDegeneracy*gn.derivative[k]+
+                    (d.dRateDExcess==0.?0.:d.dRateDExcess*excess.derivative[k])+d.dRateDElectronDegeneracy*gn.derivative[k]+
                     d.dRateDHoleDegeneracy*gp.derivative[k])*measure*scale);
                     const double tangent=k==1?tangentN:(k==2?tangentP:1.);
                     const double v=columns?value*((*columns)[k*n+i]/tangent):value/tangent;

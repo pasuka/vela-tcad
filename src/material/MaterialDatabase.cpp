@@ -68,7 +68,7 @@ void validateTemplatesLdmosMaterialRoot(const nlohmann::json& root)
 {
     rejectUnknownKeys(
         root,
-        {"schema", "benchmark", "revision", "unit_system", "materials"},
+        {"schema", "benchmark", "revision", "unit_system", "materials", "physical_constants_profile"},
         "MaterialDatabase: vela.templates_ldmos.materials.v1");
     if (!root.contains("benchmark") || !root.at("benchmark").is_string() ||
         root.at("benchmark").get<std::string>().empty() ||
@@ -263,8 +263,14 @@ MaterialDatabase::MaterialDatabase()
     si.mup   = 0.04705;  // [m^2/V/s]
     si.bandgap_eV = 1.1241592307692307;
     si.electron_affinity_eV = 4.05;
+#if defined(VELA_CONSTANTS_SENT_U2022_12) && VELA_CONSTANTS_SENT_U2022_12
+    // Same Formula-1 no-BGN material law, regenerated under this profile.
+    si.Nc_m3 = 2.856653288716314e25;
+    si.Nv_m3 = 3.1046289324748374e25;
+#else
     si.Nc_m3 = 2.8566791451911786e25;
     si.Nv_m3 = 3.104657033455896e25;
+#endif
     si.temperature_K = 300.0;
     si.ni = std::sqrt(*si.Nc_m3 * *si.Nv_m3) *
         std::exp(-*si.bandgap_eV * constants::q /
@@ -324,6 +330,7 @@ void MaterialDatabase::loadJson(const std::string& jsonPath, UnitScalingConfig s
     try {
         nlohmann::json root;
         ifs >> root;
+        constants::requireProfile(root.is_object() ? root.value("physical_constants_profile", std::string("codata2018")) : std::string("codata2018"));
         const bool versionedTemplatesLdmos = isTemplatesLdmosMaterialsV1(root);
         // Versioned material documents declare their own TCAD unit contract.
         // Only unversioned overrides inherit the deck's v1/v2 key spelling;

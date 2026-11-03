@@ -2,6 +2,7 @@
 
 #include "vela/material/Material.h"
 #include <cstdint>
+#include <limits>
 #include <string>
 
 namespace vela {
@@ -50,7 +51,16 @@ struct GeneralizedSrhCarrierState {
     Real holeDegeneracy = 1.0;
     Real equilibriumProduct = 0.0;
     Real excessProduct = 0.0;
+    // Preserve factors outside double's separate exponential range.
+    Real logEquilibriumProduct = -std::numeric_limits<Real>::infinity();
+    Real normalizedSplitting = 0.0;
 };
+
+/// Direction in log(gamma_n), log(gamma_p), and splitting/VT coordinates.
+/// Structural zeros do not multiply overflowing intermediate exponentials.
+Real generalizedSrhExcessDirectionalDerivative(
+    const GeneralizedSrhCarrierState& state,Real dLogGammaN,
+    Real dLogGammaP,Real dNormalizedSplitting);
 
 /// Validate `config.model` and return the resolved enumeration.
 CarrierStatisticsModel carrierStatisticsModel(const CarrierStatisticsConfig& config);

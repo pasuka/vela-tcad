@@ -37,7 +37,13 @@ backend exceptions are documented in the [configuration schema](config_schema.md
 The explicit `solver.coupled_operator: "bvmethods_tri3_qf"` profile routes
 coupled carrier residuals, Jacobians, ledgers and terminal totals through
 `BvMethodsCoupledRuntime`, retaining existing Poisson and constraint rows.
-Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
+Population-coordinate SRH forms a compensated density-product difference and
+its direct population tangents without reconstructing a quasi-Fermi split.
+Shared recombination retains logarithmic factors outside separate exponential
+range, and saturated source partials differentiate the value actually returned.
+AV/AD range fallbacks preserve finite representable directions. See the
+[arithmetic repair qualification](validation/bvmethods_physics_arithmetic_fix_2026-11-02.md).
+The BVMethods [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
 the default and PN2D operators retain their existing paths.
 
 The BVMethods convergence callback requests one stateless physical evaluation

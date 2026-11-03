@@ -610,3 +610,13 @@ schema 之外、golden 夹具所依赖的确定性规则：
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
   阶段 1 维持拒绝。
 - C5 新增键已由 WP6 回填第 2.6 节；C6 的 `time` 语义与符号因子由 WP10 回填第 3.3 节（C3 见第 2.4 节）。
+
+
+### Explicit physical constants compatibility
+
+The default frontend/core contract remains CODATA2018. Use
+`vela device <deck.cmd> --physical-constants-profile sentaurus_u2022_12`
+with the corresponding CMake build to regenerate material densities. A different
+solver profile rejects those materials. See
+[physical constants profiles](config_schema.md#physical-constants-profiles)
+for values, metadata and the untagged-material policy.

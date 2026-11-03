@@ -1,5 +1,45 @@
 # Config Schema Reference
 
+## Physical constants profiles
+
+`VELA_PHYSICAL_CONSTANTS_PROFILE` is a CMake build contract: `codata2018`
+(default) or `sentaurus_u2022_12`. The latter uses older documented constants
+for compatibility; it is not a newer CODATA standard. Use separate builds:
+
+```powershell
+cmake --preset windows-ucrt64-release-sentaurus2022
+cmake --build --preset windows-ucrt64-release-sentaurus2022
+./build-release/sentaurus2022/vela_example_runner.exe --physical-constants
+```
+
+`vela device --physical-constants-profile sentaurus_u2022_12` and
+`python -m vela_sdevice.materials --physical-constants-profile sentaurus_u2022_12`
+regenerate Formula-1 `Nc`, `Nv`, and `ni` under the selected constants, including
+the existing active OldSlotboom offset. They emit `physical_constants_profile`
+in materials, the material report, and generated decks. Point `VELA_BIN` at
+the matching build. The JSON field declares an expected profile; it cannot
+switch constants inside a running binary. Explicit mismatches fail before
+assembly. Untagged external material files retain CODATA2018 semantics and
+are rejected by the compatibility binary. Regenerate them from `.par`;
+adding a tag to old density values does not convert those values.
+
+| Constant | CODATA2018 | U-2022.12 compatibility |
+| --- | --- | --- |
+| q (C) | 1.602176634e-19 | 1.602192e-19 |
+| epsilon0 (F/m) | 8.8541878128e-12 | 8.8542e-12 |
+| kB (J/K) | 1.380649e-23 | 1.380662e-23 |
+| h (J s) | 6.62607015e-34 | 6.626176e-34 |
+| m0 (kg) | 9.1093837015e-31 | 9.109534e-31 |
+| DOS pi | mathematical pi | 3.141592654 |
+
+DOS pi affects DOS evaluation only. Geometry, trigonometry, and hbar retain
+mathematical pi. Relative dielectric parameters (Si 11.7), bandgap laws,
+Formula-1 masses, BGN and acceptance gates are unchanged. Built-in Si/SiO2
+have separate regenerated no-BGN 300 K snapshots. The independent nonlocal
+BTBT source-constant preset remains explicit and is not silently switched;
+the BV verification keeps BTBT off. Parameter provenance is recorded in the
+[native constants audit](validation/bvmethods_native_parameter_constants_audit_2026-11-03.md).
+
 ## SDevice command entry point and generated v2 decks
 
 `vela device` reads a preprocessed single-device SDevice command file, imports
@@ -33,7 +73,7 @@ For Formula-1 electron DOS masses, an active OldSlotboom constant bandgap
 offset enters both gaps in `mt = a*(Eg(0)+dEg0)/(Eg(T)+dEg0)`, as well as the
 intrinsic-density exponent. Without that model the offset is zero. The emitted
 `bandgap_eV` remains the unshifted Varshni gap; the material report records the
-two effective DOS gaps separately. Constants remain CODATA 2018. See the
+two effective DOS gaps separately. Constants default to CODATA 2018. See the
 [native parameter audit](validation/bvmethods_material_export_2026-10-23.md).
 
 For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested

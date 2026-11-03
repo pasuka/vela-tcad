@@ -113,6 +113,16 @@ class DeckEmitterTests(unittest.TestCase):
             function(*args, **kwargs)
         self.assertEqual(caught.exception.message_id, identifier)
 
+    def test_compatibility_profile_follows_material_report_into_every_deck(self):
+        ir = accepted("pn2d_sentaurus2018/pn2d_iv_sdevice.cmd")
+        native = emit_materials(default_models_par_path(), active_models=active_models_from_ir(ir),
+            temperature_K=300, mesh_materials=["Si"], allow_lossy=True,
+            constants_profile="sentaurus_u2022_12")
+        result = emit(ir, materials_report=native.report)
+        self.assertTrue(result.decks)
+        self.assertTrue(all(d["physical_constants_profile"] == "sentaurus_u2022_12" for d in result.decks))
+        self.assertTrue(all("physical_constants_profile" not in d for d in emit(ir).decks))
+
     def test_accepted_fixture_goldens_and_full_schema_validation(self):
         try:
             import jsonschema

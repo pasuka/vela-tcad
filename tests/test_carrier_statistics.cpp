@@ -494,3 +494,27 @@ TEST_CASE("Expansion operator retains sub ULP direction corrections", "[carrier_
     REQUIRE(abs(W(paired.value())-expected)<W("1e-16"));
     REQUIRE(abs(W(collapsed.value())-expected)>W(".74"));
 }
+
+
+TEST_CASE("Generalized excess combines exponential range without clipping the model",
+          "[carrier_statistics][srh][range]")
+{
+    using HP=boost::multiprecision::cpp_dec_float_100;
+    const double vt=.025851999786435535;
+    for(double split:{-800.,-1e-18,0.,1e-18,800.}) {
+        const double ni=1e-100;
+        const auto state=generalizedSrhCarrierState(1.,1.,ni,1.,1.,split*vt,vt,CarrierStatisticsModel::Boltzmann);
+        const HP exact=HP(ni)*HP(ni)*expm1(HP(state.normalizedSplitting));
+        REQUIRE(std::isfinite(state.excessProduct));
+        if(split==0.)REQUIRE(state.excessProduct==0.);
+        else REQUIRE(state.excessProduct==Approx(double(exact)).epsilon(1e-13));
+        const double direction=generalizedSrhExcessDirectionalDerivative(state,0.,0.,1.);
+        REQUIRE(direction==Approx(double(HP(ni)*HP(ni)*exp(HP(state.normalizedSplitting)))).epsilon(1e-13));
+        REQUIRE(generalizedSrhExcessDirectionalDerivative(state,0.,0.,0.)==0.);
+        if(split>1.) {
+            // The growing product's direction cancels before exponentiation.
+            REQUIRE(generalizedSrhExcessDirectionalDerivative(state,1.,0.,-1.)==
+                Approx(-ni*ni).epsilon(1e-13));
+        }
+    }
+}

@@ -4226,6 +4226,14 @@ int runDCWorker(bool reuseLinearAnalysis = true)
 
 int main(int argc, char** argv)
 {
+    if (argc == 2 && std::string(argv[1]) == "--physical-constants") {
+        std::cout << nlohmann::json{{"profile", vela::constants::profileName},
+            {"q_C", vela::constants::q}, {"eps0_F_per_m", vela::constants::eps0},
+            {"kb_J_per_K", vela::constants::kb}, {"h_J_s", vela::constants::h},
+            {"m0_kg", vela::constants::m0}, {"dos_pi", vela::constants::dosPi},
+            {"Vt_300_V", vela::constants::Vt_300}}.dump() << '\n';
+        return 0;
+    }
     if (argc == 2 && std::string(argv[1]) == "--dc-worker")
         return runDCWorker();
     if (argc == 2 && std::string(argv[1]) == "--dc-worker-linear-reuse")

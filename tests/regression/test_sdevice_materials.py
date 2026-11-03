@@ -512,10 +512,14 @@ class ContractTest(unittest.TestCase):
 
     def test_constants_match_physical_constants_header(self) -> None:
         header = (REPO / "include" / "vela" / "core" / "PhysicalConstants.h").read_text(encoding="utf-8")
-        for name, key in (("kb", "kb_J_per_K"), ("q", "q_C"), ("h", "h_J_s"), ("m0", "m0_kg")):
-            match = re.search(r"constexpr double " + name + r"\s*=\s*([\d.eE+-]+)", header)
-            self.assertIsNotNone(match, name)
-            self.assertEqual(float(match[1]), mat.CONSTANTS[key], name)
+        native, default = header.split("#else", 1)
+        for profile, branch in (("codata2018", default), ("sentaurus_u2022_12", native)):
+            c = mat.physical_constants(profile)
+            for name, key in (("kb", "kb_J_per_K"), ("q", "q_C"), ("h", "h_J_s"),
+                              ("m0", "m0_kg"), ("eps0", "eps0_F_per_m")):
+                match = re.search(r"constexpr double " + name + r"\s*=\s*([\d.eE+-]+)", branch)
+                self.assertIsNotNone(match, (profile, name))
+                self.assertEqual(float(match[1]), c[key], (profile, name))
 
     def test_active_models_from_all_goldens(self) -> None:
         expected = {
@@ -575,6 +579,35 @@ class CliTest(unittest.TestCase):
             self.assertIn("E303", proc.stderr)
             proc = self.run_cli("--par", str(BV_PAR), "--out", str(out))
             self.assertEqual(2, proc.returncode)
+
+
+class ConstantsProfilesTest(unittest.TestCase):
+    def test_native_formula1_and_no_global_state(self):
+        original = _emit(PN2D_PAR, IV_IR)
+        native = _emit(PN2D_PAR, IV_IR, constants_profile="sentaurus_u2022_12")
+        si = _material(native, "Si")
+        self.assertAlmostEqual(si["conduction_band_density_of_states_cm3"] / 2.8582520073866555e19, 1, places=13)
+        self.assertAlmostEqual(si["valence_band_density_of_states_cm3"] / 3.1046289324748374e19, 1, places=13)
+        self.assertAlmostEqual(si["intrinsic_carrier_density_cm3"] / 14638805412.559155, 1, places=13)
+        self.assertEqual("sentaurus_u2022_12", native.materials["physical_constants_profile"])
+        self.assertEqual([], sv.collect_errors(SCHEMA, native.materials))
+        self.assertEqual(original.materials, _emit(PN2D_PAR, IV_IR).materials)
+        self.assertEqual(1.602176634e-19, mat.CONSTANTS["q_C"])
+        with self.assertRaisesRegex(ValueError, "Unknown physical constants"):
+            _emit(PN2D_PAR, IV_IR, constants_profile="typo")
+
+    def test_both_builtin_snapshots_are_reproducible(self):
+        par = mat.default_models_par_path()
+        for profile, filename in (("codata2018", "default_materials.json"),
+                                  ("sentaurus_u2022_12", "default_materials_sentaurus_u2022_12.json")):
+            actual = json.loads(gen.render_materials(par, profile))
+            self.assertEqual(actual, json.loads(par.with_name(filename).read_text(encoding="utf-8")))
+            self.assertEqual([], sv.collect_errors(SCHEMA, actual))
+
+    def test_profile_dictionary_cannot_mutate_next_emission(self):
+        copy = mat.physical_constants("sentaurus_u2022_12")
+        copy["q_C"] = 0
+        self.assertEqual(1.602192e-19, mat.physical_constants("sentaurus_u2022_12")["q_C"])
 
 
 if __name__ == "__main__":

@@ -477,6 +477,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             "node_doping_file": "doping.csv", "materials_file": "materials.json", "doping": [],
             "mesh_geometry": {"node_volume_policy": "barycentric", "require_non_obtuse": False},
             "solver": solver, **_charges(ir, mesh)}
+    if report.get("physical_constants_profile", "codata2018") != "codata2018":
+        base["physical_constants_profile"] = report["physical_constants_profile"]
     voltages = {e["name"]: e["initial_voltage_V"] for e in electrodes}
     sources = deepcopy(ir["stages"])
     groups = []

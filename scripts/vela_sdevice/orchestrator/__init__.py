@@ -141,6 +141,7 @@ class DeviceRun:
             write_json(self.work / "mesh_qualification.json", mesh)
             electrode_materials = [e["attributes"]["material"] for e in self.ir["electrodes"] if "material" in e["attributes"]]
             materials = emit_materials(self.cmd.parent / self.ir["files"]["parameter"]["resolved"],
+                constants_profile=getattr(self.options, "physical_constants_profile", "codata2018"),
                 active_models=active_models_from_ir(self.ir), temperature_K=self.ir["physics"]["temperature_K"] or 300,
                 mesh_materials=mesh["materials"], electrode_materials=electrode_materials,
                 effective_models=self.ir["physics"]["effective"], allow_lossy=self.options.allow_lossy,

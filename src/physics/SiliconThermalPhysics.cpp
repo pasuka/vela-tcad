@@ -27,7 +27,7 @@ std::array<D,3> bands(const SiliconThermalParameters&p,const D&t) {
     D eg=scalar(eg0)-scalar(p.bandgapAlpha_eV_per_K)*t*t/(t+scalar(p.bandgapBeta_K));
     D me=power(power(scalar(6.*p.electronTransverseMass*eg0)/eg,2.)*scalar(p.electronLongitudinalMass),1./3.)+scalar(p.electronMassOffset);
     D mh=power(polynomial(p.holeMassNumerator,t)/polynomial(p.holeMassDenominator,t),2./3.)+scalar(p.holeMassOffset);
-    const Real c=2.*std::pow(2.*std::numbers::pi*constants::m0*constants::kb/(constants::h*constants::h),1.5);
+    const Real c=2.*std::pow(2.*constants::dosPi*constants::m0*constants::kb/(constants::h*constants::h),1.5);
     if (!(eg.value>0.)||!(me.value>0.)||!(mh.value>0.))throw std::invalid_argument("Invalid thermal band/DOS state");
     return {eg,scalar(c)*power(me*t,1.5),scalar(c)*power(mh*t,1.5)};
 }

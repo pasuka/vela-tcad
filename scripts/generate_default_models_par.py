@@ -229,12 +229,13 @@ def render() -> str:
     return "\n".join(lines)
 
 
-def render_materials(par_path: Path) -> str:
+def render_materials(par_path: Path, constants_profile: str = "codata2018") -> str:
     """Freeze the emitter's Si/SiO2 scalars at 300 K without active BGN."""
     import json
     from vela_sdevice.materials import emit_materials
     document = emit_materials(par_path, active_models=[], temperature_K=300.0,
-                              mesh_materials=["Si", "SiO2"], benchmark="builtin:300K").materials
+                              mesh_materials=["Si", "SiO2"], benchmark="builtin:300K",
+                              constants_profile=constants_profile).materials
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
 
 
@@ -243,16 +244,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--materials-output", type=Path,
                         help="300 K JSON snapshot (defaults beside --output)")
+    parser.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"), default="codata2018")
     parser.add_argument("--check", action="store_true", help="exit 1 when the file is stale instead of writing")
     args = parser.parse_args(argv)
-    materials_output = args.materials_output or args.output.with_name("default_materials.json")
+    materials_output = args.materials_output or args.output.with_name(
+        "default_materials.json" if args.physical_constants_profile == "codata2018" else "default_materials_sentaurus_u2022_12.json")
     text = render()
     if args.check:
         current = args.output.read_text(encoding="utf-8").replace("\r\n", "\n") if args.output.exists() else None
         if current != text:
             print(f"{args.output} is stale; regenerate with scripts/generate_default_models_par.py", file=sys.stderr)
             return 1
-        materials_text = render_materials(args.output)
+        materials_text = render_materials(args.output, args.physical_constants_profile)
         current_materials = materials_output.read_text(encoding="utf-8") if materials_output.exists() else None
         if current_materials != materials_text:
             print(f"{materials_output} is stale; regenerate with scripts/generate_default_models_par.py", file=sys.stderr)
@@ -266,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {args.output}")
     materials_output.parent.mkdir(parents=True, exist_ok=True)
     with materials_output.open("w", encoding="utf-8", newline="\n") as handle:
-        handle.write(render_materials(args.output))
+        handle.write(render_materials(args.output, args.physical_constants_profile))
     print(f"wrote {materials_output}")
     return 0
 

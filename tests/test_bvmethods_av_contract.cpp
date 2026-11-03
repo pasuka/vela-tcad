@@ -4,6 +4,8 @@
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
 #include <cmath>
+#include "vela/physics/experimental/PopulationRecombination.h"
+#include <boost/multiprecision/cpp_dec_float.hpp>
 using namespace vela::experimental;
 using Catch::Approx;
 
@@ -1041,4 +1043,68 @@ TEST_CASE("Statistical bootstrap is opt-in and restores full and above-floor mat
     cfg["population_update"]["minimum_density_cm3"]=1e-100;
     cfg["population_sg_current"]="band_population";REQUIRE_THROWS(newtonConfigFromJson(cfg));
     cfg["population_sg_current"]="quasi_fermi";cfg["population_sg_bootstrap_linearization"]="invalid";REQUIRE_THROWS(newtonConfigFromJson(cfg));
+}
+
+
+TEST_CASE("AV exponential has finite directions at extremely small positive field",
+          "[av_contract][tri3_ad][range]")
+{
+    const AvCoefficient coefficient{7.03e5,1.231e6,7.03e5,1.231e6,4e5};
+    for(double field:{0.,1e-300,1e-200,1e-160,1e-140,1e-20,1.,1e4,4e5,1e6}) {
+        const auto x=AvJet::variable(field,0);
+        const auto value=avCoefficient(x,coefficient);
+        REQUIRE(std::isfinite(value.value));
+        for(double d:value.derivative)REQUIRE(std::isfinite(d));
+        if(field<1.) {REQUIRE(value.value==0.);REQUIRE(value.derivative[0]==0.);}
+        else {
+            const long double exact=7.03e5L*std::exp(-1.231e6L/field);
+            const long double slope=exact*1.231e6L/field/field;
+            REQUIRE(value.value==Approx(double(exact)).epsilon(3e-14));
+            REQUIRE(value.derivative[0]==Approx(double(slope)).epsilon(3e-14));
+        }
+    }
+}
+
+TEST_CASE("AD exponential scales finite directions before narrowing",
+          "[av_contract][tri3_ad][range]")
+{
+    for(double x:{-800.,800.}) {
+        AvJet input(x);input.derivative[0]=x>0.?1e-100:1e100;
+        const double expected=double(std::exp((long double)x)*input.derivative[0]);
+        for(const auto result:{vela::detail::dualExp(input),vela::detail::dualExpm1(input)}) {
+            REQUIRE(std::isfinite(result.derivative[0]));
+            REQUIRE(result.derivative[0]==Approx(expected).epsilon(3e-14));
+            for(int k=1;k<9;++k)REQUIRE(result.derivative[k]==0.);
+        }
+    }
+}
+
+TEST_CASE("Population recombination preserves equilibrium cancellation and has no psi direction",
+          "[av_contract][population_core][srh]")
+{
+    using HP=boost::multiprecision::cpp_dec_float_100;
+    const double n0=1e10,p0=std::nextafter(n0,INFINITY);
+    AvJet n=AvJet::variable(n0,3),p=AvJet::variable(p0,6);
+    const auto excess=populationRecombinationExcess(n,p,AvJet(1),AvJet(1),n0);
+    const double expected=double(HP(n0)*HP(p0)-HP(n0)*HP(n0));
+    REQUIRE(excess.value!=0.);
+    REQUIRE(excess.value==Approx(expected).epsilon(1e-15));
+    REQUIRE(excess.derivative[0]==0.);
+    REQUIRE(excess.derivative[3]==p0);
+    REQUIRE(excess.derivative[6]==n0);
+    REQUIRE(populationRecombinationExcess(n,n,AvJet(1),AvJet(1),n0).value==0.);
+    // Both captured positive populations are finite even when the former
+    // QF-splitting expm1 path overflowed (splitting > 709).
+    for(const auto values:std::array<std::array<double,5>,2>{{
+        {1.7738208624835845e23,1.1435920332085196e23,3.052789335414555e-174,2.1978091765134392e-122,8.337122390342656e10},
+        {3.9192596591152703e23,1.4878424437485111e10,2.2163657908827803e-297,.9999999998305675,4.095286472506107e10}}}) {
+        const auto e=populationRecombinationExcess(AvJet::variable(values[0],3),
+            AvJet::variable(values[1],6),AvJet(values[2]),AvJet(values[3]),values[4]);
+        const HP reference=HP(values[0])*HP(values[1])-HP(values[2])*HP(values[3])*HP(values[4])*HP(values[4]);
+        REQUIRE(std::isfinite(e.value));
+        REQUIRE(e.value==Approx(double(reference)).epsilon(2e-15));
+        REQUIRE(e.derivative[0]==0.);
+        REQUIRE(e.derivative[3]==values[1]);
+        REQUIRE(e.derivative[6]==values[0]);
+    }
 }

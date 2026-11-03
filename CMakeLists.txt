@@ -117,6 +117,12 @@ add_custom_target(vela_sdevice_pyz ALL
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
 
+set(VELA_PHYSICAL_CONSTANTS_PROFILE "codata2018" CACHE STRING "Physical constants contract: codata2018 or sentaurus_u2022_12")
+set_property(CACHE VELA_PHYSICAL_CONSTANTS_PROFILE PROPERTY STRINGS codata2018 sentaurus_u2022_12)
+if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE MATCHES "^(codata2018|sentaurus_u2022_12)$")
+    message(FATAL_ERROR "Unknown VELA_PHYSICAL_CONSTANTS_PROFILE: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
+endif()
+message(STATUS "Physical constants profile: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
 option(VELA_ENABLE_HDF5_STATE "Build required HDF5/HighFive restart storage" ON)
@@ -399,6 +405,12 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+if(VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12")
+    target_compile_definitions(vela_core PUBLIC VELA_CONSTANTS_SENT_U2022_12=1)
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials_sentaurus_u2022_12.json)
+else()
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials.json)
+endif()
 if(VELA_ENABLE_HDF5_STATE)
     if(NOT VELA_HDF5_TARGET)
         message(FATAL_ERROR "HDF5 state archives require a detected HDF5 library")
@@ -839,7 +851,7 @@ add_test(NAME ascii_sources
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT})
 
-add_executable(test_scaling tests/test_scaling.cpp)
+add_executable(test_scaling tests/test_scaling.cpp tests/test_physical_constants.cpp)
 if(VELA_ENABLE_HDF5_STATE)
     add_executable(test_state_archive tests/test_state_archive.cpp)
     target_link_libraries(test_state_archive PRIVATE vela_core Catch2::Catch2WithMain)
@@ -866,7 +878,7 @@ target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_builtin_material_alignment tests/test_builtin_material_alignment.cpp)
 target_link_libraries(test_builtin_material_alignment PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_builtin_material_alignment PRIVATE
-    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/default_materials.json"
+    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/${VELA_DEFAULT_MATERIALS_NAME}"
     VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(test_poisson tests/test_poisson.cpp)
@@ -900,6 +912,9 @@ if(TARGET PkgConfig::VELA_MUMPS)
 endif()
 
 # Diagnostic replay of frozen Newton systems through the shared linear backend.
+add_executable(vela_physics_frozen_audit EXCLUDE_FROM_ALL scripts/diagnostics/physics_frozen_audit.cpp)
+target_link_libraries(vela_physics_frozen_audit PRIVATE vela_core)
+
 add_executable(vela_coupled_frozen_replay EXCLUDE_FROM_ALL scripts/diagnostics/coupled_frozen_replay.cpp)
 target_link_libraries(vela_coupled_frozen_replay PRIVATE vela_core)
 

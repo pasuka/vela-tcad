@@ -3,6 +3,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": true,
   "properties": {
+    "physical_constants_profile": {"enum": ["codata2018", "sentaurus_u2022_12"]},
     "contacts": {
       "items": {
         "additionalProperties": true,
