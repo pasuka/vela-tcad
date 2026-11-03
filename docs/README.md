@@ -1,5 +1,56 @@
 # Vela Documentation
 
+- [兼容常数VM生产A0完整BV，2026-11-03](validation/bvmethods_vm_sentaurus2022_full_2026-11-03.md)：
+  AND/OR各12小时独立求解预算；运行快照与终态验收规则，未提前宣称完整扫描通过。
+
+- [兼容常数T470p冷0–100 V分区比较，2026-11-03](validation/bvmethods_t470p_sentaurus2022_low100_2026-11-03.md)：
+  按实际外压统计接受点、目标尝试和失败；AND提前数值失败，OR终态待核验。
+
+- [修复核心A1三组、入口与平台定位，2026-11-02](validation/bvmethods_repaired_a1_t1_t3_2026-11-02.md)：
+  T1/A1e与T2/T3诊断结束；保留低区反例、入口恢复及投影停滞证据，原A1完整BV准入仍阻断。
+
+- [U-2022.12常数兼容配置与T470p验证，2026-11-03](validation/bvmethods_sentaurus2022_constants_2026-11-03.md)：
+  默认CODATA2018保留，显式兼容配置与材料重生成；15帧RHS明显对齐，保留首帧六空穴行导数差异；默认全回归1219项零失败。
+
+- [原生U-2022.12参数/TDR与基本常数核查，2026-11-03](validation/bvmethods_native_parameter_constants_audit_2026-11-03.md)：
+  真正原生par导出与同版本手册旧常数；无拟合重建2152节点QF至约1e-15 V，生产设置不改。
+
+- [Vela VM原生首五点矩阵/RHS系数偏差定位，2026-11-02](validation/bvmethods_vm_static_operator_bias_2026-11-02.md)：
+  Poisson与DOS/kT系数识别、独立RHS反事实和AV直接分项留出验证，生产模型不改。
+
+- [SRH修复版S2–S5接触/端口与保护/高压复验，2026-11-02](validation/bvmethods_s2_s5_2026-11-02.md)：
+  接触与统计反事实、250位SRH分项、36份Schur及保护历史复验；新AND/OR全程首步统计完成。
+
+- [原生首五点固定方向差与根/轨迹复验S0–S1，2026-11-02](validation/bvmethods_native_roots_s0s1_2026-11-02.md)：
+  五份真正原生末态各2次Full通过AND；Vela冷首五目标15接受/15尝试/0失败，限定为局部根偏移。
+
+- [T470p SRH修复版与原生首五点逐轮矩阵/RHS对照，2026-11-02](validation/bvmethods_t470p_native_first5_srh_comparison_2026-11-02.md)：
+  15帧Full装配与原始方向、6765维共同系统及边界仿射RHS分解，保留跨工具一致性限制。
+
+- [SRH修复版VM完整BV AND/OR，2026-11-02](validation/bvmethods_vm_srh_fixed_full_2026-11-02.md)：
+  AND/自动复核OR完整扫描均通过独立终态验收，保留分区成本、报告型守恒和跨版本比较限制。
+
+- [SRH修复版T470p Full低压AND/OR对照，2026-11-02](validation/bvmethods_t470p_srh_full_low_2026-11-02.md)：
+  原参数冷0–1 V、始终完整导数，两组均线性精度失败，保留共同外压范围点数/失败对照。
+
+- [BVMethods物理算术修复与T470p复验，2026-11-02](validation/bvmethods_physics_arithmetic_fix_2026-11-02.md)：
+  人口SRH、AV微场及通用复合Full导数修复；六冻结态和原门冷窗口通过，SG默认不变。
+
+- [BVMethods人口坐标下物理模型算术与导数审计，2026-11-02](validation/bvmethods_physics_coordinate_audit_2026-11-02.md)：
+  Auger共享excess/限幅、AV微场AD边界及SG派生QF消减的隔离复现，区分实际启用与人工控制。
+
+- [BVMethods近似模型可信度与Schur窗口消融，2026-11-02](validation/bvmethods_bootstrap_trust_windows_2026-11-02.md)：
+  36份合格Schur分解、30组消融与12组选择器配对窗口终态；保留中低区失败，P3未启动。
+
+- [BVMethods保护后逐轮路径与0.51 kV失稳审计，2026-11-02](validation/bvmethods_post_protection_path_audit_2026-11-02.md)：
+  同态项族／候选复核／近解续算，定位AV切线遗漏与持续局部冻结，并保留算术敏感性限制。
+
+- [BVMethods低偏压反复保护与阶段线性化诊断，2026-11-02](validation/bvmethods_protection_ledger_2026-11-02.md)：
+  逐节点保护、同态切线干预、E分解、20/40轮与高偏压反例，保留未闭合归因。
+
+- [BVMethods与Sentaurus区域采样和BV附近步长对照，2026-11-02](validation/bvmethods_native_step_comparison_2026-11-02.md)：
+  原生日志/PLT与AND、OR完整轨迹逐次对齐，定位100–1000 V密集尝试及BV前后步长变化。
+
 - [BVMethods两组OR策略完整BV，2026-11-01](validation/bvmethods_or_full_2026-11-01.md)：
   同二进制Full/自动复核并行OR、逐点独立强制门与八小时监督。
 
