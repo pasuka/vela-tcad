@@ -2,8 +2,9 @@
 
 ## Physical constants profiles
 
-`VELA_PHYSICAL_CONSTANTS_PROFILE` is a CMake build contract: `codata2018`
-(default) or `sentaurus_u2022_12`. The latter uses older documented constants
+`VELA_PHYSICAL_CONSTANTS_PROFILE` is a CMake build contract:
+`sentaurus_u2022_12` (fresh-build default) or explicit `codata2018` rollback.
+Existing explicit CMake cache selections remain unchanged. Compatibility uses older documented constants
 for compatibility; it is not a newer CODATA standard. Use separate builds:
 
 ```powershell
@@ -17,7 +18,11 @@ cmake --build --preset windows-ucrt64-release-sentaurus2022
 regenerate Formula-1 `Nc`, `Nv`, and `ni` under the selected constants, including
 the existing active OldSlotboom offset. They emit `physical_constants_profile`
 in materials, the material report, and generated decks. Point `VELA_BIN` at
-the matching build. The JSON field declares an expected profile; it cannot
+the matching build. The CMD frontend defaults to `sentaurus_u2022_12` when its
+sidecar selects `bvmethods_operator_profile: "bvmethods_tri3_qf"`. Select a
+compatible runner with `VELA_BIN`, or explicitly choose `codata2018` for a
+matching CODATA2018 build. Other CMD profiles also default to compatible constants; use explicit CODATA2018 for historical inputs.
+The JSON field declares an expected profile; it cannot
 switch constants inside a running binary. Explicit mismatches fail before
 assembly. Untagged external material files retain CODATA2018 semantics and
 are rejected by the compatibility binary. Regenerate them from `.par`;
@@ -73,7 +78,7 @@ For Formula-1 electron DOS masses, an active OldSlotboom constant bandgap
 offset enters both gaps in `mt = a*(Eg(0)+dEg0)/(Eg(T)+dEg0)`, as well as the
 intrinsic-density exponent. Without that model the offset is zero. The emitted
 `bandgap_eV` remains the unshifted Varshni gap; the material report records the
-two effective DOS gaps separately. Constants default to CODATA 2018. See the
+two effective DOS gaps separately. Fresh builds and material emission default to Sentaurus U-2022.12; CODATA2018 remains an explicit rollback. See the
 [native parameter audit](validation/bvmethods_material_export_2026-10-23.md).
 
 For SDevice output, the emitter sets `sweep.vtk_format: vtu`, requested
@@ -188,8 +193,9 @@ independent. Existing decks and global defaults are unchanged.
 
 Newton numerical and geometry controls added for explicit validation profiles:
 
-- `solver.state_variables`: `potential_quasi_fermi` (default) or explicitly
-  `potential_density`. The latter currently requires the qualified 300 K
+- `solver.state_variables`: BVMethods defaults to `potential_density`; legacy
+  operators retain `potential_quasi_fermi`. Explicit values override this
+  operator-scoped default. Population state requires the qualified 300 K
   `bvmethods_tri3_qf` physics and Joyce–Dixon statistics; the profile name
   identifies its physical discretization, while this option selects coordinates.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
@@ -222,11 +228,26 @@ Newton numerical and geometry controls added for explicit validation profiles:
   Population-mode coupled load-line secant prediction uses linear ψ/internal
   voltage and logarithmic n/p extrapolation between accepted states:
   `c_pred = exp(log(c_current) + ratio*(log(c_current)-log(c_previous)))`.
-  This predicts the next initial state; Newton still solves physical n/p.
+  This predicts the next initial state; Newton solves n/C0 and p/C0 by default; physical n/p remain the public state contract.
   Zero inactive pairs remain zero, and unchanged carrier slots retain their
   exact values. Invalid domains, overflow/underflow or a failed predictor guard
   fall back to the last accepted state; no population floor is introduced.
   QF-mode prediction retains its existing behavior.
+- `solver.primary_variable_coordinates`: `unit` (population default) or `physical`
+  (rollback). Internally psi/VT, n/C0, p/C0 and inner voltage/VT; output, archive
+  populations, positivity and ErrRef remain physical. Existing device row scales
+  remain; the scalar row is divided by VT. Unit directions require one original
+  defect correction and the original physical precision audit before writeback.
+- `solver.population_stopping_rule`: `native_approx` (population default) or
+  `legacy`. Approximate stop is valid E<1 OR a valid mapped RHS infinity norm
+  <1e-5. E uses the physical raw direction and actual protected post-state.
+  Mapping is limited to the frozen 300 K, 2600/5020 reference normalization,
+  compatible constants and material scales. Outside it only E can accept, with
+  an unavailable-mapping diagnostic. This is not native RHSMin equivalence.
+- `sweep.external_circuit.physical_acceptance_mode`: `report` or `enforce`.
+  Omitted selects report for native_approx, enforce otherwise. Load, carrier,
+  continuity and KCL remain recorded; nonfinite states always reject. Linear
+  precision gates are independent and continue to enforce their tolerances.
 - `solver.population_sg_current`: `quasi_fermi` (default) or experimental
   `band_population`. The latter requires `potential_density` and its qualified
   BVMethods physics. It constructs SG arguments directly from ψ, authoritative
@@ -258,8 +279,13 @@ Newton numerical and geometry controls added for explicit validation profiles:
   Every Newton trial repeats the check; invalid predictions fall back to the
   last accepted state. This policy does not change the configured residual,
   load-line, KCL or report/enforce gates. RMS diagnostics retain the raw direction.
-- `solver.population_derivative_recovery`: `full` (default) or explicit
-  `automatic`. Automatic mode requires population coordinates, a direct bordered
+- `solver.population_derivative_recovery`: `after_protection` (population default), `full`, or explicit
+  `automatic`. `after_protection` starts each target with Full; after an accepted
+  protected writeback, only the next linearization omits mobility and AV
+  derivatives. It retains the complete physical RHS, SRH derivatives and
+  statistical SG edge feedback. An unprotected accepted write restores Full;
+  rejected candidates do not alter the event policy. No derivative-selection
+  history transfers to a new target. Automatic mode requires population coordinates, a direct bordered
   solve and `full_step` acceptance. Its bootstrap directly assembles transport
   with mobility derivatives frozen and omits AV derivatives, retaining full SRH
   derivatives and the complete physical RHS. A bounded trial/full controller
@@ -2936,7 +2962,10 @@ coordinates, density protection, or convergence tolerances.
 
 The qualified BVMethods CMD profile emits `quasistationary` by default. Its
 Quasistationary dimensionless steps are converted by the **external** voltage
-span, and Decrement is converted to its reciprocal. An existing sidecar that
+span, and Decrement is converted to its reciprocal. For a CMD sweep using
+`coupled_newton`, the sweep's local `Coupled(Iterations=...)` budget takes
+precedence over `Math.Iterations` and supplies `external_circuit.max_iterations`.
+An explicit sidecar circuit budget takes precedence over both. An existing sidecar that
 requests inner guards must explicitly select `legacy_inner_guard`. This is a
 compatibility contract for documented stepping, not a promise of identical
 Sentaurus nonlinear trajectories or proprietary solver internals.
@@ -3588,7 +3617,7 @@ transport, BTBT and avalanche measures are unchanged. It is not a global default
 ### Opt-in population lower bound and predictor cutoff
 
 For `solver.state_variables: potential_density`, the following controls are
-independent and default to zero (disabled), preserving existing trajectories:
+independent. Population candidate floor defaults to 1e-100 cm^-3; predictor cutoff remains zero. Explicit zero floor restores the disabled-floor policy:
 
 - `solver.population_update.minimum_density_cm3`: finite nonnegative lower
   bound applied after each free-carrier candidate update and its existing
@@ -3603,8 +3632,8 @@ independent and default to zero (disabled), preserving existing trajectories:
 
 These explicit experimental controls support separate Sentaurus compatibility
 validation. T-2022.03 documents default `DensLowLimit=1e-100 cm^-3` for Newton
-updates and `Extrapolate(LowDensityLimit=1e-100)` for extrapolation. The current
-Vela zero defaults do not claim those native defaults. The exact native mixed
+updates and `Extrapolate(LowDensityLimit=1e-100)` for extrapolation. The candidate floor does not establish native update equivalence; the predictor
+cutoff remains independently disabled. The exact native mixed
 history/equality boundary and boundary-slot behavior require separate evidence;
 using these fields alone is not a claim of complete native equivalence.
 Candidate floor and predictor-cutoff events are recorded in the runtime log;

@@ -780,6 +780,8 @@ TEST_CASE("Population numerical policy rejects inactive QF controls before assem
 TEST_CASE("Population absolute block stopping replaces scalar tolerances without bypassing blocks", "[population_core]") {
     using namespace vela;ProfileFixture f;
     NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";cfg.stateVariables="potential_density";
+    cfg.populationStoppingRule="legacy";cfg.primaryVariableCoordinates="physical";
+    cfg.populationDerivativeRecovery="full";
     cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
     cfg.maxIter=1;cfg.reltol=1e-40;cfg.abstol=1e-80;cfg.lineSearch=false;
     NewtonSolver owner(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
@@ -1032,6 +1034,10 @@ TEST_CASE("Statistical bootstrap is opt-in and restores full and above-floor mat
     REQUIRE((controlled->residual(y,{}).array()==rhs.array()).all());
     REQUIRE((Eigen::MatrixXd(controlled->assembleJacobian(y,{})).array()==full.array()).all());
     REQUIRE((Eigen::MatrixXd(controlled->populationBootstrapJacobian(y,{}))-bootstrap).norm()>0.);
+    // The event policy omits mobility/AV tangents, never the separate
+    // statistical floor-edge feedback. Its RHS is the same physical model.
+    REQUIRE((Eigen::MatrixXd(controlled->populationProtectedJacobian(y,{})).array()==bootstrap.array()).all());
+    REQUIRE((controlled->residual(y,{}).array()==rhs.array()).all());
     f.scaling.populationSgBootstrapFloor_cm3=1e-100;auto above=f.assembler();
     REQUIRE((Eigen::MatrixXd(above->populationBootstrapJacobian(y,{})).array()==bootstrap.array()).all());
     auto cfg=nlohmann::json{{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},

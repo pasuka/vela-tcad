@@ -86,9 +86,13 @@ CONSTANTS_PROFILES = {
         "h_J_s": 6.626176e-34, "m0_kg": 9.109534e-31,
         "eps0_F_per_m": 8.8542e-12, "dos_pi": 3.141592654},
 }
+# Public default references follow the default emission/build profile. Keep the
+# original CODATA dictionary inside CONSTANTS_PROFILES for explicit rollback.
+CONSTANTS = {k: CONSTANTS_PROFILES["sentaurus_u2022_12"][k] for k in CONSTANTS}
+KB_EV_PER_K = CONSTANTS["kb_J_per_K"] / CONSTANTS["q_C"]
 
 
-def physical_constants(profile: str = "codata2018") -> dict:
+def physical_constants(profile: str = "sentaurus_u2022_12") -> dict:
     """Return a copy; selecting one emission never changes another emission."""
     if profile not in CONSTANTS_PROFILES:
         raise ValueError(f"Unknown physical constants profile: {profile}")
@@ -241,7 +245,7 @@ def varshni_gap(eg0: float, alpha: float, beta: float, tpar: float, temperature_
     return eg_T, eg_zero
 
 
-def dos_prefactor_cm3(temperature_K: float, mass_ratio: float = 1.0, *, constants_profile: str = "codata2018") -> float:
+def dos_prefactor_cm3(temperature_K: float, mass_ratio: float = 1.0, *, constants_profile: str = "sentaurus_u2022_12") -> float:
     """``2 (2 pi m kB T / h^2)^{3/2}`` in cm^-3 for ``m = mass_ratio * m0``."""
     c = physical_constants(constants_profile)
     m = mass_ratio * c["m0_kg"]
@@ -275,14 +279,14 @@ def hole_dos_mass(coefficients: Dict[str, float], temperature_K: float) -> float
     return (numerator / denominator) ** (2.0 / 3.0) + coefficients.get("mm", 0.0)
 
 
-def intrinsic_density_cm3(nc_cm3: float, nv_cm3: float, effective_gap_eV: float, temperature_K: float, *, constants_profile: str = "codata2018") -> float:
+def intrinsic_density_cm3(nc_cm3: float, nv_cm3: float, effective_gap_eV: float, temperature_K: float, *, constants_profile: str = "sentaurus_u2022_12") -> float:
     c = physical_constants(constants_profile)
     kT = c["kb_J_per_K"] / c["q_C"] * temperature_K
     return math.sqrt(nc_cm3 * nv_cm3) * math.exp(-effective_gap_eV / (2.0 * kT))
 
 
 def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: float,
-                           fold_old_slotboom: bool, *, constants_profile: str = "codata2018") -> Dict[str, Any]:
+                           fold_old_slotboom: bool, *, constants_profile: str = "sentaurus_u2022_12") -> Dict[str, Any]:
     """Evaluate the frozen material scalars from merged section parameter maps.
 
     ``sections[section][name]`` is a list of numbers (``dEg0`` variants are
@@ -355,7 +359,7 @@ class _Context:
     temperature_K: float
     active_models: set
     band_edge_sensitive: bool
-    constants_profile: str = "codata2018"
+    constants_profile: str = "sentaurus_u2022_12"
 
 
 def _all(values: Sequence[Any], target: float) -> bool:
@@ -578,7 +582,7 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                    allow_lossy: bool = False, band_edge_sensitive: bool = False,
                    default_par: Optional[Path] = None, benchmark: Optional[str] = None,
                    effective_models: Optional[Sequence[dict]] = None,
-                   constants_profile: str = "codata2018") -> EmitResult:
+                   constants_profile: str = "sentaurus_u2022_12") -> EmitResult:
     """Emit the C3 material file and the per-parameter report.
 
     ``active_models`` are mapping-matrix model names (see

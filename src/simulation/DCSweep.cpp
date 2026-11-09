@@ -4,6 +4,7 @@
 // CoupledDDAssembler configuration is intentionally constructed in this unit.
 #include "vela/simulation/BoundaryControl.h"
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/PopulationCoordinateNewton.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/RuntimeLog.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -1786,14 +1787,20 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             circuit.value("residual_tolerance_V", 1.0e-6);
         sweep.externalResistor.loadLineConvergenceMode =
             circuit.value("load_line_convergence_mode", std::string{"enforce"});
+        sweep.externalResistor.physicalAcceptanceMode=circuit.value("physical_acceptance_mode",std::string{"auto"});
+        if(sweep.externalResistor.physicalAcceptanceMode!="auto" &&
+           sweep.externalResistor.physicalAcceptanceMode!="enforce" && sweep.externalResistor.physicalAcceptanceMode!="report")
+            throw std::invalid_argument("physical_acceptance_mode must be enforce or report");
         sweep.externalResistor.voltageTolerance_V =
             circuit.value("voltage_tolerance_V", 1.0e-8);
         sweep.externalResistor.maxInnerVoltageStep_V =
             circuit.value("max_inner_voltage_step_V", 0.1);
         sweep.externalResistor.maxBracketSteps =
             circuit.value("max_bracket_steps", 200);
+        const int inheritedNewtonBudget=sweep.externalResistor.solver=="coupled_newton"
+            ? cfg.value("solver",nlohmann::json::object()).value("max_iter",20):40;
         sweep.externalResistor.maxIterations =
-            circuit.value("max_iterations", 40);
+            circuit.value("max_iterations",inheritedNewtonBudget);
         sweep.externalResistor.coupledEquationTolerance = circuit.value(
             "coupled_equation_tolerance",
             sweep.externalResistor.coupledEquationTolerance);
@@ -3430,7 +3437,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         : HybridHandoffConfig{};
     const DDSolutionValidationOptions validationOptions = validationOptionsFromJson(cfg);
     GummelConfig gummel;
-    NewtonConfig newton;
+    // Gummel/frozen-state consumers also read these state-coordinate defaults,
+    // but must not parse or enforce unrelated Newton-only user fields.
+    NewtonConfig newton=newtonConfigFromJson(nlohmann::json::object(),scaling);
     std::optional<NewtonConfig> initializationNewton;
     MobilityModelConfig mobilityConfig;
     if (solverMethod == SolverMethod::Newton ||
@@ -8294,7 +8303,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 experimentNewton.open(std::filesystem::path(experiment->directory)/"newton.csv");
                 experimentAttempts.open(std::filesystem::path(experiment->directory)/"attempts.csv");
                 if(!experimentNewton||!experimentAttempts)throw std::runtime_error("cannot open experiment diagnostics");
-                experimentNewton<<std::setprecision(17)<<"outer_V,step_V,retry,iteration,mode,reason,device_residual,load_V,update_valid,rms,raw_dv,applied_alpha,protected_n,protected_p,linear_absolute_defect,linear_absolute_tolerance,linear_componentwise_error,linear_backward_tolerance,phi_before,phi_model,phi_actual,rho_reliable,rho,model_report_valid,rejected,model_review,linear_review,converged,failure\n";
+                experimentNewton<<std::setprecision(17)<<"outer_V,step_V,retry,iteration,mode,reason,device_residual,load_V,update_valid,rms,raw_dv,applied_alpha,protected_n,protected_p,linear_absolute_defect,linear_absolute_tolerance,linear_componentwise_error,linear_backward_tolerance,phi_before,phi_model,phi_actual,rho_reliable,rho,model_report_valid,rejected,model_review,linear_review,converged,failure,physical_linear_absolute,physical_linear_backward,mapped_rhs_inf\n";
                 experimentAttempts<<std::setprecision(17)<<"outer_V,step_V,nominal_step_V,target_clipped,retry,iterations,growth,next_step_V,recovered,converged,failure\n";
             }
             coupledConfig.maxIterations = sweep.externalResistor.maxIterations;
@@ -8337,6 +8346,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             coupledConfig.linearizationAuditEnabled =
                 sweep.externalResistor.coupledLinearizationAudit;
             coupledConfig.updateConvergence = sweep.externalResistor.coupledUpdateConvergence;
+            const bool populationUnit=newton.stateVariables=="potential_density" && newton.primaryVariableCoordinates=="unit";
+            const bool approximateNative=newton.stateVariables=="potential_density" && newton.populationStoppingRule=="native_approx";
+            const bool enforcePhysicalAcceptance=sweep.externalResistor.physicalAcceptanceMode=="enforce" ||
+                (sweep.externalResistor.physicalAcceptanceMode=="auto" && !approximateNative);
+            if(populationUnit)coupledConfig.minimumOriginalCorrections=1;
+            if(approximateNative && coupledConfig.updateConvergence.mode=="off")coupledConfig.updateConvergence.mode="report";
             DensityUpdateErrorEvaluator coupledUpdateError;
             if (coupledConfig.updateConvergence.mode != "off")
                 coupledUpdateError = coupledDeviceSolver.makeArclengthUpdateErrorEvaluator(
@@ -8351,11 +8366,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     sweep.currentContact, coupledCurrentScale);
             const auto coupledCurrentValue = coupledCurrent.value;
             const auto experimentResidual=coupledDeviceSystem.residual;
-            CoupledLoadLineNewton coupledSolver(
-                std::move(coupledDeviceSystem),
-                coupledCurrentValue,
-                coupledConfig,
-                std::move(coupledCurrent), std::move(coupledUpdateError));
+            const auto nativeMapping=coupledDeviceSolver.approximateNativeRhsScales();
+            if(approximateNative && !nativeMapping.available())
+                runtimeLogInfo("native_approx: mapped RHS unavailable outside frozen calibration; physical E branch remains active");
+            PopulationCoordinateNewton coupledSolver(
+                std::move(coupledDeviceSystem),coupledCurrentValue,coupledConfig,
+                std::move(coupledCurrent),std::move(coupledUpdateError),
+                populationUnit?coupledDeviceSolver.primaryVariableScales():PrimaryVariableScales{},populationUnit,approximateNative,nativeMapping);
 
             ArclengthState coupledState;
             coupledState.x =
@@ -8405,7 +8422,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 coupledUpdateCsv.open(coupledConfig.updateConvergence.diagnosticCsv);
                 if (!coupledUpdateCsv)
                     throw std::runtime_error("Cannot open coupled update convergence diagnostic CSV");
-                coupledUpdateCsv << "outer_V,attempted_step_V,retry,iteration,device_residual_inf,load_residual_V,update_valid,update_rms,poisson_rms,electron_rms,hole_rms,contact_rms,poisson_count,electron_count,hole_count,contact_count,accepted_alpha,convergence_reason,reported_alpha,full_step_merit,raw_state_update_inf,raw_inner_update_V,limited_state_update_inf,proposed_inner_update_V,protected_electrons,protected_holes,population_effective_alpha,derivative_mode,derivative_reason,candidate_update_valid,candidate_update_rms,candidate_device_residual,candidate_load_residual_V,candidate_model_ratio,recovery_rejected,device_jvp_relative_error,device_jvp_worst_row,componentwise_backward_error,bootstrap_linear_retry\n";
+                coupledUpdateCsv << "outer_V,attempted_step_V,retry,iteration,device_residual_inf,load_residual_V,update_valid,update_rms,poisson_rms,electron_rms,hole_rms,contact_rms,poisson_count,electron_count,hole_count,contact_count,accepted_alpha,convergence_reason,reported_alpha,full_step_merit,raw_state_update_inf,raw_inner_update_V,limited_state_update_inf,proposed_inner_update_V,protected_electrons,protected_holes,population_effective_alpha,derivative_mode,derivative_reason,candidate_update_valid,candidate_update_rms,candidate_device_residual,candidate_load_residual_V,candidate_model_ratio,recovery_rejected,device_jvp_relative_error,device_jvp_worst_row,componentwise_backward_error,bootstrap_linear_retry,physical_linear_absolute,physical_linear_backward,mapped_rhs_inf\n";
                 coupledUpdateCsv << std::setprecision(17);
             }
 
@@ -8451,7 +8468,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 << ',' << trace.candidateModelRatio << ',' << trace.candidateRejectedByRecovery
                                 << ',' << trace.deviceJvpRelativeError << ',' << trace.deviceJvpErrorIndex
                                 << ',' << trace.componentwiseBackwardError
-                                << ',' << !trace.bootstrapLinearFailureReason.empty() << '\n';
+                                << ',' << !trace.bootstrapLinearFailureReason.empty()
+                                << ',' << trace.physicalLinearAbsolute << ',' << trace.physicalLinearBackward
+                                << ',' << trace.mappedRhsNorm << '\n';
                         }
                         coupledUpdateCsv.flush();
                     }
@@ -8469,7 +8488,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             <<','<<t.modelReportReliable<<','<<t.modelReportRatio<<','<<t.modelReportValid
                             <<','<<t.candidateRejectedByRecovery<<','<<t.bootstrapModelRetry
                             <<','<<!t.bootstrapLinearFailureReason.empty()<<','<<pendingCoupled.converged
-                            <<','<<boundaryCsvToken(pendingCoupled.failureReason)<<'\n';
+                            <<','<<boundaryCsvToken(pendingCoupled.failureReason)
+                            <<','<<t.physicalLinearAbsolute<<','<<t.physicalLinearBackward<<','<<t.mappedRhsNorm<<'\n';
                         experimentNewton.flush();
                     }
                     pendingAcceptanceDiagnostics.clear();
@@ -8560,9 +8580,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             {"terminal_hole_current_abs_sum_A_per_um", holeTerminalAbsSum},
                             {"terminal_kcl_A_per_um", static_cast<Real>(kcl)},
                             {"terminal_kcl_limit_A_per_um", kclLimit},
-                            {"terminal_kcl_satisfied", kclPass}}.dump();
+                            {"terminal_kcl_satisfied", kclPass},
+                            {"physical_acceptance_mode",enforcePhysicalAcceptance?"enforce":"report"},
+                            {"primary_variable_coordinates",populationUnit?"unit":"physical"},
+                            {"stopping_rule",approximateNative?"native_approx":"legacy"},
+                            {"mapped_rhs_calibration_available",nativeMapping.available()}}.dump();
                         runtimeLogInfo("external_circuit: physical acceptance " + pendingAcceptanceDiagnostics);
-                        if (!physicalFinite || !rowsPass || !globalPass || !kclPass || !loadAccepted) {
+                        if (!physicalFinite || (enforcePhysicalAcceptance && (!rowsPass || !globalPass || !kclPass || !loadAccepted))) {
                             pendingCoupled.converged = false;
                             pendingCoupled.failureReason = "coupled_physical_acceptance: " +
                                 std::string(!physicalFinite ? "nonfinite_residual" :

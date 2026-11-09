@@ -92,7 +92,7 @@
       "additionalProperties": true,
       "allOf": [
         {"anyOf": [
-          {"not": {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}},
+          {"not": {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}},
           {"required": ["coupled_operator", "carrier_statistics"], "properties": {
             "coupled_operator": {"const": "bvmethods_tri3_qf"},
             "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]},
@@ -120,19 +120,28 @@
           }}
         ]},
         {"anyOf": [
-          {"not": {"required": ["population_update"]}},
-          {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}
+          {"not": {"required": ["primary_variable_coordinates"], "properties": {"primary_variable_coordinates": {"const": "unit"}}}},
+          {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
         ]},
         {"anyOf": [
-          {"not": {"required": ["population_derivative_recovery"], "properties": {"population_derivative_recovery": {"const": "automatic"}}}},
-          {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}
+          {"not": {"required": ["population_stopping_rule"], "properties": {"population_stopping_rule": {"const": "native_approx"}}}},
+          {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
+        ]},
+        {"anyOf": [
+          {"not": {"required": ["population_update"]}},
+          {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
+        ]},
+        {"anyOf": [
+          {"not": {"required": ["population_derivative_recovery"], "properties": {"population_derivative_recovery": {"enum": ["automatic", "after_protection"]}}}},
+          {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
         ]}
         ,{"anyOf": [
           {"not": {"required": ["population_sg_bootstrap_linearization"], "properties": {"population_sg_bootstrap_linearization": {"const": "floor_adjacent_edges"}}}},
-          {"required": ["state_variables", "coupled_operator", "population_update"], "properties": {
+          {"allOf": [{"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}], "required": ["coupled_operator"], "properties": {
             "state_variables": {"const": "potential_density"}, "coupled_operator": {"const": "bvmethods_tri3_qf"},
             "population_sg_current": {"const": "quasi_fermi"},
             "population_update": {"anyOf": [
+              {"not": {"anyOf": [{"required": ["minimum_density_cm3"]}, {"required": ["minimum_density_m3"]}]}},
               {"required": ["minimum_density_cm3"], "properties": {"minimum_density_cm3": {"type": "number", "exclusiveMinimum": 0}}},
               {"required": ["minimum_density_m3"], "properties": {"minimum_density_m3": {"type": "number", "exclusiveMinimum": 0}}}
             ]}
@@ -140,14 +149,16 @@
         ]}
         ,{"anyOf": [
           {"not": {"required": ["population_sg_current"], "properties": {"population_sg_current": {"const": "band_population"}}}},
-          {"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}
+          {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
         ]}
       ],
       "properties": {
+        "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
+        "population_stopping_rule": {"enum": ["native_approx", "legacy"], "description": "Population default native_approx is E<1 OR a valid calibrated mapped RHS<1e-5; unsupported mappings never authorize RHS stopping."},
         "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode requires explicit BVMethods physics."},
         "population_sg_bootstrap_linearization": {"enum": ["unchanged", "floor_adjacent_edges"], "default": "unchanged", "description": "Opt-in approximate-only SG population feedback freezing on carrier edges touching the configured positive density floor; requires potential_density and quasi_fermi SG."},
         "population_sg_current": {"enum": ["quasi_fermi", "band_population"], "default": "quasi_fermi", "description": "Experimental direct population/ni-band SG arithmetic; band_population requires potential_density."},
-        "population_derivative_recovery": {"enum": ["full", "automatic"], "description": "Population only, automatic full-step bootstrap/trial/full derivative recovery; default full."},
+        "population_derivative_recovery": {"enum": ["full", "automatic", "after_protection"], "description": "Population only: full, automatic controller, or Full entry with mobility/AV tangents omitted only after protected writeback (after_protection)."},
         "population_update": {"type": "object", "additionalProperties": false, "properties": {"protection": {"enum": ["local_nonpositive", "fraction_to_boundary"]}, "local_retained_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "fraction_tau": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1}, "minimum_density_cm3": {"type": "number", "minimum": 0}, "minimum_density_m3": {"type": "number", "minimum": 0}}},
         "block_absolute_convergence": {
           "additionalProperties": false,
@@ -391,6 +402,7 @@
             "mode": {
               "const": "series_resistor"
             },
+            "physical_acceptance_mode": {"enum": ["enforce", "report"], "description": "Independent load, carrier, continuity and KCL quality gate; default report for native_approx, enforce for legacy. Nonfinite states always reject."},
             "load_line_convergence_mode": {
               "enum": ["enforce", "report"],
               "default": "enforce",

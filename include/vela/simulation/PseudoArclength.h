@@ -158,6 +158,11 @@ struct ArclengthSystem {
     std::function<Real(const VectorXd&)> equationNorm;
     std::function<SparseMatrixd(const VectorXd&,Real)> bootstrapJacobian;
     bool automaticDerivativeRecovery=false;
+    /// Event policy: start Full at each target; omit only mobility/AV tangents
+    /// on the next linearization after an actually protected writeback.
+    bool postProtectionDerivativeRecovery=false;
+    std::function<SparseMatrixd(const VectorXd&,Real)> protectedJacobian;
+    std::function<SparseMatrixd(const VectorXd&,Real,const VectorXd&)> protectedJacobianInColumns;
 };
 
 /// Pseudo-arclength (Keller) continuation engine.

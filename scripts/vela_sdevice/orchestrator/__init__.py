@@ -139,9 +139,17 @@ class DeviceRun:
                 raise RunError("E401", "Electrodes have no matching mesh contacts", findings=findings)
             sv.validate(sv.load_schema(resource_root() / "schemas/vela.mesh_qualification.v1.schema.json"), mesh)
             write_json(self.work / "mesh_qualification.json", mesh)
+            sidecar_path = self.cmd.with_suffix(".vela.json")
+            try:
+                sidecar = json.loads(sidecar_path.read_text(encoding="utf-8")) if sidecar_path.exists() else None
+            except (OSError, ValueError) as error:
+                raise RunError("E409", f"Sidecar '{sidecar_path}' is invalid: {error}") from error
+            bvmethods = (isinstance(sidecar, dict) and
+                         sidecar.get("bvmethods_operator_profile") == "bvmethods_tri3_qf")
+            constants_profile = getattr(self.options, "physical_constants_profile", None) or "sentaurus_u2022_12"
             electrode_materials = [e["attributes"]["material"] for e in self.ir["electrodes"] if "material" in e["attributes"]]
             materials = emit_materials(self.cmd.parent / self.ir["files"]["parameter"]["resolved"],
-                constants_profile=getattr(self.options, "physical_constants_profile", "codata2018"),
+                constants_profile=constants_profile,
                 active_models=active_models_from_ir(self.ir), temperature_K=self.ir["physics"]["temperature_K"] or 300,
                 mesh_materials=mesh["materials"], electrode_materials=electrode_materials,
                 effective_models=self.ir["physics"]["effective"], allow_lossy=self.options.allow_lossy,
@@ -150,11 +158,6 @@ class DeviceRun:
             for kind in ("lossy", "inert"):
                 for parameter in materials.report[kind]:
                     self.log("MATERIAL", json.dumps({"status": kind, **parameter}))
-            sidecar_path = self.cmd.with_suffix(".vela.json")
-            try:
-                sidecar = json.loads(sidecar_path.read_text(encoding="utf-8")) if sidecar_path.exists() else None
-            except (OSError, ValueError) as error:
-                raise RunError("E409", f"Sidecar '{sidecar_path}' is invalid: {error}") from error
             self.result = emit_stage_plan(self.ir, mesh_qualification=mesh, materials_report=materials.report,
                 work_dir=self.work.name, cmd_basename=self.cmd.name, cmd_sha256=self.ir["source"]["sha256"],
                 options=EmitOptions(exit_on_failure=self.options.exit_on_failure, threads=self.options.threads,

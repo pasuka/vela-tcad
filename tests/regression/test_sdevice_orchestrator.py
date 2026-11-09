@@ -117,8 +117,18 @@ class OrchestratorTests(unittest.TestCase):
     def call(self, *args, mode="ok", target=None, env=None):
         environment = dict(self.env, FAKE_RUNNER_MODE=mode)
         environment.update(env or {})
-        return subprocess.run([sys.executable, "-m", "vela_sdevice", "device", *(args or [str(target or self.cmd)])],
+        profile=[]
+        runner=environment.get("VELA_EXAMPLE_RUNNER")
+        if runner and Path(runner).resolve()!=FAKE.resolve() and "--physical-constants-profile" not in args:
+            # Exercise explicit historical builds as well as the fresh default;
+            # never feed compatible materials to a CODATA-only binary.
+            profile=self.runner_constants_args(runner)
+        return subprocess.run([sys.executable, "-m", "vela_sdevice", "device", *(args or [str(target or self.cmd)]), *profile],
                               cwd=self.root, env=environment, capture_output=True, text=True, encoding="utf-8", timeout=30)
+
+    def runner_constants_args(self, runner):
+        done=subprocess.run([runner,"--physical-constants"],capture_output=True,text=True,check=True,timeout=10)
+        return ["--physical-constants-profile",json.loads(done.stdout)["profile"]]
 
     def assert_exit(self, code, done):
         self.assertEqual(done.returncode, code, done.stdout + done.stderr)
@@ -153,6 +163,32 @@ class OrchestratorTests(unittest.TestCase):
         self.assert_exit(0, self.call(str(self.cmd), "-i"))
         self.assertEqual(len(self.calls()), 1)
         self.assertTrue((self.root / "final_des.vtu").exists())
+
+    def test_bvmethods_cmd_default_constants_and_explicit_override(self):
+        text = self.cmd.read_text().replace('{Name="anode" Voltage=0}', '{Name="anode" Voltage=0 Resistor=1e7}')
+        text = text.replace("Solve {", """
+            Physics { EffectiveIntrinsicDensity(OldSlotboom) Fermi
+              Mobility(DopingDep HighFieldSaturation(GradQuasiFermi) Enormal)
+              Recombination(SRH(DopingDep) Avalanche(GradQuasiFermi)) }
+            Plot { Potential eDensity hDensity SpaceCharge Doping }
+            Math { Extrapolate AvalDerivatives Iterations=20 }
+            Solve {""")
+        self.cmd.write_text(text)
+        self.cmd.with_suffix(".vela.json").write_text(json.dumps({
+            "schema": "vela.sdevice_sidecar.v1", "bvmethods_operator_profile": "bvmethods_tri3_qf"
+        }))
+        for args, expected in (
+            ([], "sentaurus_u2022_12"),
+            (["--physical-constants-profile", "codata2018"], "codata2018"),
+        ):
+            with self.subTest(constants=expected):
+                self.assert_exit(0, self.call(str(self.cmd), "--check", "--allow-lossy", *args))
+                report = json.loads((self.work / "materials_report.json").read_text())
+                deck = json.loads((self.work / "simulation_stage01.json").read_text())
+                self.assertEqual(report.get("physical_constants_profile", "codata2018"), expected)
+                self.assertEqual(deck.get("physical_constants_profile", "codata2018"), expected)
+                self.assertEqual(deck["sweep"]["external_circuit"]["max_iterations"], 20)
+        self.assertEqual(self.calls(), [])
 
     def test_explicit_plot_names_cannot_be_overwritten_by_default_series(self):
         self.cmd.write_text(self.cmd.read_text().replace('Coupled {Poisson Electron Hole}}',
@@ -406,7 +442,7 @@ class OrchestratorTests(unittest.TestCase):
         if launcher and Path(launcher).is_file():
             env = dict(self.env, VELA_EXAMPLE_RUNNER=runner, PYTHONPATH="", VELA_PYTHON=sys.executable)
             env.pop("VELA_SDEVICE_PYZ", None)
-            done = subprocess.run([launcher, "device", str(cmd), "--allow-lossy"], cwd=root,
+            done = subprocess.run([launcher, "device", str(cmd), "--allow-lossy", *self.runner_constants_args(runner)], cwd=root,
                 env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
         else:
             done = self.call(str(cmd), "--allow-lossy", env={"VELA_EXAMPLE_RUNNER": runner})

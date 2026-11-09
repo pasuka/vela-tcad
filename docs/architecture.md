@@ -53,7 +53,7 @@ node coefficients for the fixed owner mesh/doping/configuration; normal fields
 and mobility tangents remain live. See the
 [performance qualification](validation/bvmethods_t470p_round2_2026-10-29.md).
 
-The explicit `solver.state_variables: "potential_density"` mode stores physical
+The BVMethods default `solver.state_variables: "potential_density"` mode stores physical
 n/p as primary state alongside scaled potential. `BvMethodsCoupledRuntime`
 directly seeds population derivatives in the shared Tri3 jets, uses a fixed-n/p
 Poisson block and derives QF only for physical fields. `PopulationNewtonSolver`
@@ -67,6 +67,18 @@ coordinates; the coupled continuation service retains prediction rollback.
 Population archives store internal n/p alongside SI output fields and their
 conversion scale, so same-unit restores bypass a lossy SI round trip. Population
 solutions also retain original normalized psi separately from QF packedState.
+`PopulationCoordinateNewton` is the production coordinate entry for population
+Newton and resistor sweeps. `PrimaryVariableCoordinates` transforms states,
+Jacobians, ports, prediction, protected writes and physical E metrics into Unit
+coordinates, delegating to the single `CoupledLoadLineNewton` implementation.
+There are no environment flags or duplicate Newton kernels. A state-local
+physical `LoadLineResidual` is shared by scaled RHS and physical direction audit.
+The after_protection policy starts Full per target and omits only mobility/AV
+partials after protected writes, restoring Full after unprotected writes. It is
+separate from the optional automatic bootstrap controller. Population default
+stopping is explicitly native_approx; RHS mapping is unavailable outside its
+calibrated domain, while valid physical E remains available.
+
 The independent `vela_bvmethods_experiment` entry accepts `--experiment` and
 `--checkpoint` requests outside the simulation JSON schema. All groups share its
 binary; its scoped C++ sweep controls can enable the protected-model review,

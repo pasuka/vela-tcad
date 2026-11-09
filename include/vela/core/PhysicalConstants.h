@@ -8,7 +8,8 @@
 namespace vela::constants {
 
 // A binary has one immutable constants contract. Never combine it with material
-// scalars generated under another profile. CODATA 2018 remains the default.
+// scalars generated under another profile. Fresh CMake builds default to the
+// Sentaurus profile; an explicitly cached CODATA build remains reproducible.
 #if defined(VELA_CONSTANTS_SENT_U2022_12) && VELA_CONSTANTS_SENT_U2022_12
 inline constexpr std::string_view profileName = "sentaurus_u2022_12";
 inline constexpr double q = 1.602192e-19;       // C

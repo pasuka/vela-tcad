@@ -24,6 +24,9 @@ TEST_CASE("C3 material schema keeps its units under a v2 deck",
     } cleanup{path};
     const nlohmann::json document = {
         {"schema", "vela.templates_ldmos.materials.v1"},
+        // Synthetic unit-conversion coefficients, not a frozen Formula-1
+        // material snapshot. Declare the active contract explicitly.
+        {"physical_constants_profile", std::string(constants::profileName)},
         {"benchmark", "c3-v2-test"}, {"revision", 1},
         {"unit_system", {
             {"concentration", "cm^-3"}, {"mobility", "cm^2/(V*s)"},
@@ -54,6 +57,17 @@ TEST_CASE("C3 material schema keeps its units under a v2 deck",
         REQUIRE(*material.Nv_m3 == Catch::Approx(units.m3ToInternalConcentration(3.1e25)));
         REQUIRE(material.bandgap_eV == Catch::Approx(1.124));
     }
+    auto wrongProfile=document;
+    wrongProfile["physical_constants_profile"]=constants::profileName=="codata2018"
+        ? "sentaurus_u2022_12":"codata2018";
+    { std::ofstream file(path);file<<wrongProfile.dump(2); }
+    REQUIRE_THROWS(MaterialDatabase(path.string(),parseUnitScalingConfig({{"format_version",2}})));
+    auto untagged=document;untagged.erase("physical_constants_profile");
+    { std::ofstream file(path);file<<untagged.dump(2); }
+    if(constants::profileName=="sentaurus_u2022_12")
+        REQUIRE_THROWS(MaterialDatabase(path.string(),parseUnitScalingConfig({{"format_version",2}})));
+    else
+        REQUIRE_NOTHROW(MaterialDatabase(path.string(),parseUnitScalingConfig({{"format_version",2}})));
     // The schema-specific whitelist still rejects a genuinely wrong unit key.
     auto invalid = document;
     invalid["materials"][0]["conduction_band_density_of_states_m3"] = 2.8e25;

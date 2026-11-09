@@ -9,6 +9,19 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class BVMethodsCmdProfileTests(unittest.TestCase):
+    def test_approximate_stopping_reads_math_update_references_and_preserves_override(self):
+        d, ir, stage, _ = self.inputs()
+        ir["math"].update(digits=6, err_ref_electron_cm3=2e10, err_ref_hole_cm3=3e10)
+        d["sweep"]["external_circuit"]["coupled_update_convergence"]={"digits": 4}
+        apply_bvmethods_profile(d, ir, stage, {})
+        metric=d["sweep"]["external_circuit"]["coupled_update_convergence"]
+        self.assertEqual(metric, {"mode": "report", "digits": 4,
+            "electron_reference_cm3": 2e10, "hole_reference_cm3": 3e10})
+        d, ir, stage, _ = self.inputs()
+        ir["math"]["rel_err_control"]=False
+        with self.assertRaisesRegex(ValueError, "RelErrControl"):
+            apply_bvmethods_profile(d, ir, stage, {})
+
     def test_load_report_and_or_stopping_are_independent_schema_controls(self):
         for mode, load in [("enforce", "enforce"), ("enforce_joint", "report"), ("enforce", "report")]:
             controls = {"solver": "coupled_newton",
@@ -46,7 +59,7 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
             invalid = {"population_sg_current": value}
             with self.assertRaises(sv.ValidationError):sv.validate(schema, {"solver": invalid})
             d, ir, stage, _ = self.inputs()
-            with self.assertRaises(ValueError):apply_bvmethods_profile(d, ir, stage, {"solver": invalid})
+            with self.assertRaises(ValueError):apply_bvmethods_profile(d, ir, stage, {"solver": {"state_variables": "potential_quasi_fermi", **invalid}})
 
     def test_statistical_bootstrap_schema_requires_compatible_population_floor(self):
         import copy
@@ -64,15 +77,25 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
             "state_variables": "potential_density", "population_sg_bootstrap_linearization": "floor_adjacent_edges",
             "population_update": {"minimum_density_cm3": 1e-100}}})
         self.assertEqual(forwarded["solver"]["population_sg_bootstrap_linearization"], "floor_adjacent_edges")
-        for control in [{"population_sg_bootstrap_linearization": "bad"},
-                        {"population_sg_bootstrap_linearization": "floor_adjacent_edges"}]:
+        defaults, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(defaults, ir, stage, {"solver": {
+            "population_sg_bootstrap_linearization": "floor_adjacent_edges"}})
+        self.assertEqual(defaults["solver"]["population_update"]["minimum_density_cm3"], 1e-100)
+        for control in [{"population_sg_bootstrap_linearization": "bad"}]:
             bad, ir, stage, _ = self.inputs()
             with self.assertRaises(ValueError):apply_bvmethods_profile(bad, ir, stage, {"solver": control})
-        for key, value in [("population_update", {}), ("population_update", {"minimum_density_cm3": 0}),
+        for key, value in [("population_update", {"minimum_density_cm3": 0}),
                            ("population_sg_current", "band_population"),
                            ("population_sg_bootstrap_linearization", "bad")]:
             bad = copy.deepcopy(solver); bad[key] = value
             with self.assertRaises(sv.ValidationError):sv.validate(schema, {"solver": bad})
+
+    def test_population_floor_unit_alias_does_not_emit_two_floor_fields(self):
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {"solver": {
+            "population_update": {"minimum_density_m3": 1e-100}}})
+        self.assertNotIn("minimum_density_cm3", d["solver"]["population_update"])
+        self.assertEqual(d["solver"]["population_update"]["minimum_density_m3"], 1e-100)
 
     def test_population_mode_is_explicit_and_emits_independent_protection(self):
         d, ir, stage, _ = self.inputs()
@@ -93,7 +116,7 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
 
     def test_population_mode_rejects_unknown_coordinates_and_qf_caps(self):
         for values in ({"state_variables": "bad"},
-                       {"population_derivative_recovery": "automatic"},
+                       {"state_variables": "potential_quasi_fermi", "population_derivative_recovery": "automatic"},
                        {"state_variables": "potential_density", "method": "gummel"},
                        {"state_variables": "potential_density", "quasi_fermi_update_limit_V": .1}):
             d, ir, stage, _ = self.inputs()
@@ -168,15 +191,15 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         self.assertEqual(d['sweep']['step'],100000.)
         self.assertEqual(stage['sweep']['step_V'],100000.)
         self.assertNotIn('boundary_control',d['sweep'])
-        self.assertEqual(d['solver']['quasi_fermi_update_limit_V'],0.)
-        self.assertEqual(d['solver']['quasi_fermi_update_limit_minority_V'],0.)
+        self.assertNotIn('quasi_fermi_update_limit_V',d['solver'])
+        self.assertNotIn('quasi_fermi_update_limit_minority_V',d['solver'])
 
     def test_implicit_legacy_cap_is_removed_but_explicit_control_is_preserved(self):
         d,ir,stage,s=self.inputs();d['solver']['quasi_fermi_update_limit_V']=.1
         apply_bvmethods_profile(d,ir,stage,s)
-        self.assertEqual(d['solver']['quasi_fermi_update_limit_V'],0.)
+        self.assertNotIn('quasi_fermi_update_limit_V',d['solver'])
         d,ir,stage,s=self.inputs()
-        s={'solver':{'quasi_fermi_update_limit_V':.1,'quasi_fermi_update_limit_minority_V':.05}}
+        s={'solver':{'state_variables':'potential_quasi_fermi','quasi_fermi_update_limit_V':.1,'quasi_fermi_update_limit_minority_V':.05}}
         apply_bvmethods_profile(d,ir,stage,s)
         self.assertEqual(d['solver']['quasi_fermi_update_limit_V'],.1)
         self.assertEqual(d['solver']['quasi_fermi_update_limit_minority_V'],.05)
@@ -209,6 +232,73 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         self.assertEqual(ir['stages'][0]['not_damped'],100)
         self.assertEqual(ir['stages'][1]['not_damped'],200)
         self.assertEqual(ir['stages'][1]['line_search_damping'],1.)
+
+    def test_default_population_profile_and_explicit_qf_rollback(self):
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {})
+        self.assertEqual(d["solver"]["state_variables"], "potential_density")
+        self.assertEqual(d["solver"]["primary_variable_coordinates"], "unit")
+        self.assertEqual(d["solver"]["population_derivative_recovery"], "after_protection")
+        self.assertEqual(d["solver"]["population_stopping_rule"], "native_approx")
+        legacy, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(legacy, ir, stage, {"solver": {"state_variables": "potential_quasi_fermi"}})
+        self.assertNotIn("population_stopping_rule", legacy["solver"])
+        self.assertEqual(legacy["solver"]["quasi_fermi_update_limit_V"], 0.)
+
+    def test_post_protection_policy_survives_profile_and_schema(self):
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {"solver": {
+            "state_variables": "potential_density",
+            "population_derivative_recovery": "after_protection"}})
+        self.assertEqual(d["solver"]["population_derivative_recovery"], "after_protection")
+        d["solver"]["mobility"]["doping_concentration_basis"] = "total_impurity"
+        schema = sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json")
+        sv.validate({**schema, "required": []}, {"solver": d["solver"]})
+        with self.assertRaises(sv.ValidationError):
+            sv.validate({**schema, "required": []}, {"solver": {
+                "state_variables": "potential_quasi_fermi",
+                "population_derivative_recovery": "after_protection"}})
+
+    def test_explicit_basic_state_plot_projection_is_schema_bounded(self):
+        schema = sv.load_schema(REPO / "schemas/vela.sdevice_sidecar.v1.schema.json")
+        valid = {"schema": "vela.sdevice_sidecar.v1", "sweep": {
+            "vtk_fields": ["ElectrostaticPotential", "eDensity", "hDensity"]}}
+        sv.validate(schema, valid)
+        for bad in ([], ["UnqualifiedField"], ["eDensity", "eDensity"]):
+            with self.subTest(fields=bad), self.assertRaises(sv.ValidationError):
+                sv.validate(schema, {**valid, "sweep": {"vtk_fields": bad}})
+        with self.assertRaises(sv.ValidationError):
+            sv.validate(schema, {**valid, "sweep": {"vtk_fields": ["eDensity"], "stop": 1}})
+
+    def test_implicit_population_state_has_the_same_schema_contract(self):
+        d, ir, stage, _ = self.inputs()
+        apply_bvmethods_profile(d, ir, stage, {})
+        solver = d["solver"]
+        solver["mobility"]["doping_concentration_basis"] = "total_impurity"
+        del solver["state_variables"]
+        solver["population_sg_bootstrap_linearization"] = "floor_adjacent_edges"
+        schema = {**sv.load_schema(REPO / "configs/schema/vela-simulation.schema.json"),
+                  "required": []}
+        sv.validate(schema, {"solver": solver})
+        for changed in ({"state_variables": "potential_quasi_fermi"},
+                        {"coupled_operator": "legacy_edge"},
+                        {"quasi_fermi_trust_region_growth_factor": 2.}):
+            with self.subTest(changed=changed), self.assertRaises(sv.ValidationError):
+                sv.validate(schema, {"solver": {**solver, **changed}})
+
+    def test_resistor_budget_uses_sweep_coupled_not_seed_budget(self):
+        for local, math, explicit, expected in [(20, 40, None, 20),
+                                                (None, 20, None, 20),
+                                                (20, 40, 12, 12)]:
+            with self.subTest(local=local, math=math, explicit=explicit):
+                d, ir, stage, sidecar = self.inputs()
+                d["solver"]["max_iter"] = 100
+                ir["math"]["iterations"] = math
+                if explicit is not None:
+                    d["sweep"]["external_circuit"]["max_iterations"] = explicit
+                apply_bvmethods_profile(d, ir, stage, sidecar,
+                    source_stage={"iterations": local, "not_damped": 100})
+                self.assertEqual(d["sweep"]["external_circuit"]["max_iterations"], expected)
 
     def test_profile_does_not_invent_a_series_resistor_for_equilibrium(self):
         d,ir,stage,s=self.inputs();del d['sweep']['external_circuit']
@@ -259,21 +349,58 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
         result = emit(ir, mesh_qualification=qualification(ir, ('Si','SiO2')),
                       materials_report=material_result(ir, ('Si','SiO2')).report, sidecar=sidecar)
         self.assertEqual(len(result.decks), 2)
+        # A deliberate output projection must be visible and leave the solve
+        # contract intact. Unsupported physical diagnostics still reject by default.
+        import copy
+        wide_ir = parse_cmd_text(text.replace("Plot { Potential", "Plot { eCurrent/Vector Potential"),
+                                 path_name="device.cmd")
+        with self.assertRaises(ValueError):
+            emit(wide_ir, mesh_qualification=qualification(wide_ir, ('Si', 'SiO2')),
+                 materials_report=material_result(wide_ir, ('Si', 'SiO2')).report,
+                 sidecar=sidecar)
+        projected_sidecar = copy.deepcopy(sidecar)
+        projected_sidecar['sweep']['vtk_fields'] = list(result.decks[0]['sweep']['vtk_fields'])
+        projected = emit(wide_ir, mesh_qualification=qualification(wide_ir, ('Si', 'SiO2')),
+                         materials_report=material_result(wide_ir, ('Si', 'SiO2')).report,
+                         sidecar=projected_sidecar)
+        for original, narrowed in zip(result.decks, projected.decks):
+            self.assertEqual(original['solver'], narrowed['solver'])
+            self.assertEqual(original['sweep'], narrowed['sweep'])
+        self.assertTrue(any(d.get('message_id') == 'W207' and
+                            d.get('vela_key') == 'sweep.vtk_fields' for d in projected.decisions))
         zero, scan = result.decks
         self.assertNotIn('external_circuit', zero['sweep'])
         self.assertEqual(zero['sweep']['initialization']['poisson_max_iter'],100)
         self.assertEqual(scan['sweep']['initial_state_file'],zero['sweep']['write_state_file'])
         self.assertEqual(scan['sweep']['external_circuit']['resistance_ohm_um'],1e7)
+        self.assertEqual(scan['sweep']['external_circuit']['max_iterations'],20)
+        for name, cmd, override, expected in (
+            ("local", text.replace("{Coupled {Poisson Electron Hole}}",
+                                   "{Coupled(Iterations=12) { Poisson Electron Hole}}"), None, 12),
+            ("default", text.replace(" Iterations=20", ""), None, 50),
+            ("override", text, 17, 17),
+        ):
+            with self.subTest(budget=name):
+                case = parse_cmd_text(cmd, path_name="device.cmd")
+                self.assertTrue(case["verdict"]["accepted"], case["errors"])
+                circuit = dict(sidecar["sweep"]["external_circuit"])
+                options = {**sidecar, "sweep": {"external_circuit": circuit}}
+                if override is not None:
+                    circuit["max_iterations"] = override
+                scan_deck = emit(case, mesh_qualification=qualification(case, ("Si", "SiO2")),
+                                 materials_report=material_result(case, ("Si", "SiO2")).report,
+                                 sidecar=options).decks[1]
+                self.assertEqual(scan_deck["sweep"]["external_circuit"]["max_iterations"], expected)
         self.assertEqual(scan['sweep']['external_circuit']['coupled_line_search_mode'],'report_only')
         self.assertEqual(scan['sweep']['external_circuit']['load_line_convergence_mode'],'report')
         self.assertEqual(scan['sweep']['external_circuit']['coupled_update_convergence'],
-                         {'mode':'off','diagnostic_csv':'updates.csv'})
+                         {'mode':'off','diagnostic_csv':'updates.csv','digits':5})
         self.assertEqual(scan['sweep']['external_circuit']['coupled_max_outer_step_V'],2500)
         self.assertEqual(scan['solver']['carrier_row_convergence'],{'mode':'report'})
         for deck in result.decks:
             self.assertEqual(deck['solver']['coupled_operator'],'bvmethods_tri3_qf')
-            self.assertEqual(deck['solver']['quasi_fermi_update_limit_V'],0.)
-            self.assertEqual(deck['solver']['quasi_fermi_update_limit_minority_V'],0.)
+            self.assertNotIn('quasi_fermi_update_limit_V',deck['solver'])
+            self.assertNotIn('quasi_fermi_update_limit_minority_V',deck['solver'])
             sv.validate(sv.load_schema(REPO/'configs/schema/vela-simulation.schema.json'),deck)
         sv.validate(sv.load_schema(REPO/'schemas/vela.stage_plan.v1.schema.json'),result.stage_plan)
 

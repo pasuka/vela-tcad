@@ -243,12 +243,16 @@ struct NewtonConfig {
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
     std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
-    std::string stateVariables = "potential_quasi_fermi";
-    std::string populationDerivativeRecovery = "full";
+    // Empty defaults resolve identically in JSON and direct C++ construction:
+    // BVMethods uses population/Unit/event recovery; legacy operators retain QF.
+    std::string stateVariables;
+    std::string populationDerivativeRecovery;
+    std::string primaryVariableCoordinates;
+    std::string populationStoppingRule;
     std::string populationSgCurrent = "quasi_fermi";
     std::string populationSgBootstrapLinearization = "unchanged";
     PopulationUpdateConfig populationUpdate;
-    Real populationMinimumDensity_cm3 = 0.;
+    Real populationMinimumDensity_cm3 = -1.; ///< Internal default sentinel; resolves to 1e-100 for population, zero for QF.
     Real populationPredictorLowDensity_cm3 = 0.;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
@@ -776,6 +780,9 @@ struct NewtonJacobianBlockAuditRow {
     Real relHolePhipDiff = 0.0;
 };
 
+struct PrimaryVariableScales;
+struct ApproximateNativeRhsScales;
+
 class NewtonSolver {
 public:
     NewtonSolver(const DeviceMesh& mesh,
@@ -865,6 +872,8 @@ public:
     /// exact assembler, boundary-condition construction, and Jacobian assembly of
     /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
     /// finite difference used to estimate dF/dV.
+    PrimaryVariableScales primaryVariableScales() const;
+    ApproximateNativeRhsScales approximateNativeRhsScales() const;
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
                                         Real biasFiniteDifferenceStep_V = 1.0e-4,
                                         bool boundaryOnlyParameterDerivative = false) const;

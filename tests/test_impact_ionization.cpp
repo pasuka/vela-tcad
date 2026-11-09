@@ -3093,13 +3093,25 @@ TEST_CASE("Eparallel legacy source Jacobian follows the residual cell current ve
     VectorXd x(12);
     x << .1,-.05,.03,.2, .001,-.002,-.001,.003, -.001,.004,.002,-.003;
     const CoupledDDBoundaryConditions bcs;
+    // Isolate the production AV contribution before summing transport. The
+    // difference of two large full residuals/Jacobians can round a weak or
+    // inactive tangent into a one-ULP signal and invalidate a relative check.
     const SparseMatrixd sourceJ = full.assembleJacobian(x,bcs)-off.assembleJacobian(x,bcs);
+    const auto source = [&](const VectorXd& state) -> VectorXd {
+        VectorXd value=VectorXd::Zero(12);
+        for(const auto& term:full.carrierContinuityTermDiagnostics(state,bcs)) {
+            value[4+term.nodeId]=term.electronImpact;
+            value[8+term.nodeId]=term.holeImpact;
+        }
+        return value;
+    };
+    const VectorXd withSource=full.residual(x,bcs),withoutSource=off.residual(x,bcs);
+    const VectorXd roundoff=8.*std::numeric_limits<Real>::epsilon()*
+        (withSource.cwiseAbs()+withoutSource.cwiseAbs()+source(x).cwiseAbs());
+    CHECK(((withSource-withoutSource-source(x)).cwiseAbs().array()<=roundoff.array()).all());
     for (int block = 0; block < 3; ++block) {
         VectorXd direction = VectorXd::Zero(12);
         direction(4*block+3) = 1e-7;
-        const auto source = [&](const VectorXd& state) -> VectorXd {
-            return (full.residual(state,bcs)-off.residual(state,bcs)).eval();
-        };
         const VectorXd difference = .5*(source((x+direction).eval())-source((x-direction).eval()));
         const VectorXd analytic = sourceJ*direction;
         CAPTURE(statistics.model,block,analytic.norm(),difference.norm());
@@ -3108,8 +3120,7 @@ TEST_CASE("Eparallel legacy source Jacobian follows the residual cell current ve
             CHECK((analytic.tail(8)-difference.tail(8)).norm()/difference.tail(8).norm()<1e-4);
         else
             CHECK(analytic.tail(8).norm()==0.0);
-        // Subtracting two transport Jacobians introduces roundoff before
-        // isolating the equal electron/hole source contributions.
+        // The source scatters equally into electron and hole equations.
         CHECK((analytic.segment(4,4)-analytic.tail(4)).norm()<=1e-13*analytic.norm());
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/simulation/PseudoArclength.h"
+#include "vela/simulation/LoadLineResidual.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/solver/LinearRefinement.h"
 #include "vela/solver/DensityUpdateConvergence.h"
@@ -77,6 +78,9 @@ struct CoupledLoadLineConfig {
     /// defect of the original unscaled system. Zero preserves the existing
     /// solve path. This is a linear accuracy control, not a nonlinear criterion.
     int directRefinementSteps = 0;
+    /// Always perform this many original-system defect corrections, even when
+    /// the first factor solve already passes. Zero is the explicit legacy path.
+    int minimumOriginalCorrections = 0;
     DensityUpdateConvergenceConfig updateConvergence;
 };
 
@@ -252,6 +256,9 @@ struct CoupledLoadLineResult {
         Real linearGateAbsoluteTolerance = std::numeric_limits<Real>::quiet_NaN();
         Real linearGateBackward = std::numeric_limits<Real>::quiet_NaN();
         Real linearGateBackwardTolerance = std::numeric_limits<Real>::quiet_NaN();
+        Real physicalLinearAbsolute = std::numeric_limits<Real>::quiet_NaN();
+        Real physicalLinearBackward = std::numeric_limits<Real>::quiet_NaN();
+        Real mappedRhsNorm = std::numeric_limits<Real>::quiet_NaN();
         bool modelReportValid = false, modelReportReliable = false;
         Real modelReportBefore = std::numeric_limits<Real>::quiet_NaN();
         Real modelReportPredicted = std::numeric_limits<Real>::quiet_NaN();
@@ -265,6 +272,15 @@ struct CoupledLoadLineResult {
     std::vector<IterationTrace> trace;
     // Explicit caller-owned history; only carry it from an accepted state.
     std::optional<derivative_recovery::DerivativeSwitch> derivativeHistory;
+};
+
+/// Coordinate-bound callbacks. The physical contract is supplied by the
+/// production coordinate adapter, never by process-wide experimental flags.
+struct CoupledLoadLineCallbacks {
+    std::function<Real(const ArclengthState&)> canonicalLoadResidual;
+    std::function<bool(const ArclengthState&,const VectorXd&,Real,bool,CoupledLoadLineResult::IterationTrace&,std::string&)> validatePhysicalDirection;
+    std::function<std::string(const ArclengthState&,const VectorXd&,CoupledLoadLineResult&)> stoppingRule;
+    std::function<Real(const VectorXd&)> physicalStepNorm;
 };
 
 /// Newton solver for the fully coupled stationary series-resistor system
@@ -283,14 +299,24 @@ public:
                           CurrentFunctional current,
                           CoupledLoadLineConfig config,
                           ArclengthScalarFunctional currentLinearization = {},
-                          DensityUpdateErrorEvaluator updateErrorEvaluator = {})
+                          DensityUpdateErrorEvaluator updateErrorEvaluator = {},
+                          CoupledLoadLineCallbacks callbacks = {})
         : system_(std::move(system))
         , current_(std::move(current))
         , config_(std::move(config))
         , currentLinearization_(std::move(currentLinearization))
         , updateErrorEvaluator_(std::move(updateErrorEvaluator))
+        , callbacks_(std::move(callbacks))
     {
         validateDensityUpdateConvergence(config_.updateConvergence);
+        if(config_.minimumOriginalCorrections<0 || config_.minimumOriginalCorrections>8 ||
+           (config_.minimumOriginalCorrections>0 && config_.linearSolver!="direct_bordered"))
+            throw std::invalid_argument("minimum original corrections require direct_bordered and a count in [0,8]");
+        if(system_.postProtectionDerivativeRecovery &&
+           (system_.automaticDerivativeRecovery || !system_.protectedJacobian ||
+            !system_.protectedJacobianInColumns || !system_.makeTrial ||
+            config_.linearSolver!="direct_bordered"))
+            throw std::invalid_argument("post-protection derivatives require population direct_bordered and cannot use automatic recovery");
         if(system_.automaticDerivativeRecovery && (!system_.bootstrapJacobian ||
             config_.linearSolver!="direct_bordered" || config_.lineSearchMode!="full_step"))
             throw std::invalid_argument("automatic derivative recovery requires bootstrap Jacobian, direct_bordered and full_step");
@@ -394,6 +420,7 @@ public:
         Real anchoredLoadEnvelopeScale =
             std::numeric_limits<Real>::quiet_NaN();
         bool repeatIteration = false;
+        bool omitNext=false;
         for (int iter = 0; iter <= config_.maxIterations; iter += repeatIteration ? 0 : 1) {
             repeatIteration = false;
             VectorXd f;
@@ -411,9 +438,10 @@ public:
             if (f.size() > 0)
                 f.cwiseAbs().maxCoeff(&maxResidualIndex);
             result.directedCurrent_A_per_um = current;
-            result.loadLineResidual_V = config_.voltageCoefficient *
-                result.state.lambda +
-                resistance_ohm_um * current - outerVoltage_V;
+            result.loadLineResidual_V = callbacks_.canonicalLoadResidual
+                ? callbacks_.canonicalLoadResidual(result.state)
+                : LoadLineResidual::evaluate(config_.voltageCoefficient, result.state.lambda,
+                    resistance_ohm_um, current, outerVoltage_V).voltage_V;
             result.effectiveEquationTolerance =
                 coupledEffectiveEquationTolerance(
                     config_, result.loadLineResidual_V);
@@ -459,7 +487,11 @@ public:
             const bool loadAccepted = std::isfinite(result.loadLineResidual_V) &&
                 (!config_.enforceLoadLineConvergence ||
                  std::abs(result.loadLineResidual_V) <= config_.loadLineTolerance_V);
-            if (stopping && loadAccepted &&
+            if(callbacks_.stoppingRule) {
+                const auto reason=callbacks_.stoppingRule(result.state,f,result);
+                if(!reason.empty()) {result.converged=true;result.convergenceReason=reason;return result;}
+            }
+            if (!callbacks_.stoppingRule && stopping && loadAccepted &&
                 (!system_.convergenceSatisfied || system_.convergenceSatisfied(result.state.x,result.state.lambda))) {
                 result.inexactConvergenceUsed =
                     residualConverged && result.equationResidualNorm > config_.equationTolerance;
@@ -471,12 +503,18 @@ public:
             if (iter == config_.maxIterations)
                 break;
 
-            bool fullDerivative=!system_.automaticDerivativeRecovery || recovery.requestFull(
-                residualConverged && loadAccepted);
+            bool fullDerivative=system_.postProtectionDerivativeRecovery ? !omitNext :
+                (!system_.automaticDerivativeRecovery || recovery.requestFull(
+                    residualConverged && loadAccepted));
             result.trace.back().derivativeMode=system_.automaticDerivativeRecovery
                 ?derivative_recovery::derivativeModeName(recovery.mode()):"full";
             result.trace.back().derivativeReason=system_.automaticDerivativeRecovery?recovery.reason:"configured_full_derivatives";
-            auto selectedJacobian=fullDerivative?system_.jacobian:system_.bootstrapJacobian;
+            if(system_.postProtectionDerivativeRecovery) {
+                result.trace.back().derivativeMode=fullDerivative?"full":"post_protection_omitted";
+                result.trace.back().derivativeReason=fullDerivative?"full_entry_or_unprotected_writeback":"previous_writeback_population_protected";
+            }
+            auto selectedJacobian=fullDerivative?system_.jacobian:
+                (system_.postProtectionDerivativeRecovery?system_.protectedJacobian:system_.bootstrapJacobian);
 
             VectorXd fLambda;
             try {
@@ -554,6 +592,14 @@ public:
             }
             if (!updateSolved)
                 return result;
+            if(callbacks_.validatePhysicalDirection) {
+                try {
+                    if(!callbacks_.validatePhysicalDirection(result.state,deltaState,deltaVoltage,
+                        fullDerivative,result.trace.back(),result.failureReason))return result;
+                } catch(const std::exception& e) {
+                    result.failureReason=std::string("physical direction audit failed: ")+e.what();return result;
+                }
+            }
             if (!deltaState.allFinite() || !std::isfinite(deltaVoltage)) {
                 result.failureReason = "non-finite coupled Newton update";
                 return result;
@@ -700,7 +746,7 @@ public:
             }
             if (config_.applyDeviceUpdateLimit && system_.limitUpdate)
                 system_.limitUpdate(result.state.x, deltaState, deltaVoltage);
-            result.trace.back().limitedStateUpdateNorm = infinityNorm(deltaState);
+            result.trace.back().limitedStateUpdateNorm = callbacks_.physicalStepNorm ? callbacks_.physicalStepNorm(deltaState) : infinityNorm(deltaState);
             result.trace.back().proposedVoltageUpdate_V = deltaVoltage;
 
             bool accepted = false;
@@ -729,9 +775,10 @@ public:
                     const VectorXd trialF =
                         system_.residual(trial.x, trial.lambda);
                     const Real trialCurrent = current_(trial.x, trial.lambda);
-                    const Real trialLoadResidual = config_.voltageCoefficient *
-                        trial.lambda +
-                        resistance_ohm_um * trialCurrent - outerVoltage_V;
+                    const Real trialLoadResidual = callbacks_.canonicalLoadResidual
+                        ? callbacks_.canonicalLoadResidual(trial)
+                        : LoadLineResidual::evaluate(config_.voltageCoefficient,trial.lambda,
+                            resistance_ohm_um,trialCurrent,outerVoltage_V).voltage_V;
                     const Real trialEquationResidual = system_.equationNorm?system_.equationNorm(trialF):infinityNorm(trialF);
                     const Real trialMerit = normalizedMerit(trialEquationResidual, trialLoadResidual);
                     if (fullStepMode && lineSearch == 0) {
@@ -881,8 +928,9 @@ public:
                     const Real dv=fullStep.lambda-result.state.lambda;
                     const VectorXd model=f+j*applied+fLambda*dv;
                     const VectorXd actual=system_.residual(fullStep.x,fullStep.lambda);
-                    const Real actualLoad=config_.voltageCoefficient*fullStep.lambda+
-                        resistance_ohm_um*current_(fullStep.x,fullStep.lambda)-outerVoltage_V;
+                    const Real actualLoad=callbacks_.canonicalLoadResidual ? callbacks_.canonicalLoadResidual(fullStep) :
+                        LoadLineResidual::evaluate(config_.voltageCoefficient,fullStep.lambda,resistance_ohm_um,
+                            current_(fullStep.x,fullStep.lambda),outerVoltage_V).voltage_V;
                     const Real modelLoad=result.loadLineResidual_V+config_.voltageCoefficient*dv+
                         resistance_ohm_um*(port.stateDerivative.dot(applied)+port.parameterDerivative*dv);
                     const auto phi=[&](const VectorXd& r,Real load) {
@@ -906,6 +954,8 @@ public:
                     }
                 }
                 result.updateError=candidateError;
+                omitNext=system_.postProtectionDerivativeRecovery &&
+                    (result.trace.back().protectedElectrons>0 || result.trace.back().protectedHoles>0);
                 result.state = std::move(fullStep);
                 result.trace.back().acceptedAlpha = 1.0;
                 accepted = true;
@@ -938,6 +988,11 @@ public:
                     diagnosticReal(trace.limitedStateUpdateNorm);
                 return result;
             }
+            // A rejected candidate must not change the next linearization.
+            // Only the accepted trial's actual protected writeback controls it,
+            // including when the caller explicitly uses a line search.
+            omitNext=system_.postProtectionDerivativeRecovery &&
+                (result.trace.back().protectedElectrons>0 || result.trace.back().protectedHoles>0);
             if(system_.automaticDerivativeRecovery)recovery.stateAdvanced();
         }
         result.failureReason = "coupled Newton iteration budget exhausted";
@@ -1030,7 +1085,8 @@ private:
     {
         const auto coordinates=linearizationCoordinates(before);
         const bool relative=(coordinates.array()!=1.).any();
-        const auto& columns=fullDerivative?system_.jacobianInColumns:system_.bootstrapJacobianInColumns;
+        const auto& columns=fullDerivative?system_.jacobianInColumns:
+            (system_.postProtectionDerivativeRecovery?system_.protectedJacobianInColumns:system_.bootstrapJacobianInColumns);
         const auto j=relative?columns(before.x,before.lambda,coordinates.head(before.x.size())):
             selectedJacobian(before.x,before.lambda);
         const auto port=relative?currentLinearization_.linearizeInColumns(before.x,before.lambda,coordinates.head(before.x.size())):
@@ -1180,7 +1236,8 @@ private:
         const Eigen::Index n = state.x.size();
         const VectorXd coordinates=linearizationCoordinates(state);
         const bool relative=(coordinates.array()!=1.).any();
-        const auto& direct=fullDerivative?system_.jacobianInColumns:system_.bootstrapJacobianInColumns;
+        const auto& direct=fullDerivative?system_.jacobianInColumns:
+            (system_.postProtectionDerivativeRecovery?system_.protectedJacobianInColumns:system_.bootstrapJacobianInColumns);
         const SparseMatrixd deviceJacobian=relative?direct(state.x,state.lambda,coordinates.head(n)):
             selectedJacobian(state.x,state.lambda);
         const auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
@@ -1504,7 +1561,7 @@ private:
         VectorXd update = updateUsesColumnScaling
             ? VectorXd(columnScale.array() * scaledUpdate.array())
             : scaledUpdate;
-        if (config_.directRefinementSteps > 0 || system_.makeTrial) {
+        if (config_.directRefinementSteps > 0 || config_.minimumOriginalCorrections>0 || system_.makeTrial) {
             // Always measure the original system, including a candidate obtained
             // from a regularized factorization or the row-scaled QR path.
             auto defect = linear_refinement::highPrecisionDefect(
@@ -1520,15 +1577,17 @@ private:
             reportDefect();
             const auto defectScore=[&](const auto& d){return std::max(d.backwardMax/backwardTolerance,
                 infinityNorm(d.values.cwiseProduct(rowScale))/linearTolerance);};
-            if (defectScore(defect)>1.) {
+            const int minimumCorrections=config_.minimumOriginalCorrections;
+            if (minimumCorrections>0 || defectScore(defect)>1.) {
                 LinearSolver correctionLu("sparselu");
                 // Population columns span many decades. Its mandatory
                 // original-system accuracy audit also requires an automatic
                 // correction budget; keep legacy QF defaults unchanged.
                 const int corrections=system_.makeTrial
-                    ? std::max(3,config_.directRefinementSteps):config_.directRefinementSteps;
+                    ? std::max({3,config_.directRefinementSteps,minimumCorrections}):
+                      std::max(config_.directRefinementSteps,minimumCorrections);
                 for (int k = 0; k < corrections &&
-                     defectScore(defect)>1.; ++k) {
+                     (k<minimumCorrections || defectScore(defect)>1.); ++k) {
                     const VectorXd correctionRhs = -defect.values.cwiseProduct(rowScale);
                     VectorXd correction;
                     try {
@@ -1550,7 +1609,7 @@ private:
                     }
                     auto next = linear_refinement::highPrecisionDefect(
                         rawAugmented, -rawRhs, candidate);
-                    if (defectScore(next) >= defectScore(defect))
+                    if (k>=minimumCorrections && defectScore(next) >= defectScore(defect))
                         break;
                     update = std::move(candidate);
                     defect = std::move(next);
@@ -1620,6 +1679,7 @@ private:
     CoupledLoadLineConfig config_;
     ArclengthScalarFunctional currentLinearization_;
     DensityUpdateErrorEvaluator updateErrorEvaluator_;
+    CoupledLoadLineCallbacks callbacks_;
 };
 
 } // namespace vela

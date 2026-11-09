@@ -57,10 +57,11 @@
     },
     "sweep": {
       "type": "object",
-      "description": "Numerical diagnostics and external-circuit solver controls only; physical resistance, electrodes, goals, step schedule and output names remain owned by cmd.",
-      "anyOf": [{"required": ["diagnostics"]}, {"required": ["external_circuit"]}],
+      "description": "Numerical diagnostics, explicit basic-state output selection and external-circuit solver controls only; physical resistance, electrodes, goals, step schedule and output names remain owned by cmd.",
+      "anyOf": [{"required": ["diagnostics"]}, {"required": ["external_circuit"]}, {"required": ["vtk_fields"]}],
       "additionalProperties": false,
       "properties": {
+        "vtk_fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["ElectrostaticPotential", "eDensity", "hDensity", "SpaceCharge", "DopingConcentration"]}, "description": "Explicit basic-state Plot projection, logged with W207. Does not change the CMD, physics, stop rules or output names; omitted fields are not qualified as exported."},
         "diagnostics": {"type": "object", "additionalProperties": true},
         "external_circuit": {
           "type": "object",
@@ -76,6 +77,7 @@
               "minimum": 1,
               "type": "integer"
             },
+            "physical_acceptance_mode": {"enum": ["enforce", "report"], "description": "Independent load, carrier, continuity and KCL quality gate; default report for native_approx, enforce for legacy. Nonfinite states always reject."},
             "load_line_convergence_mode": {
               "enum": ["enforce", "report"],
               "default": "enforce",

@@ -57,8 +57,9 @@ def qualification(ir: dict, materials: tuple = ("Si",)) -> dict:
             "recommended_node_volume_policy": "barycentric", "allow_obtuse": True}}
 
 
-def material_result(ir: dict, materials: tuple = ("Si",)):
-    return emit_materials(default_models_par_path(), active_models=active_models_from_ir(ir),
+def material_result(ir: dict, materials: tuple = ("Si",), *, constants_profile="codata2018"):
+    return emit_materials(default_models_par_path(), constants_profile=constants_profile,
+        active_models=active_models_from_ir(ir),
         temperature_K=ir["physics"]["temperature_K"] or 300.0, mesh_materials=materials,
         allow_lossy=True, effective_models=ir["physics"]["effective"])
 
@@ -490,6 +491,12 @@ class DeckEmitterTests(unittest.TestCase):
 
 
 class RunnerSmokeTests(unittest.TestCase):
+    @staticmethod
+    def runner_materials(runner, ir):
+        done = subprocess.run([str(Path(runner).resolve()), "--physical-constants"],
+                              capture_output=True, text=True, check=True, timeout=10)
+        return material_result(ir, constants_profile=json.loads(done.stdout)["profile"])
+
     def test_biased_p_contact_pins_minority_quasi_fermi_and_density(self):
         runner = os.environ.get("VELA_EXAMPLE_RUNNER")
         if not runner or not Path(runner).is_file():
@@ -501,7 +508,7 @@ class RunnerSmokeTests(unittest.TestCase):
             Solve { Coupled {Poisson Electron Hole}
               Quasistationary(Goal {Name="left" Voltage=0.2}) {Coupled {Poisson Electron Hole}} }''',
             path_name="ohmic.cmd")
-        materials = material_result(ir)
+        materials = self.runner_materials(runner, ir)
         result = emit(ir, materials_report=materials.report)
         for deck in result.decks:
             self.assertEqual(deck["solver"]["impact_ionization"]["driving_force"], "eparallel")
@@ -548,7 +555,7 @@ class RunnerSmokeTests(unittest.TestCase):
               Set("left" mode current)
               Quasistationary(Goal {Name="left" Current=1e-7}) {Coupled {Poisson Electron Hole}}
               Load(FilePrefix="eq") }''', path_name="smoke.cmd")
-        materials = material_result(ir)
+        materials = self.runner_materials(runner, ir)
         result = emit(ir, materials_report=materials.report,
                       sidecar={"schema": "vela.sdevice_sidecar.v1", "apply_to": [0, 1, 2], "solver": {"method": "newton"}})
         with tempfile.TemporaryDirectory(dir=REPO / "build") as temp:

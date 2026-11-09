@@ -313,6 +313,8 @@ public:
         structureCache_ = std::move(cache);
     }
     bool usesBvMethodsOperator() const { return scaling_.coupledOperator=="bvmethods_tri3_qf"; }
+    SparseMatrixd populationProtectedJacobian(const VectorXd&,
+        const CoupledDDBoundaryConditions&,const VectorXd* columns=nullptr) const;
     SparseMatrixd populationBootstrapJacobian(const VectorXd&,const CoupledDDBoundaryConditions&) const;
     /// Opt-in single-owner sequential reuse of immutable BVMethods kernels.
     /// State keys are bit-exact; boundary replacement is evaluated on every call.

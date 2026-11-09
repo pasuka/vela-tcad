@@ -117,7 +117,7 @@ add_custom_target(vela_sdevice_pyz ALL
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
 
-set(VELA_PHYSICAL_CONSTANTS_PROFILE "codata2018" CACHE STRING "Physical constants contract: codata2018 or sentaurus_u2022_12")
+set(VELA_PHYSICAL_CONSTANTS_PROFILE "sentaurus_u2022_12" CACHE STRING "Physical constants contract: codata2018 or sentaurus_u2022_12")
 set_property(CACHE VELA_PHYSICAL_CONSTANTS_PROFILE PROPERTY STRINGS codata2018 sentaurus_u2022_12)
 if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE MATCHES "^(codata2018|sentaurus_u2022_12)$")
     message(FATAL_ERROR "Unknown VELA_PHYSICAL_CONSTANTS_PROFILE: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
@@ -1072,7 +1072,10 @@ target_link_libraries(test_vtu_writer PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
 target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_coupled_load_line tests/test_coupled_load_line.cpp)
+add_executable(test_coupled_load_line
+    tests/test_coupled_load_line.cpp
+    tests/test_load_line_residual.cpp
+    tests/test_primary_variable_coordinates.cpp)
 target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2WithMain)
 
 # Header-only policy test: no solver rebuild or commercial inputs are needed.

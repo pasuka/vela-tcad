@@ -1,10 +1,64 @@
 # Vela Documentation
 
+- [BVMethods 正式入口四项补齐，2026-11-09](validation/bvmethods_production_closure_2026-11-09.md)：
+  普通入口、当前分叉证据、原始 CMD 整链与跨阶段账本；各项终态以报告为准。
+
+- [BVMethods 正式入口集成与回归，2026-11-08](validation/bvmethods_production_integration_2026-11-08.md)：
+  Unit 坐标、保护后偏导事件、近似判停和 CMD/常数合同的正式接入；验证状态与保留限制。
+
+- [低压失稳问题归档与剩余主线，2026-11-08](validation/bvmethods_low_failure_archive_2026-11-08.md)：
+  研究暂缓、根因和门禁资格保留，回到正式默认集成与回归；不以原生同类现象豁免性能条件。
+
+- [原生低压失败器件/电路响应，2026-11-08](validation/bvmethods_native_low_failure_response_2026-11-08.md)：
+  8份冻结系统与少子聚焦归因，区分绝对浓度分量和相对人口方向；四开关恢复未放行，无生产改动。
+
+- [原生低压失败诊断补采，2026-11-08](validation/bvmethods_native_low_failure_capture_2026-11-08.md)：
+  同配置前17目标复现，8份矩阵/方向与7组实际写回；自由浓度1%保护得到确认，直接缩步机制仍不同，共同根因未闭合。
+
+- [原生约2.51 V与Vela约2.43 V失败过程对照，2026-11-07](validation/bvmethods_native_vela_low_failure_comparison_2026-11-07.md)：
+  逐轮RHS/E、保护与五帧Schur/RHS分块；原生RHS增长终止、Vela写回前绝对线性门拒绝，巨大方向来自器件块，未认定同一上游根因。
+
+- [2.4307 V绝对线性精度定位与有界试修，2026-11-07](validation/bvmethods_defaults_absolute_precision_2026-11-07.md)：
+  大空穴方向放大舍入，原坐标/Full及补偿校正均未找到通过原门的修复，保留缩步、生产不改。
+
+- [负载线RHS修复与完整BV复验，2026-11-07](validation/bvmethods_defaults_rhsfix_fullbv_2026-11-07.md)：
+  25/40组前置及两组完整BV通过；Unit377轮/4失败，消除原RHS后向拒绝，保留1次绝对门拒绝和默认放行限制。
+
+- [全变量Unit高压回代拒绝定位，2026-11-07](validation/bvmethods_defaults_backward_audit_2026-11-07.md)：
+  22拒绝与3对照逐位复现，定位电路RHS重复求值舍入；统一RHS冻结反事实25/25过原门，未改生产。
+
+- [默认迁移完整BV复核，2026-11-07](validation/bvmethods_defaults_fullbv_2026-11-07.md)：
+  原坐标/全变量Unit两组停流、BV插值及逐点质量/物理输出与终态证据复核完成，实际资格见报告，生产默认保持。
+
+- [默认迁移0–100 V分区工作量，2026-11-07](validation/bvmethods_defaults_regional100_2026-11-07.md)：
+  原坐标/全变量Unit连续扫描、同版本原生参照及必要新失败入口配对，计数/锚点/成本与质量独立核验，生产默认未切换。
+
+- [默认迁移5–10 V缩步及线性拒绝检查，2026-11-07](validation/bvmethods_defaults_mid10_2026-11-07.md)：
+  同核原坐标/全变量Unit连续0–10 V及失败入口配对，保留失败、独立质量与逐SHA终态证据，生产默认不变。
+
+- [默认迁移0–1 V首次分叉检查，2026-11-07](validation/bvmethods_defaults_low1_2026-11-07.md)：
+  原坐标/全变量Unit与最低校正四臂均到1 V，无失败；同入口2×2重放定位入口和保护路径依赖，生产默认未切换。
+
+- [VM固定步长0–10 V Full AND/OR与原生对照，2026-11-05](validation/bvmethods_vm_fixed_full_scan_2026-11-05.md)：
+  0.1/0.02 V固定网格均保留提前失败；92份同态J/RHS、24份同目标物理场及逐目标轮数，116份冻结装配和终态证据核验完成，未获得完整扫描资格。
+
+- [兼容常数VM生产A0的N20冷0–1 V对照，2026-11-04](validation/bvmethods_vm_iteration20_low1_2026-11-04.md)：
+  耦合上限与步长工作量预算40→20；AND/OR均到1V，OR工作量下降、AND增加，保留原生首次路径分叉和独立资格。
+
+- [VM全变量Unit坐标重构验证，2026-11-04](validation/bvmethods_vm_unit_basis_2026-11-04.md)：
+  全变量坐标、30组冻结态及固定/0–1 V对照；原门保持，方向门未全过且工作量增加，未切换生产。
+
+- [Vela与原生有效缩放规则核查，2026-11-03](validation/bvmethods_native_scaling_audit_2026-11-03.md)：
+  一个Jacobian校准、14帧留出与独立TDR预测；区分变量/方程/线性平衡，不改生产门。
+
+- [VM近零电流AV导数与停止规则审计，2026-11-03](validation/bvmethods_vm_av_stopping_2026-11-03.md)：
+  12行250位AV差分、15份原生更新误差重建、影子与同态/区间配对；RHS分支未冒称等价；有界对照、暖态配对和终态证据已完成，监测已停止。
+
 - [兼容常数VM生产A0完整BV，2026-11-03](validation/bvmethods_vm_sentaurus2022_full_2026-11-03.md)：
-  AND/OR各12小时独立求解预算；运行快照与终态验收规则，未提前宣称完整扫描通过。
+  生产A0兼容常数AND/OR完整扫描终态均通过；保留共同区间、成本及报告型守恒比较。
 
 - [兼容常数T470p冷0–100 V分区比较，2026-11-03](validation/bvmethods_t470p_sentaurus2022_low100_2026-11-03.md)：
-  按实际外压统计接受点、目标尝试和失败；AND提前数值失败，OR终态待核验。
+  按实际外压统计接受点、目标尝试和失败；AND提前数值失败，OR到100 V通过，终态与证据已核验。
 
 - [修复核心A1三组、入口与平台定位，2026-11-02](validation/bvmethods_repaired_a1_t1_t3_2026-11-02.md)：
   T1/A1e与T2/T3诊断结束；保留低区反例、入口恢复及投影停滞证据，原A1完整BV准入仍阻断。

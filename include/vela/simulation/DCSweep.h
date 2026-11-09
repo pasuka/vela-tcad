@@ -254,6 +254,8 @@ struct ExternalResistorControlConfig {
     Real initialInnerVoltage_V = 0.0;
     Real residualTolerance_V = 1.0e-6;
     std::string loadLineConvergenceMode = "enforce";
+    /// auto selects report for native_approx population stopping, enforce otherwise.
+    std::string physicalAcceptanceMode = "auto";
     Real coupledVoltageCoefficient = 1.0;
     Real voltageTolerance_V = 1.0e-8;
     Real maxInnerVoltageStep_V = 0.1;

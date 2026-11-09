@@ -138,10 +138,10 @@ struct BvMethodsCoupledRuntime::Impl {
         if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
         return result;
     }
-    Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr)const {
+    Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr,bool freezeStatisticalFloor=true)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
         out.transport=element->transport(s,jac,true,true,approximate,columns,
-            approximate?owner.scaling_.populationSgBootstrapFloor_cm3:0.);
+            approximate&&freezeStatisticalFloor?owner.scaling_.populationSgBootstrapFloor_cm3:0.);
         if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac&&!approximate,columns);
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;
@@ -287,9 +287,9 @@ VectorXd BvMethodsCoupledRuntime::residual(const VectorXd& x,const CoupledDDBoun
     Impl::Evaluation e;try{e=p.evaluate(x,false);}catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
     return p.residualFrom(x,b,e);
 }
-SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool approximate,const VectorXd* columns)const {
+SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool approximate,const VectorXd* columns,bool freezeStatisticalFloor)const {
     auto& p=*impl_;p.validateBoundary(b);p.sync();if(columns && (!p.owner.usesPopulationState()||columns->size()!=x.size()||!columns->allFinite()||(columns->array()<=0.).any()))throw std::invalid_argument("Invalid population linearization columns");
-    auto e=columns?p.compute(x,true,approximate,columns):(approximate?p.compute(x,true,true):p.evaluate(x,true));const int n=p.active.size();
+    auto e=columns?p.compute(x,true,approximate,columns,freezeStatisticalFloor):(approximate?p.compute(x,true,true,nullptr,freezeStatisticalFloor):p.evaluate(x,true));const int n=p.active.size();
     const auto base=p.owner.usesPopulationState()?p.populationBase(x,b,true,columns).second:p.poisson->assembleJacobian(x,b);const SparseMatrixd carrier=e.transport.jacobian+e.av.jacobian+e.srhJacobian;
     std::vector<Eigen::Triplet<double>> t;
     for(int k=0;k<base.outerSize();++k)for(SparseMatrixd::InnerIterator v(base,k);v;++v)
@@ -372,6 +372,13 @@ VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const 
 }
 SparseMatrixd CoupledDDAssembler::bvMethodsTransportJacobian(const VectorXd& x)const {
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);
+}
+SparseMatrixd CoupledDDAssembler::populationProtectedJacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b,const VectorXd* columns)const {
+    auto r=bvMethodsRuntime();
+    if(!r||!usesPopulationState())throw std::invalid_argument("Protected tangents require BVMethods population state");
+    // Keep the current-state physical operator and statistical edge tangents;
+    // only mobility and avalanche derivatives are omitted.
+    return r->jacobian(x,b,true,columns,false);
 }
 SparseMatrixd CoupledDDAssembler::populationJacobianInColumns(const VectorXd& x,const CoupledDDBoundaryConditions& b,const VectorXd& columns,bool approximate)const {
     auto r=bvMethodsRuntime();if(!r||!usesPopulationState())throw std::invalid_argument("Direct population columns require BVMethods population state");return r->jacobian(x,b,approximate,&columns);

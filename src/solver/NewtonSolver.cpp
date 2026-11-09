@@ -2,6 +2,7 @@
 #include "vela/numerics/StableMeritComparison.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/simulation/PrimaryVariableCoordinates.h"
 #include "vela/solver/experimental/NewtonCapture.h"
 #include "vela/solver/experimental/NewtonAudit.h"
 #include "vela/core/experimental/CacheAudit.h"
@@ -1595,6 +1596,21 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
 namespace {
 // One coordinate policy for JSON, direct C++ construction and CMD execution.
 // Positive populations and equation gates are not QF trust-region controls.
+void resolvePopulationDefaults(NewtonConfig& c) {
+    if(c.stateVariables.empty())c.stateVariables=c.coupledOperator=="bvmethods_tri3_qf"?"potential_density":"potential_quasi_fermi";
+    const bool population=c.stateVariables=="potential_density";
+    if(c.populationMinimumDensity_cm3==-1.)c.populationMinimumDensity_cm3=population?1e-100:0.;
+    if(c.populationDerivativeRecovery.empty())c.populationDerivativeRecovery=population?"after_protection":"full";
+    if(c.primaryVariableCoordinates.empty())c.primaryVariableCoordinates=population?"unit":"physical";
+    if(c.populationStoppingRule.empty())c.populationStoppingRule=population?"native_approx":"legacy";
+    if(c.primaryVariableCoordinates!="physical"&&c.primaryVariableCoordinates!="unit")
+        throw std::invalid_argument("primary_variable_coordinates must be physical or unit");
+    if(c.populationStoppingRule!="legacy"&&c.populationStoppingRule!="native_approx")
+        throw std::invalid_argument("population_stopping_rule must be legacy or native_approx");
+    if(!population&&(c.primaryVariableCoordinates!="physical"||c.populationStoppingRule!="legacy"))
+        throw std::invalid_argument("Unit primary coordinates and native_approx stopping require potential_density");
+}
+
 void validatePopulationNumerics(const NewtonConfig& c)
 {
     if(c.stateVariables!="potential_density")return;
@@ -1863,6 +1879,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
     cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
     cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
+    cfg.primaryVariableCoordinates=json.value("primary_variable_coordinates",cfg.primaryVariableCoordinates);
+    cfg.populationStoppingRule=json.value("population_stopping_rule",cfg.populationStoppingRule);
+    resolvePopulationDefaults(cfg);
     cfg.populationSgCurrent=json.value("population_sg_current",cfg.populationSgCurrent);
     cfg.populationSgBootstrapLinearization=json.value("population_sg_bootstrap_linearization",cfg.populationSgBootstrapLinearization);
     if((cfg.populationSgCurrent!="quasi_fermi" && cfg.populationSgCurrent!="band_population") ||
@@ -1880,7 +1899,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         if(p.contains("minimum_density_cm3")&&!p["minimum_density_cm3"].is_number())throw std::invalid_argument("minimum_density_cm3 must be numeric");
         if(p.contains("minimum_density_cm3")&&p.contains("minimum_density_m3"))throw std::invalid_argument("duplicate population minimum density units");
         if(p.contains("minimum_density_m3")&&!p["minimum_density_m3"].is_number())throw std::invalid_argument("minimum_density_m3 must be numeric");
-        cfg.populationMinimumDensity_cm3=p.contains("minimum_density_m3")?scaling.concentrationToSI(p["minimum_density_m3"].get<double>())/1e6:p.value("minimum_density_cm3",0.);
+        cfg.populationMinimumDensity_cm3=p.contains("minimum_density_m3")?scaling.concentrationToSI(p["minimum_density_m3"].get<double>())/1e6:p.value("minimum_density_cm3",cfg.populationMinimumDensity_cm3);
     }
     if(json.contains("population_predictor_low_density_limit_cm3")&&!json["population_predictor_low_density_limit_cm3"].is_number())throw std::invalid_argument("population predictor density limit must be numeric");
     if(json.contains("population_predictor_low_density_limit_cm3")&&json.contains("population_predictor_low_density_limit_m3"))throw std::invalid_argument("duplicate predictor density limit units");
@@ -1896,9 +1915,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         cfg.populationSgCurrent!="quasi_fermi" || !(cfg.populationMinimumDensity_cm3>0.)))
         throw std::invalid_argument("population_sg_bootstrap_linearization floor_adjacent_edges requires BVMethods potential_density, quasi_fermi SG and positive minimum_density_cm3");
     validatePopulationUpdate(cfg.populationUpdate);
-    cfg.populationDerivativeRecovery=json.value("population_derivative_recovery",std::string{"full"});
-    if(cfg.populationDerivativeRecovery!="full" && cfg.populationDerivativeRecovery!="automatic")
-        throw std::invalid_argument("population_derivative_recovery must be full or automatic");
+    cfg.populationDerivativeRecovery=json.value("population_derivative_recovery",cfg.populationDerivativeRecovery);
+    if(cfg.populationDerivativeRecovery!="full" && cfg.populationDerivativeRecovery!="automatic" && cfg.populationDerivativeRecovery!="after_protection")
+        throw std::invalid_argument("population_derivative_recovery must be full, automatic or after_protection");
     if(cfg.populationDerivativeRecovery!="full" && cfg.stateVariables!="potential_density")
         throw std::invalid_argument("automatic population derivative recovery requires potential_density");
     if(cfg.stateVariables!="potential_quasi_fermi" && cfg.stateVariables!="potential_density")
@@ -2953,6 +2972,7 @@ NewtonSolver::NewtonSolver(
     , fixedCharges_(std::move(fixedCharges))
     , sheetCharges_(std::move(sheetCharges))
 {
+    resolvePopulationDefaults(cfg_);
     validateNumericalPrecisionOptions(cfg_);
     if((cfg_.populationSgCurrent!="quasi_fermi" && cfg_.populationSgCurrent!="band_population") ||
        (cfg_.populationSgCurrent!="quasi_fermi" && cfg_.stateVariables!="potential_density"))
@@ -2964,7 +2984,7 @@ NewtonSolver::NewtonSolver(
         cfg_.stateVariables!="potential_density" || cfg_.coupledOperator!="bvmethods_tri3_qf" ||
         cfg_.populationSgCurrent!="quasi_fermi" || !(cfg_.populationMinimumDensity_cm3>0.)))
         throw std::invalid_argument("population_sg_bootstrap_linearization floor_adjacent_edges requires BVMethods potential_density, quasi_fermi SG and positive minimum_density_cm3");
-    if((cfg_.populationDerivativeRecovery!="full"&&cfg_.populationDerivativeRecovery!="automatic") ||
+    if((cfg_.populationDerivativeRecovery!="full"&&cfg_.populationDerivativeRecovery!="automatic"&&cfg_.populationDerivativeRecovery!="after_protection") ||
        (cfg_.populationDerivativeRecovery!="full"&&cfg_.stateVariables!="potential_density"))
         throw std::invalid_argument("invalid population derivative recovery mode");
     validatePopulationNumerics(cfg_);
@@ -3744,6 +3764,13 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns,true);
         };
         system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
+        system.postProtectionDerivativeRecovery=cfg_.populationDerivativeRecovery=="after_protection";
+        system.protectedJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+        };
+        system.protectedJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns) {
+            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),&columns);
+        };
         system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
             return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
         };
@@ -3813,6 +3840,38 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
         };
     }
     return system;
+}
+
+PrimaryVariableScales NewtonSolver::primaryVariableScales() const {
+    const Real epsRef=constants::eps0*maxRelativePermittivityAcrossRegions(mesh_,matdb_,cfg_.temperature_K);
+    const Real ni=maxIntrinsicDensityAcrossRegions(mesh_,matdb_,cfg_.temperature_K);
+    const auto inputs=UnitScalingSystem::autoInputsFrom(mesh_,doping_,matdb_,ni);
+    const auto& units=cfg_.inputScaling.unitSystem();
+    const auto scale=UnitScalingSystem::fromInputs(cfg_.temperature_K,epsRef,inputs,cfg_.unitScalingRefs,units);
+    const int n=mesh_.numNodes();PrimaryVariableScales out;
+    out.device=VectorXd::Constant(3*n,scale.C0());
+    out.device.head(n).setConstant(cfg_.inputScaling.isUnitScaling()?1.:scale.V0());
+    out.voltage=scale.V0();
+    // Match the qualified equation-normalization current reference. This is
+    // a numerical port scale, not a separately inferred material current.
+    out.current=units.currentDensityAM2PerInternal()*units.lengthMPerInternal()*1e-6*
+        scale.C0()*scale.D0()*constants::q;
+    out.validate(3*n);return out;
+}
+
+ApproximateNativeRhsScales NewtonSolver::approximateNativeRhsScales() const {
+    // Frozen 300 K calibration, not a general model of native residual units.
+    // Unsupported normalizations retain the valid physical E branch only.
+    if(cfg_.coupledOperator!="bvmethods_tri3_qf" || cfg_.stateVariables!="potential_density" ||
+       !cfg_.inputScaling.isUnitScaling() || cfg_.temperature_K!=300. ||
+       constants::profileName!="sentaurus_u2022_12" || mesh_.numNodes()!=2600 || mesh_.numCells()!=5020)
+        return {};
+    const auto s=primaryVariableScales();
+    const auto near=[](Real x,Real y){return std::abs(x/y-1.)<1e-10;};
+    if(!near(s.device[mesh_.numNodes()],5.089999999999982e20) ||
+       !near(s.current,2.98741982845799e-5) ||
+       !near(maxRelativePermittivityAcrossRegions(mesh_,matdb_,cfg_.temperature_K),11.7))return {};
+    return {11.7/11.9,1.2577838410557051e8,4.210268101838678e5};
 }
 
 VectorXd NewtonSolver::packArclengthState(const DDSolution& state) const
@@ -6452,7 +6511,7 @@ NewtonResult NewtonSolver::solve() const
 NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization() const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -6499,7 +6558,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
         auto result=NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
         // Poisson may solve in QF coordinates, but its checkpoint belongs to
         // the caller's population contract. Keep the computed n/p untouched.

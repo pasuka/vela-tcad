@@ -382,7 +382,7 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
     NewtonContactConfig contacts = contactConfigFromJson(cfg, mesh);
     vela::NewtonConfig newton = cfg.contains("solver")
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
-        : vela::NewtonConfig{};
+        : vela::newtonConfigFromJson(nlohmann::json::object(), scaling);
     newton.unitScalingRefs = vela::parseUnitScalingReferenceConfig(cfg);
     newton.poissonChargeVolumePolicy =
         vela::parsePoissonChargeVolumePolicy(cfg);

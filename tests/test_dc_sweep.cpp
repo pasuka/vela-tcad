@@ -6485,6 +6485,13 @@ TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure tr
     std::ofstream(cfgPath) << cfg.dump(2);
 
     DCSweep sweep;
+    if (constants::profileName != "codata2018") {
+        // This is a sealed CODATA trajectory, not a material conversion test.
+        // Preserve its data; compatible builds must reject mixing profiles.
+        REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring("Physical constants profile mismatch"));
+        return;
+    }
     const DCSweepResult result = sweep.runWithResult(cfgPath.string());
     REQUIRE(result.points.size() == 1);
     REQUIRE_FALSE(result.points.front().converged);

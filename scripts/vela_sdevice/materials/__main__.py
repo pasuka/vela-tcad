@@ -33,7 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--default-par", type=Path, default=default_models_par_path(),
                         help="Vela default library (share/vela/materials/models.par)")
     parser.add_argument("--benchmark", help="C3 benchmark string (default sdevice:<par stem>)")
-    parser.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"), default="codata2018", help="must match the solver build constants profile")
+    parser.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"), default="sentaurus_u2022_12", help="must match the solver build constants profile; codata2018 is an explicit rollback")
     parser.add_argument("--out", type=Path, required=True, help="output directory")
     args = parser.parse_args(argv)
 

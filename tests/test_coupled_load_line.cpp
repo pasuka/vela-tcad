@@ -945,3 +945,55 @@ TEST_CASE("Full model report uses the coupled circuit prediction",
     REQUIRE(result.trace.front().linearGateBackward<=result.trace.front().linearGateBackwardTolerance);
     REQUIRE(result.trace.front().linearGateBackwardTolerance==1e-10);
 }
+
+TEST_CASE("Protected population writes omit tangents once and reset at each target",
+          "[coupled_load_line][post_protection]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real){
+        if(!(x[1]>0))throw std::domain_error("nonpositive population");
+        VectorXd f(3);f<<x[0],std::log(x[1]),x[2]-1.;return f;
+    };
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(3);};
+    auto jac=[](const VectorXd& x,bool omit){
+        SparseMatrixd j(3,3);j.insert(0,0)=1.;j.insert(1,1)=omit?1.:1./x[1];j.insert(2,2)=1.;return j;
+    };
+    system.jacobian=[jac](const VectorXd& x,Real){return jac(x,false);};
+    system.protectedJacobian=[jac](const VectorXd& x,Real){return jac(x,true);};
+    system.protectedJacobianInColumns=[jac](const VectorXd& x,Real,const VectorXd& columns){
+        SparseMatrixd j=jac(x,true);
+        for(int k=0;k<j.outerSize();++k)for(SparseMatrixd::InnerIterator e(j,k);e;++e)e.valueRef()*=columns[e.col()];
+        return j;
+    };
+    system.solveJacobian=[](const VectorXd& x,Real,const VectorXd& b,VectorXd& y){y=b;y[1]*=x[1];return true;};
+    system.makeTrial=[](const ArclengthState& old,const VectorXd& raw,Real dv,Real alpha){
+        const auto t=makePopulationTrial(old.x,raw,alpha,{true},{true},PopulationUpdateConfig{});
+        return ArclengthTrial{{t.state,old.lambda+t.alpha*dv},t.alpha,
+            static_cast<int>(t.protectedElectrons.size()),static_cast<int>(t.protectedHoles.size())};
+    };
+    system.postProtectionDerivativeRecovery=true;
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd& x,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(x.size());return p;};
+    CoupledLoadLineConfig cfg;cfg.linearSolver="direct_bordered";cfg.lineSearchMode="full_step";
+    cfg.equationTolerance=1e-10;cfg.maxIterations=20;cfg.minimumOriginalCorrections=1;
+    ArclengthState seed{VectorXd(3),0.};seed.x<<0.,10.,1.;
+    for(const std::string mode:{"full_step","merit"}) {
+      cfg.lineSearchMode=mode;
+      seed.x[1]=mode=="merit"?30.:10.;
+      CoupledLoadLineNewton solver(system,port.value,cfg,port);
+      for(int repeat=0;repeat<2;++repeat) {
+        const auto result=solver.solve(seed,0.,1.);
+        INFO(result.failureReason);REQUIRE(result.converged);
+        REQUIRE(result.state.x[1]==Catch::Approx(1.).margin(1e-10));
+        REQUIRE(result.trace.size()>3);
+        REQUIRE(result.trace[0].derivativeMode=="full");
+        REQUIRE(result.trace[0].protectedElectrons==1);
+        REQUIRE(result.trace[1].derivativeMode=="post_protection_omitted");
+        REQUIRE(result.trace[1].protectedElectrons==0);
+        REQUIRE(result.trace[2].derivativeMode=="full");
+        REQUIRE(seed.x[1]==(mode=="merit"?30.:10.));
+      }
+    }
+    system.automaticDerivativeRecovery=true;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(system,port.value,cfg,port),std::invalid_argument);
+}
