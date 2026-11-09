@@ -1,5 +1,7 @@
 # Vela Documentation
 
+- [SLOT main合并与BVMethods外电阻重跑，2026-11-09](validation/slot_ldmos_main_bvmethods_restart_2026-11-09.md)：保留原SLOT适配、算子默认隔离、验证结果与两小时独立参考配置重跑。
+
 - [SDE 当前交付与验收，2026-11-01](sde_delivery.md)：main 八例建模、Ubuntu CI、离线包归档与历史商业证据边界。
 - [BVMethods 正式入口四项补齐，2026-11-09](validation/bvmethods_production_closure_2026-11-09.md)：
   普通入口、当前分叉证据、原始 CMD 整链与跨阶段账本；各项终态以报告为准。
