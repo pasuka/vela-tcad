@@ -14,7 +14,8 @@ spec.loader.exec_module(control)
 
 class StoppingControlTests(unittest.TestCase):
     def test_physics_thresholds_and_original_are_preserved(self):
-        with tempfile.TemporaryDirectory(dir=ROOT/"build-release") as name:
+        # Debug and arbitrary out-of-tree builds need no Release directory.
+        with tempfile.TemporaryDirectory(prefix="vela-stopping-control-") as name:
             root = Path(name)
             for file in ("mesh.json", "doping.csv", "materials.json"):
                 (root/file).write_text("{}")
