@@ -12,6 +12,25 @@ import tempfile
 REPO=Path(__file__).resolve().parents[1]
 
 
+def preprocessing_failure(directory, result):
+    """Keep a failed child failed, while exposing its structured root cause."""
+    failure={'stage':'subprocess','message':(result.stderr or '')[-1000:].strip(),
+             'exit_code':result.returncode}
+    if not failure['message']:
+        failure['message']='modeling process exited without a diagnostic'
+    try:
+        report=json.loads((directory/'fail_report.json').read_text(encoding='utf-8'))
+    except (OSError,UnicodeError,ValueError):
+        return failure
+    if (isinstance(report,dict) and
+            report.get('schema')=='vela.sentaurus_gmsh_preprocess.fail_report.v1' and
+            report.get('status')=='failed' and
+            isinstance(report.get('stage'),str) and isinstance(report.get('message'),str)):
+        failure.update(stage=report['stage'],message=report['message'],
+                       report='fail_report.json')
+    return failure
+
+
 def qualify(root,output,components,repeat=2,case_ids=None):
     sys.path.insert(0,str(REPO/'scripts'))
     from sentaurus_sde_cases import load_manifest,DEFAULT_MANIFEST,check_contract,compare_native
@@ -39,7 +58,14 @@ def qualify(root,output,components,repeat=2,case_ids=None):
             for key,value in case.get('parameters',{}).items():cmd+=['--parameter',key+'='+value]
             result=subprocess.run(cmd,cwd=output,env=env,capture_output=True,text=True)
             (output/(case['id']+'-'+str(iteration)+'.log')).write_text(result.stdout+result.stderr)
-            if result.returncode:raise RuntimeError(case['id']+': '+result.stderr[-1000:])
+            if result.returncode:
+                failure={'id':case['id'],'iteration':iteration,'completed_runs':runs,
+                         **preprocessing_failure(directory,result)}
+                report={'schema':'vela.sde_package_qualification.v1','status':'failed',
+                        'cases':rows,'failure':failure}
+                (output/'qualification.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+                raise RuntimeError(f"{case['id']} repeat {iteration}: "
+                                   f"[{failure['stage']}] {failure['message']}")
             quality=check_contract(directory,case['contract'])
             with tempfile.TemporaryDirectory(prefix='p6-independent-import-') as temp:
                 import_grid(directory/'device.grd',Path(temp));compare_native(directory,Path(temp))

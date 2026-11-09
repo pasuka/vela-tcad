@@ -112,4 +112,51 @@ class ExtractedRuntimeTests(unittest.TestCase):
             self.assertNotIn(path.name.lower(),{'gmsh.py','gmsh.exe','libgmsh.dll','gmsh-4.15.dll','libgmsh.so.4.15'})
 
 
+class QualificationFailureTests(unittest.TestCase):
+    def run_failed_child(self, payload, expected_message):
+        import qualify_sde_package as qualification
+        with tempfile.TemporaryDirectory(prefix='sde-qualification-failure-') as temp:
+            base=Path(temp);package=base/'package';output=base/'output';output.mkdir()
+            interpreter=package/('bin/python/python.exe' if os.name=='nt' else 'bin/python/bin/python3')
+            interpreter.parent.mkdir(parents=True);interpreter.touch()
+            # A failed rerun must not leave a previous success receipt behind.
+            (output/'qualification.json').write_text(json.dumps({'status':'passed'}))
+            case={'id':'bvmethods','source':'unused.cmd','parameters':{},'contract':{}}
+            def fail(command, **kwargs):
+                folder=Path(command[command.index('--output-dir')+1]);folder.mkdir(parents=True)
+                if payload is not None:
+                    text=payload if isinstance(payload,str) else json.dumps(payload)
+                    (folder/'fail_report.json').write_text(text,encoding='utf-8')
+                return subprocess.CompletedProcess(command,2,'child stdout\n','Gmsh preprocessing failed; inspect report\n')
+            with patch('sentaurus_sde_cases.load_manifest',return_value={'cases':[case]}), \
+                 patch('qualify_sde_package.subprocess.run',side_effect=fail), \
+                 patch('sentaurus_sde_cases.check_contract') as contract:
+                with self.assertRaisesRegex(RuntimeError,expected_message):
+                    qualification.qualify(package,output,[base/'gmsh.py',base/'libgmsh',base/'gmsh'],1)
+                contract.assert_not_called()
+            report=json.loads((output/'qualification.json').read_text())
+            self.assertEqual('failed',report['status']);self.assertEqual([],report['cases'])
+            self.assertEqual(2,report['failure']['exit_code'])
+            self.assertEqual('bvmethods',report['failure']['id'])
+            self.assertEqual(0,report['failure']['iteration'])
+            self.assertEqual([],report['failure']['completed_runs'])
+            self.assertIn('child stdout',(output/'bvmethods-0.log').read_text())
+            return report['failure']
+
+    def test_modeling_failure_surfaces_inner_stage_and_preserves_failure_status(self):
+        failure=self.run_failed_child({
+            'schema':'vela.sentaurus_gmsh_preprocess.fail_report.v1','status':'failed',
+            'stage':'gmsh_backend','message':'MaxTransDiff iteration budget exhausted',
+            'details':{'max_iterations':12}},r'\[gmsh_backend\].*iteration budget exhausted')
+        self.assertEqual('gmsh_backend',failure['stage'])
+        self.assertEqual('fail_report.json',failure['report'])
+
+    def test_missing_or_malformed_report_keeps_original_child_failure(self):
+        for payload in (None,'{not JSON',{'status':'failed','stage':'unowned','message':'wrong schema'}):
+            with self.subTest(payload=payload):
+                failure=self.run_failed_child(payload,'Gmsh preprocessing failed')
+                self.assertEqual('subprocess',failure['stage'])
+                self.assertNotIn('report',failure)
+
+
 if __name__=='__main__':unittest.main()

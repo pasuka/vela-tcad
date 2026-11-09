@@ -167,6 +167,7 @@ jobs:
           path: |
             ${{ env.P6_BUILD }}/packages/*
             ${{ env.P6_BUILD }}/package-corpus/qualification.json
+            ${{ env.P6_BUILD }}/package-corpus/**/fail_report.json
             ${{ env.P6_BUILD }}/baseline-corpus/case_summary.json
           if-no-files-found: warn
           retention-days: 14
