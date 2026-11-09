@@ -4713,6 +4713,8 @@ int main(int argc, char** argv)
             if (includeMeshReport)
                 status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
         } else if (type == "slot_population_memory") {
+            if(cfg.value("solver",nlohmann::json::object()).value("state_variables",std::string{})=="potential_density")
+                throw std::invalid_argument("slot_population_memory is a QF-coordinate diagnostic; use the production dc_sweep population path");
             status.update(runSlotPopulationMemory(configFile, cfg));
         } else if (type == "newton_zero_update_qualification_probe") {
             status.update(runNewtonSolveFromState(configFile, cfg, false, true));

@@ -369,6 +369,7 @@ add_library(vela_core STATIC
     src/equation/IalElementMobility.cpp
     src/equation/IalElementAvalanche.cpp
     src/equation/BvMethodsCoupledRuntime.cpp
+    src/equation/LegacyPopulationRuntime.cpp
     src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
@@ -962,6 +963,8 @@ add_executable(test_sg_flux tests/test_sg_flux.cpp)
 target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_carrier_statistics tests/test_carrier_statistics.cpp)
+add_executable(test_legacy_population_runtime tests/test_legacy_population_runtime.cpp)
+target_link_libraries(test_legacy_population_runtime PRIVATE vela_core Catch2::Catch2WithMain)
 target_sources(test_carrier_statistics PRIVATE tests/test_slot_log_inverse.cpp)
 target_sources(test_carrier_statistics PRIVATE tests/test_slot_population_coordinates.cpp)
 target_link_libraries(test_carrier_statistics PRIVATE vela_core Catch2::Catch2WithMain)
@@ -1149,6 +1152,7 @@ vela_catch_discover_tests(test_permittivity_assembly)
 vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_joyce_dixon_contract)
+vela_catch_discover_tests(test_legacy_population_runtime)
 vela_catch_discover_tests(test_bvmethods_av_contract)
 vela_catch_discover_tests(test_bvmethods_population_newton)
 vela_catch_discover_tests(test_bvmethods_derivative_switch)

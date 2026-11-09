@@ -1,3 +1,4 @@
+#include "vela/equation/LegacyPopulationRuntime.h"
 #include "vela/equation/BvMethodsCoupledRuntime.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include <algorithm>
@@ -342,18 +343,22 @@ std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationP
 }
 CoupledDDPhysicalDiagnostics CoupledDDAssembler::bvMethodsPhysicalDiagnostics(
     const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
+    auto r=coupledStateRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
     return r->physicalDiagnostics(x,b);
 }
 VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);
+    auto r=coupledStateRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);
 }
 SparseMatrixd CoupledDDAssembler::bvMethodsTransportJacobian(const VectorXd& x)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);
+    auto r=coupledStateRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);
 }
-std::shared_ptr<BvMethodsCoupledRuntime> CoupledDDAssembler::bvMethodsRuntime()const {
-    if(scaling_.coupledOperator=="legacy")return {};
+std::shared_ptr<CoupledStateRuntime> CoupledDDAssembler::coupledStateRuntime()const {
+    if(scaling_.coupledOperator=="legacy") {
+        if(!usesPopulationState())return {};
+        if(!coupledStateRuntime_)coupledStateRuntime_=std::make_shared<LegacyPopulationRuntime>(*this);
+        return coupledStateRuntime_;
+    }
     if(scaling_.coupledOperator!="bvmethods_tri3_qf")throw std::invalid_argument("Unknown coupled operator");
-    if(!bvMethodsRuntime_)bvMethodsRuntime_=std::make_shared<BvMethodsCoupledRuntime>(*this);return bvMethodsRuntime_;
+    if(!coupledStateRuntime_)coupledStateRuntime_=std::make_shared<BvMethodsCoupledRuntime>(*this);return coupledStateRuntime_;
 }
 }

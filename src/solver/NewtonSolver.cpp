@@ -10,6 +10,7 @@
 #include "vela/solver/LinearRefinement.h"
 #include "vela/solver/ShadowConvergenceDiagnostics.h"
 #include "vela/solver/SlotPopulationNumerics.h"
+#include "vela/solver/PopulationWriteback.h"
 #include "PopulationStepControl.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -2108,13 +2109,25 @@ namespace {
 // Positive populations and equation gates are not QF trust-region controls.
 void validatePopulationNumerics(const NewtonConfig& c)
 {
+    if(c.populationWriteback!="independent" && c.populationWriteback!="boltzmann_psi_compensated")
+        throw std::invalid_argument("unknown population_writeback");
+    if(c.populationWriteback!="independent" &&
+       (c.stateVariables!="potential_density" || c.coupledOperator!="legacy" ||
+        c.carrierStatistics.model!="boltzmann"))
+        throw std::invalid_argument("population_writeback compensation requires legacy Boltzmann potential_density");
     if(c.stateVariables!="potential_density")return;
     validatePopulationUpdate(c.populationUpdate);
     const auto reject=[](bool active,const char* option) {
         if(active)throw std::invalid_argument(std::string("potential_density does not support ")+option);
     };
-    reject(c.coupledOperator!="bvmethods_tri3_qf" || c.splitDDState || c.electronQuantumPotential.enabled,
-        "legacy, split or quantum state formulations");
+    reject(c.splitDDState || c.electronQuantumPotential.enabled,
+        "split or quantum state formulations");
+    reject(c.coupledOperator=="legacy" && (c.populationSgCurrent!="quasi_fermi" ||
+        c.populationDerivativeRecovery!="full"), "BVMethods-only SG or derivative recovery");
+    reject(c.poissonResidualPrecision!="double" || c.bankRose.enabled || c.populationStepFraction!=0.,
+        "QF Poisson arithmetic, Bank-Rose or QF population-step control");
+    reject(c.globalContinuityClosure.linearSystemStabilization!="off" ||
+        c.globalContinuityClosure.feasibilityRestoration!="off", "QF closure replacement/restoration");
     reject(c.quasiFermiUpdateLimit_V!=0. || c.quasiFermiUpdateLimitMinority_V!=0.,"QF voltage update caps");
     reject(c.maxUpdate!=0.,"max_update on mixed potential/concentration units");
     reject(c.quasiFermiReference!="none" || c.quasiFermiRecenterOnInitialState || c.quasiFermiRecenterOnStall,
@@ -2417,7 +2430,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
     cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
     cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
+    if(cfg.stateVariables=="potential_density" &&
+       (!json.contains("coupled_operator") || !json.contains("carrier_statistics")))
+        throw std::invalid_argument("potential_density requires explicit operator and carrier statistics");
     cfg.populationSgCurrent=json.value("population_sg_current",cfg.populationSgCurrent);
+    cfg.populationWriteback=json.value("population_writeback",cfg.populationWriteback);
     if((cfg.populationSgCurrent!="quasi_fermi" && cfg.populationSgCurrent!="band_population") ||
        (cfg.populationSgCurrent!="quasi_fermi" && cfg.stateVariables!="potential_density"))
         throw std::invalid_argument("population_sg_current requires band_population/potential_density or quasi_fermi");
@@ -2439,8 +2456,6 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument("automatic population derivative recovery requires potential_density");
     if(cfg.stateVariables!="potential_quasi_fermi" && cfg.stateVariables!="potential_density")
         throw std::invalid_argument("unknown state_variables");
-    if(cfg.stateVariables=="potential_density" && cfg.coupledOperator!="bvmethods_tri3_qf")
-        throw std::invalid_argument("potential_density requires explicit BVMethods physics");
     if(cfg.stateVariables=="potential_density") {
         const auto method=json.value("method",std::string{"newton"});
         if(method!="newton"&&method!="poisson_only")
@@ -4478,14 +4493,21 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             }
             return rows;
         };
-        system.makeTrial=[self,assembler,biasesAt,nodeCount](const ArclengthState& before,const VectorXd& raw,Real dv,Real alpha) {
+        system.makeTrial=[self,assembler,biasesAt,nodeCount,potentialScale,vt](const ArclengthState& before,const VectorXd& raw,Real dv,Real alpha) {
             const auto b=self->buildBoundaryConditions(*assembler,biasesAt(before.lambda));
             std::vector<bool> en(nodeCount),hp(nodeCount);
             for(int i=0;i<nodeCount;++i) {
                 en[i]=assembler->intrinsicDensity()[i]>0. && !b.phin.contains(i);
                 hp[i]=assembler->intrinsicDensity()[i]>0. && !b.phip.contains(i);
             }
-            const auto c=makePopulationTrial(before.x,raw,alpha,en,hp,self->cfg_.populationUpdate);
+            auto c=makePopulationTrial(before.x,raw,alpha,en,hp,self->cfg_.populationUpdate);
+            if(self->cfg_.populationWriteback=="boltzmann_psi_compensated") {
+                std::vector<bool> active(nodeCount);
+                for(int i=0;i<nodeCount;++i)active[i]=assembler->intrinsicDensity()[i]>0.;
+                // Contact populations also consume rounded psi. Their original
+                // QF identities are checked by the unchanged residual/guards.
+                c=compensateBoltzmannPsiWriteback(before.x,raw,std::move(c),potentialScale,vt,active);
+            }
             (void)assembler->unpack(c.state);
             return ArclengthTrial{{c.state,before.lambda+c.alpha*dv},c.alpha,
                 static_cast<int>(c.protectedElectrons.size()),static_cast<int>(c.protectedHoles.size())};
@@ -5205,6 +5227,8 @@ NewtonLinearSystemEvaluation NewtonSolver::evaluateSourceDiagnosticPair(const DD
 
 NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state, Real directionalAuditScale) const
 {
+    if(cfg_.stateVariables=="potential_density")
+        throw std::invalid_argument("evaluateStep QF direction fields are not population-coordinate diagnostics; use the population update report");
     if (!std::isfinite(directionalAuditScale) || directionalAuditScale < 0.)
         throw std::invalid_argument("directional audit scale must be finite and nonnegative");
     const double Vt = thermalVoltage(cfg_.temperature_K);

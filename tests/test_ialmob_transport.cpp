@@ -183,6 +183,39 @@ struct Fixture {
 };
 }
 
+TEST_CASE("IALMob population coordinates preserve oxide masks and local physical derivatives", "[ialmob][legacy_population]") {
+    for(bool tcad:{false,true}) {
+        Fixture f(tcad);const Real vt=constants::Vt_300;
+        auto rec=recombinationModelConfig({"srh","auger"});rec.activeMaterials={"Si"};
+        const auto bgn=bandgapNarrowingConfig("old_slotboom");
+        DDScalingSpec p;p.stateVariables="potential_density";
+        CoupledDDAssembler qa(f.mesh,f.materials,f.doping,vt,f.mobility,rec,bgn);
+        CoupledDDAssembler pa(f.mesh,f.materials,f.doping,vt,f.mobility,rec,bgn,{},{},{},p);
+        CoupledDDState s;s.psi=VectorXd::LinSpaced(6,.02,.04);
+        s.phin=VectorXd::Zero(6);s.phip=VectorXd::Zero(6);
+        for(int i=0;i<4;++i){s.phin[i]=.001*i;s.phip[i]=-.002*i;}
+        const auto x=qa.pack(s);const auto n=qa.electronDensity(x),holes=qa.holeDensity(x);
+        const auto y=pa.packPopulation(s.psi,n,holes);
+        const auto a=qa.residual(x,{}),b=pa.residual(y,{});
+        for(int block=0;block<3;++block) {
+            const double denom=std::max(1e-30,a.segment(6*block,6).cwiseAbs().maxCoeff());
+            CHECK((a-b).segment(6*block,6).cwiseAbs().maxCoeff()/denom<2e-10);
+        }
+        REQUIRE(y[6+4]==0.);REQUIRE(y[12+5]==0.);
+        auto bad=y;bad[10]=1.;CHECK_THROWS(pa.residual(bad,{}));
+        VectorXd d=VectorXd::Zero(18);d.head(6)=VectorXd::LinSpaced(6,-.002,.003);
+        d.segment(6,6)=.01*n;d.tail(6)=-.02*holes;
+        const auto j=pa.assembleJacobian(y,{});const VectorXd action=j*d;
+        for(double h:{1e-3,1e-4}) {
+            const VectorXd fd=(pa.residual((y+h*d).eval(),{})-pa.residual((y-h*d).eval(),{}))/(2*h);
+            for(int block=0;block<3;++block) {
+                const double denom=std::max(1e-30,action.segment(6*block,6).cwiseAbs().maxCoeff());
+                CHECK((fd-action).segment(6*block,6).cwiseAbs().maxCoeff()/denom<3e-4);
+            }
+        }
+    }
+}
+
 TEST_CASE("IALMob keeps isolated poly transport constant and scopes recombination",
           "[ialmob][material_scope][jacobian]")
 {

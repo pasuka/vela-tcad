@@ -129,6 +129,25 @@ inline double populationLogSlope(double eta) {
  if(eta < -700.)return 1.;
  return fermiDiracHalfDerivative(eta)/fermiDiracHalf(eta);
 }
+// Population-primary coordinates require relative inversion accuracy. The
+// historical inverse's absolute function tolerance is only a seed here.
+inline double populationEtaAccurate(double density,double dos) {
+ double eta=populationEta(density,dos);
+ if(eta < -40.)return std::log(density)-std::log(dos);
+ for(int k=0;k<12;++k) {
+  const double value=fermiDiracHalf(eta),slope=populationLogSlope(eta);
+  if(!(value>0.) || !(slope>0.) || !std::isfinite(slope))
+   throw std::runtime_error("invalid relative population inverse");
+  const long double mismatch=std::log(static_cast<long double>(value)*dos/density);
+  const double next=eta-static_cast<double>(mismatch/slope);
+  if(!std::isfinite(next))throw std::runtime_error("nonfinite relative population inverse");
+  if(next==eta)return eta;
+  eta=next;
+ }
+ const long double mismatch=std::log(static_cast<long double>(fermiDiracHalf(eta))*dos/density);
+ if(std::abs(mismatch)>1e-12L)throw std::runtime_error("relative population inverse did not converge");
+ return eta;
+}
 inline bool usesDiluteLogInversePopulation(double density,double dos,double rel) {
  validatePopulationCoordinates(density,dos);
  const double z=density/dos;

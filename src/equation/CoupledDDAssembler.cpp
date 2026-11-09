@@ -6,6 +6,7 @@
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/BvMethodsCoupledRuntime.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/solver/SlotPopulationNumerics.h"
 #include "vela/physics/NonlocalPathSourceAssembly.h"
 #include "vela/discretization/StableSGDerivative.h"
 #include "vela/equation/BVProcessProbe.h"
@@ -588,8 +589,9 @@ CoupledDDAssembler::CoupledDDAssembler(
     if((scaling_.populationSgCurrent!="quasi_fermi" && scaling_.populationSgCurrent!="band_population") ||
        (scaling_.populationSgCurrent!="quasi_fermi"&&!usesPopulationState()))
         throw std::invalid_argument("invalid population SG arithmetic mode");
-    if (usesPopulationState() && scaling_.coupledOperator != "bvmethods_tri3_qf")
-        throw std::invalid_argument("potential_density currently requires the explicit BVMethods operator");
+    if (usesPopulationState() && scaling_.coupledOperator == "legacy" &&
+        (electronQuantumPotentialConfig_.enabled || scaling_.populationSgCurrent!="quasi_fermi"))
+        throw std::invalid_argument("legacy population coordinates require classical quasi-Fermi SG physics");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&
         impactIonizationConfig_.model!="none" && !detail::usesPhuMobElementAvalancheSource(impactIonizationConfig_))
         throw std::invalid_argument("element_box_phumob avalanche requires phumob_element_density_grad_qf.");
@@ -1305,8 +1307,19 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
             if (!(state.n[i]>0.) || !(state.p[i]>0.))
                 throw std::domain_error("positive population state required");
             const Real psi=state.psi[i]*potentialScale;
-            state.phin[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],psi,state.n[i],Vt_,carrierStatistics_)/potentialScale;
-            state.phip[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],psi,state.p[i],Vt_,carrierStatistics_)/potentialScale;
+            if(usesBvMethodsOperator()) {
+                state.phin[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],psi,state.n[i],Vt_,carrierStatistics_)/potentialScale;
+                state.phip[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],psi,state.p[i],Vt_,carrierStatistics_)/potentialScale;
+            } else {
+                const long double electronWork=usesFermiDirac_
+                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.n[i],Nc_[i]))-std::log(static_cast<long double>(niElectron_[i])/Nc_[i])
+                    : std::log(static_cast<long double>(state.n[i])/niElectron_[i]);
+                const long double holeWork=usesFermiDirac_
+                    ? static_cast<long double>(slot_population::populationEtaAccurate(state.p[i],Nv_[i]))-std::log(static_cast<long double>(niHole_[i])/Nv_[i])
+                    : std::log(static_cast<long double>(state.p[i])/niHole_[i]);
+                state.phin[i]=static_cast<Real>((static_cast<long double>(psi)-Vt_*electronWork)/potentialScale);
+                state.phip[i]=static_cast<Real>((static_cast<long double>(psi)+Vt_*holeWork)/potentialScale);
+            }
         }
         return state;
     }
@@ -1336,7 +1349,7 @@ VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd&
 
 SparseMatrixd CoupledDDAssembler::populationBootstrapJacobian(const VectorXd& y,const CoupledDDBoundaryConditions& b) const {
     if(!usesPopulationState())throw std::invalid_argument("bootstrap population Jacobian requires population coordinates");
-    return bvMethodsRuntime()->jacobian(y,b,true);
+    return coupledStateRuntime()->jacobian(y,b,true);
 }
 
 void CoupledDDAssembler::setLegacyEdgeJacobianSteps(Real transport, Real avalanche)
@@ -1618,6 +1631,7 @@ Real CoupledDDAssembler::nodeRecombinationRate(
 
 VectorXd CoupledDDAssembler::electronDensity(const VectorXd& x) const
 {
+    if(authoritativeElectronDensity_.size())return authoritativeElectronDensity_;
     if (usesPopulationState()) {
         const int n=mesh_.numNodes();
         if(x.size()!=3*n || !x.allFinite())throw std::domain_error("invalid population state");
@@ -1643,6 +1657,7 @@ VectorXd CoupledDDAssembler::electronDensity(const VectorXd& x) const
 
 VectorXd CoupledDDAssembler::holeDensity(const VectorXd& x) const
 {
+    if(authoritativeHoleDensity_.size())return authoritativeHoleDensity_;
     if (usesPopulationState()) {
         const int n=mesh_.numNodes();
         if(x.size()!=3*n || !x.allFinite())throw std::domain_error("invalid population state");
@@ -1875,7 +1890,7 @@ CoupledDDAssembler::poissonTermDiagnosticsImpl(
 {
     if(usesPopulationState()) {
         if(substitution)throw std::invalid_argument("population Poisson diagnostic substitution is unsupported");
-        return bvMethodsRuntime()->populationPoissonTerms(x,bcs);
+        return coupledStateRuntime()->populationPoissonTerms(x,bcs);
     }
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
@@ -2020,7 +2035,7 @@ VectorXd CoupledDDAssembler::residualImpl(
     if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
         throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
 
-    if(auto runtime=bvMethodsRuntime()) {
+    if(auto runtime=coupledStateRuntime()) {
         if(substitution || nonlocal)throw std::invalid_argument("BVMethods feedback/nonlocal substitution unqualified");
         return runtime->residual(x,bcs);
     }
@@ -2765,7 +2780,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
         throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
 
-    if(auto runtime=bvMethodsRuntime()) {
+    if(auto runtime=coupledStateRuntime()) {
         if(substitution)throw std::invalid_argument("BVMethods feedback substitution unqualified");
         return runtime->terms(x,bcs,includeImpactIonization);
     }
@@ -3239,7 +3254,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
-    if(bvMethodsRuntime())throw std::invalid_argument("BVMethods element transport requires carrier-term diagnostics; legacy SG-edge diagnostics are unqualified");
+    if(coupledStateRuntime())throw std::invalid_argument("BVMethods element transport requires carrier-term diagnostics; legacy SG-edge diagnostics are unqualified");
     if(auto runtime=splitRuntime()) {
         auto edges=runtime->edges(x);
         for(auto& d:edges) {
@@ -4151,7 +4166,7 @@ VectorXd CoupledDDAssembler::impactIonizationSourceResidual(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
-    if(auto runtime=bvMethodsRuntime())return runtime->avalancheResidual(x,bcs);
+    if(auto runtime=coupledStateRuntime())return runtime->avalancheResidual(x,bcs);
     const int N = static_cast<int>(mesh_.numNodes());
     if (x.size() != 3 * N) {
         throw std::invalid_argument(
@@ -4322,7 +4337,7 @@ SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
-    if(auto runtime=bvMethodsRuntime())return runtime->avalancheJacobian(x,bcs);
+    if(auto runtime=coupledStateRuntime())return runtime->avalancheJacobian(x,bcs);
     const int N = static_cast<int>(mesh_.numNodes());
     if (x.size() != 3 * N) {
         throw std::invalid_argument(
@@ -4643,7 +4658,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const CoupledDDBoundaryConditions& bcs,
     bool includeCarrierDiagonalFloor) const
 {
-    if(auto runtime=bvMethodsRuntime())return runtime->jacobian(x,bcs);
+    if(auto runtime=coupledStateRuntime())return runtime->jacobian(x,bcs);
     return assembleSourceDiagnosticJacobian(x,bcs,0,includeCarrierDiagonalFloor);
 }
 
@@ -5277,8 +5292,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                     edgeId, basePsiAt, basePhinAt, true, &psi, &n, &p);
             avalancheBaseHoleFlux[edgeId] = evaluateHoleAvalancheFlux(
                 edgeId, basePsiAt, basePhipAt, true, &psi, &n, &p);
-            if (sentaurusEparallelImpact &&
-                nodalVectorCurrentReconstructedCurrent) {
+            if (sentaurusEparallelImpact) {
                 bool validElectricGradient = false;
                 const Point2 electricGradient =
                     detail::edgeAveragedCellScalarGradient(
@@ -6782,6 +6796,26 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                     const auto minus = edgeAvalancheNodeSources(e, i, j, h, psi_i, psi_j,
                         phinAt, phipAt, {node, noPerturbedNode, noPerturbedNode, value - step}, &base);
                     appendDerivative(psiOffset() + static_cast<int>(node), plus, minus, step);
+                }
+            }
+            else if (sentaurusEparallelImpact && !nodalVectorCurrentReconstructedCurrent) {
+                // Eparallel's cell-vector gradient depends on adjacent vertices
+                // even without surface mobility. These use cell-pattern slots,
+                // not the endpoint-only precomputed avalanche scatter table.
+                for (std::size_t k=0;k<qfStencilNodeCount;++k) {
+                    const Index node=qfStencilNodes[k];
+                    if(node==static_cast<Index>(i) || node==static_cast<Index>(j))continue;
+                    const Real value=psi(node);
+                    const Real step=legacyAvalancheJacobianStep_*std::max(Real{1},std::abs(value));
+                    const auto plus=edgeAvalancheNodeSources(e,i,j,h,psi_i,psi_j,phinAt,phipAt,
+                        {node,noPerturbedNode,noPerturbedNode,value+step},&base);
+                    const auto minus=edgeAvalancheNodeSources(e,i,j,h,psi_i,psi_j,phinAt,phipAt,
+                        {node,noPerturbedNode,noPerturbedNode,value-step},&base);
+                    avalanchePerturbedEvaluations+=2;
+                    const Real d0=(plus.node0-minus.node0)*sourceIntegralFactor/(2*step);
+                    const Real d1=(plus.node1-minus.node1)*sourceIntegralFactor/(2*step);
+                    add(phinOffset()+i,psiOffset()+node,-d0);add(phipOffset()+i,psiOffset()+node,-d0);
+                    add(phinOffset()+j,psiOffset()+node,-d1);add(phipOffset()+j,psiOffset()+node,-d1);
                 }
             }
 

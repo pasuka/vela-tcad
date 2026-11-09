@@ -298,6 +298,7 @@ struct NewtonConfig {
     std::string stateVariables = "potential_quasi_fermi";
     std::string populationDerivativeRecovery = "full";
     std::string populationSgCurrent = "quasi_fermi";
+    std::string populationWriteback = "independent"; ///< Opt-in Boltzmann psi-rounding compensation.
     PopulationUpdateConfig populationUpdate;
     CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};

@@ -541,9 +541,21 @@ independent. Existing decks and global defaults are unchanged.
 Newton numerical and geometry controls added for explicit validation profiles:
 
 - `solver.state_variables`: `potential_quasi_fermi` (default) or explicitly
-  `potential_density`. The latter currently requires the qualified 300 K
-  `bvmethods_tri3_qf` physics and Joyce–Dixon statistics; the profile name
-  identifies its physical discretization, while this option selects coordinates.
+  `potential_density`. Explicitly bind `coupled_operator` and `carrier_statistics`.
+  The `bvmethods_tri3_qf` profile retains its 300 K Joyce–Dixon contract.
+  Classical `legacy` Boltzmann/Fermi coordinates use the existing SLOT operator,
+  including its configured IALMob/PhuMob, BGN, recombination and avalanche models;
+  this option selects coordinates, not a replacement physical model.
+  The SLOT adapter stores authoritative n/p and derives QF consumer fields.
+  It retains Ohmic potential/QF constraints expressed through those populations.
+  Quantum, split coordinates, thermionic contacts, BVMethods-only band-population
+  SG/bootstrap, QF closure replacement/restoration and binary128 QF Poisson
+  arithmetic remain unsupported and are rejected. Population protection is
+  selected with `population_update`, not QF `population_step_control`.
+  The QF-only `slot_population_memory` and `evaluateStep` diagnostics reject this
+  mode; use the production `dc_sweep` and population update reports.
+  Integration and actual qualification are recorded in the
+  [SLOT integration report](validation/slot_ldmos_main_density_integration_2026-10-29.md).
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Inactive oxide slots are zero and eliminated as constraints. QF caps,
@@ -578,6 +590,19 @@ Newton numerical and geometry controls added for explicit validation profiles:
   profile; it does not add a separate material electron-affinity/energy-state
   contract. This option is an arithmetic experiment, not native zero-bias
   operator-equivalence qualification or a new global default.
+- `solver.population_writeback`: `independent` (default) or opt-in
+  `boltzmann_psi_compensated`. Compensation requires the classical `legacy`
+  operator, Boltzmann statistics and `potential_density` coordinates. After the
+  original population protection, let `e` be actual physical ψ change minus
+  the intended `alpha*delta_psi`. Unprojected carrier candidates are evaluated
+  as `(n+alpha*delta_n)*exp(e/Vt)` and `(p+alpha*delta_p)*exp(-e/Vt)` with
+  extended intermediates, then stored in binary64. This preserves the intended
+  finite Boltzmann QF change under fixed statistical prefactors. Contact
+  populations use the same map and remain subject to their original QF
+  boundary equations. Inactive slots and locally projected carriers retain
+  the original policy; positivity, inverse consistency and acceptance checks
+  remain. Zero direction is an exact identity. This is an experimental finite
+  update map, not a change to the residual/Jacobian or a Fermi update formula.
 - `solver.population_update`: population-mode-only object. `protection` is
   `local_nonpositive` (default) or `fraction_to_boundary`. The former changes
   only free nodes with c+αδc≤0 to `local_retained_fraction*c` (default 0.01).

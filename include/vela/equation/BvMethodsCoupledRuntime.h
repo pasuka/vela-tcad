@@ -1,10 +1,10 @@
 #pragma once
-#include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/CoupledStateRuntime.h"
 
 namespace vela {
 // Explicit 300 K Tri3 BVMethods runtime. One autonomous residual owns
 // transport, SRH, avalanche and their jets; no native field/cache substitution.
-class BvMethodsCoupledRuntime {
+class BvMethodsCoupledRuntime final : public CoupledStateRuntime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
 public:

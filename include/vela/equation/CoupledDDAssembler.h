@@ -32,6 +32,8 @@ struct NonlocalPairSources;
 class SplitDDRuntime;
 namespace poisson_precision { struct Model; }
 class BvMethodsCoupledRuntime;
+class LegacyPopulationRuntime;
+class CoupledStateRuntime;
 
 struct CoupledDDState {
     VectorXd psi;
@@ -321,9 +323,10 @@ struct CoupledDDAssemblyAuditOptions {
 
 class CoupledDDAssembler {
     friend class BvMethodsCoupledRuntime;
-    mutable std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime_;
+    friend class LegacyPopulationRuntime;
+    mutable std::shared_ptr<CoupledStateRuntime> coupledStateRuntime_;
     bool bvMethodsEvaluationReuse_ = false;
-    std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime() const;
+    std::shared_ptr<CoupledStateRuntime> coupledStateRuntime() const;
     struct FixedJacobianData;
 public:
     /// Single-owner sequential cache. Stores no numeric Jacobian or state.
@@ -342,7 +345,7 @@ public:
     /// State keys are bit-exact; boundary replacement is evaluated on every call.
     void setBvMethodsEvaluationReuse(bool enabled) {
         if (enabled != bvMethodsEvaluationReuse_) {
-            bvMethodsRuntime_.reset(); bvMethodsEvaluationReuse_ = enabled;
+            coupledStateRuntime_.reset(); bvMethodsEvaluationReuse_ = enabled;
         }
     }
     /// Source-free element transport for terminal totals and their derivative.
@@ -758,6 +761,7 @@ private:
     bool effectiveBandSg_ = false;
     bool extendedPoissonResidual_ = false;
     std::vector<Real> ni_;
+    mutable VectorXd authoritativeElectronDensity_, authoritativeHoleDensity_;
     std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;
