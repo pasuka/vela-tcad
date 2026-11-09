@@ -4,6 +4,8 @@
 #include "vela/equation/ExtendedPoissonResidual.h"
 #include "vela/numerics/SplitCoordinate.h"
 #include "vela/solver/NewtonSolver.h"
+#include <boost/multiprecision/cpp_int.hpp>
+#include <cmath>
 #include <limits>
 #include <nlohmann/json.hpp>
 
@@ -281,4 +283,49 @@ TEST_CASE("Stable block merit preserves weights and resolves exact cancellation"
         scaledX(1)*=8.;scaledY(1)*=8.;scaledS[1]*=8.;
         REQUIRE(vela::stable_merit::compareBlocks(scaledX,scaledY,scaledS,weights).sign==decision.sign);
     }
+}
+
+
+TEST_CASE("Sparse precision audit preserves rational defects across shared and empty columns", "[linear_refinement][precision_contract]") {
+    using namespace vela;
+    using Rational=boost::multiprecision::cpp_rational;
+    REQUIRE(Rational(.1)*Rational(std::ldexp(1.,55))==Rational(3602879701896397ULL));
+    SparseMatrixd base(6,7);
+    std::vector<Eigen::Triplet<double>> entries={
+        {0,0,std::ldexp(1.,53)},{0,1,-std::ldexp(1.,53)},{0,2,std::ldexp(1.,10)},
+        {1,0,-std::ldexp(1.,53)},{1,1,std::ldexp(1.,53)},{1,4,1.},
+        {2,2,-std::ldexp(1.,-10)},{2,3,std::ldexp(1.,-10)},
+        {3,0,.125},{3,3,3.},{3,4,-4.},{4,2,std::ldexp(1.,20)},{4,4,-std::ldexp(1.,12)}};
+    base.setFromTriplets(entries.begin(),entries.end());
+    VectorXd direction(7),residual(6);
+    direction<<1.,1.,std::ldexp(.1,-10),std::nextafter(1.,2.),-std::ldexp(1.,-8),0.,-3.;
+    residual<<-.05,std::ldexp(1.,-8),-std::ldexp(1.,-10),-.125,-118.4,-std::ldexp(1.,-24);
+    for(bool compressed:{false,true}) {
+        auto matrix=base;
+        if(!compressed)matrix.uncompress();
+        const auto actual=vela::linear_refinement::highPrecisionDefect(matrix,residual,direction);
+        double worst=0.;
+        // An independent row-wise rational oracle has no decimal rounding and
+        // checks every component's natural scale, including the weak residuals.
+        for(int row=0;row<matrix.rows();++row) {
+            Rational exact(residual(row)),denominator=abs(exact);
+            for(int column=0;column<matrix.cols();++column) {
+                const Rational term=Rational(matrix.coeff(row,column))*Rational(direction(column));
+                exact+=term;denominator+=abs(term);
+            }
+            const double value=exact.convert_to<double>();
+            const Rational ratio=denominator==0?Rational(0):Rational(abs(exact)/denominator);
+            const double backward=ratio.convert_to<double>();worst=std::max(worst,backward);
+            INFO("row="<<row<<" compressed="<<compressed);
+            const auto equivalent=[](double found,double expected) {
+                if(expected==0.)return found==0.;
+                return std::abs(found-expected)<=8*std::numeric_limits<double>::epsilon()*std::abs(expected);
+            };
+            REQUIRE(equivalent(actual.values(row),value));
+            REQUIRE(equivalent(actual.componentwiseBackwardErrors(row),backward));
+        }
+        REQUIRE(actual.backwardMax==worst);
+    }
+    auto invalid=direction;invalid(6)=std::numeric_limits<double>::quiet_NaN();
+    REQUIRE_THROWS_AS(vela::linear_refinement::highPrecisionDefect(base,residual,invalid),std::invalid_argument);
 }

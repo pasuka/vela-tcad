@@ -23,9 +23,14 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     std::vector<MP> r(F.size()), denominator(F.size());
     for (int i=0;i<F.size();++i) { r[i]=MP(F(i)); denominator[i]=abs(r[i]); }
+    // Reuse the identical 100-digit conversion of each direction coordinate.
+    // Products and row accumulation keep their original precision and order.
+    std::vector<MP> preciseStep;
+    preciseStep.reserve(static_cast<std::size_t>(step.size()));
+    for (int col=0;col<step.size();++col) preciseStep.emplace_back(step(col));
     for (int col=0;col<J.outerSize();++col)
         for (vela::SparseMatrixd::InnerIterator it(J,col);it;++it) {
-            const MP term=MP(it.value())*MP(step(it.col()));
+            const MP term=MP(it.value())*preciseStep[it.col()];
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
     Defect answer{vela::VectorXd(F.size()),0,vela::VectorXd::Zero(F.size())};
