@@ -67,7 +67,7 @@ inline nlohmann::json nonlocalResidualProbe(const nlohmann::json& j,
     }
     nlohmann::json result{{"population_frozen",true},{"constitutive_mapping_qualified",false},
         {"temperature_K",cfg.temperature_K},{"core_thermal_voltage_V",coreVt},{"coordinate_scale_V",scale.V0},
-        {"core_constants","CODATA2018"},{"source_constants","explicit source assembly policy"},
+        {"core_constants",std::string(constants::profileName)},{"source_constants","explicit source assembly policy"},
         {"QF_representation","exported physical QF as reference, zero increment; internal low part unqualified"},
         {"boundary_values","frozen state; not an independently coupled resistor load row"},
         {"backend","residual assembly; no linear solve"},{"rows",nlohmann::json::array()}};

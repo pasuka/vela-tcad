@@ -47,6 +47,12 @@ class DerivativeSwitch {
     DerivativeSwitchConfig cfg_;
     DerivativeMode mode_=DerivativeMode::Bootstrap;
     int bootstrap_=0,cooldown_=0,trial_=0,good_=0,bad_=0;
+    bool sameStateProbeUsed_=false;
+    bool probeAfterBootstrapFailure(const std::string& why) {
+        if(mode_!=DerivativeMode::Bootstrap || sameStateProbeUsed_)return false;
+        sameStateProbeUsed_=true;mode_=DerivativeMode::Trial;
+        trial_=good_=bad_=0;cooldown_=0;reason=why;return true;
+    }
     void fallback(const std::string& why) {
         mode_=DerivativeMode::Bootstrap;bootstrap_=trial_=good_=bad_=0;
         cooldown_=cfg_.cooldownSteps+1;reason=why;
@@ -71,6 +77,16 @@ public:
         }
         reason="bootstrap_progress";return false;
     }
+    // A failed approximate solve must not prevent a same-state full probe.
+    // Candidate rejection/fallback does not renew this allowance; only an
+    // actually applied step does, so an unchanged state cannot cycle modes.
+    bool probeAfterBootstrapLinearFailure() {
+        return probeAfterBootstrapFailure("bootstrap_linear_failure_restore");
+    }
+    bool probeAfterBootstrapModelFailure() {
+        return probeAfterBootstrapFailure("bootstrap_model_non_decrease_restore");
+    }
+    void stateAdvanced(){sameStateProbeUsed_=false;}
     void bootstrapApplied(){++bootstrap_;if(cooldown_>0)--cooldown_;}
     // false means reject this candidate before changing the physical state.
     bool fullCandidate(const DerivativeObservation& o) {

@@ -1,0 +1,17 @@
+{
+  "schema": "vela.sentaurus_reference_curve.v1",
+  "device": "pn2d_sentaurus2018",
+  "analysis": "bv",
+  "source_artifact": "pn2d_bv.plt",
+  "source_sdevice_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd",
+  "columns": {
+    "bias_V": "Anode OuterVoltage",
+    "current_total": "Anode TotalCurrent"
+  },
+  "units": {
+    "bias_V": "V",
+    "current_total": "A/um"
+  },
+  "curve_content_sha256_lf": "9ede4233957834fbb42b37c0465f3d581c7e1e0c321f20335dc775de30cd225b",
+  "notes": "Frozen generated reference curve for the PN2D BV E2E acceptance contract; raw proprietary Sentaurus artifacts are not included."
+}

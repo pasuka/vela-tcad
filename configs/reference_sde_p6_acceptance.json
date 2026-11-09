@@ -1,0 +1,22 @@
+{
+  "schema": "vela.sde_p6_acceptance.v1",
+  "date": "2026-10-30",
+  "status": "frozen-before-p6-meshes",
+  "approved_by_user": true,
+  "primary_sources": 8,
+  "fillet_radius_um": {
+    "mos": 0.05,
+    "bvmethods": 0.08
+  },
+  "pointwise_relative_tolerance": 1e-06,
+  "geometry_contact_tolerance_um": 1e-08,
+  "own_chord_error_um": 1e-05,
+  "native_curved_area_rule": "each mesh uses its measured arc chord boundary budget",
+  "doping_integral_relative_error": 0.01,
+  "cut_junction_error_rule": "at most the local minimum mesh size",
+  "local_size_rule": "each mesh qualified against the authored contract, no matching topology requirement",
+  "own_edge_component_envelope": 1.35,
+  "mesh_identity_required": false,
+  "solver_qualification": false,
+  "package_profile": "independent offline SDE tools; explicitly configured external Gmsh 4.15.2; SDevice package unchanged"
+}

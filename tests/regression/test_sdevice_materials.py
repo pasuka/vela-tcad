@@ -61,6 +61,8 @@ def _ir(path: Path) -> dict:
 
 def _emit(par: Path, ir_path: Path, materials=("Si",), **kwargs) -> mat.EmitResult:
     ir = _ir(ir_path)
+    # Archived 2018 fixtures retain their explicit historical constants contract.
+    kwargs.setdefault("constants_profile", "codata2018")
     return mat.emit_materials(par, active_models=mat.active_models_from_ir(ir),
                               temperature_K=ir["physics"]["temperature_K"], mesh_materials=list(materials),
                               effective_models=ir["physics"]["effective"], **kwargs)
@@ -126,7 +128,7 @@ class Pn2dSiliconTest(unittest.TestCase):
 
     def test_old_slotboom_changes_electron_dos_but_not_hole_dos(self) -> None:
         ir = _ir(IV_IR)
-        without = mat.emit_materials(PN2D_PAR, active_models=["DopingDependence", "SRH"], temperature_K=300.0,
+        without = mat.emit_materials(PN2D_PAR, constants_profile="codata2018", active_models=["DopingDependence", "SRH"], temperature_K=300.0,
                                      mesh_materials=["Si"])
         plain = _material(without, "Si")
         nc_ratio = self.si["conduction_band_density_of_states_cm3"] / plain["conduction_band_density_of_states_cm3"]
@@ -251,7 +253,7 @@ class DefaultLibraryTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.result = mat.emit_materials(mat.default_models_par_path(), active_models=[], temperature_K=300.0,
+        cls.result = mat.emit_materials(mat.default_models_par_path(), constants_profile="codata2018", active_models=[], temperature_K=300.0,
                                         mesh_materials=["Si", "SiO2", "Nitride"])
 
     def test_generated_file_is_current(self) -> None:
@@ -262,9 +264,9 @@ class DefaultLibraryTest(unittest.TestCase):
 
     def test_silicon_matches_the_sentaurus_default_dump(self) -> None:
         for models in ([], ["OldSlotboom"]):
-            library = _material(mat.emit_materials(mat.default_models_par_path(), active_models=models,
+            library = _material(mat.emit_materials(mat.default_models_par_path(), constants_profile="codata2018", active_models=models,
                                                    temperature_K=300.0, mesh_materials=["Si"]), "Si")
-            dump = _material(mat.emit_materials(PN2D_PAR, active_models=models, temperature_K=300.0,
+            dump = _material(mat.emit_materials(PN2D_PAR, constants_profile="codata2018", active_models=models, temperature_K=300.0,
                                                 mesh_materials=["Si"]), "Si")
             for key, value in dump.items():
                 if key != "provenance":
@@ -288,7 +290,7 @@ class DefaultLibraryTest(unittest.TestCase):
 
     def test_every_supported_model_has_a_lossless_fallback(self) -> None:
         for temperature in (300.0, 350.0):
-            result = mat.emit_materials(mat.default_models_par_path(), active_models=self.ALL_MODELS,
+            result = mat.emit_materials(mat.default_models_par_path(), constants_profile="codata2018", active_models=self.ALL_MODELS,
                                         temperature_K=temperature, mesh_materials=["Si"])
             self.assertEqual([], result.report["lossy"], temperature)
             self.assertNotIn("unmapped", result.report["counts"])
@@ -306,7 +308,7 @@ class DefaultLibraryTest(unittest.TestCase):
     def test_builtin_snapshot_matches_emitter(self) -> None:
         """Catch2 consumes this fixture to check actual C++ defaults in both unit systems."""
         snapshot = json.loads(gen.MATERIALS_OUTPUT.read_text(encoding="utf-8"))
-        emitted = mat.emit_materials(mat.default_models_par_path(), active_models=[], temperature_K=300.0,
+        emitted = mat.emit_materials(mat.default_models_par_path(), constants_profile="codata2018", active_models=[], temperature_K=300.0,
                                      mesh_materials=["Si", "SiO2"], benchmark="builtin:300K")
         self.assertEqual(emitted.materials, snapshot)
         self.assertEqual([], sv.collect_errors(SCHEMA, snapshot))
@@ -327,7 +329,7 @@ class DefaultLibraryTest(unittest.TestCase):
             self.assertEqual(1, gen.main(["--output", str(par), "--check"]))
 
     def test_partial_user_file_falls_back_per_parameter(self) -> None:
-        result = mat.emit_materials(BV_PAR, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "SiO2"])
+        result = mat.emit_materials(BV_PAR, constants_profile="codata2018", active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "SiO2"])
         si_report = next(m for m in result.report["materials"] if m["name"] == "Si")
         self.assertFalse(si_report["defined_in_parameter_file"])
         self.assertEqual(["user_global", "vela_default"], si_report["sections"]["Scharfetter"]["origins"])
@@ -512,10 +514,14 @@ class ContractTest(unittest.TestCase):
 
     def test_constants_match_physical_constants_header(self) -> None:
         header = (REPO / "include" / "vela" / "core" / "PhysicalConstants.h").read_text(encoding="utf-8")
-        for name, key in (("kb", "kb_J_per_K"), ("q", "q_C"), ("h", "h_J_s"), ("m0", "m0_kg")):
-            match = re.search(r"constexpr double " + name + r"\s*=\s*([\d.eE+-]+)", header)
-            self.assertIsNotNone(match, name)
-            self.assertEqual(float(match[1]), mat.CONSTANTS[key], name)
+        native, default = header.split("#else", 1)
+        for profile, branch in (("codata2018", default), ("sentaurus_u2022_12", native)):
+            c = mat.physical_constants(profile)
+            for name, key in (("kb", "kb_J_per_K"), ("q", "q_C"), ("h", "h_J_s"),
+                              ("m0", "m0_kg"), ("eps0", "eps0_F_per_m")):
+                match = re.search(r"constexpr double " + name + r"\s*=\s*([\d.eE+-]+)", branch)
+                self.assertIsNotNone(match, (profile, name))
+                self.assertEqual(float(match[1]), c[key], (profile, name))
 
     def test_active_models_from_all_goldens(self) -> None:
         expected = {
@@ -575,6 +581,44 @@ class CliTest(unittest.TestCase):
             self.assertIn("E303", proc.stderr)
             proc = self.run_cli("--par", str(BV_PAR), "--out", str(out))
             self.assertEqual(2, proc.returncode)
+
+
+class ConstantsProfilesTest(unittest.TestCase):
+    def test_default_emission_uses_compatible_constants_and_matching_scalars(self):
+        ir = _ir(IV_IR)
+        actual = mat.emit_materials(PN2D_PAR, active_models=mat.active_models_from_ir(ir),
+            temperature_K=300., mesh_materials=["Si"], effective_models=ir["physics"]["effective"])
+        expected = _emit(PN2D_PAR, IV_IR, constants_profile="sentaurus_u2022_12")
+        self.assertEqual(actual.materials, expected.materials)
+
+
+    def test_native_formula1_and_no_global_state(self):
+        original = _emit(PN2D_PAR, IV_IR)
+        native = _emit(PN2D_PAR, IV_IR, constants_profile="sentaurus_u2022_12")
+        si = _material(native, "Si")
+        self.assertAlmostEqual(si["conduction_band_density_of_states_cm3"] / 2.8582520073866555e19, 1, places=13)
+        self.assertAlmostEqual(si["valence_band_density_of_states_cm3"] / 3.1046289324748374e19, 1, places=13)
+        self.assertAlmostEqual(si["intrinsic_carrier_density_cm3"] / 14638805412.559155, 1, places=13)
+        self.assertEqual("sentaurus_u2022_12", native.materials["physical_constants_profile"])
+        self.assertEqual([], sv.collect_errors(SCHEMA, native.materials))
+        self.assertEqual(original.materials, _emit(PN2D_PAR, IV_IR).materials)
+        self.assertEqual(1.602192e-19, mat.CONSTANTS["q_C"])
+        self.assertEqual(mat.physical_constants("sentaurus_u2022_12"), mat.physical_constants())
+        with self.assertRaisesRegex(ValueError, "Unknown physical constants"):
+            _emit(PN2D_PAR, IV_IR, constants_profile="typo")
+
+    def test_both_builtin_snapshots_are_reproducible(self):
+        par = mat.default_models_par_path()
+        for profile, filename in (("codata2018", "default_materials.json"),
+                                  ("sentaurus_u2022_12", "default_materials_sentaurus_u2022_12.json")):
+            actual = json.loads(gen.render_materials(par, profile))
+            self.assertEqual(actual, json.loads(par.with_name(filename).read_text(encoding="utf-8")))
+            self.assertEqual([], sv.collect_errors(SCHEMA, actual))
+
+    def test_profile_dictionary_cannot_mutate_next_emission(self):
+        copy = mat.physical_constants("sentaurus_u2022_12")
+        copy["q_C"] = 0
+        self.assertEqual(1.602192e-19, mat.physical_constants("sentaurus_u2022_12")["q_C"])
 
 
 if __name__ == "__main__":

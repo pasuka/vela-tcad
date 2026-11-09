@@ -91,3 +91,12 @@ reference_tcad/pn2d_sentaurus2018/source/*.plt
 reference_tcad/pn2d_sentaurus2018/source/*.log
 reference_tcad/pn2d_sentaurus2018/source/*.grd
 reference_tcad/pn2d_sentaurus2018/source/*.dat
+
+# TCAD raw validation evidence is local-only (including evaluated logs).
+*.[tT][dD][rR]
+*.[lL][oO][gG]
+*.[lL][oO][gG].*
+reference_tcad/**/artifacts/*.stdout.txt
+reference_tcad/**/artifacts/*.stderr.txt
+reference_tcad/**/artifacts/*.version.txt
+reference_tcad/**/artifacts/*.exit_code.txt

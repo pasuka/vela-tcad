@@ -14,11 +14,14 @@
 #include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/QfBoundsGuard.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/simulation/DCSweepExperiment.h"
+#include "vela/simulation/AdaptiveVoltageStepControl.h"
 #include "vela/post/TerminalCharge.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -1332,6 +1335,12 @@ TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops 
     {std::ofstream f(path); f<<cfg.dump(2);}
     const auto result=DCSweep().runWithResult(path.string());
     REQUIRE(result.points.size()>=3);
+    for(const auto& point:result.points) {
+        const auto diagnostic=nlohmann::json::parse(point.validationDiagnostics);
+        REQUIRE(diagnostic.at("external_step_control")=="quasistationary");
+        REQUIRE_FALSE(diagnostic.at("newton_inner_voltage_limit_enabled").get<bool>());
+        REQUIRE(diagnostic.at("predicted_inner_step_limit_V")==0.);
+    }
     REQUIRE(result.points.back().outerVoltage_V==Catch::Approx(.02));
     for(std::size_t i=1;i+1<result.points.size();++i) {
         const auto& p=result.points[i];
@@ -1349,6 +1358,32 @@ TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops 
     {std::ofstream f(path); f<<cfg.dump(2);}
     const auto stopped=DCSweep().runWithResult(path.string());
     REQUIRE(stopped.points.size()<result.points.size());
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="report";
+    cfg["sweep"]["external_circuit"]["residual_tolerance_V"]=1e-30;
+    cfg["sweep"]["external_circuit"]["coupled_update_convergence"]={{"mode","enforce"}};
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    const auto reported=DCSweep().runWithResult(path.string());
+    REQUIRE(reported.points.size()>=2);
+    for(const auto& point:reported.points) {
+        const auto d=nlohmann::json::parse(point.validationDiagnostics);
+        REQUIRE(d.at("load_line_convergence_mode")=="report");
+        REQUIRE_FALSE(d.at("load_line_enforced").get<bool>());
+        REQUIRE(d.at("terminal_kcl_satisfied").get<bool>());
+        if(!d.at("actual_load_line_satisfied").get<bool>()) {
+            REQUIRE(d.at("density_update_valid").get<bool>());
+            REQUIRE(d.at("density_update_rms").get<Real>()<1.);
+        }
+    }
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="invalid";
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    REQUIRE_THROWS_WITH(DCSweep().runWithResult(path.string()),
+        Catch::Matchers::ContainsSubstring("load_line_convergence_mode"));
+    cfg["sweep"]["external_circuit"]["load_line_convergence_mode"]="report";
+    cfg["sweep"]["external_circuit"].erase("coupled_update_convergence");
+    cfg["sweep"]["external_circuit"]["solver"]="nested_scalar";
+    {std::ofstream f(path);f<<cfg.dump(2);}
+    REQUIRE_THROWS_WITH(DCSweep().runWithResult(path.string()),
+        Catch::Matchers::ContainsSubstring("report requires coupled_newton"));
 }
 
 TEST_CASE("DCSweep: coupled scalar convergence cannot mask failed physical closure",
@@ -1382,7 +1417,7 @@ TEST_CASE("DCSweep: coupled scalar convergence cannot mask failed physical closu
          {"initial_state_file", statePath.string()},
          {"external_circuit", {{"mode", "series_resistor"}, {"solver", "coupled_newton"},
              {"resistance_ohm_um", 1e7}, {"coupled_equation_tolerance", 1e100},
-             {"residual_tolerance_V", 1e100}}}},
+             {"residual_tolerance_V", 1e100}, {"load_line_convergence_mode", "report"}}}},
         {{"method", "newton"}, {"warm_start", true}, {"recombination", {"srh"}},
          {"global_continuity_closure", {{"mode", "enforce"}, {"tolerance", .01}, {"source_floor", 1e-30}}}});
     REQUIRE_THROWS_WITH(DCSweep().runWithResult(config.string()),
@@ -6454,6 +6489,13 @@ TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure tr
     std::ofstream(cfgPath) << cfg.dump(2);
 
     DCSweep sweep;
+    if (constants::profileName != "codata2018") {
+        // This is a sealed CODATA trajectory, not a material conversion test.
+        // Preserve its data; compatible builds must reject mixing profiles.
+        REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring("Physical constants profile mismatch"));
+        return;
+    }
     const DCSweepResult result = sweep.runWithResult(cfgPath.string());
     REQUIRE(result.points.size() == 1);
     REQUIRE_FALSE(result.points.front().converged);
@@ -6798,6 +6840,99 @@ TEST_CASE("DCSweep: hybrid fallback can accept converged Gummel when Newton fail
     REQUIRE(point.newtonIterations == 0);
 }
 
+TEST_CASE("DCSweep: hybrid fallback rejects non-converged Gummel when Newton fails",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_nonconverged_fallback.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", -1.0},
+        {"stop", -1.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"reltol", 0.0},
+        {"abstol", 0.0},
+        {"handoff", {
+            {"fallback", "gummel_on_newton_failure"},
+            {"require_gummel_convergence", false},
+            {"gummel_max_iter", 1},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.handoffStage == "gummel_fallback_rejected");
+    REQUIRE(point.failureReason == "gummel_non_convergence");
+    REQUIRE(point.gummelIterations == 1);
+    REQUIRE(point.newtonIterations == 0);
+}
+
+TEST_CASE("DCSweep: global continuity report mode is observationally pure",
+          "[dc_sweep][newton][global_continuity_closure]")
+{
+    const auto offDir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup offCleanup{offDir};
+    std::filesystem::create_directories(offDir);
+    const auto reportDir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup reportCleanup{reportDir};
+    std::filesystem::create_directories(reportDir);
+
+    auto run = [](const std::filesystem::path& dir, const std::string& mode) {
+        const auto meshPath = writePNMesh(dir);
+        const auto csvPath = dir / (mode + ".csv");
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"start", 0.0},
+            {"stop", -0.05},
+            {"step", -0.05},
+            {"write_vtk", false}
+        }, {
+            {"method", "gummel_newton"},
+            {"max_iter", 40},
+            {"reltol", 1.0e-8},
+            {"abstol", 1.0e-18},
+            {"damping_psi", 0.2},
+            {"line_search", true},
+            {"warm_start", true},
+            {"global_continuity_closure", {
+                {"mode", mode}, {"tolerance", 0.01}, {"source_floor", 1.0e-14}
+            }},
+            {"handoff", {
+                {"fallback", "none"},
+                {"require_gummel_convergence", false},
+                {"gummel_max_iter", 0},
+                {"newton_max_iter", 40}
+            }},
+            {"verbose", false}
+        });
+        DCSweep sweep;
+        return sweep.runWithResult(cfgPath.string());
+    };
+
+    const DCSweepResult off = run(offDir, "off");
+    const DCSweepResult report = run(reportDir, "report");
+    REQUIRE(off.points.size() == report.points.size());
+    REQUIRE_FALSE(off.points.empty());
+    for (std::size_t i = 0; i < off.points.size(); ++i) {
+        REQUIRE(off.points[i].converged);
+        REQUIRE(report.points[i].converged);
+        CHECK(report.points[i].newtonIterations == off.points[i].newtonIterations);
+        CHECK(report.points[i].totalCurrent ==
+              Catch::Approx(off.points[i].totalCurrent).margin(1.0e-24));
+    }
+}
+
 TEST_CASE("DCSweep: hybrid handoff has separate Gummel and Newton iteration budgets",
           "[dc_sweep][gummel_newton]")
 {
@@ -6953,4 +7088,73 @@ TEST_CASE("DCSweep: positive density circuit trials require coupled Newton",
     DCSweep sweep;
     REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
         Catch::Matchers::ContainsSubstring("coupled_positive_density_updates requires"));
+}
+
+TEST_CASE("External resistor step policy distinguishes native and explicit inner guards", "[dc_sweep][quasistationary]") {
+    using detail::externalResistorStepControl;
+    nlohmann::json c={{"solver","coupled_newton"}};
+    REQUIRE(externalResistorStepControl(c)=="quasistationary");
+    c["max_inner_voltage_step_V"]=.5;
+    REQUIRE(externalResistorStepControl(c)=="legacy_inner_guard");
+    c["coupled_step_control"]="quasistationary";
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+    c.erase("max_inner_voltage_step_V");
+    c["coupled_continuation"]={{"enabled",true}};
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+    c["coupled_step_control"]="legacy_inner_guard";
+    REQUIRE(externalResistorStepControl(c)=="legacy_inner_guard");
+    c["coupled_step_control"]="unknown";
+    REQUIRE_THROWS_AS(externalResistorStepControl(c),std::invalid_argument);
+}
+
+TEST_CASE("Quasistationary failed outer steps stop when division crosses MinStep", "[dc_sweep][quasistationary]") {
+    detail::DCSweepStepControlConfig c;
+    c.start=0.;c.stop=1.;c.step=1.;c.initialStep=.3;c.minStep=.1;c.maxStep=1.;c.shrinkFactor=.5;c.maxRetries=20;c.stopBelowMinimum=true;
+    std::vector<Real> attempted;
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(c,[&](Real,Real step,int){attempted.push_back(step);return false;},[&](const auto& e){events.push_back(e);});
+    REQUIRE(attempted.size()==2);
+    REQUIRE(attempted[0]==Catch::Approx(.3));
+    REQUIRE(attempted[1]==Catch::Approx(.15));
+    REQUIRE(events.back().failureReason=="min_step_exhausted");
+    REQUIRE_FALSE(events.back().converged);
+}
+
+
+TEST_CASE("Attempt observers see failed clipped trials without changing the controller",
+          "[dc_sweep][step_control][experiment]") {
+    detail::DCSweepStepControlConfig c;c.start=0.;c.stop=.2;c.step=.2;c.initialStep=.3;
+    c.minStep=.01;c.maxStep=.3;c.growthFactor=1.;c.shrinkFactor=.5;c.maxRetries=4;
+    std::vector<Real> off,on;int calls=0;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){off.push_back(v);return detail::DCSweepStepAttemptResult(++calls>1,4);},[](const auto&){});
+    std::vector<detail::DCSweepStepControlEvent> observed;
+    c.attemptObserved=[&](const auto& event){observed.push_back(event);};calls=0;
+    detail::runDCSweepStepControl(c,[&](Real v,Real,int){on.push_back(v);return detail::DCSweepStepAttemptResult(++calls>1,4);},[](const auto&){});
+    REQUIRE(off==on);REQUIRE(observed.size()==on.size());REQUIRE(observed.size()==3);
+    REQUIRE_FALSE(observed.front().converged);REQUIRE(observed.front().targetClipped);
+    REQUIRE(observed.front().proposedStepMagnitude==Catch::Approx(.3));
+    REQUIRE(observed.front().nextStepMagnitude==Catch::Approx(.1));
+    REQUIRE(observed[1].retryCount==1);REQUIRE(observed.back().converged);
+}
+
+TEST_CASE("Experimental sweep scopes restore previous controls and packed bits",
+          "[dc_sweep][experiment]") {
+    using namespace experimental;
+    REQUIRE(activeDCSweepExperiment()==nullptr);
+    DCSweepExperiment first,second;first.reportModelQuality=true;
+    {
+        DCSweepExperimentScope a(first);REQUIRE(activeDCSweepExperiment()==&first);
+        {DCSweepExperimentScope b(second);REQUIRE(activeDCSweepExperiment()==&second);}
+        REQUIRE(activeDCSweepExperiment()==&first);
+    }
+    REQUIRE(activeDCSweepExperiment()==nullptr);
+    const auto file=std::filesystem::temp_directory_path()/("vela_experiment_packed_"+
+        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"_"+
+        std::to_string(std::random_device{}())+".bin");
+    VectorXd v(3);v<<std::nextafter(.1,1.),1e-200,-.0;
+    writePackedExperiment(file,v);const auto copy=readPackedExperiment(file.string());
+    REQUIRE(copy.size()==v.size());REQUIRE(std::memcmp(copy.data(),v.data(),v.size()*sizeof(Real))==0);
+    {std::ofstream corrupt(file,std::ios::binary);corrupt<<'x';}
+    REQUIRE_THROWS_AS(readPackedExperiment(file.string()),std::runtime_error);
+    std::filesystem::remove(file);
 }

@@ -117,6 +117,12 @@ add_custom_target(vela_sdevice_pyz ALL
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
 
+set(VELA_PHYSICAL_CONSTANTS_PROFILE "sentaurus_u2022_12" CACHE STRING "Physical constants contract: codata2018 or sentaurus_u2022_12")
+set_property(CACHE VELA_PHYSICAL_CONSTANTS_PROFILE PROPERTY STRINGS codata2018 sentaurus_u2022_12)
+if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE MATCHES "^(codata2018|sentaurus_u2022_12)$")
+    message(FATAL_ERROR "Unknown VELA_PHYSICAL_CONSTANTS_PROFILE: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
+endif()
+message(STATUS "Physical constants profile: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
 option(VELA_ENABLE_HDF5_STATE "Build required HDF5/HighFive restart storage" ON)
@@ -422,6 +428,12 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+if(VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12")
+    target_compile_definitions(vela_core PUBLIC VELA_CONSTANTS_SENT_U2022_12=1)
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials_sentaurus_u2022_12.json)
+else()
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials.json)
+endif()
 if(VELA_ENABLE_HDF5_STATE)
     if(NOT VELA_HDF5_TARGET)
         message(FATAL_ERROR "HDF5 state archives require a detected HDF5 library")
@@ -639,6 +651,10 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# Independent validation entry; experiment controls are not simulation-schema options.
+add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
+target_link_libraries(vela_bvmethods_experiment PRIVATE vela_core)
+
 # Explicit diagnostic build; not installed or included in normal builds.
 add_executable(vela_bvmethods_profile_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_profile_probe.cpp)
@@ -843,12 +859,24 @@ add_custom_target(check_ascii
     COMMENT "Checking tests/src/include for non-ASCII bytes"
     VERBATIM)
 
+add_test(NAME bvmethods_or_full_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_or_full.py)
+set_tests_properties(bvmethods_or_full_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(NAME bvmethods_stopping_counterfactual
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_stopping_counterfactual.py)
+set_tests_properties(bvmethods_stopping_counterfactual PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(NAME bvmethods_full_ablation_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_full_ablation.py)
+set_tests_properties(bvmethods_full_ablation_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_test(NAME ascii_sources
     COMMAND ${CMAKE_COMMAND}
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT})
 
-add_executable(test_scaling tests/test_scaling.cpp)
+add_executable(test_scaling tests/test_scaling.cpp tests/test_physical_constants.cpp)
 if(VELA_ENABLE_HDF5_STATE)
     add_executable(test_state_archive tests/test_state_archive.cpp)
     target_link_libraries(test_state_archive PRIVATE vela_core Catch2::Catch2WithMain)
@@ -875,7 +903,7 @@ target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_builtin_material_alignment tests/test_builtin_material_alignment.cpp)
 target_link_libraries(test_builtin_material_alignment PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_builtin_material_alignment PRIVATE
-    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/default_materials.json"
+    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/${VELA_DEFAULT_MATERIALS_NAME}"
     VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(test_poisson tests/test_poisson.cpp)
@@ -909,6 +937,12 @@ if(TARGET PkgConfig::VELA_MUMPS)
 endif()
 
 # Diagnostic replay of frozen Newton systems through the shared linear backend.
+add_executable(vela_physics_frozen_audit EXCLUDE_FROM_ALL scripts/diagnostics/physics_frozen_audit.cpp)
+target_link_libraries(vela_physics_frozen_audit PRIVATE vela_core)
+
+add_executable(vela_coupled_frozen_replay EXCLUDE_FROM_ALL scripts/diagnostics/coupled_frozen_replay.cpp)
+target_link_libraries(vela_coupled_frozen_replay PRIVATE vela_core)
+
 add_executable(linear_solver_replay EXCLUDE_FROM_ALL src/tools/linear_solver_replay.cpp)
 target_link_libraries(linear_solver_replay PRIVATE vela_core)
 add_executable(linear_solver_strategy_study EXCLUDE_FROM_ALL src/tools/linear_solver_strategy_study.cpp)
@@ -1080,7 +1114,10 @@ target_link_libraries(test_vtu_writer PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
 target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_coupled_load_line tests/test_coupled_load_line.cpp)
+add_executable(test_coupled_load_line
+    tests/test_coupled_load_line.cpp
+    tests/test_load_line_residual.cpp
+    tests/test_primary_variable_coordinates.cpp)
 target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2WithMain)
 
 # Header-only policy test: no solver rebuild or commercial inputs are needed.
@@ -1700,6 +1737,13 @@ add_test(NAME slot_population_acceptance
 set_tests_properties(slot_population_acceptance PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(slot_population_acceptance)
+add_test(NAME sentaurus2022_sde_fixture_oracle
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus2022_sde_fixture_vm
+            tests.regression.test_sentaurus2022_sde_oracle)
+set_tests_properties(sentaurus2022_sde_fixture_oracle PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus2022_sde_fixture_oracle)
 
 add_test(NAME templates_ldmos_phase01_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -1818,6 +1862,20 @@ set_tests_properties(sentaurus_sde_frontend PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_sde_frontend)
 
+add_test(NAME sentaurus2022_sde_semantics
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus2022_sde_semantics)
+set_tests_properties(sentaurus2022_sde_semantics PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus2022_sde_semantics)
+
+add_test(NAME sentaurus_device_e2e_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_device_e2e_contract)
+set_tests_properties(sentaurus_device_e2e_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_device_e2e_contract)
+
 add_test(NAME sentaurus_parameter_ir
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_parameter_ir)
@@ -1867,7 +1925,8 @@ set_tests_properties(sdevice_mesh_import PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_mesh_import)
 set_property(TEST sdevice_mesh_import APPEND PROPERTY ENVIRONMENT
-    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>"
+    "VELA_SENTAURUS_IMPORT=$<TARGET_FILE:sentaurus_import>")
 
 add_test(NAME sdevice_vela_launcher
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -2010,6 +2069,102 @@ set_tests_properties(sentaurus_mesh_builder PROPERTIES
 vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
 set_property(TEST sentaurus_mesh_builder APPEND PROPERTY ENVIRONMENT
     "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME gmsh_python_runtime
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_gmsh_runtime)
+set_tests_properties(gmsh_python_runtime PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(gmsh_python_runtime)
+
+add_test(NAME sentaurus_ir_v2_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_ir_v2_contract)
+set_tests_properties(sentaurus_ir_v2_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_ir_v2_contract)
+
+add_test(NAME sentaurus_gmsh_m1
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m1)
+set_tests_properties(sentaurus_gmsh_m1 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m1)
+
+add_test(NAME sentaurus_gmsh_m2
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m2)
+set_tests_properties(sentaurus_gmsh_m2 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m2)
+
+add_test(NAME sentaurus_gmsh_m3
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m3)
+set_tests_properties(sentaurus_gmsh_m3 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m3)
+
+add_test(NAME sentaurus_gmsh_m4
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m4)
+set_tests_properties(sentaurus_gmsh_m4 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m4)
+
+add_test(NAME sentaurus_gmsh_m5
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m5)
+set_tests_properties(sentaurus_gmsh_m5 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m5)
+
+add_test(NAME sentaurus_bjt_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_bjt_modeling)
+set_tests_properties(sentaurus_bjt_modeling PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_bjt_modeling)
+
+add_test(NAME sentaurus_mos_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_mos_modeling)
+set_tests_properties(sentaurus_mos_modeling PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS reference_sde_cases)
+vela_set_windows_msys2_test_path(sentaurus_mos_modeling)
+
+add_test(NAME sentaurus_bv_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_bv_modeling)
+set_tests_properties(sentaurus_bv_modeling PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS reference_sde_cases)
+vela_set_windows_msys2_test_path(sentaurus_bv_modeling)
+
+add_test(NAME sde_p6_package
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_p6_package)
+set_tests_properties(sde_p6_package PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_p6_package)
+
+add_test(NAME sde_integral_control
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_integral_control)
+set_tests_properties(sde_integral_control PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_integral_control)
+
+add_test(NAME sde_p6_validation
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_p6_validation)
+set_tests_properties(sde_p6_validation PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_p6_validation)
+
+add_test(NAME reference_sde_cases
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_reference_sde_cases)
+set_tests_properties(reference_sde_cases PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(reference_sde_cases)
+
+add_test(NAME sde_sdevice_checks
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_sdevice_checks)
+set_tests_properties(sde_sdevice_checks PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_sdevice_checks)
+set_property(TEST sde_sdevice_checks APPEND PROPERTY ENVIRONMENT
+    "VELA_SD_SIM=$<TARGET_FILE:sd-sim>")
 
 add_test(NAME sentaurus_reference_workflows
     COMMAND ${Python3_EXECUTABLE} -m unittest

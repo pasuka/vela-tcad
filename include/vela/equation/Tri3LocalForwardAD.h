@@ -89,11 +89,27 @@ inline Tri3LocalForwardDual dualAbs(const Tri3LocalForwardDual& operand)
     return Tri3LocalForwardDual{};
 }
 
+// A structural zero stays zero even when exp(x) is outside double range.
+// For nonzero finite directions, combine exponents before narrowing to avoid
+// losing a representable derivative to an intermediate overflow/underflow.
+inline Real dualExponentialDirection(Real x,Real exponential,Real direction)
+{
+    if(direction==0.)return 0.;
+    const Real ordinary=exponential*direction;
+    if(std::isfinite(ordinary) && ordinary!=0.)return ordinary;
+    if(std::isfinite(x) && std::isfinite(direction)) {
+        const long double magnitude=std::exp((long double)x+
+            std::log(std::abs((long double)direction)));
+        return std::copysign(static_cast<Real>(magnitude),direction);
+    }
+    return ordinary;
+}
+
 inline Tri3LocalForwardDual dualExp(const Tri3LocalForwardDual& operand)
 {
     Tri3LocalForwardDual result(std::exp(operand.value));
     for (std::size_t i = 0; i < result.derivative.size(); ++i)
-        result.derivative[i] = result.value * operand.derivative[i];
+        result.derivative[i] = dualExponentialDirection(operand.value,result.value,operand.derivative[i]);
     return result;
 }
 
@@ -102,7 +118,7 @@ inline Tri3LocalForwardDual dualExpm1(const Tri3LocalForwardDual& operand)
     Tri3LocalForwardDual result(std::expm1(operand.value));
     const Real slope = std::exp(operand.value);
     for (std::size_t i = 0; i < result.derivative.size(); ++i)
-        result.derivative[i] = slope * operand.derivative[i];
+        result.derivative[i] = dualExponentialDirection(operand.value,slope,operand.derivative[i]);
     return result;
 }
 

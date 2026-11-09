@@ -94,6 +94,11 @@ TEST_CASE("Legacy population coordinates retain classical SLOT models and physic
     const auto y=pa.packPopulation(state.psi*scale,n,h);
     REQUIRE(pa.electronDensity(y)==n);REQUIRE(pa.holeDensity(y)==h);
     const auto restored=pa.unpack(y);REQUIRE(restored.n==n);REQUIRE(restored.p==h);
+    const auto fields=pa.populationPhysicalFields(y);
+    CHECK(fields.psi_V==restored.psi*scale);
+    CHECK(fields.phin_V==restored.phin*scale);
+    CHECK(fields.phip_V==restored.phip*scale);
+    CHECK(fields.n==n);CHECK(fields.p==h);
     CoupledDDBoundaryConditions bc;bc.psi[0]=state.psi[0];bc.phin[0]=state.phin[0];bc.phip[0]=state.phip[0];
     const VectorXd a=qa.residual(x,bc),b=pa.residual(y,bc);
     for(int block=0;block<3;++block) {
@@ -233,4 +238,22 @@ TEST_CASE("Legacy population contact and load-line directions include one indepe
             CHECK(std::abs(fdCircuit-circuit)/std::max(1e-30,std::abs(circuit))<3e-4);
         }
     }
+}
+
+TEST_CASE("Main population defaults remain scoped to BVMethods", "[legacy_population][config]") {
+    const auto legacy=newtonConfigFromJson({{"coupled_operator","legacy"},
+        {"state_variables","potential_density"},
+        {"carrier_statistics",{{"model","boltzmann"}}}});
+    CHECK(legacy.primaryVariableCoordinates=="physical");
+    CHECK(legacy.populationStoppingRule=="legacy");
+    CHECK(legacy.populationDerivativeRecovery=="full");
+    CHECK(legacy.populationMinimumDensity_cm3==0.);
+    CHECK(legacy.populationWriteback=="independent");
+    const auto bv=newtonConfigFromJson({{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}}});
+    CHECK(bv.stateVariables=="potential_density");
+    CHECK(bv.primaryVariableCoordinates=="unit");
+    CHECK(bv.populationStoppingRule=="native_approx");
+    CHECK(bv.populationDerivativeRecovery=="after_protection");
+    CHECK(bv.populationMinimumDensity_cm3==1e-100);
 }

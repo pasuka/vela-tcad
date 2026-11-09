@@ -9,6 +9,13 @@
 
 namespace vela {
 
+struct ClassicalAugerProduct {
+    Real value=0.,dN=0.,dP=0.;
+};
+// The existing population saturation is part of the value function. At its
+// kink use the inactive-side derivative, consistently with the excess limiter.
+ClassicalAugerProduct classicalAugerProduct(Real n,Real p,Real ni);
+
 struct RecombinationRateDerivatives {
     Real dRateDn = 0.0;      ///< Partial derivative at fixed excess product [s^-1]
     Real dRateDp = 0.0;      ///< Partial derivative at fixed excess product [s^-1]

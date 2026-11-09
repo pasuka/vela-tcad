@@ -1,4 +1,5 @@
 #include "vela/core/UnitScaling.h"
+#include "vela/core/PhysicalConstants.h"
 
 #include <nlohmann/json.hpp>
 #include <cstdint>
@@ -298,6 +299,8 @@ nlohmann::json canonicalizeDeck(const nlohmann::json& cfg)
 
 UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg)
 {
+    if (cfg.contains("physical_constants_profile"))
+        constants::requireProfile(cfg.at("physical_constants_profile").get<std::string>());
     const bool hasNormalization = cfg.is_object() && cfg.contains("solver") &&
         cfg.at("solver").is_object() && cfg.at("solver").contains("normalization");
 

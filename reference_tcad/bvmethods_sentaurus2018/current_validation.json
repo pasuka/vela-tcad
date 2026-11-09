@@ -1,0 +1,16 @@
+{
+  "schema": "vela.reference_tcad.current_validation.v1",
+  "version": "u2022_12_20261109",
+  "manifest": "u2022_12_20261109/manifest.json",
+  "manifest_sha256": "18036095e153294f9fc09d9f393a3e25d3d87ba44790c7cabf957211cd479447",
+  "comparison": "u2022_12_20261109/comparison.json",
+  "report": "../../docs/validation/bvmethods_production_closure_2026-11-09.md",
+  "integration_commit": "77a889a95b87f6a17c7a5943c135a0b9d04cf6b0",
+  "native_store_registration_updated": false,
+  "legacy": {
+    "artifact_manifest": "artifact_manifest.json",
+    "version": "v4",
+    "reference_inventory": "bvmethods_sentaurus2018_reference.json",
+    "tree_at_integration_commit": "6a55f373966ec6c9bc1120cc2cea35542f77cc3b"
+  }
+}

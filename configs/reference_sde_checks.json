@@ -1,0 +1,255 @@
+{
+  "schema": "vela.reference_sde_checks.v1",
+  "cases": [
+    {
+      "id": "pn2d_0v",
+      "mesh_case": "pn2d",
+      "command": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_0v_sdevice.cmd",
+        "sha256_lf": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d"
+      },
+      "parameter": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+        "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium"
+      ],
+      "expected_materials": [
+        "Si"
+      ],
+      "contacts": {
+        "Anode": {
+          "type": "ohmic"
+        },
+        "Cathode": {
+          "type": "ohmic"
+        }
+      }
+    },
+    {
+      "id": "pn2d_iv",
+      "mesh_case": "pn2d",
+      "command": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
+        "sha256_lf": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17"
+      },
+      "parameter": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+        "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si"
+      ],
+      "contacts": {
+        "Anode": {
+          "type": "ohmic"
+        },
+        "Cathode": {
+          "type": "ohmic"
+        }
+      }
+    },
+    {
+      "id": "pn2d_bv",
+      "mesh_case": "pn2d",
+      "command": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd",
+        "sha256_lf": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162"
+      },
+      "parameter": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/models.par",
+        "sha256_lf": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": {
+        "path": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.vela.json",
+        "sha256_lf": "c4dede17cf459d843c180d70ba0ed2e8be80f27bc74fa4abb4fc67b69b2bece4"
+      },
+      "stage_kinds": [
+        "equilibrium",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si"
+      ],
+      "contacts": {
+        "Anode": {
+          "type": "ohmic"
+        },
+        "Cathode": {
+          "type": "ohmic"
+        }
+      }
+    },
+    {
+      "id": "gate_barrier_zero",
+      "mesh_case": "gate_reference",
+      "command": {
+        "path": "reference_tcad/gate_reference/source/barrier_zero_sdevice.cmd",
+        "sha256_lf": "bbecba8dfdca209a509b9bda4a8fa73e04c9463b89dc9afd8f8d0fc28d048423"
+      },
+      "parameter": {
+        "path": "reference_tcad/gate_reference/source/models.par",
+        "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si",
+        "SiO2"
+      ],
+      "contacts": {
+        "substrate": {
+          "type": "ohmic"
+        },
+        "gate": {
+          "type": "metal_gate",
+          "work_function_eV": 0.0
+        }
+      }
+    },
+    {
+      "id": "gate_barrier_positive",
+      "mesh_case": "gate_reference",
+      "command": {
+        "path": "reference_tcad/gate_reference/source/barrier_positive_sdevice.cmd",
+        "sha256_lf": "5a04fc5d82afa78f6b062fc80ebfadf2edc26f48d6922045eb850bd2d6544197"
+      },
+      "parameter": {
+        "path": "reference_tcad/gate_reference/source/models.par",
+        "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si",
+        "SiO2"
+      ],
+      "contacts": {
+        "substrate": {
+          "type": "ohmic"
+        },
+        "gate": {
+          "type": "metal_gate",
+          "work_function_eV": 0.55
+        }
+      }
+    },
+    {
+      "id": "gate_barrier_negative",
+      "mesh_case": "gate_reference",
+      "command": {
+        "path": "reference_tcad/gate_reference/source/barrier_negative_sdevice.cmd",
+        "sha256_lf": "2ccf792fd2b5fddafb639247e9efd0f5b78a00134eb57c5a0151cfd8a1cf3f9d"
+      },
+      "parameter": {
+        "path": "reference_tcad/gate_reference/source/models.par",
+        "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si",
+        "SiO2"
+      ],
+      "contacts": {
+        "substrate": {
+          "type": "ohmic"
+        },
+        "gate": {
+          "type": "metal_gate",
+          "work_function_eV": -0.3
+        }
+      }
+    },
+    {
+      "id": "gate_workfunction",
+      "mesh_case": "gate_reference",
+      "command": {
+        "path": "reference_tcad/gate_reference/source/workfunction_sdevice.cmd",
+        "sha256_lf": "0f6e9d761cede363f66b8f73e8393292e4ac704168ac119d879ed1593561bae4"
+      },
+      "parameter": {
+        "path": "reference_tcad/gate_reference/source/models.par",
+        "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+        "policy": "reference_parameter_file"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si",
+        "SiO2"
+      ],
+      "contacts": {
+        "substrate": {
+          "type": "ohmic"
+        },
+        "gate": {
+          "type": "metal_gate",
+          "work_function_eV": -0.022740384615384635
+        }
+      }
+    },
+    {
+      "id": "schottky",
+      "mesh_case": "schottky",
+      "command": {
+        "path": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_des.cmd",
+        "sha256_lf": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+      },
+      "parameter": {
+        "path": "share/vela/materials/models.par",
+        "sha256_lf": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+        "policy": "explicit_default_for_check_only"
+      },
+      "sidecar": null,
+      "stage_kinds": [
+        "equilibrium",
+        "sweep"
+      ],
+      "expected_materials": [
+        "Si"
+      ],
+      "contacts": {
+        "anode": {
+          "type": "schottky",
+          "emission_model": "thermionic_robin",
+          "work_function_eV": 4.75,
+          "electron_surface_recombination_velocity_cm_per_s": 4910000.0,
+          "hole_surface_recombination_velocity_cm_per_s": 2740000.0
+        },
+        "cathode": {
+          "type": "ohmic"
+        }
+      }
+    }
+  ]
+}

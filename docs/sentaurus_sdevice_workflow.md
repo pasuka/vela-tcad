@@ -610,3 +610,45 @@ schema 之外、golden 夹具所依赖的确定性规则：
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
   阶段 1 维持拒绝。
 - C5 新增键已由 WP6 回填第 2.6 节；C6 的 `time` 语义与符号因子由 WP10 回填第 3.3 节（C3 见第 2.4 节）。
+
+
+### Explicit physical constants compatibility
+
+The frontend/fresh-build default is Sentaurus U-2022.12; explicit CODATA2018 preserves historical reproduction. Use
+`vela device <deck.cmd> --physical-constants-profile sentaurus_u2022_12`
+with the corresponding CMake build to regenerate material densities. A different
+solver profile rejects those materials. See
+[physical constants profiles](config_schema.md#physical-constants-profiles)
+for values, metadata and the untagged-material policy.
+
+### BVMethods population defaults
+
+The explicit BVMethods operator profile emits potential/density primaries,
+Unit Newton coordinates, local 1% nonpositive-population protection and a
+1e-100 cm^-3 floor. Each target starts with Full derivatives. A protected
+accepted write triggers mobility/AV derivative omission on the next
+linearization; the physical RHS and SRH derivatives remain live.
+
+`population_stopping_rule: native_approx` uses physical update error E<1 OR
+the diagnostic mapped RHS norm<1e-5. The map remains limited to the frozen
+reference normalization; outside that domain only valid E can stop. This
+does not claim native RHSMin equivalence. Independent work-point quality
+is reported; nonfinite and linear precision rejection remain enforced.
+
+The effective Coupled stage's Iterations overrides Math for the external
+resistor budget and adaptive increment. Digits and carrier ErrRef populate
+its update metric, with explicit sidecar controls taking precedence.
+Absolute update control is unsupported by native_approx and fails conversion.
+RhsMin and RhsAndUpdateConvergence remain recorded, not general mappings to
+the diagnostic rule. Explicit physical coordinates/legacy stopping/full
+derivatives or QF state preserve rollback paths. Other operator defaults and
+the PN2D discretization bundle remain separate.
+
+The maintainer snapshot generator `generate_default_models_par.py` retains
+its historical CODATA snapshot default; pass its explicit compatibility
+profile to generate the separately named compatible snapshot. User-facing
+material emission defaults to compatibility and never retags old scalars.
+
+An explicit sidecar sweep.vtk_fields may project unsupported BV Plot diagnostics
+to the five schema-listed basic-state fields. The nonempty, unique selection
+is recorded with W207; it does not qualify omitted current/source exports.

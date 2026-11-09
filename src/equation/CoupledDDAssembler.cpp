@@ -1265,8 +1265,12 @@ CoupledDDAssembler::fixedJacobianOffset(int row, int col) const
 VectorXd CoupledDDAssembler::pack(const CoupledDDState& state) const
 {
     if (usesPopulationState()) {
-        const Real scale=scaling_.enabled ? scaling_.V0 : 1.;
-        return packPopulation((state.psi*scale).eval(),state.n,state.p);
+        const int n=mesh_.numNodes();
+        if(state.psi.size()!=n || state.n.size()!=n || state.p.size()!=n)
+            throw std::invalid_argument("invalid normalized population pack contract");
+        VectorXd x(3*n);x.head(n)=state.psi;x.segment(n,n)=state.n;x.tail(n)=state.p;
+        (void)populationPhysicalFields(x);
+        return x;
     }
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N)
@@ -1333,6 +1337,33 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
             + holeQuasiFermiReferenceAt(node) / potentialScale;
     }
     return state;
+}
+
+PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const VectorXd& x) const {
+    const int n=mesh_.numNodes();
+    if(!usesPopulationState() || x.size()!=3*n)
+        throw std::invalid_argument("invalid population physical-field contract");
+    if(!x.allFinite())throw std::domain_error("nonfinite population state");
+    if (!usesBvMethodsOperator()) {
+        const auto state=unpack(x);
+        const Real potentialScale=scaling_.enabled?scaling_.V0:1.;
+        return {state.psi*potentialScale,state.phin*potentialScale,
+                state.phip*potentialScale,state.n,state.p};
+    }
+    PopulationPhysicalFields s;
+    s.psi_V=x.head(n)*(scaling_.enabled?scaling_.V0:1.);
+    s.n=x.segment(n,n);s.p=x.tail(n);
+    s.phin_V=VectorXd::Zero(n);s.phip_V=VectorXd::Zero(n);
+    for(int i=0;i<n;++i) {
+        if(ni_[i]<=0.) {
+            if(s.n[i]!=0. || s.p[i]!=0.)throw std::domain_error("inactive population slots must be zero");
+            continue;
+        }
+        if(!(s.n[i]>0.) || !(s.p[i]>0.))throw std::domain_error("positive population state required");
+        s.phin_V[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],s.psi_V[i],s.n[i],Vt_,carrierStatistics_);
+        s.phip_V[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],s.psi_V[i],s.p[i],Vt_,carrierStatistics_);
+    }
+    return s;
 }
 
 VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd& n,
@@ -4250,21 +4281,18 @@ CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real
     const Real dNormalizedSplitting[3] = {
         Real{0.0}, -1.0 / Vt_, 1.0 / Vt_};
 
-    const auto excessDerivative = [&](
-        const GeneralizedSrhCarrierState& state,
-        Real dGammaN,
-        Real dGammaHole,
-        Real dSplitting) {
-        const Real normalized = std::clamp(
-            dPhi / Vt_, Real{-500.0}, Real{500.0});
-        const Real dEquilibrium = ni * ni * (
-            state.holeDegeneracy * dGammaN +
-            state.electronDegeneracy * dGammaHole);
-        const Real activeSplittingDerivative =
-            std::abs(dPhi / Vt_) < 500.0 ? dSplitting : Real{0.0};
-        return dEquilibrium * std::expm1(normalized) +
-            state.equilibriumProduct * std::exp(normalized) *
-            activeSplittingDerivative;
+    const auto logDegeneracyDerivativeEta=[&](Real density,Real slope) {
+        return usesFermiDirac_ && density>0.?slope/density-1.:0.;
+    };
+    const Real lnN=logDegeneracyDerivativeEta(nSrh,dnSrhDeta)/Vt_;
+    const Real lnA=logDegeneracyDerivativeEta(nValue,dnDeta)/Vt_;
+    const Real lnP=logDegeneracyDerivativeEta(pValue,dpDeta)/Vt_;
+    const Real dLogGammaNSrh[3]={lnN,-lnN,0.};
+    const Real dLogGammaNAuger[3]={lnA,-lnA,0.};
+    const Real dLogGammaP[3]={-lnP,0.,lnP};
+    const auto excessDerivative = [&](const GeneralizedSrhCarrierState& state,
+        Real dLogN,Real dLogP,Real dSplitting) {
+        return generalizedSrhExcessDirectionalDerivative(state,dLogN,dLogP,dSplitting);
     };
 
     const auto srhDerivatives =
@@ -4273,24 +4301,24 @@ CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real
             srhState.electronDegeneracy,
             srhState.holeDegeneracy,
             dopingConcentration);
+    const auto classicalAuger=classicalAugerProduct(nValue,pValue,ni);
     const Real augerExcessProduct =
         recombination_.usesClassicalAugerExcessProduct()
-        ? nValue * pValue - ni * ni
+        ? classicalAuger.value
         : augerState.excessProduct;
     const auto augerDerivatives =
         recombination_.augerRateDerivativesFromExcessProduct(
             augerExcessProduct, nValue, pValue);
-    const Real recombinationRate = nodeRecombinationRate(
-        i, nValue, nSrh, pValue, dPhi, &srhState, &augerState);
+    const Real recombinationRate = nodeRecombinationRate(i,nValue,nSrh,pValue,dPhi,&srhState,&augerState);
     for (int k = 0; k < 3; ++k) {
         Real derivative = 0.0;
         if (recombination_.srhEnabled()) {
             const Real dExcess = excessDerivative(
-                srhState, dGammaNSrh[k], dGammaP[k],
+                srhState, dLogGammaNSrh[k], dLogGammaP[k],
                 dNormalizedSplitting[k]);
             derivative += srhDerivatives.dRateDn * dnSrh[k]
                 + srhDerivatives.dRateDp * dp[k]
-                + srhDerivatives.dRateDExcess * dExcess
+                + (srhDerivatives.dRateDExcess == 0. ? 0. : srhDerivatives.dRateDExcess * dExcess)
                 + srhDerivatives.dRateDElectronDegeneracy *
                     dGammaNSrh[k]
                 + srhDerivatives.dRateDHoleDegeneracy * dGammaP[k];
@@ -4298,18 +4326,19 @@ CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real
         if (recombination_.augerEnabled()) {
             const Real dExcess =
                 recombination_.usesClassicalAugerExcessProduct()
-                ? pValue * dnTransport[k] + nValue * dp[k]
+                ? classicalAuger.dN * dnTransport[k] + classicalAuger.dP * dp[k]
                 : excessDerivative(
-                    augerState, dGammaNAuger[k], dGammaP[k],
+                    augerState, dLogGammaNAuger[k], dLogGammaP[k],
                     dNormalizedSplitting[k]);
             derivative += augerDerivatives.dRateDn * dnTransport[k]
                 + augerDerivatives.dRateDp * dp[k]
-                + augerDerivatives.dRateDExcess * dExcess;
+                + (augerDerivatives.dRateDExcess == 0. ? 0. : augerDerivatives.dRateDExcess * dExcess);
         }
         result.derivative[k]=derivative;
     }
     result.rate=recombinationRate;
     return result;
+
 }
 
 SparseMatrixd CoupledDDAssembler::recombinationSourceJacobian(

@@ -10,6 +10,9 @@
     "schema": {
       "const": "vela.sentaurus_e2e_contract.v1"
     },
+    "_comment": {
+      "type": "string"
+    },
     "cases": {
       "type": "object",
       "description": "Per-case acceptance thresholds keyed by reference_tcad case name.",
@@ -30,6 +33,15 @@
       "properties": {
         "sde_cmd": {"type": "string"},
         "sdevice_cmd": {"type": "string"},
+        "solver_profile": {
+          "enum": [
+            "pn2d_sentaurus2018_iv_qualified",
+            "pn2d_sentaurus2018_bv_qualified"
+          ],
+          "description": "Explicit, case-qualified Vela solver/continuation policy."
+        },
+        "materials_file": {"type": "string"},
+        "current_contact": {"type": "string"},
         "analysis": {
           "enum": ["equilibrium", "iv", "bv", "cv"],
           "description": "Analysis kind the frontend must derive from the SDevice file."
@@ -45,6 +57,56 @@
             "min_cells": {"type": "integer", "minimum": 1},
             "min_contact_nodes": {"type": "integer", "minimum": 2},
             "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "mesh_backends": {
+          "type": "object",
+          "description": "Backend-specific mesh threshold overrides applied on top of mesh.",
+          "additionalProperties": false,
+          "properties": {
+            "gmsh": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "require_non_obtuse": {"type": "boolean"},
+                "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+                "min_nodes": {"type": "integer", "minimum": 3},
+                "min_cells": {"type": "integer", "minimum": 1},
+                "min_contact_nodes": {"type": "integer", "minimum": 2},
+                "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+              }
+            }
+          }
+        },
+        "mesh_strategies": {
+          "type": "object",
+          "description": "Mesh-strategy overrides applied after backend overrides.",
+          "additionalProperties": false,
+          "properties": {
+            "transfinite-rect": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "require_non_obtuse": {"type": "boolean"},
+                "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+                "min_nodes": {"type": "integer", "minimum": 3},
+                "min_cells": {"type": "integer", "minimum": 1},
+                "min_contact_nodes": {"type": "integer", "minimum": 2},
+                "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+              }
+            },
+            "unstructured": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "require_non_obtuse": {"type": "boolean"},
+                "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+                "min_nodes": {"type": "integer", "minimum": 3},
+                "min_cells": {"type": "integer", "minimum": 1},
+                "min_contact_nodes": {"type": "integer", "minimum": 2},
+                "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+              }
+            }
           }
         },
         "curve": {
@@ -70,7 +132,12 @@
             "max_terminal_current_imbalance": {
               "type": "number",
               "minimum": 0,
-              "description": "Maximum |I_a + I_c| / max(|I_a|, |I_c|) accepted as terminal-current conservation."
+              "description": "Relative term in the mixed conservation gate. The raw ratio is still reported for diagnostics."
+            },
+            "max_terminal_current_absolute_imbalance_a_per_um": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Absolute term in the mixed conservation gate: |I_a + I_c| <= absolute + relative * max(|I_a|, |I_c|)."
             },
             "conservation_current_floor_a_per_um": {
               "type": "number",
@@ -81,13 +148,34 @@
         },
         "reference_curve": {
           "type": "object",
-          "description": "Optional comparison against a frozen Sentaurus curve when the raw artifact is available locally.",
-          "required": ["path"],
+          "description": "Optional mandatory comparison against a checked-in frozen Sentaurus curve. When present, a missing or malformed reference fails closed.",
+          "required": [
+            "path",
+            "content_sha256_lf",
+            "reference_column",
+            "candidate_column",
+            "interpolation",
+            "min_points",
+            "max_orders_of_magnitude",
+            "max_relative_error"
+          ],
           "additionalProperties": false,
           "properties": {
             "path": {"type": "string"},
+            "content_sha256_lf": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
             "reference_column": {"type": "string"},
             "candidate_column": {"type": "string"},
+            "candidate_scale": {"type": "number"},
+            "interpolation": {
+              "type": "string",
+              "enum": ["linear", "log_current"]
+            },
+            "bias_min": {"type": "number"},
+            "bias_max": {"type": "number"},
+            "min_points": {"type": "integer", "minimum": 2},
             "max_orders_of_magnitude": {"type": "number", "minimum": 0},
             "max_relative_error": {"type": "number", "minimum": 0},
             "require_trend_match": {"type": "boolean"}

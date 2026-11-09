@@ -34,6 +34,7 @@ from sentaurus_mesh_builder import (  # noqa: E402
     MeshQualificationError,
     build_mesh_and_doping,
     evaluate_doping,
+    qualify_mesh,
     select_contact_segment,
     write_doping_csv,
     write_mesh_json,
@@ -184,7 +185,7 @@ class GeneratedMeshTest(unittest.TestCase):
         self.assertEqual(set(), anode & cathode)
 
     def test_declared_but_unassigned_contact_fails_at_mesh_time(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_") as tmp:
             path = build_sde(Path(tmp), """
 (sdegeo:create-rectangle
   (position 0.0 0.0 0.0)
@@ -201,7 +202,7 @@ class GeneratedMeshTest(unittest.TestCase):
             self.assertEqual("Anode", ctx.exception.report["contact"])
 
     def test_region_free_input_fails_at_mesh_time(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_") as tmp:
             path = build_sde(Path(tmp), "(define L 2.0)\n(define H 0.5)")
             with self.assertRaises(MeshQualificationError) as ctx:
                 build_mesh_and_doping(parse_sde_device_ir(path))
@@ -210,12 +211,33 @@ class GeneratedMeshTest(unittest.TestCase):
 
 class MeshQualificationGateTest(unittest.TestCase):
     def test_generated_mesh_is_non_obtuse(self) -> None:
-        report = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE)).qualification
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
+        report = generated.qualification
         self.assertTrue(report["require_non_obtuse"])
         self.assertEqual([], report["obtuse_cells"])
         self.assertLessEqual(report["max_angle_degrees"], 90.0 + 1e-6)
         self.assertGreater(report["min_angle_degrees"], 0.0)
         self.assertEqual("mixed_voronoi", report["node_volume_policy"])
+
+        imported_report = qualify_mesh(generated.mesh)
+        self.assertEqual(report["node_count"], imported_report["node_count"])
+        self.assertEqual(report["cell_count"], imported_report["cell_count"])
+        self.assertEqual(
+            [(item["name"], item["node_count"]) for item in report["contacts"]],
+            [(item["name"], item["node_count"])
+             for item in imported_report["contacts"]],
+        )
+        self.assertAlmostEqual(
+            report["max_angle_degrees"],
+            imported_report["max_angle_degrees"],
+        )
+
+    def test_existing_mesh_with_noncontiguous_node_ids_fails_closed(self) -> None:
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
+        generated.mesh["nodes"][-1]["id"] += 1
+        with self.assertRaises(MeshQualificationError) as ctx:
+            qualify_mesh(generated.mesh)
+        self.assertEqual("qualification", ctx.exception.report["stage"])
 
     def test_unknown_node_volume_policy_is_rejected(self) -> None:
         ir = parse_sde_device_ir(PN2D_SDE)
@@ -259,8 +281,8 @@ class NodeDopingTest(unittest.TestCase):
                 self.assertEqual(1e17, donors, f"node {node_id} at x={x}")
                 self.assertEqual(0.0, acceptors, f"node {node_id} at x={x}")
 
-    def test_junction_nodes_take_the_last_overlapping_placement(self) -> None:
-        """Both windows are closed on x=1.0; SDE gives the later placement."""
+    def test_junction_nodes_accumulate_no_replace_placements(self) -> None:
+        """Both closed windows contribute at x=1.0 under NoReplace."""
         junction = [nid for nid, (x, _y) in self.coords.items() if abs(x - 1.0) <= 1e-12]
         self.assertGreater(len(junction), 0)
         values = {(float(self.rows[nid]["donors_cm3"]),
@@ -268,8 +290,9 @@ class NodeDopingTest(unittest.TestCase):
         # The value is deterministic: whatever the ordering rule yields, every
         # junction node must agree, and the later placement must contribute.
         self.assertEqual(1, len(values))
-        donors, _acceptors = next(iter(values))
+        donors, acceptors = next(iter(values))
         self.assertEqual(1e17, donors)
+        self.assertEqual(1e17, acceptors)
 
     def test_doping_is_uniform_in_depth_at_a_fixed_x(self) -> None:
         by_x: dict[float, set[tuple[float, float]]] = {}
@@ -286,9 +309,9 @@ class NodeDopingTest(unittest.TestCase):
             self.assertEqual(donors, float(self.rows[node_id]["donors_cm3"]))
             self.assertEqual(acceptors, float(self.rows[node_id]["acceptors_cm3"]))
 
-    def test_overlapping_region_placements_overlay_per_carrier(self) -> None:
-        """Overlapping placements replace within a carrier and overlay across."""
-        with tempfile.TemporaryDirectory(prefix="vela_doping_", dir=REPO / "build") as tmp:
+    def test_region_placement_follows_effective_aba_geometry(self) -> None:
+        """A profile does not leak through area removed from a region by ABA."""
+        with tempfile.TemporaryDirectory(prefix="vela_doping_") as tmp:
             path = build_sde(Path(tmp), """
 (define L 2.0)
 (define H 0.5)
@@ -310,16 +333,15 @@ class NodeDopingTest(unittest.TestCase):
             ir = parse_sde_device_ir(path)
             # Only R.Si covers x=0.5, so only the acceptor profile applies.
             self.assertEqual((0.0, 2e16), doping_at(ir, 0.5, 0.25))
-            # Both placements cover x=1.5. They target different carriers, so
-            # they overlay rather than replace; a same-carrier placement would
-            # replace by priority instead.
-            self.assertEqual((5e18, 2e16), doping_at(ir, 1.5, 0.25))
+            # R.N was created later under ABA, so it owns x=1.5 and the R.Si
+            # placement is no longer active there.
+            self.assertEqual((5e18, 0.0), doping_at(ir, 1.5, 0.25))
 
 
 class MeshFileContractTest(unittest.TestCase):
     def test_written_files_match_the_vela_file_contract(self) -> None:
         generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_io_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_io_") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)
             write_doping_csv(root / "doping.csv", generated.doping_rows)
@@ -348,7 +370,7 @@ class MeshFileContractTest(unittest.TestCase):
         if not runner.exists():
             self.skipTest("vela_example_runner has not been built")
         generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
-        with tempfile.TemporaryDirectory(prefix="vela_mesh_run_", dir=REPO / "build") as tmp:
+        with tempfile.TemporaryDirectory(prefix="vela_mesh_run_") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)
             write_doping_csv(root / "doping.csv", generated.doping_rows)

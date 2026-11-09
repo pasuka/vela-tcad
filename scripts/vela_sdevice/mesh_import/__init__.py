@@ -16,7 +16,10 @@ Two input paths:
 * DF-ISE ``.grd`` + sibling ``.dat`` (pure Python, reuses ``parse_grd`` /
   ``parse_dat`` from ``scripts/compare_sentaurus_tdr_tdx.py``).  Elements are
   edge-indexed; triangles are rebuilt as counter-clockwise node triples,
-  ``material=Contact`` regions become contacts.  Quadrilaterals and 3-D
+  ``material=Contact`` regions become contacts. ``material=Interface`` line
+  regions are retained as optional ``mesh.json.interfaces`` boundary metadata
+  with two adjacent volume regions; they are never volume materials or cells.
+  Quadrilaterals and 3-D
   elements are rejected (E402) -- no deterministic split is attempted in
   stage 1.  Vertex datasets must be global (one value per vertex); region-local
   dataset ordering is rejected with E402.
@@ -26,8 +29,9 @@ Two input paths:
   import fails closed (E402).
 
 Material names follow ``src/io/SentaurusTdrReader.cpp``: ``Silicon -> Si``,
-``Oxide -> SiO2``; anything else is passed through verbatim and recorded in
-``regions[].source_material``.
+``Oxide -> SiO2`` and ``PolySi -> PolySilicon``; other names pass through.
+The internal region model retains ``source_material``; solver output uses the
+normalized material name.
 """
 
 from __future__ import annotations
@@ -50,7 +54,8 @@ if str(_SCRIPTS) not in sys.path:
 from compare_sentaurus_tdr_tdx import parse_dat, parse_grd  # noqa: E402
 
 SCHEMA_ID = "vela.mesh_qualification.v1"
-MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2"}
+MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2",
+                "polysi": "PolySilicon", "polysilicon": "PolySilicon"}
 DOPING_COLUMNS = ["node_id", "donors_cm3", "acceptors_cm3"]
 PLAUSIBLE_EXTENT_UM = (1e-3, 1e4)
 DONOR_DATASETS = ("DonorConcentration", "PhosphorusActiveConcentration", "ArsenicActiveConcentration",
@@ -162,19 +167,20 @@ def _load_dfise(grd_path: Path) -> dict:
     triangles: List[dict] = []
     regions: List[dict] = []
     contacts: List[dict] = []
+    interfaces: List[dict] = []
     element_region: Dict[int, int] = {}
     region_names = [name for name in grid["region_blocks"]]
     for name in region_names:
         info = grid["region_blocks"][name]
         element_ids = grid["region_elements"].get(name, [])
         material = str(info.get("material") or "")
-        if material.lower() == "contact":
+        if material.lower() in {"contact", "interface"}:
             node_ids: List[int] = []
             edge_pairs: List[List[int]] = []
             for element_id in element_ids:
                 record = elements[element_id]
                 if record[0] != 1:
-                    raise MeshImportError("E402", f"contact region '{name}' contains a non-line element")
+                    raise MeshImportError("E402", f"{material.lower()} region '{name}' contains a non-line element")
                 if len(record) == 3:
                     pair = [int(record[1]), int(record[2])]
                 else:
@@ -183,8 +189,9 @@ def _load_dfise(grd_path: Path) -> dict:
                 for node in pair:
                     if node not in node_ids:
                         node_ids.append(node)
-            contacts.append({"name": name, "node_ids": sorted(node_ids), "edge_node_ids": edge_pairs,
-                             "adjacent_regions": set()})
+            target = contacts if material.lower() == "contact" else interfaces
+            target.append({"name": name, "node_ids": sorted(node_ids), "edge_node_ids": edge_pairs,
+                           "adjacent_regions": set()})
             continue
         region_id = len(regions)
         cell_ids: List[int] = []
@@ -210,11 +217,18 @@ def _load_dfise(grd_path: Path) -> dict:
                     contact["adjacent_regions"].add(region_id)
                     break
 
+    for interface in interfaces:
+        for pair in interface["edge_node_ids"]:
+            adjacent = {region_id for nodes, region_id in node_sets if set(pair) <= nodes}
+            if len(adjacent) != 2:
+                raise MeshImportError("E402", f"interface '{interface['name']}' must separate two volume regions")
+            interface["adjacent_regions"].update(adjacent)
+
     vertex_count = len(coords)
     doping, source_fields, net_only = _doping_from_datasets(datasets, vertex_count)
     return {
         "format": "dfise", "coords": coords, "triangles": triangles, "regions": regions,
-        "contacts": contacts, "by_kind": by_kind, "doping": doping, "source_fields": source_fields,
+        "contacts": contacts, "interfaces": interfaces, "by_kind": by_kind, "doping": doping, "source_fields": source_fields,
         "net_only": net_only, "unit_declared": "um", "unit_scale": 1.0,
         "companion": dat_path,
     }
@@ -266,6 +280,10 @@ def _doping_from_datasets(datasets: dict, vertex_count: int):
 # --- TDR path ------------------------------------------------------------------------------
 
 def _load_tdr(tdr_path: Path, importer: Optional[str], work_dir: Path) -> dict:
+    with tdr_path.open("rb") as stream:
+        if stream.read(5) == b"Ogawa":
+            raise MeshImportError("E402", "Ogawa TDR is unsupported; convert to DF-ISE GRD/DAT with TDX. "
+                                  "The native importer supports HDF5 TDR.")
     command = find_importer(importer)
     if command is None:
         raise MeshImportError("E402", "no sentaurus_import executable available for .tdr grids "
@@ -345,7 +363,8 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
     for index, contact in enumerate(model["contacts"]):
         adjacent = sorted(contact["adjacent_regions"])
         contacts_out.append({"id": index, "name": contact["name"], "region_id": adjacent[0] if adjacent else 0,
-                             "node_ids": contact["node_ids"], "edge_node_ids": contact["edge_node_ids"]})
+                             "node_ids": contact["node_ids"], "edge_node_ids": contact["edge_node_ids"],
+                             **({'adjacent_regions':adjacent} if len(adjacent)>1 else {})})
     mesh = {
         "nodes": [{"id": node_id, "x": xy[0], "y": xy[1]} for node_id, xy in sorted(coords.items())],
         "triangles": triangles,
@@ -353,6 +372,12 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
                     for r in regions],
         "contacts": contacts_out,
     }
+    if model.get("interfaces"):
+        # Boundary provenance is not a material or a cell-bearing solver region.
+        mesh["interfaces"] = [{"name": item["name"], "node_ids": item["node_ids"],
+            "edge_node_ids": item["edge_node_ids"],
+            "adjacent_regions": sorted(regions[i]["name"] for i in item["adjacent_regions"])}
+            for item in model["interfaces"]]
     (out_dir / "mesh.json").write_text(json.dumps(mesh, indent=1) + "\n", encoding="utf-8")
     with (out_dir / "doping.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=DOPING_COLUMNS)

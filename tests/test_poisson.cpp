@@ -771,6 +771,7 @@ TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
     const auto& dir = tempDir.path;
     const auto materialsPath = dir / "materials.json";
     std::ofstream(materialsPath) << nlohmann::json{
+        {"physical_constants_profile", std::string(constants::profileName)},
         {"materials", {
             {{"name", "Si"}, {"eps_r", 12.5}, {"bandgap_eV", 1.11}, {"Nc_m3", 3.0e25}}
         }}
@@ -798,7 +799,9 @@ TEST_CASE("MaterialDatabase: malformed materials array reports file path", "[mat
     const auto tempDir = makePoissonTempDir("vela_material_malformed_test");
     const auto& dir = tempDir.path;
     const auto materialsPath = dir / "materials.json";
-    std::ofstream(materialsPath) << nlohmann::json{{"materials", "not an array"}}.dump(2);
+    std::ofstream(materialsPath) << nlohmann::json{
+        {"physical_constants_profile", std::string(constants::profileName)},
+        {"materials", "not an array"}}.dump(2);
 
     MaterialDatabase matdb;
     try {
@@ -833,6 +836,7 @@ TEST_CASE("PoissonSimulation: external new material can be used for assembly", "
 
     writePNMeshJson(meshPath, "GaAsLike");
     std::ofstream(materialsPath) << nlohmann::json{
+        {"physical_constants_profile", std::string(constants::profileName)},
         {"materials", {
             {{"name", "GaAsLike"}, {"eps_r", 12.9}, {"ni", 2.0e12},
              {"mun", 0.85}, {"mup", 0.04}, {"bandgap_eV", 1.42},

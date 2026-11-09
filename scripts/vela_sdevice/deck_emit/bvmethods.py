@@ -1,5 +1,6 @@
 """Explicit numerical profile for the qualified BVMethods Tri3 operator."""
 from __future__ import annotations
+import math
 
 STATE_FIELDS = {"ElectrostaticPotential", "eDensity", "hDensity", "SpaceCharge", "DopingConcentration"}
 GEOMETRY = {"node_volume_policy": "barycentric", "require_non_obtuse": False,
@@ -46,14 +47,31 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
     # qualified with this operator, retaining all cmd/par model coefficients.
     solver["carrier_statistics"]["model"] = "fermi_dirac_joyce_dixon"
     solver["coupled_operator"] = "bvmethods_tri3_qf"
-    variables = requested.get("state_variables", "potential_quasi_fermi")
+    variables = requested.get("state_variables", "potential_density")
     if variables not in ("potential_quasi_fermi", "potential_density"):
         raise ValueError("unknown state_variables")
     sg = requested.get("population_sg_current", "quasi_fermi")
     if sg not in ("quasi_fermi", "band_population") or (sg != "quasi_fermi" and variables != "potential_density"):
         raise ValueError("invalid population_sg_current")
-    recovery = requested.get("population_derivative_recovery", "full")
-    if recovery not in ("full", "automatic") or (recovery != "full" and variables != "potential_density"):
+    statistical = requested.get("population_sg_bootstrap_linearization", "unchanged")
+    if statistical not in ("unchanged", "floor_adjacent_edges"):
+        raise ValueError("invalid population_sg_bootstrap_linearization")
+    limits = requested.get("population_update", {})
+    if not isinstance(limits, dict):
+        raise ValueError("population_update must be an object")
+    limits = dict(limits)
+    if not {"minimum_density_cm3", "minimum_density_m3"} & limits.keys():
+        limits["minimum_density_cm3"] = 1e-100
+    if statistical == "floor_adjacent_edges":
+        values = [limits[k] for k in ("minimum_density_cm3", "minimum_density_m3") if k in limits]
+        if (variables != "potential_density" or sg != "quasi_fermi" or len(values) != 1 or
+                isinstance(values[0], bool) or not isinstance(values[0], (int, float)) or
+                not math.isfinite(values[0]) or values[0] <= 0):
+            raise ValueError("statistical bootstrap requires population quasi_fermi SG and a positive density floor")
+    if "population_sg_bootstrap_linearization" in requested:
+        solver["population_sg_bootstrap_linearization"] = statistical
+    recovery = requested.get("population_derivative_recovery", "after_protection" if variables == "potential_density" else "full")
+    if recovery not in ("full", "automatic", "after_protection") or (recovery != "full" and variables != "potential_density"):
         raise ValueError("invalid population_derivative_recovery")
     if variables == "potential_density":
         if requested.get("method", "newton") not in ("newton", "poisson_only"):
@@ -61,10 +79,15 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
         solver["state_variables"] = variables
         if "population_sg_current" in requested:
             solver["population_sg_current"] = sg
-        if "population_derivative_recovery" in requested:
-            solver["population_derivative_recovery"] = recovery
-        if "population_update" in requested:
-            solver["population_update"] = dict(requested["population_update"])
+        solver["population_derivative_recovery"] = recovery
+        solver["primary_variable_coordinates"] = requested.get("primary_variable_coordinates", "unit")
+        solver["population_stopping_rule"] = requested.get("population_stopping_rule", "native_approx")
+        if solver["primary_variable_coordinates"] not in ("unit", "physical"):
+            raise ValueError("invalid primary_variable_coordinates")
+        if solver["population_stopping_rule"] not in ("legacy", "native_approx"):
+            raise ValueError("invalid population_stopping_rule")
+        solver["population_update"] = {"protection": "local_nonpositive",
+            "local_retained_fraction": .01, **limits}
         for key, default in POPULATION_QF_DEFAULTS.items():
             if requested.get(key, default) != default:
                 raise ValueError(f"potential_density does not support {key}")
@@ -107,12 +130,28 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
         numeric = source_stage if source_stage is not None else stage
         damping = numeric.get("line_search_damping", ir["math"].get("line_search_damping", 1.0))
         not_damped = numeric.get("not_damped", ir["math"].get("not_damped", 1000))
-        iterations = numeric.get("iterations") or ir["math"].get("iterations", 50)
-        iterations = max(iterations, solver.get("max_iter", iterations), circuit.get("max_iterations", iterations))
+        # Resolve the budget at the actual Coupled stage. An unrelated seed
+        # solve may have a larger solver.max_iter and must not enlarge the
+        # resistor sweep budget or its adaptive step-growth denominator.
+        iterations = numeric.get("iterations")
+        if iterations is None:
+            iterations = ir["math"].get("iterations", 50)
+        circuit.setdefault("max_iterations", iterations)
+        iterations = circuit["max_iterations"]
         if damping != 1 or not_damped < iterations:
             raise ValueError("BVMethods CMD currently supports undamped Sentaurus settings only: LineSearchDamping=1 and NotDamped>=the effective iteration budget; vendor line-search/Bank-Rose algorithms are not implemented")
         circuit.setdefault("coupled_line_search_mode", "full_step")
         circuit.setdefault("solver", "coupled_newton")
+        if variables == "potential_density" and solver["population_stopping_rule"] == "native_approx":
+            if not ir["math"].get("rel_err_control", True):
+                raise ValueError("native_approx supports RelErrControl only; choose legacy stopping for absolute update control")
+            metric = circuit.setdefault("coupled_update_convergence", {})
+            metric.setdefault("mode", "report")
+            metric.setdefault("digits", ir["math"].get("digits", 5))
+            for key, source in (("electron_reference_cm3", "err_ref_electron_cm3"),
+                                ("hole_reference_cm3", "err_ref_hole_cm3")):
+                if ir["math"].get(source) is not None:
+                    metric.setdefault(key, ir["math"][source])
         if circuit["solver"] != "coupled_newton":
             raise ValueError("BVMethods CMD profile requires coupled_newton")
         for target, source in (("coupled_initial_outer_step_V", "initial_step"),
@@ -121,7 +160,16 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
                                ("coupled_outer_growth_factor", "growth_factor"),
                                ("coupled_outer_shrink_factor", "shrink_factor")):
             circuit.setdefault(target, sweep[source])
-        circuit.setdefault("coupled_continuation", {"enabled": True, "retry_from_accepted": True})
+        mode = circuit.setdefault("coupled_step_control", "quasistationary")
+        if mode not in ("quasistationary", "legacy_inner_guard"):
+            raise ValueError("unsupported external circuit coupled_step_control")
+        if mode == "quasistationary":
+            extra = circuit.get("coupled_continuation", {})
+            if ("max_inner_voltage_step_V" in circuit or extra.get("enabled", False)
+                    or "inner_step_control" in extra or extra.get("retry_from_accepted", False)):
+                raise ValueError("quasistationary does not accept inner voltage guards or retry_from_accepted; select legacy_inner_guard explicitly")
+        else:
+            circuit.setdefault("coupled_continuation", {"enabled": True, "retry_from_accepted": True})
         sweep["step_growth_mode"] = "newton_iterations"
         boundary = sweep.get("boundary_control", {})
         boundary.pop("adaptive_outer_continuation", None)

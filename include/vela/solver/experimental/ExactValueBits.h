@@ -5,12 +5,15 @@
 #include <bit>
 #include <cstdint>
 #include <string>
+#include <optional>
 #include <type_traits>
 #include <vector>
 
 namespace vela::experimental {
 namespace exact_bits_detail {
 template<class> inline constexpr bool unsupported = false;
+template<class> struct IsOptional : std::false_type {};
+template<class T> struct IsOptional<std::optional<T>> : std::true_type {};
 template<class> struct IsVector : std::false_type {};
 template<class T, class A> struct IsVector<std::vector<T,A>> : std::true_type {};
 inline void word(std::string& out, std::uint64_t value) {
@@ -49,6 +52,9 @@ template<class T> void append(std::string& out, const T& value) {
             }
             out.push_back(';');
         }
+    } else if constexpr(IsOptional<U>::value) {
+        out.push_back('o'); out.push_back(value.has_value()?'1':'0');
+        if(value)append(out,*value);
     } else if constexpr(IsVector<U>::value) {
         out.push_back('a'); word(out,value.size());
         for(const auto& item:value) append(out,item);

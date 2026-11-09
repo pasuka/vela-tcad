@@ -18,6 +18,16 @@ previously selected these cases. Shared Sentaurus avalanche helpers live in
 `scripts/sentaurus_avalanche_replay.py` and
 `scripts/sentaurus_avalanche_controls.py`.
 
+## BVMethods current and historical data
+
+The family retains its historical `bvmethods_sentaurus2018` path. Its
+[current validation index](bvmethods_sentaurus2018/current_validation.json)
+points to the separate
+[U-2022.12 compatibility snapshot](bvmethods_sentaurus2018/u2022_12_20261109/README.md).
+Vela candidate full-BV curves and native bounded-reference curves have explicit
+roles. Historical native-store manifests and curves remain frozen; the current
+text snapshot is not a replacement store registration.
+
 ## Directory Shape
 
 Each device directory can contain:

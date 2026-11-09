@@ -196,9 +196,17 @@ TEST_CASE("Thermal silicon recovers audited 300 K material and Fermi statistics"
     SiliconThermalPhysics model;
     auto r=model.evaluate({.15,.03,.07,300.,2e23,1e22});
     CHECK(r.bandgap_eV.value==Catch::Approx(1.12416).epsilon(1e-14));
-    CHECK(r.Nc_m3.value==Catch::Approx(2.856679069182081e25).epsilon(1e-13));
-    CHECK(r.Nv_m3.value==Catch::Approx(3.1046570334558958e25).epsilon(1e-13));
-    CHECK(r.ni_m3.value==Catch::Approx(1.0750016577953705e16).epsilon(1e-13));
+    // Preserve the audited CODATA values. Formula-1 masses and Eg are fixed at
+    // this temperature; only the documented DOS prefactor and thermal voltage
+    // change with the binary's constants profile.
+    const Real codataVt=1.380649e-23*300./1.602176634e-19;
+    const Real dosRatio=std::pow((constants::dosPi/std::numbers::pi)*
+        (constants::m0/9.1093837015e-31)*(constants::kb/1.380649e-23)*
+        std::pow(6.62607015e-34/constants::h,2.),1.5);
+    const Real niRatio=dosRatio*std::exp(.5*1.12416*(1./codataVt-1./constants::Vt_300));
+    CHECK(r.Nc_m3.value==Catch::Approx(2.856679069182081e25*dosRatio).epsilon(1e-13));
+    CHECK(r.Nv_m3.value==Catch::Approx(3.1046570334558958e25*dosRatio).epsilon(1e-13));
+    CHECK(r.ni_m3.value==Catch::Approx(1.0750016577953705e16*niRatio).epsilon(1e-13));
     CHECK(r.electrons_m3.value==Catch::Approx(electronDensity(r.effectiveNi_m3.value,r.Nc_m3.value,.15,.03,constants::Vt_300,CarrierStatisticsModel::FermiDirac)).epsilon(1e-12));
     CHECK(r.holes_m3.value==Catch::Approx(holeDensity(r.effectiveNi_m3.value,r.Nv_m3.value,.15,.07,constants::Vt_300,CarrierStatisticsModel::FermiDirac)).epsilon(1e-12));
     CHECK(r.electronLifetime_s.value==Catch::Approx(1e-5/22.));

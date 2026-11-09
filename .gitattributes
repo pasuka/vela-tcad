@@ -4,6 +4,13 @@ scripts/remote-vm/*.sh text eol=lf
 
 tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 
+# Workflow files use LF without renormalizing provenance-bound fixtures.
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Preserve the exact SDE bytes recorded by the M2 commercial oracle.
+tests/fixtures/sentaurus_gmsh_m2/m2_core_sde.cmd text eol=lf
+
 # The SimpleMOS delivery copies preserve the frozen Windows CRLF bytes.
 reference_tcad/simplemos_sentaurus2022/engineering/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
@@ -95,3 +102,6 @@ reference_tcad/bvmethods_sentaurus2018/zero_qs_controls/**/*.cmd text eol=lf
 reference_tcad/bvmethods_sentaurus2018/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reference_tcad/gate_reference/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 docs/validation/sdevice_followup_2026-10-06.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# The licensed SDE oracle IR is sealed in LF form by its original manifest.
+reference_tcad/pn2d_sentaurus2022_oracle/expected_device_ir.json text eol=lf

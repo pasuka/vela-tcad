@@ -1,9 +1,46 @@
-# Sentaurus 2018 BVmethods NMOS reference
+# BVMethods NMOS reference family
 
-As of 2026-10-15, the user-selected target for the ongoing external-resistor
-investigation is the installed T-2022.03-SP2 library's original `resistor`
+## Current qualified snapshot: 2026-11-09
+
+The `bvmethods_sentaurus2018` directory name is historical. Use
+[current_validation.json](current_validation.json) and the versioned
+[U-2022.12 compatibility snapshot](u2022_12_20261109/README.md) for the current
+qualified Vela BVMethods CMD/JSON defaults and evidence. See the
+[full closure report](../../docs/validation/bvmethods_production_closure_2026-11-09.md).
+
+| Dataset | Scope | Accepted / attempts / failed |
+|---|---|---:|
+| Native Sentaurus U-2022.12 | Adaptive 0-100 V only | 45 / 48 / 3 |
+| Vela ordinary physical-coordinate entry | Full BV to current stop | 62 / unknown / unknown |
+| Vela ordinary Unit-coordinate entry | Full BV to current stop | 62 / unknown / unknown |
+| Vela original CMD stage chain | Full BV to current stop | 106 / unknown / unknown |
+
+This snapshot uses 300 K, the 2600-node/5020-Tri3 mesh, matching U-2022.12
+constants/materials, SRH plus GradQuasiFermi avalanche, BTBT off and a
+1e7 ohm*um resistor. Candidate curves are under the version's `vela/curves/`;
+the native bounded curve is under its `reference_curves/`. Current CMD/par,
+sidecar, material data, relative stage configurations and input SHA receipts
+are included; binary mesh and bulk generated mesh/doping remain external.
+
+The native bounded curve does not qualify a native full BV. Vela accepts use
+the explicitly approximate E-or-mapped-RHS rule; strict native stopping and
+performance noninferiority remain unqualified. Carrier/continuity report
+failures are retained, including 70/13 for the CMD chain. Different entry/stage
+chains prevent treating its larger workload as a coordinate-only comparison.
+
+This is a local text qualification snapshot. It does **not** replace the native
+artifact-store `artifact_manifest.json` (still v4), its v1-v4 predecessors,
+`source/`, `wp14_sources/`, legacy materials, reference curves or historical
+reference inventories. Their existing SHA contracts and physics remain intact.
+Dated investigations below are provenance, not active task queues.
+
+## Historical O-2018 and October references
+
+
+On 2026-10-15, the user-selected target for the external-resistor
+investigation was the installed T-2022.03-SP2 library's original `resistor`
 branch: NonLocalPath BTBT, GradQuasiFermi avalanche, and a `1.3e-3 A/um`
-stop. See the [active alignment plan](../../docs/superpowers/plans/2026-10-15-bvmethods-installed-library-alignment-plan.md).
+stop. See the [dated alignment plan](../../docs/superpowers/plans/2026-10-15-bvmethods-installed-library-alignment-plan.md).
 The checked-in E2/Eparallel sources and existing qualifications retain their
 historical scope; they have not been rewritten or requalified as library originals.
 The [2026-10-15 original-reference audit](../../docs/validation/bvmethods_original_reference_q0_q1_2026-10-15.md)

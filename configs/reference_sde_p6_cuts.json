@@ -1,0 +1,32 @@
+{
+  "schema": "vela.sde_p6_cuts.v1",
+  "selection": "source-derived, frozen before first cut comparison",
+  "bjt": {
+    "fixed_axis": "x",
+    "coordinates_um": [
+      1.625,
+      2.6,
+      3.5
+    ]
+  },
+  "mos": {
+    "fixed_axis": "y",
+    "coordinates_um": [
+      -0.125,
+      0.125
+    ]
+  },
+  "bvmethods": {
+    "fixed_axis": "x",
+    "coordinates_um": [
+      -0.3,
+      0.3
+    ]
+  },
+  "pn": {
+    "fixed_axis": "y",
+    "coordinate_rule": "midpoint of authored vertical bounds"
+  },
+  "normal_error_limit": "smallest applicable authored directional minimum; multibox uses its local graded spacing",
+  "mirrored_scope": "map query points to authored half before sizing checks"
+}

@@ -15,9 +15,12 @@ struct PopulationUpdateConfig {
     std::string protection = "local_nonpositive";
     Real localRetainedFraction = 0.01;
     Real fractionTau = 0.99;
+    Real minimumDensity = 0.; // Internal concentration units; opt-in, not a reference error.
 };
 
 inline void validatePopulationUpdate(const PopulationUpdateConfig& c) {
+    if (!std::isfinite(c.minimumDensity) || c.minimumDensity<0.)
+        throw std::invalid_argument("population minimum density must be finite and nonnegative");
     if (c.protection != "local_nonpositive" && c.protection != "fraction_to_boundary")
         throw std::invalid_argument("population protection must be local_nonpositive or fraction_to_boundary");
     if (!(c.localRetainedFraction > 0. && c.localRetainedFraction < 1.) ||
@@ -26,16 +29,19 @@ inline void validatePopulationUpdate(const PopulationUpdateConfig& c) {
 }
 
 // Predictor coordinates are independent of the Newton unknowns. Compute logs
-// separately to avoid overflow of current/previous; no population floor.
-inline VectorXd predictPopulation(const VectorXd& previous,const VectorXd& current,Real ratio) {
+// separately to avoid overflow of current/previous. The optional cutoff
+// suppresses prediction; it does not impose a floor on the state.
+inline VectorXd predictPopulation(const VectorXd& previous,const VectorXd& current,Real ratio,Real lowDensityLimit=0.) {
     if(previous.size()!=current.size() || current.size()==0 || current.size()%3 ||
-       !previous.allFinite() || !current.allFinite() || !std::isfinite(ratio))
+       !previous.allFinite() || !current.allFinite() || !std::isfinite(ratio) ||
+       !std::isfinite(lowDensityLimit) || lowDensityLimit<0.)
         throw std::invalid_argument("invalid population predictor history");
     const int n=current.size()/3;
     VectorXd next=current+ratio*(current-previous);
     for(int k=n;k<current.size();++k) {
         if(previous[k]==0. && current[k]==0.){next[k]=0.;continue;}
         if(!(previous[k]>0.) || !(current[k]>0.))throw std::domain_error("invalid population predictor domain");
+        if(lowDensityLimit>0. && current[k]<=lowDensityLimit){next[k]=current[k];continue;}
         next[k]=std::exp(std::log(current[k])+ratio*(std::log(current[k])-std::log(previous[k])));
         if(!(next[k]>0.) || !std::isfinite(next[k]))throw std::domain_error("unrepresentable population prediction");
     }
@@ -46,6 +52,7 @@ inline VectorXd predictPopulation(const VectorXd& previous,const VectorXd& curre
 struct PopulationTrial {
     VectorXd state;
     std::vector<int> protectedElectrons, protectedHoles;
+    std::vector<int> flooredElectrons, flooredHoles;
     Real alpha = 1.;
 };
 
@@ -79,6 +86,10 @@ inline PopulationTrial makePopulationTrial(
         if (c.protection=="local_nonpositive" && result.state[k]<=0.) {
             result.state[k]=c.localRetainedFraction*before[k];
             (b==1 ? result.protectedElectrons : result.protectedHoles).push_back(i);
+        }
+        if(result.state[k]<c.minimumDensity) {
+            result.state[k]=c.minimumDensity;
+            (b==1 ? result.flooredElectrons : result.flooredHoles).push_back(i);
         }
         if (!(result.state[k]>0.) || !std::isfinite(result.state[k]))
             throw std::domain_error("unrepresentable positive population candidate");

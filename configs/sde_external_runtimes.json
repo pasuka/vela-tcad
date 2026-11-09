@@ -1,0 +1,16 @@
+{
+  "schema": "vela.sde_external_gmsh.v1",
+  "version": "4.15.2",
+  "bundled_in_sde_package": false,
+  "win64": {
+    "url": "https://gmsh.info/bin/Windows/gmsh-4.15.2-Windows64-sdk.zip",
+    "filename": "gmsh-4.15.2-Windows64-sdk.zip",
+    "sha256": "7513cc7096e0492af88eab8c217f313ee4fb6155a3155723042e2547f55845e8"
+  },
+  "ubuntu26.04-x86_64": {
+    "url": "https://files.pythonhosted.org/packages/ab/d4/336becb1488ac4fbab205043987128839c8c62d54e2036b7e887bd009040/gmsh-4.15.2-py2.py3-none-manylinux_2_24_x86_64.whl",
+    "filename": "gmsh-4.15.2-py2.py3-none-manylinux_2_24_x86_64.whl",
+    "sha256": "4076a948ce22625330d1413d4982e22b5c69fc2f0f7951f5df64c778cf54108c"
+  },
+  "license_url": "https://gmsh.info/doc/texinfo/#License"
+}

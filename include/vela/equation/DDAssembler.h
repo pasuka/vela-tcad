@@ -65,6 +65,7 @@ struct DDScalingSpec {
     std::string coupledOperator = "legacy"; ///< Explicit BVMethods contract; independent of scaling.
     std::string stateVariables = "potential_quasi_fermi";
     std::string populationSgCurrent = "quasi_fermi";
+    Real populationSgBootstrapFloor_cm3 = 0.; ///< Zero disables local statistical feedback freezing.
     bool enabled = false;
     Real V0 = 1.0;
     Real C0 = 1.0;

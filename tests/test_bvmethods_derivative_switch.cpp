@@ -53,3 +53,32 @@ TEST_CASE("Derivative switch bounds trial windows and probes stalled bootstrap",
     config.minimumTrialSteps=3;
     REQUIRE_THROWS_AS(DerivativeSwitch(config),std::invalid_argument);
 }
+
+TEST_CASE("Linear failure restoration is bounded until a state update", "[derivative_switch]") {
+    DerivativeSwitch control;
+    REQUIRE(control.probeAfterBootstrapLinearFailure());
+    REQUIRE(control.mode()==DerivativeMode::Trial);
+    REQUIRE(control.reason=="bootstrap_linear_failure_restore");
+    REQUIRE_FALSE(control.probeAfterBootstrapLinearFailure());
+    REQUIRE_FALSE(control.fullCandidate({}));
+    REQUIRE(control.mode()==DerivativeMode::Bootstrap);
+    REQUIRE_FALSE(control.probeAfterBootstrapLinearFailure());
+    control.stateAdvanced();
+    REQUIRE(control.probeAfterBootstrapLinearFailure());
+    DerivativeSwitch full({},true);
+    REQUIRE_FALSE(full.probeAfterBootstrapLinearFailure());
+}
+
+TEST_CASE("Model and linear failure probes share one unchanged-state allowance", "[derivative_switch]") {
+    DerivativeSwitch c;
+    REQUIRE(c.probeAfterBootstrapModelFailure());
+    REQUIRE(c.reason=="bootstrap_model_non_decrease_restore");
+    REQUIRE_FALSE(c.probeAfterBootstrapLinearFailure());
+    REQUIRE_FALSE(c.fullCandidate({}));
+    REQUIRE_FALSE(c.probeAfterBootstrapModelFailure());
+    REQUIRE_FALSE(c.probeAfterBootstrapLinearFailure());
+    c.stateAdvanced();
+    REQUIRE(c.probeAfterBootstrapLinearFailure());
+    REQUIRE_FALSE(c.fullCandidate({}));
+    REQUIRE_FALSE(c.probeAfterBootstrapModelFailure());
+}

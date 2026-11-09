@@ -1,0 +1,87 @@
+{
+  "schema": "vela.sentaurus2022_sde_oracle.v1",
+  "fixture": "pn2d_sentaurus2022",
+  "run_id": "T2022_03_SP2_oracle_v1",
+  "created_utc": "2026-08-22T04:11:45.107930+00:00",
+  "dry_run": false,
+  "source_original": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+  "source_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+  "wrapper_sha256": "0e174abead17e48e4ac86d06e20b7fcca9d56a6aa0a07a17ba4806facd3fdb17",
+  "sde_version": "Version T-2022.03-SP2",
+  "exit_code": 0,
+  "evaluated_logs": [
+    "vela_sde_evaluated_wrapper.log.eval"
+  ],
+  "boundary_tdrs": [
+    "pn2d_bnd.tdr"
+  ],
+  "mesh_commands": [
+    "pn2d_msh.cmd"
+  ],
+  "mesh_tdrs": [
+    "pn2d_msh.tdr"
+  ],
+  "mesh_summary": {
+    "points": 1943,
+    "elements": 3680,
+    "regions": 3
+  },
+  "expected_device_ir": "expected_device_ir.json",
+  "files": {
+    "artifacts/pn2d_bnd.tdr": {
+      "bytes": 15264,
+      "sha256": "48984eebadbbd4558054272baf3374e48c8d480c1be5e259bc4a46cff1eac127"
+    },
+    "artifacts/pn2d_msh.cmd": {
+      "bytes": 900,
+      "sha256": "beb6cb224dbdbeed64a61685a9d24e99b04b45eff3249c69a21c5b7219e03f07"
+    },
+    "artifacts/pn2d_msh.tdr": {
+      "bytes": 61021,
+      "sha256": "23af0444bd2ccf1dbaaa063a2fcbdfa1e1548f111ee7667bba083be6a487f0c7"
+    },
+    "artifacts/sde.exit_code.txt": {
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "artifacts/sde.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "artifacts/sde.stdout.txt": {
+      "bytes": 6934,
+      "sha256": "780e6aaa40c2ec41b2540583f005b058ec989efb2e5bd79582fe7e2f66749b9d"
+    },
+    "artifacts/sde.version.txt": {
+      "bytes": 1295,
+      "sha256": "cd67bf1af9c6cba98ade9f299303aedd2a31458f684fae802ad5ef0a328cce05"
+    },
+    "artifacts/vela_sde_evaluated_wrapper.log.eval": {
+      "bytes": 1482,
+      "sha256": "d2fcb791480e0e670fcc8096ee488d337370bbe3c8d217e7ff0bf04f29bb740f"
+    },
+    "expected_device_ir.json": {
+      "bytes": 6627,
+      "sha256": "2fff27227a38fb2335c0fc000bb79f1310d5323eebc5df97996d21537da0e9b7"
+    },
+    "input/pn2d_sde.cmd": {
+      "bytes": 3246,
+      "sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac"
+    },
+    "input/vela_sde_evaluated_wrapper.scm": {
+      "bytes": 3489,
+      "sha256": "0e174abead17e48e4ac86d06e20b7fcca9d56a6aa0a07a17ba4806facd3fdb17"
+    }
+  },
+  "warnings": [],
+  "local_validation_files": [
+    "artifacts/pn2d_bnd.tdr",
+    "artifacts/pn2d_msh.tdr",
+    "artifacts/sde.exit_code.txt",
+    "artifacts/sde.stderr.txt",
+    "artifacts/sde.stdout.txt",
+    "artifacts/sde.version.txt",
+    "artifacts/vela_sde_evaluated_wrapper.log.eval"
+  ],
+  "artifact_policy": "TDR and raw logs are local validation only; hashes are retained, bytes are not distributed. Missing local evidence is not a live validation pass."
+}

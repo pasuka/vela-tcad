@@ -1,0 +1,59 @@
+{
+  "schema": "vela.sentaurus_gmsh_m2_oracle.v1",
+  "fixture": "m2_core_sentaurus2022",
+  "run_id": "20260825_m2_v4",
+  "tool": "Sentaurus Structure Editor T-2022.03-SP2",
+  "exit_code": 0,
+  "source_sha256": "1656a796dc0342286c460e31a26d4c3d07801f810cc77a8f615b4226563560f5",
+  "evaluated_log_sha256": "a141dcd53038778d59586ba500a2300952bf269a6dfb6dcf1c60d90b030b50dd",
+  "boundary_tdr_sha256": "5639adb1f91095581bb6e2cb033ff74da93f641e419d7bdf77cce706b7f6be81",
+  "mesh_command_sha256": "223fefeef5f0333d46b5f13a5bb9ad93ad260228a7b00afce8230c9573de4eac",
+  "mesh_tdr_sha256": "afc7f365c198bd536290072ed6c5b33f375f92d5586276797b6ac2b2200fe752",
+  "official_mesh": {
+    "points": 7,
+    "triangles": 5,
+    "device_regions": 2,
+    "region_areas_um2": {
+      "R.P": 1.0,
+      "R.N": 2.0
+    },
+    "interface": {
+      "name": "R.P+R.N",
+      "edge_coordinates_um": [[1.0, 1.0], [1.0, 0.0]]
+    },
+    "contacts": {
+      "Anode": [[0.0, 0.5], [0.0, 0.0]],
+      "Cathode": [[3.0, 0.0], [3.0, 1.0]]
+    }
+  },
+  "region_local_fields_cm3": {
+    "R.P": {
+      "PhosphorusActiveConcentration": 100000000000000.12,
+      "BoronActiveConcentration": 10000000000000034.0,
+      "ArsenicActiveConcentration": 0.0
+    },
+    "R.N": {
+      "PhosphorusActiveConcentration": 19999999999999964.0,
+      "BoronActiveConcentration": 0.0,
+      "ArsenicActiveConcentration_at_x1_y1": 316227.7660168421,
+      "ArsenicActiveConcentration_at_x1_y0": 0.0
+    }
+  },
+  "shared_node_global_view_cm3": {
+    "x1_y1": {
+      "donors": 20100000000316192.0,
+      "acceptors": 10000000000000034.0
+    },
+    "x1_y0": {
+      "donors": 20099999999999964.0,
+      "acceptors": 10000000000000034.0
+    }
+  },
+  "frozen_rules": {
+    "interface_name": "creation-order region names joined by +",
+    "shared_node": "sum region-local species for the single-valued visualization view",
+    "positive_direction": "left normal of the directed baseline",
+    "constant_noreplace": "omit replacement argument",
+    "constant_replace": "supply numeric decay slot before Replace or LocalReplace"
+  }
+}

@@ -93,6 +93,17 @@ TEST_CASE("Frozen partial material baselines preserve their pre-alignment effect
     const auto original = root / relative;
     const auto frozen = original.parent_path() / (original.stem().string() + "_legacy_300k.json");
     const UnitScalingConfig scaling(UnitScalingMode::UnitScaling);
+    if (std::string(constants::profileName) != "codata2018") {
+        // These historical numerical baselines were generated with CODATA.
+        // A different build must reject them, not relabel or silently convert
+        // their material data. The CODATA build below retains the value check.
+        REQUIRE_THROWS_AS(MaterialDatabase(original.string(), scaling), std::runtime_error);
+        REQUIRE_THROWS_AS(MaterialDatabase(frozen.string(), scaling), std::runtime_error);
+        REQUIRE_THROWS_AS(MaterialDatabase(root.string() +
+            "/reference_tcad/schottky_charon_sentaurus2018/vela/materials_legacy_builtin_300k.json",
+            scaling), std::runtime_error);
+        return;
+    }
     MaterialDatabase old(root.string() +
         "/reference_tcad/schottky_charon_sentaurus2018/vela/materials_legacy_builtin_300k.json", scaling);
     const auto& legacy = old.getMaterial("Si");

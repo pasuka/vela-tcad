@@ -1,0 +1,187 @@
+{
+  "schema": "vela.bvmethods.validation_summary.v1",
+  "integration_commit": "77a889a95b87f6a17c7a5943c135a0b9d04cf6b0",
+  "physical_constants_profile": "sentaurus_u2022_12",
+  "native": {
+    "role": "Sentaurus_native_reference",
+    "version": "U-2022.12",
+    "curve": "reference_curves/native_u2022_12_adaptive_0_100.csv",
+    "scope_V": [
+      0,
+      100
+    ],
+    "accepted": 45,
+    "raw_accepted_csv_rows": 47,
+    "zero_initialization_records": 3,
+    "selection": "last record per outer voltage; matches the qualified native ledger",
+    "attempts_including_zero_anchor": 48,
+    "failed": 3,
+    "nonzero_goal_iterations": 308,
+    "failed_iterations": 40,
+    "zero_anchor_iterations": null,
+    "full_BV_qualified": false,
+    "source_accepted_csv_sha256": "867fd250fb9522ee4a4c910b80c3cd08cdc5ffa37d7b93d46b85faeb2689339c",
+    "source_summary_sha256": "5ecb51d94be5478acf496b58091ccbbf6c9adf8cf8b0bed2f22b11aa33a27c07",
+    "regions": [
+      {
+        "lower": 0,
+        "upper": 1,
+        "covered": true,
+        "accepted": 13,
+        "attempts": 13,
+        "failed": 0,
+        "success_iterations": 63,
+        "failure_iterations": 0
+      },
+      {
+        "lower": 1,
+        "upper": 5,
+        "covered": true,
+        "accepted": 11,
+        "attempts": 13,
+        "failed": 2,
+        "success_iterations": 90,
+        "failure_iterations": 20
+      },
+      {
+        "lower": 5,
+        "upper": 10,
+        "covered": true,
+        "accepted": 8,
+        "attempts": 9,
+        "failed": 1,
+        "success_iterations": 64,
+        "failure_iterations": 20
+      },
+      {
+        "lower": 10,
+        "upper": 100,
+        "covered": true,
+        "accepted": 13,
+        "attempts": 13,
+        "failed": 0,
+        "success_iterations": 51,
+        "failure_iterations": 0
+      }
+    ],
+    "parameters": {
+      "goal_V": 100,
+      "max_iterations": 20,
+      "digits": 5,
+      "ErrRef_cm3": 10000000000.0,
+      "RhsMin": 1e-05,
+      "initial_step_V": 0.01,
+      "min_step_V": 1e-05,
+      "max_step_V": 100,
+      "increment": 1.41,
+      "decrement": 2,
+      "extrapolate": true,
+      "maximum_observed_step_log_V": 23.7023,
+      "max_step_binding": false
+    }
+  },
+  "candidates": {
+    "ordinary_full_physical": {
+      "role": "Vela_candidate_not_native_reference",
+      "curve": "vela/curves/ordinary_full_physical.csv",
+      "entry": "formal cold-Poisson JSON entry",
+      "accepted": 62,
+      "attempts": null,
+      "failed": null,
+      "successful_newton_iterations": 351,
+      "failed_newton_iterations": null,
+      "seconds": 916.3586032390594,
+      "solver_exit": 0,
+      "timed_out": false,
+      "stop_current_reached": true,
+      "BV_inner_V": 6.670446159196355,
+      "F_pass": 62,
+      "E_pass": 62,
+      "load_KCL_finite_all": true,
+      "carrier_report_failed": 3,
+      "continuity_report_failed": 7
+    },
+    "ordinary_full_unit": {
+      "role": "Vela_candidate_not_native_reference",
+      "curve": "vela/curves/ordinary_full_unit.csv",
+      "entry": "formal cold-Poisson JSON entry",
+      "accepted": 62,
+      "attempts": null,
+      "failed": null,
+      "successful_newton_iterations": 351,
+      "failed_newton_iterations": null,
+      "seconds": 1121.6824457645416,
+      "solver_exit": 0,
+      "timed_out": false,
+      "stop_current_reached": true,
+      "BV_inner_V": 6.6704461591830935,
+      "F_pass": 62,
+      "E_pass": 62,
+      "load_KCL_finite_all": true,
+      "carrier_report_failed": 3,
+      "continuity_report_failed": 8
+    },
+    "cmd_full_bv": {
+      "role": "Vela_candidate_not_native_reference",
+      "curve": "vela/curves/cmd_full_bv.csv",
+      "entry": "original CMD Poisson/DD + HDF stage chain",
+      "accepted": 106,
+      "attempts": null,
+      "failed": null,
+      "successful_newton_iterations": 732,
+      "failed_newton_iterations": null,
+      "seconds": 2579.5925035476685,
+      "solver_exit": 0,
+      "timed_out": false,
+      "stop_current_reached": true,
+      "BV_inner_V": 6.670401072723859,
+      "F_pass": 106,
+      "E_pass": 106,
+      "load_KCL_finite_all": true,
+      "carrier_report_failed": 70,
+      "continuity_report_failed": 13
+    }
+  },
+  "contract": {
+    "nodes": 2600,
+    "triangles": 5020,
+    "temperature_K": 300,
+    "resistance_ohm_um": 10000000.0,
+    "BTBT": "off",
+    "statistics": "fermi_dirac_joyce_dixon",
+    "avalanche_drive": "quasi_fermi_gradient_with_contact_electric_field_fallback",
+    "primary_coordinates": "unit",
+    "protection_retained_fraction": 0.01,
+    "post_protection_derivatives": "omit_mobility_and_avalanche_only",
+    "stopping": "approximate E<1 OR mapped RHS infinity norm<1e-5",
+    "existing_BV_acceptance_anchor_V": 6.673833,
+    "BV_relative_tolerance": 0.005
+  },
+  "qualifications": {
+    "ordinary_observer_full_closure": true,
+    "CMD_full_BV_chain": true,
+    "strict_native_stopping_equivalence": false,
+    "speed_noninferiority": false,
+    "all_report_only_conservation_checks_passed": false
+  },
+  "runtime_identity": {
+    "core_sha256": "aa1aee5b40d1de3865f151d9697deae1c74f562e33a0696ba375bb317f600a1b",
+    "runner_sha256": "002682c5895410a42300986eaff47fee6fa30eb031d147541aea5ec7ff1218ed",
+    "frontend_archive_sha256": "a3f735ae79e342ac1688e40ac42252b70930f9122bff4ab6705aec90decaf138",
+    "MKL_runtime_sha256": "a85532b3965b4901eced61ee6d3d5b606e2d54e8de2cb357e6b5cfcce2b1e03a",
+    "backend": "pardiso_mkl",
+    "threads_each": 1
+  },
+  "evidence": {
+    "terminal_archive_sha256": "6c6ae6e0ecb8c2467413c911e26a699e21fc390c2364c547627694d8ae1cdd3e",
+    "terminal_archive_members": 547,
+    "report": "../../../docs/validation/bvmethods_production_closure_2026-11-09.md"
+  },
+  "limits": [
+    "Native curve covers only 0-100 V; it is not a new native full-BV measurement.",
+    "Original CMD and JSON use different initialization/stage chains; compare their workload with that distinction.",
+    "Ordinary/CMD attempts and failures were not exported; null does not mean zero.",
+    "Native MaxStep is 100 V, Vela MaxStep 2500 V; endpoints and initialization differ.",
+    "Vela candidate curves never replace historical or native reference curves."
+  ]
+}

@@ -477,6 +477,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             "node_doping_file": "doping.csv", "materials_file": "materials.json", "doping": [],
             "mesh_geometry": {"node_volume_policy": "barycentric", "require_non_obtuse": False},
             "solver": solver, **_charges(ir, mesh)}
+    if report.get("physical_constants_profile", "codata2018") != "codata2018":
+        base["physical_constants_profile"] = report["physical_constants_profile"]
     voltages = {e["name"]: e["initial_voltage_V"] for e in electrodes}
     sources = deepcopy(ir["stages"])
     groups = []
@@ -560,7 +562,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             method = "frozen_state"
         elif source["equations"] == ["Poisson"]:
             method = "poisson_only"
-        deck["solver"].update(method=method, max_iter=source["iterations"] or math_cfg["iterations"] or 100)
+        cmd_iterations = source["iterations"] or math_cfg["iterations"] or 100
+        deck["solver"].update(method=method, max_iter=cmd_iterations)
         if input_state and method in ("gummel_newton", "newton"):
             # Coupled continuation must preserve the accepted state. A fresh
             # Gummel pass can destroy a good high-injection Newton predictor.
@@ -687,6 +690,16 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 overrides["sweep"].pop("external_circuit", None)
             _merge(deck, overrides,
                    "", entry["sidecar_overrides"], decisions, index)
+            circuit = sweep.get("external_circuit")
+            default_circuit_solver = ("coupled_newton" if sidecar.get("bvmethods_operator_profile")
+                                      else "nested_scalar")
+            if circuit and circuit.get("solver", default_circuit_solver) == "coupled_newton":
+                if "max_iterations" not in circuit:
+                    circuit["max_iterations"] = cmd_iterations
+                    _decision(decisions, "Iterations", cmd_iterations,
+                              "sweep.external_circuit.max_iterations", cmd_iterations,
+                              "Use the effective CMD budget for coupled Newton and adaptive stepping",
+                              stage=index)
             if gradient := sidecar.get("high_field_gradient_discretization"):
                 mobility = deck["solver"]["mobility"]
                 if "_field" not in mobility["model"] or mobility.get("high_field_driving_force") != "quasi_fermi_gradient":

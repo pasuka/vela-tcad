@@ -1,0 +1,64 @@
+{
+  "schema": "vela.bvmethods.text_snapshot.v1",
+  "version": "u2022_12_20261109",
+  "kind": "local_text_qualification_not_native_store_registration",
+  "integration_commit": "77a889a95b87f6a17c7a5943c135a0b9d04cf6b0",
+  "files": {
+    ".gitattributes": {
+      "sha256": "bcfb3b8d507970b1c4114665712ce1c5de3c5632617d3aa6e5470859d7493d77",
+      "bytes": 93
+    },
+    "README.md": {
+      "sha256": "42125f867a0c8ba7ffe201db7d67782f3a15da193297476c53771150397a317d",
+      "bytes": 3318
+    },
+    "comparison.json": {
+      "sha256": "9a7dd48e4bdcbef8ab3391019e0972e65e758a32d7090c7c359e8af4cccc37a7",
+      "bytes": 6189
+    },
+    "reference_curves/native_u2022_12_adaptive_0_100.csv": {
+      "sha256": "5d1513d27334930ab34ed9bf498ddadffced0007b82663ea992a876ce907f674",
+      "bytes": 2500
+    },
+    "source/inputs.json": {
+      "sha256": "fafca37b325967c443a296dd3df6d7d96f58b523e656563a23a2409da2045016",
+      "bytes": 549
+    },
+    "source/pp5_des.cmd": {
+      "sha256": "47ed4a2330f20bcb190535175aa5dc6fb180cf49315093659c79d8e450c2a518",
+      "bytes": 1475
+    },
+    "source/pp5_des.par": {
+      "sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+      "bytes": 489
+    },
+    "source/pp5_des.vela.json": {
+      "sha256": "c24b1c1ce50c9d9c6b3269c14f2e33ce1f817fd773c00e4da392f0ca18366f17",
+      "bytes": 346
+    },
+    "vela/curves/cmd_full_bv.csv": {
+      "sha256": "1f2ae5946d2931daf48d086b897ecf274f34e858f67a0fa7fd089dfeb498d1d7",
+      "bytes": 6780
+    },
+    "vela/curves/ordinary_full_physical.csv": {
+      "sha256": "bfffe49b83736fe06dfaca12236a2f825951671be2986b344b92e0aa3d4398ce",
+      "bytes": 3974
+    },
+    "vela/curves/ordinary_full_unit.csv": {
+      "sha256": "3d6d17fbd0abdf03691d3011e47634f0612ea282babf35bef10e28758e164991",
+      "bytes": 3970
+    },
+    "vela/materials.json": {
+      "sha256": "8a6cd01d1a7a00713beed6cf652d96a3777a8feb8456cb2bd3d56895e4ae947f",
+      "bytes": 1893
+    },
+    "vela/simulation_stage00.json": {
+      "sha256": "cdb341aaa939d30d1d1982f358337228b300883677d52311f2047bf2eb478dd1",
+      "bytes": 5260
+    },
+    "vela/simulation_stage01.json": {
+      "sha256": "340d4f29db3f93cb3abf2168e7a2d637ecc7d50d588886ac8f175dce2cd70640",
+      "bytes": 6223
+    }
+  }
+}

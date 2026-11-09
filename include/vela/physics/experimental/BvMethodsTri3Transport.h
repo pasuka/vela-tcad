@@ -22,7 +22,8 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
     double thermalVoltage_V,bool electron,
     const std::array<AvJet,3>& einsteinFactor={AvJet(1),AvJet(1),AvJet(1)},
     const std::array<AvJet,3>* directArguments=nullptr,
-    const std::array<std::size_t,3>& nodeOrder={0,1,2})
+    const std::array<std::size_t,3>& nodeOrder={0,1,2},
+    const std::array<bool,3>& freezePopulationFeedback={false,false,false})
 {
     if(!(thermalVoltage_V>0.))throw std::invalid_argument("Transport requires positive thermal voltage");
     Tri3TransportResult out;
@@ -43,16 +44,27 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
         const auto j=(k+1)%3;
         const auto thermal=AvJet(thermalVoltage_V)*einsteinFactor[k];
         AvJet flux;
+        auto prefactor=AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s*thermal;
+        // Population slots are 3..8, potential slots are 0..2. Freeze the
+        // coefficient AND its argument input as a pair, retaining all values.
+        if(freezePopulationFeedback[k])
+            for(int z=3;z<9;++z)prefactor.derivative[z]=0.;
         if(!directArguments){
-            const auto delta=AvJet(electron?1.:-1.)*(quasiFermi_V[j]-quasiFermi_V[k])/thermal;
-            const auto argument=avLogRatio(density_cm3[j],density_cm3[k])+delta;
-            flux=avSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
-                *thermal,density_cm3[k],density_cm3[j],delta,argument);
+            auto delta=AvJet(electron?1.:-1.)*(quasiFermi_V[j]-quasiFermi_V[k])/thermal;
+            const auto logRatio=avLogRatio(density_cm3[j],density_cm3[k]);
+            auto argument=logRatio+delta;
+            if(freezePopulationFeedback[k])for(int z=3;z<9;++z){
+                argument.derivative[z]=0.;
+                // avSgFlux's expm1 branch uses delta, with a=logRatio+delta.
+                delta.derivative[z]=-logRatio.derivative[z];
+            }
+            flux=avSgFlux(prefactor,density_cm3[k],density_cm3[j],delta,argument);
         }
         if(directArguments) {
             const bool reverse=nodeOrder[k]>nodeOrder[j];const auto u=reverse?j:k,v=reverse?k:j;
-            flux=populationSgFlux(AvJet(edgeCoefficients[k])*out.elementMobility_cm2_V_s
-                *thermal,density_cm3[u],density_cm3[v],(*directArguments)[k]);
+            auto argument=(*directArguments)[k];
+            if(freezePopulationFeedback[k])for(int z=3;z<9;++z)argument.derivative[z]=0.;
+            flux=populationSgFlux(prefactor,density_cm3[u],density_cm3[v],argument);
             if(reverse)flux=-flux;
         }
         out.edgeFlux_per_cm_s[k]=flux;

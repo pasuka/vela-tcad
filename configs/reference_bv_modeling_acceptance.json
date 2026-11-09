@@ -1,0 +1,18 @@
+{
+  "schema": "vela.bv_modeling_acceptance.v1",
+  "date": "2026-10-30",
+  "fillet_radius_um": 0.08,
+  "chord_error_um": 1e-05,
+  "pointwise_relative_tolerance": 1e-06,
+  "geometry_tolerance_um": 1e-08,
+  "area_error_rule": "arc_length * chord_error_um",
+  "repeat_policy": "contract_equivalent",
+  "multibox_edge_component_envelope": 1.35,
+  "multibox_ratio_one": "maximum size: live U-2022.12 ratio=1/max/min controls",
+  "multibox_mapping": "continuous geometric-layer interpolation",
+  "native_topology_equivalence": false,
+  "numerical_solver_qualification": false,
+  "placeholder_parameters": {
+    "node": "0"
+  }
+}

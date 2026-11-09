@@ -1,5 +1,6 @@
 {
   "schema": "vela.templates_ldmos.materials.v1",
+  "physical_constants_profile": "codata2018",
   "benchmark": "builtin:300K",
   "revision": 1,
   "unit_system": {

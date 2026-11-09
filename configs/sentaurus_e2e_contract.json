@@ -6,6 +6,9 @@
       "sde_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
       "sdevice_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
       "analysis": "iv",
+      "solver_profile": "pn2d_sentaurus2018_iv_qualified",
+      "materials_file": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sentaurus2018_iv_materials.json",
+      "current_contact": "Cathode",
       "mesh": {
         "require_non_obtuse": true,
         "node_volume_policy": "mixed_voronoi",
@@ -13,6 +16,26 @@
         "min_cells": 2000,
         "min_contact_nodes": 11,
         "max_angle_degrees": 90.000001
+      },
+      "mesh_backends": {
+        "gmsh": {
+          "require_non_obtuse": false,
+          "node_volume_policy": "barycentric",
+          "min_nodes": 900,
+          "min_cells": 1800,
+          "min_contact_nodes": 11,
+          "max_angle_degrees": 140.0
+        }
+      },
+      "mesh_strategies": {
+        "transfinite-rect": {
+          "require_non_obtuse": true,
+          "node_volume_policy": "mixed_voronoi",
+          "min_nodes": 1000,
+          "min_cells": 2000,
+          "min_contact_nodes": 11,
+          "max_angle_degrees": 90.000001
+        }
       },
       "curve": {
         "bias_start": 0.0,
@@ -23,7 +46,69 @@
         "require_monotonic_current": true,
         "monotonic_relative_tolerance": 1e-09,
         "max_terminal_current_imbalance": 0.02,
+        "max_terminal_current_absolute_imbalance_a_per_um": 2e-18,
         "conservation_current_floor_a_per_um": 1e-20
+      }
+    },
+    "pn2d_sentaurus2018_bv": {
+      "sde_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "sdevice_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd",
+      "analysis": "bv",
+      "solver_profile": "pn2d_sentaurus2018_bv_qualified",
+      "materials_file": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sentaurus2018_iv_materials.json",
+      "current_contact": "Anode",
+      "mesh": {
+        "require_non_obtuse": true,
+        "node_volume_policy": "mixed_voronoi",
+        "min_nodes": 1000,
+        "min_cells": 2000,
+        "min_contact_nodes": 11,
+        "max_angle_degrees": 90.000001
+      },
+      "mesh_backends": {
+        "gmsh": {
+          "require_non_obtuse": false,
+          "node_volume_policy": "barycentric",
+          "min_nodes": 900,
+          "min_cells": 1800,
+          "min_contact_nodes": 11,
+          "max_angle_degrees": 140.0
+        }
+      },
+      "mesh_strategies": {
+        "transfinite-rect": {
+          "require_non_obtuse": true,
+          "node_volume_policy": "mixed_voronoi",
+          "min_nodes": 1000,
+          "min_cells": 2000,
+          "min_contact_nodes": 11,
+          "max_angle_degrees": 90.000001
+        }
+      },
+      "curve": {
+        "bias_start": 0.0,
+        "bias_stop": -20.0,
+        "bias_coverage_tolerance": 1e-06,
+        "min_points": 20,
+        "require_finite": true,
+        "require_monotonic_current": false,
+        "monotonic_relative_tolerance": 1e-09,
+        "max_terminal_current_imbalance": 0.05,
+        "max_terminal_current_absolute_imbalance_a_per_um": 2e-18,
+        "conservation_current_floor_a_per_um": 1e-20
+      },
+      "reference_curve": {
+        "path": "reference_tcad/pn2d_sentaurus2018/fixtures/pn2d_sentaurus2018_bv_reference.csv",
+        "content_sha256_lf": "9ede4233957834fbb42b37c0465f3d581c7e1e0c321f20335dc775de30cd225b",
+        "reference_column": "current_total",
+        "candidate_column": "current_total_A_per_um",
+        "interpolation": "log_current",
+        "bias_min": -20.0,
+        "bias_max": -0.05,
+        "min_points": 200,
+        "max_orders_of_magnitude": 0.08,
+        "max_relative_error": 0.2,
+        "require_trend_match": false
       }
     }
   }

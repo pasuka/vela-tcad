@@ -8,7 +8,10 @@
 
 namespace vela::detail {
 
+struct DCSweepStepControlEvent;
 struct DCSweepStepControlConfig {
+    /// Read-only observer of every attempt, including intermediate failed retries.
+    std::function<void(const DCSweepStepControlEvent&)> attemptObserved;
     Real start = 0.0;
     Real stop = 0.0;
     Real step = 0.0;
@@ -21,6 +24,8 @@ struct DCSweepStepControlConfig {
     Real shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;
+    /// Quasistationary exits when division by Decrement crosses MinStep.
+    bool stopBelowMinimum = false;
     std::function<bool()> stopRequested;
     /// Optional state-dependent cap on the proposed step magnitude. Empty
     /// means no representable step respecting both state and minimum limits.
@@ -46,6 +51,9 @@ struct DCSweepStepControlEvent {
     int newtonIterations = -1;
     Real growthFactor = 1.0;
     Real nextStepMagnitude = 0.0;
+    Real proposedStepMagnitude = 0.0;
+    bool targetClipped = false;
+    bool recovered = false;
 };
 
 struct DCSweepStepAttemptResult {

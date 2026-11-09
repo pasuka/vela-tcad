@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import re
@@ -34,8 +35,19 @@ from sentaurus_execution_ir import (  # noqa: E402
 from sentaurus_mesh_builder import (  # noqa: E402
     MeshQualificationError,
     build_mesh_and_doping,
+    qualify_mesh,
     write_doping_csv,
     write_mesh_json,
+)
+from sentaurus_gmsh_pipeline import (  # noqa: E402
+    PipelineError as GmshPipelineError,
+    run_pipeline as run_gmsh_pipeline,
+)
+from convert_tcad_export import load_mesh as load_exported_mesh  # noqa: E402
+from compare_reference_curves import compare_series, read_csv  # noqa: E402
+from sentaurus_sde_frontend import (  # noqa: E402
+    offline_static_frontend,
+    sentaurus2022_evaluated_frontend,
 )
 
 
@@ -898,9 +910,10 @@ def plt_command(args: argparse.Namespace) -> None:
 
 
 def default_tdr_importer() -> str:
-    build_dir = Path(__file__).resolve().parents[1] / "build"
+    repo = Path(__file__).resolve().parents[1]
     exe_name = "sentaurus_import.exe" if sys.platform.startswith("win") else "sentaurus_import"
-    return str(build_dir / exe_name)
+    candidates = [repo / "build-release" / exe_name, repo / "build" / exe_name]
+    return str(next((path for path in candidates if path.is_file()), candidates[-1]))
 
 
 def run_command(command: list[str], cwd: Path) -> None:
@@ -1002,15 +1015,20 @@ def deck_template_type(sim: dict[str, Any]) -> str:
 
 
 def apply_step_control_to_vela_sweep(vela_sweep: dict[str, Any],
-                                     step_control: dict[str, Any]) -> None:
+                                     step_control: dict[str, Any],
+                                     normalized_voltage_span: float | None = None) -> None:
+    initial_step = numeric_or_none(step_control.get("InitialStep"))
     max_step = numeric_or_none(step_control.get("MaxStep"))
     min_step = numeric_or_none(step_control.get("MinStep"))
     increment = numeric_or_none(step_control.get("Increment"))
     decrement = numeric_or_none(step_control.get("Decrement"))
+    scale = 1.0 if normalized_voltage_span is None else abs(normalized_voltage_span)
+    if initial_step is not None and initial_step > 0.0:
+        vela_sweep["initial_step"] = initial_step * scale
     if max_step is not None and max_step > 0.0:
-        vela_sweep["max_step"] = max_step
+        vela_sweep["max_step"] = max_step * scale
     if min_step is not None and min_step > 0.0:
-        vela_sweep["min_step"] = min_step
+        vela_sweep["min_step"] = min_step * scale
     if increment is not None and increment >= 1.0:
         vela_sweep["growth_factor"] = increment
     if decrement is not None and decrement > 1.0:
@@ -1558,6 +1576,111 @@ def project_command(args: argparse.Namespace) -> None:
 E2E_CONTRACT_PATH = REPO / "configs" / "sentaurus_e2e_contract.json"
 
 
+SOLVER_PROFILES: dict[str, dict[str, Any]] = {
+    "pn2d_sentaurus2018_iv_qualified": {
+        "remove_solver_keys": [
+            "quasi_fermi_reference",
+            "gummel_carrier_convergence_norm",
+        ],
+        "solver": {
+            "max_iter": 40,
+            "reltol": 1.0e-8,
+            "abstol": 1.0e-18,
+            "max_update": 5.0,
+            "contact_boundary_minority_electron_relaxation": False,
+            "taun": 1.0e-5,
+            "taup": 3.0e-6,
+            "mobility": {"model": "masetti"},
+            "carrier_row_convergence": {"mode": "report"},
+            "continuity_row_scaling": {"enabled": False},
+            "global_continuity_closure": {
+                "mode": "report", "tolerance": 0.02,
+                "source_floor": 1.0e-20,
+            },
+            "handoff": {
+                "fallback": "none",
+                "require_gummel_convergence": False,
+                "gummel_max_iter": 0,
+                "newton_max_iter": 40,
+            },
+        },
+        "sweep": {"initial_step": 0.02, "max_step": 0.02},
+    },
+    "pn2d_sentaurus2018_bv_qualified": {
+        "remove_solver_keys": [
+            "quasi_fermi_reference",
+            "gummel_carrier_convergence_norm",
+        ],
+        "solver": {
+            "max_iter": 40,
+            "reltol": 1.0e-8,
+            "abstol": 1.0e-9,
+            "max_update": 0.0,
+            "quasi_fermi_update_limit_V": 0.1,
+            "contact_boundary_minority_electron_relaxation": False,
+            "mobility": {
+                "model": "masetti_field",
+                "high_field_driving_force": "quasi_fermi_gradient",
+                "jacobian_field_derivatives": False,
+            },
+            "impact_ionization": {
+                "model": "van_overstraeten",
+                "driving_force": "quasi_fermi_gradient",
+                "generation": "current_density",
+                "current_approximation": "element_edge_sg_gss_laux",
+                "source_mapping_mode": "element_vertex_box_measure",
+                "cell_reconstructed_midpoint_density": "bernoulli",
+                "quasi_fermi_gradient_discretization": "cell_gradient",
+            },
+            "carrier_row_convergence": {"mode": "report"},
+            "continuity_row_scaling": {"enabled": False},
+            "global_continuity_closure": {
+                "mode": "report", "tolerance": 0.01,
+                "source_floor": 1.0e-14,
+            },
+            "handoff": {
+                "fallback": "none",
+                "require_gummel_convergence": False,
+                "gummel_max_iter": 0,
+                "newton_max_iter": 40,
+            },
+        },
+        "sweep": {
+            "initial_step": 0.05,
+            "max_step": 0.05,
+            "min_step": 1.0e-10,
+            "growth_factor": 1.2,
+            "shrink_factor": 0.5,
+            "max_retries": 29,
+        },
+    },
+}
+
+
+def _deep_update(target: dict[str, Any], update: dict[str, Any]) -> None:
+    for key, value in update.items():
+        if isinstance(value, dict) and isinstance(target.get(key), dict):
+            _deep_update(target[key], value)
+        else:
+            target[key] = json.loads(json.dumps(value))
+
+
+def apply_solver_profile(deck: dict[str, Any], profile_name: str | None) -> None:
+    if profile_name is None:
+        return
+    try:
+        profile = SOLVER_PROFILES[profile_name]
+    except KeyError as error:
+        raise ExecutionIrError(
+            f"unknown E2E solver profile '{profile_name}'") from error
+    solver = deck.setdefault("solver", {})
+    for key in profile.get("remove_solver_keys", []):
+        solver.pop(str(key), None)
+    _deep_update(solver, profile.get("solver", {}))
+    _deep_update(deck.setdefault("sweep", {}), profile.get("sweep", {}))
+    deck["_e2e_solver_profile"] = profile_name
+
+
 def load_e2e_contract(path: Path | None = None) -> dict[str, Any]:
     """Load the versioned end-to-end acceptance contract."""
     contract_path = Path(path) if path is not None else E2E_CONTRACT_PATH
@@ -1591,10 +1714,237 @@ def _clear_stale_reports(output_dir: Path) -> None:
     A stale success manifest next to a fresh failure is indistinguishable from
     a real success, so both report files are removed before anything is written.
     """
-    for name in ("fail_report.json", "run_manifest.json"):
+    for name in ("fail_report.json", "run_manifest.json", "acceptance_report.json"):
         target = output_dir / name
         if target.exists():
             target.unlink()
+
+
+def _last_converged_bias(csv_path: Path) -> float | None:
+    """Return the last converged bias from a partial curve, if readable."""
+    if not csv_path.is_file():
+        return None
+    try:
+        with csv_path.open(encoding="utf-8", newline="") as handle:
+            rows = csv.DictReader(handle)
+            accepted = [
+                float(row["bias_V"]) for row in rows
+                if row.get("converged") in {"1", "true", "True"}
+            ]
+        return accepted[-1] if accepted else None
+    except (OSError, KeyError, TypeError, ValueError):
+        return None
+
+
+def _contract_case(contract: dict[str, Any], case_name: str | None,
+                   sde: Path, sdevice: Path) -> tuple[str, dict[str, Any]] | None:
+    if case_name:
+        try:
+            return case_name, contract["cases"][case_name]
+        except KeyError as error:
+            raise ValueError(f"unknown E2E contract case '{case_name}'") from error
+    sde_norm = sde.resolve().as_posix().lower()
+    sdevice_norm = sdevice.resolve().as_posix().lower()
+    matches = [
+        (name, case) for name, case in contract["cases"].items()
+        if sde_norm.endswith(str(case["sde_cmd"]).lower()) and
+        sdevice_norm.endswith(str(case["sdevice_cmd"]).lower())
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
+                             analysis_kind: str,
+                             qualification: dict[str, Any], csv_path: Path,
+                             terminal_current_csv: Path | None = None,
+                             mesh_backend: str = "tensor-legacy",
+                             mesh_strategy: str | None = None) \
+         -> dict[str, Any]:
+    """Evaluate the checked-in contract and return a machine-readable report."""
+    failures: list[str] = []
+    mesh = dict(case["mesh"])
+    mesh.update(case.get("mesh_backends", {}).get(mesh_backend, {}))
+    if mesh_strategy is not None:
+        mesh.update(case.get("mesh_strategies", {}).get(mesh_strategy, {}))
+    if analysis_kind != case["analysis"]:
+        failures.append(f"analysis {analysis_kind!r} != {case['analysis']!r}")
+    checks = {
+        "node_count": qualification.get("node_count", 0),
+        "cell_count": qualification.get("cell_count", 0),
+        "max_angle_degrees": qualification.get("max_angle_degrees"),
+        "node_volume_policy": qualification.get("node_volume_policy"),
+    }
+    if checks["node_count"] < mesh.get("min_nodes", 0):
+        failures.append("mesh node_count below contract minimum")
+    if checks["cell_count"] < mesh.get("min_cells", 0):
+        failures.append("mesh cell_count below contract minimum")
+    if checks["max_angle_degrees"] > mesh.get("max_angle_degrees", math.inf):
+        failures.append("mesh max angle exceeds contract maximum")
+    if checks["node_volume_policy"] != mesh["node_volume_policy"]:
+        failures.append("mesh node-volume policy mismatch")
+    contact_counts = [entry["node_count"] for entry in qualification.get("contacts", [])]
+    checks["min_contact_nodes"] = min(contact_counts) if contact_counts else 0
+    if checks["min_contact_nodes"] < mesh.get("min_contact_nodes", 0):
+        failures.append("contact node_count below contract minimum")
+
+    with csv_path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    accepted = [row for row in rows if row.get("converged") in {"1", "true", "True"}]
+    curve = case["curve"]
+    expected_mode = "bv_reverse" if analysis_kind == "bv" else "iv"
+    if any(row.get("mode") != expected_mode for row in accepted):
+        failures.append(f"CSV mode is not uniformly {expected_mode}")
+    if len(accepted) < curve["min_points"]:
+        failures.append("accepted curve point count below contract minimum")
+    biases = [float(row["bias_V"]) for row in accepted]
+    currents = [float(row["current_total_A_per_um"]) for row in accepted]
+    checks.update({
+        "accepted_points": len(accepted),
+        "expected_mode": expected_mode,
+        "last_accepted_bias_V": biases[-1] if biases else None,
+    })
+    if curve.get("require_finite", False) and not all(
+            math.isfinite(value) for value in [*biases, *currents]):
+        failures.append("curve contains non-finite bias or current")
+    tolerance = float(curve.get("bias_coverage_tolerance", 0.0))
+    if not biases or abs(biases[0] - float(curve["bias_start"])) > tolerance:
+        failures.append("curve does not start at the contracted bias")
+    if not biases or abs(biases[-1] - float(curve["bias_stop"])) > tolerance:
+        failures.append("curve does not reach the contracted stop bias")
+    if curve.get("require_monotonic_current", False) and currents:
+        rel = float(curve.get("monotonic_relative_tolerance", 0.0))
+        magnitudes = [abs(value) for value in currents]
+        for previous, current in zip(magnitudes, magnitudes[1:]):
+            if current + rel * max(previous, current, 1.0e-300) < previous:
+                failures.append("current magnitude is not monotonic")
+                break
+    if "max_terminal_current_imbalance" in curve:
+        if terminal_current_csv is None or not terminal_current_csv.is_file():
+            failures.append("terminal-current diagnostic CSV is missing")
+        else:
+            with terminal_current_csv.open(encoding="utf-8", newline="") as handle:
+                terminal_rows = list(csv.DictReader(handle))
+            by_bias: dict[float, list[float]] = {}
+            for row in terminal_rows:
+                by_bias.setdefault(float(row["bias_V"]), []).append(
+                    float(row["I_sgflux_A_per_um"]))
+            floor = float(curve.get("conservation_current_floor_a_per_um", 0.0))
+            relative_limit = float(curve["max_terminal_current_imbalance"])
+            absolute_limit = float(curve.get(
+                "max_terminal_current_absolute_imbalance_a_per_um", 0.0))
+            ratios: list[float] = []
+            absolute_mismatches: list[float] = []
+            mixed_tolerance_ratios: list[float] = []
+            for bias in biases:
+                values = next((items for key, items in by_bias.items()
+                               if abs(key - bias) <= tolerance), [])
+                if len(values) < 2:
+                    failures.append(
+                        f"terminal-current diagnostic lacks two contacts at bias {bias}")
+                    continue
+                scale = max(abs(value) for value in values)
+                if scale >= floor:
+                    mismatch = abs(sum(values))
+                    ratios.append(mismatch / scale)
+                    absolute_mismatches.append(mismatch)
+                    mixed_denominator = absolute_limit + relative_limit * scale
+                    mixed_tolerance_ratios.append(
+                        mismatch / mixed_denominator
+                        if mixed_denominator > 0.0 else math.inf)
+            checks["max_terminal_current_imbalance"] = max(ratios, default=0.0)
+            checks["max_terminal_current_absolute_imbalance_a_per_um"] = max(
+                absolute_mismatches, default=0.0)
+            checks["max_terminal_current_mixed_tolerance_ratio"] = max(
+                mixed_tolerance_ratios, default=0.0)
+            if not all(math.isfinite(value) for value in mixed_tolerance_ratios):
+                failures.append("terminal-current imbalance contains non-finite values")
+            elif checks["max_terminal_current_mixed_tolerance_ratio"] > 1.0:
+                failures.append(
+                    "terminal-current imbalance exceeds mixed absolute/relative "
+                    "contract maximum")
+    reference_contract = case.get("reference_curve")
+    if reference_contract is not None:
+        reference_path = Path(str(reference_contract["path"]))
+        if not reference_path.is_absolute():
+            reference_path = REPO / reference_path
+        reference_check: dict[str, Any] = {
+            "path": str(reference_path),
+            "available": False,
+        }
+        checks["reference_curve"] = reference_check
+        if not reference_path.is_file():
+            failures.append("frozen Sentaurus reference curve is missing")
+        else:
+            try:
+                reference_bytes = reference_path.read_text(
+                    encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
+                reference_sha256 = hashlib.sha256(reference_bytes).hexdigest()
+                reference_check["content_sha256_lf"] = reference_sha256
+                if reference_sha256 != reference_contract["content_sha256_lf"]:
+                    failures.append(
+                        "frozen Sentaurus reference curve hash mismatch")
+                comparison_rows = [dict(row) for row in accepted]
+                for row in comparison_rows:
+                    bias = float(row["bias_V"])
+                    for endpoint in (float(curve["bias_start"]),
+                                     float(curve["bias_stop"])):
+                        if abs(bias - endpoint) <= tolerance:
+                            row["bias_V"] = str(endpoint)
+                            break
+                comparison = compare_series(
+                    "iv",
+                    read_csv(reference_path),
+                    comparison_rows,
+                    candidate_scale=float(reference_contract.get(
+                        "candidate_scale", 1.0)),
+                    candidate_bias_scale=1.0,
+                    candidate_bias_offset=0.0,
+                    bias_min=reference_contract.get("bias_min"),
+                    bias_max=reference_contract.get("bias_max"),
+                    reference_column=reference_contract.get("reference_column"),
+                    candidate_column=reference_contract.get("candidate_column"),
+                    interpolation=str(reference_contract.get(
+                        "interpolation", "log_current")),
+                )
+                reference_check.update(comparison)
+            except (OSError, ValueError, KeyError) as error:
+                reference_check["error"] = str(error)
+                failures.append("Sentaurus reference curve comparison failed")
+            else:
+                if not comparison.get("available", False):
+                    failures.append(
+                        "Sentaurus reference curve columns are unavailable")
+                points = int(comparison.get("points_compared", 0))
+                if points < int(reference_contract.get("min_points", 2)):
+                    failures.append(
+                        "Sentaurus reference curve point count below contract minimum")
+                max_orders = comparison.get("orders_of_magnitude")
+                if max_orders is None or not math.isfinite(float(max_orders)):
+                    failures.append(
+                        "Sentaurus reference curve log error is unavailable")
+                elif float(max_orders) > float(reference_contract[
+                        "max_orders_of_magnitude"]):
+                    failures.append(
+                        "Sentaurus reference curve log error exceeds contract maximum")
+                max_relative = comparison.get("max_relative_error")
+                if max_relative is None or not math.isfinite(float(max_relative)):
+                    failures.append(
+                        "Sentaurus reference curve relative error is unavailable")
+                elif float(max_relative) > float(reference_contract[
+                        "max_relative_error"]):
+                    failures.append(
+                        "Sentaurus reference curve relative error exceeds contract maximum")
+                if (reference_contract.get("require_trend_match", False) and
+                        not comparison.get("trend_match", False)):
+                    failures.append("Sentaurus reference curve trend mismatch")
+    return {
+        "schema": "vela.sentaurus_device_acceptance.v1",
+        "case": case_name,
+        "mesh_backend": mesh_backend,
+        "status": "accepted" if not failures else "failed",
+        "checks": checks,
+        "failures": failures,
+    }
 
 
 def build_device_deck(device_ir: dict[str, Any],
@@ -1605,8 +1955,11 @@ def build_device_deck(device_ir: dict[str, Any],
                       output_csv: str,
                       current_contact: str | None = None,
                       stop_voltage: float | None = None,
-                      materials_file: str | None = None,
-                      allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
+                       materials_file: str | None = None,
+                       solver_profile: str | None = None,
+                       node_volume_policy: str = "mixed_voronoi",
+                       require_non_obtuse: bool = True,
+                       allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
     """Build a Vela ``dc_sweep`` deck from the device and execution IRs."""
     analysis = execution_ir["analysis"]
     kind = analysis["kind"]
@@ -1636,8 +1989,17 @@ def build_device_deck(device_ir: dict[str, Any],
         raise ExecutionIrError(
             f"sweep of contact '{swept_contact}' has a zero-length bias range")
 
+    sweep_stages = [
+        stage for stage in execution_ir["stages"] if stage["phase"] == "sweep"
+    ]
+    if len(sweep_stages) != 1:
+        raise ExecutionIrError(
+            f"the unified Vela device runner currently executes exactly one "
+            f"Quasistationary sweep, but the SDevice execution IR contains "
+            f"{len(sweep_stages)}; refusing to silently discard stages")
+
     sweep: dict[str, Any] = {
-        "mode": "iv",
+        "mode": "bv_reverse" if kind == "bv" else "iv",
         "contact": swept_contact,
         "current_contact": current_contact or swept_contact,
         "start": start,
@@ -1651,11 +2013,16 @@ def build_device_deck(device_ir: dict[str, Any],
         "shrink_factor": 0.5,
         "max_retries": 20,
     }
-    final_stage = next(
-        (stage for stage in reversed(execution_ir["stages"])
-         if stage["phase"] == "sweep"), None)
+    final_stage = sweep_stages[0]
     if final_stage:
-        apply_step_control_to_vela_sweep(sweep, final_stage.get("step_control", {}))
+        apply_step_control_to_vela_sweep(
+            sweep,
+            final_stage.get("step_control", {}),
+            # Sentaurus Quasistationary controls are normalized against the
+            # original Goal, even when an E2E contract deliberately truncates
+            # the Vela stop voltage for a shorter acceptance run.
+            normalized_voltage_span=goal - start,
+        )
 
     deck: dict[str, Any] = {
         "_comment": (
@@ -1672,26 +2039,68 @@ def build_device_deck(device_ir: dict[str, Any],
         "solver": {
             "method": "gummel_newton",
             "max_iter": 40,
-            "reltol": 1.0e-8,
+            "reltol": 1.0e-10 if kind == "iv" else 1.0e-8,
             "abstol": 1.0e-9,
             "damping_psi": 0.2,
             "damping_factor": 1.0,
             "max_update": 0.0,
             "line_search": True,
             "warm_start": True,
+            "quasi_fermi_update_limit_V": 0.1,
+            "quasi_fermi_reference": "contact_majority",
+            "gummel_carrier_convergence_norm": (
+                "componentwise" if kind == "iv" else "l2"
+            ),
+            "carrier_row_convergence": {
+                "mode": "report" if kind == "iv" else "enforce",
+                "eps_row": 1.0e-3,
+                "scale_floor": 1.0e-30,
+                "min_source_scale": 1.0e-18,
+                "min_source_scale_fraction": 0.0,
+            },
+            "continuity_row_scaling": {
+                "enabled": True,
+                "flux_fraction": 0.0,
+                "max_weight": 1.0e18,
+                "min_source_scale": 1.0e-18,
+                "min_weight": 1.0e-12,
+                "scale_floor": 1.0e-30,
+            },
+            "global_continuity_closure": {
+                "mode": "report",
+                "tolerance": 0.05 if kind == "bv" else 0.02,
+                "source_floor": 1.0e-20,
+            },
             "contact_boundary_reconstruction": "dominant_signed_contact_mean",
             "handoff": {
-                "fallback": "none",
-                "require_gummel_convergence": False,
-                "gummel_max_iter": 0,
-                "newton_max_iter": 40,
+                "fallback": "gummel_on_newton_failure",
+                "require_gummel_convergence": kind == "iv",
+                "gummel_max_iter": 300 if kind == "iv" else 80,
+                "newton_max_iter": 50 if kind == "iv" else 80,
             },
         },
         "mesh_geometry": {
-            "node_volume_policy": "mixed_voronoi",
-            "require_non_obtuse": True,
+            "node_volume_policy": node_volume_policy,
+            "require_non_obtuse": require_non_obtuse,
         },
         "sweep": sweep,
+        "_sentaurus_execution_sequence": [
+            {
+                "index": stage["index"],
+                "phase": stage["phase"],
+                "type": stage["type"],
+                "depends_on": stage["depends_on"],
+                "equations": stage["equations"],
+            }
+            for stage in execution_ir["stages"]
+        ],
+    }
+    sweep["diagnostics"] = {
+        "terminal_current_method_compare": {
+            "enabled": True,
+            "contacts": sorted(contact_names),
+            "csv_file": "terminal_currents.csv",
+        }
     }
     if materials_file:
         deck["materials_file"] = materials_file
@@ -1699,20 +2108,59 @@ def build_device_deck(device_ir: dict[str, Any],
         deck, cmd_summary, {}, allow_lossy=allow_lossy)
     if kind != "bv":
         deck["solver"].pop("impact_ionization", None)
+    apply_solver_profile(deck, solver_profile)
     return deck, warnings
+
+
+def _validate_device_backend(frontend: str, backend: str) -> None:
+    if backend == "official-tdr" and frontend != "sentaurus2022-evaluated":
+        raise ExecutionIrError(
+            "mesh backend 'official-tdr' requires the internal "
+            "sentaurus2022-evaluated frontend")
+
+
+def _gmsh_pipeline_args(args: argparse.Namespace) -> argparse.Namespace:
+    return argparse.Namespace(
+        sde=args.sde,
+        output_dir=args.output_dir,
+        runtime_dir=args.gmsh_runtime_dir,
+        gmsh_python=args.gmsh_python,
+        gmsh_library=args.gmsh_library,
+        gmsh_executable=args.gmsh_executable,
+        mesh_size=args.gmsh_mesh_size,
+        capability_level="M5",
+        mesh_strategy=args.gmsh_mesh_strategy,
+        transfinite_diagonal=args.gmsh_transfinite_diagonal,
+    )
 
 
 def device_command(args: argparse.Namespace) -> None:
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     _clear_stale_reports(output_dir)
+    try:
+        _validate_device_backend(args.sde_frontend, args.mesh_backend)
+    except ExecutionIrError as error:
+        _write_fail_report(output_dir, "configuration", str(error))
+        raise
+    contract = load_e2e_contract(args.contract)
+    selected_contract = _contract_case(
+        contract, args.contract_case, args.sde, args.sdevice)
 
     try:
-        device_ir = parse_sde_device_ir(args.sde)
-    except SdeParseError as error:
+        if args.sde_frontend == "sentaurus2022-evaluated":
+            device_ir, frontend_manifest = sentaurus2022_evaluated_frontend(
+                args.sde, output_dir / "sde_evaluated",
+                executable=args.sde_executable,
+                build_mesh=(args.sde_build_mesh or args.mesh_backend == "official-tdr"),
+            )
+        else:
+            device_ir, frontend_manifest = offline_static_frontend(args.sde, parameters=parse_template_vars(args.template_var))
+    except (SdeParseError, RuntimeError) as error:
         _write_fail_report(output_dir, "sde_parse", str(error))
         raise
     write_json(output_dir / "device_ir.json", device_ir)
+    write_json(output_dir / "sde_frontend_manifest.json", frontend_manifest)
 
     template_vars = parse_template_vars(args.template_var)
     cmd_summary = parse_cmd(args.sdevice, template_vars)
@@ -1738,20 +2186,127 @@ def device_command(args: argparse.Namespace) -> None:
         raise
     write_json(output_dir / "execution_ir.json", execution_ir)
 
+    official_mesh_value = frontend_manifest.get("official_mesh_tdr")
+    mesh_source: dict[str, Any]
+    preprocess_generated: list[str] = []
     try:
-        generated = build_mesh_and_doping(
-            device_ir,
-            require_non_obtuse=not args.allow_obtuse,
-            node_volume_policy=args.node_volume_policy,
-        )
+        if args.mesh_backend == "gmsh":
+            gmsh_manifest = run_gmsh_pipeline(
+                _gmsh_pipeline_args(args),
+                device_ir_override=device_ir,
+                frontend_manifest=frontend_manifest,
+            )
+            qualification = gmsh_manifest["mesh_qualification"]
+            write_json(output_dir / "gmsh_preprocess_manifest.json", gmsh_manifest)
+            preprocess_generated = [
+                *gmsh_manifest["generated"], "gmsh_preprocess_manifest.json"
+            ]
+            mesh_source = {
+                "kind": "gmsh",
+                "frontend": args.sde_frontend,
+                "gmsh_version": gmsh_manifest["gmsh_version"],
+                "sde_sha256": gmsh_manifest["sde_sha256"],
+                "cross_format_status": gmsh_manifest["cross_format"]["status"],
+                "mesh_strategy": gmsh_manifest.get("mesh_strategy"),
+            }
+        elif args.mesh_backend == "official-tdr":
+            if not official_mesh_value:
+                raise RuntimeError(
+                    "evaluated SDE did not produce an official _msh.tdr artifact")
+            official_mesh = Path(str(official_mesh_value)).resolve()
+            export_dir = output_dir / "official_tdr_export"
+            run_tdr_importer(
+                args.tdr_importer,
+                official_mesh,
+                export_dir / "inventory.json",
+                export_dir,
+            )
+            mesh, _region_nodes = load_exported_mesh(export_dir)
+            write_mesh_json(output_dir / "mesh.json", mesh)
+            shutil.copyfile(export_dir / "doping.csv", output_dir / "doping.csv")
+            qualification = qualify_mesh(
+                mesh,
+                require_non_obtuse=not args.allow_obtuse,
+                node_volume_policy=args.node_volume_policy,
+            )
+            mesh_source = {
+                "kind": "sentaurus-official-tdr",
+                "path": str(official_mesh),
+                "sha256": frontend_manifest.get("official_mesh_tdr_sha256"),
+            }
+            preprocess_generated = [
+                "official_tdr_export/inventory.json",
+                "official_tdr_export/nodes.csv",
+                "official_tdr_export/elements.csv",
+                "official_tdr_export/contacts.csv",
+                "official_tdr_export/doping.csv",
+            ]
+        else:
+            generated = build_mesh_and_doping(
+                device_ir,
+                require_non_obtuse=not args.allow_obtuse,
+                node_volume_policy=args.node_volume_policy,
+            )
+            write_mesh_json(output_dir / "mesh.json", generated.mesh)
+            write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
+            qualification = generated.qualification
+            mesh_source = {
+                "kind": "tensor-legacy",
+                "frontend": args.sde_frontend,
+                "compatibility_only": True,
+                "path": None,
+                "sha256": None,
+            }
     except MeshQualificationError as error:
         _write_fail_report(output_dir, "mesh", str(error), error.report)
         raise
-    write_mesh_json(output_dir / "mesh.json", generated.mesh)
-    write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
-    write_json(output_dir / "mesh_qualification.json", generated.qualification)
+    except GmshPipelineError as error:
+        _write_fail_report(output_dir, error.stage, str(error), error.details)
+        raise
+    except (OSError, RuntimeError, ValueError) as error:
+        _write_fail_report(
+            output_dir,
+            "mesh_import",
+            str(error),
+            {"official_mesh_tdr": str(official_mesh_value)},
+        )
+        raise
+    write_json(output_dir / "mesh_qualification.json", qualification)
+
+    max_angle = float(qualification.get("max_angle_degrees", math.inf))
+    if args.mesh_quality_profile == "vela-non-obtuse" and max_angle > 90.000001:
+        message = (
+            f"mesh maximum angle {max_angle:.9g} exceeds the explicit "
+            "vela-non-obtuse quality profile")
+        _write_fail_report(output_dir, "mesh_quality", message, qualification)
+        raise MeshQualificationError(message, qualification)
+    effective_volume_policy = (
+        args.node_volume_policy or
+        str(qualification.get("node_volume_policy", "mixed_voronoi"))
+    )
+    require_non_obtuse = (
+        (args.mesh_quality_profile == "vela-non-obtuse" or
+         bool(qualification.get("require_non_obtuse", False))) and
+        not args.allow_obtuse
+    )
 
     try:
+        contract_stop = (
+            float(selected_contract[1]["curve"]["bias_stop"])
+            if selected_contract else None
+        )
+        effective_stop_voltage = (
+            args.stop_voltage if args.stop_voltage is not None else contract_stop
+        )
+        selected_case = selected_contract[1] if selected_contract else {}
+        contract_materials = selected_case.get("materials_file")
+        materials_file = args.materials_file
+        if materials_file is None and contract_materials:
+            candidate = (REPO / str(contract_materials)).resolve()
+            if not candidate.is_file():
+                raise ExecutionIrError(
+                    f"E2E contract materials file does not exist: {candidate}")
+            materials_file = str(candidate)
         deck, warnings = build_device_deck(
             device_ir,
             execution_ir,
@@ -1759,9 +2314,13 @@ def device_command(args: argparse.Namespace) -> None:
             mesh_file="mesh.json",
             doping_file="doping.csv",
             output_csv=args.output_csv,
-            current_contact=args.current_contact,
-            stop_voltage=args.stop_voltage,
-            materials_file=args.materials_file,
+            current_contact=(
+                args.current_contact or selected_case.get("current_contact")),
+            stop_voltage=effective_stop_voltage,
+            materials_file=materials_file,
+            solver_profile=selected_case.get("solver_profile"),
+            node_volume_policy=effective_volume_policy,
+            require_non_obtuse=require_non_obtuse,
             allow_lossy=args.allow_lossy,
         )
     except ExecutionIrError as error:
@@ -1778,22 +2337,42 @@ def device_command(args: argparse.Namespace) -> None:
         "analysis": execution_ir["analysis"],
         "generated": [
             "device_ir.json",
+            "sde_frontend_manifest.json",
             "execution_ir.json",
             "mesh.json",
             "doping.csv",
             "mesh_qualification.json",
             "simulation.json",
         ],
-        "mesh_qualification": generated.qualification,
+        "mesh_qualification": qualification,
+        "mesh_source": mesh_source,
+        "mesh_backend": args.mesh_backend,
+        "mesh_quality_profile": args.mesh_quality_profile,
         "metadata_only": device_ir["metadata_only"],
+        "sde_frontend": frontend_manifest,
         "physics_metadata_only": execution_ir["physics"]["metadata_only"],
         "warnings": warnings,
+        "e2e_contract_schema": contract["schema"],
+        "e2e_contract_case": selected_contract[0] if selected_contract else None,
+        "e2e_solver_profile": (
+            selected_contract[1].get("solver_profile")
+            if selected_contract else None),
         "goal_voltage": execution_ir["analysis"].get("final_voltage"),
         "sweep_stop_voltage": deck["sweep"]["stop"],
-        "sweep_stop_overridden": args.stop_voltage is not None,
+        "sweep_stop_overridden": effective_stop_voltage is not None,
+        "sweep_stop_source": (
+            "command_line" if args.stop_voltage is not None else
+            "e2e_contract" if contract_stop is not None else
+            "sdevice"
+        ),
     }
+    manifest["generated"] = sorted(set(manifest["generated"] + preprocess_generated))
 
     if args.run:
+        curve_path = output_dir / args.output_csv
+        for stale_csv in (curve_path, output_dir / "terminal_currents.csv"):
+            if stale_csv.exists():
+                stale_csv.unlink()
         runner = args.runner or str(
             REPO / "build" / ("vela_example_runner.exe"
                               if sys.platform.startswith("win")
@@ -1803,11 +2382,53 @@ def device_command(args: argparse.Namespace) -> None:
         try:
             run_command(command, cwd=output_dir)
         except Exception as error:  # noqa: BLE001 - reported then re-raised
-            _write_fail_report(output_dir, "solve", str(error),
-                               {"command": command})
+            last_bias = _last_converged_bias(curve_path)
+            details = {
+                "command": command,
+                "last_accepted_bias_V": last_bias,
+            }
+            manifest["status"] = "failed"
+            manifest["failure"] = {
+                "stage": "solve",
+                "message": str(error),
+                "last_accepted_bias_V": last_bias,
+            }
+            write_json(output_dir / "run_manifest.json", manifest)
+            _write_fail_report(output_dir, "solve", str(error), details)
             raise
         manifest["status"] = "solved"
         manifest["generated"].append(args.output_csv)
+        if selected_contract:
+            case_name, case = selected_contract
+            acceptance = evaluate_e2e_acceptance(
+                case_name, case, execution_ir["analysis"]["kind"],
+                qualification, output_dir / args.output_csv,
+                output_dir / "terminal_currents.csv",
+                mesh_backend=args.mesh_backend,
+                mesh_strategy=(qualification.get("mesh_strategy")
+                               if args.mesh_backend == "gmsh" else None))
+            write_json(output_dir / "acceptance_report.json", acceptance)
+            manifest["generated"].append("acceptance_report.json")
+            manifest["generated"].append("terminal_currents.csv")
+            manifest["acceptance"] = acceptance
+            if acceptance["status"] == "accepted":
+                manifest["status"] = "accepted"
+            else:
+                manifest["status"] = "failed"
+                write_json(output_dir / "run_manifest.json", manifest)
+                _write_fail_report(
+                    output_dir, "acceptance", "E2E contract was not satisfied",
+                    {"case": case_name, "failures": acceptance["failures"],
+                     "last_accepted_bias_V":
+                         acceptance["checks"].get("last_accepted_bias_V")})
+                raise RuntimeError(
+                    f"E2E contract '{case_name}' failed: "
+                    f"{'; '.join(acceptance['failures'])}")
+        else:
+            manifest["acceptance"] = {
+                "status": "not_evaluated",
+                "reason": "no unique E2E contract case matched the input pair",
+            }
 
     write_json(output_dir / "run_manifest.json", manifest)
     print(json.dumps({
@@ -1847,6 +2468,68 @@ def build_parser() -> argparse.ArgumentParser:
     device.add_argument("--sdevice", type=Path, required=True)
     device.add_argument("--output-dir", type=Path, required=True)
     device.add_argument("--output-csv", default="iv.csv")
+    device.add_argument(
+        "--contract", type=Path, default=E2E_CONTRACT_PATH,
+        help="Versioned SDE/SDevice end-to-end acceptance contract",
+    )
+    device.add_argument(
+        "--contract-case", default=None,
+        help="Explicit case key from the E2E contract; otherwise match by inputs",
+    )
+    device.add_argument(
+        "--sde-frontend",
+        choices=["offline-static", "sentaurus2022-evaluated"],
+        default="offline-static",
+        help=(
+            "Frontend policy: offline-static is the license-free public/CI "
+            "default; sentaurus2022-evaluated is reserved for internal "
+            "development oracle generation"
+        ),
+    )
+    device.add_argument("--sde-executable", default="sde")
+    device.add_argument(
+        "--sde-build-mesh", action="store_true",
+        help="Ask the evaluated frontend to preserve official _bnd.tdr/_msh.cmd artifacts",
+    )
+    device.add_argument(
+        "--tdr-importer", default=None,
+        help="Command used to import an official mesh TDR produced by evaluated SDE",
+    )
+    device.add_argument(
+        "--mesh-backend",
+        choices=["gmsh", "tensor-legacy", "official-tdr"],
+        default="gmsh",
+        help=(
+            "Mesh backend: the open-source Gmsh Python API is the public default; "
+            "tensor-legacy is compatibility-only and official-tdr is an internal "
+            "Sentaurus 2022 oracle path"
+        ),
+    )
+    device.add_argument(
+        "--mesh-quality-profile",
+        choices=["report-only", "vela-non-obtuse"],
+        default="report-only",
+        help="Report general quality or explicitly require a non-obtuse Vela mesh",
+    )
+    device.add_argument(
+        "--gmsh-runtime-dir", type=Path,
+        default=REPO / "build" / "gmsh-python-runtime",
+    )
+    device.add_argument("--gmsh-python", type=Path)
+    device.add_argument("--gmsh-library", type=Path)
+    device.add_argument("--gmsh-executable", type=Path)
+    device.add_argument("--gmsh-mesh-size", type=float, default=0.2)
+    device.add_argument(
+        "--gmsh-mesh-strategy",
+        choices=["auto", "transfinite-rect", "unstructured"], default="auto",
+        help="M5 Gmsh mesh policy; auto selects Transfinite only for eligible rectangles",
+    )
+    device.add_argument(
+        "--gmsh-transfinite-diagonal",
+        choices=["Left", "Right", "AlternateLeft", "AlternateRight"],
+        default="AlternateRight",
+        help="Gmsh Transfinite surface diagonal arrangement",
+    )
     device.add_argument("--materials-file", default=None)
     device.add_argument(
         "--current-contact",
@@ -1863,7 +2546,11 @@ def build_parser() -> argparse.ArgumentParser:
     device.add_argument(
         "--node-volume-policy",
         choices=["mixed_voronoi", "barycentric"],
-        default="mixed_voronoi",
+        default=None,
+        help=(
+            "Override the backend-qualified node-volume policy; M5 Transfinite "
+            "rectangles qualify for mixed_voronoi while unstructured Gmsh uses barycentric"
+        ),
     )
     device.add_argument(
         "--allow-obtuse",

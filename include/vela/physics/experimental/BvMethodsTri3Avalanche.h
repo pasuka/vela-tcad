@@ -30,7 +30,14 @@ inline AvJet avLogRatio(const AvJet& numerator,const AvJet& denominator)
     const double ratio=numerator.value/denominator.value;
     if(ratio>=std::sqrt(std::numeric_limits<double>::min()) &&
        ratio<=std::sqrt(std::numeric_limits<double>::max()))
-        return avLog(numerator/denominator);
+    {
+        const auto quotient=numerator/denominator;
+        bool finite=true;
+        for(double d:quotient.derivative)finite=finite&&std::isfinite(d);
+        if(finite)return avLog(quotient);
+        // The quotient can be ordinary while its intermediate tangent
+        // overflows. d log(a/b)=da/a-db/b remains representable.
+    }
     return avLog(numerator)-avLog(denominator);
 }
 
@@ -82,12 +89,31 @@ struct AvCoefficient {
     double lowA=0.,lowB=1.,highA=0.,highB=1.,switchField=4e5;
 };
 
+inline AvJet avExponentialCoefficient(const AvJet& field,double a,double b)
+{
+    if(a==0.)return {};
+    auto result=AvJet(a)*detail::dualExp(-AvJet(b)/field);
+    bool finite=std::isfinite(result.value);
+    for(double d:result.derivative)finite=finite&&std::isfinite(d);
+    if(finite)return result;
+    // A exp(-B/E) can have a finite zero value AND zero tangent although
+    // differentiating -B/E first overflows. Keep the combined exponent.
+    const long double exponent=-(long double)b/field.value;
+    const long double value=(long double)a*std::exp(exponent);
+    result.value=static_cast<double>(value);
+    const long double slope=std::exp(std::log((long double)a)+
+        std::log((long double)b)-2*std::log((long double)field.value)+exponent);
+    for(std::size_t k=0;k<result.derivative.size();++k)
+        result.derivative[k]=static_cast<double>(slope*field.derivative[k]);
+    return result;
+}
+
 inline AvJet avCoefficient(const AvJet& field,const AvCoefficient& p)
 {
     if(field.value<=0.) return {};
-    const auto low=AvJet(p.lowA)*detail::dualExp(-AvJet(p.lowB)/field);
+    const auto low=avExponentialCoefficient(field,p.lowA,p.lowB);
     if(field.value<=.95*p.switchField) return low;
-    const auto high=AvJet(p.highA)*detail::dualExp(-AvJet(p.highB)/field);
+    const auto high=avExponentialCoefficient(field,p.highA,p.highB);
     if(field.value>=1.05*p.switchField) return high;
     const auto t=(field/AvJet(p.switchField)-AvJet(.95))/AvJet(.1);
     AvJet weight(.5*(1-std::cos(std::acos(-1.)*t.value)));

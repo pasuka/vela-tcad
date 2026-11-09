@@ -28,7 +28,8 @@ Design
   temperature exponent at the reference temperature); every demotion is
   listed under ``report["inert"]`` with its reason.
 
-Physical constants are CODATA 2018 and identical to
+Physical constants default to CODATA 2018, with an explicit Sentaurus U-2022.12
+compatibility profile. Both are identical to the corresponding build profile in
 ``include/vela/core/PhysicalConstants.h``; the density-of-states prefactor is
 the full ``2 (2 pi m0 kB T / h^2)^{3/2}`` expression documented in the
 parameter files, not the rounded ``2.5094e19`` that appears in their comments.
@@ -54,7 +55,7 @@ from vela_sdevice.mesh_import import MATERIAL_MAP, map_material  # noqa: E402
 
 __all__ = [
     "MaterialsError", "EmitResult", "TEMPLATES", "SCHEMA_ID", "REPORT_SCHEMA_ID",
-    "CONSTANTS", "active_models_from_ir", "emit_materials", "write_materials",
+    "CONSTANTS", "CONSTANTS_PROFILES", "physical_constants", "active_models_from_ir", "emit_materials", "write_materials",
     "default_models_par_path", "evaluate_semiconductor", "varshni_gap",
     "dos_prefactor_cm3", "electron_dos_mass", "hole_dos_mass", "intrinsic_density_cm3",
 ]
@@ -79,6 +80,23 @@ CONSTANTS = {
     "m0_kg": 9.1093837015e-31,
 }
 KB_EV_PER_K = CONSTANTS["kb_J_per_K"] / CONSTANTS["q_C"]
+CONSTANTS_PROFILES = {
+    "codata2018": {**CONSTANTS, "eps0_F_per_m": 8.8541878128e-12, "dos_pi": math.pi},
+    "sentaurus_u2022_12": {"kb_J_per_K": 1.380662e-23, "q_C": 1.602192e-19,
+        "h_J_s": 6.626176e-34, "m0_kg": 9.109534e-31,
+        "eps0_F_per_m": 8.8542e-12, "dos_pi": 3.141592654},
+}
+# Public default references follow the default emission/build profile. Keep the
+# original CODATA dictionary inside CONSTANTS_PROFILES for explicit rollback.
+CONSTANTS = {k: CONSTANTS_PROFILES["sentaurus_u2022_12"][k] for k in CONSTANTS}
+KB_EV_PER_K = CONSTANTS["kb_J_per_K"] / CONSTANTS["q_C"]
+
+
+def physical_constants(profile: str = "sentaurus_u2022_12") -> dict:
+    """Return a copy; selecting one emission never changes another emission."""
+    if profile not in CONSTANTS_PROFILES:
+        raise ValueError(f"Unknown physical constants profile: {profile}")
+    return dict(CONSTANTS_PROFILES[profile])
 
 FATAL = "fatal"
 #: Message templates (contract C8, docs/sentaurus_sdevice_workflow.md section 4).
@@ -227,10 +245,11 @@ def varshni_gap(eg0: float, alpha: float, beta: float, tpar: float, temperature_
     return eg_T, eg_zero
 
 
-def dos_prefactor_cm3(temperature_K: float, mass_ratio: float = 1.0) -> float:
+def dos_prefactor_cm3(temperature_K: float, mass_ratio: float = 1.0, *, constants_profile: str = "sentaurus_u2022_12") -> float:
     """``2 (2 pi m kB T / h^2)^{3/2}`` in cm^-3 for ``m = mass_ratio * m0``."""
-    m = mass_ratio * CONSTANTS["m0_kg"]
-    value_m3 = 2.0 * (2.0 * math.pi * m * CONSTANTS["kb_J_per_K"] * temperature_K / CONSTANTS["h_J_s"] ** 2) ** 1.5
+    c = physical_constants(constants_profile)
+    m = mass_ratio * c["m0_kg"]
+    value_m3 = 2.0 * (2.0 * c["dos_pi"] * m * c["kb_J_per_K"] * temperature_K / c["h_J_s"] ** 2) ** 1.5
     return value_m3 / 1.0e6
 
 
@@ -260,13 +279,14 @@ def hole_dos_mass(coefficients: Dict[str, float], temperature_K: float) -> float
     return (numerator / denominator) ** (2.0 / 3.0) + coefficients.get("mm", 0.0)
 
 
-def intrinsic_density_cm3(nc_cm3: float, nv_cm3: float, effective_gap_eV: float, temperature_K: float) -> float:
-    kT = KB_EV_PER_K * temperature_K
+def intrinsic_density_cm3(nc_cm3: float, nv_cm3: float, effective_gap_eV: float, temperature_K: float, *, constants_profile: str = "sentaurus_u2022_12") -> float:
+    c = physical_constants(constants_profile)
+    kT = c["kb_J_per_K"] / c["q_C"] * temperature_K
     return math.sqrt(nc_cm3 * nv_cm3) * math.exp(-effective_gap_eV / (2.0 * kT))
 
 
 def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: float,
-                           fold_old_slotboom: bool) -> Dict[str, Any]:
+                           fold_old_slotboom: bool, *, constants_profile: str = "sentaurus_u2022_12") -> Dict[str, Any]:
     """Evaluate the frozen material scalars from merged section parameter maps.
 
     ``sections[section][name]`` is a list of numbers (``dEg0`` variants are
@@ -293,10 +313,11 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
     if "a" not in h_coeff:
         raise KeyError("hDOSMass.a")
     mh = hole_dos_mass(h_coeff, temperature_K)
-    nc = dos_prefactor_cm3(temperature_K, me)
-    nv = dos_prefactor_cm3(temperature_K, mh)
+    c = physical_constants(constants_profile)
+    nc = dos_prefactor_cm3(temperature_K, me, constants_profile=constants_profile)
+    nv = dos_prefactor_cm3(temperature_K, mh, constants_profile=constants_profile)
     effective_gap = eg_T + d_eg0
-    ni = intrinsic_density_cm3(nc, nv, effective_gap, temperature_K)
+    ni = intrinsic_density_cm3(nc, nv, effective_gap, temperature_K, constants_profile=constants_profile)
     result: Dict[str, Any] = {
         "bandgap_eV": eg_T,
         "electron_affinity_eV": bandgap["Chi0"][0],
@@ -308,8 +329,8 @@ def evaluate_semiconductor(sections: Dict[str, Dict[str, Any]], temperature_K: f
             "Eg_T_eV": eg_T, "Eg_0_eV": eg_zero, "dEg0_OldSlotboom_folded_eV": d_eg0,
             "electron_dos_gap_T_eV": effective_gap, "electron_dos_gap_0_eV": eg_zero + d_eg0,
             "effective_gap_eV": effective_gap, "electron_dos_mass_ratio": me, "hole_dos_mass_ratio": mh,
-            "kT_eV": KB_EV_PER_K * temperature_K,
-            "dos_prefactor_cm3": dos_prefactor_cm3(temperature_K),
+            "kT_eV": c["kb_J_per_K"] / c["q_C"] * temperature_K,
+            "dos_prefactor_cm3": dos_prefactor_cm3(temperature_K, constants_profile=constants_profile),
             "law": "ni = sqrt(Nc*Nv)*exp(-(Eg(T)+dEg0)/(2kT)); Nc,v = 2(2 pi m kB T/h^2)^1.5; Formula 1 masses",
         },
     }
@@ -338,6 +359,7 @@ class _Context:
     temperature_K: float
     active_models: set
     band_edge_sensitive: bool
+    constants_profile: str = "sentaurus_u2022_12"
 
 
 def _all(values: Sequence[Any], target: float) -> bool:
@@ -559,7 +581,8 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                    mesh_materials: Sequence[str], electrode_materials: Sequence[str] = (),
                    allow_lossy: bool = False, band_edge_sensitive: bool = False,
                    default_par: Optional[Path] = None, benchmark: Optional[str] = None,
-                   effective_models: Optional[Sequence[dict]] = None) -> EmitResult:
+                   effective_models: Optional[Sequence[dict]] = None,
+                   constants_profile: str = "sentaurus_u2022_12") -> EmitResult:
     """Emit the C3 material file and the per-parameter report.
 
     ``active_models`` are mapping-matrix model names (see
@@ -570,12 +593,13 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
     emitter that absolute band edges are observable (gate/Schottky contacts or
     heterointerfaces), which keeps ``Bgn2Chi`` lossy instead of inert.
     """
+    c = physical_constants(constants_profile)
     par_path = Path(par_path)
     default_par = Path(default_par) if default_par is not None else default_models_par_path()
     models = [pmap.MODEL_ALIASES.get(m, m) for m in active_models]
     model_set = set(models)
     ctx = _Context(temperature_K=float(temperature_K), active_models=model_set,
-                   band_edge_sensitive=bool(band_edge_sensitive))
+                   band_edge_sensitive=bool(band_edge_sensitive), constants_profile=constants_profile)
 
     user_ir = _parse(par_path)
     default_ir = _parse(default_par) if default_par.exists() else {"blocks": [], "files": []}
@@ -591,7 +615,8 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
         "effective_models": list(effective_models or []),
         "allow_lossy": bool(allow_lossy),
         "band_edge_sensitive": ctx.band_edge_sensitive,
-        "constants": dict(CONSTANTS),
+        "constants": c,
+        "physical_constants_profile": constants_profile,
         "materials": [],
         "solver_parameters": [],
         "electrodes": [],
@@ -711,6 +736,7 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
     report["counts"] = dict(sorted(counts.items()))
     materials = {
         "schema": SCHEMA_ID,
+        "physical_constants_profile": constants_profile,
         "benchmark": benchmark or f"sdevice:{par_path.stem}",
         "revision": 1,
         "unit_system": dict(UNIT_SYSTEM),
@@ -784,7 +810,7 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
         material_report["derivation"] = {"role": role, "bandgap_eV": entry.get("bandgap_eV")}
         return entry
     try:
-        values = evaluate_semiconductor(sections, ctx.temperature_K, "OldSlotboom" in model_set)
+        values = evaluate_semiconductor(sections, ctx.temperature_K, "OldSlotboom" in model_set, constants_profile=ctx.constants_profile)
     except KeyError as missing:
         raise MaterialsError("E404", path=f"{vela_name}.{missing.args[0]}", model="Poisson",
                              status="missing_parameter") from None
@@ -804,7 +830,7 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
                            + f"; {derivation['law']}"
                            + (f"; dEg0(OldSlotboom)={derivation['dEg0_OldSlotboom_folded_eV']:g} eV applied to electron DOS mass and ni"
                               if derivation["dEg0_OldSlotboom_folded_eV"] else "; no bandgap narrowing folded")
-                           + "; CODATA 2018 constants")
+                           + ("; CODATA 2018 constants" if ctx.constants_profile == "codata2018" else "; Sentaurus U-2022.12 compatible constants"))
     material_report["derivation"] = derivation
     return entry
 

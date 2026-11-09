@@ -11,9 +11,11 @@ public:
     explicit BvMethodsCoupledRuntime(const CoupledDDAssembler& owner);
     ~BvMethodsCoupledRuntime();
     VectorXd transportResidual(const VectorXd&) const;
-    SparseMatrixd transportJacobian(const VectorXd&) const;
+    SparseMatrixd transportJacobian(const VectorXd& x) const override { return transportJacobian(x,nullptr); }
+    SparseMatrixd transportJacobian(const VectorXd&,const VectorXd* columns) const;
     VectorXd residual(const VectorXd&, const CoupledDDBoundaryConditions&) const;
-    SparseMatrixd jacobian(const VectorXd&, const CoupledDDBoundaryConditions&, bool approximate=false) const;
+    SparseMatrixd jacobian(const VectorXd& x, const CoupledDDBoundaryConditions& b, bool approximate=false) const override { return jacobian(x,b,approximate,nullptr,true); }
+    SparseMatrixd jacobian(const VectorXd&, const CoupledDDBoundaryConditions&, bool approximate, const VectorXd* columns, bool freezeStatisticalFloor=true) const;
     std::vector<CoupledDDCarrierTermDiagnostic> terms(
         const VectorXd&, const CoupledDDBoundaryConditions&, bool includeImpact=true) const;
     CoupledDDPhysicalDiagnostics physicalDiagnostics(

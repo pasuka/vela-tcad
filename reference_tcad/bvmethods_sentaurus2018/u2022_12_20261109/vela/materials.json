@@ -1,0 +1,49 @@
+{
+  "schema": "vela.templates_ldmos.materials.v1",
+  "physical_constants_profile": "sentaurus_u2022_12",
+  "benchmark": "sdevice:pp5_des",
+  "revision": 1,
+  "unit_system": {
+    "concentration": "cm^-3",
+    "mobility": "cm^2/(V*s)",
+    "energy": "eV",
+    "temperature": "K",
+    "thermal_conductivity": "W/(m*K)",
+    "specific_heat": "J/(kg*K)",
+    "mass_density": "kg/m^3"
+  },
+  "materials": [
+    {
+      "name": "SiO2",
+      "role": "dielectric",
+      "eps_r": 3.9,
+      "bandgap_eV": 9.0,
+      "electron_affinity_eV": 0.9,
+      "temperature_K": 300.0,
+      "provenance": "Oxide/SiO2 from pp5_des.par (sha256 618d0467ee26) at 300 K; origins vela_default; dielectric: Epsilon/Bandgap"
+    },
+    {
+      "name": "Si",
+      "role": "transport_semiconductor",
+      "eps_r": 11.7,
+      "bandgap_eV": 1.1241592307692307,
+      "electron_affinity_eV": 4.05,
+      "conduction_band_density_of_states_cm3": 2.8582520073866568e+19,
+      "valence_band_density_of_states_cm3": 3.1046289324748386e+19,
+      "intrinsic_carrier_density_cm3": 14638805412.559162,
+      "temperature_K": 300.0,
+      "electron_mobility_cm2_per_V_s": 1417.0,
+      "hole_mobility_cm2_per_V_s": 470.5,
+      "provenance": "Silicon/Si from pp5_des.par (sha256 618d0467ee26) at 300 K; origins user_global,vela_default; Epsilon/Bandgap/eDOSMass Formula 1/hDOSMass Formula 1/ConstantMobility; ni = sqrt(Nc*Nv)*exp(-(Eg(T)+dEg0)/(2kT)); Nc,v = 2(2 pi m kB T/h^2)^1.5; Formula 1 masses; dEg0(OldSlotboom)=-0.01595 eV applied to electron DOS mass and ni; Sentaurus U-2022.12 compatible constants"
+    },
+    {
+      "name": "Nitride",
+      "role": "dielectric",
+      "eps_r": 7.5,
+      "bandgap_eV": 5.0,
+      "electron_affinity_eV": 1.9,
+      "temperature_K": 300.0,
+      "provenance": "Nitride from pp5_des.par (sha256 618d0467ee26) at 300 K; origins vela_default; dielectric: Epsilon/Bandgap"
+    }
+  ]
+}
