@@ -1,0 +1,17 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "bvmethods_operator_profile": "bvmethods_tri3_qf",
+  "sweep": {
+    "vtk_fields": [
+      "ElectrostaticPotential",
+      "eDensity",
+      "hDensity",
+      "SpaceCharge",
+      "DopingConcentration"
+    ]
+  },
+  "solver": {
+    "diagnostics": true,
+    "diagnostic_history": true
+  }
+}

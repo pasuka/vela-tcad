@@ -424,4 +424,98 @@ class BVMethodsCmdProfileTests(unittest.TestCase):
                 'sweep':{'external_circuit':{key:1.}}}))
 
 
+    def test_current_reference_snapshot_has_verified_scoped_members(self):
+        import hashlib, json
+        root = REPO / 'reference_tcad/bvmethods_sentaurus2018'
+        pointer = json.loads((root / 'current_validation.json').read_text(encoding='utf-8'))
+        self.assertFalse(pointer['native_store_registration_updated'])
+        self.assertEqual(json.loads((root / 'artifact_manifest.json').read_text(encoding='utf-8'))['version'], 'v4')
+        manifest_path = root / pointer['manifest']
+        self.assertEqual(hashlib.sha256(manifest_path.read_bytes()).hexdigest(), pointer['manifest_sha256'])
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+        self.assertEqual(manifest['kind'], 'local_text_qualification_not_native_store_registration')
+        for name, receipt in manifest['files'].items():
+            with self.subTest(member=name):
+                path = manifest_path.parent / name
+                self.assertTrue(path.resolve().is_relative_to(manifest_path.parent.resolve()))
+                self.assertNotIn(path.suffix, ('.tdr', '.plt', '.h5', '.log', '.bin'))
+                self.assertEqual(len(path.read_bytes()), receipt['bytes'])
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), receipt['sha256'])
+        self.assertEqual(manifest['files']['source/pp5_des.cmd']['sha256'],
+                         '47ed4a2330f20bcb190535175aa5dc6fb180cf49315093659c79d8e450c2a518')
+
+    def test_current_reference_configs_preserve_the_two_stage_contract(self):
+        import json
+        root = REPO / 'reference_tcad/bvmethods_sentaurus2018/u2022_12_20261109'
+        sidecar = json.loads((root / 'source/pp5_des.vela.json').read_text(encoding='utf-8'))
+        sv.validate(sv.load_schema(REPO / 'schemas/vela.sdevice_sidecar.v1.schema.json'), sidecar)
+        schema = sv.load_schema(REPO / 'configs/schema/vela-simulation.schema.json')
+        decks = [json.loads((root / ('vela/simulation_stage%02d.json' % i)).read_text(encoding='utf-8')) for i in (0, 1)]
+        for deck in decks:
+            sv.validate(schema, deck)
+            self.assertEqual(deck['physical_constants_profile'], 'sentaurus_u2022_12')
+            self.assertEqual(deck['solver']['primary_variable_coordinates'], 'unit')
+            self.assertEqual(deck['solver']['state_variables'], 'potential_density')
+            self.assertEqual(deck['solver']['population_derivative_recovery'], 'after_protection')
+            self.assertEqual(deck['solver']['population_stopping_rule'], 'native_approx')
+            self.assertEqual(deck['solver']['band_to_band']['model'], 'none')
+        self.assertEqual(decks[0]['sweep']['initialization']['poisson_max_iter'], 100)
+        self.assertEqual(decks[1]['sweep']['initial_state_file'], decks[0]['sweep']['write_state_file'])
+        circuit = decks[1]['sweep']['external_circuit']
+        self.assertEqual(circuit['max_iterations'], 20)
+        self.assertEqual(circuit['resistance_ohm_um'], 1e7)
+        self.assertEqual(decks[1]['sweep']['stop'], 100000.)
+        materials = json.loads((root / 'vela/materials.json').read_text(encoding='utf-8'))
+        self.assertEqual(materials['physical_constants_profile'], 'sentaurus_u2022_12')
+        self.assertEqual({x['name'] for x in materials['materials']}, {'Si', 'SiO2', 'Nitride'})
+
+    def test_current_reference_curves_keep_native_and_candidate_roles(self):
+        import csv, json, math
+        root = REPO / 'reference_tcad/bvmethods_sentaurus2018/u2022_12_20261109'
+        summary = json.loads((root / 'comparison.json').read_text(encoding='utf-8'))
+        for name, case in summary['candidates'].items():
+            self.assertEqual(case['role'], 'Vela_candidate_not_native_reference')
+            self.assertIsNone(case['attempts']); self.assertIsNone(case['failed'])
+            with (root / case['curve']).open(encoding='utf-8', newline='') as stream:
+                rows = list(csv.DictReader(stream))
+            self.assertEqual(len(rows), case['accepted'])
+            self.assertEqual(sum(int(x['newton_iterations']) for x in rows), case['successful_newton_iterations'])
+            volts = [float(x['outer_voltage_V']) for x in rows]
+            self.assertEqual(volts, sorted(set(volts)))
+            self.assertTrue(all(math.isfinite(float(v)) for x in rows for v in x.values()))
+            self.assertGreaterEqual(abs(float(rows[-1]['drain_total_current_A_per_um'])), .0013)
+            self.assertLessEqual(abs(case['BV_inner_V'] / summary['contract']['existing_BV_acceptance_anchor_V'] - 1), .005)
+            self.assertEqual(case['F_pass'], len(rows)); self.assertEqual(case['E_pass'], len(rows))
+        native = summary['native']
+        self.assertEqual(native['role'], 'Sentaurus_native_reference')
+        self.assertEqual(native['version'], 'U-2022.12')
+        self.assertEqual(native['raw_accepted_csv_rows'], 47)
+        self.assertEqual(native['zero_initialization_records'], 3)
+        with (root / native['curve']).open(encoding='utf-8', newline='') as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual(len(rows), 45)
+        self.assertEqual(float(rows[0]['outer_voltage_V']), 0.)
+        self.assertEqual(float(rows[-1]['outer_voltage_V']), 100.)
+        self.assertFalse(native['full_BV_qualified'])
+        self.assertFalse(summary['qualifications']['strict_native_stopping_equivalence'])
+        self.assertFalse(summary['qualifications']['speed_noninferiority'])
+        self.assertEqual(summary['candidates']['cmd_full_bv']['carrier_report_failed'], 70)
+        self.assertEqual(summary['candidates']['cmd_full_bv']['continuity_report_failed'], 13)
+
+    def test_reference_freezer_rejects_overwrite_and_unqualified_evidence(self):
+        import tempfile
+        from scripts.freeze_bvmethods_u2022_validation import freeze, VERSION
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); existing = root / VERSION; existing.mkdir()
+            sentinel = existing / 'retained'; sentinel.write_bytes(b'original')
+            with self.assertRaisesRegex(ValueError, 'already exists'):
+                freeze(root / 'absent', root / 'absent', root / 'absent', existing)
+            self.assertEqual(sentinel.read_bytes(), b'original')
+            bad = root / 'bad.zip'; bad.write_bytes(b'unqualified')
+            fresh = root / 'fresh' / VERSION
+            with self.assertRaisesRegex(ValueError, 'unqualified'):
+                freeze(bad, root / 'absent', root / 'absent', fresh)
+            self.assertFalse(fresh.exists())
+
+
 if __name__=='__main__':unittest.main()
