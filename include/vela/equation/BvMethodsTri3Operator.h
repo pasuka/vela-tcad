@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/equation/AssemblerUtils.h"
+#include <limits>
 // Opt-in BVMethods Tri3 element contract. Physical fields are volts and
 // caller-internal populations; local jets use physical-voltage columns.
 // SG uses stable log-density/expm1 QF differences. No native/cache input.
@@ -56,16 +57,24 @@ class BvMethodsTri3Operator {
  };
  std::vector<CellCache> cells_;
  experimental::AvCoefficient electron_,hole_;
- struct NodeStatistics {double n=0.,p=0.,dn=0.,dp=0.,etaN=0.,etaP=0.;};
+ struct NodeStatistics {double n=0.,p=0.,dn=0.,dp=0.,etaN=0.,etaP=0.,tangentN=1.,tangentP=1.;};
  // Values depend on the node state, not on the cell's local AD slot. Keep
  // this scratch local to one assembly; no reuse across states or owners.
- std::vector<NodeStatistics> nodeStatistics(const BvMethodsQfState& state,bool inverse) const {
+ std::vector<NodeStatistics> nodeStatistics(const BvMethodsQfState& state,bool inverse,const VectorXd* columns=nullptr) const {
   const auto units=problem_.newton.inputScaling.unitSystem();
   std::vector<NodeStatistics> result(problem_.mesh.numNodes());
   for(std::size_t i=0;i<result.size();++i)if(electronActive_[i]) {
-   auto& a=result[i];a.n=units.internalConcentrationToM3(state.n[i])/1e6;a.p=units.internalConcentrationToM3(state.p[i])/1e6;
+   auto& a=result[i];a.n=units.internalConcentrationToCm3(state.n[i]);a.p=units.internalConcentrationToCm3(state.p[i]);
    a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
    a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+   // Evaluate extremely depleted columns in a relative local direction,
+   // then undo that direction scale only after flux/source cancellation.
+   // State values and global population coordinates remain unchanged.
+   if(state.populationCoordinates) {
+    if(a.n<std::sqrt(std::numeric_limits<double>::min()))a.tangentN=a.n;
+    if(a.p<std::sqrt(std::numeric_limits<double>::min()))a.tangentP=a.p;
+    if(columns){a.tangentN=(*columns)[result.size()+i];a.tangentP=(*columns)[2*result.size()+i];}
+   }
    if(inverse){a.etaN=experimental::JoyceDixonStatistics::inverseDensity(a.n,nc_[i]);a.etaP=experimental::JoyceDixonStatistics::inverseDensity(a.p,nv_[i]);}
   }
   return result;
@@ -83,7 +92,7 @@ public:
   electronActive_.resize(n);holeActive_.resize(n);nc_.resize(n);nv_.resize(n);
   directPopulationSg_=directPopulationSg;
   if(directPopulationSg_ && ni.size()!=static_cast<std::size_t>(n))throw std::invalid_argument("Population SG requires intrinsic densities");
-  ni_.resize(n);for(int i=0;i<n;++i){nc_[i]=units.internalConcentrationToM3(nc[i])/1e6;nv_[i]=units.internalConcentrationToM3(nv[i])/1e6;if(directPopulationSg_)ni_[i]=units.internalConcentrationToM3(ni[i])/1e6;}
+  ni_.resize(n);for(int i=0;i<n;++i){nc_[i]=units.internalConcentrationToCm3(nc[i]);nv_[i]=units.internalConcentrationToCm3(nv[i]);if(directPopulationSg_)ni_[i]=units.internalConcentrationToCm3(ni[i]);}
   geo_.model="phumob_field_lombardi";geo_.edgeAveraging="element_box_phumob";
   geo_.surface.discretization="element_distance_gradient";geo_.highFieldGradientDiscretization="element_vertex_partial_layer";
   geo_.surface.cellNormalX.clear();geo_.surface.cellNormalY.clear();geo_.surface.cellDistances.clear();geo_.surface.nodeDistances.clear();geo_.highFieldCells.clear();
@@ -121,11 +130,11 @@ public:
   }
  }
 
- BvMethodsTri3Evaluation evaluate(const BvMethodsQfState& state,bool derivatives) const {
+ BvMethodsTri3Evaluation evaluate(const BvMethodsQfState& state,bool derivatives,const VectorXd* columns=nullptr) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
-  const auto nodes=nodeStatistics(state,false);
+  const auto nodes=nodeStatistics(state,false,columns);
   for(const auto&a:cells_){std::array<AvJet,3> psi,fn,fp,ns,ps;
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
     const auto& node=nodes[i];ns[k]=AvJet(node.n);ps[k]=AvJet(node.p);
@@ -134,12 +143,12 @@ public:
     if(state.populationCoordinates){
      // Jets retain the historical final V0 scatter; concentration columns
      // therefore carry their physical internal-unit factor divided by V0.
-     const double dc=units.internalConcentrationToM3(1.)/1e6/potentialScale_;
+     const double dc=units.internalConcentrationToCm3(1.)/potentialScale_;
      ns[k].derivative.fill(0.);ps[k].derivative.fill(0.);
-     ns[k].derivative[3+k]=dc;ps[k].derivative[6+k]=dc;
+     ns[k].derivative[3+k]=dc*node.tangentN;ps[k].derivative[6+k]=dc*node.tangentP;
      fn[k].derivative.fill(0.);fp[k].derivative.fill(0.);
      fn[k].derivative[k]=1.;fp[k].derivative[k]=1.;
-     fn[k].derivative[3+k]=-dc/dn;fp[k].derivative[6+k]=dc/dp;
+     fn[k].derivative[3+k]=-(dc*node.tangentN)/dn;fp[k].derivative[6+k]=(dc*node.tangentP)/dp;
     }
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
@@ -171,7 +180,7 @@ public:
    const auto genP=experimental::avCoefficient(hp,hole_)*mp*experimental::avNorm(result.holeParticleCurrentWithoutMobility);
    for(int k=0;k<3;++k){auto node=a.nodes[k];out.electronGeneration[node]+=a.geometry.boxAreas_cm2[k]*genN.value*factor_;out.holeGeneration[node]+=a.geometry.boxAreas_cm2[k]*genP.value*factor_;const auto& g=result.nodeGeneration_per_cm_s[k];if(!std::isfinite(g.value))throw std::runtime_error("Nonfinite candidate AV source");out.allGeneration[node]+=g.value;
     for(int block=1;block<=2;++block){if(!(block==1?electronActive_[node]:holeActive_[node]))continue;const int row=block*n+node;out.source[row]-=g.value*factor_;
-     if(derivatives)for(int j=0;j<9;++j){const double d=-g.derivative[j]*factor_*potentialScale_;if(d!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],d);}
+     if(derivatives)for(int j=0;j<9;++j){const double tangent=j<3?1.:(j<6?nodes[a.nodes[j%3]].tangentN:nodes[a.nodes[j%3]].tangentP);const int column=(j/3)*n+a.nodes[j%3];const double d=columns?(-g.derivative[j]*factor_*potentialScale_)*((*columns)[column]/tangent):(-g.derivative[j]*factor_*potentialScale_)/tangent;if(d!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],d);}
     }
    }
   }
@@ -179,11 +188,11 @@ public:
  }
  // Diagnostic approximate linearization only: retain the live mobility value,
  // but omit its tangent. Production calls retain the full derivative default.
- BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false) const {
+ BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
-  const auto nodes=nodeStatistics(state,true);
+  const auto nodes=nodeStatistics(state,true,columns);
   for(const auto&a:cells_){std::array<AvJet,3> psi,fn,fp,ns,ps;
    for(int k=0;k<3;++k){auto i=a.nodes[k];psi[k]=AvJet::variable(state.psi[i],k);fn[k]=AvJet::variable(state.phin[i],3+k);fp[k]=AvJet::variable(state.phip[i],6+k);
     const auto& node=nodes[i];ns[k]=AvJet(node.n);ps[k]=AvJet(node.p);
@@ -192,12 +201,12 @@ public:
     if(state.populationCoordinates){
      // Jets retain the historical final V0 scatter; concentration columns
      // therefore carry their physical internal-unit factor divided by V0.
-     const double dc=units.internalConcentrationToM3(1.)/1e6/potentialScale_;
+     const double dc=units.internalConcentrationToCm3(1.)/potentialScale_;
      ns[k].derivative.fill(0.);ps[k].derivative.fill(0.);
-     ns[k].derivative[3+k]=dc;ps[k].derivative[6+k]=dc;
+     ns[k].derivative[3+k]=dc*node.tangentN;ps[k].derivative[6+k]=dc*node.tangentP;
      fn[k].derivative.fill(0.);fp[k].derivative.fill(0.);
      fn[k].derivative[k]=1.;fp[k].derivative[k]=1.;
-     fn[k].derivative[3+k]=-dc/dn;fp[k].derivative[6+k]=dc/dp;
+     fn[k].derivative[3+k]=-(dc*node.tangentN)/dn;fp[k].derivative[6+k]=(dc*node.tangentP)/dp;
     }
    }
    const auto& s=geo_.highFieldCells[a.id].stencil;
@@ -248,11 +257,19 @@ public:
      an[k]=experimental::populationSgArgument(ns[u],ns[v],psi[u],psi[v],ni_[a.nodes[u]],ni_[a.nodes[v]],nc_[a.nodes[u]],nc_[a.nodes[v]],vt_,true,gn[k]);
      ap[k]=experimental::populationSgArgument(ps[u],ps[v],psi[u],psi[v],ni_[a.nodes[u]],ni_[a.nodes[v]],nv_[a.nodes[u]],nv_[a.nodes[v]],vt_,false,gp[k]);}
    }
-   auto tn=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ns,fn,mn,vt_,true,gn,directPopulationSg_?&an:nullptr,a.geometry.nodeOrder);
-   auto tp=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ps,fp,mp,vt_,false,gp,directPopulationSg_?&ap:nullptr,a.geometry.nodeOrder);
+   std::array<bool,3> freezeN{},freezeP{};
+   if(derivatives && state.populationCoordinates && statisticalFloor_cm3>0.)
+    for(int k=0;k<3;++k){const int j=(k+1)%3;
+     // Permit only rounding incurred by the internal <-> cm^-3 unit mapping.
+     const double floor=statisticalFloor_cm3*(1.+16.*std::numeric_limits<double>::epsilon());
+     freezeN[k]=ns[k].value<=floor || ns[j].value<=floor;
+     freezeP[k]=ps[k].value<=floor || ps[j].value<=floor;
+    }
+   auto tn=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ns,fn,mn,vt_,true,gn,directPopulationSg_?&an:nullptr,a.geometry.nodeOrder,freezeN);
+   auto tp=experimental::evaluateBvMethodsTri3Transport(averagingAreas,edge,ps,fp,mp,vt_,false,gp,directPopulationSg_?&ap:nullptr,a.geometry.nodeOrder,freezeP);
    for(int k=0;k<3;++k)for(int block=1;block<=2;++block){
     const int row=block*n+a.nodes[k];const auto& f=block==1?tn.nodeFlux_per_cm_s[k]:tp.nodeFlux_per_cm_s[k];out.source[row]+=f.value*factor_;out.absoluteSource[row]+=(std::abs((block==1?tn.edgeFlux_per_cm_s[k]:tp.edgeFlux_per_cm_s[k]).value)+std::abs((block==1?tn.edgeFlux_per_cm_s[(k+2)%3]:tp.edgeFlux_per_cm_s[(k+2)%3]).value))*factor_;
-    if(derivatives)for(int j=0;j<9;++j){double value=f.derivative[j]*factor_*potentialScale_;if(value!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],value);}
+    if(derivatives)for(int j=0;j<9;++j){const double tangent=j<3?1.:(j<6?nodes[a.nodes[j%3]].tangentN:nodes[a.nodes[j%3]].tangentP);const int column=(j/3)*n+a.nodes[j%3];double value=columns?(f.derivative[j]*factor_*potentialScale_)*((*columns)[column]/tangent):(f.derivative[j]*factor_*potentialScale_)/tangent;if(value!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],value);}
    }
   }
   out.jacobian.resize(3*n,3*n);if(derivatives)out.jacobian.setFromTriplets(entries.begin(),entries.end());return out;

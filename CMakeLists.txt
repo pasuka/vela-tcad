@@ -117,6 +117,12 @@ add_custom_target(vela_sdevice_pyz ALL
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Packaging SDevice frontend with current Git revision" VERBATIM)
 
+set(VELA_PHYSICAL_CONSTANTS_PROFILE "sentaurus_u2022_12" CACHE STRING "Physical constants contract: codata2018 or sentaurus_u2022_12")
+set_property(CACHE VELA_PHYSICAL_CONSTANTS_PROFILE PROPERTY STRINGS codata2018 sentaurus_u2022_12)
+if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE MATCHES "^(codata2018|sentaurus_u2022_12)$")
+    message(FATAL_ERROR "Unknown VELA_PHYSICAL_CONSTANTS_PROFILE: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
+endif()
+message(STATUS "Physical constants profile: ${VELA_PHYSICAL_CONSTANTS_PROFILE}")
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
 option(VELA_ENABLE_HDF5_STATE "Build required HDF5/HighFive restart storage" ON)
@@ -399,6 +405,12 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+if(VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12")
+    target_compile_definitions(vela_core PUBLIC VELA_CONSTANTS_SENT_U2022_12=1)
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials_sentaurus_u2022_12.json)
+else()
+    set(VELA_DEFAULT_MATERIALS_NAME default_materials.json)
+endif()
 if(VELA_ENABLE_HDF5_STATE)
     if(NOT VELA_HDF5_TARGET)
         message(FATAL_ERROR "HDF5 state archives require a detected HDF5 library")
@@ -616,6 +628,10 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# Independent validation entry; experiment controls are not simulation-schema options.
+add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
+target_link_libraries(vela_bvmethods_experiment PRIVATE vela_core)
+
 # Explicit diagnostic build; not installed or included in normal builds.
 add_executable(vela_bvmethods_profile_probe EXCLUDE_FROM_ALL
     scripts/diagnostics/bvmethods_profile_probe.cpp)
@@ -818,12 +834,24 @@ add_custom_target(check_ascii
     COMMENT "Checking tests/src/include for non-ASCII bytes"
     VERBATIM)
 
+add_test(NAME bvmethods_or_full_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_or_full.py)
+set_tests_properties(bvmethods_or_full_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(NAME bvmethods_stopping_counterfactual
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_stopping_counterfactual.py)
+set_tests_properties(bvmethods_stopping_counterfactual PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_test(NAME bvmethods_full_ablation_qualification
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_bvmethods_full_ablation.py)
+set_tests_properties(bvmethods_full_ablation_qualification PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_test(NAME ascii_sources
     COMMAND ${CMAKE_COMMAND}
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT})
 
-add_executable(test_scaling tests/test_scaling.cpp)
+add_executable(test_scaling tests/test_scaling.cpp tests/test_physical_constants.cpp)
 if(VELA_ENABLE_HDF5_STATE)
     add_executable(test_state_archive tests/test_state_archive.cpp)
     target_link_libraries(test_state_archive PRIVATE vela_core Catch2::Catch2WithMain)
@@ -850,7 +878,7 @@ target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_builtin_material_alignment tests/test_builtin_material_alignment.cpp)
 target_link_libraries(test_builtin_material_alignment PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_builtin_material_alignment PRIVATE
-    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/default_materials.json"
+    VELA_DEFAULT_MATERIALS_FILE="${CMAKE_CURRENT_SOURCE_DIR}/share/vela/materials/${VELA_DEFAULT_MATERIALS_NAME}"
     VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(test_poisson tests/test_poisson.cpp)
@@ -884,6 +912,12 @@ if(TARGET PkgConfig::VELA_MUMPS)
 endif()
 
 # Diagnostic replay of frozen Newton systems through the shared linear backend.
+add_executable(vela_physics_frozen_audit EXCLUDE_FROM_ALL scripts/diagnostics/physics_frozen_audit.cpp)
+target_link_libraries(vela_physics_frozen_audit PRIVATE vela_core)
+
+add_executable(vela_coupled_frozen_replay EXCLUDE_FROM_ALL scripts/diagnostics/coupled_frozen_replay.cpp)
+target_link_libraries(vela_coupled_frozen_replay PRIVATE vela_core)
+
 add_executable(linear_solver_replay EXCLUDE_FROM_ALL src/tools/linear_solver_replay.cpp)
 target_link_libraries(linear_solver_replay PRIVATE vela_core)
 add_executable(linear_solver_strategy_study EXCLUDE_FROM_ALL src/tools/linear_solver_strategy_study.cpp)
@@ -1038,7 +1072,10 @@ target_link_libraries(test_vtu_writer PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
 target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_coupled_load_line tests/test_coupled_load_line.cpp)
+add_executable(test_coupled_load_line
+    tests/test_coupled_load_line.cpp
+    tests/test_load_line_residual.cpp
+    tests/test_primary_variable_coordinates.cpp)
 target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2WithMain)
 
 # Header-only policy test: no solver rebuild or commercial inputs are needed.

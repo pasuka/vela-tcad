@@ -14,7 +14,7 @@ spec.loader.exec_module(control)
 
 class StoppingControlTests(unittest.TestCase):
     def test_physics_thresholds_and_original_are_preserved(self):
-        with tempfile.TemporaryDirectory() as name:
+        with tempfile.TemporaryDirectory(dir=ROOT/"build-release") as name:
             root = Path(name)
             for file in ("mesh.json", "doping.csv", "materials.json"):
                 (root/file).write_text("{}")

@@ -224,3 +224,16 @@ TEST_CASE("Assembly population capture is scoped and copies existing operands", 
     REQUIRE(a.present);
     REQUIRE_FALSE(a.failed);
 }
+
+
+TEST_CASE("Exact encoding distinguishes optional presence and floating payloads",
+          "[update_error_report]")
+{
+    const std::optional<double> absent,positive(0.),negative(-0.);
+    REQUIRE(exactValueBits(absent)!=exactValueBits(positive));
+    REQUIRE(exactValueBits(positive)!=exactValueBits(negative));
+    const double a=std::bit_cast<double>(std::uint64_t{0x7ff8000000000001});
+    const double b=std::bit_cast<double>(std::uint64_t{0x7ff8000000000002});
+    REQUIRE(exactValueBits(std::optional<double>(a))!=exactValueBits(std::optional<double>(b)));
+    REQUIRE(exactValueBits(absent)==exactValueBits(std::optional<double>()));
+}

@@ -17,6 +17,9 @@ from sentaurus_gmsh_pipeline import _strict_json
 from vela_sdevice.cmd_parser import parse_cmd_text
 
 CONFIG = REPO / "configs/reference_sde_checks.json"
+# Frozen P2 contact offsets were qualified using CODATA2018. Select that
+# profile explicitly instead of inheriting a changing frontend default.
+CONSTANTS_PROFILE = "codata2018"
 SEMANTIC_KEYS = ("electrodes", "physics", "plot", "current_plot", "math", "solve", "stages")
 
 
@@ -85,7 +88,8 @@ def invoke_check(launcher: Path, directory: Path) -> subprocess.CompletedProcess
     sentinel.write_text("from pathlib import Path\nPath(__file__).with_suffix('.called').write_text('called')\nraise SystemExit(91)\n")
     env = dict(os.environ, VELA_PYTHON=sys.executable,
                VELA_EXAMPLE_RUNNER=str(sentinel), VELA_SENTAURUS_IMPORT=str(sentinel))
-    result = subprocess.run([str(launcher.resolve()), "--check", str((directory / "device.cmd").resolve())],
+    result = subprocess.run([str(launcher.resolve()), "--check", "--physical-constants-profile",
+                             CONSTANTS_PROFILE, str((directory / "device.cmd").resolve())],
                             cwd=directory, env=env, capture_output=True, text=True)
     require(not sentinel.with_suffix(".called").exists(), "check invoked solver or TDR importer")
     return result
@@ -106,6 +110,7 @@ def verify_check(case: dict, packet: dict, meshes: Path, directory: Path) -> dic
     require(report["default_library"]["sha256"] == digest(REPO/'share/vela/materials/models.par'),
             "runtime default material library differs from source")
     materials = json.loads((work / "materials.json").read_text())
+    require(materials["physical_constants_profile"] == CONSTANTS_PROFILE, "frozen P2 constants profile changed")
     require(materials["unit_system"]["concentration"] == "cm^-3" and
             materials["unit_system"]["energy"] == "eV", "material units changed")
     qualification = json.loads((work / "mesh_qualification.json").read_text())
@@ -215,7 +220,8 @@ def run_suite(meshes: Path, output: Path, launcher: Path) -> dict:
     report={"schema":"vela.reference_sde_checks_run.v1", "status":"passed" if all(r['status']=='checked' for r in results) else "failed",
             "check_contract_sha256":digest(CONFIG), "p1_manifest_sha256":digest(DEFAULT_MANIFEST),
             "launcher_sha256":digest(launcher), "package_sha256":digest(package),
-            "p1_summary_sha256":digest(meshes/'case_summary.json'), "numerical_qualification":"not_run", "cases":results}
+            "p1_summary_sha256":digest(meshes/'case_summary.json'),
+            "physical_constants_profile": CONSTANTS_PROFILE, "numerical_qualification":"not_run", "cases":results}
     _strict_json(output/'check_summary.json',report)
     return report
 

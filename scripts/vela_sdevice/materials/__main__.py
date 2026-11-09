@@ -33,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--default-par", type=Path, default=default_models_par_path(),
                         help="Vela default library (share/vela/materials/models.par)")
     parser.add_argument("--benchmark", help="C3 benchmark string (default sdevice:<par stem>)")
+    parser.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"), default="sentaurus_u2022_12", help="must match the solver build constants profile; codata2018 is an explicit rollback")
     parser.add_argument("--out", type=Path, required=True, help="output directory")
     args = parser.parse_args(argv)
 
@@ -59,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         result = emit_materials(args.par, active_models=models, temperature_K=temperature, mesh_materials=materials,
                                 electrode_materials=args.electrode_material, allow_lossy=args.allow_lossy,
                                 band_edge_sensitive=args.band_edge_sensitive, default_par=args.default_par,
-                                benchmark=args.benchmark, effective_models=effective)
+                                benchmark=args.benchmark, effective_models=effective, constants_profile=args.physical_constants_profile)
     except MaterialsError as problem:
         print(f"{problem.message_id}: {problem.message}", file=sys.stderr)
         return 3 if problem.message_id.startswith("E3") else 4

@@ -46,6 +46,14 @@
       "environment": {
         "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;$penv{PATH}"
       }
+    },
+    {
+      "name": "windows-ucrt64-release-sentaurus2022",
+      "inherits": "windows-ucrt64-release",
+      "binaryDir": "${sourceDir}/build-release/sentaurus2022",
+      "cacheVariables": {
+        "VELA_PHYSICAL_CONSTANTS_PROFILE": "sentaurus_u2022_12"
+      }
     }
   ],
   "buildPresets": [
@@ -66,6 +74,11 @@
       "displayName": "Build Windows UCRT64 Release",
       "configurePreset": "windows-ucrt64-release",
       "jobs": 0
+    },
+    {
+      "name": "windows-ucrt64-release-sentaurus2022",
+      "configurePreset": "windows-ucrt64-release-sentaurus2022",
+      "jobs": 2
     }
   ],
   "testPresets": [
@@ -116,6 +129,13 @@
       },
       "execution": {
         "jobs": 0
+      }
+    },
+    {
+      "name": "windows-ucrt64-release-sentaurus2022",
+      "configurePreset": "windows-ucrt64-release-sentaurus2022",
+      "output": {
+        "outputOnFailure": true
       }
     }
   ]

@@ -1,6 +1,203 @@
 # Vela Documentation
 
 - [SDE 当前交付与验收，2026-11-01](sde_delivery.md)：main 八例建模、Ubuntu CI、离线包归档与历史商业证据边界。
+- [BVMethods 正式入口四项补齐，2026-11-09](validation/bvmethods_production_closure_2026-11-09.md)：
+  普通入口、当前分叉证据、原始 CMD 整链与跨阶段账本；各项终态以报告为准。
+
+- [BVMethods 正式入口集成与回归，2026-11-08](validation/bvmethods_production_integration_2026-11-08.md)：
+  Unit 坐标、保护后偏导事件、近似判停和 CMD/常数合同的正式接入；验证状态与保留限制。
+
+- [低压失稳问题归档与剩余主线，2026-11-08](validation/bvmethods_low_failure_archive_2026-11-08.md)：
+  研究暂缓、根因和门禁资格保留，回到正式默认集成与回归；不以原生同类现象豁免性能条件。
+
+- [原生低压失败器件/电路响应，2026-11-08](validation/bvmethods_native_low_failure_response_2026-11-08.md)：
+  8份冻结系统与少子聚焦归因，区分绝对浓度分量和相对人口方向；四开关恢复未放行，无生产改动。
+
+- [原生低压失败诊断补采，2026-11-08](validation/bvmethods_native_low_failure_capture_2026-11-08.md)：
+  同配置前17目标复现，8份矩阵/方向与7组实际写回；自由浓度1%保护得到确认，直接缩步机制仍不同，共同根因未闭合。
+
+- [原生约2.51 V与Vela约2.43 V失败过程对照，2026-11-07](validation/bvmethods_native_vela_low_failure_comparison_2026-11-07.md)：
+  逐轮RHS/E、保护与五帧Schur/RHS分块；原生RHS增长终止、Vela写回前绝对线性门拒绝，巨大方向来自器件块，未认定同一上游根因。
+
+- [2.4307 V绝对线性精度定位与有界试修，2026-11-07](validation/bvmethods_defaults_absolute_precision_2026-11-07.md)：
+  大空穴方向放大舍入，原坐标/Full及补偿校正均未找到通过原门的修复，保留缩步、生产不改。
+
+- [负载线RHS修复与完整BV复验，2026-11-07](validation/bvmethods_defaults_rhsfix_fullbv_2026-11-07.md)：
+  25/40组前置及两组完整BV通过；Unit377轮/4失败，消除原RHS后向拒绝，保留1次绝对门拒绝和默认放行限制。
+
+- [全变量Unit高压回代拒绝定位，2026-11-07](validation/bvmethods_defaults_backward_audit_2026-11-07.md)：
+  22拒绝与3对照逐位复现，定位电路RHS重复求值舍入；统一RHS冻结反事实25/25过原门，未改生产。
+
+- [默认迁移完整BV复核，2026-11-07](validation/bvmethods_defaults_fullbv_2026-11-07.md)：
+  原坐标/全变量Unit两组停流、BV插值及逐点质量/物理输出与终态证据复核完成，实际资格见报告，生产默认保持。
+
+- [默认迁移0–100 V分区工作量，2026-11-07](validation/bvmethods_defaults_regional100_2026-11-07.md)：
+  原坐标/全变量Unit连续扫描、同版本原生参照及必要新失败入口配对，计数/锚点/成本与质量独立核验，生产默认未切换。
+
+- [默认迁移5–10 V缩步及线性拒绝检查，2026-11-07](validation/bvmethods_defaults_mid10_2026-11-07.md)：
+  同核原坐标/全变量Unit连续0–10 V及失败入口配对，保留失败、独立质量与逐SHA终态证据，生产默认不变。
+
+- [默认迁移0–1 V首次分叉检查，2026-11-07](validation/bvmethods_defaults_low1_2026-11-07.md)：
+  原坐标/全变量Unit与最低校正四臂均到1 V，无失败；同入口2×2重放定位入口和保护路径依赖，生产默认未切换。
+
+- [VM固定步长0–10 V Full AND/OR与原生对照，2026-11-05](validation/bvmethods_vm_fixed_full_scan_2026-11-05.md)：
+  0.1/0.02 V固定网格均保留提前失败；92份同态J/RHS、24份同目标物理场及逐目标轮数，116份冻结装配和终态证据核验完成，未获得完整扫描资格。
+
+- [兼容常数VM生产A0的N20冷0–1 V对照，2026-11-04](validation/bvmethods_vm_iteration20_low1_2026-11-04.md)：
+  耦合上限与步长工作量预算40→20；AND/OR均到1V，OR工作量下降、AND增加，保留原生首次路径分叉和独立资格。
+
+- [VM全变量Unit坐标重构验证，2026-11-04](validation/bvmethods_vm_unit_basis_2026-11-04.md)：
+  全变量坐标、30组冻结态及固定/0–1 V对照；原门保持，方向门未全过且工作量增加，未切换生产。
+
+- [Vela与原生有效缩放规则核查，2026-11-03](validation/bvmethods_native_scaling_audit_2026-11-03.md)：
+  一个Jacobian校准、14帧留出与独立TDR预测；区分变量/方程/线性平衡，不改生产门。
+
+- [VM近零电流AV导数与停止规则审计，2026-11-03](validation/bvmethods_vm_av_stopping_2026-11-03.md)：
+  12行250位AV差分、15份原生更新误差重建、影子与同态/区间配对；RHS分支未冒称等价；有界对照、暖态配对和终态证据已完成，监测已停止。
+
+- [兼容常数VM生产A0完整BV，2026-11-03](validation/bvmethods_vm_sentaurus2022_full_2026-11-03.md)：
+  生产A0兼容常数AND/OR完整扫描终态均通过；保留共同区间、成本及报告型守恒比较。
+
+- [兼容常数T470p冷0–100 V分区比较，2026-11-03](validation/bvmethods_t470p_sentaurus2022_low100_2026-11-03.md)：
+  按实际外压统计接受点、目标尝试和失败；AND提前数值失败，OR到100 V通过，终态与证据已核验。
+
+- [修复核心A1三组、入口与平台定位，2026-11-02](validation/bvmethods_repaired_a1_t1_t3_2026-11-02.md)：
+  T1/A1e与T2/T3诊断结束；保留低区反例、入口恢复及投影停滞证据，原A1完整BV准入仍阻断。
+
+- [U-2022.12常数兼容配置与T470p验证，2026-11-03](validation/bvmethods_sentaurus2022_constants_2026-11-03.md)：
+  默认CODATA2018保留，显式兼容配置与材料重生成；15帧RHS明显对齐，保留首帧六空穴行导数差异；默认全回归1219项零失败。
+
+- [原生U-2022.12参数/TDR与基本常数核查，2026-11-03](validation/bvmethods_native_parameter_constants_audit_2026-11-03.md)：
+  真正原生par导出与同版本手册旧常数；无拟合重建2152节点QF至约1e-15 V，生产设置不改。
+
+- [Vela VM原生首五点矩阵/RHS系数偏差定位，2026-11-02](validation/bvmethods_vm_static_operator_bias_2026-11-02.md)：
+  Poisson与DOS/kT系数识别、独立RHS反事实和AV直接分项留出验证，生产模型不改。
+
+- [SRH修复版S2–S5接触/端口与保护/高压复验，2026-11-02](validation/bvmethods_s2_s5_2026-11-02.md)：
+  接触与统计反事实、250位SRH分项、36份Schur及保护历史复验；新AND/OR全程首步统计完成。
+
+- [原生首五点固定方向差与根/轨迹复验S0–S1，2026-11-02](validation/bvmethods_native_roots_s0s1_2026-11-02.md)：
+  五份真正原生末态各2次Full通过AND；Vela冷首五目标15接受/15尝试/0失败，限定为局部根偏移。
+
+- [T470p SRH修复版与原生首五点逐轮矩阵/RHS对照，2026-11-02](validation/bvmethods_t470p_native_first5_srh_comparison_2026-11-02.md)：
+  15帧Full装配与原始方向、6765维共同系统及边界仿射RHS分解，保留跨工具一致性限制。
+
+- [SRH修复版VM完整BV AND/OR，2026-11-02](validation/bvmethods_vm_srh_fixed_full_2026-11-02.md)：
+  AND/自动复核OR完整扫描均通过独立终态验收，保留分区成本、报告型守恒和跨版本比较限制。
+
+- [SRH修复版T470p Full低压AND/OR对照，2026-11-02](validation/bvmethods_t470p_srh_full_low_2026-11-02.md)：
+  原参数冷0–1 V、始终完整导数，两组均线性精度失败，保留共同外压范围点数/失败对照。
+
+- [BVMethods物理算术修复与T470p复验，2026-11-02](validation/bvmethods_physics_arithmetic_fix_2026-11-02.md)：
+  人口SRH、AV微场及通用复合Full导数修复；六冻结态和原门冷窗口通过，SG默认不变。
+
+- [BVMethods人口坐标下物理模型算术与导数审计，2026-11-02](validation/bvmethods_physics_coordinate_audit_2026-11-02.md)：
+  Auger共享excess/限幅、AV微场AD边界及SG派生QF消减的隔离复现，区分实际启用与人工控制。
+
+- [BVMethods近似模型可信度与Schur窗口消融，2026-11-02](validation/bvmethods_bootstrap_trust_windows_2026-11-02.md)：
+  36份合格Schur分解、30组消融与12组选择器配对窗口终态；保留中低区失败，P3未启动。
+
+- [BVMethods保护后逐轮路径与0.51 kV失稳审计，2026-11-02](validation/bvmethods_post_protection_path_audit_2026-11-02.md)：
+  同态项族／候选复核／近解续算，定位AV切线遗漏与持续局部冻结，并保留算术敏感性限制。
+
+- [BVMethods低偏压反复保护与阶段线性化诊断，2026-11-02](validation/bvmethods_protection_ledger_2026-11-02.md)：
+  逐节点保护、同态切线干预、E分解、20/40轮与高偏压反例，保留未闭合归因。
+
+- [BVMethods与Sentaurus区域采样和BV附近步长对照，2026-11-02](validation/bvmethods_native_step_comparison_2026-11-02.md)：
+  原生日志/PLT与AND、OR完整轨迹逐次对齐，定位100–1000 V密集尝试及BV前后步长变化。
+
+- [BVMethods两组OR策略完整BV，2026-11-01](validation/bvmethods_or_full_2026-11-01.md)：
+  同二进制Full/自动复核并行OR、逐点独立强制门与八小时监督。
+
+- [BVMethods OR停止与历史AND轨迹复核，2026-11-01](validation/bvmethods_or_stopping_review_2026-11-01.md)：
+  相同Full二进制与packed初态的AND/OR实测、残差/更新两分支及历史轨迹的反事实边界。
+
+- [BVMethods始终完整Jacobian消融与完整BV资格，2026-11-01](validation/bvmethods_full_jacobian_ablation_2026-11-01.md)：
+  同二进制三组P0、只报告ρ、入口逐位核验与有界P1资格。
+
+- [BVMethods bootstrap保护后模型复核与显式历史验证，2026-11-01](validation/bvmethods_bootstrap_model_review_2026-11-01.md)：
+  显式C++复核、共享探测额度、真实历史分组及VM窗口资格。
+
+- [BVMethods 2343 V方向、保护与隔离策略审计，2026-11-01](validation/bvmethods_direction_projection_audit_2026-11-01.md)：
+  实际预测态重放、合格Schur重建、保护后模型、全局化/历史控制及分项计时。
+
+- [BVMethods bootstrap线性失败同态完整导数恢复，2026-10-31](validation/bvmethods_bootstrap_linear_restore_2026-10-31.md)：
+  核心单次恢复、防循环与原门限回归；独立VM同态预检和完整BV监督。
+
+- [BVMethods失败增广系统冻结与线性解法对照，2026-10-31](validation/bvmethods_frozen_linear_failure_2026-10-31.md)：
+  同态矩阵逐行精度、16项后端控制、完整导数单步通过及bootstrap线性失败恢复缺口。
+
+- [BVMethods SG统计反馈局部bootstrap核心控制，2026-10-31](validation/bvmethods_sg_bootstrap_core_2026-10-31.md)：
+  显式局部边选择、成对冻结及恢复契约；原生逐轮和多步暖态复验。
+
+- [BVMethods弱人口列的SG统计反馈定位，2026-10-31](validation/bvmethods_sg_statistical_tangents_2026-10-31.md)：
+  统计／QF／SRH切线分解、180位复核与局部相邻边控制，恢复六个原生弱人口方向。
+
+- [BVMethods线性化策略与阶段历史控制，2026-10-31](validation/bvmethods_linearization_policies_2026-10-31.md)：
+  四类导数／事件切换／整份旧矩阵复用、76项控制及被整体误差掩盖的弱人口列。
+
+- [BVMethods下限RHS与原生逐轮有效矩阵，2026-10-31](validation/bvmethods_floor_rhs_effective_matrix_2026-10-31.md)：
+  输运主导的下限平台、迁移率切线与30项保护历史关联、同态Coupled阶段拆分控制。
+
+- [BVMethods失败态Newton定位，2026-10-31](validation/bvmethods_newton_localization_2026-10-31.md)：
+  保正相对人口导数、四策略/20与40轮控制、原生实际更新及弱行有效矩阵与RHS。
+
+- [BVMethods完整耦合停止修复，2026-10-31](validation/bvmethods_coupled_stop_fix_2026-10-31.md)：
+  C组提前接受修复、设备/电路共同残差、候选恢复诊断与三组VM重跑。
+
+- [BVMethods 停止规则 A/B/C 三组对照，2026-10-30](validation/bvmethods_stopping_controls_full_2026-10-30.md)：
+  OR／AND 与负载线 enforce／report 独立配置、核心回归和三小时 VM 完整扫描。
+
+- [BVMethods残差范数与停止规则复核，2026-10-30](validation/bvmethods_residual_stopping_2026-10-30.md)：
+  原生打印范数实测、RMS计数与原始方向契约、OR/AND停止逻辑和当前失败态逐项判断。
+
+- [BVMethods新模式18点与Sentaurus日志对照，2026-10-30](validation/bvmethods_quasistationary_first18_2026-10-30.md)：
+  逐点I–V／步长／迭代、末段导数恢复周期、局部空穴保护和停止规则差异。
+
+- [BVMethods Quasistationary新模式VM完整扫描，2026-10-30](validation/bvmethods_vm_quasistationary_full_2026-10-30.md)：
+  独立源码构建、原验收门冷Poisson起步、一小时完整扫描监督及状态记录。
+
+- [BVMethods外接电阻Quasistationary步长接入，2026-10-30](validation/bvmethods_quasistationary_steps_2026-10-30.md)：
+  外压自适应、无额外内压限幅、CMD/JSON配置及兼容回归。
+
+- [BVMethods VM双0.5 V完整扫描，2026-10-30](validation/bvmethods_vm_inner_0p5_full_2026-10-30.md)：
+  T470p对照迁移至VM，复用已验证二进制，独立冷Poisson起步、成对0.5 V上限与一小时截止。
+
+- [BVMethods T470p双0.5 V内压控制对照，2026-10-30](validation/bvmethods_t470p_inner_0p5_full_2026-10-30.md)：
+  单次Newton及预测内压上限同步设置、一小时远端扫描与独立预检；资格以实际结果为准。
+
+- [BVMethods归一化状态及热路径修复，2026-10-30](validation/bvmethods_normalization_fix_2026-10-30.md)：
+  原始psi坐标、严格重启、QF／浓度往返和Poisson归一化差分；资格以验证记录为准。
+
+- [BVMethods单位与归一化往返审计，2026-10-30](validation/bvmethods_units_normalization_audit_2026-10-30.md)：
+  检查状态装拆包、重启、热路径QF和浓度SI往返；量化真实检查点1ULP变化，并区分方程预处理与状态权威坐标。
+
+- [BVMethods SRH稳定导数修复与VM多步复验，2026-10-30](validation/bvmethods_srh_stable_derivative_2026-10-30.md)：
+  核心SRH切线修复、123例回归及同态RHS不变；tail02改善为13轮，但固定第五目标及旧轨迹冻结态仍失败，已归档packed坐标算子。
+
+- [BVMethods VM 第二次 bootstrap 六个电子弱行，2026-10-30](validation/bvmethods_vm_second_bootstrap_rows_2026-10-30.md)：
+  固定尺度 RHS／直接人口列与独立精度复核；定位 SRH 统计导数相消及 SG/GSS 弱支撑，保持完整 RHS 和原验收门。
+
+- [BVMethods VM 边界目标与材料统计一致性，2026-10-30](validation/bvmethods_vm_boundary_consistency_2026-10-30.md)：
+  一致初始化通过冷启动首五目标，tail02迭代投影后续算五点；定位浮点级边界差触发的第二轮保护分岔，独立闭合Poisson常数／行尺度隔离。
+
+- [BVMethods VM 接触人口、参考量与 tail02 弱行对照，2026-10-30](validation/bvmethods_vm_boundary_contract_2026-10-30.md)：
+  同目标浓度式／QF式边界、56套核心方向、边界仿射传播和材料参考核验；自身边界投影后tail02 34轮通过，绝对物理行尺度仍未闭合。
+
+- [BVMethods VM 原生首五点、首次保护与 tail02 对照，2026-10-30](validation/bvmethods_vm_native_lockstep_2026-10-30.md)：
+  同目标自主复算、50套核心人口保护核验、入口下限／Power控制与同态矩阵和RHS交叉求解；首五目标与完整BV资格分别记账。
+
+- [BVMethods 内压步长数学分析与T470p冻结定位，2026-10-30](validation/bvmethods_t470p_step_math_2026-10-30.md)：
+  Wolfram外推/载流子尺度核验、局部1%保护下溢定位、三种Newton上限同态对照及弱行交叉Jv。
+
+- [BVMethods 核心稳定缩放与直接人口列线性化，2026-10-30](validation/bvmethods_relative_columns_core_2026-10-30.md)：
+  核心乘积与故障分类修复、相对列全链路、真实冻结矩阵回归、局部续算与Sentaurus浓度上限核查。
+
+- [BVMethods 弱人口行与新零列同态定位，2026-10-30](validation/bvmethods_weak_population_rows_2026-10-30.md)：
+  原始非零列的缩放中间溢出、三组冻结PARDISO复算，以及tail02最差人口节点与原始Newton方向。
+
+- [BVMethods 浓度下限与外推阈值独立验证，2026-10-30](validation/bvmethods_density_controls_2026-10-30.md)：
+  四组12项VM对照、format v2单位修正、冷窗口逐位一致，以及困难态残差通过而人口更新误差仍失败的边界。
 
 - [人口主变量限制与停止条件审查，2026-10-29](validation/potential_density_policy_audit_2026-10-29.md)：
   清理QF专用配置，统一入口校验，修正独立人口Newton的权威分块停止契约。

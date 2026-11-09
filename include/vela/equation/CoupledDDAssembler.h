@@ -40,6 +40,11 @@ struct CoupledDDState {
     VectorXd p;
 };
 
+// Derived physical fields; primary densities are copied without reconstruction.
+struct PopulationPhysicalFields {
+    VectorXd psi_V, phin_V, phip_V, n, p;
+};
+
 struct CoupledDDThermionicBoundary {
     Real electronVelocity = 0.0;
     Real holeVelocity = 0.0;
@@ -308,6 +313,8 @@ public:
         structureCache_ = std::move(cache);
     }
     bool usesBvMethodsOperator() const { return scaling_.coupledOperator=="bvmethods_tri3_qf"; }
+    SparseMatrixd populationProtectedJacobian(const VectorXd&,
+        const CoupledDDBoundaryConditions&,const VectorXd* columns=nullptr) const;
     SparseMatrixd populationBootstrapJacobian(const VectorXd&,const CoupledDDBoundaryConditions&) const;
     /// Opt-in single-owner sequential reuse of immutable BVMethods kernels.
     /// State keys are bit-exact; boundary replacement is evaluated on every call.
@@ -319,6 +326,9 @@ public:
     /// Source-free element transport for terminal totals and their derivative.
     VectorXd bvMethodsTransportResidual(const VectorXd& x) const;
     SparseMatrixd bvMethodsTransportJacobian(const VectorXd& x) const;
+    SparseMatrixd populationJacobianInColumns(const VectorXd&,const CoupledDDBoundaryConditions&,
+        const VectorXd& columns,bool approximate=false) const;
+    SparseMatrixd bvMethodsTransportJacobianInColumns(const VectorXd&,const VectorXd& columns) const;
     void setFermiNodeCache(bool enabled) { fermiNodeCacheEnabled_ = enabled; }
     // Relative column perturbations for the legacy edge transport/source Jacobian.
     // These do not alter element-box derivatives or the physical residual.
@@ -363,6 +373,7 @@ public:
     bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
+    PopulationPhysicalFields populationPhysicalFields(const VectorXd& x) const;
 
     /// Store quasi-Fermi unknowns as contact-referenced increments.  The
     /// public CoupledDDState and boundary-condition values remain scaled

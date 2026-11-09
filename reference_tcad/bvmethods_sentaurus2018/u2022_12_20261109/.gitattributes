@@ -1,0 +1,4 @@
+* -text
+source/*.cmd -whitespace
+source/*.par -whitespace
+source/*.json whitespace=cr-at-eol

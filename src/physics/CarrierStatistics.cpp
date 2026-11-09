@@ -413,16 +413,14 @@ Real equilibriumCarrierProduct(
 
 namespace {
 
-Real fermiDegeneracyFactor(Real density, Real densityOfStates, CarrierStatisticsModel model)
+Real fermiLogDegeneracyFactor(Real density, Real densityOfStates, CarrierStatisticsModel model)
 {
-    if (!(density > 0.0) || !(densityOfStates > 0.0))
-        return 1.0;
-    const Real reducedDensity = density / densityOfStates;
-    if (!(reducedDensity > 0.0) || !std::isfinite(reducedDensity))
-        return 1.0;
-    const Real eta = inverseFermiDiracHalf(reducedDensity, model);
-    const Real logGamma = std::log(reducedDensity) - eta;
-    return std::exp(std::clamp(logGamma, Real{-500.0}, Real{500.0}));
+    if (!(density > 0.0) || !(densityOfStates > 0.0))return 0.0;
+    const Real ratio=density/densityOfStates;
+    if (!(ratio > 0.0) || !std::isfinite(ratio))return 0.0;
+    if(model==CarrierStatisticsModel::FermiDiracJoyceDixon)
+        return experimental::JoyceDixonStatistics::primitiveLogGamma(ratio);
+    return std::log(ratio)-inverseFermiDiracHalf(ratio,model);
 }
 
 } // namespace
@@ -437,17 +435,46 @@ GeneralizedSrhCarrierState generalizedSrhCarrierState(
             "generalizedSrhCarrierState: Vt must be finite and positive.");
 
     GeneralizedSrhCarrierState state;
-    if (usesFermiDirac(model)) {
-        state.electronDegeneracy = fermiDegeneracyFactor(n, Nc, model);
-        state.holeDegeneracy = fermiDegeneracyFactor(p, Nv, model);
+    const Real logN=usesFermiDirac(model)?fermiLogDegeneracyFactor(n,Nc,model):0.;
+    const Real logP=usesFermiDirac(model)?fermiLogDegeneracyFactor(p,Nv,model):0.;
+    state.electronDegeneracy=std::exp(logN);
+    state.holeDegeneracy=std::exp(logP);
+    state.logEquilibriumProduct=logN+logP+2*std::log(std::abs(ni));
+    state.normalizedSplitting=quasiFermiSplitting_V/Vt;
+    state.equilibriumProduct=state.electronDegeneracy*state.holeDegeneracy*ni*ni;
+    if(!std::isfinite(state.equilibriumProduct) || state.equilibriumProduct==0.)
+        state.equilibriumProduct=static_cast<Real>(std::exp((long double)state.logEquilibriumProduct));
+    const Real split=state.normalizedSplitting;
+    // Keep the accurate expm1 path near equilibrium. Outside that range,
+    // combine logs before exponentiation instead of clipping independent factors.
+    if(std::abs(split)<=500. && std::isfinite(state.equilibriumProduct) &&
+       state.equilibriumProduct>=std::numeric_limits<Real>::min())
+        state.excessProduct=state.equilibriumProduct*std::expm1(split);
+    else if(ni==0. || split==0.)state.excessProduct=0.;
+    else {
+        const long double magnitude=std::exp((long double)state.logEquilibriumProduct+
+            (split>0.?split:0.))*-std::expm1(-std::abs((long double)split));
+        state.excessProduct=std::copysign(static_cast<Real>(magnitude),split);
     }
-    state.equilibriumProduct = state.electronDegeneracy
-        * state.holeDegeneracy * ni * ni;
-    const Real normalizedSplitting = std::clamp(
-        quasiFermiSplitting_V / Vt, Real{-500.0}, Real{500.0});
-    state.excessProduct = state.equilibriumProduct
-        * std::expm1(normalizedSplitting);
     return state;
+}
+
+Real generalizedSrhExcessDirectionalDerivative(
+    const GeneralizedSrhCarrierState& state,Real dLogGammaN,
+    Real dLogGammaP,Real dNormalizedSplitting)
+{
+    using Wide=long double;
+    const Wide dLogProduct=Wide(dLogGammaN)+dLogGammaP;
+    const auto scaledExp=[](Wide logarithm,Wide direction) {
+        if(direction==0.)return Wide(0.);
+        return std::copysign(std::exp(logarithm+std::log(std::abs(direction))),direction);
+    };
+    const Wide logQ=state.logEquilibriumProduct,split=state.normalizedSplitting;
+    const Wide direction=split>=1.
+        ? scaledExp(logQ+split,dLogProduct+dNormalizedSplitting)-scaledExp(logQ,dLogProduct)
+        : (dLogProduct==0.?Wide(0.):Wide(state.excessProduct)*dLogProduct)+
+          scaledExp(logQ+split,dNormalizedSplitting);
+    return static_cast<Real>(direction);
 }
 
 GeneralizedSrhCarrierState generalizedSrhCarrierState(

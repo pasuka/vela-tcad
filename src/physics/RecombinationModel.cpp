@@ -18,9 +18,7 @@ Real limitedAugerCarrier(Real value)
 
 Real limitedExcessProduct(Real n, Real p, Real ni)
 {
-    const Real limitedN = limitedAugerCarrier(n);
-    const Real limitedP = limitedAugerCarrier(p);
-    return limitedN * limitedP - ni * ni;
+    return classicalAugerProduct(n,p,ni).value;
 }
 
 Real limitedExcessValue(Real value)
@@ -35,14 +33,15 @@ std::pair<Real, Real> augerCarrierFactor(
     Real density, Real coefficient, Real enhancement, Real referenceDensity)
 {
     const Real n = limitedAugerCarrier(density);
+    const Real active = std::abs(density) < kMaxAugerCarrier ? 1.0 : 0.0;
     if (enhancement == 0.0)
-        return {coefficient * n, coefficient};
+        return {coefficient * n, coefficient * active};
     const Real ratio = std::max(n, 0.0) / referenceDensity;
     if (ratio > 700.0)
-        return {coefficient * n, coefficient};
+        return {coefficient * n, coefficient * active};
     const Real term = enhancement * std::exp(-ratio);
     return {coefficient * n * (1.0 + term),
-            coefficient * (1.0 + term * (1.0 - ratio))};
+            coefficient * (1.0 + term * (1.0 - ratio)) * active};
 }
 
 Real dopingDependentLifetime(Real concentration,
@@ -71,6 +70,13 @@ void validateLifetimeParameters(const SRHLifetimeParameters& parameters,
 }
 
 } // namespace
+
+ClassicalAugerProduct classicalAugerProduct(Real n,Real p,Real ni)
+{
+    const Real nn=limitedAugerCarrier(n),pp=limitedAugerCarrier(p);
+    return {nn*pp-ni*ni,std::abs(n)<kMaxAugerCarrier?pp:0.,
+            std::abs(p)<kMaxAugerCarrier?nn:0.};
+}
 
 RecombinationModel::RecombinationModel(RecombinationModelConfig config)
     : config_(std::move(config))
@@ -290,16 +296,11 @@ RecombinationRateDerivatives RecombinationModel::totalRateDerivativesFromExcessP
     RecombinationRateDerivatives derivatives;
 
     if (srhEnabled_) {
-        const Real den = srhDenominator(n, p, ni, dopingConcentration);
-        if (std::abs(den) >= 1.0e-100) {
-            derivatives.dRateDExcess += 1.0 / den;
-            const Real invDen2 = 1.0 / (den * den);
-            const Real limitedExcess = limitedExcessValue(excessProduct);
-            derivatives.dRateDn -= limitedExcess *
-                holeLifetime(dopingConcentration) * invDen2;
-            derivatives.dRateDp -= limitedExcess *
-                electronLifetime(dopingConcentration) * invDen2;
-        }
+        const auto srh=srhRateGeneralizedDerivativesFromExcessProduct(
+            excessProduct,n,p,ni,ni,1.,1.,dopingConcentration);
+        derivatives.dRateDExcess+=srh.dRateDExcess;
+        derivatives.dRateDn+=srh.dRateDn;
+        derivatives.dRateDp+=srh.dRateDp;
     }
 
     if (augerEnabled_) {
@@ -336,7 +337,7 @@ RecombinationModel::srhRateGeneralizedDerivativesFromExcessProduct(
     const Real limitedExcess = limitedExcessValue(excessProduct);
     const Real invDen = 1.0 / den;
     const Real common = -limitedExcess * invDen * invDen;
-    derivatives.dRateDExcess = invDen;
+    derivatives.dRateDExcess = std::abs(excessProduct) < kMaxAugerCarrier*kMaxAugerCarrier ? invDen : 0.0;
     derivatives.dRateDn = common * holeLifetime(dopingConcentration);
     derivatives.dRateDp = common * electronLifetime(dopingConcentration);
     derivatives.dRateDElectronDegeneracy =
@@ -363,7 +364,7 @@ RecombinationModel::augerRateDerivativesFromExcessProduct(
     const auto hole = augerCarrierFactor(p, config_.augerCp,
         a.enabled ? a.holeEnhancement : 0.0, a.holeReferenceDensity);
     const Real limitedExcess = limitedExcessValue(excessProduct);
-    derivatives.dRateDExcess = electron.first + hole.first;
+    derivatives.dRateDExcess = std::abs(excessProduct) < kMaxAugerCarrier*kMaxAugerCarrier ? electron.first + hole.first : 0.0;
     derivatives.dRateDn = electron.second * limitedExcess;
     derivatives.dRateDp = hole.second * limitedExcess;
     return derivatives;
@@ -390,8 +391,8 @@ RecombinationLinearization RecombinationModel::electronLinearization(
         const Real limitedP = limitedAugerCarrier(p);
         const Real excessProduct = limitedExcessProduct(n, p, ni);
         const auto partials = augerRateDerivativesFromExcessProduct(excessProduct, n, p);
-        const Real rate = partials.dRateDExcess * excessProduct;
-        const Real derivative = partials.dRateDn + partials.dRateDExcess * limitedP;
+        const Real rate = augerRateFromExcessProduct(excessProduct,n,p);
+        const Real derivative = partials.dRateDn + partials.dRateDExcess * (std::abs(n)<kMaxAugerCarrier?limitedP:0.);
         const Real positiveDerivative = std::max(derivative, 0.0);
         linearization.diagonal += positiveDerivative;
         linearization.rhs += positiveDerivative * limitedN - rate;
@@ -421,8 +422,8 @@ RecombinationLinearization RecombinationModel::holeLinearization(
         const Real limitedP = limitedAugerCarrier(p);
         const Real excessProduct = limitedExcessProduct(n, p, ni);
         const auto partials = augerRateDerivativesFromExcessProduct(excessProduct, n, p);
-        const Real rate = partials.dRateDExcess * excessProduct;
-        const Real derivative = partials.dRateDp + partials.dRateDExcess * limitedN;
+        const Real rate = augerRateFromExcessProduct(excessProduct,n,p);
+        const Real derivative = partials.dRateDp + partials.dRateDExcess * (std::abs(p)<kMaxAugerCarrier?limitedN:0.);
         const Real positiveDerivative = std::max(derivative, 0.0);
         linearization.diagonal += positiveDerivative;
         linearization.rhs += positiveDerivative * limitedP - rate;

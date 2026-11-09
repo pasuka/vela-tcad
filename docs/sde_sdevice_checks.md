@@ -5,6 +5,12 @@ P2 binds the three P1 mesh cases to eight named SDevice inputs, using the real
 electrodes, stage emission and sidecars. It does **not** run a numerical solver,
 requalify an IV/BV curve, fetch private reference data or convert through TDR.
 
+The frozen P2 contact offsets use the CODATA2018 constants profile. This
+batch explicitly passes `--physical-constants-profile codata2018`, records that
+profile in its summary and checks the emitted material identity. It does not
+change the frontend default (`sentaurus_u2022_12`) or requalify those historical
+offsets under a different constants profile.
+
 The reviewed inputs and portable LF fingerprints live in
 [`configs/reference_sde_checks.json`](../configs/reference_sde_checks.json), with
 [schema](../schemas/vela.reference_sde_checks.v1.schema.json). The producer-side

@@ -1,5 +1,5 @@
 #include "vela/solver/NewtonSolver.h"
-#include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/PopulationCoordinateNewton.h"
 #include "vela/numerics/ResidualNorm.h"
 #include <algorithm>
 #include <stdexcept>
@@ -46,6 +46,7 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     c.linearSolver="direct_bordered";
     c.directRefinementSteps=cfg_.linearRefinementIterations;
     c.updateConvergence.mode="report";
+    c.minimumOriginalCorrections=cfg_.primaryVariableCoordinates=="unit"?1:0;
     // The scalar fixes the selected contact voltage exactly. The zero
     // functional makes this the same device solve, without a physical resistor.
     ArclengthScalarFunctional zero;
@@ -53,8 +54,14 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     zero.linearize=[](const VectorXd& x,Real){
         ArclengthScalarLinearization out;out.stateDerivative=VectorXd::Zero(x.size());return out;
     };
-    const auto solved=CoupledLoadLineNewton(system,zero.value,c,zero,
-        makeArclengthUpdateErrorEvaluator(contact,c.updateConvergence)).solve({y,bias->second},bias->second,1.);
+    zero.linearizeInColumns=[](const VectorXd& x,Real,const VectorXd&){
+        ArclengthScalarLinearization out;out.stateDerivative=VectorXd::Zero(x.size());return out;
+    };
+    const auto solved=PopulationCoordinateNewton(system,zero.value,c,zero,
+        makeArclengthUpdateErrorEvaluator(contact,c.updateConvergence),
+        cfg_.primaryVariableCoordinates=="unit"?primaryVariableScales():PrimaryVariableScales{},
+        cfg_.primaryVariableCoordinates=="unit",cfg_.populationStoppingRule=="native_approx",
+        approximateNativeRhsScales()).solve({y,bias->second},bias->second,1.);
     NewtonResult out;
     out.solution=unpackArclengthState(solved.state.x);
     out.converged=solved.converged;out.iters=solved.iterations;

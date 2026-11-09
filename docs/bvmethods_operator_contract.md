@@ -209,6 +209,15 @@ degeneracy law use the same limit. Actual positive, finite populations remain
 required; no density floor is introduced. See the [extreme-density recovery
 audit](validation/bvmethods_full_recovery_2026-10-25.md).
 
+The explicit BVMethods SRH tangent now differentiates the JD log-gamma
+primitive with respect to population before applying the caller's direction
+scale. This avoids subtracting `1/n - 1/(Nc*F'(eta))` in depleted rows. The
+existing `exp(log(n/Nc)-eta)` value and extreme-ratio value branch are retained,
+so this repair changes the tangent, not the source formula, density bounds or
+Newton acceptance rules. The integrated dilute-population regression checks
+both electron/hole responses after summing conservative transport rows.
+SG/GSS arithmetic and derivative-recovery policy remain separate qualifications.
+
 ## Discrete operator
 
 - Poisson and contact/gauge rows retain the existing cell-material assembler.
@@ -378,3 +387,63 @@ instead of the local manifest object. Malformed explicit settings are errors.
 and rejects an incomplete or failed continuation. Every rejected solve remains
 in the evidence; step halving retries from the last accepted state with the same
 iteration budget and stopping rules.
+
+
+## Direct population column linearization
+
+The core population state remains x=(psi,n,p). For a positive fixed column
+vector T, `CoupledDDAssembler::populationJacobianInColumns(x,b,T,approximate)`
+assembles J(x) diag(T) without first producing an absolute population Jacobian.
+Element transport/AV and SRH seed their local AD directions in T directly;
+Poisson, prescribed contact rows and terminal transport use the same column
+basis. Dimensions, residual formulas and state storage do not change. Invalid,
+zero or negative column factors are rejected.
+
+The bordered service uses this route only when the full, bootstrap and terminal
+column callbacks are all available and a physical column scale is below
+sqrt(DBL_MIN). Other columns use T=1, and ordinary states retain the existing
+assembly and solve path. T depends on the current state but is constant within
+that linear solve: do not differentiate T itself. The returned direction is
+converted back to physical increments before local positivity protection,
+state writeback and the raw density-update error. The recovery model evaluates
+its matrix action in that same column basis.
+
+Existing absolute Jacobian/adjoint/audit consumers retain their API. At extreme
+populations an absolute column may exceed binary64 even when J diag(T) is
+finite; consumers requiring a finite representation must request the explicit
+column interface and transform directions consistently. A finite relative
+Jacobian does not qualify every absolute diagnostic or every finite nonlinear
+step. Positivity/floor policies and all residual/conservation gates remain
+independent.
+
+For a frozen CSV regression fixture containing `last_matrix_matrix.csv` and
+`last_matrix_state.csv`, build and run the dedicated diagnostic target:
+
+```powershell
+cmake --build --preset windows-ucrt64-release --target vela_coupled_frozen_replay
+./build-release/vela_coupled_frozen_replay.exe <fixture-directory> <report.json>
+```
+
+The tool retains the archived RHS and positive physical column scales, requests
+one actual core bordered step, and checks its original-system multiprecision
+componentwise backward error against 1e-10. Exit 0 is a linear regression pass,
+not a nonlinear convergence or full BV result. Very small decimal populations
+are parsed without rejecting representable subnormal values. Fixtures and
+reports stay in ignored build directories.
+
+## Population normalization arithmetic
+
+Population pack/unpack preserves the original normalized psi directly. Derived
+physical QFs are computed from psi/n/p once for SG, GradQF and SRH; they do not
+pass through normalized QF coordinates on this path. Population terminal-current
+postprocessing restores the same original psi when its physical binding and V0
+match. Concentrations, DOS and intrinsic density use a combined conversion to
+cm^-3, with an exact identity when internal densities already use cm^-3. The
+corresponding tangent uses the same unit factor.
+
+The fixed-population Poisson diffusion block uses normalized psi differences and
+g/eps_ref directly. Charge and interface sources retain their physical row scale
+1/(eps_ref*V0); boundary equations and affine elimination remain unchanged. This
+is an arithmetic rewrite, not a new physical model or a relaxed acceptance gate.
+See the [normalization repair verification](validation/bvmethods_normalization_fix_2026-10-30.md)
+for actual Jv, restart, fixed-target and full-BV qualification.

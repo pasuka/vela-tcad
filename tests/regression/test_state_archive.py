@@ -71,6 +71,46 @@ class StateArchiveTest(unittest.TestCase):
         for key in archive.POPULATION:
             self.assertEqual(np.asarray(fields[key]).tobytes(), np.asarray(self.fields[key]).tobytes())
 
+    def test_population_potential_bits_reference_and_cpp_interop(self):
+        self.population_state()
+        self.fields['population_psi_normalized']=[21.200072448909626, -17.200072448909626, 0.]
+        scale=.025851999786435535
+        self.fields['psi']=[x*scale for x in self.fields['population_psi_normalized']]
+        self.meta.update(population_potential_schema='vela.population-potential.v1',
+            population_potential_scale_V=scale, population_potential_origin_V=self.meta['potential_origin_V'],
+            population_potential_unit='V')
+        archive.write(self.path,self.fields,self.meta)
+        self.assertFields(archive.read(self.path,3,'a'*64)[0])
+        tool=os.environ.get('VELA_STATE_ARCHIVE_TOOL')
+        if tool:
+            got=json.loads(subprocess.check_output([tool,'decode',str(self.path),'3','a'*64],text=True))
+            self.assertFields(got['fields'])
+            source=self.path.with_suffix('.json');source.write_text(json.dumps(dict(fields=self.fields,metadata=self.meta)))
+            subprocess.run([tool,'encode',str(source),str(self.path)],check=True)
+            self.assertFields(archive.read(self.path,3,'a'*64)[0])
+        shifted=self.path.parent/'shifted.h5'
+        archive.translate(self.path,shifted,1.,{0,1,2},3,'a'*64)
+        moved, meta=archive.read(shifted,3,'a'*64)
+        self.assertEqual(meta['potential_origin_V'],self.meta['potential_origin_V']+1.)
+        self.assertEqual(meta['population_potential_origin_V'],meta['potential_origin_V'])
+        with localcontext() as ctx:
+            ctx.prec=100
+            v0=Decimal.from_float(scale)
+            expected=[float((Decimal.from_float(x)*v0-Decimal(1))/v0) for x in self.fields['population_psi_normalized']]
+        self.assertEqual(np.asarray(moved['population_psi_normalized']).tobytes(),np.asarray(expected).tobytes())
+        self.assertEqual(np.asarray(moved['psi']).tobytes(),np.asarray([x*scale for x in expected]).tobytes())
+        for key in archive.POPULATION:
+            self.assertEqual(np.asarray(moved[key]).tobytes(),np.asarray(self.fields[key]).tobytes())
+        if tool:
+            got=json.loads(subprocess.check_output([tool,'decode',str(shifted),'3','a'*64],text=True))
+            self.assertEqual(got['metadata']['population_potential_origin_V'],meta['potential_origin_V'])
+        for key in ('population_potential_schema','population_potential_scale_V','population_potential_origin_V','population_potential_unit'):
+            meta=dict(self.meta);meta.pop(key)
+            with self.assertRaises(ValueError):archive.validate(self.fields,meta)
+        for update in (dict(population_potential_scale_V=0.),dict(population_potential_scale_V=True),
+                       dict(population_potential_unit='mV'),dict(potential_origin_V=29.)):
+            with self.assertRaises(ValueError):archive.validate(self.fields,dict(self.meta,**update))
+
     def test_population_coordinates_reject_inconsistent_or_mixed_state(self):
         import copy
         self.population_state()

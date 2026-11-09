@@ -221,7 +221,11 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage_,mobilityConfig_,none,
             bandgapConfig_,ImpactIonizationModelConfig{},{},{},coordinates,{},carrierStatistics_,electronQuantumPotentialConfig_);
         const Real vscale=scaling_.enabled?scaling_.V0:1.;VectorXd x;
-        if(assembler.usesPopulationState())x=assembler.packPopulation(solution.psi,solution.n,solution.p);
+        if(assembler.usesPopulationState()) {
+            CoupledDDState normalized;
+            normalized.psi=solution.normalizedPopulationPotential(vscale);
+            normalized.n=solution.n;normalized.p=solution.p;x=assembler.pack(normalized);
+        }
         else if(solution.hasConsistentPackedState() && solution.packedPotentialScale_V==vscale){
             assembler.setQuasiFermiReferenceFields(solution.electronQfReference,solution.holeQfReference);x=solution.packedState;
         }else{x=assembler.pack({solution.psi/vscale,solution.phin/vscale,solution.phip/vscale});}

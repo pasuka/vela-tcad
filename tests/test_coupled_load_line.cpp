@@ -1,3 +1,4 @@
+#include "vela/numerics/WeightedSparseRows.h"
 #include "vela/simulation/CoupledLoadLine.h"
 #include "vela/solver/PopulationState.h"
 
@@ -570,4 +571,429 @@ TEST_CASE("Coupled continuation uses positive population predictor and rolls bac
     const auto noHistory=solver.secantPredict(current,current,.02,1.);REQUIRE(noHistory.x==current.x);
     current.x[2]=1e-300;
     const auto invalid=solver.secantPredict(previous,current,.02,1.);REQUIRE(invalid.x==current.x);REQUIRE(invalid.lambda==current.lambda);
+}
+
+TEST_CASE("Terminal derivative uses only selected conservation rows", "[coupled_load_line][terminal_rows]") {
+    SparseMatrixd j(3,2);j.insert(0,0)=2.;j.insert(0,1)=-3.;
+    j.insert(1,0)=std::numeric_limits<Real>::quiet_NaN();
+    j.insert(2,1)=std::numeric_limits<Real>::infinity();
+    VectorXd w=VectorXd::Zero(3);w[0]=4.;Eigen::Index excluded=0;
+    const auto d=weightedSparseRows(j,w,&excluded);
+    REQUIRE(excluded==2);REQUIRE(d.allFinite());REQUIRE(d[0]==8.);REQUIRE(d[1]==-12.);
+    w[1]=1.;REQUIRE_THROWS(weightedSparseRows(j,w));
+}
+TEST_CASE("Terminal row summation retains the finite sparse derivative", "[coupled_load_line][terminal_rows]") {
+    SparseMatrixd j(3,2);j.insert(0,0)=2.;j.insert(1,0)=.5;j.insert(2,1)=-3.;
+    VectorXd w(3);w<<1.,-2.,0.;
+    REQUIRE((weightedSparseRows(j,w)-(j.transpose()*w)).isZero(0.));
+}
+TEST_CASE("Bordered equilibration preserves a finite product with overflowing intermediate", "[coupled_load_line][scaled_columns]") {
+    ArclengthSystem s;const double goal=2e-320;
+    s.residual=[goal](const VectorXd& x,Real){return VectorXd::Constant(1,1e303*(x[0]-goal));};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1e303;return j;};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd& b,VectorXd& y){y=b/1e303;return true;};
+    s.columnScales=[](const ArclengthState&){VectorXd s(2);s<<1e-320,1.;return s;};
+    ArclengthScalarFunctional p;p.value=[](const VectorXd&,Real){return 0.;};
+    p.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";c.equationTolerance=1e-30;c.maxIterations=3;
+    const auto r=CoupledLoadLineNewton(s,p.value,c,p).solve({VectorXd::Constant(1,1e-320),0.},0.,1.);
+    INFO(r.failureReason);REQUIRE(r.converged);REQUIRE(std::abs(r.state.x[0]-goal)<=2*std::numeric_limits<double>::denorm_min());
+    REQUIRE(std::isfinite(scaledProduct(1e17,1e303,1e-320)));
+    REQUIRE(scaledProduct(1e17,1e303,1e-320)>0.);
+}
+TEST_CASE("Relative population callback publishes physical increments", "[coupled_load_line][scaled_columns]") {
+    ArclengthSystem s;const double goal=2e-320;int relativeCalls=0;
+    s.residual=[goal](const VectorXd& x,Real){return VectorXd::Constant(1,1e303*(x[0]-goal));};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.jacobian=[](const VectorXd&,Real)->SparseMatrixd{throw std::runtime_error("absolute assembly must not be used");};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    s.jacobianInColumns=[&](const VectorXd&,Real,const VectorXd& t){++relativeCalls;SparseMatrixd j(1,1);j.insert(0,0)=1e303*t[0];return j;};
+    s.bootstrapJacobianInColumns=s.jacobianInColumns;
+    s.columnScales=[](const ArclengthState& st){VectorXd s(2);s<<st.x[0],1.;return s;};
+    ArclengthScalarFunctional p;p.value=[](const VectorXd&,Real){return 0.;};
+    p.linearize=[](const VectorXd&,Real)->ArclengthScalarLinearization{throw std::runtime_error("absolute terminal must not be used");};
+    p.linearizeInColumns=[](const VectorXd&,Real,const VectorXd&){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";c.equationTolerance=1e-30;c.maxIterations=3;
+    const auto r=CoupledLoadLineNewton(s,p.value,c,p).solve({VectorXd::Constant(1,1e-320),0.},0.,1.);
+    INFO(r.failureReason);REQUIRE(r.converged);REQUIRE(relativeCalls>0);REQUIRE(std::abs(r.state.x[0]-goal)<=2*std::numeric_limits<double>::denorm_min());
+}
+TEST_CASE("Bordered diagnostics distinguish missing support from weighted overflow", "[coupled_load_line][scaled_columns]") {
+    auto check=[](double diagonal,double physical){
+        ArclengthSystem s;s.residual=[](const VectorXd&,Real){return VectorXd::Ones(1);};
+        s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+        s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+        s.jacobian=[=](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=diagonal;return j;};
+        s.columnScales=[=](const ArclengthState&){VectorXd a(2);a<<physical,1.;return a;};
+        ArclengthScalarFunctional p;p.value=[](const VectorXd&,Real){return 0.;};
+        p.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+        CoupledLoadLineConfig c;c.linearSolver="direct_bordered";
+        return CoupledLoadLineNewton(s,p.value,c,p).solve({VectorXd::Zero(1),0.},0.,1.).failureReason;
+    };
+    REQUIRE(check(0.,1.).find("structural zero row")!=std::string::npos);
+    REQUIRE(check(1e300,1e300).find("non-finite weighted row magnitude")!=std::string::npos);
+    REQUIRE(check(1e-300,1e-300).find("weighted row magnitude underflow")!=std::string::npos);
+}
+
+TEST_CASE("External resistor Quasistationary keeps the full inner voltage correction", "[coupled_load_line][quasistationary]") {
+    // A linear device x=V with I=x/2 has the unique load-line solution
+    // V + R I = 3, R=1, hence V=2. No nonlinear globalization is needed.
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    system.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd& b,VectorXd& x){x=b;return true;};
+    ArclengthScalarFunctional current;
+    current.value=[](const VectorXd& x,Real){return .5*x[0];};
+    current.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Constant(1,.5);a.parameterDerivative=0.;return a;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.maxIterations=2;c.maxVoltageUpdate_V=.1;c.applyDeviceUpdateLimit=false;
+    ArclengthState seed{VectorXd::Zero(1),0.};
+    const auto limited=CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.);
+    REQUIRE_FALSE(limited.converged);
+    c.applyVoltageUpdateLimit=false;
+    const auto full=CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.);
+    REQUIRE(full.converged);
+    REQUIRE(full.state.lambda==Catch::Approx(2.));
+    REQUIRE(full.state.x[0]==Catch::Approx(2.));
+    REQUIRE(std::abs(full.loadLineResidual_V)<1e-12);
+}
+
+TEST_CASE("Load-line report retains the complete residual branch", "[coupled_load_line][load_report]") {
+    // Exact device root x=V, but the initial state does not satisfy V+I=3.
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    system.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd& b,VectorXd& x){x=b;return true;};
+    ArclengthScalarFunctional current;
+    current.value=[](const VectorXd& x,Real){return .5*x[0];};
+    current.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Constant(1,.5);a.parameterDerivative=0.;return a;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.applyVoltageUpdateLimit=false;c.maxIterations=2;
+    ArclengthState seed{VectorXd::Zero(1),0.};
+    const auto closed=CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.);
+    REQUIRE(closed.converged);REQUIRE(closed.state.lambda==Catch::Approx(2.));
+    c.enforceLoadLineConvergence=false;
+    const auto reported=CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.);
+    REQUIRE(reported.converged);REQUIRE(reported.state.lambda==Catch::Approx(2.));
+    REQUIRE(std::abs(reported.loadLineResidual_V)<1e-12);REQUIRE(reported.iterations==1);
+    // An already closed complete system may still accept zero updates.
+    const auto unchanged=CoupledLoadLineNewton(system,current.value,c,current).solve(reported.state,3.,1.);
+    REQUIRE(unchanged.converged);REQUIRE(unchanged.iterations==0);
+    // Every changed external target must re-close the circuit even from an exact PDE root.
+    const auto next=CoupledLoadLineNewton(system,current.value,c,current).solve(reported.state,6.,1.);
+    REQUIRE(next.converged);REQUIRE(next.iterations==1);
+    REQUIRE(next.state.lambda==Catch::Approx(4.));
+    // A cached-looking small update sample cannot authorize iter=0 in a new solve.
+    c.updateConvergence.mode="enforce";
+    DensityUpdateErrorEvaluator metric=[](const VectorXd&,const VectorXd&,const VectorXd&,Real,Real) {
+        DensityUpdateError e;e.valid=true;e.rms=.01;return e;};
+    const auto orNext=CoupledLoadLineNewton(system,current.value,c,current,metric).solve(next.state,9.,1.);
+    REQUIRE(orNext.converged);REQUIRE(orNext.iterations==1);
+    REQUIRE(orNext.state.lambda==Catch::Approx(6.));
+    c.updateConvergence.mode="off";
+    // Report does not bypass the device equation or another physical gate.
+    seed.x[0]=1.;
+    const auto corrected=CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.);
+    REQUIRE(corrected.converged);REQUIRE(corrected.iterations>0);
+    REQUIRE(corrected.state.lambda==Catch::Approx(2.));
+    system.convergenceSatisfied=[](const VectorXd&,Real){return false;};
+    REQUIRE_FALSE(CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.).converged);
+    system.convergenceSatisfied={};
+    current.value=[](const VectorXd&,Real){return std::numeric_limits<Real>::infinity();};
+    REQUIRE_FALSE(CoupledLoadLineNewton(system,current.value,c,current).solve(seed,3.,1.).converged);
+}
+
+TEST_CASE("Complete residual and report-only load gate have independent update branches", "[coupled_load_line][load_report]") {
+    // x=V, I=x^2. The first Newton step from V=1 toward V+I=2.001
+    // leaves a quadratic circuit defect, while its relative voltage update is small.
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    s.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd& b,VectorXd& x){x=b;return true;};
+    ArclengthScalarFunctional current;
+    current.value=[](const VectorXd& x,Real){return x[0]*x[0];};
+    current.linearize=[](const VectorXd& x,Real){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Constant(1,2*x[0]);a.parameterDerivative=0.;return a;};
+    DensityUpdateErrorEvaluator metric=[](const VectorXd&,const VectorXd& dx,const VectorXd& after,Real v,Real dv){
+        DensityUpdateError e;e.valid=true;e.counts[0]=1;e.counts[3]=1;
+        e.blockRms[0]=std::abs(dx[0])/(1+std::abs(after[0]));
+        e.blockRms[3]=std::abs(dv)/(1+std::abs(v));
+        e.rms=std::hypot(e.blockRms[0],e.blockRms[3])/std::sqrt(2.);return e;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.applyVoltageUpdateLimit=false;c.maxIterations=4;c.loadLineTolerance_V=1e-12;
+    c.updateConvergence.mode="enforce";c.enforceLoadLineConvergence=false;
+    ArclengthState seed{VectorXd::Constant(1,1.),1.};
+    const auto report=CoupledLoadLineNewton(s,current.value,c,current,metric).solve(seed,2.001,1.);
+    REQUIRE(report.converged);REQUIRE(report.iterations==1);
+    REQUIRE(report.convergenceReason=="coupled_density_update");
+    REQUIRE(std::abs(report.loadLineResidual_V)>c.loadLineTolerance_V);
+    c.enforceLoadLineConvergence=true;
+    const auto enforce=CoupledLoadLineNewton(s,current.value,c,current,metric).solve(seed,2.001,1.);
+    REQUIRE(enforce.converged);REQUIRE(enforce.iterations>report.iterations);
+    REQUIRE(std::abs(enforce.loadLineResidual_V)<=c.loadLineTolerance_V);
+    c.enforceLoadLineConvergence=false;c.updateConvergence.mode="off";
+    const auto residualOnly=CoupledLoadLineNewton(s,current.value,c,current).solve(seed,2.001,1.);
+    REQUIRE(residualOnly.converged);REQUIRE(residualOnly.iterations>report.iterations);
+}
+
+TEST_CASE("Failed bootstrap solve restores full Jacobian at the unchanged target",
+          "[coupled_load_line][population_core][linear_restore]") {
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x[0]-1.);};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    int bootstrapCalls=0,fullCalls=0;bool fullFails=false,rejectTrial=false;
+    const ArclengthState initial{VectorXd::Zero(1),.2};
+    auto matrix=[&](bool full,const VectorXd& x,Real v,const VectorXd& columns){
+        REQUIRE(x[0]==initial.x[0]);REQUIRE(v==initial.lambda);
+        if(full)++fullCalls;else ++bootstrapCalls;
+        SparseMatrixd j(1,1);j.insert(0,0)=full&&!fullFails?columns[0]:0.;return j;
+    };
+    s.jacobian=[&](const VectorXd& x,Real v){return matrix(true,x,v,VectorXd::Ones(1));};
+    s.bootstrapJacobian=[&](const VectorXd& x,Real v){return matrix(false,x,v,VectorXd::Ones(1));};
+    s.automaticDerivativeRecovery=true;
+    s.makeTrial=[&](const ArclengthState& st,const VectorXd& dx,Real dv,Real alpha){
+        if(rejectTrial)throw std::domain_error("diagnostic domain failure");
+        ArclengthTrial t;t.state={st.x+alpha*dx,st.lambda+alpha*dv};return t;
+    };
+    ArclengthScalarFunctional p;p.value=[](const VectorXd&,Real){return 0.;};
+    p.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Zero(1);return a;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.equationTolerance=1e-12;c.maxIterations=1;c.applyVoltageUpdateLimit=false;
+    c.updateConvergence.mode="enforce_joint";c.enforceLoadLineConvergence=true;
+    double rms=.25;
+    DensityUpdateErrorEvaluator metric=[&](const VectorXd&,const VectorXd&,const VectorXd&,Real,Real){
+        DensityUpdateError e;e.valid=true;e.rms=rms;return e;
+    };
+    SECTION("Same iteration restores the ordinary bordered matrix") {}
+    SECTION("Relative population columns also select the full callback") {
+        s.columnScales=[](const ArclengthState&){VectorXd t(2);t<<1e-200,1.;return t;};
+        s.jacobianInColumns=[&](const VectorXd& x,Real v,const VectorXd& t){return matrix(true,x,v,t);};
+        s.bootstrapJacobianInColumns=[&](const VectorXd& x,Real v,const VectorXd& t){return matrix(false,x,v,t);};
+        s.jacobian=[](const VectorXd&,Real)->SparseMatrixd{throw std::runtime_error("absolute full path forbidden");};
+        s.bootstrapJacobian=[](const VectorXd&,Real)->SparseMatrixd{throw std::runtime_error("absolute bootstrap path forbidden");};
+        p.linearizeInColumns=[](const VectorXd&,Real,const VectorXd&){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Zero(1);return a;};
+    }
+    SECTION("Two bad matrices return without mode cycling or state changes") {fullFails=true;}
+    SECTION("An invalid restored candidate cannot renew the same-state probe") {rejectTrial=true;c.maxIterations=10;}
+    SECTION("Restoration does not bypass the update stopping gate") {rms=2.;}
+    SECTION("Restoration does not bypass an independent physical gate") {s.convergenceSatisfied=[](const VectorXd&,Real){return false;};}
+    const auto result=CoupledLoadLineNewton(s,p.value,c,p,metric).solve(initial,.7,1.);
+    INFO(result.failureReason);
+    REQUIRE_FALSE(result.trace.front().bootstrapLinearFailureReason.empty());
+    REQUIRE((result.trace.front().derivativeReason=="bootstrap_linear_failure_restore" || rejectTrial));
+    if(fullFails||rejectTrial) {
+        REQUIRE_FALSE(result.converged);REQUIRE(result.state.x[0]==initial.x[0]);
+        REQUIRE(result.state.lambda==initial.lambda);REQUIRE(fullCalls==1);
+        REQUIRE(bootstrapCalls==(rejectTrial?2:1));
+        if(fullFails)REQUIRE(result.failureReason.find("full Jacobian retry failed")!=std::string::npos);
+    } else {
+        REQUIRE(bootstrapCalls==1);REQUIRE(fullCalls>=1);
+        REQUIRE(result.state.x[0]==Catch::Approx(1.));REQUIRE(result.state.lambda==Catch::Approx(.7));
+        REQUIRE(result.iterations==1);REQUIRE(result.trace.front().acceptedAlpha==1.);
+        REQUIRE(result.equationResidualNorm<=c.equationTolerance);
+        REQUIRE(std::abs(result.loadLineResidual_V)<=c.loadLineTolerance_V);
+        REQUIRE(result.converged==(rms<1.&&!s.convergenceSatisfied));
+    }
+}
+
+TEST_CASE("Protected bootstrap prediction is reviewed before changing the state",
+          "[coupled_load_line][population_core][model_review]") {
+    const ArclengthState seed{(VectorXd(2)<<0.,.1).finished(),.2};
+    double bootSlope=-.001,rms=.25;bool rejectFull=false,fullFails=false;
+    int fullCalls=0,bootCalls=0;
+    ArclengthSystem s;
+    s.residual=[](const VectorXd& x,Real){VectorXd f(2);f<<x[0]+x[1]-1.,x[1]-1.;return f;};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(2);};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    s.prescribedRows=[](const VectorXd&,Real){return std::vector<int>{};};
+    auto matrix=[&](bool full,const VectorXd& x,Real v,const VectorXd& columns){
+        REQUIRE((x-seed.x).norm()==0.);REQUIRE(v==seed.lambda);
+        if(full)++fullCalls;else ++bootCalls;
+        SparseMatrixd j(2,2);j.insert(0,0)=columns[0];j.insert(0,1)=columns[1];
+        j.insert(1,1)=(full?(fullFails?0.:1.):bootSlope)*columns[1];return j;
+    };
+    s.jacobian=[&](const VectorXd& x,Real v){return matrix(true,x,v,VectorXd::Ones(2));};
+    s.bootstrapJacobian=[&](const VectorXd& x,Real v){return matrix(false,x,v,VectorXd::Ones(2));};
+    s.automaticDerivativeRecovery=true;
+    s.makeTrial=[&](const ArclengthState& before,const VectorXd& dx,Real dv,Real alpha){
+        if(rejectFull&&dx[1]>0)throw std::domain_error("full candidate outside domain");
+        ArclengthTrial t;t.state={before.x+alpha*dx,before.lambda+alpha*dv};
+        if(t.state.x[1]<=0){t.state.x[1]=.01*before.x[1];t.protectedHoles=1;}return t;
+    };
+    ArclengthScalarFunctional port;port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(2);return p;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
+    c.applyVoltageUpdateLimit=false;c.maxIterations=1;c.equationTolerance=1e-12;
+    c.bootstrapModelGuardEnabled=true;c.updateConvergence.mode="enforce_joint";
+    DensityUpdateErrorEvaluator metric=[&](const VectorXd&,const VectorXd&,const VectorXd&,Real,Real){DensityUpdateError e;e.valid=true;e.rms=rms;return e;};
+    bool legacy=false,relative=false,feasible=false;
+    SECTION("Review uses the original state, target and one applied-update budget"){}
+    SECTION("Extreme relative columns retain their direct assembly contract"){
+        relative=true;s.columnScales=[](const ArclengthState&){return (VectorXd(3)<<1e-200,1e-200,1.).finished();};
+        s.jacobianInColumns=[&](const VectorXd& x,Real v,const VectorXd& t){return matrix(true,x,v,t);};
+        s.bootstrapJacobianInColumns=[&](const VectorXd& x,Real v,const VectorXd& t){return matrix(false,x,v,t);};
+        s.jacobian=[](const VectorXd&,Real)->SparseMatrixd{throw std::runtime_error("absolute full forbidden");};
+        s.bootstrapJacobian=[](const VectorXd&,Real)->SparseMatrixd{throw std::runtime_error("absolute bootstrap forbidden");};
+        port.linearizeInColumns=[](const VectorXd&,Real,const VectorXd&){ArclengthScalarLinearization a;a.stateDerivative=VectorXd::Zero(2);return a;};
+    }
+    SECTION("The explicit disabled control preserves the unsafe baseline") {legacy=true;c.bootstrapModelGuardEnabled=false;}
+    SECTION("A rejected full candidate cannot reissue an unchanged-state probe") {rejectFull=true;c.maxIterations=10;}
+    SECTION("An unusable full matrix exits without a mode cycle") {fullFails=true;c.maxIterations=10;}
+    SECTION("Full review cannot bypass RMS") {rms=2.;}
+    SECTION("Full review cannot bypass the independent physical gate") {s.convergenceSatisfied=[](const VectorXd&,Real){return false;};}
+    SECTION("Feasible residuals keep the original stopping gate") {
+        feasible=true;bootSlope=-100.;
+        s.makeTrial=[](const ArclengthState& before,const VectorXd&,Real dv,Real alpha){ArclengthTrial t;t.state={(VectorXd(2)<<0.,1.).finished(),before.lambda+alpha*dv};return t;};
+    }
+    const auto a=CoupledLoadLineNewton(s,port.value,c,port,metric).solve(seed,.7,1.);
+    INFO(a.failureReason);REQUIRE((seed.x-(VectorXd(2)<<0.,.1).finished()).norm()==0.);
+    if(legacy){REQUIRE_FALSE(a.converged);REQUIRE(a.state.x[0]>100.);REQUIRE(fullCalls==0);return;}
+    if(feasible){REQUIRE(a.converged);REQUIRE(fullCalls==0);REQUIRE_FALSE(a.trace.front().bootstrapModelRetry);return;}
+    REQUIRE(a.trace.front().bootstrapModelRetry);REQUIRE(a.trace.front().candidateRejectedByRecovery);
+    REQUIRE(a.trace.front().acceptedAlpha==0.);REQUIRE(a.trace.front().bootstrapModelAfter>a.trace.front().bootstrapModelBefore);
+    REQUIRE(a.trace.front().iteration==0);REQUIRE(a.trace[1].iteration==0);
+    if(rejectFull||fullFails){REQUIRE_FALSE(a.converged);REQUIRE((a.state.x-seed.x).norm()==0.);REQUIRE(a.state.lambda==seed.lambda);REQUIRE(fullCalls==1);REQUIRE(a.trace.size()<6);}
+    else{REQUIRE(a.iterations==1);REQUIRE(a.state.x[0]==Catch::Approx(0.).margin(1e-12));REQUIRE(a.state.x[1]==Catch::Approx(1.));REQUIRE(a.state.lambda==Catch::Approx(.7));REQUIRE(a.converged==(rms<1.&&!s.convergenceSatisfied));}
+    (void)relative;
+}
+
+TEST_CASE("Bootstrap review includes the circuit prediction even when device prediction improves",
+          "[coupled_load_line][model_review]") {
+    ArclengthSystem s;s.automaticDerivativeRecovery=true;
+    s.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x[0]-1.);};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    s.prescribedRows=[](const VectorXd&,Real){return std::vector<int>{};};
+    s.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    s.bootstrapJacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=-.001;return j;};
+    s.makeTrial=[](const ArclengthState& x,const VectorXd& dx,Real dv,Real alpha){ArclengthTrial t;t.state={x.x+alpha*dx,x.lambda+alpha*dv};if(t.state.x[0]<=0)t.state.x[0]=.01*x.x[0];return t;};
+    ArclengthScalarFunctional p;p.value=[](const VectorXd& x,Real){return x[0];};p.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Ones(1);return p;};
+    CoupledLoadLineConfig c;c.bootstrapModelGuardEnabled=true;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";c.applyVoltageUpdateLimit=false;c.maxIterations=1;
+    auto a=CoupledLoadLineNewton(s,p.value,c,p).solve({VectorXd::Constant(1,.1),.2},1.5,1.);
+    REQUIRE(a.trace.front().bootstrapModelRetry);REQUIRE(a.converged);REQUIRE(a.iterations==1);
+    REQUIRE(a.state.x[0]==Catch::Approx(1.));REQUIRE(a.state.lambda==Catch::Approx(.5));
+}
+
+TEST_CASE("Recovery history is explicit, copied and independent of the model guard",
+          "[coupled_load_line][derivative_history]") {
+    ArclengthSystem s;s.automaticDerivativeRecovery=true;
+    s.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    s.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    s.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    int full=0,boot=0;s.jacobian=[&](const VectorXd&,Real){++full;SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    s.bootstrapJacobian=[&](const VectorXd&,Real){++boot;SparseMatrixd j(1,1);j.insert(0,0)=2.;return j;};
+    ArclengthScalarFunctional p;p.value=[](const VectorXd&,Real){return 0.;};p.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";c.applyVoltageUpdateLimit=false;c.maxIterations=2;
+    derivative_recovery::DerivativeSwitch history({},true);auto reason=history.reason;
+    CoupledLoadLineNewton solver(s,p.value,c,p);
+    auto first=solver.solve({VectorXd::Zero(1),0.},.5,1.,&history);
+    REQUIRE(first.converged);REQUIRE(boot==0);REQUIRE(first.derivativeHistory.has_value());
+    REQUIRE(history.reason==reason);REQUIRE(history.mode()==derivative_recovery::DerivativeMode::Full);
+    auto second=solver.solve(first.state,.6,1.,&*first.derivativeHistory);
+    REQUIRE(second.converged);REQUIRE(boot==0);REQUIRE(full>0);
+    s.automaticDerivativeRecovery=false;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(s,p.value,c,p).solve(first.state,.6,1.,&history),std::invalid_argument);
+}
+
+
+TEST_CASE("Full model quality reports do not select or alter candidates",
+          "[coupled_load_line][model_report]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real){return VectorXd::Constant(1,x[0]*x[0]-2.);};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(1);};
+    system.jacobian=[](const VectorXd& x,Real){SparseMatrixd j(1,1);j.insert(0,0)=2.*x[0];return j;};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    CoupledLoadLineConfig config;config.maxIterations=1;config.linearSolver="direct_bordered";
+    config.lineSearchMode="full_step";config.applyVoltageUpdateLimit=false;config.applyDeviceUpdateLimit=false;
+    const auto initial=ArclengthState{VectorXd::Constant(1,.1),0.};
+    const auto off=CoupledLoadLineNewton(system,port.value,config,port).solve(initial,0.,1.);
+    config.reportModelQuality=true;
+    const auto on=CoupledLoadLineNewton(system,port.value,config,port).solve(initial,0.,1.);
+    REQUIRE(on.state.x[0]==off.state.x[0]);REQUIRE(on.state.lambda==off.state.lambda);
+    REQUIRE(on.failureReason==off.failureReason);REQUIRE(on.iterations==off.iterations);
+    REQUIRE(on.trace.front().modelReportValid);REQUIRE(on.trace.front().modelReportReliable);
+    REQUIRE(on.trace.front().modelReportRatio<0.);
+    REQUIRE_FALSE(on.trace.front().candidateRejectedByRecovery);
+    REQUIRE(on.trace.front().acceptedAlpha==1.);
+}
+
+TEST_CASE("Full model report uses the coupled circuit prediction",
+          "[coupled_load_line][model_report]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real v){return VectorXd::Constant(1,x[0]-v);};
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Constant(1,-1.);};
+    system.jacobian=[](const VectorXd&,Real){SparseMatrixd j(1,1);j.insert(0,0)=1.;return j;};
+    system.solveJacobian=[](const VectorXd&,Real,const VectorXd&,VectorXd&){return false;};
+    ArclengthScalarFunctional port;port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd&,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(1);return p;};
+    system.makeTrial=[](const ArclengthState& x,const VectorXd& dx,Real dv,Real alpha){
+        ArclengthTrial t;t.state={x.x+alpha*dx,x.lambda+alpha*dv};return t;};
+    CoupledLoadLineConfig config;config.maxIterations=1;config.linearSolver="direct_bordered";
+    config.lineSearchMode="full_step";config.applyVoltageUpdateLimit=false;config.reportModelQuality=true;
+    const auto result=CoupledLoadLineNewton(system,port.value,config,port).solve({VectorXd::Zero(1),0.},.5,1.);
+    REQUIRE(result.converged);REQUIRE(result.trace.front().modelReportReliable);
+    REQUIRE(result.trace.front().modelReportRatio==Catch::Approx(1.));
+    REQUIRE(result.trace.front().modelReportPredicted==Catch::Approx(0.));
+    REQUIRE(result.trace.front().modelReportBefore>0.);
+    REQUIRE(result.trace.front().linearGateAbsolute<=result.trace.front().linearGateAbsoluteTolerance);
+    REQUIRE(result.trace.front().linearGateBackward<=result.trace.front().linearGateBackwardTolerance);
+    REQUIRE(result.trace.front().linearGateBackwardTolerance==1e-10);
+}
+
+TEST_CASE("Protected population writes omit tangents once and reset at each target",
+          "[coupled_load_line][post_protection]") {
+    ArclengthSystem system;
+    system.residual=[](const VectorXd& x,Real){
+        if(!(x[1]>0))throw std::domain_error("nonpositive population");
+        VectorXd f(3);f<<x[0],std::log(x[1]),x[2]-1.;return f;
+    };
+    system.parameterDerivative=[](const VectorXd&,Real){return VectorXd::Zero(3);};
+    auto jac=[](const VectorXd& x,bool omit){
+        SparseMatrixd j(3,3);j.insert(0,0)=1.;j.insert(1,1)=omit?1.:1./x[1];j.insert(2,2)=1.;return j;
+    };
+    system.jacobian=[jac](const VectorXd& x,Real){return jac(x,false);};
+    system.protectedJacobian=[jac](const VectorXd& x,Real){return jac(x,true);};
+    system.protectedJacobianInColumns=[jac](const VectorXd& x,Real,const VectorXd& columns){
+        SparseMatrixd j=jac(x,true);
+        for(int k=0;k<j.outerSize();++k)for(SparseMatrixd::InnerIterator e(j,k);e;++e)e.valueRef()*=columns[e.col()];
+        return j;
+    };
+    system.solveJacobian=[](const VectorXd& x,Real,const VectorXd& b,VectorXd& y){y=b;y[1]*=x[1];return true;};
+    system.makeTrial=[](const ArclengthState& old,const VectorXd& raw,Real dv,Real alpha){
+        const auto t=makePopulationTrial(old.x,raw,alpha,{true},{true},PopulationUpdateConfig{});
+        return ArclengthTrial{{t.state,old.lambda+t.alpha*dv},t.alpha,
+            static_cast<int>(t.protectedElectrons.size()),static_cast<int>(t.protectedHoles.size())};
+    };
+    system.postProtectionDerivativeRecovery=true;
+    ArclengthScalarFunctional port;
+    port.value=[](const VectorXd&,Real){return 0.;};
+    port.linearize=[](const VectorXd& x,Real){ArclengthScalarLinearization p;p.stateDerivative=VectorXd::Zero(x.size());return p;};
+    CoupledLoadLineConfig cfg;cfg.linearSolver="direct_bordered";cfg.lineSearchMode="full_step";
+    cfg.equationTolerance=1e-10;cfg.maxIterations=20;cfg.minimumOriginalCorrections=1;
+    ArclengthState seed{VectorXd(3),0.};seed.x<<0.,10.,1.;
+    for(const std::string mode:{"full_step","merit"}) {
+      cfg.lineSearchMode=mode;
+      seed.x[1]=mode=="merit"?30.:10.;
+      CoupledLoadLineNewton solver(system,port.value,cfg,port);
+      for(int repeat=0;repeat<2;++repeat) {
+        const auto result=solver.solve(seed,0.,1.);
+        INFO(result.failureReason);REQUIRE(result.converged);
+        REQUIRE(result.state.x[1]==Catch::Approx(1.).margin(1e-10));
+        REQUIRE(result.trace.size()>3);
+        REQUIRE(result.trace[0].derivativeMode=="full");
+        REQUIRE(result.trace[0].protectedElectrons==1);
+        REQUIRE(result.trace[1].derivativeMode=="post_protection_omitted");
+        REQUIRE(result.trace[1].protectedElectrons==0);
+        REQUIRE(result.trace[2].derivativeMode=="full");
+        REQUIRE(seed.x[1]==(mode=="merit"?30.:10.));
+      }
+    }
+    system.automaticDerivativeRecovery=true;
+    REQUIRE_THROWS_AS(CoupledLoadLineNewton(system,port.value,cfg,port),std::invalid_argument);
 }

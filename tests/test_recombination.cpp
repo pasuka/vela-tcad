@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <array>
 #include <catch2/catch_approx.hpp>
 
 #include "vela/material/MaterialDatabase.h"
@@ -795,4 +796,49 @@ TEST_CASE("SRH doping-dependent lifetime is unit-system invariant",
             == Catch::Approx(legacyModel.electronLifetime(doping_m3)).epsilon(1.0e-12));
     REQUIRE(internalModel.holeLifetime(tcad.m3ToInternalConcentration(doping_m3))
             == Catch::Approx(legacyModel.holeLifetime(doping_m3)).epsilon(1.0e-12));
+}
+
+
+TEST_CASE("Saturated recombination values have matching inactive partials",
+          "[recombination][srh][auger][jacobian][range]")
+{
+    RecombinationModelConfig c;c.mechanisms={"srh","auger"};RecombinationModel model(c);
+    const double excess=1e61,n=1e22,p=1e22,step=1e55;
+    const auto d=model.totalRateDerivativesFromExcessProduct(excess,n,p,1e16);
+    const double fd=(model.totalRateFromExcessProduct(excess+step,n,p,1e16)-
+                     model.totalRateFromExcessProduct(excess-step,n,p,1e16))/(2*step);
+    REQUIRE(fd==0.);REQUIRE(d.dRateDExcess==0.);
+    const auto srh=model.srhRateGeneralizedDerivativesFromExcessProduct(excess,n,p,1e16,1e16,1.,1.);
+    REQUIRE(srh.dRateDExcess==0.);
+    c.mechanisms={"auger"};RecombinationModel auger(c);
+    for(bool enhanced:{false,true}) {
+        c.augerDensityDependence.enabled=enhanced;
+        c.augerDensityDependence.electronEnhancement=3.;RecombinationModel a(c);
+        const auto da=a.augerRateDerivativesFromExcessProduct(1e40,2e30,1e20);
+        const double dn=(a.augerRateFromExcessProduct(1e40,2e30+1e24,1e20)-
+                         a.augerRateFromExcessProduct(1e40,2e30-1e24,1e20))/(2e24);
+        REQUIRE(dn==0.);REQUIRE(da.dRateDn==0.);
+        const auto linear=a.electronLinearization(2e30,1e20,1e16);
+        REQUIRE(linear.diagonal*2e30-linear.rhs==Catch::Approx(a.augerRate(2e30,1e20,1e16)).epsilon(1e-12));
+    }
+}
+
+TEST_CASE("Classical Auger product and total rate agree beyond population saturation",
+          "[recombination][auger][jacobian][range]")
+{
+    RecombinationModelConfig cfg;cfg.mechanisms={"auger"};RecombinationModel model(cfg);
+    for(const auto pair:std::array<std::array<double,2>,3>{{{2e30,1e20},{1e20,2e30},{1e22,2e22}}}) {
+        const double n=pair[0],p=pair[1],ni=1e16;
+        const auto product=vela::classicalAugerProduct(n,p,ni);
+        const auto partial=model.augerRateDerivativesFromExcessProduct(product.value,n,p);
+        const double direction=partial.dRateDn+partial.dRateDExcess*product.dN;
+        const double h=n*1e-6;
+        const double fd=(model.augerRate(n+h,p,ni)-model.augerRate(n-h,p,ni))/(2*h);
+        REQUIRE(direction==Catch::Approx(fd).epsilon(2e-8).margin(1e-20));
+        for(bool electron:{true,false}) {
+            const auto linear=electron?model.electronLinearization(n,p,ni):model.holeLinearization(n,p,ni);
+            REQUIRE(linear.diagonal*(electron?n:p)-linear.rhs==
+                Catch::Approx(model.augerRate(n,p,ni)).epsilon(2e-12));
+        }
+    }
 }

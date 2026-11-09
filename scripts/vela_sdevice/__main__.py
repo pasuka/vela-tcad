@@ -98,6 +98,8 @@ def main(argv=None):
     device.add_argument("--threads", type=int)
     device.add_argument("--verbose", action="store_true")
     device.add_argument("--allow-lossy", action="store_true")
+    device.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"),
+                        help="must match the solver build; defaults to sentaurus_u2022_12; codata2018 remains an explicit rollback")
     keep = device.add_mutually_exclusive_group()
     keep.add_argument("--keep-intermediate", action="store_true", dest="keep_intermediate", default=True)
     keep.add_argument("--no-keep-intermediate", action="store_false", dest="keep_intermediate")

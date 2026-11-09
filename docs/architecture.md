@@ -37,7 +37,13 @@ backend exceptions are documented in the [configuration schema](config_schema.md
 The explicit `solver.coupled_operator: "bvmethods_tri3_qf"` profile routes
 coupled carrier residuals, Jacobians, ledgers and terminal totals through
 `BvMethodsCoupledRuntime`, retaining existing Poisson and constraint rows.
-Its [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
+Population-coordinate SRH forms a compensated density-product difference and
+its direct population tangents without reconstructing a quasi-Fermi split.
+Shared recombination retains logarithmic factors outside separate exponential
+range, and saturated source partials differentiate the value actually returned.
+AV/AD range fallbacks preserve finite representable directions. See the
+[arithmetic repair qualification](validation/bvmethods_physics_arithmetic_fix_2026-11-02.md).
+The BVMethods [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
 the default and PN2D operators retain their existing paths.
 
 The BVMethods convergence callback requests one stateless physical evaluation
@@ -47,7 +53,7 @@ node coefficients for the fixed owner mesh/doping/configuration; normal fields
 and mobility tangents remain live. See the
 [performance qualification](validation/bvmethods_t470p_round2_2026-10-29.md).
 
-The explicit `solver.state_variables: "potential_density"` mode stores physical
+The BVMethods default `solver.state_variables: "potential_density"` mode stores physical
 n/p as primary state alongside scaled potential. `BvMethodsCoupledRuntime`
 directly seeds population derivatives in the shared Tri3 jets, uses a fixed-n/p
 Poisson block and derives QF only for physical fields. `PopulationNewtonSolver`
@@ -59,8 +65,47 @@ chooses directly assembled approximate/full Jacobians without changing RHS.
 populations in logarithmic coordinates independently of Newton's physical n/p
 coordinates; the coupled continuation service retains prediction rollback.
 Population archives store internal n/p alongside SI output fields and their
-conversion scale, so same-unit restores bypass a lossy SI round trip. Both
-C++ and Python codecs validate the optional coordinate bundle. The Poisson
+conversion scale, so same-unit restores bypass a lossy SI round trip. Population
+solutions also retain original normalized psi separately from QF packedState.
+`PopulationCoordinateNewton` is the production coordinate entry for population
+Newton and resistor sweeps. `PrimaryVariableCoordinates` transforms states,
+Jacobians, ports, prediction, protected writes and physical E metrics into Unit
+coordinates, delegating to the single `CoupledLoadLineNewton` implementation.
+There are no environment flags or duplicate Newton kernels. A state-local
+physical `LoadLineResidual` is shared by scaled RHS and physical direction audit.
+The after_protection policy starts Full per target and omits only mobility/AV
+partials after protected writes, restoring Full after unprotected writes. It is
+separate from the optional automatic bootstrap controller. Population default
+stopping is explicitly native_approx; RHS mapping is unavailable outside its
+calibrated domain, while valid physical E remains available.
+
+The independent `vela_bvmethods_experiment` entry accepts `--experiment` and
+`--checkpoint` requests outside the simulation JSON schema. All groups share its
+binary; its scoped C++ sweep controls can enable the protected-model review,
+read-only model-quality reports and authoritative packed initial states. The
+standard entry never installs this scope. Diagnostics write separate attempt and
+Newton ledgers, including intermediate failed retries and target clipping.
+`reportModelQuality` cannot accept, reject, or replace a candidate; its Full
+formula matches the automatic Full-candidate observation. Ordinary calls and
+numerical defaults remain unchanged. The portable diagnostics supervisor checks
+entry/report-only trajectory parity before P0 and explicitly qualifies outputs
+before any bounded P1 run. Host paths and receipts are request data outside Git.
+
+The C++ load-line validation flag `bootstrapModelGuardEnabled` is off by default.
+When explicitly enabled with automatic recovery/full-step, it evaluates the
+protected bootstrap prediction with multiprecision accumulation and requests
+one same-state full-Jacobian review if no reliable decrease is predicted outside
+the original physical gates. The linear-failure and model-failure paths share
+one allowance until an actual update. JSON/CMD do not enable this experiment.
+`CoupledLoadLineNewton::solve` also accepts optional caller-owned derivative
+history and returns a copied final history. Ordinary calls still reset per solve;
+experiments may carry only from an accepted state with matching numerical
+contracts, and must not overwrite accepted history with a failed attempt.
+
+The optional population potential archive bundle binds V0, the voltage unit and
+reference origin to the mesh-qualified physical output. Matching restores reuse
+psi bits; changed scales convert explicitly and stale bindings cannot be archived.
+Both C++ and Python codecs validate the optional coordinate bundles. The Poisson
 stage retains its computed n/p when publishing a population checkpoint.
 The explicit experimental `population_sg_current: band_population` path uses
 `BvMethodsPopulationSg` to form population/band SG arguments without subtracting
@@ -72,6 +117,19 @@ correctly rounded inverse-series coefficients. `BvMethodsPrimitiveState` separat
 defines normalized population, band, reference-energy and AD current contracts;
 this experimental interface has no JSON/CMD dispatch. See the
 [primitive-state follow-up](validation/bvmethods_primitive_contract_2026-10-28.md).
+For extreme BVMethods population columns, `ArclengthSystem::jacobianInColumns`
+and `bootstrapJacobianInColumns` assemble J diag(T) directly in the element,
+SRH, Poisson and boundary contracts. The matching terminal callback uses the
+same basis. T is fixed for one linearization; the core returns T times the
+linear direction to physical n/p before trial protection and raw update RMS.
+The ordinary-state path retains its established arithmetic. Absolute Jacobian
+APIs remain available for diagnostics, but may be unrepresentable for extreme
+positive densities; they must not be multiplied by T after overflowing.
+`ScaledProduct` rescues avoidable intermediate range loss in equilibration,
+and diagnostics distinguish absent support from weighted underflow/overflow.
+The opt-in `vela_coupled_frozen_replay` target tests archived linear systems
+through the actual bordered-Newton core without requiring a full device scan.
+
 Equilibrium Poisson initialization remains a separate scalar statistical problem.
 The [implementation record](validation/potential_density_development_2026-10-28.md)
 separates implemented interfaces from passed numerical qualifications; the

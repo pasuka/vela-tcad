@@ -4,6 +4,8 @@
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
 #include <cmath>
+#include "vela/physics/experimental/PopulationRecombination.h"
+#include <boost/multiprecision/cpp_dec_float.hpp>
 using namespace vela::experimental;
 using Catch::Approx;
 
@@ -564,17 +566,13 @@ TEST_CASE("Population continuation restart preserves the physical predictor and 
     };
     const auto originalPredictor=newton.secantPredict(previous,first.state,.002,1e3);
     const auto restoredPredictor=newton.secantPredict(roundtrip(previous),roundtrip(first.state),.002,1e3);
-    // SI physical archives do not promise bitwise identity of the normalized
-    // psi/V0 packing. Fix the restart budget before comparing solve paths.
-    const VectorXd predictorScale=sys.columnScales(originalPredictor).head(originalPredictor.x.size());
-    REQUIRE((originalPredictor.x-restoredPredictor.x).cwiseQuotient(predictorScale).lpNorm<Eigen::Infinity>()<1e-10);
-    REQUIRE(std::abs(originalPredictor.lambda-restoredPredictor.lambda)<1e-11);
+    REQUIRE(exactValueBits(originalPredictor.x)==exactValueBits(restoredPredictor.x));
+    REQUIRE(originalPredictor.lambda==restoredPredictor.lambda);
     const auto uninterrupted=newton.solve(originalPredictor,.002,1e3);
     const auto restarted=newton.solve(restoredPredictor,.002,1e3);
     INFO(restarted.failureReason);REQUIRE(uninterrupted.converged);REQUIRE(restarted.converged);
-    const VectorXd finalScale=sys.columnScales(uninterrupted.state).head(uninterrupted.state.x.size());
-    REQUIRE((uninterrupted.state.x-restarted.state.x).cwiseQuotient(finalScale).lpNorm<Eigen::Infinity>()<1e-10);
-    REQUIRE(std::abs(uninterrupted.state.lambda-restarted.state.lambda)<1e-11);
+    REQUIRE(exactValueBits(uninterrupted.state.x)==exactValueBits(restarted.state.x));
+    REQUIRE(uninterrupted.state.lambda==restarted.state.lambda);
     REQUIRE(uninterrupted.iterations==restarted.iterations);
     REQUIRE(restarted.updateError.valid);REQUIRE(restarted.updateError.rms<1.);
 }
@@ -782,6 +780,8 @@ TEST_CASE("Population numerical policy rejects inactive QF controls before assem
 TEST_CASE("Population absolute block stopping replaces scalar tolerances without bypassing blocks", "[population_core]") {
     using namespace vela;ProfileFixture f;
     NewtonConfig cfg;cfg.coupledOperator="bvmethods_tri3_qf";cfg.stateVariables="potential_density";
+    cfg.populationStoppingRule="legacy";cfg.primaryVariableCoordinates="physical";
+    cfg.populationDerivativeRecovery="full";
     cfg.carrierStatistics=f.statistics;cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
     cfg.maxIter=1;cfg.reltol=1e-40;cfg.abstol=1e-80;cfg.lineSearch=false;
     NewtonSolver owner(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
@@ -804,4 +804,313 @@ TEST_CASE("Population absolute block stopping replaces scalar tolerances without
     REQUIRE_FALSE(strict.makeArclengthSystem("source").convergenceSatisfied(y,0.));
     const auto rejected=strict.solve(state);
     REQUIRE_FALSE((rejected.converged&&rejected.iters==0));
+}
+
+TEST_CASE("Log density ratio retains finite tangents across depleted populations", "[bvmethods_profile][population_core]") {
+    using namespace vela::experimental;
+    auto a=AvJet::variable(1e-200,0),b=AvJet::variable(1e-300,1);
+    const auto g=avLogRatio(a,b);
+    REQUIRE(std::isfinite(g.derivative[0]));REQUIRE(std::isfinite(g.derivative[1]));
+    REQUIRE(g.derivative[0]==Catch::Approx(1e200));
+    REQUIRE(g.derivative[1]==Catch::Approx(-1e300));
+    const auto reverse=avLogRatio(b,a);
+    REQUIRE(reverse.value==Catch::Approx(-g.value));
+    REQUIRE(reverse.derivative[0]==Catch::Approx(-g.derivative[0]));
+    REQUIRE(reverse.derivative[1]==Catch::Approx(-g.derivative[1]));
+}
+
+TEST_CASE("Population transport evaluates depleted tangents without overflowing intermediates", "[bvmethods_profile][population_core]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const auto x=f.point();
+    VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);
+    hp[1]=1e-296;hp[2]=1e-194;en[1]=1e-232;
+    f.scaling.stateVariables="potential_density";auto a=f.assembler();
+    const VectorXd y=a->packPopulation(x.head(6),en,hp);
+    REQUIRE(a->bvMethodsTransportResidual(y).allFinite());
+    const auto j=a->bvMethodsTransportJacobian(y);
+    for(int k=0;k<j.outerSize();++k)for(SparseMatrixd::InnerIterator v(j,k);v;++v)REQUIRE(std::isfinite(v.value()));
+}
+
+TEST_CASE("Depleted population sources keep complete bootstrap tangents finite", "[bvmethods_profile][population_core]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const auto x=f.point();
+    VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);hp[1]=1e-308;en[2]=1e-239;
+    f.scaling.stateVariables="potential_density";auto a=f.assembler();
+    const auto y=a->packPopulation(x.head(6),en,hp);
+    REQUIRE(a->residual(y,{}).allFinite());
+    const auto j=a->populationBootstrapJacobian(y,{});
+    for(int k=0;k<j.outerSize();++k)for(SparseMatrixd::InnerIterator v(j,k);v;++v)REQUIRE(std::isfinite(v.value()));
+}
+
+TEST_CASE("Population minimum is distinct from positivity and excludes constrained slots", "[population_core]") {
+    using namespace vela;VectorXd x(6);x<<.1,.2,1e-110,0.,1e-110,5e-120;
+    VectorXd d=VectorXd::Zero(6);d[2]=-2e-110;d[4]=-.5e-110;
+    PopulationUpdateConfig c;c.minimumDensity=1e-100;
+    auto t=makePopulationTrial(x,d,1.,{true,false},{true,false},c);
+    REQUIRE(t.state[2]==1e-100);REQUIRE(t.state[4]==1e-100);
+    REQUIRE(t.state[3]==0.);REQUIRE(t.state[5]==5e-120);
+    REQUIRE(t.protectedElectrons.size()==1);REQUIRE(t.protectedHoles.empty());
+    REQUIRE(t.flooredElectrons.size()==1);REQUIRE(t.flooredHoles.size()==1);
+    c.minimumDensity=0.;auto old=makePopulationTrial(x,d,1.,{true,false},{true,false},c);
+    REQUIRE(old.state[2]==Catch::Approx(.01*x[2]));REQUIRE(old.state[4]==.5*x[4]);
+}
+TEST_CASE("Predictor low-density threshold retains density without clipping it", "[population_core]") {
+    using namespace vela;VectorXd a(6),b(6);a<<0.,0.,1e-110,0.,1e-90,0.;b<<.1,.2,1e-120,0.,1e-80,0.;
+    auto y=predictPopulation(a,b,1.,1e-100);
+    REQUIRE(y[0]==.2);REQUIRE(y[2]==1e-120);REQUIRE(y[2]<1e-100);
+    REQUIRE(y[4]==Catch::Approx(1e-70));REQUIRE(y[3]==0.);
+    const auto baseline=predictPopulation(a,b,1.);REQUIRE(baseline[2]<b[2]);
+    REQUIRE_THROWS(predictPopulation(a,b,1.,-1.));
+}
+TEST_CASE("Population density controls are independent JSON inputs with physical units", "[population_core]") {
+    using namespace vela;
+    nlohmann::json j={{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}},
+        {"population_update",{{"minimum_density_cm3",1e-100}}},
+        {"population_predictor_low_density_limit_cm3",1e-100}};
+    ProfileFixture f;auto cfg=newtonConfigFromJson(j);cfg.mobility=f.mobility;cfg.impactIonization=f.avalanche;
+    REQUIRE(cfg.populationMinimumDensity_cm3==1e-100);REQUIRE(cfg.populationPredictorLowDensity_cm3==1e-100);
+    auto a=f.assembler();const auto x=f.point();DDSolution state;
+    state.psi=x.head(6);state.n=a->electronDensity(x);state.p=a->holeDensity(x);
+    state.n[1]=state.p[1]=2e-110;
+    NewtonSolver solver(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",.01}},cfg);
+    const auto y=solver.packArclengthState(state);const auto sys=solver.makeArclengthSystem("drain");
+    const auto t=sys.makeTrial({y,.01},VectorXd::Zero(18),0.,1.);
+    REQUIRE(t.state.x[7]==Catch::Approx(1e-94).epsilon(1e-14));
+    REQUIRE(t.state.x[13]==Catch::Approx(1e-94).epsilon(1e-14));
+    VectorXd before=y;before[7]*=10.;before[13]*=10.;
+    const auto predicted=sys.predictState(before,y,1.);
+    REQUIRE(predicted[7]==y[7]);REQUIRE(predicted[13]==y[13]);
+    auto bad=j;bad["population_update"]["minimum_density_cm3"]=-1.;REQUIRE_THROWS(newtonConfigFromJson(bad));
+    bad=j;bad["population_predictor_low_density_limit_cm3"]=true;REQUIRE_THROWS(newtonConfigFromJson(bad));
+}
+
+TEST_CASE("Canonical SI density-limit aliases preserve physical concentration", "[population_core]") {
+    using namespace vela;nlohmann::json j={{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}},
+        {"population_update",{{"minimum_density_m3",1e-94}}},{"population_predictor_low_density_limit_m3",1e-94}};
+    const auto c=newtonConfigFromJson(j);REQUIRE(c.populationMinimumDensity_cm3==Catch::Approx(1e-100));
+    REQUIRE(c.populationPredictorLowDensity_cm3==Catch::Approx(1e-100));
+    j["population_update"]["minimum_density_cm3"]=1e-100;REQUIRE_THROWS(newtonConfigFromJson(j));
+}
+
+TEST_CASE("Format v2 density controls retain cm3 values through canonicalization", "[population_core]") {
+    using namespace vela;
+    nlohmann::json deck={{"format_version",2},{"solver",{
+        {"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}},
+        {"population_update",{{"minimum_density_cm3",1e-100}}},
+        {"population_predictor_low_density_limit_cm3",1e-100}}}};
+    const auto parsed=canonicalizeDeck(deck);
+    const auto c=newtonConfigFromJson(parsed.at("solver"),parseUnitScalingConfig(deck));
+    REQUIRE(c.populationMinimumDensity_cm3==Catch::Approx(1e-100));
+    REQUIRE(c.populationPredictorLowDensity_cm3==Catch::Approx(1e-100));
+}
+TEST_CASE("Direct population columns agree with coordinate multiplication in the finite domain", "[population_core][relative_columns]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const auto x=f.point();
+    const VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);f.scaling.stateVariables="potential_density";auto a=f.assembler();
+    const auto y=a->packPopulation(x.head(6),en,hp);VectorXd t=VectorXd::Ones(18);
+    for(int i=6;i<18;++i)if(y[i]>0.)t[i]=y[i];
+    CoupledDDBoundaryConditions b;b.psi[0]=x[0];b.phin[0]=x[6];b.phip[0]=x[12];
+    const auto f0=a->residual(y,b);
+    for(bool approximate:{false,true}){
+        SparseMatrixd reference=approximate?a->populationBootstrapJacobian(y,b):a->assembleJacobian(y,b);
+        for(int k=0;k<reference.outerSize();++k)for(SparseMatrixd::InnerIterator e(reference,k);e;++e)e.valueRef()*=t[e.col()];
+        const auto scaled=a->populationJacobianInColumns(y,b,t,approximate);
+        REQUIRE((scaled-reference).norm()/reference.norm()<1e-11);
+    }
+    REQUIRE((a->residual(y,b)-f0).isZero(0.));
+    t[7]=0.;REQUIRE_THROWS(a->populationJacobianInColumns(y,b,t));
+}
+TEST_CASE("Extreme populations retain finite native column assembly", "[population_core][relative_columns]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const auto x=f.point();VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);
+    en[1]=1e-300;hp[1]=1e-316;
+    f.scaling.stateVariables="potential_density";auto a=f.assembler();const auto y=a->packPopulation(x.head(6),en,hp);VectorXd t=VectorXd::Ones(18);t[7]=en[1];t[13]=hp[1];
+    const auto rhs=a->residual(y,{});REQUIRE(rhs.allFinite());
+    for(bool approximate:{false,true}){const auto j=a->populationJacobianInColumns(y,{},t,approximate);
+        for(int k=0;k<j.outerSize();++k)for(SparseMatrixd::InnerIterator v(j,k);v;++v)REQUIRE(std::isfinite(v.value()));
+    }
+    REQUIRE((a->residual(y,{})-rhs).isZero(0.));
+}
+
+TEST_CASE("BVMethods dilute SRH population tangent retains its positive physical limit",
+          "[bvmethods_profile][population_core][srh_stable]") {
+    using namespace vela;
+    ProfileFixture fixture;
+    fixture.scaling.stateVariables="potential_density";
+    fixture.avalanche.model="none";
+    auto assembler=fixture.assembler();
+    const RecombinationModelConfig srh;
+    // Uniform dilute populations give zero flux and AV. Summing all carrier
+    // rows removes the conservative transport tangent, leaving the local SRH
+    // response. Its depletion limit is n*dR/dn = -R*n*taup/(ni*(taun+taup))
+    // (and tau_n for holes); JD corrections here are O(ni/Nc), below 1e-8.
+    for(double population:{1e-40,1e-84,1e-250}) {
+        VectorXd n=VectorXd::Zero(6),p=n;n.head(4).setConstant(population);p.head(4).setConstant(population);
+        const VectorXd x=assembler->packPopulation(VectorXd::Zero(6),n,p);
+        const auto terms=assembler->carrierContinuityEquationTermDiagnostics(x,{});
+        VectorXd columns=VectorXd::Ones(18);columns.segment(6,4)=n.head(4);columns.segment(12,4)=p.head(4);
+        for(bool approximate:{false,true}) {
+            const auto matrix=assembler->populationJacobianInColumns(x,{},columns,approximate);
+            for(int species:{1,2}) {
+                const int node=1,column=6*species+node;
+                const double lifetime=species==1?srh.taup:srh.taun;
+                const double expected=-terms[node].electronRecombination*
+                    (population/assembler->intrinsicDensity()[node])*(lifetime/(srh.taun+srh.taup));
+                REQUIRE(expected>0.);
+                for(int equation:{1,2}) {
+                    double actual=0.;for(int i=0;i<4;++i)actual+=matrix.coeff(equation*6+i,column);
+                    REQUIRE(std::isfinite(actual));
+                    REQUIRE(actual>0.);
+                    REQUIRE(actual/expected==Approx(1.).epsilon(1e-7));
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("Population normalized packing preserves nonzero last-bit coordinates and converts changed scales", "[population_core][normalization]") {
+    using namespace vela;ProfileFixture f;f.scaling.stateVariables="potential_density";
+    f.scaling.enabled=true;f.scaling.V0=.025851999786435535;
+    auto a=f.assembler();VectorXd x=VectorXd::Zero(18);
+    x.head(6)<<21.200072448909626,-17.200072448909626,.1,.7,2.,3.;
+    x.segment(6,4).setConstant(1e20);x.segment(12,4).setConstant(1e10);
+    REQUIRE((x[0]*f.scaling.V0)/f.scaling.V0!=x[0]);
+    REQUIRE(exactValueBits(a->pack(a->unpack(x)))==exactValueBits(x));
+    NewtonConfig c;c.coupledOperator="bvmethods_tri3_qf";c.stateVariables="potential_density";
+    c.carrierStatistics=f.statistics;c.mobility=f.mobility;c.impactIonization=f.avalanche;
+    c.inputScaling.mode=UnitScalingMode::UnitScaling;
+    NewtonSolver solver(f.mesh,f.materials,f.doping,{{"source",0.},{"drain",0.}},c);
+    const auto physical=solver.unpackArclengthState(x);
+    REQUIRE(physical.hasConsistentPopulationPotential());
+    REQUIRE(exactValueBits(solver.packArclengthState(physical))==exactValueBits(x));
+    auto changed=physical;changed.psi[1]+=.01;
+    REQUIRE_FALSE(changed.hasConsistentPopulationPotential());
+    auto z=solver.packArclengthState(changed);
+    REQUIRE(z[1]==changed.psi[1]/physical.populationPotentialScale_V);
+    // A genuine potential-scale change is an explicit conversion, not a stale reuse.
+    changed=physical;changed.populationPotentialScale_V*=2.;changed.populationPsi/=2.;
+    REQUIRE(changed.hasConsistentPopulationPotential());
+    REQUIRE(solver.packArclengthState(changed)[0]==physical.psi[0]/physical.populationPotentialScale_V);
+}
+
+TEST_CASE("Local bootstrap SG feedback keeps values and potential tangents with conservative population coefficients",
+          "[population_sg_bootstrap][tri3_ad]") {
+    for(double drive:{.2,80.})for(bool electron:{false,true}) {
+        const double sign=electron?1.:-1.,vt=.02585;
+        std::array<AvJet,3> c{AvJet(1e-100),AvJet(2e-99),AvJet(5e-98)};
+        std::array<AvJet,3> f{AvJet(0),AvJet(sign*drive*vt),AvJet(0)};
+        std::array<AvJet,3> mu{AvJet(1),AvJet(1),AvJet(1)},g{AvJet(1),AvJet(1),AvJet(1)};
+        for(int k=0;k<3;++k){c[k].derivative[3+k]=c[k].value;f[k].derivative[k]=1.;
+            f[k].derivative[3+k]=sign*vt;g[k].derivative[3+k]=.07;}
+        const std::array<double,3> areas{1,1,1},edges{1,0,0};
+        const auto original=evaluateBvMethodsTri3Transport(areas,edges,c,f,mu,vt,electron,g);
+        const auto frozen=evaluateBvMethodsTri3Transport(areas,edges,c,f,mu,vt,electron,g,nullptr,{0,1,2},{true,false,false});
+        auto argument=avLogRatio(c[1],c[0])+AvJet(sign)*(f[1]-f[0])/(AvJet(vt)*g[0]);
+        for(int z=3;z<9;++z)argument.derivative[z]=0.;
+        auto coefficient=AvJet(vt)*g[0];for(int z=3;z<9;++z)coefficient.derivative[z]=0.;
+        const auto expected=populationSgFlux(coefficient,c[0],c[1],argument);
+        REQUIRE(original.edgeFlux_per_cm_s[0].value==frozen.edgeFlux_per_cm_s[0].value);
+        for(int z=0;z<9;++z){
+            INFO("drive="<<drive<<" electron="<<electron<<" slot="<<z);
+            REQUIRE(std::isfinite(frozen.edgeFlux_per_cm_s[0].derivative[z]));
+            if(z<3)REQUIRE(original.edgeFlux_per_cm_s[0].derivative[z]==frozen.edgeFlux_per_cm_s[0].derivative[z]);
+            else REQUIRE(frozen.edgeFlux_per_cm_s[0].derivative[z]==Approx(expected.derivative[z]).epsilon(2e-12).margin(1e-300));
+            REQUIRE(frozen.nodeFlux_per_cm_s[0].derivative[z]==-frozen.nodeFlux_per_cm_s[1].derivative[z]);
+        }
+        REQUIRE(frozen.edgeFlux_per_cm_s[0].derivative[3]>0.);
+        REQUIRE(frozen.edgeFlux_per_cm_s[0].derivative[4]<0.);
+        // An unselected edge remains byte-for-byte on its original AD path.
+        for(int z=0;z<9;++z)REQUIRE(original.edgeFlux_per_cm_s[1].derivative[z]==frozen.edgeFlux_per_cm_s[1].derivative[z]);
+    }
+}
+TEST_CASE("Statistical bootstrap is opt-in and restores full and above-floor matrices",
+          "[population_sg_bootstrap][population_core]") {
+    using namespace vela;ProfileFixture f;auto q=f.assembler();const VectorXd x=f.point();
+    const VectorXd en=q->electronDensity(x),hp=q->holeDensity(x);
+    f.scaling.stateVariables="potential_density";auto old=f.assembler();
+    const VectorXd y=old->packPopulation(x.head(6),en,hp);
+    const VectorXd rhs=old->residual(y,{});const Eigen::MatrixXd full=old->assembleJacobian(y,{});
+    const Eigen::MatrixXd bootstrap=old->populationBootstrapJacobian(y,{});
+    f.scaling.populationSgBootstrapFloor_cm3=1e30;auto controlled=f.assembler();
+    REQUIRE((controlled->residual(y,{}).array()==rhs.array()).all());
+    REQUIRE((Eigen::MatrixXd(controlled->assembleJacobian(y,{})).array()==full.array()).all());
+    REQUIRE((Eigen::MatrixXd(controlled->populationBootstrapJacobian(y,{}))-bootstrap).norm()>0.);
+    // The event policy omits mobility/AV tangents, never the separate
+    // statistical floor-edge feedback. Its RHS is the same physical model.
+    REQUIRE((Eigen::MatrixXd(controlled->populationProtectedJacobian(y,{})).array()==bootstrap.array()).all());
+    REQUIRE((controlled->residual(y,{}).array()==rhs.array()).all());
+    f.scaling.populationSgBootstrapFloor_cm3=1e-100;auto above=f.assembler();
+    REQUIRE((Eigen::MatrixXd(above->populationBootstrapJacobian(y,{})).array()==bootstrap.array()).all());
+    auto cfg=nlohmann::json{{"state_variables","potential_density"},{"coupled_operator","bvmethods_tri3_qf"},
+        {"population_sg_bootstrap_linearization","floor_adjacent_edges"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}},
+        {"population_update",{{"minimum_density_cm3",1e-100}}}};
+    REQUIRE(newtonConfigFromJson(cfg).populationSgBootstrapLinearization=="floor_adjacent_edges");
+    cfg["population_update"]["minimum_density_cm3"]=0.;REQUIRE_THROWS(newtonConfigFromJson(cfg));
+    cfg["population_update"]["minimum_density_cm3"]=1e-100;
+    cfg["population_sg_current"]="band_population";REQUIRE_THROWS(newtonConfigFromJson(cfg));
+    cfg["population_sg_current"]="quasi_fermi";cfg["population_sg_bootstrap_linearization"]="invalid";REQUIRE_THROWS(newtonConfigFromJson(cfg));
+}
+
+
+TEST_CASE("AV exponential has finite directions at extremely small positive field",
+          "[av_contract][tri3_ad][range]")
+{
+    const AvCoefficient coefficient{7.03e5,1.231e6,7.03e5,1.231e6,4e5};
+    for(double field:{0.,1e-300,1e-200,1e-160,1e-140,1e-20,1.,1e4,4e5,1e6}) {
+        const auto x=AvJet::variable(field,0);
+        const auto value=avCoefficient(x,coefficient);
+        REQUIRE(std::isfinite(value.value));
+        for(double d:value.derivative)REQUIRE(std::isfinite(d));
+        if(field<1.) {REQUIRE(value.value==0.);REQUIRE(value.derivative[0]==0.);}
+        else {
+            const long double exact=7.03e5L*std::exp(-1.231e6L/field);
+            const long double slope=exact*1.231e6L/field/field;
+            REQUIRE(value.value==Approx(double(exact)).epsilon(3e-14));
+            REQUIRE(value.derivative[0]==Approx(double(slope)).epsilon(3e-14));
+        }
+    }
+}
+
+TEST_CASE("AD exponential scales finite directions before narrowing",
+          "[av_contract][tri3_ad][range]")
+{
+    for(double x:{-800.,800.}) {
+        AvJet input(x);input.derivative[0]=x>0.?1e-100:1e100;
+        const double expected=double(std::exp((long double)x)*input.derivative[0]);
+        for(const auto result:{vela::detail::dualExp(input),vela::detail::dualExpm1(input)}) {
+            REQUIRE(std::isfinite(result.derivative[0]));
+            REQUIRE(result.derivative[0]==Approx(expected).epsilon(3e-14));
+            for(int k=1;k<9;++k)REQUIRE(result.derivative[k]==0.);
+        }
+    }
+}
+
+TEST_CASE("Population recombination preserves equilibrium cancellation and has no psi direction",
+          "[av_contract][population_core][srh]")
+{
+    using HP=boost::multiprecision::cpp_dec_float_100;
+    const double n0=1e10,p0=std::nextafter(n0,INFINITY);
+    AvJet n=AvJet::variable(n0,3),p=AvJet::variable(p0,6);
+    const auto excess=populationRecombinationExcess(n,p,AvJet(1),AvJet(1),n0);
+    const double expected=double(HP(n0)*HP(p0)-HP(n0)*HP(n0));
+    REQUIRE(excess.value!=0.);
+    REQUIRE(excess.value==Approx(expected).epsilon(1e-15));
+    REQUIRE(excess.derivative[0]==0.);
+    REQUIRE(excess.derivative[3]==p0);
+    REQUIRE(excess.derivative[6]==n0);
+    REQUIRE(populationRecombinationExcess(n,n,AvJet(1),AvJet(1),n0).value==0.);
+    // Both captured positive populations are finite even when the former
+    // QF-splitting expm1 path overflowed (splitting > 709).
+    for(const auto values:std::array<std::array<double,5>,2>{{
+        {1.7738208624835845e23,1.1435920332085196e23,3.052789335414555e-174,2.1978091765134392e-122,8.337122390342656e10},
+        {3.9192596591152703e23,1.4878424437485111e10,2.2163657908827803e-297,.9999999998305675,4.095286472506107e10}}}) {
+        const auto e=populationRecombinationExcess(AvJet::variable(values[0],3),
+            AvJet::variable(values[1],6),AvJet(values[2]),AvJet(values[3]),values[4]);
+        const HP reference=HP(values[0])*HP(values[1])-HP(values[2])*HP(values[3])*HP(values[4])*HP(values[4]);
+        REQUIRE(std::isfinite(e.value));
+        REQUIRE(e.value==Approx(double(reference)).epsilon(2e-15));
+        REQUIRE(e.derivative[0]==0.);
+        REQUIRE(e.derivative[3]==values[1]);
+        REQUIRE(e.derivative[6]==values[0]);
+    }
 }

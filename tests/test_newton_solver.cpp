@@ -79,6 +79,33 @@ TEST_CASE("Refinement recovers a weak carrier direction through its configured s
 static DeviceMesh makePNMesh();
 static DopingModel makePNDoping(const DeviceMesh& mesh);
 
+TEST_CASE("Population production defaults are scoped and have an explicit rollback",
+          "[newton][population_defaults]")
+{
+    const auto legacy=newtonConfigFromJson(nlohmann::json::object());
+    REQUIRE(legacy.stateVariables=="potential_quasi_fermi");
+    REQUIRE(legacy.primaryVariableCoordinates=="physical");
+    REQUIRE(legacy.populationStoppingRule=="legacy");
+    REQUIRE(legacy.populationMinimumDensity_cm3==0.);
+    const auto population=newtonConfigFromJson({{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}}});
+    REQUIRE(population.stateVariables=="potential_density");
+    REQUIRE(population.primaryVariableCoordinates=="unit");
+    REQUIRE(population.populationDerivativeRecovery=="after_protection");
+    REQUIRE(population.populationStoppingRule=="native_approx");
+    REQUIRE(population.populationUpdate.protection=="local_nonpositive");
+    REQUIRE(population.populationUpdate.localRetainedFraction==.01);
+    REQUIRE(population.populationMinimumDensity_cm3==1e-100);
+    const auto rollback=newtonConfigFromJson({{"coupled_operator","bvmethods_tri3_qf"},
+        {"carrier_statistics",{{"model","fermi_dirac_joyce_dixon"}}},
+        {"state_variables","potential_quasi_fermi"}});
+    REQUIRE(rollback.primaryVariableCoordinates=="physical");
+    REQUIRE(rollback.populationDerivativeRecovery=="full");
+    REQUIRE(rollback.populationStoppingRule=="legacy");
+    REQUIRE_THROWS_AS(newtonConfigFromJson({{"primary_variable_coordinates","unit"}}),std::invalid_argument);
+    REQUIRE_THROWS_AS(newtonConfigFromJson({{"population_stopping_rule","native_approx"}}),std::invalid_argument);
+}
+
 TEST_CASE("Newton JSON parses opt-in compensated equal-ni SG evaluation",
           "[newton][sg][equal_ni]")
 {
@@ -700,6 +727,11 @@ TEST_CASE("Extended Poisson restart retains normalized free-node coordinates", "
     const Real scale=solver.evaluateResidual(initial).potentialScale;
     initial.packedPotentialScale_V=scale;initial.packedState=VectorXd::Zero(15);
     initial.packedState(4)=-0x1.e53059760fd30p+3;
+    // Select a nearby representable witness for the active constants profile.
+    // A single fixed bit pattern need not lose a bit for both thermal voltages.
+    for (int i=0;i<1024 && (initial.packedState(4)*scale)/scale==initial.packedState(4);++i)
+        initial.packedState(4)=std::nextafter(initial.packedState(4),
+            -std::numeric_limits<Real>::infinity());
     initial.psi(4)=initial.packedState(4)*scale;
     initial.phinIncrement=initial.phipIncrement=VectorXd::Zero(5);
     REQUIRE(initial.hasConsistentPackedState());REQUIRE(initial.psi(4)/scale!=initial.packedState(4));

@@ -1,0 +1,20 @@
+{
+  "schema": "vela.bvmethods.external_inputs.v1",
+  "inputs": {
+    "n1_msh.tdr": {
+      "sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+      "bytes": 173535,
+      "checked_in": false
+    },
+    "mesh.json": {
+      "sha256": "dd6e136c105528126217e65c77f69770637a67d3f1d7f0521bff92634d33787c",
+      "bytes": 690726,
+      "checked_in": false
+    },
+    "doping.csv": {
+      "sha256": "a5be130f8c7d0244df6b3858a1154376221d698c5df092baf0ea7d7953c90c9b",
+      "bytes": 111161,
+      "checked_in": false
+    }
+  }
+}

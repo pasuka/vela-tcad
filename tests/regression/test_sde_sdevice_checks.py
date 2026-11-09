@@ -9,6 +9,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'scripts'))
@@ -20,6 +21,13 @@ from tests.regression.test_sdevice_mesh_import import OBTUSE_GRD, OBTUSE_DAT
 
 
 class InputContractTest(unittest.TestCase):
+    def test_frozen_checks_pin_constants_in_the_real_launcher_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(checks.subprocess, 'run') as run:
+                checks.invoke_check(Path('sd-sim.exe'), Path(directory))
+            command = run.call_args.args[0]
+            self.assertEqual(command[command.index('--physical-constants-profile') + 1], 'codata2018')
+
     def test_eight_named_inputs_are_pinned(self):
         data=checks.load_cases()
         self.assertEqual(8,len(data['cases']))
@@ -146,6 +154,21 @@ class NativeCheckTest(unittest.TestCase):
             (d/'device.vela.json').write_text(json.dumps({'schema':'vela.sdevice_sidecar.v1',
                                                        'solver':{'mobility':{'model':'constant'}}}))
         self.reject('forbidden sidecar',change,'E409',4)
+
+    def test_constants_profile_corruption_is_rejected(self):
+        case = self.specs[0]
+        directory = self.root / 'changed constants profile'
+        shutil.copytree(self.output / case['id'], directory)
+        row = next(r for r in self.results['cases'] if r['id'] == case['id'])
+        packet = copy.deepcopy(row['inputs'])
+        packet['original_ir'] = checks.parse_cmd_text(
+            (REPO / case['command']['path']).read_text(), path_name='device.cmd')
+        path = directory / 'device_vela/materials.json'
+        data = json.loads(path.read_text())
+        data['physical_constants_profile'] = 'sentaurus_u2022_12'
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, 'frozen P2 constants profile changed'):
+            checks.verify_check(case, packet, self.meshes, directory)
 
     def test_emitted_goal_corruption_is_detected(self):
         case=next(c for c in self.specs if c['id']=='pn2d_iv')

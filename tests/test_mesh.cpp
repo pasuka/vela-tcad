@@ -4,6 +4,8 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/io/MeshReader.h"
 #include "vela/core/UnitScaling.h"
+#include "vela/core/PhysicalConstants.h"
+#include <nlohmann/json.hpp>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -185,6 +187,15 @@ static TemporaryMeshFile writeMeshReaderTestFile(const std::string& stem,
     return TemporaryMeshFile(uniqueMeshReaderTestPath(stem), content);
 }
 
+static TemporaryMeshFile writeMaterialUnitFixture(const std::string& stem,
+                                                  const std::string& content)
+{
+    // Synthetic scalar/unit/schema fixtures, not historical model snapshots.
+    auto document = nlohmann::json::parse(content);
+    document["physical_constants_profile"] = std::string(constants::profileName);
+    return writeMeshReaderTestFile(stem, document.dump());
+}
+
 TEST_CASE("mesh reader unit_scaling keeps micrometer coordinates internal",
           "[mesh][reader][scaling]")
 {
@@ -238,7 +249,7 @@ TEST_CASE("mesh reader unit_scaling keeps micrometer coordinates internal",
 TEST_CASE("MaterialDatabase unit_scaling keeps TCAD material values internal",
           "[material][scaling]")
 {
-    const auto path = writeMeshReaderTestFile("materials_unit_scaling", R"json(
+    const auto path = writeMaterialUnitFixture("materials_unit_scaling", R"json(
 {
   "materials": [
     {
@@ -273,7 +284,7 @@ TEST_CASE("MaterialDatabase unit_scaling keeps TCAD material values internal",
 TEST_CASE("MaterialDatabase reads material-specific electron quantum parameters",
           "[material][density_gradient]")
 {
-    const auto path = writeMeshReaderTestFile(
+    const auto path = writeMaterialUnitFixture(
         "material_quantum_parameters",
         R"json({"materials":[{"name":"Si","electron_quantum_gamma":4.5,"electron_quantum_dos_mass_ratio":1.07,"electron_quantum_coefficient_mass_ratio":1.09}]})json");
     MaterialDatabase db(path.path.string());
@@ -287,7 +298,7 @@ TEST_CASE("MaterialDatabase reads material-specific electron quantum parameters"
 TEST_CASE("MaterialDatabase reads strict Templates LDMOS material units",
           "[material][templates_ldmos][schema]")
 {
-    const auto path = writeMeshReaderTestFile(
+    const auto path = writeMaterialUnitFixture(
         "templates_ldmos_material_v1",
         R"json({
   "schema":"vela.templates_ldmos.materials.v1",
@@ -341,7 +352,7 @@ TEST_CASE("MaterialDatabase reads strict Templates LDMOS material units",
 TEST_CASE("MaterialDatabase rejects unknown versioned material keys and units",
           "[material][templates_ldmos][schema]")
 {
-    const auto unknown = writeMeshReaderTestFile(
+    const auto unknown = writeMaterialUnitFixture(
         "templates_ldmos_material_unknown",
         R"json({
   "schema":"vela.templates_ldmos.materials.v1",
@@ -363,7 +374,7 @@ TEST_CASE("MaterialDatabase rejects unknown versioned material keys and units",
                 std::string::npos);
     }
 
-    const auto units = writeMeshReaderTestFile(
+    const auto units = writeMaterialUnitFixture(
         "templates_ldmos_material_wrong_units",
         R"json({
   "schema":"vela.templates_ldmos.materials.v1",
