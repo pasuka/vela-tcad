@@ -1,6 +1,7 @@
 """P6 offline packaging boundaries and extracted-runtime behavior."""
 from pathlib import Path
-import hashlib,json,os,shutil,subprocess,sys,tempfile,unittest,zipfile
+import hashlib,io,json,os,shutil,subprocess,sys,tempfile,unittest,zipfile
+from urllib.error import HTTPError
 from unittest.mock import patch
 
 REPO=Path(__file__).resolve().parents[2]
@@ -10,6 +11,33 @@ from prepare_sde_offline_assets import download
 
 
 class InputBoundaryTests(unittest.TestCase):
+    def test_transient_http_error_retries_locked_download(self):
+        import prepare_sde_offline_assets as offline
+        payload=b'locked asset'
+        error=HTTPError('https://example.invalid/asset',504,'Gateway Timeout',None,None)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            with patch.object(offline.urllib.request,'urlopen',side_effect=[error,io.BytesIO(payload)]) as urlopen, \
+                 patch.object(offline.time,'sleep') as sleep:
+                target=download({'filename':'asset.whl','sha256':hashlib.sha256(payload).hexdigest(),
+                                 'url':'https://example.invalid/asset'},root)
+            self.assertEqual(payload,target.read_bytes())
+            self.assertEqual(2,urlopen.call_count)
+            sleep.assert_called_once_with(1)
+
+    def test_permanent_http_error_is_not_retried(self):
+        import prepare_sde_offline_assets as offline
+        error=HTTPError('https://example.invalid/asset',404,'Not Found',None,None)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            with patch.object(offline.urllib.request,'urlopen',side_effect=error) as urlopen, \
+                 patch.object(offline.time,'sleep') as sleep:
+                with self.assertRaises(HTTPError):
+                    download({'filename':'asset.whl','sha256':'0'*64,'url':'https://example.invalid/asset'},root)
+            urlopen.assert_called_once()
+            sleep.assert_not_called()
+            self.assertFalse((root/'asset.whl.download').exists())
+
     def test_corrupted_existing_download_is_preserved(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);target=root/'asset.whl';target.write_bytes(b'owned data')
