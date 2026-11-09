@@ -8,7 +8,7 @@ Reuse the already qualified T470p compatibility binary/core and regenerated comp
 
 ## Current status
 
-Connection recovered after user reboot and original strict host-key verification. Independent source/binary/core/input identities and frozen cold qualifications passed. Both actual windows started Beijing2026-11-03 14:00:52, deadline2026-11-04 02:00:52 each. AND has now ended in numerical failure before100V; OR remains running. No0-100V overall success is claimed.
+Connection recovered after user reboot and original strict host-key verification. Independent source/binary/core/input identities and frozen cold qualifications passed. Both actual windows started Beijing2026-11-03 14:00:52, deadline2026-11-04 02:00:52 each. Both windows have ended and terminal evidence is verified: AND failed before100 V; OR passed the 0–100 V window. The pair did not both succeed. See the final qualification below.
 
 ## Accounting
 
@@ -77,3 +77,24 @@ AND remains the independently qualified numerical failure described above and is
 |10-100|74/103/29|not reached|71/99/28|50/71/20(partial)|
 
 The completed0-5V totals are newAND37/45/8 versus old31/37/6, and newOR47/59/12 versus old35/43/8. Both totals increased despite the OR0-1Vreduction. These remain cross-host comparisons, not unique constants causation. Uncovered ranges are not complete zero-cost regions, and no0-100Vsuccess is claimed.
+
+## Final qualification, 2026-11-03
+
+OR ended at 2026-11-03T14:36:12.106129+08:00 Beijing after2119.815825 s (35min19.816s), not timed out, solver0/groupworker0. It reached exactly100 V with142accepted/191attempts/49failed; last internal voltage6.648838267773 V and current9.33511618534e-6 A/um. Every accepted point independently passed the original OR and independent gates. Branches:100 residual-only,2 update-only,40 both,1 zero-update point. Report-only carrier102/continuity9 unsatisfied points remain separate. At the final point F1.77794834e-9 andload1.21202305e-7 V passed; RMS4.65485 alone does not pass AND and is not used to disqualify the original OR rule.
+
+AND remains the previously verified numerical failure41/66/25 before100 V. The batch worker exited4 as the expected aggregate of failedAND and successfulOR; the worker and all task-owned Python/solver processes are absent. All6154 source files, binary/core and input hashes were checked again and unchanged. The OR terminal packet contains19 data files,657647 bytes, SHA256 `6aa595091b5f71896332f034bde940b2bad81ca32b233d0e9e91d6f33b314396`; archive and every member SHA passed. No successful solver log was read. Both T470p groups are now removed from polling; the separate VM full sweeps continue.
+
+Final regional counts are accepted/attempts/direct failures:
+
+| Outer V | Old SRH-fixed VM AND | Compatible T470p AND | Old SRH-fixed VM OR | Compatible T470p OR |
+|---|---:|---:|---:|---:|
+|0–1|16/18/2|24/29/5|21/27/6|15/17/2|
+|1–5|15/19/4|13/16/3|14/16/2|32/42/10|
+|5–10|43/59/16|4/21/17; partial, stopped5.580805 V|22/30/8|23/31/8|
+|10–100|74/103/29|not reached|71/99/28|72/101/29|
+
+OR totals over0–100 V are142/191/49 versus old128/172/44:14 more accepted points,19 more attempts and5 more failures. Its forced exactly100 V endpoint contributes1 accepted point/1 successful attempt; after removing that endpoint the counts are141/190/49, still13/18/5 more than the old regional totals. This exclusion is accounting only, not a replay of the un-clipped path. The endpoint-clipped10–100 V row becomes71/100/29. AND only has fully comparable completed0–5 V intervals (37/45/8 versus old31/37/6); its incomplete5–10 V region cannot support full-region workload conclusions.
+
+OR top-level inclusive cost closes: attempt1975.7876897 s + recording138.5270542 s + other4.3149559 s = total2118.6296998 s. Solver-process wall time also includes launcher/monitor overhead. Nested counters must not be added to these top-level values, and per-attempt elapsed times are unavailable. Raw qualification, config, IV/updates/attempts/Newton, profile/material and performance evidence are archived once; the previously missing failed-AND partition remains missing.
+
+There is no uniform reduction in work: OR0–1 V improves its counts while1–5 V worsens; totalOR0–100 V costs more attempts, andAND did not finish. Cross-host/compiler/roundoff and exact-endpoint differences preclude unique constants/SRH attribution. This is a 100 V external-voltage window result, not complete breakdown qualification or a new Sentaurus sweep. The native regional reference remains archived T-2022.03-SP2, distinct from the U-2022.12 constants/frozen-frame audit.
