@@ -1,5 +1,16 @@
 # Vela Documentation
 
+- [BVMethods电子797与接触234/235局部项补证，2026-11-10](validation/bvmethods_native_local_terms_2026-11-10.md)：
+  两份真实RHS停止后态的源项/输运分账、8单元散射与同态Vela对照；主要差收窄到输运形成与边界合同，严格RHSMin等价仍未取得。
+- [BVMethods原生组装阶段与消费者账本，2026-11-09](validation/bvmethods_native_rhs_stage_ledger_2026-11-09.md)：
+  局部缓冲、实际索引收集、逐别名接触电流及电阻加项；区分连续性槽与内部约束RHS。
+- [BVMethods Digits × RhsMin组合验证，2026-11-09](validation/bvmethods_rhsmin_grid_2026-11-09.md)：
+  九组合加基线取得52次真实RHS停止；两份样本出现原生通过、Vela映射不通过。
+- [BVMethods RHSMin与Digits单因素对照，2026-11-09](validation/bvmethods_rhsmin_controls_2026-11-09.md)：
+  共享起态三臂前缀，保留未取得RHS-only样本的负结果及同态轨迹证据。
+- [BVMethods实际RHS消费者与映射审计，2026-11-09](validation/bvmethods_rhs_consumer_audit_2026-11-09.md)：
+  绑定6843维消费者、字段尺度和真实停止分支，量化当前映射及接触修正差异。
+
 - [SDE 当前交付与验收，2026-11-01](sde_delivery.md)：main 八例建模、Ubuntu CI、离线包归档与历史商业证据边界。
 - [BVMethods 正式入口四项补齐，2026-11-09](validation/bvmethods_production_closure_2026-11-09.md)：
   普通入口、当前分叉证据、原始 CMD 整链与跨阶段账本；各项终态以报告为准。
