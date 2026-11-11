@@ -691,6 +691,15 @@ Sentaurus matrix agreement.
 An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 `direct_bordered` load-line matrix and its refinement corrections, including
 the direct path of `auto`; a PARDISO error is returned without backend fallback.
+
+For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
+solve, the original-system defect calculation defaults to compensated EFT
+accumulation with `std::from_chars` conversion. The weighted absolute defect,
+componentwise backward error and original correction rules retain their
+existing tolerances. Unsupported floating-point environments use MP100,
+and out-of-range or detected cancellation rows use the original MP100
+accumulation. Set `VELA_BVMETHODS_MP100_DEFECT=1` to select the original
+MP100 path for the entire run.
 The explicitly selected `direct_bordered_qr` policy retains its QR preference.
 In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate

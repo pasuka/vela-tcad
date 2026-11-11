@@ -5,8 +5,8 @@
 namespace vela {
 
 /// Production population-coordinate entry. The Newton algorithm remains the
-/// single CoupledLoadLineNewton implementation. No environment flags, shadow
-/// kernels, state capture or native data substitution participate in a solve.
+/// single CoupledLoadLineNewton implementation. BVMethods can select an
+/// equivalent defect calculation for the PARDISO bordered path.
 class PopulationCoordinateNewton {
 public:
     PopulationCoordinateNewton(ArclengthSystem system,
@@ -105,7 +105,11 @@ public:
             b[b.size()-1]=physicalLoad(physical).physicalRhs();
             VectorXd direction(b.size());direction.head(dx.size())=coordinates.physical(dx);
             direction[dx.size()]=dv*references.voltage;
-            const auto defect=linear_refinement::highPrecisionDefect(A,-b,direction);
+            const auto calculateDefect = config.bvMethodsEftDefect &&
+                config.linearSolver != "direct_bordered_qr" &&
+                LinearSolver::selectedBackend() == "pardiso_mkl"
+                ? linear_refinement::eftDefect : linear_refinement::highPrecisionDefect;
+            const auto defect=calculateDefect(A,-b,direction);
             const auto rows=auditRows(A,b,system_.columnScales(physical));
             trace.physicalLinearAbsolute=defect.values.cwiseProduct(rows).cwiseAbs().maxCoeff();
             trace.physicalLinearBackward=defect.backwardMax;

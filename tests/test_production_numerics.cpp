@@ -329,3 +329,24 @@ TEST_CASE("Sparse precision audit preserves rational defects across shared and e
     auto invalid=direction;invalid(6)=std::numeric_limits<double>::quiet_NaN();
     REQUIRE_THROWS_AS(vela::linear_refinement::highPrecisionDefect(base,residual,invalid),std::invalid_argument);
 }
+
+TEST_CASE("BVMethods EFT defect covers cancellation and binary64 range fallbacks", "[linear_refinement][precision_contract]") {
+    using namespace vela;
+    const std::vector<Eigen::Triplet<double>> entries{
+        {0,0,0x1p-60}, {0,1,0x1p-120}, {0,2,0x1p-180},
+        {0,3,-1.}, {0,4,-0x1p-60}, {0,5,-0x1p-120},
+        {1,6,std::numeric_limits<double>::denorm_min()}, {2,1,2.}};
+    SparseMatrixd matrix(4,7);
+    matrix.setFromTriplets(entries.begin(),entries.end());
+    VectorXd f(4), direction=VectorXd::Ones(7);
+    f<<1.,1e-310,-1.,0.;
+    direction(6)=0.5;
+    const auto expected=highPrecisionDefect(matrix,f,direction);
+    const auto actual=eftDefect(matrix,f,direction);
+    REQUIRE(actual.values(0)==0x1p-180);
+    REQUIRE((actual.values.array()==expected.values.array()).all());
+    REQUIRE((actual.componentwiseBackwardErrors.array()==expected.componentwiseBackwardErrors.array()).all());
+    REQUIRE(actual.backwardMax==expected.backwardMax);
+    direction(0)=std::numeric_limits<double>::quiet_NaN();
+    REQUIRE_THROWS_AS(eftDefect(matrix,f,direction),std::invalid_argument);
+}

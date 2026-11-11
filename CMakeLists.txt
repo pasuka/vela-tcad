@@ -370,6 +370,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/EftLinearDefect.cpp
     src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
@@ -532,6 +533,14 @@ elseif(NOT VELA_SPARSELU_ORDERING STREQUAL "COLAMD")
         "VELA_SPARSELU_ORDERING must be COLAMD or AMD")
 endif()
 message(STATUS "Eigen SparseLU ordering: ${VELA_SPARSELU_ORDERING}")
+
+if(MSVC)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS /fp:strict)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS -ffp-contract=off -fno-fast-math)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
+endif()
 
 if(VELA_ENABLE_GPROF)
     target_compile_options(vela_core PUBLIC

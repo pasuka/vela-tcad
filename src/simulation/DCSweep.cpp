@@ -8302,6 +8302,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const auto coupledConvergence =
                 coupledDeviceSolver.makeArclengthConvergenceEvaluator(sweep.contact);
             CoupledLoadLineConfig coupledConfig;
+            coupledConfig.bvMethodsEftDefect = newton.coupledOperator == "bvmethods_tri3_qf" &&
+                linear_refinement::useBvMethodsEftDefect();
             const auto* experiment=experimental::activeDCSweepExperiment();
             if(experiment) {
                 coupledConfig.bootstrapModelGuardEnabled=experiment->bootstrapModelGuardEnabled;
