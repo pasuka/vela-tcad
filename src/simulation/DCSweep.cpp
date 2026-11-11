@@ -5600,6 +5600,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         saveBiasState(path, solution, voltage, "accepted");
     };
 
+    VtuSurfaceGeometryCache vtuSurfaceGeometry;
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
@@ -7658,6 +7659,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             vtkOptions.fields = sweep.vtkFields;
             vtkOptions.binary = sweep.vtkBinary;
             vtkOptions.skippedFields = &point.skippedVtkFields;
+            vtkOptions.surfaceGeometryCache = &vtuSurfaceGeometry;
             vtkOptions.fieldDataStrings.emplace_back("VelaVersion", VELA_VERSION);
             vtkOptions.fieldDataStrings.emplace_back("SweepContact", sweep.contact);
             vtkOptions.fieldDataValues.emplace_back("Bias_V", voltage);

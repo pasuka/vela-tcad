@@ -295,6 +295,16 @@ void writeDDSolutionVTK(const std::string&    filename,
                         const DDSolution&     sol,
                         UnitScalingConfig scaling = {});
 
+/// Exporter-owned geometry for repeated VTU writes on a fixed mesh.
+struct VtuSurfaceGeometryCache {
+    const DeviceMesh* mesh = nullptr;
+    std::string surfaceRegion;
+    std::vector<std::string> surfaceInterface;
+    std::vector<Real> cellNormalX;
+    std::vector<Real> cellNormalY;
+    std::vector<Real> cellDistances;
+};
+
 /**
  * @brief Output options for the full DD exporter.
  *
@@ -313,6 +323,9 @@ struct DDSolutionVtkOptions {
     std::vector<std::pair<std::string, std::string>> fieldDataStrings;
     std::vector<std::pair<std::string, Real>> fieldDataValues;
     std::vector<std::string>* skippedFields = nullptr;
+    /// Optional cache for sequential writes. The caller must keep the mesh
+    /// immutable for the cache lifetime and discard the cache with the mesh.
+    VtuSurfaceGeometryCache* surfaceGeometryCache = nullptr;
 };
 
 void writeDDSolutionVTK(const std::string& filename,

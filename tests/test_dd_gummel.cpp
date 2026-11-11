@@ -310,6 +310,54 @@ TEST_CASE("GummelSolver: VTK output is written successfully", "[gummel][vtk]")
     REQUIRE(content.find("VECTORS TotalCurrentDensityVector double") != std::string::npos);
 }
 
+TEST_CASE("GummelSolver: VTU geometry reuse updates fields and respects region selectors",
+          "[gummel][vtk][vtu]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    const MaterialDatabase matdb;
+    const DopingModel doping = makePNDoping(mesh);
+    const int count = static_cast<int>(mesh.numNodes());
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(count);
+    sol.phin = VectorXd::Zero(count);
+    sol.phip = VectorXd::Zero(count);
+    sol.n = VectorXd::Constant(count, 1.0e22);
+    sol.p = VectorXd::Constant(count, 2.0e21);
+
+    auto mobility = mobilityModelConfig("masetti_field_lombardi");
+    VtuSurfaceGeometryCache cache;
+    const auto path = std::filesystem::temp_directory_path() /
+        "test_dd_gummel_vtu_surface_cache.vtu";
+    const auto writeField = [&](VtuSurfaceGeometryCache* geometry) {
+        DDSolutionVtkOptions options;
+        options.format = "vtu";
+        options.fields = {"eEnormal"};
+        options.surfaceGeometryCache = geometry;
+        writeDDSolutionVTK(path.string(), mesh, matdb, doping, sol, mobility,
+                           {}, {}, {}, constants::T0, {}, {}, nullptr, false, &options);
+        std::ifstream input(path, std::ios::binary);
+        REQUIRE(input.is_open());
+        const std::string content{std::istreambuf_iterator<char>(input),
+                                  std::istreambuf_iterator<char>()};
+        REQUIRE(content.find("Name=\"eEnormal\"") != std::string::npos);
+        return content;
+    };
+
+    const auto zeroField = writeField(&cache);
+    REQUIRE(cache.mesh == &mesh);
+    REQUIRE(cache.cellDistances.size() == mesh.numCells());
+    sol.psi(1) = 0.25;
+    const auto biasedField = writeField(&cache);
+    REQUIRE(biasedField == writeField(nullptr));
+    REQUIRE(biasedField != zeroField);
+
+    mobility.surface.surfaceRegion = "p_region";
+    const auto restrictedField = writeField(&cache);
+    REQUIRE(restrictedField == writeField(nullptr));
+    REQUIRE(restrictedField != biasedField);
+    std::filesystem::remove(path);
+}
+
 TEST_CASE("GummelSolver: VTK recombination uses Fermi-corrected effective intrinsic density",
           "[gummel][vtk][fermi_dirac][bgn]")
 {
