@@ -1,4 +1,5 @@
 #include "vela/equation/BvMethodsCoupledRuntime.h"
+#include "vela/core/PerformanceProfiler.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/physics/experimental/PopulationRecombination.h"
 #include <algorithm>
@@ -10,6 +11,38 @@
 #include <tuple>
 
 namespace vela {
+namespace {
+bool enabledEnvironmentFlag(const char* name) {
+    const char* value=std::getenv(name);
+    return value && std::string_view(value)=="1";
+}
+
+enum class TransportValueMode { dual, shadow, scalar };
+TransportValueMode transportValueMode() {
+    static const auto mode=[] {
+        const char* value=std::getenv("VELA_BVMETHODS_TRI3_VALUE_MODE");
+        if(value && std::string_view(value)=="shadow")return TransportValueMode::shadow;
+        if(value && std::string_view(value)=="scalar")return TransportValueMode::scalar;
+        return TransportValueMode::dual;
+    }();
+    return mode;
+}
+
+bool equalStateBits(const VectorXd& a,const VectorXd& b) {
+    return a.size()==b.size() && (a.size()==0 || std::memcmp(a.data(),b.data(),sizeof(Real)*a.size())==0);
+}
+
+std::string_view portTransportStage(BvMethodsTransportPurpose purpose) {
+    switch(purpose) {
+    case BvMethodsTransportPurpose::terminalValue:return "bvmethods.tri3.port_value";
+    case BvMethodsTransportPurpose::terminalLinearization:return "bvmethods.tri3.port_linearization_value";
+    case BvMethodsTransportPurpose::terminalValidation:return "bvmethods.tri3.port_validation";
+    case BvMethodsTransportPurpose::contactOutput:return "bvmethods.tri3.contact_output";
+    case BvMethodsTransportPurpose::other:return "bvmethods.tri3.transport_other";
+    }
+    return "bvmethods.tri3.transport_other";
+}
+} // namespace
 struct BvMethodsCoupledRuntime::Impl {
     const CoupledDDAssembler& owner;
     std::unique_ptr<CoupledDDAssembler> poisson;
@@ -35,6 +68,10 @@ struct BvMethodsCoupledRuntime::Impl {
     mutable std::array<Entry<Evaluation>,2> evaluations;
     mutable std::array<Entry<detail::BvMethodsTri3Evaluation>,2> transports;
     mutable VectorXd electronReference,holeReference;
+    // A single runtime owns immutable geometry, coefficients and options.
+    // Audit one previous source-free value state without changing dispatch.
+    mutable VectorXd lastPortValueState;
+    mutable BvMethodsTransportPurpose lastPortPurpose=BvMethodsTransportPurpose::other;
     explicit Impl(const CoupledDDAssembler& a)
     :owner(a),context{a.mesh_,a.matdb_,a.doping_,{a.mobilityConfig_,a.impactIonizationConfig_,{},a.carrierStatisticsModel_}},
      scale(a.scaling_.enabled?a.scaling_.V0:1.),continuity(a.scaling_.enabled?a.scaling_.C0*a.scaling_.D0:1.) {
@@ -124,11 +161,48 @@ struct BvMethodsCoupledRuntime::Impl {
             throw std::domain_error("BVMethods trial state outside positive finite carrier domain");
         return s;
     }
-    detail::BvMethodsTri3Evaluation transport(const VectorXd& x,bool jac)const {
-        if(!owner.bvMethodsEvaluationReuse_)return element->transport(makeState(x),jac,true,true);
-        sync();auto& cached=transports[jac?1:0];
+    detail::BvMethodsTri3Evaluation assembleTransport(const detail::BvMethodsQfState& state,
+        bool jac,bool approximate,const VectorXd* columns,double floor,bool reusePowers,
+        std::string_view stage) const {
+        const auto mode=jac || !element->supportsTransportValues(state)
+            ? TransportValueMode::dual : transportValueMode();
+        if(mode==TransportValueMode::scalar) {
+            ScopedPerformanceTimer timer(stage);
+            return element->transportValues(state,true,true,reusePowers);
+        }
+        auto reference=[&] {
+            ScopedPerformanceTimer timer(stage);
+            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers);
+        }();
+        if(mode==TransportValueMode::shadow) {
+            ScopedPerformanceTimer timer("bvmethods.tri3.scalar_shadow");
+            const auto candidate=element->transportValues(state,true,true,reusePowers);
+            if(!equalStateBits(reference.source,candidate.source) ||
+               !equalStateBits(reference.absoluteSource,candidate.absoluteSource)) {
+                incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_mismatches");
+                throw std::runtime_error("BVMethods scalar transport shadow mismatch");
+            }
+        }
+        return reference;
+    }
+
+    detail::BvMethodsTri3Evaluation transport(const VectorXd& x,bool jac,
+        BvMethodsTransportPurpose purpose=BvMethodsTransportPurpose::other) const {
+        auto& cached=transports[jac?1:0];
         if(owner.bvMethodsEvaluationReuse_&&cached.matches(x))return *cached.value;
-        auto result=element->transport(makeState(x),jac,true,true);
+        static const bool audit=enabledEnvironmentFlag("VELA_BVMETHODS_TRI3_CONTACT_AUDIT");
+        std::optional<ScopedPerformanceTimer> repeatTimer;
+        if(audit && activePerformanceProfiler() && !jac && purpose!=BvMethodsTransportPurpose::other) {
+            incrementPerformanceCounter("bvmethods.tri3.port_audited_values");
+            if(lastPortPurpose!=BvMethodsTransportPurpose::other && equalStateBits(lastPortValueState,x)) {
+                incrementPerformanceCounter("bvmethods.tri3.port_same_state");
+                if(lastPortPurpose!=purpose)incrementPerformanceCounter("bvmethods.tri3.port_same_state_cross_purpose");
+                repeatTimer.emplace("bvmethods.tri3.port_same_state_recompute");
+            } else lastPortValueState=x;
+            lastPortPurpose=purpose;
+        }
+        auto result=assembleTransport(makeState(x),jac,false,nullptr,0.,false,
+            jac?"bvmethods.tri3.terminal_jacobian":portTransportStage(purpose));
         if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
         return result;
     }
@@ -148,10 +222,14 @@ struct BvMethodsCoupledRuntime::Impl {
         }();
         const bool reuseLombardiPowers = enableLombardiPowReuse && !jac &&
             s.populationCoordinates && owner.scaling_.populationSgCurrent == "quasi_fermi";
-        out.transport=element->transport(s,jac,true,true,approximate,columns,
+        out.transport=assembleTransport(s,jac,approximate,columns,
             approximate&&freezeStatisticalFloor?owner.scaling_.populationSgBootstrapFloor_cm3:0.,
-            reuseLombardiPowers);
-        if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac&&!approximate,columns);
+            reuseLombardiPowers,jac?"bvmethods.tri3.device_jacobian":"bvmethods.tri3.device_residual");
+        if(owner.impactIonizationCoupled_) {
+            static const bool reuseGeneration=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_GENERATION_REUSE");
+            ScopedPerformanceTimer timer(jac&&!approximate?"bvmethods.tri3.avalanche_jacobian":"bvmethods.tri3.avalanche_residual");
+            out.av=element->evaluate(s,jac&&!approximate,columns,reuseGeneration);
+        }
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;
         const auto& u=context.newton.inputScaling.unitSystem();
@@ -328,14 +406,14 @@ VectorXd BvMethodsCoupledRuntime::avalancheResidual(const VectorXd& x,const Coup
 SparseMatrixd BvMethodsCoupledRuntime::avalancheJacobian(const VectorXd& x,const CoupledDDBoundaryConditions& b)const {
     return impl_->project(impl_->evaluate(x,true).av.jacobian,b);
 }
-VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x)const {
+VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x,BvMethodsTransportPurpose purpose)const {
     auto& p=*impl_;p.sync();
-    try{return p.transport(x,false).source;}
+    try{return p.transport(x,false,purpose).source;}
     catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
 }
 SparseMatrixd BvMethodsCoupledRuntime::transportJacobian(const VectorXd& x,const VectorXd* columns)const {
     auto& p=*impl_;p.sync();
-    if(columns){if(!p.owner.usesPopulationState()||columns->size()!=x.size()||!columns->allFinite()||(columns->array()<=0.).any())throw std::invalid_argument("Invalid population transport columns");return p.element->transport(p.makeState(x),true,true,true,false,columns).jacobian;}
+    if(columns){if(!p.owner.usesPopulationState()||columns->size()!=x.size()||!columns->allFinite()||(columns->array()<=0.).any())throw std::invalid_argument("Invalid population transport columns");return p.assembleTransport(p.makeState(x),true,false,columns,0.,false,"bvmethods.tri3.terminal_jacobian").jacobian;}
     return p.transport(x,true).jacobian;
 }
 std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationPoissonTerms(
@@ -376,8 +454,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::bvMethodsPhysicalDiagnostics(
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods diagnostics requested for legacy operator");
     return r->physicalDiagnostics(x,b);
 }
-VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x)const {
-    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x);
+VectorXd CoupledDDAssembler::bvMethodsTransportResidual(const VectorXd& x,BvMethodsTransportPurpose purpose)const {
+    auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportResidual(x,purpose);
 }
 SparseMatrixd CoupledDDAssembler::bvMethodsTransportJacobian(const VectorXd& x)const {
     auto r=bvMethodsRuntime();if(!r)throw std::invalid_argument("BVMethods transport requested for legacy operator");return r->transportJacobian(x);

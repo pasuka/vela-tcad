@@ -1154,3 +1154,37 @@ TEST_CASE("Population recombination preserves equilibrium cancellation and has n
         REQUIRE(e.derivative[6]==values[0]);
     }
 }
+
+
+TEST_CASE("Scalar Tri3 transport retains SG value branches and depleted quotient checks", "[bvmethods_profile]") {
+    using namespace vela::experimental;
+    const std::array<double,3> area{.5,.25,.125}, edge{.25,.5,.75};
+    const std::array<double,3> mobility{300.,450.,600.}, einstein{1.,1.25,1.};
+    const double vt=.025852;
+    for(const auto& density : {std::array<double,3>{2e15,2e15,2.00000001e15},
+                              std::array<double,3>{1e-280,1.5e-280,2e-280},
+                              std::array<double,3>{1e-250,1e-100,1e20}}) {
+        for(const auto& qf : {std::array<double,3>{0.,1e-14,-1e-14},
+                             std::array<double,3>{0.,2.,-2.}}) {
+            std::array<AvJet,3> d,q,m,g;
+            for(std::size_t k=0;k<3;++k) {
+                d[k]=AvJet(density[k]);d[k].derivative[k]=1e200;
+                q[k]=AvJet::variable(qf[k],k+3);m[k]=AvJet(mobility[k]);g[k]=AvJet(einstein[k]);
+            }
+            std::array<double,3> logs;
+            for(std::size_t k=0;k<3;++k) {
+                const auto j=(k+1)%3;
+                logs[k]=populationTransportLogRatio(density[j],density[k],1e200,1e200);
+                REQUIRE(logs[k]==avLogRatio(d[j],d[k]).value);
+            }
+            for(bool electron : {true,false}) {
+                const auto reference=evaluateBvMethodsTri3Transport(area,edge,d,q,m,vt,electron,g);
+                const auto scalar=evaluateBvMethodsTri3TransportValues(area,edge,density,qf,mobility,vt,electron,einstein,logs);
+                for(std::size_t k=0;k<3;++k) {
+                    REQUIRE(scalar.edges[k]==reference.edgeFlux_per_cm_s[k].value);
+                    REQUIRE(scalar.nodes[k]==reference.nodeFlux_per_cm_s[k].value);
+                }
+            }
+        }
+    }
+}

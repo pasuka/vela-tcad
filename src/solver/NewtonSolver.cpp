@@ -4053,13 +4053,13 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     functional.value = [assembler, residualWeights, scale](
                            const VectorXd& x, Real) {
         const VectorXd residual =
-            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, CoupledDDBoundaryConditions{});
+            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValue):assembler->residual(x, CoupledDDBoundaryConditions{});
         return scale * residualWeights.dot(residual);
     };
     functional.linearize = [assembler, residualWeights, scale](
                                const VectorXd& x, Real) {
         const CoupledDDBoundaryConditions noBoundaryConditions;
-        const VectorXd residual = assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, noBoundaryConditions);
+        const VectorXd residual = assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalLinearization):assembler->residual(x, noBoundaryConditions);
         const SparseMatrixd jacobian =
             assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportJacobian(x):assembler->assembleJacobian(x, noBoundaryConditions);
         ArclengthScalarLinearization result;
@@ -4075,7 +4075,7 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     if(assembler->usesPopulationState()&&assembler->usesBvMethodsOperator()) {
         functional.linearizeInColumns=[assembler,residualWeights,scale](const VectorXd& x,Real,const VectorXd& columns){
             ArclengthScalarLinearization result;
-            result.value=scale*residualWeights.dot(assembler->bvMethodsTransportResidual(x));
+            result.value=scale*residualWeights.dot(assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalLinearization));
             result.stateDerivative=scale*weightedSparseRows(assembler->bvMethodsTransportJacobianInColumns(x,columns),residualWeights);
             result.parameterDerivative=0.;return result;
         };
@@ -4091,7 +4091,7 @@ Real NewtonSolver::evaluateStateTerminalCurrent(const DDSolution& state,
     if(!contact)throw std::invalid_argument("Unknown terminal current contact");
     auto assembler=makeArclengthAssembler();
     const auto x=packReferencedSolution(*assembler,state,{});
-    const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x,{});const int N=mesh_.numNodes();
+    const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValidation):assembler->residual(x,{});const int N=mesh_.numNodes();
     long double sum=0;
     for(auto i:contact->node_ids)sum+=static_cast<long double>(residual(2*N+i))-static_cast<long double>(residual(N+i));
     return static_cast<Real>(sum*static_cast<long double>(constants::q)*assembler->continuityResidualScale()*currentScale);

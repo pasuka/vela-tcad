@@ -295,6 +295,10 @@ struct CarrierDiagonalFloorRegularizationConfig {
     Real minorityDensityRatio = 1.0;
 };
 
+enum class BvMethodsTransportPurpose {
+    other, terminalValue, terminalLinearization, terminalValidation, contactOutput
+};
+
 class CoupledDDAssembler {
     friend class BvMethodsCoupledRuntime;
     mutable std::shared_ptr<BvMethodsCoupledRuntime> bvMethodsRuntime_;
@@ -324,7 +328,8 @@ public:
         }
     }
     /// Source-free element transport for terminal totals and their derivative.
-    VectorXd bvMethodsTransportResidual(const VectorXd& x) const;
+    VectorXd bvMethodsTransportResidual(const VectorXd& x,
+        BvMethodsTransportPurpose purpose=BvMethodsTransportPurpose::other) const;
     SparseMatrixd bvMethodsTransportJacobian(const VectorXd& x) const;
     SparseMatrixd populationJacobianInColumns(const VectorXd&,const CoupledDDBoundaryConditions&,
         const VectorXd& columns,bool approximate=false) const;

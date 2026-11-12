@@ -181,7 +181,7 @@ ContactCurrentResult ContactCurrent::computeFromResidual(
     const int N = static_cast<int>(assembler.numNodes());
     const int phinOffset = N;
     const int phipOffset = 2 * N;
-    const VectorXd r = assembler.usesBvMethodsOperator()?assembler.bvMethodsTransportResidual(x):assembler.residual(x, CoupledDDBoundaryConditions{});
+    const VectorXd r = assembler.usesBvMethodsOperator()?assembler.bvMethodsTransportResidual(x,BvMethodsTransportPurpose::contactOutput):assembler.residual(x, CoupledDDBoundaryConditions{});
     const Real continuityScale = assembler.continuityResidualScale();
     const Real currentLineFactor = scaling_.enabled
         ? scaling_.currentDensityLineIntegralFactor
