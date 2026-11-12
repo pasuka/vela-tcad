@@ -3,11 +3,51 @@
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
+#include <bit>
 #include <cmath>
+#include <cstdint>
+#include <limits>
+#include "vela/physics/PreparedElementLombardi.h"
 #include "vela/physics/experimental/PopulationRecombination.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 using namespace vela::experimental;
 using Catch::Approx;
+
+TEST_CASE("Per-cell Lombardi powers preserve mobility values and tangents",
+          "[av_contract][lombardi]")
+{
+    const vela::MobilityModelConfig config;
+    vela::LombardiParameters electron;
+    electron.B = 9e4;
+    electron.C = 1e3;
+    electron.delta = 9e12;
+    electron.eta = 9e28;
+    auto hole = electron;
+    hole.A = 2.7;
+    hole.C = 1.1e3;
+    const auto preparedN = vela::prepareElementLombardi(1e-9, 1e22, 300., electron, config);
+    const auto preparedP = vela::prepareElementLombardi(2e-9, 1e24, 300., hole, config);
+    const auto bits = [](double x) { return std::bit_cast<std::uint64_t>(x); };
+
+    for (double field : {0., 1e-20, 1., 1e3, -2e5, 1e8,
+                         std::numeric_limits<double>::infinity()}) {
+        vela::LombardiCellPowers cache;
+        for (int vertex = 0; vertex < 3; ++vertex) {
+            for (bool isElectron : {true, false}) {
+                const double bulk = 0.1 + vertex * 0.02;
+                const auto& parameters = isElectron ? electron : hole;
+                const auto& prepared = isElectron ? preparedN : preparedP;
+                const auto base = vela::evaluatePreparedElementLombardi(
+                    bulk, field, prepared, parameters, config);
+                const auto reused = vela::evaluatePreparedElementLombardi(
+                    bulk, field, prepared, parameters, config, &cache, isElectron);
+                REQUIRE(bits(reused.mobility) == bits(base.mobility));
+                REQUIRE(bits(reused.bulkDerivative) == bits(base.bulkDerivative));
+                REQUIRE(bits(reused.fieldDerivative) == bits(base.fieldDerivative));
+            }
+        }
+    }
+}
 
 TEST_CASE("Tri3 SG retains diffusion and both endpoint derivatives beyond exponential range",
           "[av_contract][tri3_ad]")

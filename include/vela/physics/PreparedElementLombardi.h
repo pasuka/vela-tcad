@@ -26,9 +26,35 @@ inline PreparedElementLombardi prepareElementLombardi(
         std::pow((N+p.N2)/p.N0,p.lambda);
     return out;
 }
+// The residual transport visits three vertices for each carrier on the same
+// cell. Only the powers depend on the common field and the carrier exponent.
+struct LombardiCellPowers {
+    struct Entry {
+        long double base = 0.;
+        long double exponent = 0.;
+        long double value = 0.;
+
+        long double evaluate(long double nextBase, long double nextExponent) {
+            if (!(nextBase > 0.) || !std::isfinite(nextBase) || !std::isfinite(nextExponent))
+                return std::pow(nextBase, nextExponent);
+            if (base != nextBase || exponent != nextExponent) {
+                value = std::pow(nextBase, nextExponent);
+                base = nextBase;
+                exponent = nextExponent;
+            }
+            return value;
+        }
+    };
+
+    Entry acoustic;
+    Entry electronRoughness;
+    Entry holeRoughness;
+};
+
 inline ElementLombardiResult evaluatePreparedElementLombardi(Real bulk,Real field,
     const PreparedElementLombardi& prepared,const LombardiParameters& p,
-    const MobilityModelConfig& config) {
+    const MobilityModelConfig& config, LombardiCellPowers* powers = nullptr,
+    bool electron = false) {
     if(bulk<=0)return {0,0,0};
     if(!prepared.finiteDistance || !std::isfinite(field))return {bulk,1,0};
     if(!prepared.validParameters)
@@ -37,8 +63,14 @@ inline ElementLombardiResult evaluatePreparedElementLombardi(Real bulk,Real fiel
     const long double M=bulk*config.internalMobilityToM2PerVS;
     long double inv=0.,power=0.,roughness=0.;
     if(!(F<=0.)) {
-        power=std::pow(F,(long double)2/3);
-        roughness=std::pow(F/(long double)100,(long double)p.A);
+        if (powers) {
+            power = powers->acoustic.evaluate(F, (long double)2/3);
+            auto& entry = electron ? powers->electronRoughness : powers->holeRoughness;
+            roughness = entry.evaluate(F/(long double)100, (long double)p.A);
+        } else {
+            power=std::pow(F,(long double)2/3);
+            roughness=std::pow(F/(long double)100,(long double)p.A);
+        }
         const long double ac=F/((long double)p.B+prepared.valueCoefficient*power);
         const long double sr=roughness/(long double)p.delta+F*F*F/(long double)p.eta;
         inv=prepared.damping*((long double)p.acousticFactor*ac+(long double)p.roughnessFactor*sr);

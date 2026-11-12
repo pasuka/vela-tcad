@@ -705,6 +705,11 @@ In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate
 qualification. Runtime paths belong in local environment configuration.
 
+In BVMethods potential-density mode with quasi-Fermi SG, coupled residual
+assembly reuses identical long-double Lombardi powers within each element.
+Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
+against uncached evaluation. The cache is scoped to one element evaluation.
+
 Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
 `mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
 They require their detected CMake packages (`VELA_ENABLE_METIS`,

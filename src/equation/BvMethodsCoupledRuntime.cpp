@@ -2,6 +2,8 @@
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/physics/experimental/PopulationRecombination.h"
 #include <algorithm>
+#include <cstdlib>
+#include <string_view>
 #include <stdexcept>
 #include <cstring>
 #include <optional>
@@ -140,8 +142,15 @@ struct BvMethodsCoupledRuntime::Impl {
     }
     Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr,bool freezeStatisticalFloor=true)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
+        static const bool enableLombardiPowReuse = [] {
+            const char* flag = std::getenv("VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE");
+            return !flag || std::string_view(flag) != "1";
+        }();
+        const bool reuseLombardiPowers = enableLombardiPowReuse && !jac &&
+            s.populationCoordinates && owner.scaling_.populationSgCurrent == "quasi_fermi";
         out.transport=element->transport(s,jac,true,true,approximate,columns,
-            approximate&&freezeStatisticalFloor?owner.scaling_.populationSgBootstrapFloor_cm3:0.);
+            approximate&&freezeStatisticalFloor?owner.scaling_.populationSgBootstrapFloor_cm3:0.,
+            reuseLombardiPowers);
         if(owner.impactIonizationCoupled_)out.av=element->evaluate(s,jac&&!approximate,columns);
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;

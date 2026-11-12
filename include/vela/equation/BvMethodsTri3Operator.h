@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 
 #include "vela/equation/AssemblerUtils.h"
 #include <limits>
@@ -188,7 +189,8 @@ public:
  }
  // Diagnostic approximate linearization only: retain the live mobility value,
  // but omit its tangent. Production calls retain the full derivative default.
- BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.) const {
+ BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.,
+    bool reuseLombardiPowers=false) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
@@ -214,9 +216,14 @@ public:
    const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
+   std::optional<LombardiCellPowers> powers;
+   if (reuseLombardiPowers && !derivatives)
+    powers.emplace();
    auto mobility=[&](bool e,const AvJet& drive,int local){auto node=a.nodes[local];
     const double low=e?a.bulkN[local]:a.bulkP[local];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
-    const auto surface=evaluatePreparedElementLombardi(low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_);
+    const auto surface=evaluatePreparedElementLombardi(
+        low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_,
+        powers ? &*powers : nullptr,e);
     const auto high=evaluateElementCanali(surface.mobility,drive.value,hf,100./cfg_.internalFieldToVPerM);
     const double scale=units.internalMobilityToM2PerVS(1.)*1e4;AvJet mu(high.mobility*scale);
     for(int k=0;k<9;++k)mu.derivative[k]=(high.lowDerivative*surface.fieldDerivative*normal.derivative[k]+high.fieldDerivative*drive.derivative[k])*scale;
