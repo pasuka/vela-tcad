@@ -694,12 +694,16 @@ the direct path of `auto`; a PARDISO error is returned without backend fallback.
 
 For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
 solve, the original-system defect calculation defaults to compensated EFT
-accumulation with `std::from_chars` conversion. The weighted absolute defect,
-componentwise backward error and original correction rules retain their
-existing tolerances. Unsupported floating-point environments use MP100,
-and out-of-range or detected cancellation rows use the original MP100
-accumulation. Set `VELA_BVMETHODS_MP100_DEFECT=1` to select the original
-MP100 path for the entire run.
+accumulation with extended `long double` finalization when supported.
+Out-of-range EFT rows are recomputed in extended precision. A detected
+discarded-tail cancellation is recomputed from the exact binary64 inputs
+using rational arithmetic. The weighted absolute defect, componentwise
+backward error and original correction rules retain their existing tolerances.
+Platforms without suitable extended precision use EFT with MP100 finalization
+and `std::from_chars` conversion. Floating-point environments unsupported by
+EFT use the original MP100 path. Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
+compare against EFT with MP100 finalization, or `VELA_BVMETHODS_MP100_DEFECT=1`
+to select the original all-MP100 defect path.
 The explicitly selected `direct_bordered_qr` policy retains its QR preference.
 In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate

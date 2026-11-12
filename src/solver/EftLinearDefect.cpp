@@ -1,6 +1,8 @@
 
 #include "vela/solver/LinearRefinement.h"
 
+#include <boost/multiprecision/cpp_int.hpp>
+
 #include <bit>
 #include <cfenv>
 #include <charconv>
@@ -8,6 +10,7 @@
 #include <cstdlib>
 #include <optional>
 #include <string_view>
+#include <type_traits>
 #if defined(__SSE__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
 #include <xmmintrin.h>
 #define VELA_EFT_MXCSR
@@ -79,14 +82,15 @@ struct Accumulator {
         return std::isfinite(sum) && std::isfinite(first) && std::isfinite(second);
     }
 
-    bool finish(MP& value) const {
+    template<class Number>
+    bool finish(Number& value) const {
         double sumHigh, sumLow, high, low;
         twoSum(sum, first, sumHigh, sumLow);
         twoSum(sumHigh, sumLow + second, high, low);
         if (!std::isfinite(high) || !std::isfinite(low) ||
             (discarded && high == 0. && low == 0.))
             return false;
-        value = MP(high) + MP(low);
+        value = Number(high) + Number(low);
         return true;
     }
 };
@@ -132,6 +136,129 @@ double convert(const MP& value) {
     const auto result = std::from_chars(text.data(), end, parsed, std::chars_format::scientific);
     return result.ec == std::errc{} && result.ptr == end ? parsed : static_cast<double>(value);
 }
+using Exact = boost::multiprecision::cpp_rational;
+
+// Cover products of any two finite binary64 inputs, including subnormals.
+constexpr bool hasExtendedPrecision =
+    std::numeric_limits<long double>::is_iec559 &&
+    std::numeric_limits<long double>::digits >= 64 &&
+    std::numeric_limits<long double>::max_exponent > 4096 &&
+    std::numeric_limits<long double>::min_exponent < -4096;
+
+double convert(long double value) {
+    // Preserve the existing result policy for binary64 subnormals.
+    const long double magnitude = std::abs(value);
+    if (magnitude < std::numeric_limits<double>::min()) return 0.;
+    if (magnitude > std::numeric_limits<double>::max()) {
+        const double infinity = std::numeric_limits<double>::infinity();
+        return value < 0. ? -infinity : infinity;
+    }
+    return static_cast<double>(value);
+}
+
+double convert(const Exact& value) {
+    static const Exact minimum(std::numeric_limits<double>::min());
+    if (abs(value) < minimum) return 0.;
+    return value.convert_to<double>();
+}
+
+template<class Number>
+struct FallbackRow {
+    Eigen::Index row;
+    Number residual;
+    Number denominator;
+};
+
+template<class Number, class WriteRow>
+void accumulateFallback(const SparseMatrixd& J, const VectorXd& step,
+                        std::vector<FallbackRow<Number>>& fallback, const WriteRow& writeRow) {
+    if (fallback.empty()) return;
+    using std::abs;
+    std::vector<Eigen::Index> index(J.rows(), -1);
+    for (Eigen::Index i = 0; i < static_cast<Eigen::Index>(fallback.size()); ++i)
+        index[fallback[i].row] = i;
+    for (Eigen::Index col = 0; col < J.outerSize(); ++col) {
+        std::optional<Number> direction;
+        for (SparseMatrixd::InnerIterator it(J, col); it; ++it) {
+            const auto row = index[it.row()];
+            if (row < 0) continue;
+            if (!direction) direction.emplace(step(col));
+            const Number product = Number(it.value()) * *direction;
+            fallback[row].residual += product;
+            fallback[row].denominator += abs(product);
+        }
+    }
+    for (const auto& row : fallback) writeRow(row.row, row.residual, row.denominator);
+}
+
+template<class Number>
+Defect eftDefectImpl(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step) {
+    constexpr bool nativeFinish = std::is_same_v<Number, long double>;
+    using std::abs;
+    ScopedPerformanceTimer timer("linear.mp_defect.total");
+    incrementPerformanceCounter("linear.mp_defect.calls");
+    incrementPerformanceCounter("linear.eft_defect.calls");
+    incrementPerformanceCounter(nativeFinish ? "linear.eft_defect.long_double_calls"
+                                              : "linear.eft_defect.mp100_finish_calls");
+    std::vector<Row> rows;
+    {
+        ScopedPerformanceTimer stage("linear.eft_defect.accumulate");
+        rows.reserve(F.size());
+        for (Eigen::Index i = 0; i < F.size(); ++i) rows.emplace_back(F(i));
+        for (Eigen::Index col = 0; col < J.outerSize(); ++col)
+            for (SparseMatrixd::InnerIterator it(J, col); it; ++it)
+                rows[it.row()].add(it.value(), step(col));
+    }
+
+    Defect result{VectorXd(F.size()), 0., VectorXd::Zero(F.size())};
+    std::vector<FallbackRow<Number>> fallback;
+    std::vector<FallbackRow<Exact>> exactCancellation;
+    std::uint64_t rangeRows = 0, cancellationRows = 0;
+    auto writeRow = [&]<class Value>(Eigen::Index row, const Value& residual, const Value& denominator) {
+        using std::abs;
+        result.values(row) = convert(residual);
+        if (denominator != 0) {
+            const double error = convert(Value(abs(residual) / denominator));
+            result.componentwiseBackwardErrors(row) = error;
+            result.backwardMax = std::max(result.backwardMax, error);
+        }
+    };
+    {
+        ScopedPerformanceTimer stage("linear.eft_defect.finish");
+        for (Eigen::Index i = 0; i < F.size(); ++i) {
+            const auto& row = rows[i];
+            if (row.fallback == FallbackReason::none) {
+                Number residual, denominator;
+                if (row.residual.finish(residual) && row.denominator.finish(denominator) && denominator >= 0) {
+                    writeRow(i, residual, denominator);
+                    continue;
+                }
+                ++cancellationRows;
+                if constexpr (nativeFinish) {
+                    // The discarded EFT tail can exceed the precision of long double.
+                    const Exact value(F(i));
+                    exactCancellation.push_back({i, value, abs(value)});
+                    continue;
+                }
+            } else {
+                ++rangeRows;
+            }
+            const Number value(F(i));
+            fallback.push_back({i, value, abs(value)});
+        }
+    }
+    if (!fallback.empty() || !exactCancellation.empty()) {
+        ScopedPerformanceTimer stage("linear.eft_defect.fallback");
+        accumulateFallback(J, step, fallback, writeRow);
+        if constexpr (nativeFinish) accumulateFallback(J, step, exactCancellation, writeRow);
+    }
+    if (!result.values.allFinite() || !result.componentwiseBackwardErrors.allFinite())
+        throw std::runtime_error("Nonfinite linear refinement defect");
+    incrementPerformanceCounter("linear.eft_defect.rows", rows.size() - fallback.size() - exactCancellation.size());
+    incrementPerformanceCounter("linear.eft_defect.range_fallback_rows", rangeRows);
+    incrementPerformanceCounter("linear.eft_defect.cancellation_fallback_rows", cancellationRows);
+    return result;
+}
 #endif
 } // namespace
 
@@ -146,76 +273,12 @@ Defect eftDefect(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     FloatingEnvironment environment;
     if (environment.supported()) {
-        ScopedPerformanceTimer timer("linear.mp_defect.total");
-        incrementPerformanceCounter("linear.mp_defect.calls");
-        incrementPerformanceCounter("linear.eft_defect.calls");
-        std::vector<Row> rows;
-        {
-            ScopedPerformanceTimer stage("linear.eft_defect.accumulate");
-            rows.reserve(F.size());
-            for (Eigen::Index i = 0; i < F.size(); ++i) rows.emplace_back(F(i));
-            for (Eigen::Index col = 0; col < J.outerSize(); ++col)
-                for (SparseMatrixd::InnerIterator it(J, col); it; ++it)
-                    rows[it.row()].add(it.value(), step(col));
+        if constexpr (hasExtendedPrecision) {
+            const char* forceMp100 = std::getenv("VELA_BVMETHODS_EFT_MP100_FINISH");
+            if (!forceMp100 || std::string_view(forceMp100) != "1")
+                return eftDefectImpl<long double>(J, F, step);
         }
-
-        Defect result{VectorXd(F.size()), 0., VectorXd::Zero(F.size())};
-        struct FallbackRow {
-            Eigen::Index row;
-            MP residual;
-            MP denominator;
-        };
-        std::vector<FallbackRow> fallback;
-        std::vector<Eigen::Index> index(F.size(), -1);
-        std::uint64_t rangeRows = 0, cancellationRows = 0;
-        auto writeRow = [&](Eigen::Index row, const MP& residual, const MP& denominator) {
-            result.values(row) = convert(residual);
-            if (denominator != 0) {
-                const double error = convert(MP(abs(residual) / denominator));
-                result.componentwiseBackwardErrors(row) = error;
-                result.backwardMax = std::max(result.backwardMax, error);
-            }
-        };
-        {
-            ScopedPerformanceTimer stage("linear.eft_defect.finish");
-            for (Eigen::Index i = 0; i < F.size(); ++i) {
-                const auto& row = rows[i];
-                if (row.fallback == FallbackReason::none) {
-                    MP residual, denominator;
-                    if (row.residual.finish(residual) && row.denominator.finish(denominator) && denominator >= 0) {
-                        writeRow(i, residual, denominator);
-                        continue;
-                    }
-                    ++cancellationRows;
-                } else {
-                    ++rangeRows;
-                }
-                index[i] = static_cast<Eigen::Index>(fallback.size());
-                const MP value(F(i));
-                fallback.push_back({i, value, abs(value)});
-            }
-        }
-        if (!fallback.empty()) {
-            ScopedPerformanceTimer stage("linear.eft_defect.fallback");
-            for (Eigen::Index col = 0; col < J.outerSize(); ++col) {
-                std::optional<MP> direction;
-                for (SparseMatrixd::InnerIterator it(J, col); it; ++it) {
-                    const auto row = index[it.row()];
-                    if (row < 0) continue;
-                    if (!direction) direction.emplace(step(col));
-                    const MP product = MP(it.value()) * *direction;
-                    fallback[row].residual += product;
-                    fallback[row].denominator += abs(product);
-                }
-            }
-            for (const auto& row : fallback) writeRow(row.row, row.residual, row.denominator);
-        }
-        if (!result.values.allFinite() || !result.componentwiseBackwardErrors.allFinite())
-            throw std::runtime_error("Nonfinite linear refinement defect");
-        incrementPerformanceCounter("linear.eft_defect.rows", rows.size() - fallback.size());
-        incrementPerformanceCounter("linear.eft_defect.range_fallback_rows", rangeRows);
-        incrementPerformanceCounter("linear.eft_defect.cancellation_fallback_rows", cancellationRows);
-        return result;
+        return eftDefectImpl<MP>(J, F, step);
     }
 #endif
     incrementPerformanceCounter("linear.eft_defect.whole_call_fallbacks");
