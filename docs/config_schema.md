@@ -714,6 +714,12 @@ assembly reuses identical long-double Lombardi powers within each element.
 Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
 against uncached evaluation. The cache is scoped to one element evaluation.
 
+BVMethods potential-density contact and circuit current evaluations reuse the
+last source-free transport vector when the packed state matches bit for bit
+within the same assembler runtime. Set `VELA_BVMETHODS_TRI3_PORT_CACHE=0`
+before launch to disable this reuse. Set it to `shadow` to recompute each cache
+hit and check bitwise equality. Jacobian assembly uses its own path.
+
 Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
 `mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
 They require their detected CMake packages (`VELA_ENABLE_METIS`,

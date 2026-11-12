@@ -768,6 +768,44 @@ TEST_CASE("BVMethods residual values are independent of derivative request and r
 }
 
 
+TEST_CASE("BVMethods port transport uses the current packed population state", "[bvmethods_profile][population_core]") {
+    using namespace vela;
+    ProfileFixture fixture;
+    const auto qfAssembler = fixture.assembler();
+    const auto qf = fixture.point();
+    fixture.scaling.stateVariables = "potential_density";
+    const auto assembler = fixture.assembler();
+    const VectorXd state = assembler->packPopulation(
+        qf.head(fixture.mesh.numNodes()),
+        qfAssembler->electronDensity(qf),
+        qfAssembler->holeDensity(qf));
+    VectorXd changed = state;
+    changed[fixture.mesh.numNodes() + 1] *= 1.125;
+    const auto initial = assembler->bvMethodsTransportResidual(state);
+    const auto next = assembler->bvMethodsTransportResidual(changed);
+    REQUIRE(initial.allFinite());
+    REQUIRE(next.allFinite());
+    REQUIRE(exactValueBits(next) != exactValueBits(initial));
+
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalValue)) == exactValueBits(initial));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalLinearization)) == exactValueBits(initial));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::terminalValidation)) == exactValueBits(next));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::contactOutput)) == exactValueBits(next));
+
+    VectorXd invalid = changed;
+    invalid[fixture.mesh.numNodes() + 1] = 0.;
+    REQUIRE_FALSE(assembler->bvMethodsTransportResidual(
+        invalid, BvMethodsTransportPurpose::terminalValue).allFinite());
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::contactOutput)) == exactValueBits(next));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalValue)) == exactValueBits(initial));
+}
+
 TEST_CASE("BVMethods fused diagnostics retain constrained and free physical equations", "[bvmethods_profile][population_core]") {
     using namespace vela;ProfileFixture f;auto qf=f.assembler();const auto x=f.point();
     for(bool population:{false,true}) {

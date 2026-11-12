@@ -28,6 +28,17 @@ TransportValueMode transportValueMode() {
     return mode;
 }
 
+enum class PortValueReuse { disabled, shadow, enabled };
+PortValueReuse portValueReuse() {
+    static const auto mode=[] {
+        const char* value=std::getenv("VELA_BVMETHODS_TRI3_PORT_CACHE");
+        if(value && std::string_view(value)=="shadow")return PortValueReuse::shadow;
+        if(value && std::string_view(value)=="0")return PortValueReuse::disabled;
+        return PortValueReuse::enabled;
+    }();
+    return mode;
+}
+
 bool equalStateBits(const VectorXd& a,const VectorXd& b) {
     return a.size()==b.size() && (a.size()==0 || std::memcmp(a.data(),b.data(),sizeof(Real)*a.size())==0);
 }
@@ -67,6 +78,9 @@ struct BvMethodsCoupledRuntime::Impl {
     };
     mutable std::array<Entry<Evaluation>,2> evaluations;
     mutable std::array<Entry<detail::BvMethodsTri3Evaluation>,2> transports;
+    // Source-free transport values are independent of the port and its weights.
+    // Keep the last packed state only, within this immutable runtime.
+    mutable Entry<VectorXd> portValue;
     mutable VectorXd electronReference,holeReference;
     // A single runtime owns immutable geometry, coefficients and options.
     // Audit one previous source-free value state without changing dispatch.
@@ -408,8 +422,33 @@ SparseMatrixd BvMethodsCoupledRuntime::avalancheJacobian(const VectorXd& x,const
 }
 VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x,BvMethodsTransportPurpose purpose)const {
     auto& p=*impl_;p.sync();
-    try{return p.transport(x,false,purpose).source;}
-    catch(const std::domain_error&){return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());}
+    const auto mode=portValueReuse();
+    const bool reuse=mode!=PortValueReuse::disabled &&
+        purpose!=BvMethodsTransportPurpose::other && p.owner.usesPopulationState();
+    try {
+        if(!reuse)return p.transport(x,false,purpose).source;
+        incrementPerformanceCounter("bvmethods.tri3.port_cache.requests");
+        auto& entry=p.portValue;
+        if(entry.matches(x)) {
+            incrementPerformanceCounter("bvmethods.tri3.port_cache.hits");
+            if(mode==PortValueReuse::shadow) {
+                const auto reference=p.transport(x,false,purpose).source;
+                if(!equalStateBits(*entry.value,reference))
+                    throw std::runtime_error("BVMethods port transport reuse shadow mismatch");
+            }
+            return *entry.value;
+        }
+        incrementPerformanceCounter("bvmethods.tri3.port_cache.misses");
+        entry.value.reset();
+        auto result=p.transport(x,false,purpose).source;
+        if(result.allFinite()) {
+            entry.state=x;
+            entry.value=result;
+        }
+        return result;
+    } catch(const std::domain_error&) {
+        return VectorXd::Constant(x.size(),std::numeric_limits<double>::quiet_NaN());
+    }
 }
 SparseMatrixd BvMethodsCoupledRuntime::transportJacobian(const VectorXd& x,const VectorXd* columns)const {
     auto& p=*impl_;p.sync();
