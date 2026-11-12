@@ -26,13 +26,17 @@ struct DCSweepStepControlConfig {
     bool stopOnFailure = true;
     /// Quasistationary exits when division by Decrement crosses MinStep.
     bool stopBelowMinimum = false;
+    /// Retain the proposed step after a first-attempt output-point landing
+    /// that shortened the step.
+    bool preserveStepAfterOutputClip = false;
     std::function<bool()> stopRequested;
     /// Optional state-dependent cap on the proposed step magnitude. Empty
     /// means no representable step respecting both state and minimum limits.
     std::function<std::optional<Real>(Real proposed, Real remaining)> stepLimit;
     /// Biases strictly between start and stop that the controller must land
     /// on exactly (merged into the nominal target sequence).  Points outside
-    /// the swept interval or coinciding with a nominal target are ignored.
+    /// the swept interval are ignored. A nominal target at the same voltage
+    /// also counts as an output point.
     std::vector<Real> mandatoryPoints;
 };
 

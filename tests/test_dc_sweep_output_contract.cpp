@@ -245,6 +245,60 @@ TEST_CASE("Step control lands exactly on mandatory points without changing the o
     REQUIRE(std::abs(fineVisited.back() - 1.0) <= 1.0e-12);
 }
 
+TEST_CASE("Output clipping preserves a successful proposal and retains real cutbacks",
+          "[dc_sweep][output_contract][step_control]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.stop = 0.15;
+    cfg.step = 0.15;
+    cfg.initialStep = 0.04;
+    cfg.minStep = 1e-7;
+    cfg.maxStep = 0.25;
+    cfg.growthMode = "newton_iterations";
+    cfg.growthFactor = 1.3;
+    cfg.newtonIterationLimit = 50;
+    cfg.mandatoryPoints = {0.05, 0.10};
+    cfg.preserveStepAfterOutputClip = true;
+
+    std::vector<detail::DCSweepStepControlEvent> events;
+    bool failFirstOutputAttempt = false;
+    SECTION("A successful output landing retains the proposal for the next interval") {}
+    SECTION("A failed output landing reduces the proposal before a retry") {
+        failFirstOutputAttempt = true;
+    }
+    bool rejected = false;
+    cfg.attemptObserved = [&](const auto& event) { events.push_back(event); };
+    detail::runDCSweepStepControl(cfg, [&](Real bias, Real, int) -> detail::DCSweepStepAttemptResult {
+        if (failFirstOutputAttempt && !rejected && std::abs(bias - 0.05) < 1e-12) {
+            rejected = true;
+            return {false, 50};
+        }
+        return {true, 3};
+    }, [](const auto&) {});
+
+    REQUIRE(events.at(0).voltage == Catch::Approx(0.04));
+    REQUIRE(events.at(0).nextStepMagnitude == Catch::Approx(0.05136));
+    const auto& firstOutput = events.at(1);
+    REQUIRE(firstOutput.voltage == Catch::Approx(0.05));
+    REQUIRE(firstOutput.targetClipped);
+    if (failFirstOutputAttempt) {
+        REQUIRE_FALSE(firstOutput.converged);
+        REQUIRE(events.at(2).retryCount == 1);
+        REQUIRE(events.at(2).voltage == Catch::Approx(0.045));
+        REQUIRE(events.at(2).nextStepMagnitude == Catch::Approx(0.00642));
+        REQUIRE(events.at(3).voltage == Catch::Approx(0.05));
+        REQUIRE(events.at(3).nextStepMagnitude == Catch::Approx(0.00642));
+        REQUIRE(events.at(4).voltage == Catch::Approx(0.05642));
+    } else {
+        REQUIRE(firstOutput.converged);
+        REQUIRE(firstOutput.acceptedStep == Catch::Approx(0.01));
+        REQUIRE(firstOutput.nextStepMagnitude == Catch::Approx(0.05136));
+        REQUIRE(events.size() == 4);
+        REQUIRE(events.at(2).voltage == Catch::Approx(0.10));
+    }
+    REQUIRE(events.back().voltage == Catch::Approx(0.15));
+}
+
 TEST_CASE("DCSweep writes TDR-named .vtu files at mandatory bias points with the requested subset",
           "[dc_sweep][output_contract][vtu]")
 {

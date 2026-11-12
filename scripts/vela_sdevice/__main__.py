@@ -92,6 +92,8 @@ def main(argv=None):
     device.add_argument("-q", action="store_true", dest="quiet")
     reserved_options(device, argv)
     device.add_argument("--check", action="store_true", dest="check")
+    device.add_argument("--pn2d-population", action="store_true",
+                        help="Use potential and carrier densities with Quasistationary controls for a classical PN2D deck")
     device.add_argument("-i", action="store_true", dest="initial_only",
                         help="Vela limitation: run only the first emitted stage; native initial-save semantics not verified")
     device.add_argument("--exit-on-failure", action="store_true")

@@ -376,6 +376,7 @@ public:
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
     bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
+    bool usesLegacyPopulationState() const { return usesPopulationState() && !usesBvMethodsOperator(); }
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
     PopulationPhysicalFields populationPhysicalFields(const VectorXd& x) const;
@@ -547,6 +548,12 @@ public:
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
 
 private:
+    VectorXd legacyPopulationQfCoordinates(const VectorXd& populations) const;
+    SparseMatrixd legacyPopulationJacobian(const SparseMatrixd& qfJacobian,
+                                           const VectorXd& populations,
+                                           const CoupledDDBoundaryConditions& bcs) const;
+    Real legacyPopulationContactTarget(Index node, Real qf,
+                                       const CoupledDDBoundaryConditions& bcs, bool electron) const;
     void validateExperimentalNonlocalState(const VectorXd&,
         const experimental::TunnelingSourceAssembly&,
         const experimental::TunnelingBandState&,

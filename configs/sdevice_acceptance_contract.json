@@ -91,6 +91,11 @@
         0.2,
         0.3
       ],
+      "kcl_report_only_bias_window_V": [
+        0.0,
+        0.05
+      ],
+      "kcl_report_non_output_points": true,
       "equilibrium_tdr": "pn2d_iv_multibias_0000_des.tdr",
       "require_biased_fields": true,
       "field_bias_V": 0.2

@@ -202,9 +202,11 @@ Newton numerical and geometry controls added for explicit validation profiles:
 
 - `solver.state_variables`: BVMethods defaults to `potential_density`; legacy
   operators retain `potential_quasi_fermi`. Explicit values override this
-  operator-scoped default. Population state requires the qualified 300 K
-  `bvmethods_tri3_qf` physics and Joyce–Dixon statistics; the profile name
-  identifies its physical discretization, while this option selects coordinates.
+  operator-scoped default. The legacy operator accepts explicit population
+  state for classical Boltzmann transport. It uses the original residual in
+  its original row units and transforms the analytic tangent to ψ, n and p.
+  It uses full derivatives, physical coordinates and the legacy residual stop.
+  The BVMethods path retains its 300 K Joyce–Dixon contract.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Population DDSolution retains the original normalized psi separately from QF
@@ -230,8 +232,28 @@ Newton numerical and geometry controls added for explicit validation profiles:
   of being silently ignored. Population positivity, physical residuals and
   configured report/enforce gates remain. See the
   [coordinate-policy audit](validation/potential_density_policy_audit_2026-10-29.md).
-  PN2D and pseudo-arclength are not qualified for this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
-  for actual validation status.
+  `sd-sim --pn2d-population <cmd>` enables this path for classical silicon
+  voltage stages with ohmic Anode and Cathode contacts. It retains the CMD
+  physics and the BV sidecar. Coupled stages select Unit coordinates and
+  relative-update stopping with CMD Digits and ErrRef values. With omitted
+  ErrRef, the reference values are 0.0258 V for Poisson and 1e10 cm⁻³ for
+  each carrier. The relative error uses the existing population RMS evaluator
+  in physical units, with no circuit-voltage term for fixed-voltage solves.
+  The RhsMin branch requires a native RHS calibration, which is unavailable
+  for PN2D. Carrier-row, global-continuity and configured absolute-block
+  thresholds are reported. The emitter uses full Newton steps when the CMD
+  damping settings disable both damping methods within the iteration budget.
+  The emitter translates normalized InitialStep,
+  MinStep and MaxStep to volts and uses Increment with Newton-iteration growth
+  and reciprocal Decrement on retries. `sweep.stop_below_minimum_step: true`
+  stops an ordinary voltage sweep when a retry would require less than MinStep.
+  Forward PN2D sweeps select `sweep.preserve_step_after_output_clip: true` to
+  reuse the proposed step after a first-attempt landing at an intermediate
+  `vtk_bias_points` voltage shortened the step. A rejected step uses the
+  configured reduction and the accepted retry determines subsequent growth.
+  Each CMD Goal and requested output bias is landed exactly. Different Newton
+  outcomes can produce different adaptive trajectories. Full PN2D IV/BV and
+  pseudo-arclength qualification require separate numerical evidence.
   Population-mode coupled load-line secant prediction uses linear ψ/internal
   voltage and logarithmic n/p extrapolation between accepted states:
   `c_pred = exp(log(c_current) + ratio*(log(c_current)-log(c_previous)))`.
@@ -240,17 +262,21 @@ Newton numerical and geometry controls added for explicit validation profiles:
   exact values. Invalid domains, overflow/underflow or a failed predictor guard
   fall back to the last accepted state; no population floor is introduced.
   QF-mode prediction retains its existing behavior.
-- `solver.primary_variable_coordinates`: `unit` (population default) or `physical`
-  (rollback). Internally psi/VT, n/C0, p/C0 and inner voltage/VT; output, archive
+- `solver.primary_variable_coordinates`: `unit` (BVMethods population default and
+  selected by the PN2D CMD mode) or `physical`. Internally psi/VT, n/C0, p/C0
+  and inner voltage/VT; output, archive
   populations, positivity and ErrRef remain physical. Existing device row scales
   remain; the scalar row is divided by VT. Unit directions require one original
   defect correction and the original physical precision audit before writeback.
-- `solver.population_stopping_rule`: `native_approx` (population default) or
+- `solver.population_stopping_rule`: `native_approx` (BVMethods population default) or
   `legacy`. Approximate stop is valid E<1 OR a valid mapped RHS infinity norm
   <1e-5. E uses the physical raw direction and actual protected post-state.
   Mapping is limited to the frozen 300 K, 2600/5020 reference normalization,
   compatible constants and material scales. Outside it only E can accept, with
   an unavailable-mapping diagnostic. This is not native RHSMin equivalence.
+- `solver.population_update_convergence`: optional `digits`,
+  `potential_reference_V`, `electron_reference_cm3` and `hole_reference_cm3`
+  for the relative update test in the fixed-voltage population solve.
 - `sweep.external_circuit.physical_acceptance_mode`: `report` or `enforce`.
   Omitted selects report for native_approx, enforce otherwise. Load, carrier,
   continuity and KCL remain recorded; nonfinite states always reject. Linear

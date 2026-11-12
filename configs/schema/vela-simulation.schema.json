@@ -93,9 +93,16 @@
       "allOf": [
         {"anyOf": [
           {"not": {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}},
-          {"required": ["coupled_operator", "carrier_statistics"], "properties": {
-            "coupled_operator": {"const": "bvmethods_tri3_qf"},
-            "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]},
+          {"anyOf": [
+            {"required": ["coupled_operator", "carrier_statistics"], "properties": {
+              "coupled_operator": {"const": "bvmethods_tri3_qf"},
+              "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]}}},
+            {"properties": {
+              "coupled_operator": {"const": "legacy"},
+              "carrier_statistics": {"type": "object", "properties": {"model": {"const": "boltzmann"}}},
+              "population_derivative_recovery": {"const": "full"},
+              "population_sg_current": {"const": "quasi_fermi"}}}
+          ], "properties": {
             "method": {"enum": ["newton", "poisson_only"]},
             "quasi_fermi_reference": {"const": "none"}, "split_dd_state": {"const": false},
             "quasi_fermi_update_limit_V": {"const": 0}, "quasi_fermi_update_limit_minority_V": {"const": 0}, "max_update": {"const": 0},
@@ -132,6 +139,12 @@
           {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
         ]},
         {"anyOf": [
+          {"not": {"required": ["population_update_convergence"]}},
+          {"required": ["population_stopping_rule"], "properties": {"population_stopping_rule": {"const": "native_approx"}}},
+          {"required": ["coupled_operator"], "not": {"required": ["population_stopping_rule"]},
+           "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}
+        ]},
+        {"anyOf": [
           {"not": {"required": ["population_derivative_recovery"], "properties": {"population_derivative_recovery": {"enum": ["automatic", "after_protection"]}}}},
           {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}
         ]}
@@ -155,7 +168,17 @@
       "properties": {
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
         "population_stopping_rule": {"enum": ["native_approx", "legacy"], "description": "Population default native_approx is E<1 OR a valid calibrated mapped RHS<1e-5; unsupported mappings never authorize RHS stopping."},
-        "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode requires explicit BVMethods physics."},
+        "population_update_convergence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "digits": {"type": "integer", "minimum": 0, "maximum": 15},
+            "potential_reference_V": {"type": "number", "exclusiveMinimum": 0},
+            "electron_reference_cm3": {"type": "number", "exclusiveMinimum": 0},
+            "hole_reference_cm3": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode supports the BVMethods operator or classical Boltzmann transport."},
         "population_sg_bootstrap_linearization": {"enum": ["unchanged", "floor_adjacent_edges"], "default": "unchanged", "description": "Opt-in approximate-only SG population feedback freezing on carrier edges touching the configured positive density floor; requires potential_density and quasi_fermi SG."},
         "population_sg_current": {"enum": ["quasi_fermi", "band_population"], "default": "quasi_fermi", "description": "Experimental direct population/ni-band SG arithmetic; band_population requires potential_density."},
         "population_derivative_recovery": {"enum": ["full", "automatic", "after_protection"], "description": "Population only: full, automatic controller, or Full entry with mobility/AV tangents omitted only after protected writeback (after_protection)."},
@@ -304,6 +327,8 @@
     "sweep": {
       "additionalProperties": true,
       "properties": {
+        "stop_below_minimum_step": {"type": "boolean", "default": false},
+        "preserve_step_after_output_clip": {"type": "boolean", "default": false},
         "contact": {
           "minLength": 1,
           "type": "string"

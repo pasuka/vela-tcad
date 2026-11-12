@@ -80,6 +80,7 @@ class EmitOptions:
     keep_intermediate: bool = True
     allow_lossy: bool = False
     defer_current_times: bool = False
+    pn2d_population: bool = False
 
 
 @dataclass
@@ -449,14 +450,14 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                   "Implicit plot fields appended", "W203")
     fields = list(dict.fromkeys(fields))
     math_cfg = ir["math"]
-    for keyword in ("digits", "rel_err_control", "err_ref_electron_cm3", "err_ref_hole_cm3"):
-        if math_cfg.get(keyword) is not None:
+    for keyword in ("digits", "rel_err_control", "err_ref_poisson_V", "err_ref_electron_cm3", "err_ref_hole_cm3"):
+        if math_cfg.get(keyword) is not None and not options.pn2d_population:
             _decision(decisions, keyword, math_cfg[keyword], None, None,
                       "Recorded without loosening Vela convergence tolerances", "W201")
     for ignored in math_cfg["ignored"]:
         _decision(decisions, ignored["keyword"], ignored["value"], None, None,
                   "Recorded and ignored", ignored["finding_id"])
-    if not (sidecar or {}).get("bvmethods_operator_profile"):
+    if not options.pn2d_population and not (sidecar or {}).get("bvmethods_operator_profile"):
         for key in ("line_search_damping", "not_damped"):
             if key in math_cfg:
                 _decision(decisions, key, math_cfg[key], None, None,
@@ -734,6 +735,63 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 _decision(decisions, "bvmethods_operator_profile", sidecar["bvmethods_operator_profile"],
                           "solver.coupled_operator", bundle,
                           "Explicit qualified operator/coordinate profile; physical coefficients unchanged", "W207", index)
+        if options.pn2d_population:
+            population_solver = deck["solver"]
+            if ({c["name"] for c in contacts} != {"Anode", "Cathode"}
+                    or any(c["type"] != "ohmic" for c in contacts)
+                    or set(mesh["materials"]) != {"Si"}
+                    or population_solver.get("carrier_statistics", {}).get("model", "boltzmann") != "boltzmann"
+                    or population_solver.get("coupled_operator", "legacy") != "legacy"
+                    or population_solver.get("electron_quantum_potential", {}).get("enabled", False)
+                    or kind == "load" or current or "external_circuit" in sweep):
+                raise DeckEmitError("E407", detail="PN2D population mode requires a classical two-contact silicon voltage deck")
+            population_solver.update(state_variables="potential_density", quasi_fermi_reference="none",
+                                     primary_variable_coordinates="unit", quasi_fermi_update_limit_V=0.0,
+                                     continuity_row_scaling={"enabled": False})
+            if method != "poisson_only":
+                if not math_cfg["rel_err_control"]:
+                    raise DeckEmitError("E407", detail="PN2D population stopping requires RelErrControl")
+                update = {"digits": math_cfg["digits"],
+                          "potential_reference_V": math_cfg.get("err_ref_poisson_V", 0.0258)}
+                for reference, key in (("electron_reference_cm3", "err_ref_electron_cm3"),
+                                       ("hole_reference_cm3", "err_ref_hole_cm3")):
+                    if math_cfg.get(key) is not None:
+                        update[reference] = math_cfg[key]
+                population_solver.update(method="newton", warm_start=True,
+                                         population_stopping_rule="native_approx",
+                                         population_update_convergence=update)
+                damping = source.get("line_search_damping", math_cfg.get("line_search_damping", 1.0))
+                not_damped = source.get("not_damped", math_cfg.get("not_damped", 1000))
+                if damping == 1.0 and not_damped >= population_solver["max_iter"]:
+                    population_solver["line_search"] = False
+                    _decision(decisions, "LineSearchDamping/NotDamped", [damping, not_damped],
+                              "solver.line_search", False, "Use undamped Newton for this CMD stage", stage=index)
+                for gate in ("carrier_row_convergence", "global_continuity_closure"):
+                    population_solver.setdefault(gate, {})["mode"] = "report"
+                if "block_absolute_convergence" in population_solver:
+                    population_solver["block_absolute_convergence"]["mode"] = "report"
+                _decision(decisions, "RelErrControl", True, "solver.population_update_convergence", update,
+                          "Use the CMD relative update threshold; native RhsMin mapping is unavailable on PN2D",
+                          stage=index)
+            if entry["kind"] == "sweep":
+                if method == "poisson_only":
+                    raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
+                # Use the CMD Goal and requested output biases as the only
+                # landing targets. Do not insert a second MaxStep-based grid.
+                sweep.update(step=v1 - v0, step_growth_mode="newton_iterations", stop_below_minimum_step=True)
+                if v1 > v0:
+                    sweep["preserve_step_after_output_clip"] = True
+                    _decision(decisions, "Plot", "forward output voltages",
+                              "sweep.preserve_step_after_output_clip", True,
+                              "Retain the proposed step after a successful first-attempt output landing", stage=index)
+                retries = math.ceil((math.log(controls["max_step"]) - math.log(controls["min_step"]))
+                                    / math.log(controls["decrement"]))
+                if retries > 2_147_483_647:
+                    raise DeckEmitError("E407", detail="Quasistationary controls imply an unrepresentable retry count")
+                sweep["max_retries"] = retries
+                entry["sweep"]["step_V"] = v1 - v0
+            _decision(decisions, "PN2D population", True, "solver.primary_variable_coordinates", "unit",
+                      "Scale the primary potential and concentrations with the existing Unit references", stage=index)
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]

@@ -641,6 +641,49 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
+TEST_CASE("PN junction concentration Jacobian differentiates fixed-population Poisson and carrier fluxes",
+          "[newton][pn2d_population][jacobian]")
+{
+    const auto mesh = makePNMesh();
+    const auto doping = makePNDoping(mesh);
+    const MaterialDatabase materials;
+    const int count = static_cast<int>(mesh.numNodes());
+    const auto mobility = mobilityModelConfig("masetti");
+    const auto recombination = recombinationModelConfig({"srh"});
+    CoupledDDAssembler qf(mesh, materials, doping, constants::Vt_300, mobility, recombination);
+    DDScalingSpec scaling;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler density(mesh, materials, doping, constants::Vt_300,
+                              mobility, recombination, {}, {}, {}, {}, scaling);
+    CoupledDDState physical;
+    physical.psi = (VectorXd(count) << -.08, .04, .11, -.03, .025).finished();
+    physical.phin = (VectorXd(count) << -.01, .02, .05, -.02, .012).finished();
+    physical.phip = (VectorXd(count) << .02, -.03, .01, .04, -.015).finished();
+    const VectorXd x = qf.pack(physical);
+    const VectorXd y = density.packPopulation(physical.psi, qf.electronDensity(x), qf.holeDensity(x));
+    CoupledDDBoundaryConditions boundary;
+    boundary.psi[0] = -.07;
+    boundary.phin[0] = .01;
+    boundary.phip[0] = .01;
+    const VectorXd f = qf.residual(x, {});
+    const VectorXd fDensity = density.residual(y, {});
+    const auto jacobian = density.assembleJacobian(y, boundary);
+    VectorXd direction = VectorXd::Constant(3 * count, 0.025);
+    direction.segment(count, count) = 0.4 * y.segment(count, count);
+    direction.tail(count) = -0.3 * y.tail(count);
+    constexpr Real h = 1e-5;
+    const VectorXd fd = (density.residual(y + h * direction, boundary) -
+                         density.residual(y - h * direction, boundary)) / (2.0 * h);
+    const VectorXd analytic = jacobian * direction;
+    for (int block = 0; block < 3; ++block) {
+        CAPTURE(block);
+        const auto reference = f.segment(block * count, count);
+        REQUIRE((fDensity.segment(block * count, count) - reference).norm() < 1e-12 * reference.norm());
+        const auto derivative = fd.segment(block * count, count);
+        REQUIRE((analytic.segment(block * count, count) - derivative).norm() < 1e-6 * derivative.norm());
+    }
+}
+
 TEST_CASE("Surface and HFS transport Jacobian follows live residual in every carrier block",
           "[newton][mobility][surface][composition_order][jacobian]")
 {

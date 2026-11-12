@@ -543,8 +543,10 @@ CoupledDDAssembler::CoupledDDAssembler(
     if((scaling_.populationSgCurrent!="quasi_fermi" && scaling_.populationSgCurrent!="band_population") ||
        (scaling_.populationSgCurrent!="quasi_fermi"&&!usesPopulationState()))
         throw std::invalid_argument("invalid population SG arithmetic mode");
-    if (usesPopulationState() && scaling_.coupledOperator != "bvmethods_tri3_qf")
-        throw std::invalid_argument("potential_density currently requires the explicit BVMethods operator");
+    if (usesLegacyPopulationState() &&
+        (carrierStatistics_.model != "boltzmann" || mobilityConfig_.model == "ialmob" ||
+         scaling_.populationSgCurrent != "quasi_fermi"))
+        throw std::invalid_argument("Legacy population coordinates require classical Boltzmann transport");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&
         (usesFermiDirac_ || impactIonizationConfig_.model!="none"))
         throw std::invalid_argument("element_box_phumob currently requires Boltzmann statistics and disabled avalanche.");
@@ -1238,6 +1240,17 @@ PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const Vect
             continue;
         }
         if(!(s.n[i]>0.) || !(s.p[i]>0.))throw std::domain_error("positive population state required");
+        if (usesLegacyPopulationState()) {
+            // Deep-off QF differences can be much smaller than either the
+            // band potential or the statistical term. Round only after their
+            // subtraction so a tiny edge drive survives the inverse map.
+            const long double psi = s.psi_V[i];
+            const long double thermal = Vt_;
+            const long double ni = ni_[i];
+            s.phin_V[i] = static_cast<Real>(psi - thermal * std::log(s.n[i] / ni));
+            s.phip_V[i] = static_cast<Real>(psi + thermal * std::log(s.p[i] / ni));
+            continue;
+        }
         s.phin_V[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],s.psi_V[i],s.n[i],Vt_,carrierStatistics_);
         s.phip_V[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],s.psi_V[i],s.p[i],Vt_,carrierStatistics_);
     }
@@ -1254,6 +1267,67 @@ VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd&
     y.segment(count,count)=n; y.tail(count)=p;
     (void)unpack(y);
     return y;
+}
+
+VectorXd CoupledDDAssembler::legacyPopulationQfCoordinates(const VectorXd& populations) const
+{
+    const auto fields = populationPhysicalFields(populations);
+    const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const int count = static_cast<int>(mesh_.numNodes());
+    VectorXd coordinates = populations;
+    for (int i = 0; i < count; ++i) {
+        coordinates(count + i) = (fields.phin_V(i) - electronQuasiFermiReferenceAt(i)) / scale;
+        coordinates(2 * count + i) = (fields.phip_V(i) - holeQuasiFermiReferenceAt(i)) / scale;
+    }
+    return coordinates;
+}
+
+Real CoupledDDAssembler::legacyPopulationContactTarget(
+    Index node, Real qf, const CoupledDDBoundaryConditions& bcs, bool electron) const
+{
+    const auto psi = bcs.psi.find(node);
+    if (psi == bcs.psi.end() || !(ni_[node] > 0.0))
+        throw std::invalid_argument("Legacy population contacts require prescribed potential on a semiconductor");
+    const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const Real eta = (psi->second - qf) * scale / Vt_;
+    return ni_[node] * std::exp(electron ? eta : -eta);
+}
+
+SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
+    const SparseMatrixd& qfJacobian, const VectorXd& populations,
+    const CoupledDDBoundaryConditions& bcs) const
+{
+    // Apply the chain rule in the original residual row units. Poisson and
+    // transport are evaluated with the supplied populations, and QFs are
+    // derived fields for the existing transport and contact formulas.
+    const int count = static_cast<int>(mesh_.numNodes());
+    const Real vtScaled = Vt_ / (scaling_.enabled ? scaling_.V0 : 1.0);
+    VectorXd prescribed = VectorXd::Zero(3 * count);
+    for (const auto& [node, value] : bcs.phin)
+        prescribed(count + node) = -vtScaled / legacyPopulationContactTarget(node, value, bcs, true);
+    for (const auto& [node, value] : bcs.phip)
+        prescribed(2 * count + node) = vtScaled / legacyPopulationContactTarget(node, value, bcs, false);
+    std::vector<Eigen::Triplet<Real>> entries;
+    entries.reserve(2 * static_cast<std::size_t>(qfJacobian.nonZeros()));
+    for (int col = 0; col < qfJacobian.outerSize(); ++col) {
+        for (SparseMatrixd::InnerIterator entry(qfJacobian, col); entry; ++entry) {
+            if (prescribed(entry.row()) != 0.0) {
+                if (entry.row() == col)
+                    entries.emplace_back(entry.row(), col, prescribed(entry.row()));
+                continue;
+            }
+            if (col < count || ni_[col % count] <= 0.0) {
+                entries.emplace_back(entry.row(), col, entry.value());
+                continue;
+            }
+            entries.emplace_back(entry.row(), col % count, entry.value());
+            const Real sign = col < 2 * count ? -1.0 : 1.0;
+            entries.emplace_back(entry.row(), col, (entry.value() / populations(col)) * (sign * vtScaled));
+        }
+    }
+    SparseMatrixd jacobian(qfJacobian.rows(), qfJacobian.cols());
+    jacobian.setFromTriplets(entries.begin(), entries.end());
+    return jacobian;
 }
 
 SparseMatrixd CoupledDDAssembler::populationBootstrapJacobian(const VectorXd& y,const CoupledDDBoundaryConditions& b) const {
@@ -1912,7 +1986,7 @@ CoupledDDAssembler::poissonTermDiagnosticsImpl(
 }
 
 VectorXd CoupledDDAssembler::residualImpl(
-    const VectorXd& x,
+    const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs,
     const CoupledDDFeedbackStateSubstitution* substitution,
     const experimental::NonlocalPairSources* nonlocal) const
@@ -1922,12 +1996,14 @@ VectorXd CoupledDDAssembler::residualImpl(
 
     if(auto runtime=bvMethodsRuntime()) {
         if(substitution || nonlocal)throw std::invalid_argument("BVMethods feedback/nonlocal substitution unqualified");
-        return runtime->residual(x,bcs);
+        return runtime->residual(state,bcs);
     }
     if(auto split=splitRuntime()) {
         if(substitution || nonlocal)throw std::invalid_argument("Split DD feedback/nonlocal substitution is unqualified");
-        return split->residual(x,bcs);
+        return split->residual(state,bcs);
     }
+    const VectorXd qf = usesLegacyPopulationState() ? legacyPopulationQfCoordinates(state) : VectorXd{};
+    const VectorXd& x = usesLegacyPopulationState() ? qf : state;
     ScopedPerformanceTimer timer("dd.residual");
     incrementPerformanceCounter("dd.residual_calls");
     const Index Nidx = mesh_.numNodes();
@@ -1956,8 +2032,8 @@ VectorXd CoupledDDAssembler::residualImpl(
     }
 
     // n and p are needed for Poisson source and configured recombination.
-    VectorXd n = electronDensity(x);
-    VectorXd p = holeDensity(x);
+    VectorXd n = electronDensity(state);
+    VectorXd p = holeDensity(state);
     refreshIalMobility(x);
     const auto validateSubstitutionVector = [N](
         const VectorXd& values,
@@ -2604,6 +2680,21 @@ VectorXd CoupledDDAssembler::residualImpl(
             - (value - holeQuasiFermiReferenceAt(node) / potentialScale); experimental::ResidualAuditScope::operation(phipOffset() + static_cast<int>(node), '=', [&]() -> Real { return x(phipOffset() + static_cast<int>(node))
             - (value - holeQuasiFermiReferenceAt(node) / potentialScale); }); }
 
+    if (usesLegacyPopulationState()) {
+        // Fix the ohmic densities at the same prescribed potential and QFs.
+        // Keep the original voltage-scaled row units without subtracting
+        // nearly equal reconstructed quasi-Fermi values at the contacts.
+        const Real vtScaled = Vt_ / potentialScale;
+        for (const auto& [node, value] : bcs.phin) {
+            const Real target = legacyPopulationContactTarget(node, value, bcs, true);
+            r(phinOffset() + node) = -vtScaled * ((n(node) - target) / target);
+        }
+        for (const auto& [node, value] : bcs.phip) {
+            const Real target = legacyPopulationContactTarget(node, value, bcs, false);
+            r(phipOffset() + node) = vtScaled * ((p(node) - target) / target);
+        }
+    }
+
     experimental::ResidualAuditScope::end(r);
     return r;
 }
@@ -2638,7 +2729,7 @@ CoupledDDAssembler::feedbackSubstitutionCarrierContinuityTermDiagnostics(
 
 std::vector<CoupledDDCarrierTermDiagnostic>
 CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
-    const VectorXd& x,
+    const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs,
     const CoupledDDFeedbackStateSubstitution* substitution,
     bool includeImpactIonization) const
@@ -2648,12 +2739,14 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
     if(auto runtime=bvMethodsRuntime()) {
         if(substitution)throw std::invalid_argument("BVMethods feedback substitution unqualified");
-        return runtime->terms(x,bcs,includeImpactIonization);
+        return runtime->terms(state,bcs,includeImpactIonization);
     }
     if(auto split=splitRuntime()) {
         if(substitution)throw std::invalid_argument("Split DD feedback diagnostics are unqualified");
-        return split->terms(x,bcs);
+        return split->terms(state,bcs);
     }
+    const VectorXd qf = usesLegacyPopulationState() ? legacyPopulationQfCoordinates(state) : VectorXd{};
+    const VectorXd& x = usesLegacyPopulationState() ? qf : state;
     ScopedPerformanceTimer timer("dd.continuity_diagnostics");
     incrementPerformanceCounter("dd.continuity_diagnostics_calls");
     const Index Nidx = mesh_.numNodes();
@@ -2666,8 +2759,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     for (Index i = 0; i < Nidx; ++i)
         terms[i].nodeId = i;
 
-    VectorXd n = electronDensity(x);
-    VectorXd p = holeDensity(x);
+    VectorXd n = electronDensity(state);
+    VectorXd p = holeDensity(state);
     refreshIalMobility(x);
     const auto validateSubstitutionVector = [N](
         const VectorXd& values,
@@ -3102,12 +3195,12 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
 std::vector<CoupledDDEdgeFluxDiagnostic>
 CoupledDDAssembler::sgEdgeFluxDiagnostics(
-    const VectorXd& x,
+    const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs) const
 {
     if(bvMethodsRuntime())throw std::invalid_argument("BVMethods element transport requires carrier-term diagnostics; legacy SG-edge diagnostics are unqualified");
     if(auto runtime=splitRuntime()) {
-        auto edges=runtime->edges(x);
+        auto edges=runtime->edges(state);
         for(auto& d:edges) {
             const auto& a=mesh_.getNode(d.node0);const auto& b=mesh_.getNode(d.node1);
             d.x0=a.x;d.y0=a.y;d.x1=b.x;d.y1=b.y;
@@ -3115,6 +3208,8 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         }return edges;
     }
     (void)bcs;
+    const VectorXd qf = usesLegacyPopulationState() ? legacyPopulationQfCoordinates(state) : VectorXd{};
+    const VectorXd& x = usesLegacyPopulationState() ? qf : state;
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
     if (x.size() != 3 * N)
@@ -3132,8 +3227,8 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             mobilityConfig_, mesh_, edgeCells_, psi,
             mobilityConfig_.surface.coordinateFieldFactor, &cellMaterials_);
     }
-    const VectorXd n = electronDensity(x);
-    const VectorXd p = holeDensity(x);
+    const VectorXd n = electronDensity(state);
+    const VectorXd p = holeDensity(state);
     refreshIalMobility(x);
 
     const bool qfMobility = qfMobilityEnabled_;
@@ -4333,10 +4428,12 @@ CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl(
 }
 
 SparseMatrixd CoupledDDAssembler::assembleJacobian(
-    const VectorXd& x,
+    const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs) const
 {
-    if(auto runtime=bvMethodsRuntime())return runtime->jacobian(x,bcs);
+    if(auto runtime=bvMethodsRuntime())return runtime->jacobian(state,bcs);
+    const VectorXd qf = usesLegacyPopulationState() ? legacyPopulationQfCoordinates(state) : VectorXd{};
+    const VectorXd& x = usesLegacyPopulationState() ? qf : state;
     ScopedPerformanceTimer timer("dd.jacobian");
     incrementPerformanceCounter("dd.jacobian_calls");
     const Index Nidx = mesh_.numNodes();
@@ -4344,8 +4441,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::assembleJacobian: vector size mismatch.");
 
-    const VectorXd n = electronDensity(x);
-    const VectorXd p = holeDensity(x);
+    const VectorXd n = electronDensity(state);
+    const VectorXd p = holeDensity(state);
     experimental::AssemblyPopulationCaptureScope::record(x, n, p);
     refreshIalMobility(x);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
@@ -7377,6 +7474,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     experimental::AssemblyAuditScope::end(J);
     incrementPerformanceCounter("jacobian.endpoint_cache_hits", endpointCacheHits);
     incrementPerformanceCounter("jacobian.endpoint_cache_misses", endpointCacheMisses);
+    if (usesLegacyPopulationState())
+        return legacyPopulationJacobian(J, state, bcs);
     return J;
 }
 

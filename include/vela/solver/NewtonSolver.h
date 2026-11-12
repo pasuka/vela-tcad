@@ -249,6 +249,7 @@ struct NewtonConfig {
     std::string populationDerivativeRecovery;
     std::string primaryVariableCoordinates;
     std::string populationStoppingRule;
+    DensityUpdateConvergenceConfig populationUpdateConvergence;
     std::string populationSgCurrent = "quasi_fermi";
     std::string populationSgBootstrapLinearization = "unchanged";
     PopulationUpdateConfig populationUpdate;
@@ -894,7 +895,8 @@ public:
     makeArclengthConvergenceEvaluator(const std::string& activeContact) const;
     DensityUpdateErrorEvaluator makeArclengthUpdateErrorEvaluator(
         const std::string& activeContact,
-        const DensityUpdateConvergenceConfig& config) const;
+        const DensityUpdateConvergenceConfig& config,
+        bool includeContactVoltage = true) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the

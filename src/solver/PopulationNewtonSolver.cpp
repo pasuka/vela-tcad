@@ -2,6 +2,7 @@
 #include "vela/simulation/PopulationCoordinateNewton.h"
 #include "vela/numerics/ResidualNorm.h"
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace vela {
@@ -38,6 +39,20 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
         };
     }
     const double first=system.equationNorm(initialF);
+    const auto acceptsLegacyFloor = [&](const ArclengthState& state, Real norm) {
+        if (cfg_.coupledOperator != "legacy" || cfg_.populationStoppingRule != "legacy" ||
+            cfg_.blockAbsoluteConvergence.mode == "enforce" ||
+            !std::isfinite(norm) || norm > cfg_.stallResidualFloor ||
+            std::abs(state.lambda - bias->second) > 1e-12)
+            return false;
+        if (system.convergenceSatisfied && !system.convergenceSatisfied(state.x, state.lambda))
+            return false;
+        const Real limit = cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V;
+        if (limit <= 0.0)
+            return true;
+        const Real drop = maxContactMajorityQuasiFermiDrop(unpackArclengthState(state.x));
+        return std::isfinite(drop) && drop <= limit;
+    };
     c.equationTolerance=cfg_.blockAbsoluteConvergence.mode=="enforce"?1.:
         std::max(cfg_.abstol,cfg_.reltol*first);
     c.loadLineTolerance_V=1e-12;
@@ -45,6 +60,7 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     c.lineSearchMode=cfg_.lineSearch?"merit":"full_step";
     c.linearSolver="direct_bordered";
     c.directRefinementSteps=cfg_.linearRefinementIterations;
+    c.updateConvergence = cfg_.populationUpdateConvergence;
     c.updateConvergence.mode="report";
     c.minimumOriginalCorrections=cfg_.primaryVariableCoordinates=="unit"?1:0;
     // The scalar fixes the selected contact voltage exactly. The zero
@@ -57,11 +73,29 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
     zero.linearizeInColumns=[](const VectorXd& x,Real,const VectorXd&){
         ArclengthScalarLinearization out;out.stateDerivative=VectorXd::Zero(x.size());return out;
     };
-    const auto solved=PopulationCoordinateNewton(system,zero.value,c,zero,
-        makeArclengthUpdateErrorEvaluator(contact,c.updateConvergence),
-        cfg_.primaryVariableCoordinates=="unit"?primaryVariableScales():PrimaryVariableScales{},
-        cfg_.primaryVariableCoordinates=="unit",cfg_.populationStoppingRule=="native_approx",
-        approximateNativeRhsScales()).solve({y,bias->second},bias->second,1.);
+    CoupledLoadLineResult solved;
+    const ArclengthState seed{y, bias->second};
+    if (acceptsLegacyFloor(seed, first)) {
+        solved.state = seed;
+        solved.equationResidualNorm = first;
+        solved.converged = true;
+        solved.convergenceReason = "initial_stall_residual_floor";
+    } else {
+        solved = PopulationCoordinateNewton(system,zero.value,c,zero,
+            makeArclengthUpdateErrorEvaluator(contact,c.updateConvergence,
+                cfg_.coupledOperator != "legacy" || cfg_.populationStoppingRule == "legacy"),
+            cfg_.primaryVariableCoordinates=="unit"?primaryVariableScales():PrimaryVariableScales{},
+            cfg_.primaryVariableCoordinates=="unit",cfg_.populationStoppingRule=="native_approx",
+            approximateNativeRhsScales()).solve(seed,bias->second,1.);
+        if (!solved.converged &&
+            (solved.failureReason.starts_with("coupled line search rejected update") ||
+             solved.failureReason == "coupled Newton iteration budget exhausted") &&
+            acceptsLegacyFloor(solved.state, solved.equationResidualNorm)) {
+            solved.converged = true;
+            solved.convergenceReason = "stall_residual_floor";
+            solved.failureReason.clear();
+        }
+    }
     NewtonResult out;
     out.solution=unpackArclengthState(solved.state.x);
     out.converged=solved.converged;out.iters=solved.iterations;

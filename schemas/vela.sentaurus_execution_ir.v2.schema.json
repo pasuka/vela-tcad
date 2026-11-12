@@ -305,6 +305,7 @@
         "not_damped": {"type": "integer", "minimum": 0},
         "digits": {"type": "number", "default": 5},
         "rel_err_control": {"type": "boolean", "default": true},
+        "err_ref_poisson_V": {"type": "number", "exclusiveMinimum": 0},
         "err_ref_electron_cm3": {"type": ["number", "null"]},
         "err_ref_hole_cm3": {"type": ["number", "null"]},
         "extrapolate": {"type": "boolean", "default": false},

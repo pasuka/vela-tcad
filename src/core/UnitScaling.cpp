@@ -209,7 +209,9 @@ constexpr KeyRename kSuffixRenames[] = {
 
 // `solver.band_to_band` is Class C: it stays SI and keeps its SI key names.
 // `solver.normalization` is spelled in v2 units already.
-constexpr std::string_view kUntouchedSubtrees[] = {"band_to_band", "normalization"};
+// Population convergence references always use physical volts and cm^-3.
+constexpr std::string_view kUntouchedSubtrees[] = {
+    "band_to_band", "normalization", "population_update_convergence"};
 
 bool endsWith(const std::string& text, std::string_view suffix)
 {

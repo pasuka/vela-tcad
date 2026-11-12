@@ -1651,6 +1651,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.shrinkFactor = j.value("shrink_factor", sweep.shrinkFactor);
     sweep.growthFactor = j.value("growth_factor", sweep.growthFactor);
     sweep.stepGrowthMode = j.value("step_growth_mode", sweep.stepGrowthMode);
+    sweep.stopBelowMinimumStep = j.value("stop_below_minimum_step", false);
+    sweep.preserveStepAfterOutputClip = j.value("preserve_step_after_output_clip", false);
     if (sweep.stepGrowthMode != "fixed" && sweep.stepGrowthMode != "newton_iterations") {
         throw std::invalid_argument(
             "DCSweep: sweep.step_growth_mode must be 'fixed' or 'newton_iterations'.");
@@ -3522,7 +3524,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     << "step_control: mode=newton_iterations bias_V=" << event.voltage
                     << " newton_iterations=" << event.newtonIterations
                     << " growth_factor=" << event.growthFactor
-                    << " next_step_magnitude_V=" << event.nextStepMagnitude;
+                    << " next_step_magnitude_V=" << event.nextStepMagnitude
+                    << " proposed_step_magnitude_V=" << event.proposedStepMagnitude
+                    << " target_clipped=" << event.targetClipped;
             runtimeLogInfo(message.str());
         }
     };
@@ -9669,6 +9673,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     stepControl.shrinkFactor = sweep.shrinkFactor;
     stepControl.maxRetries = sweep.maxRetries;
     stepControl.stopOnFailure = sweep.stopOnFailure;
+    stepControl.stopBelowMinimum = sweep.stopBelowMinimumStep;
+    stepControl.preserveStepAfterOutputClip = sweep.preserveStepAfterOutputClip;
     stepControl.mandatoryPoints = sweep.vtkBiasPoints;
     stepControl.stopRequested = [&]() {
         return !points.empty() && sweepStopRequestedByCriterion(points.back());
@@ -9859,7 +9865,7 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
         return limited;
     };
 
-    auto advanceToward = [&](Real target) -> bool {
+    auto advanceToward = [&](Real target, bool outputPoint) -> bool {
         int retryCount = 0;
         Real trialStep = std::min(adaptiveStep, cfg.maxStep);
         Real lastAttempted = 0.0;
@@ -9909,11 +9915,14 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                     // Keep the legacy unclipped-base behavior only in fixed mode.
                     growthBase = std::abs(attemptedStep);
                 }
-                const Real nextStep = cfg.growthMode == "newton_iterations"
+                const bool preserveProposal = cfg.preserveStepAfterOutputClip && outputPoint &&
+                    retryCount == 0 && remaining < trialStep - tolerance && !cfg.stepLimit;
+                const Real nextStep = preserveProposal ? trialStep : cfg.growthMode == "newton_iterations"
                     ? std::clamp(growthBase * growth, cfg.minStep, cfg.maxStep)
                     : std::min(cfg.maxStep, growthBase * growth);
                 DCSweepStepControlEvent event{candidate,true,attemptedStep,attemptedStep,retryCount,{},
-                    outcome.newtonIterations,growth,nextStep,trialStep,remaining<trialStep,outcome.recovered};
+                    outcome.newtonIterations,preserveProposal ? 1.0 : growth,
+                    nextStep,trialStep,remaining<trialStep,outcome.recovered};
                 if(cfg.attemptObserved)cfg.attemptObserved(event);
                 record(event);
                 previousVoltage = candidate;
@@ -9958,10 +9967,7 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
     };
 
     bool blockedByFailedStep = false;
-    // Mandatory landing points are merged into the nominal target sequence
-    // in sweep direction.  A mandatory point only clips the step that would
-    // cross it; the adaptive step size itself is untouched, so the other
-    // targets are reached exactly as without it.
+    // Merge requested output voltages into the nominal target sequence.
     std::vector<Real> pendingMandatory;
     for (const Real point : cfg.mandatoryPoints) {
         if (!std::isfinite(point))
@@ -9972,9 +9978,9 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
     std::sort(pendingMandatory.begin(), pendingMandatory.end(),
               [&](Real a, Real b) { return direction * a < direction * b; });
     std::size_t nextMandatory = 0;
-    auto reachNominal = [&](Real target) -> bool {
+    auto reachOutput = [&](Real target) -> bool {
         while (direction * (previousVoltage - target) < -tolerance) {
-            if (!advanceToward(target))
+            if (!advanceToward(target, true))
                 return false;
             if (cfg.stopRequested && cfg.stopRequested())
                 return false;
@@ -9987,7 +9993,7 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             const Real point = pendingMandatory[nextMandatory++];
             if (direction * (point - previousVoltage) <= tolerance)
                 continue;
-            if (!reachNominal(point))
+            if (!reachOutput(point))
                 return false;
         }
         return true;
@@ -10000,8 +10006,10 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             blockedByFailedStep = true;
             break;
         }
+        const bool isOutput = nextMandatory < pendingMandatory.size() &&
+            std::abs(pendingMandatory[nextMandatory] - nominalTarget) <= tolerance;
         while (direction * (previousVoltage - nominalTarget) < -tolerance) {
-            if (!advanceToward(nominalTarget)) {
+            if (!advanceToward(nominalTarget, isOutput)) {
                 if (cfg.stopOnFailure)
                     return;
                 blockedByFailedStep = true;
@@ -10019,7 +10027,7 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
         blockedByFailedStep = true;
     }
     while (!blockedByFailedStep && direction * (previousVoltage - cfg.stop) < -tolerance) {
-        if (!advanceToward(cfg.stop)) {
+        if (!advanceToward(cfg.stop, false)) {
             if (cfg.stopOnFailure)
                 return;
             break;

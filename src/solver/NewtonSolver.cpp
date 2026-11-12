@@ -1599,10 +1599,11 @@ namespace {
 void resolvePopulationDefaults(NewtonConfig& c) {
     if(c.stateVariables.empty())c.stateVariables=c.coupledOperator=="bvmethods_tri3_qf"?"potential_density":"potential_quasi_fermi";
     const bool population=c.stateVariables=="potential_density";
+    const bool bvMethodsPopulation=population&&c.coupledOperator=="bvmethods_tri3_qf";
     if(c.populationMinimumDensity_cm3==-1.)c.populationMinimumDensity_cm3=population?1e-100:0.;
-    if(c.populationDerivativeRecovery.empty())c.populationDerivativeRecovery=population?"after_protection":"full";
-    if(c.primaryVariableCoordinates.empty())c.primaryVariableCoordinates=population?"unit":"physical";
-    if(c.populationStoppingRule.empty())c.populationStoppingRule=population?"native_approx":"legacy";
+    if(c.populationDerivativeRecovery.empty())c.populationDerivativeRecovery=bvMethodsPopulation?"after_protection":"full";
+    if(c.primaryVariableCoordinates.empty())c.primaryVariableCoordinates=bvMethodsPopulation?"unit":"physical";
+    if(c.populationStoppingRule.empty())c.populationStoppingRule=bvMethodsPopulation?"native_approx":"legacy";
     if(c.primaryVariableCoordinates!="physical"&&c.primaryVariableCoordinates!="unit")
         throw std::invalid_argument("primary_variable_coordinates must be physical or unit");
     if(c.populationStoppingRule!="legacy"&&c.populationStoppingRule!="native_approx")
@@ -1622,8 +1623,14 @@ void validatePopulationNumerics(const NewtonConfig& c)
     const auto reject=[](bool active,const char* option) {
         if(active)throw std::invalid_argument(std::string("potential_density does not support ")+option);
     };
-    reject(c.coupledOperator!="bvmethods_tri3_qf" || c.splitDDState || c.electronQuantumPotential.enabled,
-        "legacy, split or quantum state formulations");
+    reject(c.splitDDState || c.electronQuantumPotential.enabled,
+        "split or quantum state formulations");
+    if(c.coupledOperator=="legacy") {
+        reject(c.carrierStatistics.model!="boltzmann" || c.mobility.model=="ialmob" ||
+            c.poissonResidualPrecision!="double", "legacy non-Boltzmann, IALMob or extended Poisson assembly");
+        reject(c.populationDerivativeRecovery!="full" || c.populationSgCurrent!="quasi_fermi",
+            "BVMethods-specific numerical controls with the legacy operator");
+    }
     reject(c.quasiFermiUpdateLimit_V!=0. || c.quasiFermiUpdateLimitMinority_V!=0.,"QF voltage update caps");
     reject(c.maxUpdate!=0.,"max_update on mixed potential/concentration units");
     reject(c.quasiFermiReference!="none" || c.quasiFermiRecenterOnInitialState || c.quasiFermiRecenterOnStall,
@@ -1882,6 +1889,26 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.primaryVariableCoordinates=json.value("primary_variable_coordinates",cfg.primaryVariableCoordinates);
     cfg.populationStoppingRule=json.value("population_stopping_rule",cfg.populationStoppingRule);
     resolvePopulationDefaults(cfg);
+    if (json.contains("population_update_convergence")) {
+        const auto& metric = json.at("population_update_convergence");
+        if (cfg.stateVariables != "potential_density" || cfg.populationStoppingRule != "native_approx")
+            throw std::invalid_argument("population_update_convergence requires potential_density and native_approx");
+        if (!metric.is_object())
+            throw std::invalid_argument("population_update_convergence must be an object");
+        for (auto field = metric.begin(); field != metric.end(); ++field) {
+            if (field.key() != "digits" && field.key() != "potential_reference_V" &&
+                field.key() != "electron_reference_cm3" && field.key() != "hole_reference_cm3")
+                throw std::invalid_argument("unknown population_update_convergence field: " + field.key());
+        }
+        if (metric.contains("digits") && !metric.at("digits").is_number_integer())
+            throw std::invalid_argument("population_update_convergence digits must be an integer");
+        auto& update = cfg.populationUpdateConvergence;
+        update.digits = metric.value("digits", update.digits);
+        update.potentialReference_V = metric.value("potential_reference_V", update.potentialReference_V);
+        update.electronReference_cm3 = metric.value("electron_reference_cm3", update.electronReference_cm3);
+        update.holeReference_cm3 = metric.value("hole_reference_cm3", update.holeReference_cm3);
+        validateDensityUpdateConvergence(update);
+    }
     cfg.populationSgCurrent=json.value("population_sg_current",cfg.populationSgCurrent);
     cfg.populationSgBootstrapLinearization=json.value("population_sg_bootstrap_linearization",cfg.populationSgBootstrapLinearization);
     if((cfg.populationSgCurrent!="quasi_fermi" && cfg.populationSgCurrent!="band_population") ||
@@ -1922,8 +1949,6 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument("automatic population derivative recovery requires potential_density");
     if(cfg.stateVariables!="potential_quasi_fermi" && cfg.stateVariables!="potential_density")
         throw std::invalid_argument("unknown state_variables");
-    if(cfg.stateVariables=="potential_density" && cfg.coupledOperator!="bvmethods_tri3_qf")
-        throw std::invalid_argument("potential_density requires explicit BVMethods physics");
     if(cfg.stateVariables=="potential_density") {
         const auto method=json.value("method",std::string{"newton"});
         if(method!="newton"&&method!="poisson_only")
@@ -3932,7 +3957,8 @@ NewtonSolver::makeArclengthConvergenceEvaluator(const std::string& activeContact
 
 DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
     const std::string& activeContact,
-    const DensityUpdateConvergenceConfig& config) const
+    const DensityUpdateConvergenceConfig& config,
+    bool includeContactVoltage) const
 {
     validateDensityUpdateConvergence(config);
     if (cfg_.splitDDState || cfg_.electronQuantumPotential.enabled)
@@ -3948,6 +3974,8 @@ DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
     }
     if (!foundContact || aliases == 0)
         throw std::invalid_argument("density update stopping requires a named nonempty contact");
+    if (!includeContactVoltage)
+        aliases = 0;
     const Real potentialScale = assembler->usesScaledState() ? assembler->potentialScale() : 1.;
     const Real densityToCm3 = cfg_.inputScaling.unitSystem().concentrationM3PerInternal()*1e-6;
     return [this, assembler, activeContact, config, aliases, potentialScale, densityToCm3](

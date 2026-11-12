@@ -2,6 +2,7 @@
 
 #include "vela/simulation/DCSweep.h"
 #include "vela/equation/SplitDDRuntime.h"
+#include "vela/solver/PopulationState.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -159,6 +160,39 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
     if(previous->packedLow.size()!=0 || current.packedLow.size()!=0)
         return predictSplitDDState(*previous,current,ratio,
             {predictorUsesField(fields,"psi"),predictorUsesField(fields,"phin"),predictorUsesField(fields,"phip")});
+
+    if (current.stateVariables == "potential_density") {
+        if (previous->stateVariables != current.stateVariables)
+            return current;
+        const int count = static_cast<int>(current.psi.size());
+        const auto pack = [count](const DDSolution& state) {
+            if (state.psi.size() != count || state.n.size() != count || state.p.size() != count)
+                throw std::invalid_argument("DCSweep predictor: population field size mismatch");
+            VectorXd values(3 * count);
+            values << state.psi, state.n, state.p;
+            return values;
+        };
+        try {
+            const VectorXd values = predictPopulation(pack(*previous), pack(current), ratio);
+            if (predictorUsesField(fields, "psi")) {
+                predicted.psi = values.head(count);
+                predicted.populationPsi.resize(0);
+            }
+            if (predictorUsesField(fields, "phin")) {
+                for (int i = 0; i < count; ++i)
+                    if (previous->n(i) != current.n(i))
+                        predicted.n(i) = values(count + i);
+            }
+            if (predictorUsesField(fields, "phip")) {
+                for (int i = 0; i < count; ++i)
+                    if (previous->p(i) != current.p(i))
+                        predicted.p(i) = values(2 * count + i);
+            }
+            return predicted;
+        } catch (const std::domain_error&) {
+            return current;
+        }
+    }
 
     if (predictorUsesField(fields, "psi")) {
         requireMatchingFieldSize(previous->psi, current.psi, "psi");

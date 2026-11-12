@@ -72,6 +72,43 @@ def emit(ir: dict, **kwargs):
 
 
 class DeckEmitterTests(unittest.TestCase):
+    def test_pn2d_population_uses_original_physics_and_quasistationary_controls(self):
+        root = REPO / "reference_tcad/pn2d_sentaurus2018"
+        paths = sorted(root.rglob("*_sdevice.cmd"))
+        self.assertEqual(len(paths), 19)
+        for path in paths:
+            with self.subTest(cmd=str(path.relative_to(root))):
+                text = path.read_text(encoding="utf-8")
+                if path.parent.name == "source":
+                    text = text.replace("File {", 'File { Parameter="models.par"', 1)
+                ir = parse_cmd_text(text, path_name=path.name)
+                sidecar_path = path.with_suffix(".vela.json")
+                sidecar = json.loads(sidecar_path.read_text()) if sidecar_path.exists() else None
+                baseline = emit(ir, sidecar=sidecar)
+                candidate = emit(ir, sidecar=sidecar, options=EmitOptions(pn2d_population=True))
+                for old, new in zip(baseline.decks, candidate.decks, strict=True):
+                    self.assertEqual(new["solver"]["state_variables"], "potential_density")
+                    self.assertEqual(new["solver"]["method"], "newton")
+                    self.assertEqual(new["solver"]["primary_variable_coordinates"], "unit")
+                    self.assertEqual(new["solver"]["population_stopping_rule"], "native_approx")
+                    self.assertEqual(new["solver"]["population_update_convergence"]["digits"], ir["math"]["digits"])
+                    self.assertFalse(new["solver"]["line_search"])
+                    for key in ("carrier_row_convergence", "global_continuity_closure"):
+                        self.assertEqual(new["solver"][key]["mode"], "report")
+                    for key in ("mobility", "recombination", "bandgap_narrowing", "impact_ionization"):
+                        self.assertEqual(old["solver"].get(key), new["solver"].get(key))
+                    self.assertEqual(old["mesh_geometry"], new["mesh_geometry"])
+                    prior, sweep = old["sweep"], new["sweep"]
+                    for key in ("start", "stop", "initial_step", "min_step", "max_step", "growth_factor",
+                                "shrink_factor", "vtk_bias_points"):
+                        self.assertEqual(prior.get(key), sweep.get(key))
+                    if sweep["start"] != sweep["stop"]:
+                        self.assertEqual(sweep["step"], sweep["stop"] - sweep["start"])
+                        self.assertEqual(sweep["step_growth_mode"], "newton_iterations")
+                        self.assertTrue(sweep["stop_below_minimum_step"])
+                        self.assertEqual(sweep.get("preserve_step_after_output_clip", False),
+                                         sweep["stop"] > sweep["start"])
+
     def test_old_slotboom_fermi_correction_and_explicit_nofermi(self):
         for fermi in (False, True):
             for nofermi in (False, True):
@@ -496,6 +533,61 @@ class RunnerSmokeTests(unittest.TestCase):
         done = subprocess.run([str(Path(runner).resolve()), "--physical-constants"],
                               capture_output=True, text=True, check=True, timeout=10)
         return material_result(ir, constants_profile=json.loads(done.stdout)["profile"])
+
+    def test_lightly_doped_pn_junction_preserves_terminal_current_in_population_mode(self):
+        runner = os.environ.get("VELA_EXAMPLE_RUNNER")
+        if not runner or not Path(runner).is_file():
+            self.skipTest("VELA_EXAMPLE_RUNNER is not available")
+        runner = Path(runner).resolve()
+        fixture = REPO / "tests/fixtures/pn2d_bv_rejected_transition"
+        ir = parse_cmd_text('''File {Grid="pn2d_msh.tdr" Parameter="models.par"}
+            Electrode {{Name="Anode" Voltage=0} {Name="Cathode" Voltage=0}}
+            Physics {Mobility(DopingDependence) Recombination(SRH)}
+            Math {RelErrControl Digits=7 ErrRef(Poisson)=0.03 ErrRef(Electron)=1e10 ErrRef(Hole)=2e10 NotDamped=100}
+            Solve {Coupled(Iterations=100) {Poisson} Coupled(Iterations=100) {Poisson Electron Hole}
+              Quasistationary(InitialStep=0.25 MinStep=1e-4 MaxStep=0.5 Increment=1.5 Decrement=2
+                             Goal {Name="Anode" Voltage=0.08}) {Coupled {Poisson Electron Hole}}}''',
+            path_name="pn2d_short.cmd")
+        materials = self.runner_materials(runner, ir)
+        endpoints = []
+        with tempfile.TemporaryDirectory(dir=REPO / "build") as temp:
+            for population in (False, True):
+                root = Path(temp) / str(population)
+                root.mkdir()
+                (root / "mesh.json").write_bytes((fixture / "mesh.json").read_bytes())
+                # A portable, lightly doped PN control on the existing Tri3
+                # geometry. Full reference IV/BV retain their original doping.
+                with (fixture / "doping.csv").open(newline="") as source, (root / "doping.csv").open("w", newline="") as target:
+                    rows = csv.DictReader(source)
+                    writer = csv.DictWriter(target, fieldnames=rows.fieldnames)
+                    writer.writeheader()
+                    for row in rows:
+                        for key in ("donors_cm3", "acceptors_cm3"):
+                            row[key] = float(row[key]) * 0.01
+                        writer.writerow(row)
+                result = emit(ir, materials_report=materials.report,
+                              options=EmitOptions(pn2d_population=population, plot_final_only=True))
+                if population:
+                    self.assertEqual(result.decks[-1]["solver"]["population_update_convergence"], {
+                        "digits": 7, "potential_reference_V": 0.03,
+                        "electron_reference_cm3": 1e10, "hole_reference_cm3": 2e10,
+                    })
+                write_materials(root, materials)
+                write_stage_plan(root, result)
+                for stage in result.stage_plan["stages"]:
+                    done = subprocess.run([str(runner), "--config", stage["deck"], "--log", "off"],
+                                          cwd=root, capture_output=True, text=True, timeout=120)
+                    self.assertEqual(done.returncode, 0, f"population={population} {done.stdout}{done.stderr}")
+                with (root / stage["csv"]).open(newline="") as stream:
+                    rows = list(csv.DictReader(stream))
+                self.assertAlmostEqual(float(rows[-1]["bias_V"]), 0.08, delta=1e-12)
+                self.assertTrue(all(row["converged"] == "1" for row in rows))
+                if population:
+                    self.assertTrue(all(row["newton_convergence_reason"] == "native_approx_update" for row in rows))
+                current = float(rows[-1]["current_total_A_per_um"])
+                self.assertTrue(math.isfinite(current) and current != 0.0)
+                endpoints.append(current)
+        self.assertAlmostEqual(endpoints[1] / endpoints[0], 1.0, delta=0.01)
 
     def test_biased_p_contact_pins_minority_quasi_fermi_and_density(self):
         runner = os.environ.get("VELA_EXAMPLE_RUNNER")
