@@ -714,6 +714,13 @@ assembly reuses identical long-double Lombardi powers within each element.
 Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
 against uncached evaluation. The cache is scoped to one element evaluation.
 
+BVMethods potential-density mode with quasi-Fermi SG uses scalar Tri3
+transport by default when only the transport value is requested. Set
+`VELA_BVMETHODS_TRI3_VALUE_MODE=dual` before launch to use the Dual path for
+those calls, or set it to `shadow` to return the Dual result and compare
+both value vectors bit for bit with the scalar result. Jacobian requests
+and unsupported state or SG modes use the Dual path.
+
 BVMethods potential-density contact and circuit current evaluations reuse the
 last source-free transport vector when the packed state matches bit for bit
 within the same assembler runtime. Set `VELA_BVMETHODS_TRI3_PORT_CACHE=0`

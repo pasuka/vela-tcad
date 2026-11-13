@@ -22,7 +22,7 @@ TransportValueMode transportValueMode() {
     static const auto mode=[] {
         const char* value=std::getenv("VELA_BVMETHODS_TRI3_VALUE_MODE");
         if(value && std::string_view(value)=="shadow")return TransportValueMode::shadow;
-        if(value && std::string_view(value)=="scalar")return TransportValueMode::scalar;
+        if(!value || !*value || std::string_view(value)=="scalar")return TransportValueMode::scalar;
         return TransportValueMode::dual;
     }();
     return mode;
@@ -181,6 +181,7 @@ struct BvMethodsCoupledRuntime::Impl {
         const auto mode=jac || !element->supportsTransportValues(state)
             ? TransportValueMode::dual : transportValueMode();
         if(mode==TransportValueMode::scalar) {
+            incrementPerformanceCounter("bvmethods.tri3.scalar_value_calls");
             ScopedPerformanceTimer timer(stage);
             return element->transportValues(state,true,true,reusePowers);
         }
@@ -189,6 +190,7 @@ struct BvMethodsCoupledRuntime::Impl {
             return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers);
         }();
         if(mode==TransportValueMode::shadow) {
+            incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
             ScopedPerformanceTimer timer("bvmethods.tri3.scalar_shadow");
             const auto candidate=element->transportValues(state,true,true,reusePowers);
             if(!equalStateBits(reference.source,candidate.source) ||
