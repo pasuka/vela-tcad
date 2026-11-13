@@ -32,6 +32,7 @@ from analyze_pn2d_avalanche_on_bv_parity import CurvePoint, continuous_breakpoin
 
 REPO = Path(__file__).resolve().parents[1]
 CONTRACT = REPO / 'configs/sdevice_acceptance_contract.json'
+COMPENSATED_BV_SIDECAR = REPO / 'configs/pn2d_bv_compensated.vela.json'
 
 
 def read_json(path):
@@ -392,12 +393,27 @@ def bv_spatial_qualification(contract, name, provenance, version, manifest_sha25
     qualification = contract.get('biased_spatial_qualification', {}).get(name)
     if not qualification:
         return None, 'No independent avalanche spatial qualification.'
+    if len(decks) != 2:
+        return None, 'Avalanche spatial qualification requires two stages.'
+    stage_hashes = None
+    if any(deck['solver'].get('compensated_population_state', False) for deck in decks):
+        compensated = qualification.get('compensated_population')
+        if not compensated:
+            return None, 'No independent compensated population spatial qualification.'
+        stage_hashes = compensated['stage_policy_sha256']
+        qualification = {**qualification, **{k: compensated[k] for k in ('id','scope','evidence')},
+                         'input_sha256': {**qualification['input_sha256'],
+                                          'sidecar_sha256': compensated['sidecar_sha256']}}
     if set(qualification.get('input_sha256', {})) != {'cmd_sha256', 'parameter_sha256', 'grid_sha256', 'sidecar_sha256'} or any(provenance.get(key) != value
             for key, value in qualification['input_sha256'].items()):
         return None, 'Avalanche spatial qualification input fingerprints differ.'
     if version != qualification['reference_version'] or manifest_sha256 != qualification['reference_manifest_sha256']:
         return None, 'Avalanche spatial qualification reference identity differs.'
-    if len(decks) != 2 or stage_policy_sha256(decks[1]) != qualification['stage_policy_sha256']:
+    if stage_hashes is None:
+        policy_matches = stage_policy_sha256(decks[1]) == qualification['stage_policy_sha256']
+    else:
+        policy_matches = [stage_policy_sha256(deck) for deck in decks] == stage_hashes
+    if not policy_matches:
         return None, 'Avalanche spatial qualification solver/geometry/contact policy differs.'
     expected = qualification['mesh']
     if (mesh['nodes']['count'] != expected['nodes'] or mesh['elements']['count'] != expected['cells']
@@ -461,7 +477,7 @@ def biased_field_metrics(name, case, base, output, importer, work, mesh, provena
     return result
 
 
-def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200):
+def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200, *, compensated_bv=False):
     case = contract['cases'][name]; base = staging/case['archive']/contract['reference_version']
     manifest_path = base/'artifact_manifest.json'
     if not manifest_path.is_file():
@@ -487,6 +503,12 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     if not qualified(verification):
         return {'status':'unqualified_reference','verification':verification}
     cmd, provenance = prepare_reference(base, case, output/'candidate')
+    launcher_options = ['--allow-lossy','--exit-on-failure','--threads','1']
+    if compensated_bv:
+        sidecar = cmd.with_suffix('.vela.json')
+        shutil.copy2(COMPENSATED_BV_SIDECAR, sidecar)
+        provenance.update(sidecar_sha256=sha(sidecar), sidecar=read_json(sidecar))
+        launcher_options.append('--pn2d-population')
     if candidate_dir:
         cmd = candidate_dir/case['cmd']
         check_candidate_inputs(candidate_dir,case,provenance)
@@ -495,7 +517,7 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     else:
         env = dict(os.environ, VELA_PYTHON=sys.executable)
         with (output/'candidate_console.log').open('w',encoding='utf-8') as log:
-            proc = subprocess.Popen([str(launcher),'device',str(cmd),'--allow-lossy','--exit-on-failure','--threads','1'],
+            proc = subprocess.Popen([str(launcher),'device',str(cmd),*launcher_options],
                 env=env,stdout=log,stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=='nt' else 0)
             try:
@@ -541,6 +563,13 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
         except ValueError as error:
             result['breakdown_knee'] = {'status':'fail', 'error':str(error)}
         if result['breakdown_knee']['status'] != 'pass': result['status'] = 'fail'
+    if compensated_bv:
+        requested = requested_output_biases(cmd, case['contact'])
+        accepted_biases = {round(row['bias_V'], 9) for row in candidate}
+        missing = [bias for bias in requested if round(bias, 9) not in accepted_biases]
+        result['output_bias_coverage'] = {'requested': len(requested), 'missing_V': missing}
+        if missing:
+            result['status'] = 'fail'
     result['cmd_exit_code']=code
     result['candidate_csv_sha256']={s['csv']:sha(work/s['csv']) for s in plan['stages'] if (work/s['csv']).is_file()}
     result['mesh']={'nodes':len(read_json(work/'mesh.json')['nodes']),'cells':len(read_json(work/'mesh.json')['triangles'])}
@@ -622,6 +651,7 @@ def run_gates(staging,output,launcher):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--case',choices=('pn2d_0v','pn2d_iv','pn2d_bv','gates'),required=True)
+    parser.add_argument('--compensated-bv', action='store_true', help='Use the qualified compensated PN2D BV sidecar and population frontend')
     parser.add_argument('--reference-dir',type=Path,default=os.environ.get('VELA_REFERENCE_ARTIFACTS_DIR'))
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--launcher',type=Path,required=True)
@@ -629,6 +659,7 @@ def main(argv=None):
     parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid/sidecar hash checks')
     parser.add_argument('--timeout-seconds',type=float,default=7200.,help='Bound each fresh candidate run; timeout never passes (full BV retains 401 Plot biases)')
     args = parser.parse_args(argv)
+    if args.compensated_bv and args.case != 'pn2d_bv':parser.error('--compensated-bv requires --case pn2d_bv')
     if args.timeout_seconds<=0:parser.error('--timeout-seconds must be positive')
     if args.reference_dir is None:
         print('SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.')
@@ -638,7 +669,8 @@ def main(argv=None):
     try:
         result = run_gates(args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve()) if args.case=='gates' else \
             run_case(args.case,args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve(),args.tdr_importer.resolve(),read_json(CONTRACT),
-                     args.candidate_dir.resolve() if args.candidate_dir else None,args.timeout_seconds)
+                     args.candidate_dir.resolve() if args.candidate_dir else None,args.timeout_seconds,
+                     compensated_bv=args.compensated_bv)
     except (ValueError,OSError,KeyError,StopIteration,ET.ParseError,subprocess.TimeoutExpired,struct.error) as error:
         result = {'status':'fail','error':str(error)}
     result.update(case=args.case,contract_sha256=sha(CONTRACT),units=read_json(CONTRACT)['units'])

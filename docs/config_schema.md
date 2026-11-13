@@ -283,7 +283,9 @@ Newton numerical and geometry controls added for explicit validation profiles:
   element-edge SG/GSS-Laux avalanche. It defaults to `false`. This path
   uses physical residual ceilings of `8e-28 C/m` (Poisson) and
   `5e-22 A/µm` (each continuity equation), with backtracking on the live
-  residual. The correction uses the SG/Poisson Jacobian with mobility
+  residual. A continuity row can also meet its binary64 roundoff bound
+  of 16 machine epsilons times the sum of absolute flux and source terms.
+  The correction uses the SG/Poisson Jacobian with mobility
   and generation/recombination coefficients frozen during linearization.
   HDF5 checkpoints store the three low components as one bundle. It is
   supported for voltage-controlled sweeps. Terminal totals use the compensated
@@ -1118,10 +1120,18 @@ Supported `node_volume_policy` values:
 cotangent contribution, `true` substitutes the existing positive barycentric
 box contribution. `false` removes that local contribution (zero weight); it
 does not retain a signed negative edge coupling. The option is intended for
-explicit mesh/discretization qualification and should not be changed as an
-implicit physics calibration.
+explicit mesh/discretization qualification.
 
-This option changes the mesh node control volumes used by Poisson charge,
+SDevice mesh qualification and the box builder use the same per-triangle
+threshold. A cotangent with magnitude at most `1.7453292519943296e-12`
+(an angle within `1e-10` degrees of a right angle) contributes zero to
+the opposite edge. Other triangles sharing that edge keep their own
+contributions. Mixed-Voronoi shares in a triangle with a rounded
+cotangent are rescaled to sum to its area. A cotangent below the negative
+threshold still triggers `require_non_obtuse` or the configured fallback
+when that guard is disabled.
+
+The node volume policy controls the areas used by Poisson charge,
 carrier continuity volume terms, stored/terminal charge, and SG avalanche
 source density normalization. It does not change donor/acceptor values used for
 Ohmic contact boundary conditions.

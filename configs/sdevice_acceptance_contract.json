@@ -151,6 +151,16 @@
       "reference_version": "T-2022.03-SP2 (0.7745337)",
       "reference_manifest_sha256": "6a1315399c0cc2714d1372184b976a3effba29fab28434dc124f86ce10eaf88c",
       "stage_policy_sha256": "ce3960d33c899cf222f7f59aa2d16c1cbfc53f7c0533042a58ed7d647ecbfad3",
+      "compensated_population": {
+        "id": "pn2d-bv-v2-ten-spatial-anchors-300K-compensated-population",
+        "scope": "PN2D v2 original non-obtuse mesh, 300 K, ten pinned reverse-bias anchors, voltage-controlled compensated potential-density Newton with the complete SG/GSS-Laux profile.",
+        "evidence": "docs/validation/pn2d_bv_validation.md#compensated-population-frontend-qualification",
+        "sidecar_sha256": "fe83bed891009d33891367ce25d87d03699c241f4f511d2d49a2e4b984211fec",
+        "stage_policy_sha256": [
+          "3275f42f86df8c3305b4435b23e3b0600688c703674ef580199a05ecea120b40",
+          "285a40a2ed327f3fa389b2b9c556f314456d6a69af9f329d036f64bdb185f5e4"
+        ]
+      },
       "mesh": {
         "nodes": 1943,
         "cells": 3680,

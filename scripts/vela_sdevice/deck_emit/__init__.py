@@ -800,7 +800,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]
         if geometry.get("node_volume_policy") == "mixed_voronoi":
-            if mesh["angles"]["max_deg"] > 90 + 1e-8 or mesh["angles"]["obtuse_element_count"] or not mesh["qualification"]["non_obtuse"]:
+            if mesh["angles"]["obtuse_element_count"] or not mesh["qualification"]["non_obtuse"]:
                 raise DeckEmitError("E408", policy="mixed_voronoi", n=mesh["angles"]["obtuse_element_count"])
             geometry["require_non_obtuse"] = True
         if sidecar and kind == "load" and deck["solver"]["method"] != "frozen_state":

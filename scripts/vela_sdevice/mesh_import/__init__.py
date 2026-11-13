@@ -97,6 +97,21 @@ def _signed_area(p0, p1, p2) -> float:
     return 0.5 * ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]))
 
 
+# tan(1e-10 degrees), matching the C++ BoxGeometryBuilder.
+_RIGHT_ANGLE_COTANGENT_TOLERANCE = 1.7453292519943296e-12
+
+
+def _has_obtuse_angle(points):
+    for i, (x, y) in enumerate(points):
+        a, b = points[(i + 1) % 3], points[(i + 2) % 3]
+        ux, uy = a[0] - x, a[1] - y
+        vx, vy = b[0] - x, b[1] - y
+        cross = abs(ux * vy - uy * vx)
+        if cross >= 1.0e-30 and (ux * vx + uy * vy) / cross < -_RIGHT_ANGLE_COTANGENT_TOLERANCE:
+            return True
+    return False
+
+
 def _angles_deg(p0, p1, p2) -> List[float]:
     def length(a, b):
         return math.hypot(a[0] - b[0], a[1] - b[1])
@@ -390,10 +405,11 @@ def _write_outputs(model: dict, grid_path: Path, out_dir: Path) -> dict:
     ys = [xy[1] for xy in coords.values()]
     max_deg, min_deg, obtuse = 0.0, 180.0, 0
     for tri in triangles:
-        angles = _angles_deg(*(coords[n] for n in tri["node_ids"]))
+        points = [coords[n] for n in tri["node_ids"]]
+        angles = _angles_deg(*points)
         max_deg = max(max_deg, max(angles))
         min_deg = min(min_deg, min(angles))
-        if max(angles) > 90.0 + 1e-9:
+        if _has_obtuse_angle(points):
             obtuse += 1
     extent = (max(xs) - min(xs), max(ys) - min(ys))
     plausible = all(PLAUSIBLE_EXTENT_UM[0] <= e <= PLAUSIBLE_EXTENT_UM[1] for e in extent)

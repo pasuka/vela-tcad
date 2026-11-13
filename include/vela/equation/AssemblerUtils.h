@@ -306,7 +306,7 @@ inline Real cellLocalEdgeCoupling(const DeviceMesh& mesh,
     const Real cross = std::abs(uX * vY - uY * vX);
     if (cross <= 1.0e-300)
         return 0.0;
-    const Real cotangent = (uX * vX + uY * vY) / cross;
+    const Real cotangent = clampNearRightCotangent((uX * vX + uY * vY) / cross);
     if (cotangent < 0.0)
         return triangleArea(mesh, cell) / (3.0 * edge.length);
     return 0.5 * cotangent * edge.length;
@@ -2180,9 +2180,11 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         const Point2 sideCenter = 0.5 * (p1 + p2);
         lengths[static_cast<std::size_t>(local)] = (p1 - p2).norm();
         const Real rawDistance = (sideCenter - circumcenter).norm();
+        const Real cotangent = clampNearRightCotangent(
+            (p1 - p3).dot(p2 - p3) / std::abs(det));
         const Real distance =
-            rawDistance <= distanceTolerance ? 0.0 : rawDistance;
-        if ((p1 - p3).dot(p2 - p3) < 0.0) {
+            cotangent == 0.0 || rawDistance <= distanceTolerance ? 0.0 : rawDistance;
+        if (cotangent < 0.0) {
             dt[static_cast<std::size_t>(local)] = -distance;
             obtuseEdge = local;
         } else {

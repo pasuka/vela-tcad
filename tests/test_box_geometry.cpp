@@ -7,6 +7,7 @@
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/simulation/ConfigParsing.h"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -59,6 +60,20 @@ DeviceMesh makeUnitSquareTwoTriangles()
     Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0, 1};
     mesh.addRegion(r);
 
+    mesh.buildEdges();
+    return mesh;
+}
+
+DeviceMesh makeNearRightPatch(Real shift)
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{.id = 0, .x = 0.0, .y = 0.0});
+    mesh.addNode(Node{.id = 1, .x = 1.0, .y = 0.0});
+    mesh.addNode(Node{.id = 2, .x = shift, .y = 1.0});
+    mesh.addNode(Node{.id = 3, .x = 1.0, .y = 1.5});
+    mesh.addCell(Cell{.id = 0, .type = CellType::Tri3, .region_id = 0, .node_ids = {0, 1, 2}});
+    mesh.addCell(Cell{.id = 1, .type = CellType::Tri3, .region_id = 0, .node_ids = {2, 1, 3}});
+    mesh.addRegion(Region{.id = 0, .name = "body", .material = "Si", .cell_ids = {0, 1}});
     mesh.buildEdges();
     return mesh;
 }
@@ -399,6 +414,54 @@ TEST_CASE("BoxGeometryBuilder: non-obtuse qualification accepts eligible meshes 
     REQUIRE_THROWS_WITH(
         obtuse.buildBoxGeometry(options),
         Catch::Matchers::ContainsSubstring("mesh_geometry.require_non_obtuse rejected cell 0"));
+}
+
+TEST_CASE("BoxGeometryBuilder: near-right cotangents are zero per cell",
+          "[box_geometry][mixed_voronoi][qualification]")
+{
+    const Real tolerance = kRightAngleCotangentTolerance;
+    BoxGeometryBuilder::Options options;
+    options.nodeVolumePolicy = BoxGeometryBuilder::NodeVolumePolicy::MixedVoronoi;
+    options.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
+    options.requireNonObtuse = true;
+
+    for (const Real shift : {0.0, -tolerance, -0.5 * tolerance, 0.5 * tolerance, tolerance}) {
+        CAPTURE(shift);
+        auto mesh = makeNearRightPatch(shift);
+        mesh.buildBoxGeometry(options);
+        const auto& report = mesh.lastGeometryBuildReport();
+        CHECK(report.negativeCotangentCount == 0);
+        CHECK(report.fallbackCount == 0);
+        CHECK(report.clampedCotangentCount == (shift == 0.0 ? 0 : 1));
+        CHECK(report.nodeVolumeSum == Catch::Approx(0.5 + 0.75 * (1.0 - shift)).margin(1e-15).epsilon(0));
+        CHECK(mesh.poissonCellEdgeCoefficients(0)[1] == 0.0);
+
+        const auto& edges = mesh.edges();
+        const auto edge = std::find_if(edges.begin(), edges.end(), [](const Edge& e) {
+            return (e.n0 == 1 && e.n1 == 2) || (e.n0 == 2 && e.n1 == 1);
+        });
+        REQUIRE(edge != edges.end());
+        CHECK(detail::cellLocalEdgeCoupling(mesh, 0, edge->id) == 0.0);
+        const Real otherCouple = detail::cellLocalEdgeCoupling(mesh, 1, edge->id);
+        REQUIRE(otherCouple > 0.0);
+        CHECK(edge->couple == Catch::Approx(otherCouple));
+        CHECK(detail::geniusTri3TruncatedPartialVolumeWithEdge(mesh, mesh.getCell(0), 1, 2) == 0.0);
+    }
+
+    auto acute = makeNearRightPatch(2.0 * tolerance);
+    acute.buildBoxGeometry(options);
+    CHECK(acute.poissonCellEdgeCoefficients(0)[1] == Catch::Approx(tolerance).epsilon(1e-12));
+    CHECK(acute.lastGeometryBuildReport().clampedCotangentCount == 0);
+
+    auto obtuse = makeNearRightPatch(-2.0 * tolerance);
+    REQUIRE_THROWS_WITH(
+        obtuse.buildBoxGeometry(options),
+        Catch::Matchers::ContainsSubstring("mesh_geometry.require_non_obtuse rejected cell 0"));
+    options.requireNonObtuse = false;
+    obtuse.buildBoxGeometry(options);
+    CHECK(obtuse.lastGeometryBuildReport().negativeCotangentCount == 1);
+    CHECK(obtuse.lastGeometryBuildReport().fallbackCount == 1);
+    CHECK(obtuse.poissonCellEdgeCoefficients(0)[1] > 0.01);
 }
 
 TEST_CASE("BoxGeometryBuilder: all edge couplings are non-negative", "[box_geometry]")

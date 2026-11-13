@@ -3584,6 +3584,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             " degenerate_cells=" + std::to_string(report.degenerateCells) +
             " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
             " fallback_count=" + std::to_string(report.fallbackCount) +
+            " clamped_cotangent_count=" + std::to_string(report.clampedCotangentCount) +
+            " node_volume_sum=" + formatReal(report.nodeVolumeSum) +
             " min_angle_degrees=" + formatReal(report.minAngleDegrees));
         runtimeLogInfo(
             "carrier_transport_couple_profile: profile=" +

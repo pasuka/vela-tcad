@@ -140,7 +140,7 @@ Data {
 """
 
 
-def write_strip_fixture(directory: Path) -> Path:
+def write_strip_fixture(directory: Path, nodes=NODES) -> Path:
     doping_csv = directory / "vela_doping.csv"
     with doping_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -148,7 +148,7 @@ def write_strip_fixture(directory: Path) -> Path:
         for node_id, (donors, acceptors) in DOPING.items():
             writer.writerow([node_id, repr(donors), repr(acceptors)])
     grd = directory / "strip_msh.grd"
-    grd.write_text(dfise_writers.render_dfise_grid(NODES, TRIANGLES, CONTACTS), encoding="utf-8")
+    grd.write_text(dfise_writers.render_dfise_grid(nodes, TRIANGLES, CONTACTS), encoding="utf-8")
     grd.with_suffix(".dat").write_text(dfise_writers.render_dfise_doping(NODES, TRIANGLES, CONTACTS, doping_csv),
                                        encoding="utf-8")
     return grd
@@ -215,6 +215,19 @@ class DfiseImportTest(unittest.TestCase):
         self.assertEqual("barycentric", report["qualification"]["recommended_node_volume_policy"])
         self.assertEqual(["PhosphorusActiveConcentration", "BoronActiveConcentration"], report["doping"]["source_fields"])
         self.assertFalse(report["doping"]["net_only"])
+
+    def test_near_right_angles_use_the_geometry_qualification_tolerance(self) -> None:
+        tolerance = 1.7453292519943296e-12
+        for shift, expected in [(0.0, True), (-0.5 * tolerance, True), (0.5 * tolerance, True),
+                                (-2.0 * tolerance, True), (2.0 * tolerance, False)]:
+            with self.subTest(shift=shift):
+                nodes = {i: (x + shift * y, y) for i, (x, y) in NODES.items()}
+                grd = write_strip_fixture(self.tmp, nodes)
+                report = import_grid(grd, self.tmp / "out")
+                self.assertEqual(expected, report["qualification"]["non_obtuse"])
+                self.assertEqual(expected, report["angles"]["obtuse_element_count"] == 0)
+                if shift > 0.0:
+                    self.assertGreater(report["angles"]["max_deg"], 90.0)
 
     def test_electrode_check(self) -> None:
         grd = write_strip_fixture(self.tmp)

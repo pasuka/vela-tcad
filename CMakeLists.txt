@@ -1938,6 +1938,14 @@ foreach(sdevice_case pn2d_0v pn2d_iv pn2d_bv gates)
     vela_set_windows_msys2_test_path(sdevice_e2e_${sdevice_case})
 endforeach()
 
+add_test(NAME sdevice_e2e_pn2d_bv_compensated
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
+        --case pn2d_bv --compensated-bv --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
+        --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
+set_tests_properties(sdevice_e2e_pn2d_bv_compensated PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
+vela_set_windows_msys2_test_path(sdevice_e2e_pn2d_bv_compensated)
+
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sdevice_gate_contact_mapping)

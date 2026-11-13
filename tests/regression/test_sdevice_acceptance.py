@@ -133,6 +133,25 @@ class AvalancheQualificationTests(unittest.TestCase):
         self.mesh['qualification']['non_obtuse'] = False
         self.assertIsNone(self.admit()[0])
 
+    def test_compensated_path_requires_its_sidecar_and_both_stage_policies(self):
+        new = self.q['compensated_population']
+        self.assertEqual(a.sha(a.COMPENSATED_BV_SIDECAR), new['sidecar_sha256'])
+        self.assertTrue(self.admit()[0])
+        for deck in self.decks:
+            deck['solver']['compensated_population_state'] = True
+        new['stage_policy_sha256'] = [a.stage_policy_sha256(deck) for deck in self.decks]
+        self.assertIsNone(self.admit()[0])
+        self.provenance['sidecar_sha256'] = new['sidecar_sha256']
+        qualified, _ = self.admit()
+        self.assertEqual(new['id'], qualified['id'])
+        self.assertEqual(self.q['spatial'], qualified['spatial'])
+        self.assertEqual(self.q['anchors'], qualified['anchors'])
+        self.decks[0]['solver']['compensated_population_state'] = False
+        self.assertIsNone(self.admit()[0])
+        self.decks[0]['solver']['compensated_population_state'] = True
+        self.decks[1]['solver']['compensated_population_state'] = False
+        self.assertIsNone(self.admit()[0])
+
     def test_partial_pins_and_duplicate_anchors_are_rejected(self):
         del self.q['input_sha256']['parameter_sha256']
         self.assertIsNone(self.admit()[0])

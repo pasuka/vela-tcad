@@ -166,12 +166,29 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
     constexpr Real continuityCeiling_A_per_um = 5e-22;
     const Real poissonWeight = scaling.permittivityReference_F_per_m * scaling.V0 /
         poissonCeiling_C_per_m;
-    const Real continuityWeight = constants::q * assembler->continuityResidualScale() *
-        scaling.currentDensityLineIntegralFactor * 1e-6 / continuityCeiling_A_per_um;
-    const auto merit = [&](const VectorXd& f) {
-        if (!f.allFinite()) return std::numeric_limits<Real>::infinity();
-        return std::max(poissonWeight*f.head(count).lpNorm<Eigen::Infinity>(),
-                        continuityWeight*f.tail(2*count).lpNorm<Eigen::Infinity>());
+    const Real continuityScale = constants::q * assembler->continuityResidualScale() *
+        scaling.currentDensityLineIntegralFactor * 1e-6;
+    // Edge currents and source terms are binary64. Allow for their rounding
+    // when a large forward flux enters and leaves the same control volume.
+    // The absolute leakage floor still governs rows with small currents.
+    constexpr Real continuityRoundoff = 16. * std::numeric_limits<Real>::epsilon();
+    const auto merit = [&](const CoupledDDPhysicalDiagnostics& physical) {
+        const VectorXd& residual = physical.residual;
+        if (!residual.allFinite()) return std::numeric_limits<Real>::infinity();
+        Real error = poissonWeight*residual.head(count).lpNorm<Eigen::Infinity>();
+        for (int node = 0; node < count; ++node) {
+            const auto& row = physical.constrainedTerms[node];
+            const Real electronScale = row.electronFluxAbsSum +
+                std::abs(row.electronRecombination) + std::abs(row.electronImpact);
+            const Real holeScale = row.holeFluxAbsSum +
+                std::abs(row.holeRecombination) + std::abs(row.holeImpact);
+            error = std::max({error,
+                continuityScale*std::abs(residual[count+node]) /
+                    std::max(continuityCeiling_A_per_um,continuityRoundoff*continuityScale*electronScale),
+                continuityScale*std::abs(residual[2*count+node]) /
+                    std::max(continuityCeiling_A_per_um,continuityRoundoff*continuityScale*holeScale)});
+        }
+        return error;
     };
     const auto evaluate = [&](const VectorXd& x, const VectorXd& tails, SparseMatrixd* jacobian = nullptr) {
         return assembler->compensatedPopulationDiagnostics(
@@ -199,7 +216,7 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
     NewtonResult result;
     LinearSolver linear;
     auto physical = evaluate(state,low);
-    Real currentMerit = merit(physical.residual);
+    Real currentMerit = merit(physical);
     result.initialResidualNorm = currentMerit;
     result.failureDiagnostics.failureReason = "compensated population Newton iteration budget exhausted";
     for (int iteration = 0; iteration <= cfg_.maxIter; ++iteration) {
@@ -259,7 +276,7 @@ NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial)
             if (trial.tail(2*count).minCoeff() <= 0.)
                 continue;
             auto candidate = evaluate(trial,trialLow);
-            const Real candidateMerit = merit(candidate.residual);
+            const Real candidateMerit = merit(candidate);
             if (candidateMerit >= currentMerit)
                 continue;
             state.swap(trial);

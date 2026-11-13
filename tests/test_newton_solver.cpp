@@ -641,6 +641,41 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
+TEST_CASE("Compensated population Newton retains forward current conservation",
+          "[newton][pn2d_population][precision]")
+{
+    const auto mesh = makePNMesh();
+    const MaterialDatabase materials;
+    const auto doping = makePNDoping(mesh);
+    NewtonConfig cfg;
+    cfg.stateVariables = "potential_density";
+    cfg.primaryVariableCoordinates = "unit";
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    cfg.compensatedPopulationState = true;
+    cfg.contactBoundaryMinorityElectronRelaxation = false;
+    cfg.mobility = mobilityModelConfig("masetti");
+    cfg.maxIter = 100;
+    cfg.warmStart = true;
+    auto equilibrium = NewtonSolver(mesh,materials,doping,{{"anode",0.},{"cathode",0.}},cfg).solve();
+    REQUIRE(equilibrium.converged);
+    auto seed = equilibrium.solution;
+    for (int step = 1; step <= 20; ++step) {
+        const Real voltage = 0.05*step;
+        const NewtonSolver solver(mesh,materials,doping,{{"anode",voltage},{"cathode",0.}},cfg);
+        const auto result = solver.solve(seed);
+        CAPTURE(voltage,result.failureDiagnostics.failureReason);
+        REQUIRE(result.converged);
+        REQUIRE(result.solution.populationLow.size() == 3*mesh.numNodes());
+        seed = result.solution;
+        if (step == 20) {
+            const Real anode = solver.evaluateStateTerminalCurrent(seed,"anode",1.);
+            const Real cathode = solver.evaluateStateTerminalCurrent(seed,"cathode",1.);
+            REQUIRE(anode > 0.);
+            REQUIRE(std::abs(anode+cathode) <= 1e-10*std::abs(anode));
+        }
+    }
+}
+
 TEST_CASE("PN junction concentration Jacobian differentiates fixed-population Poisson and carrier fluxes",
           "[newton][pn2d_population][jacobian]")
 {

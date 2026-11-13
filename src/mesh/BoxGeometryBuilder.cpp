@@ -17,7 +17,6 @@ namespace {
 
 constexpr Real kDegenerateTol = 1.0e-30;
 constexpr Real kPi = 3.141592653589793238462643383279502884;
-constexpr Real kNonObtuseAngleToleranceDegrees = 1.0e-10;
 
 std::pair<Index, Index> edgeKey(Index a, Index b)
 {
@@ -63,14 +62,14 @@ Real distanceSquared(const Node& a, const Node& b)
 }
 
 std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
-                                       const std::array<Real, 3>&       angles,
-                                       Real                             area)
+                                       const std::array<Real, 3>&       cotangents,
+                                       Real                             area,
+                                       bool                             clamped)
 {
-    auto maxAngleIt = std::max_element(angles.begin(), angles.end());
-    const int maxAngleIndex = static_cast<int>(std::distance(angles.begin(), maxAngleIt));
-    if (*maxAngleIt > 90.0) {
+    const auto minimumCotangent = std::min_element(cotangents.begin(), cotangents.end());
+    if (*minimumCotangent < 0.0) {
         std::array<Real, 3> shares = {area * 0.25, area * 0.25, area * 0.25};
-        shares[static_cast<std::size_t>(maxAngleIndex)] = area * 0.5;
+        shares[std::distance(cotangents.begin(), minimumCotangent)] = area * 0.5;
         return shares;
     }
 
@@ -78,12 +77,8 @@ std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
     for (int i = 0; i < 3; ++i) {
         const int j = (i + 1) % 3;
         const int k = (i + 2) % 3;
-        const Real cotJ = cotangentAtOppositeVertex(*nodes[static_cast<std::size_t>(i)],
-                                                    *nodes[static_cast<std::size_t>(k)],
-                                                    *nodes[static_cast<std::size_t>(j)]);
-        const Real cotK = cotangentAtOppositeVertex(*nodes[static_cast<std::size_t>(i)],
-                                                    *nodes[static_cast<std::size_t>(j)],
-                                                    *nodes[static_cast<std::size_t>(k)]);
+        const Real cotJ = cotangents[j];
+        const Real cotK = cotangents[k];
         shares[static_cast<std::size_t>(i)] =
             0.125 *
             (distanceSquared(*nodes[static_cast<std::size_t>(i)],
@@ -92,6 +87,12 @@ std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
                              *nodes[static_cast<std::size_t>(j)]) * cotK);
         if (shares[static_cast<std::size_t>(i)] < 0.0)
             shares[static_cast<std::size_t>(i)] = 0.0;
+    }
+    if (clamped) {
+        // The near-right projection slightly changes the sum of the shares.
+        const Real scale = area / (shares[0] + shares[1] + shares[2]);
+        for (Real& share : shares)
+            share *= scale;
     }
     return shares;
 }
@@ -210,9 +211,21 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             angleDegreesAt(n1, n2, n0),
             angleDegreesAt(n2, n0, n1),
         };
-        const Real maxCellAngle = *std::max_element(angles.begin(), angles.end());
+        const std::array<const Node*, 3> nodes = {&n0, &n1, &n2};
+        std::array<Real, 3> cotangents{};
+        bool clamped = false;
+        for (int k = 0; k < 3; ++k) {
+            const Real raw = cotangentAtOppositeVertex(*nodes[(k + 1) % 3],
+                                                       *nodes[(k + 2) % 3], *nodes[k]);
+            cotangents[k] = clampNearRightCotangent(raw);
+            if (raw != cotangents[k]) {
+                clamped = true;
+                ++report.clampedCotangentCount;
+            }
+        }
         if (options.requireNonObtuse &&
-            maxCellAngle > 90.0 + kNonObtuseAngleToleranceDegrees) {
+            *std::min_element(cotangents.begin(), cotangents.end()) < 0.0) {
+            const Real maxCellAngle = *std::max_element(angles.begin(), angles.end());
             std::ostringstream os;
             os << "BoxGeometryBuilder: mesh_geometry.require_non_obtuse rejected cell "
                << cell.id << " with maximum angle " << maxCellAngle << " degrees.";
@@ -230,8 +243,7 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
         }
 
         if (options.nodeVolumePolicy == NodeVolumePolicy::MixedVoronoi) {
-            const std::array<const Node*, 3> nodes = {&n0, &n1, &n2};
-            const std::array<Real, 3> shares = mixedVoronoiShares(nodes, angles, area);
+            const auto shares = mixedVoronoiShares(nodes, cotangents, area, clamped);
             for (int k = 0; k < 3; ++k)
                 mesh.nodes_.at(ids[k]).volume += shares[static_cast<std::size_t>(k)];
         } else {
@@ -243,7 +255,6 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
         for (int k = 0; k < 3; ++k) {
             const Index a = ids[k];
             const Index b = ids[(k + 1) % 3];
-            const Index opp = ids[(k + 2) % 3];
 
             auto it = edgeMap.find(edgeKey(a, b));
             if (it == edgeMap.end()) {
@@ -256,9 +267,7 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             if (edge.length < kDegenerateTol)
                 continue;
 
-            const Real cot = cotangentAtOppositeVertex(mesh.getNode(a),
-                                                       mesh.getNode(b),
-                                                       mesh.getNode(opp));
+            const Real cot = cotangents[(k + 2) % 3];
 
             Real localCouple = 0.5 * cot * edge.length;
             if (cot < 0.0) {
@@ -274,8 +283,6 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
                 }
             }
 
-            if (localCouple < 0.0)
-                localCouple = 0.0;
             edge.couple += localCouple;
             if (cellMaterial)
                 poissonCoefficients.at(cell.id)[k] = supplied.empty()
@@ -286,6 +293,8 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
     if (transfer) poissonCoefficients = generated.coefficients;
     mesh.poissonPermittivityPolicy_ = options.poissonPermittivityPolicy;
     mesh.poissonCellEdgeCoefficients_ = std::move(poissonCoefficients);
+    for (const auto& node : mesh.nodes_)
+        report.nodeVolumeSum += node.volume;
     return report;
 }
 
