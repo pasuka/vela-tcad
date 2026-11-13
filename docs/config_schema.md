@@ -784,6 +784,18 @@ restore separate power evaluations. `VELA_BVMETHODS_CANALI_OPTIMIZATION_AUDIT=1`
 compares the active optimized evaluations with the original bit patterns and
 checks the assembled avalanche source.
 
+BVMethods potential-density mode with quasi-Fermi SG also uses scalar avalanche
+residual assembly by default when no avalanche derivatives are requested.
+The scalar device transport passes the two carrier mobilities at each
+element's representative vertex to avalanche assembly for the same state.
+Set `VELA_BVMETHODS_DISABLE_AV_MOBILITY_REUSE=1` before launch to recompute
+those mobilities. Set `VELA_BVMETHODS_AV_VALUE_MODE=dual` to restore dual
+avalanche residual assembly, or `shadow` to return the dual result and
+check scalar source terms, generation rates, zero-current diagnostics and
+reused mobilities bit for bit. Derivative requests and cells outside the
+scalar arithmetic range use dual assembly. Calls without eligible scalar
+device transport compute avalanche mobility independently.
+
 BVMethods potential-density contact and circuit current evaluations reuse the
 last source-free transport vector when the packed state matches bit for bit
 within the same assembler runtime. Set `VELA_BVMETHODS_TRI3_PORT_CACHE=0`

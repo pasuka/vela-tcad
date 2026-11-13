@@ -1250,3 +1250,123 @@ TEST_CASE("Canali shared power preserves value and both branch-local tangents", 
     p.beta=1.;
     REQUIRE_THROWS_AS(evaluateElementCanaliSharedPower(.1,cutoff,p,cutoff),std::invalid_argument);
 }
+
+#include "vela/physics/experimental/BvMethodsAvValues.h"
+
+TEST_CASE("Scalar AV reproduces dual current, source and zero diagnostics",
+          "[av_contract][av_scalar]")
+{
+    const auto bits=[](double x){return std::bit_cast<std::uint64_t>(x);};
+    AvTri3Geometry geometry{{{{0.,0.},{2e-4,0.},{.5e-4,1e-4}}},
+                            {2e-9,4e-9,3e-9},0,{.8,-.1,.13,.7}};
+    const AvCoefficient electron{7e5,1.2e6,8e5,1.5e6,4e5};
+    const AvCoefficient hole{1.6e6,2e6,2e6,2.6e6,4e5};
+    constexpr double vt=.02585;
+    for(std::size_t rep=0;rep<3;++rep) {
+        geometry.representative=rep;
+        for(double density:{1e-303,1e-100,1.,1e20}) {
+            const std::array<double,3> n{1e20,density,1e-100},p{density,1e19,1e-99};
+            const std::array<double,3> tn{1.,density<1e-155?density:1.,1.};
+            const std::array<double,3> tp{density<1e-155?density:1.,1.,1.};
+            for(double step:{0.,1e-18,.01,1.6,17.}) {
+                const std::array<double,3> f{0.,step,-step};
+                std::array<AvJet,3> nd,pd,fn,fp;
+                for(std::size_t i=0;i<3;++i) {
+                    nd[i]=AvJet(n[i]);nd[i].derivative[i+3]=tn[i];
+                    pd[i]=AvJet(p[i]);pd[i].derivative[i+6]=tp[i];
+                    fn[i]=AvJet::variable(f[i],i+3);
+                    fp[i]=AvJet::variable(f[i],i+6);
+                }
+                const auto jn=avParticleCurrentValues(geometry,n,f,tn,vt,true);
+                const auto jp=avParticleCurrentValues(geometry,p,f,tp,vt,false);
+                for(double field:{0.,1e-55,3.8e5,4e5,4.2e5,1e8}) {
+                    REQUIRE(avFieldSafe(field));
+                    const auto a=avGenerationValues(geometry,jn,jp,1000.,500.,field,field,electron,hole);
+                    const auto b=evaluateBvMethodsTri3Avalanche(geometry,nd,pd,fn,fp,
+                        AvJet(1000.),AvJet(500.),AvJet::variable(field,0),AvJet::variable(field,1),
+                        vt,electron,hole);
+                    for(int i=0;i<2;++i) {
+                        REQUIRE(bits(jn[i])==bits(b.electronParticleCurrentWithoutMobility[i].value));
+                        REQUIRE(bits(jp[i])==bits(b.holeParticleCurrentWithoutMobility[i].value));
+                    }
+                    for(int i=0;i<3;++i)REQUIRE(bits(a.node[i])==bits(b.nodeGeneration_per_cm_s[i].value));
+                    REQUIRE(bits(a.electron)==bits(b.electronGeneration_cm3_s));
+                    REQUIRE(bits(a.hole)==bits(b.holeGeneration_cm3_s));
+                    REQUIRE(a.electronZero==b.electronZeroNorm);
+                    REQUIRE(a.holeZero==b.holeZeroNorm);
+                    REQUIRE(a.electronActive==b.electronActiveAtZero);
+                    REQUIRE(a.holeActive==b.holeActiveAtZero);
+                }
+            }
+        }
+    }
+    REQUIRE(avCoefficientsSafe(electron));
+    REQUIRE_FALSE(avFieldSafe(1e-300));
+    REQUIRE_FALSE(avFieldSafe(std::numeric_limits<double>::infinity()));
+    REQUIRE_FALSE(avCoefficientsSafe({7e5,0.,8e5,1.5e6,4e5}));
+}
+
+TEST_CASE("BVMethods AV reuses same-state representative mobility and preserves fallback",
+          "[av_contract][av_mobility_reuse]")
+{
+    using namespace vela;
+    ProfileFixture fixture;
+    const auto assembler=fixture.assembler();
+    const auto x=fixture.point();
+    detail::BvMethodsQfState state{x.head(6),x.segment(6,6),x.tail(6),
+        assembler->electronDensity(x),assembler->holeDensity(x),true};
+    const auto nc=assembler->electronDensityOfStates(),nv=assembler->holeDensityOfStates();
+    detail::CanaliEvaluationOptions canali{true,true,false};
+    for(bool forceFallback:{false,true}) {
+        auto coefficients=fixture.avalanche;
+        if(forceFallback) coefficients.electronAHigh=1e60;
+        detail::BvMethodsTri3Context context{fixture.mesh,fixture.materials,fixture.doping,
+            {fixture.mobility,coefficients,{},CarrierStatisticsModel::FermiDiracJoyceDixon}};
+        detail::BvMethodsTri3Operator element(context,state,nc,nv,1.,1.,constants::Vt_300);
+        for(double shift:{0.,.035}) {
+            auto input=state;
+            input.psi[1]+=shift;
+            input.phin[1]+=shift;
+            detail::BvMethodsRepresentativeMobilities values;
+            element.transportValues(input,true,true,true,true,false,&values);
+            REQUIRE_FALSE(values.empty());
+            const auto dual=element.evaluate(input,false,nullptr,true,canali);
+            const auto scalar=element.evaluate(input,false,nullptr,true,canali,true);
+            const auto reused=element.evaluate(input,false,nullptr,true,canali,true,&values,true);
+            REQUIRE(exactValueBits(reused.source)==exactValueBits(scalar.source));
+            REQUIRE(exactValueBits(reused.allGeneration)==exactValueBits(scalar.allGeneration));
+            REQUIRE(exactValueBits(reused.electronGeneration)==exactValueBits(scalar.electronGeneration));
+            REQUIRE(exactValueBits(reused.holeGeneration)==exactValueBits(scalar.holeGeneration));
+            REQUIRE(reused.zeroNormElectron==scalar.zeroNormElectron);
+            REQUIRE(reused.zeroNormHole==scalar.zeroNormHole);
+            REQUIRE(reused.zeroActiveElectron==scalar.zeroActiveElectron);
+            REQUIRE(reused.zeroActiveHole==scalar.zeroActiveHole);
+            if(forceFallback) {
+                REQUIRE(reused.fallbackCells==values.size());
+                REQUIRE(reused.reusedMobilityCells==0);
+                REQUIRE(exactValueBits(reused.source)==exactValueBits(dual.source));
+                REQUIRE(exactValueBits(reused.allGeneration)==exactValueBits(dual.allGeneration));
+                REQUIRE(exactValueBits(reused.electronGeneration)==exactValueBits(dual.electronGeneration));
+                REQUIRE(exactValueBits(reused.holeGeneration)==exactValueBits(dual.holeGeneration));
+                REQUIRE(reused.zeroNormElectron==dual.zeroNormElectron);
+                REQUIRE(reused.zeroNormHole==dual.zeroNormHole);
+                REQUIRE(reused.zeroActiveElectron==dual.zeroActiveElectron);
+                REQUIRE(reused.zeroActiveHole==dual.zeroActiveHole);
+            } else {
+                REQUIRE(exactValueBits(reused.source)==exactValueBits(dual.source));
+                REQUIRE(exactValueBits(reused.allGeneration)==exactValueBits(dual.allGeneration));
+                REQUIRE(exactValueBits(reused.electronGeneration)==exactValueBits(dual.electronGeneration));
+                REQUIRE(exactValueBits(reused.holeGeneration)==exactValueBits(dual.holeGeneration));
+                REQUIRE(reused.zeroNormElectron==dual.zeroNormElectron);
+                REQUIRE(reused.zeroNormHole==dual.zeroNormHole);
+                REQUIRE(reused.zeroActiveElectron==dual.zeroActiveElectron);
+                REQUIRE(reused.zeroActiveHole==dual.zeroActiveHole);
+                REQUIRE(reused.reusedMobilityCells==values.size());
+                REQUIRE(reused.auditedMobilityPairs==values.size());
+                values.front()[0]*=2.;
+                REQUIRE_THROWS_AS(element.evaluate(input,false,nullptr,true,canali,true,&values,true),
+                                  std::runtime_error);
+            }
+        }
+    }
+}
