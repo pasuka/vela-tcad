@@ -358,7 +358,7 @@ public:
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    std::optional<LombardiCellPowers> powers;
-   if (reuseLombardiPowers && !derivatives)
+   if (reuseLombardiPowers)
     powers.emplace();
    auto mobility=[&](bool e,const AvJet& drive,int local){auto node=a.nodes[local];
     const double low=e?a.bulkN[local]:a.bulkP[local];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;

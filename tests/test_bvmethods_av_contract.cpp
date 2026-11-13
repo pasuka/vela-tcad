@@ -351,6 +351,13 @@ TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conser
     detail::BvMethodsTri3Operator element(context,s,nc,nv,1.,1.,constants::Vt_300);
     const auto live=element.transport(s,true,true,true);
     const auto frozen=element.transport(s,true,true,true,true);
+    for(bool freezeMobility:{false,true}) {
+        const auto& reference=freezeMobility?frozen:live;
+        const auto reused=element.transport(s,true,true,true,freezeMobility,nullptr,0.,true);
+        REQUIRE(exactValueBits(reused.source)==exactValueBits(reference.source));
+        REQUIRE(exactValueBits(reused.absoluteSource)==exactValueBits(reference.absoluteSource));
+        REQUIRE(exactValueBits(reused.jacobian)==exactValueBits(reference.jacobian));
+    }
     REQUIRE((live.source.array()==frozen.source.array()).all());
     REQUIRE((live.absoluteSource.array()==frozen.absoluteSource.array()).all());
     const SparseMatrixd removed=live.jacobian-frozen.jacobian;

@@ -26,7 +26,7 @@ inline PreparedElementLombardi prepareElementLombardi(
         std::pow((N+p.N2)/p.N0,p.lambda);
     return out;
 }
-// The residual transport visits three vertices for each carrier on the same
+// The transport assembly visits three vertices for each carrier on the same
 // cell. Only the powers depend on the common field and the carrier exponent.
 struct LombardiCellPowers {
     struct Entry {

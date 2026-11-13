@@ -27,6 +27,11 @@ detail::CanaliEvaluationOptions canaliEvaluationOptions() {
 }
 
 enum class TransportValueMode { dual, shadow, scalar };
+bool lombardiPowerReuseEnabled() {
+    static const bool enabled=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE");
+    return enabled;
+}
+
 TransportValueMode transportValueMode() {
     static const auto mode=[] {
         const char* value=std::getenv("VELA_BVMETHODS_TRI3_VALUE_MODE");
@@ -216,7 +221,8 @@ struct BvMethodsCoupledRuntime::Impl {
             ScopedPerformanceTimer timer(stage);
             const auto canali=canaliEvaluationOptions();
             if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_transport");
-            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers,canali);
+            const bool reuseLombardiPowers=jac?lombardiPowerReuseEnabled():reusePowers;
+            return element->transport(state,jac,true,true,approximate,columns,floor,reuseLombardiPowers,canali);
         }();
         if(mode==TransportValueMode::shadow) {
             incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
@@ -261,11 +267,7 @@ struct BvMethodsCoupledRuntime::Impl {
     }
     Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr,bool freezeStatisticalFloor=true)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
-        static const bool enableLombardiPowReuse = [] {
-            const char* flag = std::getenv("VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE");
-            return !flag || std::string_view(flag) != "1";
-        }();
-        const bool reuseLombardiPowers = enableLombardiPowReuse && !jac &&
+        const bool reuseLombardiPowers = lombardiPowerReuseEnabled() && !jac &&
             s.populationCoordinates && owner.scaling_.populationSgCurrent == "quasi_fermi";
         const auto valueMode=avalancheValueMode();
         static const bool reuseMobility=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_MOBILITY_REUSE");
