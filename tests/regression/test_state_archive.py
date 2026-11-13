@@ -111,6 +111,31 @@ class StateArchiveTest(unittest.TestCase):
                        dict(population_potential_unit='mV'),dict(potential_origin_V=29.)):
             with self.assertRaises(ValueError):archive.validate(self.fields,dict(self.meta,**update))
 
+    def test_compensated_population_restart_and_frame_translation(self):
+        self.population_state()
+        self.fields['psi'] = [1., -1., 0.5]
+        for key, physical in zip(archive.POPULATION, ('electrons_m3', 'holes_m3')):
+            self.fields[key] = [1., 2., 4.]
+            self.fields[physical] = [1e6, 2e6, 4e6]
+        for key in archive.POPULATION_LOW:
+            self.fields[key] = [2.0**-65, -2.0**-65, 2.0**-66]
+        archive.write(self.path,self.fields,self.meta)
+        self.assertFields(archive.read(self.path,3,'a'*64)[0])
+        tool = os.environ.get('VELA_STATE_ARCHIVE_TOOL')
+        if tool:
+            result = subprocess.check_output([tool,'decode',str(self.path),'3','a'*64],text=True)
+            self.assertFields(json.loads(result)['fields'])
+        shifted = self.path.with_name('shifted.h5')
+        archive.translate(self.path,shifted,1.,{0,1,2},3,'a'*64)
+        moved, _ = archive.read(shifted,3,'a'*64)
+        self.assertEqual(moved['psi'][0], self.fields['population_psi_low_V'][0])
+        self.assertEqual(moved['population_psi_low_V'][0], 0.)
+        for key in archive.POPULATION_LOW[1:]:
+            np.testing.assert_array_equal(moved[key], self.fields[key])
+        self.fields.pop(archive.POPULATION_LOW[2])
+        with self.assertRaises(ValueError):
+            archive.validate(self.fields,self.meta)
+
     def test_population_coordinates_reject_inconsistent_or_mixed_state(self):
         import copy
         self.population_state()

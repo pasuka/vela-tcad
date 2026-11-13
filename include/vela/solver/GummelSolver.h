@@ -74,6 +74,8 @@ struct DDSolution {
     Real packedPotentialScale_V = 0.0;
     // Distinct from QF packedState: only psi is normalized; n/p keep internal units.
     VectorXd populationPsi;
+    /// Potential tail in volts, then electron and hole tails in internal units.
+    VectorXd populationLow;
     Real populationPotentialScale_V = 0.;
     std::optional<Real> populationPotentialOrigin_V; ///< Bound by the archive reference identity.
     bool hasConsistentPopulationPotential() const {

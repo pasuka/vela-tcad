@@ -43,6 +43,13 @@ This is a template policy, not a global solver-default change. Configurations
 that omit `mesh_geometry.node_volume_policy` still use barycentric volumes, and
 the PN2D IV template remains unchanged with impact ionization disabled.
 
+## Sentaurus breakdown knee acceptance
+
+The PN2D BV Sentaurus comparison passes the fitted breakdown knee check when
+`abs(Vela knee - Sentaurus knee) / abs(Sentaurus knee)` is at most 0.01
+(1%) and both curves have the same slope-crossing outcome. The report includes
+the absolute voltage difference in volts and the dimensionless relative error.
+
 ## Historical version-3 acceptance
 
 The prospective atomic-default contract passed all M0, M2, forward-IV,

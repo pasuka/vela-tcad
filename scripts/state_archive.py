@@ -26,7 +26,10 @@ PACKED_LOW = tuple(name+'_low' for name in PACKED)
 UNITS.update({name:'1' for name in PACKED+PACKED_LOW})
 UNITS['population_psi_normalized'] = '1'
 POPULATION = ('population_electrons_internal', 'population_holes_internal')
-UNITS.update({name:'internal_concentration' for name in POPULATION})
+POPULATION_LOW = ('population_psi_low_V', 'population_electrons_low_internal',
+                  'population_holes_low_internal')
+UNITS[POPULATION_LOW[0]] = 'V'
+UNITS.update({name:'internal_concentration' for name in POPULATION + POPULATION_LOW[1:]})
 
 
 def mesh_identity(mesh, length_m_per_internal):
@@ -115,7 +118,13 @@ def translate(source, destination, subtract, active_nodes, expected_nodes, expec
                 fields[ref][i]=new if live else 0.
                 fields[inc][i]=math.fsum((a,-subtract,-new,b)) if live else 0.
         for key in ('psi','phin','phip'):
-            fields[key][i]=float(fields[key][i])-subtract if key=='psi' or live else 0.
+            if key == 'psi' and POPULATION_LOW[0] in fields:
+                high, low = float(fields[key][i]), float(fields[POPULATION_LOW[0]][i])
+                translated = math.fsum((high, low, -subtract))
+                fields[key][i] = translated
+                fields[POPULATION_LOW[0]][i] = math.fsum((high, low, -subtract, -translated))
+            else:
+                fields[key][i]=float(fields[key][i])-subtract if key=='psi' or live else 0.
     if 'population_psi_normalized' in fields:
         # Explicit frame conversion starts from authoritative normalized psi,
         # not its rounded physical output. A changed frame incurs one final
@@ -218,6 +227,14 @@ def validate(fields, metadata):
             physical = np.asarray(fields['population_psi_normalized'], dtype='<f8') * scale
         if not np.all(np.isfinite(physical)) or not np.array_equal(physical, np.asarray(fields['psi'], dtype='<f8')):
             raise ValueError('Population potential disagrees with physical field')
+    if any(name in fields for name in POPULATION_LOW):
+        if not all(name in fields for name in POPULATION_LOW) or not population[0] or potential:
+            raise ValueError('Incomplete compensated population coordinates')
+        for block, (primary, correction) in enumerate(zip(('psi',) + POPULATION, POPULATION_LOW)):
+            high = np.asarray(fields[primary])
+            tail = np.asarray(fields[correction])
+            if np.any(high + tail != high) or (block and np.any(high <= 0)):
+                raise ValueError('Invalid compensated population coordinate pair')
     if SPLIT <= fields.keys():
         for carrier, qf in (('electron', 'phin'), ('hole', 'phip')):
             combined = np.asarray(fields[carrier+'_qf_reference_V']) + np.asarray(fields[carrier+'_qf_increment_V'])

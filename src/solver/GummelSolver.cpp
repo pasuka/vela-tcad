@@ -1352,7 +1352,8 @@ void writeDDSolutionVTK(const std::string& filename,
             false,
             carrierStatistics,
             densityOfStatesNc,
-            densityOfStatesNv)
+            densityOfStatesNv,
+            sol.stateVariables == "potential_density")
         : std::vector<detail::SgEdgeCurrentAvalancheSourceRecord>{};
     const std::vector<Real> currentDensityAvalancheSourceIntegrals =
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)
@@ -1375,7 +1376,8 @@ void writeDDSolutionVTK(const std::string& filename,
             fieldFactor,
             carrierStatistics,
             densityOfStatesNc,
-            densityOfStatesNv)
+            densityOfStatesNv,
+            sol.stateVariables == "potential_density")
         : std::vector<Real>{};
     for (Index i = 0; i < N; ++i) {
         const int row = static_cast<int>(i);

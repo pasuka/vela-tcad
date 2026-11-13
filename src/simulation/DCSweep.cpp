@@ -312,6 +312,7 @@ std::string ddSolutionStateHash(const DDSolution& state)
     appendVector(state.phip);
     appendVector(state.n);
     appendVector(state.p);
+    if (state.populationLow.size()) appendVector(state.populationLow);
     std::ostringstream output;
     output << std::hex << std::setfill('0') << std::setw(16) << hash;
     return output.str();
@@ -3501,6 +3502,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
+    if (newton.compensatedPopulationState &&
+        (sweep.externalResistor.enabled || sweep.voltageToCurrent.enabled ||
+         sweep.continuation.arclength.enabled))
+        throw std::invalid_argument("Compensated population state requires a voltage-controlled sweep");
     if (sweep.stepGrowthMode == "newton_iterations") {
         const bool supportedCircuit = !sweep.externalResistor.enabled ||
             sweep.externalResistor.solver == "coupled_newton";

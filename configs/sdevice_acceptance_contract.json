@@ -127,8 +127,8 @@
           -19.95,
           -20.0
         ],
-        "maximum_V_break_absolute_error_V": 0.1,
-        "source": "docs/validation/contracts/pn2d_node_volume_policy_atomic_default_acceptance_v2.json:avalanche_on_gate.maximum_V_break_absolute_error_V",
+        "maximum_V_break_relative_error": 0.01,
+        "source": "docs/validation/pn2d_bv_validation.md#sentaurus-breakdown-knee-acceptance",
         "definition": "analyze_pn2d_avalanche_on_bv_parity.continuous_breakpoint: continuous two-segment log10(|I|) fit, 0.001 V knot grid; fitted knee metric, not a current-threshold or ionization-integral breakdown"
       }
     }

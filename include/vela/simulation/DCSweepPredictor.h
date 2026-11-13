@@ -3,6 +3,7 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/solver/PopulationState.h"
+#include "vela/numerics/ExpansionProductSum.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -172,6 +173,36 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
             values << state.psi, state.n, state.p;
             return values;
         };
+        if (current.populationLow.size() || previous->populationLow.size()) {
+            if (current.populationLow.size() != 3*count || previous->populationLow.size() != 3*count)
+                return current;
+            const VectorXd before = pack(*previous);
+            const VectorXd now = pack(current);
+            VectorXd values = now;
+            const char* names[] = {"psi","phin","phip"};
+            for (int block = 0; block < 3; ++block) {
+                if (!predictorUsesField(fields,names[block]))
+                    continue;
+                for (int i = block*count; i < (block+1)*count; ++i) {
+                    experimental::ExpansionProductSum sum;
+                    sum.add(now[i]);
+                    sum.add(current.populationLow[i]);
+                    sum.addProduct({ratio,0.},now[i]);
+                    sum.addProduct({-ratio,0.},before[i]);
+                    sum.addProduct({ratio,0.},current.populationLow[i]);
+                    sum.addProduct({-ratio,0.},previous->populationLow[i]);
+                    const auto value = sum.parts();
+                    if (block > 0 && value.high <= 0.)
+                        continue;
+                    values[i] = value.high;
+                    predicted.populationLow[i] = value.low;
+                }
+            }
+            predicted.psi = values.head(count);
+            predicted.n = values.segment(count,count);
+            predicted.p = values.tail(count);
+            return predicted;
+        }
         try {
             const VectorXd values = predictPopulation(pack(*previous), pack(current), ratio);
             if (predictorUsesField(fields, "psi")) {

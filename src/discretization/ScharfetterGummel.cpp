@@ -130,6 +130,45 @@ Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef)
     return coef * (w.b_plus * p0 - w.b_minus * p1);
 }
 
+long double sgPopulationLogRatio(Real numerator, Real denominator)
+{
+    const long double low = std::min(numerator, denominator);
+    const long double high = std::max(numerator, denominator);
+    const long double relativeDifference = (high - low) / low;
+    const long double magnitude = std::isfinite(relativeDifference)
+        ? std::log1p(relativeDifference) : std::log(high) - std::log(low);
+    return numerator < denominator ? -magnitude : magnitude;
+}
+
+Real sgBoltzmannPopulationContinuityFlux(
+    Real population0, Real population1, Real ni0, Real ni1,
+    long double signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
+    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection)
+{
+    long double eta = static_cast<long double>(signedDpsi) / Vt;
+    if (includeNiGradientDrift && ni0 > 0.0 && ni1 > 0.0)
+        eta += sgPopulationLogRatio(ni1, ni0);
+
+    if (population0 <= 0.0 || population1 <= 0.0) {
+        return static_cast<Real>(coef * (longDoubleBernoulli(-eta) * population0
+            - longDoubleBernoulli(eta) * population1));
+    }
+
+    // B(-eta) = exp(eta) * B(eta). Factor out the larger term and
+    // evaluate the small relative imbalance without subtracting two fluxes.
+    const long double deltaEta = signedDpsiCorrection / Vt;
+    const long double logLeftOverRight = eta + sgPopulationLogRatio(population0, population1)
+        + (deltaEta + std::log1p(static_cast<long double>(relativeCorrection0))
+           - std::log1p(static_cast<long double>(relativeCorrection1)));
+    eta += deltaEta;
+    if (logLeftOverRight >= 0.0L) {
+        return static_cast<Real>(coef * longDoubleBernoulli(-eta) * population0
+            * (1.L + relativeCorrection0) * (-std::expm1(-logLeftOverRight)));
+    }
+    return static_cast<Real>(coef * longDoubleBernoulli(eta) * population1
+        * (1.L + relativeCorrection1) * std::expm1(logLeftOverRight));
+}
+
 Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
                                             Real psi1,
                                             Real phin0,

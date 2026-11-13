@@ -319,8 +319,15 @@ class CurveTests(unittest.TestCase):
         def curve(knee):
             return [{'bias_V':b,'I':-10**(-19+.1*abs(b)+.4*max(0.,abs(b)-knee))} for b in settings['biases_V']]
         reference = curve(19.6)
-        self.assertEqual(a.breakdown_knee_metrics(reference,reference,settings)['status'],'pass')
-        self.assertEqual(a.breakdown_knee_metrics(reference,curve(19.1),settings)['status'],'fail')
+        self.assertEqual(a.breakdown_knee_metrics(reference, reference, settings)['status'], 'pass')
+        accepted = a.breakdown_knee_metrics(reference, curve(19.418), settings)
+        self.assertEqual(accepted['status'], 'pass')
+        self.assertAlmostEqual(accepted['absolute_error_V'], 0.182)
+        self.assertAlmostEqual(accepted['relative_error'], 0.182 / 19.6)
+        self.assertEqual(accepted['maximum_relative_error'], 0.01)
+        rejected = a.breakdown_knee_metrics(reference, curve(19.4), settings)
+        self.assertGreater(rejected['relative_error'], 0.01)
+        self.assertEqual(rejected['status'], 'fail')
         with self.assertRaisesRegex(ValueError,'exact breakdown-knee bias'):
             a.breakdown_knee_metrics(reference,reference[:-1],settings)
         with self.assertRaisesRegex(ValueError,'duplicate'):

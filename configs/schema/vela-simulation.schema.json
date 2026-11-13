@@ -167,6 +167,7 @@
       ],
       "properties": {
         "primary_variable_coordinates": {"enum": ["unit", "physical"], "description": "Population Newton coordinates; default unit for BVMethods population state, physical is the explicit rollback."},
+        "compensated_population_state": {"type": "boolean", "default": false},
         "population_stopping_rule": {"enum": ["native_approx", "legacy"], "description": "Population default native_approx is E<1 OR a valid calibrated mapped RHS<1e-5; unsupported mappings never authorize RHS stopping."},
         "population_update_convergence": {
           "type": "object",

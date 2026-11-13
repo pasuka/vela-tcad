@@ -106,8 +106,18 @@ class DeckEmitterTests(unittest.TestCase):
                         self.assertEqual(sweep["step"], sweep["stop"] - sweep["start"])
                         self.assertEqual(sweep["step_growth_mode"], "newton_iterations")
                         self.assertTrue(sweep["stop_below_minimum_step"])
-                        self.assertEqual(sweep.get("preserve_step_after_output_clip", False),
-                                         sweep["stop"] > sweep["start"])
+                        self.assertTrue(sweep["preserve_step_after_output_clip"])
+                        self.assertNotIn("predictor", sweep)
+                        self.assertEqual(sweep["continuation"]["predictor"]["mode"],
+                                         "linear" if ir["math"]["extrapolate"] else "none")
+
+    def test_pn2d_population_without_extrapolate_disables_voltage_predictor(self):
+        source = REPO / "reference_tcad/pn2d_sentaurus2018/source/pn2d_bv_sdevice.cmd"
+        text = source.read_text(encoding="utf-8").replace("File {", 'File { Parameter="models.par"', 1)
+        ir = parse_cmd_text(text.replace("  Extrapolate", ""), path_name=source.name)
+        self.assertFalse(ir["math"]["extrapolate"])
+        result = emit(ir, options=EmitOptions(pn2d_population=True))
+        self.assertEqual(result.decks[-1]["sweep"]["continuation"]["predictor"]["mode"], "none")
 
     def test_old_slotboom_fermi_correction_and_explicit_nofermi(self):
         for fermi in (False, True):

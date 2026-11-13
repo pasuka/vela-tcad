@@ -58,6 +58,9 @@ struct CoupledDDBoundaryConditions {
     std::unordered_map<Index, Real> phin;
     std::unordered_map<Index, Real> phip;
     std::unordered_map<Index, CoupledDDThermionicBoundary> thermionic;
+    // Exact neutral densities and built-in potentials for compensated ohmic rows.
+    std::unordered_map<Index, std::array<Real, 3>> ohmicPopulation;
+    std::unordered_map<Index, Real> ohmicBias;
 };
 
 // Diagnostic-only frozen inputs for one-stage feedback substitutions.  The
@@ -380,6 +383,10 @@ public:
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
     PopulationPhysicalFields populationPhysicalFields(const VectorXd& x) const;
+    CoupledDDPhysicalDiagnostics compensatedPopulationDiagnostics(
+        const VectorXd& psi_V, const VectorXd& n, const VectorXd& p,
+        const VectorXd& low, const CoupledDDBoundaryConditions& bcs,
+        bool includeImpactIonization=true, SparseMatrixd* transportJacobian=nullptr) const;
 
     /// Store quasi-Fermi unknowns as contact-referenced increments.  The
     /// public CoupledDDState and boundary-condition values remain scaled

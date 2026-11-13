@@ -203,10 +203,16 @@ Newton numerical and geometry controls added for explicit validation profiles:
 - `solver.state_variables`: BVMethods defaults to `potential_density`; legacy
   operators retain `potential_quasi_fermi`. Explicit values override this
   operator-scoped default. The legacy operator accepts explicit population
-  state for classical Boltzmann transport. It uses the original residual in
-  its original row units and transforms the analytic tangent to ψ, n and p.
-  It uses full derivatives, physical coordinates and the legacy residual stop.
-  The BVMethods path retains its 300 K Joyce–Dixon contract.
+  state for classical Boltzmann transport. The PN2D Masetti SG profiles
+  assemble the transport and high-field mobility Jacobian contributions directly
+  in psi, n and p. The element-edge GSS-Laux avalanche Jacobian seeds these same
+  variables in local AD and uses the supplied populations in the SG factors.
+  GradQF driving fields still derive their quasi-Fermi potentials from the
+  population state. In legacy population mode, the SG edge fluxes use the
+  solved potentials and densities with cancellation-resistant Bernoulli
+  evaluation. Residual row units are unchanged. Other legacy contributions can
+  use the existing QF-to-population
+  Jacobian transform. The BVMethods path retains its 300 K Joyce–Dixon contract.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Population DDSolution retains the original normalized psi separately from QF
@@ -247,7 +253,10 @@ Newton numerical and geometry controls added for explicit validation profiles:
   MinStep and MaxStep to volts and uses Increment with Newton-iteration growth
   and reciprocal Decrement on retries. `sweep.stop_below_minimum_step: true`
   stops an ordinary voltage sweep when a retry would require less than MinStep.
-  Forward PN2D sweeps select `sweep.preserve_step_after_output_clip: true` to
+  The CMD `Extrapolate` setting maps to `sweep.continuation.predictor.mode`.
+  Linear prediction uses two accepted states. For concentration coordinates,
+  it extrapolates positive carrier concentrations in log space.
+  PN2D IV and BV sweeps select `sweep.preserve_step_after_output_clip: true` to
   reuse the proposed step after a first-attempt landing at an intermediate
   `vtk_bias_points` voltage shortened the step. A rejected step uses the
   configured reduction and the accepted retry determines subsequent growth.
@@ -268,6 +277,18 @@ Newton numerical and geometry controls added for explicit validation profiles:
   populations, positivity and ErrRef remain physical. Existing device row scales
   remain; the scalar row is divided by VT. Unit directions require one original
   defect correction and the original physical precision audit before writeback.
+- `solver.compensated_population_state` enables compensated potential and
+  carrier concentrations for the legacy, unit-scaled Boltzmann SG solver
+  with Ohmic contacts, Masetti mobility, optional SRH, and optional
+  element-edge SG/GSS-Laux avalanche. It defaults to `false`. This path
+  uses physical residual ceilings of `8e-28 C/m` (Poisson) and
+  `5e-22 A/µm` (each continuity equation), with backtracking on the live
+  residual. The correction uses the SG/Poisson Jacobian with mobility
+  and generation/recombination coefficients frozen during linearization.
+  HDF5 checkpoints store the three low components as one bundle. It is
+  supported for voltage-controlled sweeps. Terminal totals use the compensated
+  transport fluxes. Spatial fields in VTU retain the usual binary64 output
+  representation.
 - `solver.population_stopping_rule`: `native_approx` (BVMethods population default) or
   `legacy`. Approximate stop is valid E<1 OR a valid mapped RHS infinity norm
   <1e-5. E uses the physical raw direction and actual protected post-state.

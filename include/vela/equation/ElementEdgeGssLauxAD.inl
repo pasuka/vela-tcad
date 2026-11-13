@@ -623,7 +623,12 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
     const std::array<Scalar, 3>& p,
     const std::array<Real, 3>& ni,
     Real Vt,
-    Real fieldFactor)
+    Real fieldFactor,
+    bool populationFlux = false,
+    const std::array<long double, 3>* edgePotentialDrops = nullptr,
+    const std::array<Real, 3>* relativeElectronCorrections = nullptr,
+    const std::array<Real, 3>* relativeHoleCorrections = nullptr,
+    const std::array<long double, 3>* edgePotentialCorrections = nullptr)
 {
     if (!usesElementEdgeGssLauxAvalancheSource(impactConfig)) {
         throw std::invalid_argument(
@@ -711,19 +716,54 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
             qfMobility ? (vectorQfMobility ? holeQfField : holeEdgeField)
                        : electricEdgeField,
             n, p);
+        const auto populationSgFlux = [&](CarrierType carrier, const Scalar& coefficient) {
+            const bool electron = carrier == CarrierType::Electron;
+            const auto& density = electron ? n : p;
+            const Scalar signedDpsi = Scalar(electron ? 1.0 : -1.0) *
+                (psi[next] - psi[local]);
+            if constexpr (std::is_same_v<Scalar, Real>) {
+                const auto* corrections = electron ? relativeElectronCorrections : relativeHoleCorrections;
+                return sgBoltzmannPopulationContinuityFlux(
+                    density[local], density[next], ni[local], ni[next],
+                    edgePotentialDrops ? (electron ? 1. : -1.) * (*edgePotentialDrops)[local]
+                                       : signedDpsi,
+                    Vt, coefficient, true,
+                    corrections ? (*corrections)[local] : 0.,
+                    corrections ? (*corrections)[next] : 0.,
+                    edgePotentialCorrections ? (electron ? 1.L : -1.L) * (*edgePotentialCorrections)[local] : 0.L);
+            } else {
+                const Real niOffset = ni[local] > 0.0 && ni[next] > 0.0
+                    ? std::log(ni[next] / ni[local]) : 0.0;
+                const Scalar argument = signedDpsi / Scalar(Vt) + Scalar(niOffset);
+                Scalar flux = localAdBernoulli(-argument) * density[local] -
+                    localAdBernoulli(argument) * density[next];
+                if constexpr (std::is_same_v<Scalar, Tri3LocalForwardDual>) {
+                    // Keep the analytic tangents and use the residual's value
+                    // when differentiating the mobility multiplier.
+                    flux.value = sgBoltzmannPopulationContinuityFlux(
+                        density[local].value, density[next].value, ni[local], ni[next],
+                        signedDpsi.value, Vt, 1.0, true);
+                }
+                return coefficient * flux;
+            }
+        };
         electronFlux[local] =
             localAdValue(electronMobility) > 0.0
-            ? localAdElectronSgFlux(
-                ni[local], ni[next],
-                psi[local], psi[next], phin[local], phin[next], Vt,
-                electronMobility * Scalar(Vt * fieldFactor / edgeLength))
+            ? (populationFlux
+                ? populationSgFlux(CarrierType::Electron,
+                    electronMobility * Scalar(Vt * fieldFactor / edgeLength))
+                : localAdElectronSgFlux(
+                    ni[local], ni[next], psi[local], psi[next], phin[local], phin[next],
+                    Vt, electronMobility * Scalar(Vt * fieldFactor / edgeLength)))
             : Scalar(0.0);
         holeFlux[local] =
             localAdValue(holeMobility) > 0.0
-            ? localAdHoleSgFlux(
-                ni[local], ni[next],
-                psi[local], psi[next], phip[local], phip[next], Vt,
-                holeMobility * Scalar(Vt * fieldFactor / edgeLength))
+            ? (populationFlux
+                ? populationSgFlux(CarrierType::Hole,
+                    holeMobility * Scalar(Vt * fieldFactor / edgeLength))
+                : localAdHoleSgFlux(
+                    ni[local], ni[next], psi[local], psi[next], phip[local], phip[next],
+                    Vt, holeMobility * Scalar(Vt * fieldFactor / edgeLength)))
             : Scalar(0.0);
     }
 

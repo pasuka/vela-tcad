@@ -4072,7 +4072,8 @@ nlohmann::json runTerminalCurrentFunctionalProbe(const std::string& configFile,
             contact);
     }
     vela::Real current;
-    if(problem.newton.splitDDState)current=solver.evaluateStateTerminalCurrent(state,contact,currentScale);
+    if (problem.newton.splitDDState || state.populationLow.size())
+        current=solver.evaluateStateTerminalCurrent(state,contact,currentScale);
     else {
         const auto x=solver.packArclengthState(state);
         const auto functional=solver.makeArclengthContactCurrentFunctional(contact,currentScale);

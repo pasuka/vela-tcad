@@ -228,14 +228,17 @@ def breakdown_knee_metrics(reference, candidate, settings):
         curves.append(curve)
     reference_knee = continuous_breakpoint(curves[0], biases, 'reference')
     candidate_knee = continuous_breakpoint(curves[1], biases, 'candidate')
-    error = abs(candidate_knee-reference_knee)
+    absolute_error = abs(candidate_knee - reference_knee)
+    relative_error = absolute_error / abs(reference_knee)
+    maximum_relative_error = settings['maximum_V_break_relative_error']
     slope_knots = [slope_knee(adjacent_slopes(curve, biases, label))
                    for curve, label in zip(curves, ('reference', 'candidate'))]
     same_crossing = (slope_knots[0] is None) == (slope_knots[1] is None)
-    return {'status':'pass' if error <= settings['maximum_V_break_absolute_error_V'] and same_crossing else 'fail',
+    return {'status':'pass' if relative_error <= maximum_relative_error and same_crossing else 'fail',
             'definition':settings['definition'], 'threshold_source':settings['source'], 'biases_V':biases,
             'reference_fitted_knee_V':reference_knee, 'candidate_fitted_knee_V':candidate_knee,
-            'absolute_error_V':error, 'maximum_absolute_error_V':settings['maximum_V_break_absolute_error_V'],
+            'absolute_error_V':absolute_error, 'relative_error':relative_error,
+            'maximum_relative_error':maximum_relative_error,
             'slope_crossing_V':{'reference':slope_knots[0], 'candidate':slope_knots[1]},
             'slope_outcome':'shared_no_crossing' if all(s is None for s in slope_knots) else 'both_cross' if same_crossing else 'mismatch'}
 

@@ -684,6 +684,93 @@ TEST_CASE("PN junction concentration Jacobian differentiates fixed-population Po
     }
 }
 
+TEST_CASE("PN2D direct population columns follow field mobility and avalanche residuals",
+          "[newton][pn2d_population][jacobian]")
+{
+    const auto mesh = makePNMesh();
+    const auto doping = makePNDoping(mesh);
+    const MaterialDatabase materials;
+    const int count = static_cast<int>(mesh.numNodes());
+    auto mobility = mobilityModelConfig("masetti_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    mobility.electronField.saturationVelocity = 3e3;
+    mobility.holeField.saturationVelocity = 2e3;
+    const auto recombination = recombinationModelConfig({"none"});
+    BandgapNarrowingConfig bgn;
+    bgn.model = "old_slotboom";
+    ImpactIonizationModelConfig impact;
+    impact.model = "selberherr";
+    impact.drivingForce = "quasi_fermi_gradient";
+    impact.generation = "current_density";
+    impact.currentApproximation = "element_edge_sg_gss_laux";
+    impact.sourceMappingMode = "element_vertex_box_measure";
+    impact.quasiFermiGradientDiscretization = "cell_gradient";
+    impact.sourceJacobianMode = "local_ad";
+    impact.electronA = 8e5;
+    impact.holeA = 5e5;
+    impact.electronB = 3e5;
+    impact.holeB = 4e5;
+
+    DDScalingSpec scaling;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler qf(mesh, materials, doping, constants::Vt_300,
+                          mobility, recombination, bgn, impact);
+    CoupledDDAssembler density(mesh, materials, doping, constants::Vt_300,
+                               mobility, recombination, bgn, impact, {}, {}, scaling);
+    auto observe = impact;
+    observe.couplingMode = "postprocess_only";
+    CoupledDDAssembler transport(mesh, materials, doping, constants::Vt_300,
+                                  mobility, recombination, bgn, observe, {}, {}, scaling);
+    CoupledDDState fields;
+    fields.psi = (VectorXd(count) << -.08, .04, .11, -.03, .025).finished();
+    fields.phin = (VectorXd(count) << -.01, .02, .05, -.02, .012).finished();
+    fields.phip = (VectorXd(count) << .02, -.03, .01, .04, -.015).finished();
+    const auto x = qf.pack(fields);
+    const auto y = density.packPopulation(fields.psi, qf.electronDensity(x), qf.holeDensity(x));
+    CoupledDDBoundaryConditions boundary;
+    boundary.psi[0] = -.07;
+    boundary.phin[0] = .01;
+    boundary.phip[0] = .01;
+    const auto jacobian = density.assembleJacobian(y, boundary);
+    const auto transportJacobian = transport.assembleJacobian(y, boundary);
+    constexpr Real h = 1e-5;
+    for (int columnBlock = 0; columnBlock < 3; ++columnBlock) {
+        CAPTURE(columnBlock);
+        VectorXd direction = VectorXd::Zero(3 * count);
+        if (columnBlock == 0)
+            direction.head(count) << -.02, .03, .01, -.025, .04;
+        else
+            direction.segment(columnBlock * count, count) =
+                y.segment(columnBlock * count, count).cwiseProduct(
+                    (VectorXd(count) << .2, -.3, .4, .1, -.25).finished());
+        const VectorXd plus = y + h * direction;
+        const VectorXd minus = y - h * direction;
+        const VectorXd fd = (density.residual(plus, boundary) -
+                             density.residual(minus, boundary)) / (2 * h);
+        const VectorXd transportFd = (transport.residual(plus, boundary) -
+                                      transport.residual(minus, boundary)) / (2 * h);
+        const VectorXd analytic = jacobian * direction;
+        const VectorXd transportAnalytic = transportJacobian * direction;
+        for (int rowBlock : {1, 2}) {
+            CAPTURE(rowBlock);
+            const auto t = transportFd.segment(rowBlock * count, count);
+            const VectorXd source = (fd - transportFd).segment(rowBlock * count, count);
+            const auto transportBlock = transportAnalytic.segment(rowBlock * count, count);
+            if (columnBlock == 0 || columnBlock == rowBlock) {
+                REQUIRE(t.norm() > 0.0);
+                REQUIRE((transportBlock - t).norm() < 1e-6 * t.norm());
+            } else {
+                REQUIRE(t.isZero(0.0));
+                REQUIRE(transportBlock.isZero(0.0));
+            }
+            REQUIRE(source.norm() > 0.0);
+            REQUIRE(((analytic - transportAnalytic).segment(rowBlock * count, count) - source).norm() <
+                    1e-6 * source.norm());
+        }
+    }
+}
+
 TEST_CASE("Surface and HFS transport Jacobian follows live residual in every carrier block",
           "[newton][mobility][surface][composition_order][jacobian]")
 {

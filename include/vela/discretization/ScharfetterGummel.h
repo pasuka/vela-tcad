@@ -50,6 +50,19 @@ Real sgElectronContinuityFlux(Real n0, Real n1, Real dpsi, Real Vt, Real coef);
  */
 Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef);
 
+/** @brief Boltzmann SG flux from the solved endpoint populations.
+ *
+ * Pass psi1 - psi0 for electrons and psi0 - psi1 for holes as signedDpsi.
+ * The intrinsic-density gradient uses the same orientation for both carriers.
+ */
+Real sgBoltzmannPopulationContinuityFlux(
+    Real population0, Real population1, Real ni0, Real ni1,
+    long double signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
+    Real relativeCorrection0 = 0., Real relativeCorrection1 = 0., long double signedDpsiCorrection = 0.L);
+
+// Stable logarithm of a positive ratio, including neighboring populations.
+long double sgPopulationLogRatio(Real numerator, Real denominator);
+
 /**
  * @brief Balanced electron continuity flux for Boltzmann quasi-Fermi variables.
  *

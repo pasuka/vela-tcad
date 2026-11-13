@@ -250,6 +250,7 @@ struct NewtonConfig {
     std::string primaryVariableCoordinates;
     std::string populationStoppingRule;
     DensityUpdateConvergenceConfig populationUpdateConvergence;
+    bool compensatedPopulationState = false;
     std::string populationSgCurrent = "quasi_fermi";
     std::string populationSgBootstrapLinearization = "unchanged";
     PopulationUpdateConfig populationUpdate;
@@ -925,6 +926,7 @@ private:
         const CoupledDDAssembler& assembler,
         const std::unordered_map<std::string, Real>& contactBiases) const;
     std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler() const;
+    NewtonResult solveCompensatedPopulation(const DDSolution& initial) const;
     DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;

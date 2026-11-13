@@ -1,4 +1,7 @@
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/LinearSolver.h"
+#include "vela/numerics/ExpansionProductSum.h"
+#include "vela/core/PhysicalConstants.h"
 #include "vela/simulation/PopulationCoordinateNewton.h"
 #include "vela/numerics/ResidualNorm.h"
 #include <algorithm>
@@ -7,6 +10,8 @@
 
 namespace vela {
 NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
+    if (cfg_.compensatedPopulationState)
+        return solveCompensatedPopulation(initial);
     if(mesh_.contacts().empty())throw std::invalid_argument("population Newton requires an explicit contact");
     const std::string contact=mesh_.contacts().front().name;
     const auto bias=contactBiases_.find(contact);
@@ -120,5 +125,176 @@ NewtonResult NewtonSolver::solvePopulation(const DDSolution& initial) const {
         if(cfg_.diagnostics)out.history.push_back(out.trace.back());
     }
     return out;
+}
+NewtonResult NewtonSolver::solveCompensatedPopulation(const DDSolution& initial) const
+{
+    auto assembler = makeArclengthAssembler();
+    const auto boundary = buildBoundaryConditions(*assembler);
+    const auto scaling = buildScalingSpec();
+    const int count = mesh_.numNodes();
+    if (initial.psi.size() != count || initial.n.size() != count || initial.p.size() != count ||
+        !initial.psi.allFinite() || !initial.n.allFinite() || !initial.p.allFinite() ||
+        initial.n.minCoeff() <= 0. || initial.p.minCoeff() <= 0. ||
+        (initial.populationLow.size() && initial.populationLow.size() != 3*count))
+        throw std::invalid_argument("Invalid compensated population initial state");
+
+    VectorXd state(3*count);
+    state << initial.psi, initial.n, initial.p;
+    VectorXd low = initial.populationLow.size() ? initial.populationLow : VectorXd::Zero(3*count);
+    std::vector<Index> contacts;
+    std::vector<int> prescribed;
+    for (const auto& [node,target] : boundary.ohmicPopulation) {
+        experimental::ExpansionProductSum potential;
+        potential.add(boundary.ohmicBias.at(node));
+        potential.add(target[0]);
+        const auto value = potential.parts();
+        state[node] = value.high;
+        low[node] = value.low;
+        state[count+node] = target[1];
+        state[2*count+node] = target[2];
+        low[count+node] = low[2*count+node] = 0.;
+        contacts.push_back(node);
+        for (int block = 0; block < 3; ++block)
+            prescribed.push_back(block*count+node);
+    }
+    if (contacts.empty())
+        throw std::invalid_argument("Compensated population Newton requires Ohmic contacts");
+
+    // The PN2D precision validation uses absolute physical residual ceilings.
+    // A small relative update alone cannot resolve the reverse leakage current.
+    constexpr Real poissonCeiling_C_per_m = 8e-28;
+    constexpr Real continuityCeiling_A_per_um = 5e-22;
+    const Real poissonWeight = scaling.permittivityReference_F_per_m * scaling.V0 /
+        poissonCeiling_C_per_m;
+    const Real continuityWeight = constants::q * assembler->continuityResidualScale() *
+        scaling.currentDensityLineIntegralFactor * 1e-6 / continuityCeiling_A_per_um;
+    const auto merit = [&](const VectorXd& f) {
+        if (!f.allFinite()) return std::numeric_limits<Real>::infinity();
+        return std::max(poissonWeight*f.head(count).lpNorm<Eigen::Infinity>(),
+                        continuityWeight*f.tail(2*count).lpNorm<Eigen::Infinity>());
+    };
+    const auto evaluate = [&](const VectorXd& x, const VectorXd& tails, SparseMatrixd* jacobian = nullptr) {
+        return assembler->compensatedPopulationDiagnostics(
+            x.head(count),x.segment(count,count),x.tail(count),tails,boundary,true,jacobian);
+    };
+    const auto blockInfo = [&](const VectorXd& residual) {
+        const auto blocks = ResidualNorm::computeBlocks(residual,count);
+        return NewtonBlockResidualInfo{blocks.psi,blocks.phin,blocks.phip,blocks.combined};
+    };
+    const auto gates = [&](const CoupledDDPhysicalDiagnostics& physical, NewtonResult& result) {
+        result.finalBlockNorms = blockInfo(physical.residual);
+        result.finalCarrierRowConvergence = evaluateCarrierRowConvergence(
+            physical.constrainedTerms,cfg_.carrierRowConvergence);
+        result.finalGlobalContinuityClosure = evaluateGlobalContinuityClosure(
+            physical.unconstrainedTerms,contacts,contacts,cfg_.globalContinuityClosure);
+        const auto& block = cfg_.blockAbsoluteConvergence;
+        return (!result.finalCarrierRowConvergence.enforced || result.finalCarrierRowConvergence.satisfied) &&
+               (!result.finalGlobalContinuityClosure.enforced || result.finalGlobalContinuityClosure.satisfied) &&
+               (block.mode != "enforce" ||
+                (physical.residual.head(count).lpNorm<Eigen::Infinity>() <= block.psiResidualCeiling &&
+                 physical.residual.segment(count,count).lpNorm<Eigen::Infinity>() <= block.electronResidualCeiling &&
+                 physical.residual.tail(count).lpNorm<Eigen::Infinity>() <= block.holeResidualCeiling));
+    };
+
+    NewtonResult result;
+    LinearSolver linear;
+    auto physical = evaluate(state,low);
+    Real currentMerit = merit(physical.residual);
+    result.initialResidualNorm = currentMerit;
+    result.failureDiagnostics.failureReason = "compensated population Newton iteration budget exhausted";
+    for (int iteration = 0; iteration <= cfg_.maxIter; ++iteration) {
+        if (currentMerit <= 1. && gates(physical,result)) {
+            result.converged = true;
+            result.convergenceReason = "compensated_population_residual";
+            result.failureDiagnostics.failureReason.clear();
+            break;
+        }
+        if (iteration == cfg_.maxIter)
+            break;
+
+        // Keep mobility, SRH and avalanche live in the residual. Freeze their
+        // derivatives in this correction, which uses the scaled SG/Poisson stencil.
+        SparseMatrixd jacobian;
+        physical = evaluate(state,low,&jacobian);
+        VectorXd rowMax = VectorXd::Zero(state.size());
+        for (int column = 0; column < jacobian.outerSize(); ++column)
+            for (SparseMatrixd::InnerIterator it(jacobian,column); it; ++it)
+                rowMax[it.row()] = std::max(rowMax[it.row()],std::abs(it.value()));
+        if ((rowMax.array() <= 0.).any() || !rowMax.allFinite()) {
+            result.failureDiagnostics.failureReason = "invalid compensated population Jacobian row";
+            break;
+        }
+        for (int column = 0; column < jacobian.outerSize(); ++column)
+            for (SparseMatrixd::InnerIterator it(jacobian,column); it; ++it)
+                it.valueRef() /= rowMax[it.row()];
+        VectorXd rhs = -physical.residual.cwiseQuotient(rowMax);
+        for (int row : prescribed) rhs[row] = 0.;
+        VectorXd delta;
+        try {
+            delta = linear.solve(jacobian,rhs,prescribed);
+        } catch (const std::runtime_error& error) {
+            result.failureDiagnostics.failureReason = error.what();
+            break;
+        }
+        delta.head(count) *= scaling.V0;
+        delta.tail(2*count).array() *= state.tail(2*count).array();
+        if (!delta.allFinite()) {
+            result.failureDiagnostics.failureReason = "nonfinite compensated population correction";
+            break;
+        }
+
+        bool accepted = false;
+        Real alpha = cfg_.dampingFactor;
+        for (int attempt = 1; attempt <= 20; ++attempt, alpha *= 0.5) {
+            VectorXd trial(state.size()), trialLow(state.size());
+            for (Eigen::Index i = 0; i < state.size(); ++i) {
+                experimental::ExpansionProductSum sum;
+                sum.add(state[i]);
+                sum.add(low[i]);
+                sum.add(alpha*delta[i]);
+                const auto value = sum.parts();
+                trial[i] = value.high;
+                trialLow[i] = value.low;
+            }
+            if (trial.tail(2*count).minCoeff() <= 0.)
+                continue;
+            auto candidate = evaluate(trial,trialLow);
+            const Real candidateMerit = merit(candidate.residual);
+            if (candidateMerit >= currentMerit)
+                continue;
+            state.swap(trial);
+            low.swap(trialLow);
+            physical = std::move(candidate);
+            currentMerit = candidateMerit;
+            result.iters = iteration+1;
+            NewtonIterationInfo info;
+            info.iter = result.iters;
+            info.event = "compensated_population";
+            info.residualNorm = currentMerit;
+            info.blockResiduals = blockInfo(physical.residual);
+            info.dampingFactor = alpha;
+            info.lineSearchAttempts = attempt;
+            info.lineSearchAccepted = true;
+            result.trace.push_back(info);
+            if (cfg_.diagnostics)
+                result.history.push_back(info);
+            accepted = true;
+            break;
+        }
+        if (!accepted) {
+            result.failureDiagnostics.failureReason = "compensated population line search rejected correction";
+            break;
+        }
+    }
+    gates(physical,result);
+    result.finalResidualNorm = currentMerit;
+    result.solution = makeSolution(*assembler,assembler->packPopulation(
+        state.head(count),state.segment(count,count),state.tail(count)),result.iters);
+    result.solution.psi = state.head(count);
+    result.solution.populationPsi.resize(0);
+    result.solution.populationPotentialScale_V = 0.;
+    result.solution.populationLow = std::move(low);
+    result.solution.converged = result.converged;
+    return result;
 }
 } // namespace vela

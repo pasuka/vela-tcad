@@ -778,12 +778,16 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                     raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
                 # Use the CMD Goal and requested output biases as the only
                 # landing targets. Do not insert a second MaxStep-based grid.
-                sweep.update(step=v1 - v0, step_growth_mode="newton_iterations", stop_below_minimum_step=True)
-                if v1 > v0:
-                    sweep["preserve_step_after_output_clip"] = True
-                    _decision(decisions, "Plot", "forward output voltages",
-                              "sweep.preserve_step_after_output_clip", True,
-                              "Retain the proposed step after a successful first-attempt output landing", stage=index)
+                sweep.update(step=v1 - v0, step_growth_mode="newton_iterations",
+                             stop_below_minimum_step=True, preserve_step_after_output_clip=True)
+                predictor = sweep.pop("predictor")
+                sweep.setdefault("continuation", {})["predictor"] = {"mode": predictor}
+                _decision(decisions, "Extrapolate", math_cfg["extrapolate"],
+                          "sweep.continuation.predictor.mode", predictor,
+                          "Predict the initial state from the last two accepted voltage states", stage=index)
+                _decision(decisions, "Plot", "requested output voltages",
+                          "sweep.preserve_step_after_output_clip", True,
+                          "Retain the proposed step after a successful first-attempt output landing", stage=index)
                 retries = math.ceil((math.log(controls["max_step"]) - math.log(controls["min_step"]))
                                     / math.log(controls["decrement"]))
                 if retries > 2_147_483_647:
