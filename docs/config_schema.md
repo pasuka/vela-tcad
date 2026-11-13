@@ -774,7 +774,15 @@ Scalar Tri3 transport computes the Canali mobility value in long double.
 Set `VELA_BVMETHODS_CANALI_VALUE_ONLY=0` before launch to use the full Canali
 evaluation for scalar transport, or set `VELA_BVMETHODS_CANALI_VALUE_AUDIT=1`
 to compute both paths and check the mobility bit pattern at every evaluation.
-Jacobian and avalanche assembly retain the full evaluation.
+BVMethods avalanche residual assembly also computes only the Canali mobility
+value when it does not assemble avalanche derivatives. Full Canali evaluations
+in BVMethods transport and avalanche assembly reuse the common long-double power
+for the mobility and its derivatives.
+Set `VELA_BVMETHODS_DISABLE_CANALI_AV_VALUE=1` to restore full Canali evaluation
+for avalanche residuals, or `VELA_BVMETHODS_DISABLE_CANALI_SHARED_POWER=1` to
+restore separate power evaluations. `VELA_BVMETHODS_CANALI_OPTIMIZATION_AUDIT=1`
+compares the active optimized evaluations with the original bit patterns and
+checks the assembled avalanche source.
 
 BVMethods potential-density contact and circuit current evaluations reuse the
 last source-free transport vector when the packed state matches bit for bit

@@ -17,6 +17,15 @@ bool enabledEnvironmentFlag(const char* name) {
     return value && std::string_view(value)=="1";
 }
 
+detail::CanaliEvaluationOptions canaliEvaluationOptions() {
+    static const detail::CanaliEvaluationOptions mode{
+        !enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_CANALI_AV_VALUE"),
+        !enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_CANALI_SHARED_POWER"),
+        enabledEnvironmentFlag("VELA_BVMETHODS_CANALI_OPTIMIZATION_AUDIT")
+    };
+    return mode;
+}
+
 enum class TransportValueMode { dual, shadow, scalar };
 TransportValueMode transportValueMode() {
     static const auto mode=[] {
@@ -194,7 +203,9 @@ struct BvMethodsCoupledRuntime::Impl {
         }
         auto reference=[&] {
             ScopedPerformanceTimer timer(stage);
-            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers);
+            const auto canali=canaliEvaluationOptions();
+            if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_transport");
+            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers,canali);
         }();
         if(mode==TransportValueMode::shadow) {
             incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
@@ -251,7 +262,22 @@ struct BvMethodsCoupledRuntime::Impl {
         if(owner.impactIonizationCoupled_) {
             static const bool reuseGeneration=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_GENERATION_REUSE");
             ScopedPerformanceTimer timer(jac&&!approximate?"bvmethods.tri3.avalanche_jacobian":"bvmethods.tri3.avalanche_residual");
-            out.av=element->evaluate(s,jac&&!approximate,columns,reuseGeneration);
+            const bool derivatives=jac&&!approximate;
+            const auto canali=canaliEvaluationOptions();
+            if(canali.avalancheValueOnly&&!derivatives)incrementPerformanceCounter("bvmethods.tri3.canali_av_value");
+            if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_av");
+            out.av=element->evaluate(s,derivatives,columns,reuseGeneration,canali);
+            if(canali.audit) {
+                const auto baseline=element->evaluate(s,derivatives,columns,reuseGeneration);
+                if(!equalStateBits(out.av.source,baseline.source) ||
+                   !equalStateBits(out.av.allGeneration,baseline.allGeneration) ||
+                   !equalStateBits(out.av.electronGeneration,baseline.electronGeneration) ||
+                   !equalStateBits(out.av.holeGeneration,baseline.holeGeneration) ||
+                   out.av.zeroActiveElectron!=baseline.zeroActiveElectron ||
+                   out.av.zeroActiveHole!=baseline.zeroActiveHole)
+                    throw std::runtime_error("Canali avalanche source bit mismatch");
+                incrementPerformanceCounter("bvmethods.tri3.canali_av_audit");
+            }
         }
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;

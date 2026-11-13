@@ -1226,3 +1226,27 @@ TEST_CASE("Scalar Tri3 transport retains SG value branches and depleted quotient
         }
     }
 }
+
+TEST_CASE("Canali shared power preserves value and both branch-local tangents", "[bvmethods_profile][av_contract]") {
+    using namespace vela;
+    using detail::CanaliEvaluationOptions;
+    const double cutoff=100.;
+    FieldMobilityParameters p;
+    for(double beta:{1.001,1.109,1.213,2.,5.}) {
+        p.beta=beta;
+        for(double vsat:{1e-20,8.37e4,1.07e5,1e20}) {
+            p.saturationVelocity=vsat;
+            for(double mu:{-1.,-0.,0.,1e-150,.025,.15,1e100}) {
+                for(double f:{0.,std::nextafter(cutoff,0.),cutoff,std::nextafter(cutoff,1e3),1e6,1e12,1e100}) {
+                    const auto a=evaluateElementCanali(mu,f,p,cutoff);
+                    const auto b=evaluateElementCanaliSharedPower(mu,f,p,cutoff);
+                    REQUIRE(CanaliEvaluationOptions::same(a.mobility,b.mobility));
+                    REQUIRE(CanaliEvaluationOptions::same(a.lowDerivative,b.lowDerivative));
+                    REQUIRE(CanaliEvaluationOptions::same(a.fieldDerivative,b.fieldDerivative));
+                }
+            }
+        }
+    }
+    p.beta=1.;
+    REQUIRE_THROWS_AS(evaluateElementCanaliSharedPower(.1,cutoff,p,cutoff),std::invalid_argument);
+}
