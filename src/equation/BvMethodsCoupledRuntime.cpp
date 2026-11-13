@@ -180,10 +180,17 @@ struct BvMethodsCoupledRuntime::Impl {
         std::string_view stage) const {
         const auto mode=jac || !element->supportsTransportValues(state)
             ? TransportValueMode::dual : transportValueMode();
+        static const bool auditCanali=enabledEnvironmentFlag("VELA_BVMETHODS_CANALI_VALUE_AUDIT");
+        static const bool valueOnlyCanali=[] {
+            const char* value=std::getenv("VELA_BVMETHODS_CANALI_VALUE_ONLY");
+            return auditCanali || !value || std::string_view(value)!="0";
+        }();
         if(mode==TransportValueMode::scalar) {
+            if(valueOnlyCanali)incrementPerformanceCounter("bvmethods.tri3.canali_value_only_transport_calls");
+            if(auditCanali)incrementPerformanceCounter("bvmethods.tri3.canali_audit_transport_calls");
             incrementPerformanceCounter("bvmethods.tri3.scalar_value_calls");
             ScopedPerformanceTimer timer(stage);
-            return element->transportValues(state,true,true,reusePowers);
+            return element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali);
         }
         auto reference=[&] {
             ScopedPerformanceTimer timer(stage);
@@ -192,7 +199,7 @@ struct BvMethodsCoupledRuntime::Impl {
         if(mode==TransportValueMode::shadow) {
             incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
             ScopedPerformanceTimer timer("bvmethods.tri3.scalar_shadow");
-            const auto candidate=element->transportValues(state,true,true,reusePowers);
+            const auto candidate=element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali);
             if(!equalStateBits(reference.source,candidate.source) ||
                !equalStateBits(reference.absoluteSource,candidate.absoluteSource)) {
                 incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_mismatches");

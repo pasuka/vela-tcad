@@ -1,5 +1,7 @@
 #pragma once
 #include <optional>
+#include <bit>
+#include <cstdint>
 
 #include "vela/equation/AssemblerUtils.h"
 #include <limits>
@@ -294,7 +296,7 @@ public:
  }
 
  BvMethodsTri3Evaluation transportValues(const BvMethodsQfState& state,bool generalized,
-    bool coefficientAveraging,bool reuseLombardiPowers) const {
+    bool coefficientAveraging,bool reuseLombardiPowers,bool valueOnlyCanali,bool auditCanali) const {
   if(!supportsTransportValues(state))throw std::invalid_argument("Scalar Tri3 transport requires population QF SG");
   const auto units=problem_.newton.inputScaling.unitSystem();
   const int n=problem_.mesh.numNodes();
@@ -342,8 +344,19 @@ public:
      tangent[k]=dc*(electron?node.tangentN:node.tangentP);
      eta[k]=electron?node.etaN:node.etaP;
      const auto surface=evaluatePreparedElementLombardi(bulk[k],normal,prepared[i],lp,cfg_,powers?&*powers:nullptr,electron);
-     const auto high=evaluateElementCanali(surface.mobility,drive,hf,100./cfg_.internalFieldToVPerM);
-     mobility[k]=high.mobility*mobilityScale;
+     const double cutoff=100./cfg_.internalFieldToVPerM;
+     const auto valueOnly=[&] {
+      return static_cast<Real>(elementCanali(static_cast<long double>(surface.mobility),
+          static_cast<long double>(drive),hf,cutoff));
+     };
+     const double mobilityValue=valueOnlyCanali ? valueOnly()
+        : evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility;
+     if(auditCanali) {
+      const double reference=evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility;
+      if(std::bit_cast<std::uint64_t>(mobilityValue)!=std::bit_cast<std::uint64_t>(reference))
+       throw std::runtime_error("BVMethods value-only Canali mobility mismatch");
+     }
+     mobility[k]=mobilityValue*mobilityScale;
     }
     for(int k=0;k<3;++k) {
      const int j=(k+1)%3;

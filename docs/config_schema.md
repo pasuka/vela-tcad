@@ -721,6 +721,12 @@ those calls, or set it to `shadow` to return the Dual result and compare
 both value vectors bit for bit with the scalar result. Jacobian requests
 and unsupported state or SG modes use the Dual path.
 
+Scalar Tri3 transport computes the Canali mobility value in long double.
+Set `VELA_BVMETHODS_CANALI_VALUE_ONLY=0` before launch to use the full Canali
+evaluation for scalar transport, or set `VELA_BVMETHODS_CANALI_VALUE_AUDIT=1`
+to compute both paths and check the mobility bit pattern at every evaluation.
+Jacobian and avalanche assembly retain the full evaluation.
+
 BVMethods potential-density contact and circuit current evaluations reuse the
 last source-free transport vector when the packed state matches bit for bit
 within the same assembler runtime. Set `VELA_BVMETHODS_TRI3_PORT_CACHE=0`
