@@ -72,12 +72,13 @@ elementLocalAvalancheSourceIntegrals(
     const DeviceMesh& mesh,const DopingModel& doping,const std::vector<Material>& materials,
     Index cell,const std::array<Scalar,3>& psi,const std::array<Scalar,3>& fn,
     const std::array<Scalar,3>& fp,const std::array<Scalar,3>& n,const std::array<Scalar,3>& p,
-    const std::array<Real,3>& ni,Real vt,Real fieldFactor)
+    const std::array<Real,3>& ni,Real vt,Real fieldFactor,bool populationFlux=false)
 {
     if (usesPhuMobElementAvalancheSource(impact))
         return phumobElementAvalancheSourceIntegralsLocal(impact,mobility,mesh,doping,materials,cell,psi,fn,fp,n,p);
     if (usesIalElementAvalancheSource(impact))
         return ialElementAvalancheSourceIntegralsLocal(impact,mobility,mesh,doping,cell,psi,fn,fp,n,p);
     return elementEdgeGssLauxAvalancheSourceIntegralsLocal<Scalar>(
-        impact,mobility,model,edges,mesh,doping,materials,cell,psi,fn,fp,n,p,ni,vt,fieldFactor);
+        impact,mobility,model,edges,mesh,doping,materials,cell,psi,fn,fp,n,p,ni,vt,fieldFactor,
+        populationFlux);
 }

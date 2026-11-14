@@ -64,6 +64,20 @@ Real distanceSquared(const Node& a, const Node& b)
     return dx * dx + dy * dy;
 }
 
+std::array<Real, 3> triangleCotangents(const std::array<const Node*, 3>& nodes,
+                                      Index& clampedCount)
+{
+    std::array<Real, 3> cotangents{};
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        const Real raw = cotangentAtOppositeVertex(*nodes[(i + 1) % 3],
+                                                  *nodes[(i + 2) % 3], *nodes[i]);
+        cotangents[i] = clampNearRightCotangent(raw);
+        if (raw != cotangents[i])
+            ++clampedCount;
+    }
+    return cotangents;
+}
+
 std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
                                        const std::array<Real, 3>&       cotangents,
                                        Real                             area,
@@ -133,8 +147,10 @@ std::array<Real,3> BoxGeometryBuilder::mixedVoronoiVertexVolumes(const DeviceMes
     const auto& c=mesh.getNode(cell.node_ids[2]);
     const Real area=triangleArea(a,b,c);
     if (area<=kDegenerateTol) return {};
-    return mixedVoronoiShares({&a,&b,&c},
-        {angleDegreesAt(a,b,c),angleDegreesAt(b,c,a),angleDegreesAt(c,a,b)},area);
+    const std::array<const Node*, 3> nodes = {&a, &b, &c};
+    Index clampedCount = 0;
+    const auto cotangents = triangleCotangents(nodes, clampedCount);
+    return mixedVoronoiShares(nodes, cotangents, area, clampedCount != 0);
 }
 
 std::array<Real,3> BoxGeometryBuilder::circumcentricVertexVolumes(
@@ -255,17 +271,10 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             angleDegreesAt(n2, n0, n1),
         };
         const std::array<const Node*, 3> nodes = {&n0, &n1, &n2};
-        std::array<Real, 3> cotangents{};
-        bool clamped = false;
-        for (int k = 0; k < 3; ++k) {
-            const Real raw = cotangentAtOppositeVertex(*nodes[(k + 1) % 3],
-                                                       *nodes[(k + 2) % 3], *nodes[k]);
-            cotangents[k] = clampNearRightCotangent(raw);
-            if (raw != cotangents[k]) {
-                clamped = true;
-                ++report.clampedCotangentCount;
-            }
-        }
+        Index clampedCount = 0;
+        const auto cotangents = triangleCotangents(nodes, clampedCount);
+        report.clampedCotangentCount += clampedCount;
+        const bool clamped = clampedCount != 0;
         if (options.requireNonObtuse &&
             *std::min_element(cotangents.begin(), cotangents.end()) < 0.0) {
             const Real maxCellAngle = *std::max_element(angles.begin(), angles.end());

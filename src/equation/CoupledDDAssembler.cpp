@@ -1452,7 +1452,10 @@ SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
 
 SparseMatrixd CoupledDDAssembler::populationBootstrapJacobian(const VectorXd& y,const CoupledDDBoundaryConditions& b) const {
     if(!usesPopulationState())throw std::invalid_argument("bootstrap population Jacobian requires population coordinates");
-    return coupledStateRuntime()->jacobian(y,b,true);
+    const auto runtime = coupledStateRuntime();
+    if (!runtime)
+        throw std::invalid_argument("bootstrap population Jacobian requires the BVMethods operator");
+    return runtime->jacobian(y,b,true);
 }
 
 void CoupledDDAssembler::setLegacyEdgeJacobianSteps(Real transport, Real avalanche)
@@ -7706,6 +7709,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                                 psi(nodeIndex)-holeQuasiFermiReferenceAt(node),x(phipOffset()+nodeIndex)*potentialScale,Vt_,carrierStatisticsModel_)/Vt_;
                             en.derivative[localNode]=dn; en.derivative[3+localNode]=-dn;
                             hp.derivative[localNode]=-dp; hp.derivative[6+localNode]=dp;
+                        }
                     }
                 }
                 const auto sources = sourceMode==1

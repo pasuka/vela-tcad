@@ -550,6 +550,12 @@ TEST_CASE("BoxGeometryBuilder: near-right cotangents are zero per cell",
         CHECK(report.fallbackCount == 0);
         CHECK(report.clampedCotangentCount == (shift == 0.0 ? 0 : 1));
         CHECK(report.nodeVolumeSum == Catch::Approx(0.5 + 0.75 * (1.0 - shift)).margin(1e-15).epsilon(0));
+        const auto shares = BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh, mesh.getCell(0));
+        CHECK(shares[0] + shares[1] + shares[2] ==
+              Catch::Approx(0.5).margin(1e-15).epsilon(0));
+        CHECK(shares[0] == Catch::Approx(0.25).margin(tolerance).epsilon(0));
+        CHECK(shares[1] == Catch::Approx(0.125).margin(tolerance).epsilon(0));
+        CHECK(shares[2] == Catch::Approx(0.125).margin(tolerance).epsilon(0));
         CHECK(mesh.poissonCellEdgeCoefficients(0)[1] == 0.0);
 
         const auto& edges = mesh.edges();
