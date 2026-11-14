@@ -71,6 +71,16 @@ The reference regression is `sdevice_e2e_pn2d_bv_compensated`. Set
 The case covers the opt-in frontend profile and its pinned mesh. The standalone
 M0/M2 template and its existing qualification retain their own scope.
 
+## Standalone equilibrium deck pending removal
+
+The standalone reference deck
+[`pn2d_0v_sdevice.cmd`](../../reference_tcad/pn2d_sentaurus2018/source/pn2d_0v_sdevice.cmd)
+is marked for planned removal. The IV and BV decks both solve at 0 V
+and their end-to-end acceptance compares that equilibrium field state.
+Before removal, carry the standalone absolute-current and current-balance
+checks into the sweep equilibrium acceptance. The standalone deck, archived
+baseline, and CTest registration remain available during this transition.
+
 ## Vela-generated mesh comparison
 
 The offline SDE path generated a non-obtuse PN2D mesh with 1,482 nodes and
