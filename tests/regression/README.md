@@ -60,7 +60,7 @@ its authoritative scripts, reports, and acceptance boundary.
 ## PN2D Release regression
 
 The `CI` workflow runs the PN2D job on every push and pull request. To run it
-manually, choose **Actions → CI → Run workflow**, select the branch and set
+manually, open **CI** under **Actions**, choose **Run workflow**, select the branch and set
 `suite=pn2d`. Choose `all` to also run the existing Debug and SDE packaging jobs.
 The default branch must expose the workflow before GitHub offers manual runs.
 With GitHub CLI, use `gh workflow run ci.yml --ref <branch> -f suite=pn2d`.
