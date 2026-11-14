@@ -1946,6 +1946,36 @@ set_tests_properties(sdevice_e2e_pn2d_bv_compensated PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
 vela_set_windows_msys2_test_path(sdevice_e2e_pn2d_bv_compensated)
 
+option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)
+if(VELA_ENABLE_PN2D_CI)
+    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "codata2018")
+        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=codata2018")
+    endif()
+    set(_pn2d_ci_runner ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_pn2d_ci.py)
+    set(_pn2d_ci_args --reference ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reference
+                      --output ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reports)
+    add_test(NAME pn2d_ci_stage
+        COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} stage ${_pn2d_ci_args})
+    set_tests_properties(pn2d_ci_stage PROPERTIES FIXTURES_SETUP pn2d_ci_reference LABELS pn2d-ci)
+    set(_pn2d_ci_cases 0v iv bv)
+    foreach(_variant P0 P1 P2 P3 D1 D2 G1 G2)
+        list(APPEND _pn2d_ci_cases ${_variant}-forward ${_variant}-reverse)
+    endforeach()
+    foreach(_case IN LISTS _pn2d_ci_cases)
+        add_test(NAME pn2d_ci_${_case}
+            COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} ${_case} ${_pn2d_ci_args}
+                --launcher $<TARGET_FILE:sd-sim>)
+        set_tests_properties(pn2d_ci_${_case} PROPERTIES
+            FIXTURES_REQUIRED pn2d_ci_reference LABELS "pn2d-ci;sdevice" TIMEOUT 5400)
+        vela_set_windows_msys2_test_path(pn2d_ci_${_case})
+    endforeach()
+    add_test(NAME pn2d_ci_sde
+        COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} sde ${_pn2d_ci_args})
+    set_tests_properties(pn2d_ci_sde PROPERTIES LABELS "pn2d-ci;sde")
+    vela_set_windows_msys2_test_path(pn2d_ci_stage)
+    vela_set_windows_msys2_test_path(pn2d_ci_sde)
+endif()
+
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sdevice_gate_contact_mapping)

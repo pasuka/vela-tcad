@@ -4,9 +4,18 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Regression suite
+        type: choice
+        options:
+          - all
+          - pn2d
+        default: pn2d
 
 jobs:
   build-and-test:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all'
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
@@ -110,6 +119,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   sde-modeling:
+    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all'
     name: SDE modeling qualification
     runs-on: ubuntu-26.04
     timeout-minutes: 60
@@ -169,5 +179,63 @@ jobs:
             ${{ env.P6_BUILD }}/package-corpus/qualification.json
             ${{ env.P6_BUILD }}/package-corpus/**/fail_report.json
             ${{ env.P6_BUILD }}/baseline-corpus/case_summary.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  pn2d:
+    name: PN2D Release regression
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      VELA_LINEAR_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v2
+        with:
+          version: 16
+          platform: x64
+
+      - name: Install build and modeling dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ pkg-config \
+            libboost-dev libeigen3-dev libspdlog-dev nlohmann-json3-dev catch2 \
+            libhdf5-dev libsuitesparse-dev libmetis-dev libglu1-mesa \
+            python3-venv python3-jsonschema python3-numpy python3-h5py python3-pil
+
+      - name: Prepare pinned Gmsh runtime
+        run: |
+          /usr/bin/python3 scripts/prepare_sde_external_gmsh.py \
+            --assets build-pn2d/gmsh-inputs --runtime build-pn2d/external-gmsh
+
+      - name: Build PN2D Release executables
+        run: |
+          cmake -S . -B build-pn2d -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DPython3_EXECUTABLE=/usr/bin/python3 \
+            -DVELA_PHYSICAL_CONSTANTS_PROFILE=codata2018 -DVELA_ENABLE_PN2D_CI=ON \
+            -DVELA_ENABLE_MKL_PARDISO=OFF -DVELA_ENABLE_MUMPS=OFF \
+            -DVELA_ENABLE_SUPERLU_MT=OFF -DVELA_ENABLE_STRUMPACK=OFF
+          cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
+
+      - name: Run PN2D modeling and numerical regressions
+        run: |
+          ctest --test-dir build-pn2d --output-on-failure --no-tests=error \
+            --parallel 4 -L '^pn2d-ci$'
+
+      - name: Upload PN2D reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pn2d-release-regression
+          path: |
+            build-pn2d/pn2d-reports/*.json
+            build-pn2d/pn2d-reports/*.log
+            build-pn2d/Testing/Temporary/LastTest.log
           if-no-files-found: warn
           retention-days: 14

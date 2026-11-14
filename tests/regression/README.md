@@ -12,7 +12,7 @@ for CMake/CTest so that it sees the apt-installed modules. The C/C++ HDF5
 development library alone does not provide the Python `h5py` module.
 
 SDE modeling regressions additionally need the external Gmsh 4.15.2 Python
-wrapper, shared library and CLI. Both jobs in `.github/workflows/ci.yml` prepare them with
+wrapper, shared library and CLI. The jobs in `.github/workflows/ci.yml` prepare them with
 `scripts/prepare_sde_external_gmsh.py` using the versions and SHA-256 hashes in
 `configs/sde_external_runtimes.json`; this exports `VELA_GMSH_PYTHON`,
 `VELA_GMSH_LIBRARY` and `VELA_GMSH_EXECUTABLE` to later CI steps. On Ubuntu,
@@ -56,6 +56,32 @@ ctest --test-dir build --output-on-failure -R reference_tcad_regression
 Many reference cases have additional focused test modules in this directory.
 Each case README or machine-readable `*_reference.json` inventory identifies
 its authoritative scripts, reports, and acceptance boundary.
+
+## PN2D Release regression
+
+The `CI` workflow runs the PN2D job on every push and pull request. To run it
+manually, choose **Actions → CI → Run workflow**, select the branch and set
+`suite=pn2d`. Choose `all` to also run the existing Debug and SDE packaging jobs.
+The default branch must expose the workflow before GitHub offers manual runs.
+With GitHub CLI, use `gh workflow run ci.yml --ref <branch> -f suite=pn2d`.
+
+The PN2D job uses a Release build, CODATA2018 constants and the checked-in
+[reference archive](../../reference_tcad/pn2d_sentaurus2018/ci/README.md).
+It runs equilibrium, the complete IV and compensated BV sweeps, and both
+compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
+requested biases, current and conservation gates, and saved spatial fields.
+The SDE test generates and reimports the PN2D mesh twice with pinned Gmsh.
+The job uploads JSON reports and logs as `pn2d-release-regression`.
+
+For a local Linux run with the build dependencies and Gmsh runtime above:
+
+```bash
+cmake -S . -B build-pn2d -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DPython3_EXECUTABLE=/usr/bin/python3 \
+  -DVELA_ENABLE_PN2D_CI=ON -DVELA_PHYSICAL_CONSTANTS_PROFILE=codata2018
+cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
+ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
+```
 
 `simplemos_evidence_archive` checks the selected historical evidence, archive
 manifest and safe restoration with temporary fixtures. It needs no VM access;
