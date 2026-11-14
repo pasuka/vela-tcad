@@ -653,7 +653,9 @@ TEST_CASE("Compensated population Newton retains forward current conservation",
     cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
     cfg.compensatedPopulationState = true;
     cfg.contactBoundaryMinorityElectronRelaxation = false;
-    cfg.mobility = mobilityModelConfig("masetti");
+    const auto mobility = GENERATE("masetti", "constant");
+    CAPTURE(mobility);
+    cfg.mobility = mobilityModelConfig(mobility);
     cfg.maxIter = 100;
     cfg.warmStart = true;
     auto equilibrium = NewtonSolver(mesh,materials,doping,{{"anode",0.},{"cathode",0.}},cfg).solve();

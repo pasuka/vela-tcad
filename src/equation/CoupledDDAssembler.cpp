@@ -1724,6 +1724,9 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     bool includeImpactIonization, SparseMatrixd* transportJacobian) const
 {
     const int count = static_cast<int>(mesh_.numNodes());
+    const bool supportedMobility = mobilityConfig_.model == "masetti" ||
+        mobilityConfig_.model == "masetti_field" ||
+        (mobilityConfig_.model == "constant" && !impactIonizationEnabled_);
     if (!usesLegacyPopulationState() || !scaling_.enabled ||
         psi.size() != count || n.size() != count || p.size() != count ||
         low.size() != 3 * count || !low.allFinite() || !bcs.thermionic.empty() ||
@@ -1731,7 +1734,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
                              bcs.ohmicBias.size() != bcs.psi.size())) ||
         mobilityConfig_.edgeAveraging != "legacy" ||
         mobilityConfig_.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
-        (mobilityConfig_.model != "masetti" && mobilityConfig_.model != "masetti_field") ||
+        !supportedMobility ||
         mobilityConfig_.contactElectricFieldFallback ||
         recombination_.augerEnabled() || recombination_.bandToBandEnabled() ||
         std::any_of(ni_.begin(), ni_.end(), [](Real v) { return v <= 0.; }) ||
