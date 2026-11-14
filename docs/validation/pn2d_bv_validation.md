@@ -1,14 +1,26 @@
 # PN2D BV Validation
 
-Last updated: 2026-10-23
+Last updated: 2026-11-14
 
-## Current decision
+## Current PN2D regression and JSON defaults
+
+CTest uses the GRD/DAT reference suite (`pn2d_ci_*`). The default IV v2 and
+BV v5 JSON templates use the suite's compensated potential and concentration
+coordinates, unit scaling, and Newton-controlled voltage steps. IV sweeps
+to +10 V with 201 requested biases. BV sweeps to −20 V with 401 requested
+biases and uses the atomic `element_edge_sg_gss_laux` profile. The standalone
+`pn2d_ci_0v` equilibrium test remains part of this suite.
+
+Use `--set solver_profile=legacy` with the template generator to reproduce
+the earlier numerical defaults. The BV `legacy_cell_reconstructed` profile
+also selects the legacy solver by default. Historical evidence below belongs
+to the input and template versions recorded in those reports.
+
+## Version 4 mobility and mesh policy
 
 Template version 4 corrects the mobility impurity basis to `total_impurity`
 (`Nd + Na`). Net doping does not describe impurity scattering at compensated
-nodes. The user authorized this PN2D-specific correction; global mobility
-defaults remain unchanged. The IV template already uses reconstructed total
-impurity and remains unchanged.
+nodes. At the time, IV v1 used reconstructed total impurity.
 
 Version 4 retains the atomic `element_edge_sg_gss_laux` profile on the
 non-obtuse M0/M2 Tri3 mesh family. The historical full-curve acceptance below
@@ -66,10 +78,9 @@ maximum relative terminal imbalance was 0.000279%, and the fitted knee was
 −19.404 V versus −19.405 V in Sentaurus. All ten reverse-bias field anchors
 and the equilibrium field comparison passed.
 
-The reference regression is `sdevice_e2e_pn2d_bv_compensated`. Set
-`VELA_REFERENCE_ARTIFACTS_DIR` to the staged v2 archive before running CTest.
-The case covers the opt-in frontend profile and its pinned mesh. The standalone
-M0/M2 template and its existing qualification retain their own scope.
+The current reference regression is `pn2d_ci_bv` in the
+[GRD/DAT suite](../../tests/regression/README.md#pn2d-release-regression).
+Its reference archive supplies the pinned original mesh.
 
 ## Standalone equilibrium deck pending removal
 

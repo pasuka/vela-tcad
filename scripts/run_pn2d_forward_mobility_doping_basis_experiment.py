@@ -134,6 +134,7 @@ def main() -> None:
         baseline, _ = render_named_template(
             "pn2d_iv",
             {
+                "solver_profile": "legacy",
                 "mesh_file": str(args.mesh_file.resolve()),
                 "node_doping_file": str(args.node_doping_file.resolve()),
                 "materials_file": str(args.materials_file.resolve()),

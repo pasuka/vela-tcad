@@ -167,7 +167,7 @@ Solve {{
 
 
 def vela_config(spec, cfg, branch):
-    c, _ = render_named_template('pn2d_iv')
+    c, _ = render_named_template('pn2d_iv', {'solver_profile': 'legacy'})
     c.update(state_format='hdf5', mesh_file='inputs/mesh.json', node_doping_file='inputs/doping.csv', materials_file='materials.json', output_csv=f'{branch}.csv')
     s = c['solver']
     s.update(temperature_K=300.0, taun=1e-5, taup=3e-6, recombination=['srh'] if cfg['srh'] else [],

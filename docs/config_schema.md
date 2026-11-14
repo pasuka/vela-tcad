@@ -2656,25 +2656,29 @@ Initialization semantics:
 Qualified PN2D production starting points are stored separately for forward
 and reverse operation:
 
-- `configs/templates/pn2d_iv.template.json`: forward 0--20 V IV, low-field
-  Masetti mobility, `cell_reconstructed_total_impurity`, SRH plus Old
+- `configs/templates/pn2d_iv.template.json`: forward 0 to +10 V IV, low-field
+  Masetti mobility, `total_impurity`, SRH plus Old
   Slotboom, and impact ionization disabled.
 - `configs/templates/pn2d_bv.template.json`: reverse 0---20 V BV,
   `masetti_field`, `total_impurity` (`Nd + Na`), SRH plus Old Slotboom, and
   Van Overstraeten impact ionization.
 
-PN2D BV version 4 corrects impurity scattering from net doping to total
-impurity. The external-resistor validation entry rejects a net-doping basis.
-Version 4 retains the version-3 atomic
+IV v2 and BV v5 default to compensated potential and concentration with unit
+scaling. They use Newton iteration counts for step growth, linear prediction,
+and preserve the proposed step after landing on a requested output bias.
+The default grids have 201 IV and 401 BV output biases. The numerical defaults
+use the CODATA2018 reference profile. For the previous solver and sweep
+defaults, render with `--set solver_profile=legacy`.
+
+PN2D BV retains the version-3 atomic
 `element_edge_sg_gss_laux` profile. Rendering it binds element-edge
 SG/GSS-Laux current support, element-vertex box source mapping, Bernoulli
 midpoint density, mixed-Voronoi node volumes, and
 `mesh_geometry.require_non_obtuse=true`. Use the
 `legacy_cell_reconstructed` profile for the complete cell-reconstructed and
 barycentric rollback. The generator rejects partially mixed profiles. This
-template policy does not change the global barycentric or mobility parser
-defaults, or the PN2D IV template. Version-3 curve qualification does not by
-itself qualify version 4; see the current PN2D validation reference.
+template policy applies to the BV geometry and avalanche settings.
+See the PN2D validation reference for the scope of each template version.
 
 The Sentaurus BVmethods NMOS boundary-control equivalents are stored as
 separate templates because their sweep voltage has different semantics from a

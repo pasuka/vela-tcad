@@ -247,6 +247,56 @@ def validate_pn2d_config(config: dict[str, Any], template_name: str) -> None:
         raise TemplateError(f"unsupported PN2D template: {template_name}")
 
 
+def _apply_compensated_pn2d(config: dict[str, Any], template_name: str,
+                            mobility_basis_overridden: bool) -> None:
+    solver = config["solver"]
+    solver.pop("handoff")
+    solver.update(
+        method="newton", state_variables="potential_density",
+        primary_variable_coordinates="unit", compensated_population_state=True,
+        quasi_fermi_reference="none", quasi_fermi_update_limit_V=0.0,
+        population_stopping_rule="native_approx",
+        population_update_convergence={"digits": 5, "potential_reference_V": 0.0258},
+        line_search=False, tau_n_s=1e-5, tau_p_s=3e-6,
+    )
+    solver["continuity_row_scaling"]["enabled"] = False
+    solver["carrier_row_convergence"]["mode"] = "report"
+    solver["global_continuity_closure"]["mode"] = "report"
+    if not mobility_basis_overridden:
+        solver["mobility"]["doping_concentration_basis"] = "total_impurity"
+
+    reverse = template_name == "pn2d_bv"
+    if reverse:
+        solver["mobility"]["high_field_gradient_discretization"] = "transport_cell_vector"
+        solver["impact_ionization"].update(
+            contact_electric_field_fallback=True, source_jacobian="local_ad",
+        )
+    sweep = config["sweep"]
+    span = sweep["stop"] - sweep["start"]
+    if span * sweep["step"] < 0:
+        direction = "positive" if span > 0 else "negative"
+        raise TemplateError(f"{template_name} sweep requires a {direction} sweep.step")
+    sweep.update(
+        step=span or sweep["step"], step_growth_mode="newton_iterations",
+        stop_below_minimum_step=True, preserve_step_after_output_clip=True,
+        continuation={"predictor": {"mode": "linear"}},
+        initialization={"mode": "poisson_block", "poisson_max_iter": 100},
+        stop_on_failure=True, csv_all_contacts=True,
+    )
+    if span:
+        for key in ("initial_step", "min_step", "max_step"):
+            sweep[key] *= abs(span)
+        sweep["max_retries"] = math.ceil(
+            (math.log(sweep["max_step"]) - math.log(sweep["min_step"]))
+            / -math.log(sweep["shrink_factor"])
+        )
+        intervals = 400 if reverse else 200
+        sweep["vtk_bias_points"] = [
+            sweep["start"] + span * (i / intervals) for i in range(intervals + 1)
+        ]
+        sweep["vtk_format"] = "vtu"
+
+
 def render_named_template(
     template_name: str,
     overrides: dict[str, Any] | None = None,
@@ -284,6 +334,16 @@ def render_named_template(
         impact = config["solver"]["impact_ionization"]
         impact.update(copy.deepcopy(bundle["impact_ionization"]))
         config["mesh_geometry"] = copy.deepcopy(bundle["mesh_geometry"])
+    if (parameters.get("solver_profile") == "compensated"
+            and parameters.get("avalanche_current_support_profile") == "legacy_cell_reconstructed"):
+        if "solver_profile" in supplied:
+            raise TemplateError("compensated BV requires the element_edge_sg_gss_laux profile")
+        parameters["solver_profile"] = "legacy"
+    if parameters.get("solver_profile") == "compensated":
+        _apply_compensated_pn2d(config, template_name, "mobility_doping_basis" in supplied)
+        parameters["mobility_doping_basis"] = config["solver"]["mobility"]["doping_concentration_basis"]
+    elif parameters.get("solver_profile") == "legacy" and template_name == "pn2d_iv" and "stop_voltage" not in supplied:
+        config["sweep"]["stop"] = parameters["stop_voltage"] = 20.0
     validate_pn2d_config(config, template_name)
     manifest = {
         "generator": "scripts/generate_pn2d_config.py",

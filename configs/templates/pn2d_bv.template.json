@@ -127,6 +127,11 @@
     }
   },
   "parameters": {
+    "solver_profile": {
+      "choices": ["compensated", "legacy"],
+      "default": "compensated",
+      "type": "string"
+    },
     "avalanche_current_support_profile": {
       "choices": [
         "element_edge_sg_gss_laux",
@@ -230,5 +235,5 @@
   },
   "template": "pn2d_bv",
   "template_schema": "vela.simulation-template.v1",
-  "version": 4
+  "version": 5
 }

@@ -1928,23 +1928,13 @@ foreach(_vela_wp11_test package_smoke concurrency)
     set_property(TEST sdevice_${_vela_wp11_test} APPEND PROPERTY ENVIRONMENT
         "VELA_LAUNCHER=$<TARGET_FILE:vela>")
 endforeach()
-foreach(sdevice_case pn2d_0v pn2d_iv pn2d_bv gates)
-    add_test(NAME sdevice_e2e_${sdevice_case}
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
-            --case ${sdevice_case} --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
-            --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
-    set_tests_properties(sdevice_e2e_${sdevice_case} PROPERTIES
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
-    vela_set_windows_msys2_test_path(sdevice_e2e_${sdevice_case})
-endforeach()
-
-add_test(NAME sdevice_e2e_pn2d_bv_compensated
+add_test(NAME sdevice_e2e_gates
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
-        --case pn2d_bv --compensated-bv --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
+        --case gates --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
         --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
-set_tests_properties(sdevice_e2e_pn2d_bv_compensated PROPERTIES
+set_tests_properties(sdevice_e2e_gates PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
-vela_set_windows_msys2_test_path(sdevice_e2e_pn2d_bv_compensated)
+vela_set_windows_msys2_test_path(sdevice_e2e_gates)
 
 option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)
 if(VELA_ENABLE_PN2D_CI)
