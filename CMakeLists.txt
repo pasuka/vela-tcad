@@ -1938,8 +1938,8 @@ vela_set_windows_msys2_test_path(sdevice_e2e_gates)
 
 option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)
 if(VELA_ENABLE_PN2D_CI)
-    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "codata2018")
-        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=codata2018")
+    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12")
+        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12")
     endif()
     set(_pn2d_ci_runner ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_pn2d_ci.py)
     set(_pn2d_ci_args --reference ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reference

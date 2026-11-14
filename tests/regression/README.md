@@ -59,13 +59,14 @@ its authoritative scripts, reports, and acceptance boundary.
 
 ## PN2D Release regression
 
-The `CI` workflow runs the PN2D job on every push and pull request. To run it
-manually, open **CI** under **Actions**, choose **Run workflow**, select the branch and set
-`suite=pn2d`. Choose `all` to also run the existing Debug and SDE packaging jobs.
+The `CI` workflow includes PN2D in the full Release CTest run on every push and
+pull request. To run only PN2D manually, open **CI** under **Actions**, choose
+**Run workflow**, select the branch and set `suite=pn2d`. Choose `all` to include
+the full Release suite and SDE offline package qualification.
 The default branch must expose the workflow before GitHub offers manual runs.
 With GitHub CLI, use `gh workflow run ci.yml --ref <branch> -f suite=pn2d`.
 
-The PN2D job uses a Release build, CODATA2018 constants and the checked-in
+PN2D uses the shared Release build, `sentaurus_u2022_12` constants and the checked-in
 [reference archive](../../reference_tcad/pn2d_sentaurus2018/ci/README.md).
 It runs equilibrium, the complete IV and compensated BV sweeps, and both
 compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
@@ -78,7 +79,7 @@ For a local Linux run with the build dependencies and Gmsh runtime above:
 ```bash
 cmake -S . -B build-pn2d -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DPython3_EXECUTABLE=/usr/bin/python3 \
-  -DVELA_ENABLE_PN2D_CI=ON -DVELA_PHYSICAL_CONSTANTS_PROFILE=codata2018
+  -DVELA_ENABLE_PN2D_CI=ON -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12
 cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
 ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
 ```

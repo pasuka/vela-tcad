@@ -63,7 +63,7 @@ def stage_inputs(source, output, deck, spec, experiment, branch):
 
 
 def run_sdevice(launcher, output, deck, log, compensated):
-    args = [str(launcher), '--physical-constants-profile', 'codata2018',
+    args = [str(launcher), '--physical-constants-profile', 'sentaurus_u2022_12',
             '--threads', '1', '--allow-lossy', '--exit-on-failure']
     if compensated:
         args.append('--pn2d-population')
