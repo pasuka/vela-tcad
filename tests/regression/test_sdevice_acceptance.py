@@ -46,37 +46,24 @@ def field_fixture(root, bias=0.0):
 
 
 class CheckOnlyManifestTests(unittest.TestCase):
-    def test_versioned_inventory_wins_over_latest_alias(self):
+    def test_check_only_grid_rejects_changed_doping_and_source_provenance(self):
+        archive = 'bvmethods_sentaurus2018'
+        paths, _ = a.checked_gate_grid(archive, 'n1_msh')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            repository = root / 'reference_tcad' / 'case'
-            repository.mkdir(parents=True)
-            pinned = {'case': 'case', 'version': 'v1', 'artifacts': []}
-            (repository / 'artifact_manifest_v1.json').write_text(json.dumps(pinned))
-            (repository / 'artifact_manifest.json').write_text(json.dumps({'case': 'case', 'version': 'v4'}))
-            with patch.object(a, 'REPO', root):
-                manifest, path = a.check_only_manifest(root / 'staging', 'case', 'v1')
-            self.assertEqual(pinned, manifest)
-            self.assertEqual('artifact_manifest_v1.json', path.name)
-
-    def test_staged_identity_drift_is_rejected(self):
-        for case, version in [('different', 'v1'), ('case', 'v4')]:
-            with self.subTest(case=case, version=version), tempfile.TemporaryDirectory() as directory:
-                root = Path(directory)
-                base = root / 'staging' / 'case' / 'v1'
-                base.mkdir(parents=True)
-                (base / 'artifact_manifest.json').write_text(json.dumps({'case': case, 'version': version}))
-                with patch.object(a, 'REPO', root), self.assertRaisesRegex(ValueError, 'identity mismatch'):
-                    a.check_only_manifest(root / 'staging', 'case', 'v1')
-
-    def test_latest_different_version_cannot_replace_missing_pinned_inventory(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            repository = root / 'reference_tcad' / 'case'
-            repository.mkdir(parents=True)
-            (repository / 'artifact_manifest.json').write_text(json.dumps({'case': 'case', 'version': 'v4'}))
-            with patch.object(a, 'REPO', root), self.assertRaisesRegex(ValueError, 'identity mismatch'):
-                a.check_only_manifest(root / 'staging', 'case', 'v1')
+            for path in paths:
+                shutil.copyfile(path, root / path.name)
+            manifest = a.read_json(a.GATE_FIXTURES / 'manifest.json')
+            path = root / 'manifest.json'
+            path.write_text(json.dumps(manifest))
+            with patch.object(a, 'GATE_FIXTURES', root):
+                (root / 'n1_msh.dat').write_bytes(b'changed doping')
+                with self.assertRaisesRegex(ValueError, 'fixture hash mismatch: n1_msh.dat'):
+                    a.checked_gate_grid(archive, 'n1_msh')
+                manifest['grids'][archive]['source_tdr']['version'] = 'v4'
+                path.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, 'source TDR provenance mismatch'):
+                    a.checked_gate_grid(archive, 'n1_msh')
 
 
 class AvalancheQualificationTests(unittest.TestCase):

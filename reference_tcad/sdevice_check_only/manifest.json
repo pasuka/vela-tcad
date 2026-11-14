@@ -1,0 +1,43 @@
+{
+  "export_tool": "Sentaurus Data Explorer T-2022.03-SP2, tdx -dd",
+  "grids": {
+    "schottky_charon_sentaurus2018": {
+      "source_tdr": {
+        "manifest": "reference_tcad/schottky_charon_sentaurus2018/artifact_manifest.json",
+        "version": "v1",
+        "sha256": "a4bb8a4c93dcee13d62add4f930697e0c4fa12adb7401563073327f8ba44dcf3"
+      },
+      "files": {
+        "schottky_n_msh.grd": "69a45c088b752472698d03934c39cffe5aa9ebb90da13398bc33e3b2d511da20",
+        "schottky_n_msh.dat": "be44ca691164f35da91162c0dadbb98900c346c9da555781814f39e7c2783afb"
+      },
+      "equivalence": {
+        "nodes": 697,
+        "triangles": 1280,
+        "contact_edges": {"anode": 16, "cathode": 16},
+        "max_coordinate_difference_um": 0.0,
+        "max_relative_doping_difference": 3.9999999999999866e-16,
+        "solver_doping_sha256_11_significant_digits": "4011f0bcf8e63ab67ac66e8a8632772701d529611cb844842f4915f4f7697de4"
+      }
+    },
+    "bvmethods_sentaurus2018": {
+      "source_tdr": {
+        "manifest": "reference_tcad/bvmethods_sentaurus2018/artifact_manifest_v1.json",
+        "version": "v1",
+        "sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e"
+      },
+      "files": {
+        "n1_msh.grd": "0abe81f09ee6eb2a787b20746bcca3a9b338a30af670602aa66e7e214b87505c",
+        "n1_msh.dat": "7a75e6930e79494d0f2ee1d63dec24cd3eb80cbe73bb0663cc822b1f4ded61d5"
+      },
+      "equivalence": {
+        "nodes": 2600,
+        "triangles": 5020,
+        "contact_edges": {"drain": 10, "gate": 46, "source": 10, "substrate": 8},
+        "max_coordinate_difference_um": 5.551115123125783e-17,
+        "max_relative_doping_difference": 4.982295709744557e-16,
+        "solver_doping_sha256_11_significant_digits": "d986155006523a4ab639bd502bc51afe9b694e999c4993dd108a6ac6b88cf851"
+      }
+    }
+  }
+}

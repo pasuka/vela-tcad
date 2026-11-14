@@ -83,6 +83,11 @@ cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
 ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
 ```
 
+`sdevice_e2e_gates` runs five Schottky and BVmethods deck checks from
+[pinned TDX GRD/DAT fixtures](../../reference_tcad/sdevice_check_only/manifest.json).
+It also checks that the unsupported TransportModels deck is rejected.
+The test uses `vela device --check` and requires no external reference directory.
+
 `simplemos_evidence_archive` checks the selected historical evidence, archive
 manifest and safe restoration with temporary fixtures. It needs no VM access;
 full external archive verification is a separate explicit command documented in

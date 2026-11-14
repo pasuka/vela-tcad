@@ -1931,9 +1931,9 @@ endforeach()
 add_test(NAME sdevice_e2e_gates
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
         --case gates --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
-        --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
+        --launcher $<TARGET_FILE:vela>)
 set_tests_properties(sdevice_e2e_gates PROPERTIES
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} LABELS "sdevice;reference")
 vela_set_windows_msys2_test_path(sdevice_e2e_gates)
 
 option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)

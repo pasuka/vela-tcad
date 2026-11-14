@@ -18,11 +18,12 @@ Two input paths:
   edge-indexed; triangles are rebuilt as counter-clockwise node triples,
   ``material=Contact`` regions become contacts. ``material=Interface`` line
   regions are retained as optional ``mesh.json.interfaces`` boundary metadata
-  with two adjacent volume regions; they are never volume materials or cells.
+  with two adjacent volume regions. TDX may also list the vertices of these
+  lines as point elements in the same interface region.
   Quadrilaterals and 3-D
   elements are rejected (E402) -- no deterministic split is attempted in
-  stage 1.  Vertex datasets must be global (one value per vertex); region-local
-  dataset ordering is rejected with E402.
+  stage 1. Doping datasets can be global or use TDX single-region validity with
+  values in ascending global vertex ID order within each region.
 * Sentaurus ``.tdr`` through the external ``sentaurus_import`` executable
   (``--tdr <file> --export-dir <dir>``), whose CSV export is converted with the
   same rules as ``convert_tcad_export.load_mesh``.  Without an importer the
@@ -51,7 +52,7 @@ _SCRIPTS = Path(__file__).resolve().parents[2]
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from compare_sentaurus_tdr_tdx import parse_dat, parse_grd  # noqa: E402
+from compare_sentaurus_tdr_tdx import iter_dat_datasets, parse_grd  # noqa: E402
 
 SCHEMA_ID = "vela.mesh_qualification.v1"
 MATERIAL_MAP = {"silicon": "Si", "si": "Si", "oxide": "SiO2", "sio2": "SiO2",
@@ -61,6 +62,7 @@ PLAUSIBLE_EXTENT_UM = (1e-3, 1e4)
 DONOR_DATASETS = ("DonorConcentration", "PhosphorusActiveConcentration", "ArsenicActiveConcentration",
                   "AntimonyActiveConcentration")
 ACCEPTOR_DATASETS = ("AcceptorConcentration", "BoronActiveConcentration", "IndiumActiveConcentration")
+SEMICONDUCTOR_MATERIALS = {"Si", "PolySilicon", "Germanium", "SiliconGermanium"}
 
 __all__ = ["MeshImportError", "import_grid", "check_electrodes", "find_importer", "SCHEMA_ID"]
 
@@ -159,7 +161,6 @@ def _load_dfise(grd_path: Path) -> dict:
     if not dat_path.is_file():
         raise MeshImportError("E304", f"DF-ISE companion file '{dat_path.name}' not found")
     grid = parse_grd(grd_path)
-    datasets = parse_dat(dat_path)
     vertices = grid["vertices"]
     if not vertices:
         raise MeshImportError("E402", f"no vertices found in '{grd_path.name}'")
@@ -183,7 +184,6 @@ def _load_dfise(grd_path: Path) -> dict:
     regions: List[dict] = []
     contacts: List[dict] = []
     interfaces: List[dict] = []
-    element_region: Dict[int, int] = {}
     region_names = [name for name in grid["region_blocks"]]
     for name in region_names:
         info = grid["region_blocks"][name]
@@ -194,6 +194,9 @@ def _load_dfise(grd_path: Path) -> dict:
             edge_pairs: List[List[int]] = []
             for element_id in element_ids:
                 record = elements[element_id]
+                if material.lower() == "interface" and record[0] == 0 and len(record) == 2:
+                    node_ids.append(record[1])
+                    continue
                 if record[0] != 1:
                     raise MeshImportError("E402", f"{material.lower()} region '{name}' contains a non-line element")
                 if len(record) == 3:
@@ -205,7 +208,7 @@ def _load_dfise(grd_path: Path) -> dict:
                     if node not in node_ids:
                         node_ids.append(node)
             target = contacts if material.lower() == "contact" else interfaces
-            target.append({"name": name, "node_ids": sorted(node_ids), "edge_node_ids": edge_pairs,
+            target.append({"name": name, "node_ids": sorted(set(node_ids)), "edge_node_ids": edge_pairs,
                            "adjacent_regions": set()})
             continue
         region_id = len(regions)
@@ -218,7 +221,6 @@ def _load_dfise(grd_path: Path) -> dict:
             cell_id = len(triangles)
             triangles.append({"id": cell_id, "region_id": region_id, "node_ids": node_ids})
             cell_ids.append(cell_id)
-            element_region[element_id] = region_id
         regions.append({"id": region_id, "name": name, "material": map_material(material),
                         "source_material": material, "cell_ids": cell_ids})
 
@@ -233,14 +235,16 @@ def _load_dfise(grd_path: Path) -> dict:
                     break
 
     for interface in interfaces:
+        boundary_nodes = {node for edge in interface["edge_node_ids"] for node in edge}
+        if boundary_nodes != set(interface["node_ids"]) or not boundary_nodes:
+            raise MeshImportError("E402", f"interface '{interface['name']}' has points outside its edges")
         for pair in interface["edge_node_ids"]:
             adjacent = {region_id for nodes, region_id in node_sets if set(pair) <= nodes}
             if len(adjacent) != 2:
                 raise MeshImportError("E402", f"interface '{interface['name']}' must separate two volume regions")
             interface["adjacent_regions"].update(adjacent)
 
-    vertex_count = len(coords)
-    doping, source_fields, net_only = _doping_from_datasets(datasets, vertex_count)
+    doping, source_fields, net_only = _read_dfise_doping(dat_path, len(coords), regions, triangles)
     return {
         "format": "dfise", "coords": coords, "triangles": triangles, "regions": regions,
         "contacts": contacts, "interfaces": interfaces, "by_kind": by_kind, "doping": doping, "source_fields": source_fields,
@@ -249,16 +253,57 @@ def _load_dfise(grd_path: Path) -> dict:
     }
 
 
-def _doping_from_datasets(datasets: dict, vertex_count: int):
+def _read_dfise_doping(path: Path, vertex_count: int, regions: List[dict], triangles: List[dict]):
+    names = {*DONOR_DATASETS, *ACCEPTOR_DATASETS, "DopingConcentration"}
+    records = [(name, item) for name, item in iter_dat_datasets(path) if name in names]
+    for name, item in records:
+        if (item["dimension"] != 1 or item["location"] not in {None, "vertex"} or
+                item["count"] != len(item["values"])):
+            raise MeshImportError("E402", f"invalid DF-ISE scalar vertex dataset '{name}'")
+    unique = dict(records)
+    if len(unique) == len(records) and all(len(item["values"]) == vertex_count for item in unique.values()):
+        return _doping_from_datasets(unique, list(range(vertex_count)))
+
+    nodes_by_region = {
+        region["name"]: sorted({node for cell in region["cell_ids"] for node in triangles[cell]["node_ids"]})
+        for region in regions
+    }
+    regional = {region["name"]: {} for region in regions}
+    for name, item in records:
+        valid = item["regions"]
+        if len(valid) != 1 or valid[0] not in regional:
+            raise MeshImportError("E402", f"expected single material region validity for dataset '{name}'")
+        region = valid[0]
+        if name in regional[region] or len(item["values"]) != len(nodes_by_region[region]):
+            raise MeshImportError("E402", f"duplicate or incomplete dataset '{name}' in region '{region}'")
+        regional[region][name] = item
+
+    rows = [{"node_id": node, "donors_cm3": 0.0, "acceptors_cm3": 0.0} for node in range(vertex_count)]
+    assigned = set()
+    used = []
+    net_only = False
+    for region in regions:
+        name = region["name"]
+        if region["material"] not in SEMICONDUCTOR_MATERIALS:
+            continue
+        local_rows, fields, local_net_only = _doping_from_datasets(regional[name], nodes_by_region[name])
+        used.extend(field for field in fields if field not in used)
+        net_only |= local_net_only
+        for row in local_rows:
+            node = row["node_id"]
+            if node in assigned and rows[node] != row:
+                raise MeshImportError("E402", f"conflicting region-local doping at shared vertex {node}")
+            assigned.add(node)
+            rows[node] = row
+    if not used:
+        raise MeshImportError("E402", "no semiconductor doping dataset found in the DF-ISE data file")
+    return rows, used, net_only
+
+
+def _doping_from_datasets(datasets: dict, node_ids: Sequence[int]):
+    vertex_count = len(node_ids)
     def values_of(name: str) -> Optional[List[float]]:
-        entry = datasets.get(name)
-        if entry is None:
-            return None
-        values = entry["values"]
-        if len(values) != vertex_count:
-            raise MeshImportError("E402", f"dataset '{name}' has {len(values)} values for {vertex_count} vertices; "
-                                  "region-local dataset ordering is not supported")
-        return [float(v) for v in values]
+        return datasets[name]["values"] if name in datasets else None
 
     donors = [0.0] * vertex_count
     acceptors = [0.0] * vertex_count
@@ -287,8 +332,8 @@ def _doping_from_datasets(datasets: dict, vertex_count: int):
         acceptors = [max(-v, 0.0) for v in net]
         used = ["DopingConcentration"]
         net_only = True
-    rows = [{"node_id": index, "donors_cm3": donors[index], "acceptors_cm3": acceptors[index]}
-            for index in range(vertex_count)]
+    rows = [{"node_id": node, "donors_cm3": donors[index], "acceptors_cm3": acceptors[index]}
+            for index, node in enumerate(node_ids)]
     return rows, used, net_only
 
 

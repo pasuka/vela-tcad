@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import os
 import subprocess
@@ -273,6 +274,27 @@ class DfiseImportTest(unittest.TestCase):
         with self.assertRaises(MeshImportError) as ctx:
             import_grid(self.tmp / "absent.grd", self.tmp / "out")
         self.assertEqual("E302", ctx.exception.message_id)
+
+    def test_tdx_regional_doping_and_interface_points(self) -> None:
+        fixture = REPO / "reference_tcad" / "sdevice_check_only"
+        manifest = json.loads((fixture / "manifest.json").read_text(encoding="utf-8"))
+        reference = manifest["grids"]["bvmethods_sentaurus2018"]["equivalence"]
+        out = self.tmp / "regional"
+        report = import_grid(fixture / "n1_msh.grd", out)
+        self.assertEqual(reference["nodes"], report["nodes"]["count"])
+        self.assertEqual(reference["triangles"], report["elements"]["count"])
+        self.assertEqual(reference["contact_edges"], {c["name"]: c["edge_count"] for c in report["contacts"]})
+        self.assertFalse(report["doping"]["net_only"])
+        self.assertEqual(["ArsenicActiveConcentration", "BoronActiveConcentration"],
+                         report["doping"]["source_fields"])
+        mesh = json.loads((out / "mesh.json").read_text(encoding="utf-8"))
+        self.assertEqual(7, len(mesh["interfaces"]))
+        doping = read_doping(out / "doping.csv")
+        # Match the independently read TDR donor and acceptor vectors, in global
+        # vertex order and rounded below the precision of the TDX text export.
+        values = "".join("{:.10e},{:.10e}\n".format(*doping[n]) for n in range(reference["nodes"]))
+        self.assertEqual(reference["solver_doping_sha256_11_significant_digits"],
+                         hashlib.sha256(values.encode("ascii")).hexdigest())
 
     def test_quadrilateral_grid_is_rejected(self) -> None:
         grd = self.tmp / "quad_msh.grd"

@@ -109,9 +109,9 @@ def parse_region_elements(text: str) -> dict[str, list[int]]:
     return elements_by_region
 
 
-def parse_dat(path: Path) -> dict[str, dict[str, Any]]:
+def iter_dat_datasets(path: Path):
+    """Yield each dataset block, including repeated names with regional validity."""
     text = path.read_text(errors="replace")
-    datasets: dict[str, dict[str, Any]] = {}
     pattern = re.compile(
         r'Dataset\s*\("([^"]+)"\)\s*\{(?P<header>.*?)\bValues\s*\((\d+)\)\s*\{(?P<values>.*?)\n\s*\}',
         re.S,
@@ -123,12 +123,19 @@ def parse_dat(path: Path) -> dict[str, dict[str, Any]]:
         dimension = int(dimension_match.group(1)) if dimension_match else 1
         values = [float(item) for item in NUMBER_RE.findall(match.group("values"))]
         count = int(match.group(3))
-        datasets[name] = {
+        location = re.search(r"\blocation\s*=\s*(\w+)", header)
+        yield name, {
             "count": count,
             "dimension": dimension,
+            "location": location.group(1) if location else None,
+            "regions": parse_ise_list(header, "validity"),
             "values": values,
         }
-    return datasets
+
+
+def parse_dat(path: Path) -> dict[str, dict[str, Any]]:
+    return {name: {key: record[key] for key in ("count", "dimension", "values")}
+            for name, record in iter_dat_datasets(path)}
 
 
 def count_csv_rows(path: Path) -> int | None:

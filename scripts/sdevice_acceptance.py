@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """WP10: fail-closed, same-mesh SDevice frontend acceptance (stdlib only).
 
-References must be staged and registered first with reference_artifacts.py.
-Missing VELA_REFERENCE_ARTIFACTS_DIR returns 77 for an explicit CTest skip.
+The check-only gates use repository GRD/DAT fixtures. The legacy numerical
+cases require staged native references and return 77 if none are configured.
 No physics defaults, per-case sign corrections, or post-result thresholds.
 """
 from __future__ import annotations
@@ -33,6 +33,7 @@ from analyze_pn2d_avalanche_on_bv_parity import CurvePoint, continuous_breakpoin
 REPO = Path(__file__).resolve().parents[1]
 CONTRACT = REPO / 'configs/sdevice_acceptance_contract.json'
 COMPENSATED_BV_SIDECAR = REPO / 'configs/pn2d_bv_compensated.vela.json'
+GATE_FIXTURES = REPO / 'reference_tcad/sdevice_check_only'
 
 
 def read_json(path):
@@ -592,40 +593,40 @@ def time_semantics(base):
     return {'semantics':'reset_per_quasistationary_stage','evidence':evidence}
 
 
-def check_only_manifest(staging, archive, version):
-    """Bind check-only grids to their archive version, never the latest alias."""
-    repository = REPO / 'reference_tcad' / archive
-    for path in (staging / archive / version / 'artifact_manifest.json',
-                 repository / f'artifact_manifest_{version}.json',
-                 repository / 'artifact_manifest.json'):
-        if path.is_file():
-            manifest = read_json(path)
-            if manifest['case'] != archive or manifest['version'] != version:
-                raise ValueError('check-only manifest archive identity mismatch: ' + str(path))
-            return manifest, path
-    raise ValueError('registered check-only manifest missing: ' + archive + '/' + version)
+def checked_gate_grid(archive, stem):
+    manifest = read_json(GATE_FIXTURES / 'manifest.json')
+    entry = manifest['grids'][archive]
+    source = entry['source_tdr']
+    inventory = REPO / source['manifest']
+    native = read_json(inventory)
+    listed = [a for a in native['artifacts'] if a['path'] == f'mesh/{stem}.tdr']
+    if (native['case'] != archive or native['version'] != source['version'] or
+            len(listed) != 1 or listed[0]['sha256'] != source['sha256']):
+        raise ValueError(f'Check-only source TDR provenance mismatch: {archive}/{stem}')
+    paths = [GATE_FIXTURES / f'{stem}.{ext}' for ext in ('grd', 'dat')]
+    for path in paths:
+        if sha(path) != entry['files'][path.name]:
+            raise ValueError(f'Check-only fixture hash mismatch: {path.name}')
+    return paths, source
 
 
-def run_gates(staging,output,launcher):
+def run_gates(output,launcher):
     results=[];env=dict(os.environ,VELA_PYTHON=sys.executable)
-    for archive,commands,grid in (
-        ('schottky_charon_sentaurus2018',['schottky_n_des.cmd'],'schottky_n_msh.tdr'),
-        ('bvmethods_sentaurus2018',['aba_poisson_sdevice.cmd','aba_coupled_sdevice.cmd','external_resistor_sdevice.cmd','voltage_to_current_sdevice.cmd'],'n1_msh.tdr')):
-        base=staging/archive/'v1'
-        meshes=list(base.rglob(grid))
-        if len(meshes)!=1:raise ValueError('check-only mesh missing or ambiguous: '+grid)
-        manifest, manifest_path = check_only_manifest(staging, archive, 'v1')
-        listed=[a for a in manifest['artifacts'] if a['path']==meshes[0].relative_to(base).as_posix()]
-        if len(listed)!=1 or sha(meshes[0])!=listed[0]['sha256']:raise ValueError('check-only grid hash mismatch')
+    for archive,commands,stem in (
+        ('schottky_charon_sentaurus2018',['schottky_n_des.cmd'],'schottky_n_msh'),
+        ('bvmethods_sentaurus2018',['aba_poisson_sdevice.cmd','aba_coupled_sdevice.cmd','external_resistor_sdevice.cmd','voltage_to_current_sdevice.cmd'],'n1_msh')):
+        (grid, doping), provenance = checked_gate_grid(archive, stem)
         for name in commands:
             directory=output/name;directory.mkdir()
             source=REPO/'reference_tcad'/archive/'source'/name
             text=source.read_text()
-            original_grid=re.search(r'\bGrid\s*=\s*"([^"]+)"',text).group(1)
-            shutil.copy2(meshes[0],directory/original_grid)
+            text, count = re.subn(r'(\bGrid\s*=\s*")[^"]+\.tdr(")',
+                                  lambda match: match[1] + grid.name + match[2], text)
+            if count != 1:
+                raise ValueError(f'{name}: expected one TDR Grid declaration')
+            shutil.copyfile(grid, directory / grid.name)
+            shutil.copyfile(doping, directory / doping.name)
             parameter=REPO/'reference_tcad'/archive/'source/models.par'
-            if not parameter.is_file():
-                parameter=base/'source/models.par'
             if not parameter.is_file():
                 from vela_sdevice.materials import default_models_par_path
                 parameter=default_models_par_path()
@@ -634,8 +635,9 @@ def run_gates(staging,output,launcher):
             cmd=directory/name;cmd.write_text(text,encoding='utf-8')
             completed=subprocess.run([str(launcher),'device',str(cmd),'--check','--allow-lossy'],capture_output=True,text=True,encoding='utf-8',env=env)
             results.append({'cmd':name,'expected_exit_code':0,'exit_code':completed.returncode,'diagnostics':completed.stdout+completed.stderr,'pass':completed.returncode==0,
-                            'reference_archive':archive,'reference_version':manifest['version'],
-                            'reference_manifest_sha256':sha(manifest_path),'grid_sha256':sha(meshes[0])})
+                            'reference_archive':archive,'reference_version':provenance['version'],
+                            'source_tdr_sha256':provenance['sha256'], 'grid_sha256':sha(grid),
+                            'doping_sha256':sha(doping)})
     fixture=REPO/'tests/fixtures/sdevice/transportmodels_sentaurus2022/pp6_des.cmd'
     rejected=output/'transport_rejection';rejected.mkdir()
     cmd=rejected/fixture.name;shutil.copy2(fixture,cmd)
@@ -655,19 +657,21 @@ def main(argv=None):
     parser.add_argument('--reference-dir',type=Path,default=os.environ.get('VELA_REFERENCE_ARTIFACTS_DIR'))
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--launcher',type=Path,required=True)
-    parser.add_argument('--tdr-importer',type=Path,required=True)
+    parser.add_argument('--tdr-importer',type=Path)
     parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid/sidecar hash checks')
     parser.add_argument('--timeout-seconds',type=float,default=7200.,help='Bound each fresh candidate run; timeout never passes (full BV retains 401 Plot biases)')
     args = parser.parse_args(argv)
     if args.compensated_bv and args.case != 'pn2d_bv':parser.error('--compensated-bv requires --case pn2d_bv')
     if args.timeout_seconds<=0:parser.error('--timeout-seconds must be positive')
-    if args.reference_dir is None:
+    if args.case != 'gates' and args.reference_dir is None:
         print('SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.')
         return 77
+    if args.case != 'gates' and args.tdr_importer is None:
+        parser.error('--tdr-importer is required for native numerical references')
     args.output_dir.mkdir(parents=True,exist_ok=True)
     args.output_dir = Path(tempfile.mkdtemp(prefix=args.case+'_',dir=args.output_dir))
     try:
-        result = run_gates(args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve()) if args.case=='gates' else \
+        result = run_gates(args.output_dir.resolve(),args.launcher.resolve()) if args.case=='gates' else \
             run_case(args.case,args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve(),args.tdr_importer.resolve(),read_json(CONTRACT),
                      args.candidate_dir.resolve() if args.candidate_dir else None,args.timeout_seconds,
                      compensated_bv=args.compensated_bv)
