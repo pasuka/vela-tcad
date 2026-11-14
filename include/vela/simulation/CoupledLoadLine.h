@@ -84,6 +84,7 @@ struct CoupledLoadLineConfig {
     /// Always perform this many original-system defect corrections, even when
     /// the first factor solve already passes. Zero is the explicit legacy path.
     int minimumOriginalCorrections = 0;
+    bool bvMethodsEftDefect = false;
     DensityUpdateConvergenceConfig updateConvergence;
 };
 
@@ -1701,8 +1702,9 @@ private:
         if (config_.directRefinementSteps > 0 || config_.minimumOriginalCorrections>0 || system_.makeTrial) {
             // Always measure the original system, including a candidate obtained
             // from a regularized factorization or the row-scaled QR path.
-            auto defect = linear_refinement::highPrecisionDefect(
-                rawAugmented, -rawRhs, update);
+            const auto calculateDefect = config_.bvMethodsEftDefect && pardiso
+                ? linear_refinement::eftDefect : linear_refinement::highPrecisionDefect;
+            auto defect = calculateDefect(rawAugmented, -rawRhs, update);
             constexpr Real backwardTolerance = 1.0e-10;
             const auto reportDefect=[&]() {
                 if(report) {
@@ -1744,8 +1746,7 @@ private:
                         failureReason = "direct bordered refinement update is non-finite";
                         return false;
                     }
-                    auto next = linear_refinement::highPrecisionDefect(
-                        rawAugmented, -rawRhs, candidate);
+                    auto next = calculateDefect(rawAugmented, -rawRhs, candidate);
                     if (k>=minimumCorrections && defectScore(next) >= defectScore(defect))
                         break;
                     update = std::move(candidate);

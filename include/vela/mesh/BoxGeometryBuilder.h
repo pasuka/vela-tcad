@@ -10,6 +10,15 @@ class DeviceMesh;
 struct Cell;
 struct Node;
 
+// tan(1e-10 degrees). Keep the SDevice mesh import predicate in sync.
+inline constexpr Real kRightAngleCotangentTolerance = 1.7453292519943296e-12;
+
+inline constexpr Real clampNearRightCotangent(Real cotangent)
+{
+    return cotangent >= -kRightAngleCotangentTolerance &&
+           cotangent <= kRightAngleCotangentTolerance ? 0.0 : cotangent;
+}
+
 /**
  * @brief Diagnostics gathered while computing box-method mesh geometry.
  */
@@ -20,9 +29,11 @@ struct GeometryBuildReport {
     Index fallbackCount = 0;
     Index edgeAggregationRepairCount = 0;
     Index aggregatedNegativeEdgeCount = 0;
+    Index clampedCotangentCount = 0;
     Real minAngleDegrees = 0.0;
     Real maxAngleDegrees = 0.0;
     Real minEdgeLength = 0.0;
+    Real nodeVolumeSum = 0.0;
     Index transferredCellBoxEdges = 0;
 };
 

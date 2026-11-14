@@ -27,7 +27,9 @@ const std::map<std::string, std::string> units{
     {"electron_qf_reference_V", "V"}, {"hole_qf_reference_V", "V"},
     {"packed_psi", "1"}, {"packed_electron_qf_increment", "1"}, {"packed_hole_qf_increment", "1"},
     {"packed_psi_low", "1"}, {"packed_electron_qf_increment_low", "1"}, {"packed_hole_qf_increment_low", "1"},
-    {"population_psi_normalized", "1"},
+    {"population_psi_normalized", "1"}, {"population_psi_low_V", "V"},
+    {"population_electrons_low_internal", "internal_concentration"},
+    {"population_holes_low_internal", "internal_concentration"},
     {"population_electrons_internal", "internal_concentration"},
     {"population_holes_internal", "internal_concentration"},
     {"temperature_K", "K"}};
@@ -132,6 +134,21 @@ void validateStateArchive(const StateArchive& s) {
         for(std::size_t i=0;i<s.nodeCount;++i) {
             const double physical=s.fields.at("population_psi_normalized")[i]*v0;
             if(!std::isfinite(physical) || physical!=s.fields.at("psi")[i])bad("population potential disagrees with physical field");
+        }
+    }
+    const char* highs[] = {"psi","population_electrons_internal","population_holes_internal"};
+    const char* tails[] = {"population_psi_low_V","population_electrons_low_internal",
+                           "population_holes_low_internal"};
+    const int tailCount = std::count_if(std::begin(tails),std::end(tails),
+        [&](const char* name) { return s.fields.contains(name); });
+    if (tailCount) {
+        if (tailCount != 3 || !en || potential) bad("incomplete compensated population coordinates");
+        for (int block = 0; block < 3; ++block) {
+            const auto& high = s.fields.at(highs[block]);
+            const auto& tail = s.fields.at(tails[block]);
+            for (std::size_t i = 0; i < s.nodeCount; ++i)
+                if (high[i]+tail[i] != high[i] || (block && high[i] <= 0.))
+                    bad("invalid compensated population coordinate pair");
         }
     }
     if (split) for (std::size_t i = 0; i < s.nodeCount; ++i) {

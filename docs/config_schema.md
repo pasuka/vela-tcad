@@ -608,6 +608,8 @@ Newton numerical and geometry controls added for explicit validation profiles:
   mode; use the production `dc_sweep` and population update reports.
   Integration and actual qualification are recorded in the
   [SLOT integration report](validation/slot_ldmos_main_density_integration_2026-10-29.md).
+  Classical Masetti and Masetti-field population configurations use the direct
+  PN2D transport columns, while the SLOT adapter retains its QF consumer.
   Packed unknowns are ψ/V0, n and p in internal concentration units. Positive
   semiconductor n/p are authoritative; derived QF fields never overwrite them.
   Population DDSolution retains the original normalized psi separately from QF
@@ -633,8 +635,31 @@ Newton numerical and geometry controls added for explicit validation profiles:
   of being silently ignored. Population positivity, physical residuals and
   configured report/enforce gates remain. See the
   [coordinate-policy audit](validation/potential_density_policy_audit_2026-10-29.md).
-  PN2D and pseudo-arclength are not qualified for this mode. See the [implementation record](validation/potential_density_development_2026-10-28.md)
-  for actual validation status.
+  `sd-sim --pn2d-population <cmd>` enables this path for classical silicon
+  voltage stages with ohmic Anode and Cathode contacts. It retains the CMD
+  physics and the BV sidecar. Coupled stages select Unit coordinates and
+  relative-update stopping with CMD Digits and ErrRef values. With omitted
+  ErrRef, the reference values are 0.0258 V for Poisson and 1e10 cm⁻³ for
+  each carrier. The relative error uses the existing population RMS evaluator
+  in physical units, with no circuit-voltage term for fixed-voltage solves.
+  The RhsMin branch requires a native RHS calibration, which is unavailable
+  for PN2D. Carrier-row, global-continuity and configured absolute-block
+  thresholds are reported. The emitter uses full Newton steps when the CMD
+  damping settings disable both damping methods within the iteration budget.
+  The emitter translates normalized InitialStep,
+  MinStep and MaxStep to volts and uses Increment with Newton-iteration growth
+  and reciprocal Decrement on retries. `sweep.stop_below_minimum_step: true`
+  stops an ordinary voltage sweep when a retry would require less than MinStep.
+  The CMD `Extrapolate` setting maps to `sweep.continuation.predictor.mode`.
+  Linear prediction uses two accepted states. For concentration coordinates,
+  it extrapolates positive carrier concentrations in log space.
+  PN2D IV and BV sweeps select `sweep.preserve_step_after_output_clip: true` to
+  reuse the proposed step after a first-attempt landing at an intermediate
+  `vtk_bias_points` voltage shortened the step. A rejected step uses the
+  configured reduction and the accepted retry determines subsequent growth.
+  Each CMD Goal and requested output bias is landed exactly. Different Newton
+  outcomes can produce different adaptive trajectories. Full PN2D IV/BV and
+  pseudo-arclength qualification require separate numerical evidence.
   Population-mode coupled load-line secant prediction uses linear ψ/internal
   voltage and logarithmic n/p extrapolation between accepted states:
   `c_pred = exp(log(c_current) + ratio*(log(c_current)-log(c_previous)))`.
@@ -643,17 +668,35 @@ Newton numerical and geometry controls added for explicit validation profiles:
   exact values. Invalid domains, overflow/underflow or a failed predictor guard
   fall back to the last accepted state; no population floor is introduced.
   QF-mode prediction retains its existing behavior.
-- `solver.primary_variable_coordinates`: `unit` (population default) or `physical`
-  (rollback). Internally psi/VT, n/C0, p/C0 and inner voltage/VT; output, archive
+- `solver.primary_variable_coordinates`: `unit` (BVMethods population default and
+  selected by the PN2D CMD mode) or `physical`. Internally psi/VT, n/C0, p/C0
+  and inner voltage/VT; output, archive
   populations, positivity and ErrRef remain physical. Existing device row scales
   remain; the scalar row is divided by VT. Unit directions require one original
   defect correction and the original physical precision audit before writeback.
-- `solver.population_stopping_rule`: `native_approx` (population default) or
+- `solver.compensated_population_state` enables compensated potential and
+  carrier concentrations for the legacy, unit-scaled Boltzmann SG solver
+  with Ohmic contacts, Masetti mobility, optional SRH, and optional
+  element-edge SG/GSS-Laux avalanche. It defaults to `false`. This path
+  uses physical residual ceilings of `8e-28 C/m` (Poisson) and
+  `5e-22 A/µm` (each continuity equation), with backtracking on the live
+  residual. A continuity row can also meet its binary64 roundoff bound
+  of 16 machine epsilons times the sum of absolute flux and source terms.
+  The correction uses the SG/Poisson Jacobian with mobility
+  and generation/recombination coefficients frozen during linearization.
+  HDF5 checkpoints store the three low components as one bundle. It is
+  supported for voltage-controlled sweeps. Terminal totals use the compensated
+  transport fluxes. Spatial fields in VTU retain the usual binary64 output
+  representation.
+- `solver.population_stopping_rule`: `native_approx` (BVMethods population default) or
   `legacy`. Approximate stop is valid E<1 OR a valid mapped RHS infinity norm
   <1e-5. E uses the physical raw direction and actual protected post-state.
   Mapping is limited to the frozen 300 K, 2600/5020 reference normalization,
   compatible constants and material scales. Outside it only E can accept, with
   an unavailable-mapping diagnostic. This is not native RHSMin equivalence.
+- `solver.population_update_convergence`: optional `digits`,
+  `potential_reference_V`, `electron_reference_cm3` and `hole_reference_cm3`
+  for the relative update test in the fixed-voltage population solve.
 - `sweep.external_circuit.physical_acceptance_mode`: `report` or `enforce`.
   Omitted selects report for native_approx, enforce otherwise. Load, carrier,
   continuity and KCL remain recorded; nonfinite states always reject. Linear
@@ -1248,10 +1291,47 @@ Sentaurus matrix agreement.
 An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 `direct_bordered` load-line matrix and its refinement corrections, including
 the direct path of `auto`; a PARDISO error is returned without backend fallback.
+
+For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
+solve, the original-system defect calculation defaults to compensated EFT
+accumulation with extended `long double` finalization when supported.
+Out-of-range EFT rows are recomputed in extended precision. A detected
+discarded-tail cancellation is recomputed from the exact binary64 inputs
+using rational arithmetic. The weighted absolute defect, componentwise
+backward error and original correction rules retain their existing tolerances.
+Platforms without suitable extended precision use EFT with MP100 finalization
+and `std::from_chars` conversion. Floating-point environments unsupported by
+EFT use the original MP100 path. Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
+compare against EFT with MP100 finalization, or `VELA_BVMETHODS_MP100_DEFECT=1`
+to select the original all-MP100 defect path.
 The explicitly selected `direct_bordered_qr` policy retains its QR preference.
 In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate
 qualification. Runtime paths belong in local environment configuration.
+
+In BVMethods potential-density mode with quasi-Fermi SG, coupled residual
+assembly reuses identical long-double Lombardi powers within each element.
+Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
+against uncached evaluation. The cache is scoped to one element evaluation.
+
+BVMethods potential-density mode with quasi-Fermi SG uses scalar Tri3
+transport by default when only the transport value is requested. Set
+`VELA_BVMETHODS_TRI3_VALUE_MODE=dual` before launch to use the Dual path for
+those calls, or set it to `shadow` to return the Dual result and compare
+both value vectors bit for bit with the scalar result. Jacobian requests
+and unsupported state or SG modes use the Dual path.
+
+Scalar Tri3 transport computes the Canali mobility value in long double.
+Set `VELA_BVMETHODS_CANALI_VALUE_ONLY=0` before launch to use the full Canali
+evaluation for scalar transport, or set `VELA_BVMETHODS_CANALI_VALUE_AUDIT=1`
+to compute both paths and check the mobility bit pattern at every evaluation.
+Jacobian and avalanche assembly retain the full evaluation.
+
+BVMethods potential-density contact and circuit current evaluations reuse the
+last source-free transport vector when the packed state matches bit for bit
+within the same assembler runtime. Set `VELA_BVMETHODS_TRI3_PORT_CACHE=0`
+before launch to disable this reuse. Set it to `shadow` to recompute each cache
+hit and check bitwise equality. Jacobian assembly uses its own path.
 
 Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
 `mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
@@ -1591,10 +1671,18 @@ Supported `node_volume_policy` values:
 cotangent contribution, `true` substitutes the existing positive barycentric
 box contribution. `false` removes that local contribution (zero weight); it
 does not retain a signed negative edge coupling. The option is intended for
-explicit mesh/discretization qualification and should not be changed as an
-implicit physics calibration.
+explicit mesh/discretization qualification.
 
-This option changes the mesh node control volumes used by Poisson charge,
+SDevice mesh qualification and the box builder use the same per-triangle
+threshold. A cotangent with magnitude at most `1.7453292519943296e-12`
+(an angle within `1e-10` degrees of a right angle) contributes zero to
+the opposite edge. Other triangles sharing that edge keep their own
+contributions. Mixed-Voronoi shares in a triangle with a rounded
+cotangent are rescaled to sum to its area. A cotangent below the negative
+threshold still triggers `require_non_obtuse` or the configured fallback
+when that guard is disabled.
+
+The node volume policy controls the areas used by Poisson charge,
 carrier continuity volume terms, stored/terminal charge, and SG avalanche
 source density normalization. It does not change donor/acceptor values used for
 Ohmic contact boundary conditions.
@@ -3655,25 +3743,29 @@ Initialization semantics:
 Qualified PN2D production starting points are stored separately for forward
 and reverse operation:
 
-- `configs/templates/pn2d_iv.template.json`: forward 0--20 V IV, low-field
-  Masetti mobility, `cell_reconstructed_total_impurity`, SRH plus Old
+- `configs/templates/pn2d_iv.template.json`: forward 0 to +10 V IV, low-field
+  Masetti mobility, `total_impurity`, SRH plus Old
   Slotboom, and impact ionization disabled.
 - `configs/templates/pn2d_bv.template.json`: reverse 0---20 V BV,
   `masetti_field`, `total_impurity` (`Nd + Na`), SRH plus Old Slotboom, and
   Van Overstraeten impact ionization.
 
-PN2D BV version 4 corrects impurity scattering from net doping to total
-impurity. The external-resistor validation entry rejects a net-doping basis.
-Version 4 retains the version-3 atomic
+IV v2 and BV v5 default to compensated potential and concentration with unit
+scaling. They use Newton iteration counts for step growth, linear prediction,
+and preserve the proposed step after landing on a requested output bias.
+The default grids have 201 IV and 401 BV output biases. The numerical defaults
+use the CODATA2018 reference profile. For the previous solver and sweep
+defaults, render with `--set solver_profile=legacy`.
+
+PN2D BV retains the version-3 atomic
 `element_edge_sg_gss_laux` profile. Rendering it binds element-edge
 SG/GSS-Laux current support, element-vertex box source mapping, Bernoulli
 midpoint density, mixed-Voronoi node volumes, and
 `mesh_geometry.require_non_obtuse=true`. Use the
 `legacy_cell_reconstructed` profile for the complete cell-reconstructed and
 barycentric rollback. The generator rejects partially mixed profiles. This
-template policy does not change the global barycentric or mobility parser
-defaults, or the PN2D IV template. Version-3 curve qualification does not by
-itself qualify version 4; see the current PN2D validation reference.
+template policy applies to the BV geometry and avalanche settings.
+See the PN2D validation reference for the scope of each template version.
 
 For audited imported meshes that contain obtuse triangles but are Delaunay at
 the assembled interior-edge level, `mesh_geometry.edge_coupling_policy` may be

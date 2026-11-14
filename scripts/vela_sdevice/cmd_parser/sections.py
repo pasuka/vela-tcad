@@ -752,7 +752,9 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                 math["rel_err_control"] = not negated
             elif base == "errref":
                 carrier = group[0].value.lower() if group else ""
-                if carrier == "electron":
+                if carrier == "poisson":
+                    math["err_ref_poisson_V"] = parse_number(value, "ErrRef")
+                elif carrier == "electron":
                     math["err_ref_electron_cm3"] = parse_number(value, "ErrRef")
                 elif carrier == "hole":
                     math["err_ref_hole_cm3"] = parse_number(value, "ErrRef")

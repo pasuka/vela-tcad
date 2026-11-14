@@ -22,14 +22,19 @@ inline AvJet avLog(const AvJet& x)
     return y;
 }
 
+inline bool avRatioInOrdinaryRange(double ratio)
+{
+    return ratio>=std::sqrt(std::numeric_limits<double>::min()) &&
+           ratio<=std::sqrt(std::numeric_limits<double>::max());
+}
+
 inline AvJet avLogRatio(const AvJet& numerator,const AvJet& denominator)
 {
     // Keep the qualified near-equilibrium arithmetic. Outside the safe
     // ratio range, logs and their derivatives remain representable even
     // when forming the density quotient (or its derivative) does not.
     const double ratio=numerator.value/denominator.value;
-    if(ratio>=std::sqrt(std::numeric_limits<double>::min()) &&
-       ratio<=std::sqrt(std::numeric_limits<double>::max()))
+    if(avRatioInOrdinaryRange(ratio))
     {
         const auto quotient=numerator/denominator;
         bool finite=true;
@@ -166,7 +171,9 @@ struct AvTri3Result {
     std::array<AvJet,3> nodeGeneration_per_cm_s;
     std::array<AvJet,2> electronParticleCurrentWithoutMobility;
     std::array<AvJet,2> holeParticleCurrentWithoutMobility;
+    double electronGeneration_cm3_s=0.,holeGeneration_cm3_s=0.;
     bool electronZeroNorm=false,holeZeroNorm=false;
+    bool electronActiveAtZero=false,holeActiveAtZero=false;
 };
 
 inline AvTri3Result evaluateBvMethodsTri3Avalanche(
@@ -186,8 +193,15 @@ inline AvTri3Result evaluateBvMethodsTri3Avalanche(
     const auto jn=avNorm(out.electronParticleCurrentWithoutMobility);
     const auto jp=avNorm(out.holeParticleCurrentWithoutMobility);
     out.electronZeroNorm=jn.value==0.;out.holeZeroNorm=jp.value==0.;
-    out.generation_cm3_s=avCoefficient(electronField,electron)*mun*jn
-                       +avCoefficient(holeField,hole)*mup*jp;
+    const auto electronCoefficient=avCoefficient(electronField,electron);
+    const auto holeCoefficient=avCoefficient(holeField,hole);
+    const auto electronGeneration=electronCoefficient*mun*jn;
+    const auto holeGeneration=holeCoefficient*mup*jp;
+    out.electronGeneration_cm3_s=electronGeneration.value;
+    out.holeGeneration_cm3_s=holeGeneration.value;
+    out.electronActiveAtZero=out.electronZeroNorm && electronCoefficient.value>0.;
+    out.holeActiveAtZero=out.holeZeroNorm && holeCoefficient.value>0.;
+    out.generation_cm3_s=electronGeneration+holeGeneration;
     for(std::size_t k=0;k<3;++k){
         if(!(geometry.boxAreas_cm2[k]>=0.))throw std::invalid_argument("Negative AV box measure");
         out.nodeGeneration_per_cm_s[k]=AvJet(geometry.boxAreas_cm2[k])*out.generation_cm3_s;

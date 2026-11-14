@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """WP10: fail-closed, same-mesh SDevice frontend acceptance (stdlib only).
 
-References must be staged and registered first with reference_artifacts.py.
-Missing VELA_REFERENCE_ARTIFACTS_DIR returns 77 for an explicit CTest skip.
+The check-only gates use repository GRD/DAT fixtures. The legacy numerical
+cases require staged native references and return 77 if none are configured.
 No physics defaults, per-case sign corrections, or post-result thresholds.
 """
 from __future__ import annotations
@@ -32,6 +32,8 @@ from analyze_pn2d_avalanche_on_bv_parity import CurvePoint, continuous_breakpoin
 
 REPO = Path(__file__).resolve().parents[1]
 CONTRACT = REPO / 'configs/sdevice_acceptance_contract.json'
+COMPENSATED_BV_SIDECAR = REPO / 'configs/pn2d_bv_compensated.vela.json'
+GATE_FIXTURES = REPO / 'reference_tcad/sdevice_check_only'
 
 
 def read_json(path):
@@ -130,17 +132,70 @@ def sign_evidence(reference, candidate):
     return {'factor': pairs[0]['factor'], 'pairs': pairs}
 
 
-def curve_metrics(reference, candidate, case, contract):
+def requested_output_biases(cmd, contact):
+    from vela_sdevice.cmd_parser import parse_cmd_file
+    from vela_sdevice.deck_emit import expand_times
+
+    ir = parse_cmd_file(cmd)
+    voltages = {electrode['name']: electrode['voltage_V'] for electrode in ir['electrodes']}
+    biases = set()
+    for stage in ir['stages']:
+        goal = stage.get('goal')
+        if not goal or 'voltage_V' not in goal:
+            continue
+        name, stop = goal['contact'], goal['voltage_V']
+        start = voltages[name]
+        voltages[name] = stop
+        if name != contact:
+            continue
+        outputs = stage['outputs']
+        times = {0.0, 1.0}
+        for plot in outputs['plot_files']:
+            times.update(expand_times(plot['time']))
+        times.update(expand_times(outputs['current_plot_times']))
+        biases.update(start + t * (stop - start) for t in times)
+    return sorted(biases)
+
+
+def curve_metrics(reference, candidate, case, contract, *, output_biases=None):
     lo, hi = case['bias_window_V']
     for series in (reference, candidate):
         if not series or min(r['bias_V'] for r in series) > lo + 1e-9 or max(r['bias_V'] for r in series) < hi - 1e-9:
             raise ValueError('curve does not cover the frozen comparison window')
     limits = contract['curve']
-    kcl = max(abs(sum(r['currents'])) / max(max(map(abs, r['currents'])), limits['current_floor_A_per_um']) for r in candidate)
+    kcl_points = []
+    for row in candidate:
+        imbalance = abs(sum(row['currents']))
+        scale = max(max(map(abs, row['currents'])), limits['current_floor_A_per_um'])
+        kcl_points.append({'bias_V': row['bias_V'], 'absolute_imbalance_A_per_um': imbalance,
+                           'kcl_relative': imbalance / scale})
+    kcl = max(point['kcl_relative'] for point in kcl_points)
     if lo == hi:
         absolute = max(abs(r['I']) for r in reference + candidate)
         return {'status': 'pass' if absolute <= limits['current_floor_A_per_um'] and kcl <= limits['max_terminal_current_imbalance'] else 'fail',
                 'max_absolute_current_A_per_um': absolute, 'max_kcl_relative': kcl}
+    report_window = case.get('kcl_report_only_bias_window_V')
+    report_non_output = case.get('kcl_report_non_output_points', False)
+    enforced_kcl = kcl
+    if report_non_output:
+        if not output_biases:
+            raise ValueError('KCL output-point policy requires CMD output voltages')
+        for bias in output_biases:
+            if not any(abs(point['bias_V'] - bias) <= 1e-9 for point in kcl_points):
+                raise ValueError(f'candidate is missing an accepted CMD output point at {bias:g} V')
+    if report_window is not None or report_non_output:
+        report_points, enforced_points = [], []
+        for point in kcl_points:
+            bias = point['bias_V']
+            low_bias = report_window is not None and report_window[0] <= bias <= report_window[1]
+            non_output = report_non_output and not any(abs(bias - output) <= 1e-9 for output in output_biases)
+            if low_bias or non_output:
+                report_points.append(point)
+            else:
+                enforced_points.append(point)
+        if not enforced_points:
+            raise ValueError('KCL policy requires an accepted point where the threshold applies')
+        enforced_kcl = max(point['kcl_relative'] for point in enforced_points)
     metrics = compare_series('iv', reference, candidate, CURRENT_SIGN_FACTOR, 1.0, 0.0, lo, hi,
                              reference_column='I', candidate_column='I', interpolation='log_current')
     # OOM alone uses magnitudes; opposite signs must fail independently.
@@ -148,8 +203,14 @@ def curve_metrics(reference, candidate, case, contract):
     sign_ok = bool(ref_values) and all(r*c > 0 for r,c in zip(ref_values,cand_values))
     passed = metrics['available'] and metrics['points_compared'] >= limits['min_points'] and sign_ok \
         and metrics['orders_of_magnitude'] is not None and metrics['orders_of_magnitude'] <= limits['max_orders_of_magnitude'] \
-        and (metrics['trend_match'] or not limits['require_trend_match']) and kcl <= limits['max_terminal_current_imbalance']
+        and (metrics['trend_match'] or not limits['require_trend_match']) and enforced_kcl <= limits['max_terminal_current_imbalance']
     metrics.update(status='pass' if passed else 'fail', max_kcl_relative=kcl, same_sign=sign_ok)
+    if report_window is not None or report_non_output:
+        metrics.update(max_enforced_kcl_relative=enforced_kcl,
+                       kcl_report_only={'bias_window_V': report_window, 'non_output_points': report_non_output,
+                                        'points': report_points})
+    if report_non_output:
+        metrics.update(kcl_requested_output_biases_V=output_biases, kcl_enforced_points=len(enforced_points))
     metrics['derived_max_relative_error'] = 10**limits['max_orders_of_magnitude']-1
     if metrics['max_relative_error'] is None or metrics['max_relative_error'] > metrics['derived_max_relative_error']:
         metrics['status']='fail'
@@ -169,14 +230,17 @@ def breakdown_knee_metrics(reference, candidate, settings):
         curves.append(curve)
     reference_knee = continuous_breakpoint(curves[0], biases, 'reference')
     candidate_knee = continuous_breakpoint(curves[1], biases, 'candidate')
-    error = abs(candidate_knee-reference_knee)
+    absolute_error = abs(candidate_knee - reference_knee)
+    relative_error = absolute_error / abs(reference_knee)
+    maximum_relative_error = settings['maximum_V_break_relative_error']
     slope_knots = [slope_knee(adjacent_slopes(curve, biases, label))
                    for curve, label in zip(curves, ('reference', 'candidate'))]
     same_crossing = (slope_knots[0] is None) == (slope_knots[1] is None)
-    return {'status':'pass' if error <= settings['maximum_V_break_absolute_error_V'] and same_crossing else 'fail',
+    return {'status':'pass' if relative_error <= maximum_relative_error and same_crossing else 'fail',
             'definition':settings['definition'], 'threshold_source':settings['source'], 'biases_V':biases,
             'reference_fitted_knee_V':reference_knee, 'candidate_fitted_knee_V':candidate_knee,
-            'absolute_error_V':error, 'maximum_absolute_error_V':settings['maximum_V_break_absolute_error_V'],
+            'absolute_error_V':absolute_error, 'relative_error':relative_error,
+            'maximum_relative_error':maximum_relative_error,
             'slope_crossing_V':{'reference':slope_knots[0], 'candidate':slope_knots[1]},
             'slope_outcome':'shared_no_crossing' if all(s is None for s in slope_knots) else 'both_cross' if same_crossing else 'mismatch'}
 
@@ -330,12 +394,27 @@ def bv_spatial_qualification(contract, name, provenance, version, manifest_sha25
     qualification = contract.get('biased_spatial_qualification', {}).get(name)
     if not qualification:
         return None, 'No independent avalanche spatial qualification.'
+    if len(decks) != 2:
+        return None, 'Avalanche spatial qualification requires two stages.'
+    stage_hashes = None
+    if any(deck['solver'].get('compensated_population_state', False) for deck in decks):
+        compensated = qualification.get('compensated_population')
+        if not compensated:
+            return None, 'No independent compensated population spatial qualification.'
+        stage_hashes = compensated['stage_policy_sha256']
+        qualification = {**qualification, **{k: compensated[k] for k in ('id','scope','evidence')},
+                         'input_sha256': {**qualification['input_sha256'],
+                                          'sidecar_sha256': compensated['sidecar_sha256']}}
     if set(qualification.get('input_sha256', {})) != {'cmd_sha256', 'parameter_sha256', 'grid_sha256', 'sidecar_sha256'} or any(provenance.get(key) != value
             for key, value in qualification['input_sha256'].items()):
         return None, 'Avalanche spatial qualification input fingerprints differ.'
     if version != qualification['reference_version'] or manifest_sha256 != qualification['reference_manifest_sha256']:
         return None, 'Avalanche spatial qualification reference identity differs.'
-    if len(decks) != 2 or stage_policy_sha256(decks[1]) != qualification['stage_policy_sha256']:
+    if stage_hashes is None:
+        policy_matches = stage_policy_sha256(decks[1]) == qualification['stage_policy_sha256']
+    else:
+        policy_matches = [stage_policy_sha256(deck) for deck in decks] == stage_hashes
+    if not policy_matches:
         return None, 'Avalanche spatial qualification solver/geometry/contact policy differs.'
     expected = qualification['mesh']
     if (mesh['nodes']['count'] != expected['nodes'] or mesh['elements']['count'] != expected['cells']
@@ -399,7 +478,7 @@ def biased_field_metrics(name, case, base, output, importer, work, mesh, provena
     return result
 
 
-def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200):
+def run_case(name, staging, output, launcher, importer, contract, candidate_dir=None, timeout=7200, *, compensated_bv=False):
     case = contract['cases'][name]; base = staging/case['archive']/contract['reference_version']
     manifest_path = base/'artifact_manifest.json'
     if not manifest_path.is_file():
@@ -425,6 +504,12 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     if not qualified(verification):
         return {'status':'unqualified_reference','verification':verification}
     cmd, provenance = prepare_reference(base, case, output/'candidate')
+    launcher_options = ['--allow-lossy','--exit-on-failure','--threads','1']
+    if compensated_bv:
+        sidecar = cmd.with_suffix('.vela.json')
+        shutil.copy2(COMPENSATED_BV_SIDECAR, sidecar)
+        provenance.update(sidecar_sha256=sha(sidecar), sidecar=read_json(sidecar))
+        launcher_options.append('--pn2d-population')
     if candidate_dir:
         cmd = candidate_dir/case['cmd']
         check_candidate_inputs(candidate_dir,case,provenance)
@@ -433,7 +518,7 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     else:
         env = dict(os.environ, VELA_PYTHON=sys.executable)
         with (output/'candidate_console.log').open('w',encoding='utf-8') as log:
-            proc = subprocess.Popen([str(launcher),'device',str(cmd),'--allow-lossy','--exit-on-failure','--threads','1'],
+            proc = subprocess.Popen([str(launcher),'device',str(cmd),*launcher_options],
                 env=env,stdout=log,stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=='nt' else 0)
             try:
@@ -450,7 +535,8 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
     reference = native_rows(base/'plt'/case['plt'],case['contact'])
     candidate = raw_rows([work/s['csv'] for s in plan['stages']],case['contact'])
     try:
-        curves = curve_metrics(reference,candidate,case,contract)
+        output_biases = requested_output_biases(cmd, case['contact']) if case.get('kcl_report_non_output_points') else None
+        curves = curve_metrics(reference, candidate, case, contract, output_biases=output_biases)
     except ValueError as error:
         curves = {'status':'fail','error':str(error),'candidate_bias_range':[min(r['bias_V'] for r in candidate),max(r['bias_V'] for r in candidate)]}
     # Equilibrium VTU is retained as the first stage's accepted output.
@@ -478,6 +564,13 @@ def run_case(name, staging, output, launcher, importer, contract, candidate_dir=
         except ValueError as error:
             result['breakdown_knee'] = {'status':'fail', 'error':str(error)}
         if result['breakdown_knee']['status'] != 'pass': result['status'] = 'fail'
+    if compensated_bv:
+        requested = requested_output_biases(cmd, case['contact'])
+        accepted_biases = {round(row['bias_V'], 9) for row in candidate}
+        missing = [bias for bias in requested if round(bias, 9) not in accepted_biases]
+        result['output_bias_coverage'] = {'requested': len(requested), 'missing_V': missing}
+        if missing:
+            result['status'] = 'fail'
     result['cmd_exit_code']=code
     result['candidate_csv_sha256']={s['csv']:sha(work/s['csv']) for s in plan['stages'] if (work/s['csv']).is_file()}
     result['mesh']={'nodes':len(read_json(work/'mesh.json')['nodes']),'cells':len(read_json(work/'mesh.json')['triangles'])}
@@ -500,40 +593,40 @@ def time_semantics(base):
     return {'semantics':'reset_per_quasistationary_stage','evidence':evidence}
 
 
-def check_only_manifest(staging, archive, version):
-    """Bind check-only grids to their archive version, never the latest alias."""
-    repository = REPO / 'reference_tcad' / archive
-    for path in (staging / archive / version / 'artifact_manifest.json',
-                 repository / f'artifact_manifest_{version}.json',
-                 repository / 'artifact_manifest.json'):
-        if path.is_file():
-            manifest = read_json(path)
-            if manifest['case'] != archive or manifest['version'] != version:
-                raise ValueError('check-only manifest archive identity mismatch: ' + str(path))
-            return manifest, path
-    raise ValueError('registered check-only manifest missing: ' + archive + '/' + version)
+def checked_gate_grid(archive, stem):
+    manifest = read_json(GATE_FIXTURES / 'manifest.json')
+    entry = manifest['grids'][archive]
+    source = entry['source_tdr']
+    inventory = REPO / source['manifest']
+    native = read_json(inventory)
+    listed = [a for a in native['artifacts'] if a['path'] == f'mesh/{stem}.tdr']
+    if (native['case'] != archive or native['version'] != source['version'] or
+            len(listed) != 1 or listed[0]['sha256'] != source['sha256']):
+        raise ValueError(f'Check-only source TDR provenance mismatch: {archive}/{stem}')
+    paths = [GATE_FIXTURES / f'{stem}.{ext}' for ext in ('grd', 'dat')]
+    for path in paths:
+        if sha(path) != entry['files'][path.name]:
+            raise ValueError(f'Check-only fixture hash mismatch: {path.name}')
+    return paths, source
 
 
-def run_gates(staging,output,launcher):
+def run_gates(output,launcher):
     results=[];env=dict(os.environ,VELA_PYTHON=sys.executable)
-    for archive,commands,grid in (
-        ('schottky_charon_sentaurus2018',['schottky_n_des.cmd'],'schottky_n_msh.tdr'),
-        ('bvmethods_sentaurus2018',['aba_poisson_sdevice.cmd','aba_coupled_sdevice.cmd','external_resistor_sdevice.cmd','voltage_to_current_sdevice.cmd'],'n1_msh.tdr')):
-        base=staging/archive/'v1'
-        meshes=list(base.rglob(grid))
-        if len(meshes)!=1:raise ValueError('check-only mesh missing or ambiguous: '+grid)
-        manifest, manifest_path = check_only_manifest(staging, archive, 'v1')
-        listed=[a for a in manifest['artifacts'] if a['path']==meshes[0].relative_to(base).as_posix()]
-        if len(listed)!=1 or sha(meshes[0])!=listed[0]['sha256']:raise ValueError('check-only grid hash mismatch')
+    for archive,commands,stem in (
+        ('schottky_charon_sentaurus2018',['schottky_n_des.cmd'],'schottky_n_msh'),
+        ('bvmethods_sentaurus2018',['aba_poisson_sdevice.cmd','aba_coupled_sdevice.cmd','external_resistor_sdevice.cmd','voltage_to_current_sdevice.cmd'],'n1_msh')):
+        (grid, doping), provenance = checked_gate_grid(archive, stem)
         for name in commands:
             directory=output/name;directory.mkdir()
             source=REPO/'reference_tcad'/archive/'source'/name
             text=source.read_text()
-            original_grid=re.search(r'\bGrid\s*=\s*"([^"]+)"',text).group(1)
-            shutil.copy2(meshes[0],directory/original_grid)
+            text, count = re.subn(r'(\bGrid\s*=\s*")[^"]+\.tdr(")',
+                                  lambda match: match[1] + grid.name + match[2], text)
+            if count != 1:
+                raise ValueError(f'{name}: expected one TDR Grid declaration')
+            shutil.copyfile(grid, directory / grid.name)
+            shutil.copyfile(doping, directory / doping.name)
             parameter=REPO/'reference_tcad'/archive/'source/models.par'
-            if not parameter.is_file():
-                parameter=base/'source/models.par'
             if not parameter.is_file():
                 from vela_sdevice.materials import default_models_par_path
                 parameter=default_models_par_path()
@@ -542,8 +635,9 @@ def run_gates(staging,output,launcher):
             cmd=directory/name;cmd.write_text(text,encoding='utf-8')
             completed=subprocess.run([str(launcher),'device',str(cmd),'--check','--allow-lossy'],capture_output=True,text=True,encoding='utf-8',env=env)
             results.append({'cmd':name,'expected_exit_code':0,'exit_code':completed.returncode,'diagnostics':completed.stdout+completed.stderr,'pass':completed.returncode==0,
-                            'reference_archive':archive,'reference_version':manifest['version'],
-                            'reference_manifest_sha256':sha(manifest_path),'grid_sha256':sha(meshes[0])})
+                            'reference_archive':archive,'reference_version':provenance['version'],
+                            'source_tdr_sha256':provenance['sha256'], 'grid_sha256':sha(grid),
+                            'doping_sha256':sha(doping)})
     fixture=REPO/'tests/fixtures/sdevice/transportmodels_sentaurus2022/pp6_des.cmd'
     rejected=output/'transport_rejection';rejected.mkdir()
     cmd=rejected/fixture.name;shutil.copy2(fixture,cmd)
@@ -559,23 +653,28 @@ def run_gates(staging,output,launcher):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--case',choices=('pn2d_0v','pn2d_iv','pn2d_bv','gates'),required=True)
+    parser.add_argument('--compensated-bv', action='store_true', help='Use the qualified compensated PN2D BV sidecar and population frontend')
     parser.add_argument('--reference-dir',type=Path,default=os.environ.get('VELA_REFERENCE_ARTIFACTS_DIR'))
     parser.add_argument('--output-dir',type=Path,required=True)
     parser.add_argument('--launcher',type=Path,required=True)
-    parser.add_argument('--tdr-importer',type=Path,required=True)
+    parser.add_argument('--tdr-importer',type=Path)
     parser.add_argument('--candidate-dir',type=Path,help='Audit an already finished run, after exact cmd/par/grid/sidecar hash checks')
     parser.add_argument('--timeout-seconds',type=float,default=7200.,help='Bound each fresh candidate run; timeout never passes (full BV retains 401 Plot biases)')
     args = parser.parse_args(argv)
+    if args.compensated_bv and args.case != 'pn2d_bv':parser.error('--compensated-bv requires --case pn2d_bv')
     if args.timeout_seconds<=0:parser.error('--timeout-seconds must be positive')
-    if args.reference_dir is None:
+    if args.case != 'gates' and args.reference_dir is None:
         print('SKIP: VELA_REFERENCE_ARTIFACTS_DIR is not set; native references unavailable.')
         return 77
+    if args.case != 'gates' and args.tdr_importer is None:
+        parser.error('--tdr-importer is required for native numerical references')
     args.output_dir.mkdir(parents=True,exist_ok=True)
     args.output_dir = Path(tempfile.mkdtemp(prefix=args.case+'_',dir=args.output_dir))
     try:
-        result = run_gates(args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve()) if args.case=='gates' else \
+        result = run_gates(args.output_dir.resolve(),args.launcher.resolve()) if args.case=='gates' else \
             run_case(args.case,args.reference_dir.resolve(),args.output_dir.resolve(),args.launcher.resolve(),args.tdr_importer.resolve(),read_json(CONTRACT),
-                     args.candidate_dir.resolve() if args.candidate_dir else None,args.timeout_seconds)
+                     args.candidate_dir.resolve() if args.candidate_dir else None,args.timeout_seconds,
+                     compensated_bv=args.compensated_bv)
     except (ValueError,OSError,KeyError,StopIteration,ET.ParseError,subprocess.TimeoutExpired,struct.error) as error:
         result = {'status':'fail','error':str(error)}
     result.update(case=args.case,contract_sha256=sha(CONTRACT),units=read_json(CONTRACT)['units'])

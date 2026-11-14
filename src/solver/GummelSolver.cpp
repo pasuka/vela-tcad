@@ -1236,9 +1236,35 @@ void writeDDSolutionVTK(const std::string& filename,
     MobilityModelConfig resolvedMobilityConfig = mobilityConfig;
     std::vector<Real> nodeSurfaceNormalField_V_cm(N, 0.0);
     if (isSurfaceMobilityModel(resolvedMobilityConfig)) {
+        auto& surface = resolvedMobilityConfig.surface;
+        auto* cache = exportTdrVtu ? vtkOptions->surfaceGeometryCache : nullptr;
+        // The exporter selects interfaces without the solver's material table.
+        // Reuse only geometry produced by this path, and leave any geometry
+        // supplied by the caller in place.
+        const bool needsGeometry =
+            surface.cellNormalX.size() != mesh.numCells() ||
+            surface.cellNormalY.size() != mesh.numCells() ||
+            surface.cellDistances.size() != mesh.numCells();
+        const bool canCache = cache != nullptr && needsGeometry &&
+            !usesElementDistanceLombardi(resolvedMobilityConfig);
+        const bool cacheHit = canCache && cache->mesh == &mesh &&
+            cache->surfaceRegion == surface.surfaceRegion &&
+            cache->surfaceInterface == surface.surfaceInterface;
+        if (cacheHit) {
+            surface.cellNormalX = cache->cellNormalX;
+            surface.cellNormalY = cache->cellNormalY;
+            surface.cellDistances = cache->cellDistances;
+        }
+
+        // Normal electric fields still depend on the current potential.
         detail::updateSurfaceMobilityCellGeometry(
             resolvedMobilityConfig, mesh, edgeCells, sol.psi,
-            resolvedMobilityConfig.surface.coordinateFieldFactor);
+            surface.coordinateFieldFactor);
+
+        if (canCache && !cacheHit) {
+            *cache = {&mesh, surface.surfaceRegion, surface.surfaceInterface,
+                      surface.cellNormalX, surface.cellNormalY, surface.cellDistances};
+        }
 
         // Export the exact normal electric field used by the surface-mobility
         // model. CellSurfaceNormalField is the native discretization;
@@ -1424,7 +1450,8 @@ void writeDDSolutionVTK(const std::string& filename,
             false,
             carrierStatistics,
             densityOfStatesNc,
-            densityOfStatesNv)
+            densityOfStatesNv,
+            sol.stateVariables == "potential_density")
         : std::vector<detail::SgEdgeCurrentAvalancheSourceRecord>{};
     const std::vector<Real> currentDensityAvalancheSourceIntegrals =
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)
@@ -1447,7 +1474,8 @@ void writeDDSolutionVTK(const std::string& filename,
             fieldFactor,
             carrierStatistics,
             densityOfStatesNc,
-            densityOfStatesNv)
+            densityOfStatesNv,
+            sol.stateVariables == "potential_density")
         : std::vector<Real>{};
     for (Index i = 0; i < N; ++i) {
         const int row = static_cast<int>(i);

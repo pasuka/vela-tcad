@@ -391,6 +391,7 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
+    src/solver/EftLinearDefect.cpp
     src/solver/ConstraintElimination.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
@@ -555,6 +556,14 @@ elseif(NOT VELA_SPARSELU_ORDERING STREQUAL "COLAMD")
         "VELA_SPARSELU_ORDERING must be COLAMD or AMD")
 endif()
 message(STATUS "Eigen SparseLU ordering: ${VELA_SPARSELU_ORDERING}")
+
+if(MSVC)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS /fp:strict)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS -ffp-contract=off -fno-fast-math)
+    set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
+endif()
 
 if(VELA_ENABLE_GPROF)
     target_compile_options(vela_core PUBLIC
@@ -2042,15 +2051,43 @@ foreach(_vela_wp11_test package_smoke concurrency)
     set_property(TEST sdevice_${_vela_wp11_test} APPEND PROPERTY ENVIRONMENT
         "VELA_LAUNCHER=$<TARGET_FILE:vela>")
 endforeach()
-foreach(sdevice_case pn2d_0v pn2d_iv pn2d_bv gates)
-    add_test(NAME sdevice_e2e_${sdevice_case}
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
-            --case ${sdevice_case} --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
-            --launcher $<TARGET_FILE:vela> --tdr-importer $<TARGET_FILE:sentaurus_import>)
-    set_tests_properties(sdevice_e2e_${sdevice_case} PROPERTIES
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} SKIP_RETURN_CODE 77 LABELS "sdevice;reference")
-    vela_set_windows_msys2_test_path(sdevice_e2e_${sdevice_case})
-endforeach()
+add_test(NAME sdevice_e2e_gates
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdevice_acceptance.py
+        --case gates --output-dir ${CMAKE_CURRENT_BINARY_DIR}/sdevice_acceptance
+        --launcher $<TARGET_FILE:vela>)
+set_tests_properties(sdevice_e2e_gates PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} LABELS "sdevice;reference")
+vela_set_windows_msys2_test_path(sdevice_e2e_gates)
+
+option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)
+if(VELA_ENABLE_PN2D_CI)
+    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "codata2018")
+        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=codata2018")
+    endif()
+    set(_pn2d_ci_runner ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_pn2d_ci.py)
+    set(_pn2d_ci_args --reference ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reference
+                      --output ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reports)
+    add_test(NAME pn2d_ci_stage
+        COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} stage ${_pn2d_ci_args})
+    set_tests_properties(pn2d_ci_stage PROPERTIES FIXTURES_SETUP pn2d_ci_reference LABELS pn2d-ci)
+    set(_pn2d_ci_cases 0v iv bv)
+    foreach(_variant P0 P1 P2 P3 D1 D2 G1 G2)
+        list(APPEND _pn2d_ci_cases ${_variant}-forward ${_variant}-reverse)
+    endforeach()
+    foreach(_case IN LISTS _pn2d_ci_cases)
+        add_test(NAME pn2d_ci_${_case}
+            COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} ${_case} ${_pn2d_ci_args}
+                --launcher $<TARGET_FILE:sd-sim>)
+        set_tests_properties(pn2d_ci_${_case} PROPERTIES
+            FIXTURES_REQUIRED pn2d_ci_reference LABELS "pn2d-ci;sdevice" TIMEOUT 5400)
+        vela_set_windows_msys2_test_path(pn2d_ci_${_case})
+    endforeach()
+    add_test(NAME pn2d_ci_sde
+        COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} sde ${_pn2d_ci_args})
+    set_tests_properties(pn2d_ci_sde PROPERTIES LABELS "pn2d-ci;sde")
+    vela_set_windows_msys2_test_path(pn2d_ci_stage)
+    vela_set_windows_msys2_test_path(pn2d_ci_sde)
+endif()
 
 add_test(NAME sdevice_gate_contact_mapping
     COMMAND ${Python3_EXECUTABLE} -m unittest

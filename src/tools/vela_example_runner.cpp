@@ -77,9 +77,11 @@ nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
         {"fallback_count", report.fallbackCount},
         {"edge_aggregation_repair_count", report.edgeAggregationRepairCount},
         {"aggregated_negative_edge_count", report.aggregatedNegativeEdgeCount},
+        {"clamped_cotangent_count", report.clampedCotangentCount},
         {"min_angle_degrees", report.minAngleDegrees},
         {"max_angle_degrees", report.maxAngleDegrees},
         {"min_edge_length", report.minEdgeLength},
+        {"node_volume_sum", report.nodeVolumeSum},
     };
 }
 
@@ -4451,7 +4453,8 @@ nlohmann::json runTerminalCurrentFunctionalProbe(const std::string& configFile,
             contact);
     }
     vela::Real current;
-    if(problem.newton.splitDDState)current=solver.evaluateStateTerminalCurrent(state,contact,currentScale);
+    if (problem.newton.splitDDState || state.populationLow.size())
+        current=solver.evaluateStateTerminalCurrent(state,contact,currentScale);
     else {
         const auto x=solver.packArclengthState(state);
         const auto functional=solver.makeArclengthContactCurrentFunctional(contact,currentScale);

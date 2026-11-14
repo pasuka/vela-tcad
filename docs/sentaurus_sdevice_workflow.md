@@ -293,7 +293,7 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 
 | 输入 | 当前行为 | 限制/证据 |
 | --- | --- | --- |
-| File/Grid/Parameter | `.tdr` 或二维三角形 DF-ISE `.grd` + 同名 `.dat`；必须声明参数文件 | TDR 需实际 HDF5 importer；坐标 um，掺杂 cm^-3；`sdevice_mesh_import` |
+| File/Grid/Parameter | `.tdr` 或二维三角形 DF-ISE `.grd` + 同名 `.dat`；必须声明参数文件 | TDR 需实际 HDF5 importer；坐标 um，掺杂 cm^-3。DF-ISE 支持全局节点掺杂和按单个材料区声明 `validity` 的 TDX 节点掺杂，区域内按全局节点编号升序；`sdevice_mesh_import` |
 | Electrode | 大小写敏感的接触名，Voltage、栅 Barrier/WorkFunction/Material、Schottky、Resist/Resistor | 不支持分布电阻或掺杂多晶硅栅；电阻只可在扫描接触；`sdevice_gate_contact_mapping`/`sdevice_deck_emit` |
 | Physics | 等温 DD、Boltzmann/Fermi、常数/Masetti 迁移率、高场、SRH/Auger、OldSlotboom、VanOverstraeten、已映射带间隧穿与固定电荷 | 有效作用域需可表达；`.par` 活跃参数逐项门控；IALMob/热输运及未映射系数模型拒绝；`sdevice_materials` |
 | Math | 线程、Iterations、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria；解析并记录 Digits/RelErrControl/ErrRef | stage Iterations 映射 max_iter；Digits/RelErrControl/ErrRef 记录 W201，不替代 Vela 接受规则；其他无等价项按消息目录警告 |
@@ -437,6 +437,9 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
   完整结果与指纹见[本轮记录](validation/sdevice_followup_2026-10-06.md)。
   附加诊断失败随 JSON 保留，不推导全反偏范围的空间资格。后续核对可复用已完成候选，
   cmd/par/grid/sidecar 必须通过指纹检查；配置漂移不能自动沿用 BV 场量资格。
+- PN2D IV 的验收报告逐点记录阳极偏压 0–50 mV（含端点）的端子电流绝对不平衡量和相对比值。
+  该区间及 CMD 非输出中间点仅作记录。区间外，CMD 的 Plot、CurrentPlot 指定偏压及扫压端点
+  执行 2% 门限；验收核对这些输出偏压都有接受点。独立 PN2D 0V 算例执行零偏电流和守恒验收。
 - `.vtu`：XML UnstructuredGrid，Float64，ASCII 默认；binary 为 inline base64 加 UInt32 header，
   不是 appended raw。字段名/单位用当前 `src/io/VtuWriter.cpp::tdrFieldCatalogue()` 的 TDR 数据名
   （计划附录 B），向量为同名 3 分量数组；`region_id` CellData；`FieldData` 含 `VelaVersion`、

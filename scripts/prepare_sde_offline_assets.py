@@ -1,14 +1,19 @@
 """Download the locked build inputs; the packager itself is strictly offline."""
 import argparse
 import hashlib
+import http.client
 import json
 from pathlib import Path
 import shutil
+import time
+import urllib.error
 import tarfile
 import urllib.request
 from package_vela import distribution_platform
 
 REPO=Path(__file__).resolve().parents[1]
+DOWNLOAD_ATTEMPTS=4
+TRANSIENT_HTTP_STATUS={408,429}
 
 
 def download(record,directory):
@@ -23,8 +28,20 @@ def download(record,directory):
     temporary=target.with_name(target.name+'.download')
     if temporary.exists():raise ValueError('preexisting download file: '+temporary.name)
     try:
-        with urllib.request.urlopen(record['url'],timeout=120) as source,temporary.open('xb') as out:
-            shutil.copyfileobj(source,out)
+        for attempt in range(DOWNLOAD_ATTEMPTS):
+            try:
+                with urllib.request.urlopen(record['url'],timeout=120) as source,temporary.open('xb') as out:
+                    shutil.copyfileobj(source,out)
+            except urllib.error.HTTPError as error:
+                retryable=error.code in TRANSIENT_HTTP_STATUS or 500<=error.code<=599
+                if not retryable or attempt+1==DOWNLOAD_ATTEMPTS:
+                    raise
+            except (urllib.error.URLError,TimeoutError,ConnectionError,http.client.IncompleteRead):
+                if attempt+1==DOWNLOAD_ATTEMPTS:raise
+            else:
+                break
+            if temporary.exists():temporary.unlink()
+            time.sleep(2**attempt)
         if hashlib.sha256(temporary.read_bytes()).hexdigest()!=record['sha256']:
             raise ValueError('download hash mismatch: '+name)
         temporary.replace(target)

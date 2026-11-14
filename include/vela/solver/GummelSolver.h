@@ -74,6 +74,8 @@ struct DDSolution {
     Real packedPotentialScale_V = 0.0;
     // Distinct from QF packedState: only psi is normalized; n/p keep internal units.
     VectorXd populationPsi;
+    /// Potential tail in volts, then electron and hole tails in internal units.
+    VectorXd populationLow;
     Real populationPotentialScale_V = 0.;
     std::optional<Real> populationPotentialOrigin_V; ///< Bound by the archive reference identity.
     bool hasConsistentPopulationPotential() const {
@@ -299,6 +301,16 @@ void writeDDSolutionVTK(const std::string&    filename,
                         const DDSolution&     sol,
                         UnitScalingConfig scaling = {});
 
+/// Exporter-owned geometry for repeated VTU writes on a fixed mesh.
+struct VtuSurfaceGeometryCache {
+    const DeviceMesh* mesh = nullptr;
+    std::string surfaceRegion;
+    std::vector<std::string> surfaceInterface;
+    std::vector<Real> cellNormalX;
+    std::vector<Real> cellNormalY;
+    std::vector<Real> cellDistances;
+};
+
 /**
  * @brief Output options for the full DD exporter.
  *
@@ -317,6 +329,9 @@ struct DDSolutionVtkOptions {
     std::vector<std::pair<std::string, std::string>> fieldDataStrings;
     std::vector<std::pair<std::string, Real>> fieldDataValues;
     std::vector<std::string>* skippedFields = nullptr;
+    /// Optional cache for sequential writes. The caller must keep the mesh
+    /// immutable for the cache lifetime and discard the cache with the mesh.
+    VtuSurfaceGeometryCache* surfaceGeometryCache = nullptr;
 };
 
 void writeDDSolutionVTK(const std::string& filename,

@@ -80,6 +80,7 @@ def main() -> int:
         shutil.copyfile(path, inputs / name)
         identities[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     base, manifest = render_named_template('pn2d_bv', {
+        'solver_profile': 'legacy',
         'mesh_file': '../inputs/mesh.json',
         'node_doping_file': '../inputs/doping.csv',
         'materials_file': '../inputs/materials.json',

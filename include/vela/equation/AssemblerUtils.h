@@ -309,7 +309,7 @@ inline Real cellLocalEdgeCoupling(const DeviceMesh& mesh,
     const Real cross = std::abs(uX * vY - uY * vX);
     if (cross <= 1.0e-300)
         return 0.0;
-    const Real cotangent = (uX * vX + uY * vY) / cross;
+    const Real cotangent = clampNearRightCotangent((uX * vX + uY * vY) / cross);
     if (cotangent < 0.0)
         return triangleArea(mesh, cell) / (3.0 * edge.length);
     return 0.5 * cotangent * edge.length;
@@ -2232,9 +2232,11 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         const Point2 sideCenter = 0.5 * (p1 + p2);
         lengths[static_cast<std::size_t>(local)] = (p1 - p2).norm();
         const Real rawDistance = (sideCenter - circumcenter).norm();
+        const Real cotangent = clampNearRightCotangent(
+            (p1 - p3).dot(p2 - p3) / std::abs(det));
         const Real distance =
-            rawDistance <= distanceTolerance ? 0.0 : rawDistance;
-        if ((p1 - p3).dot(p2 - p3) < 0.0) {
+            cotangent == 0.0 || rawDistance <= distanceTolerance ? 0.0 : rawDistance;
+        if (cotangent < 0.0) {
             dt[static_cast<std::size_t>(local)] = -distance;
             obtuseEdge = local;
         } else {
@@ -4680,7 +4682,8 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
     const VectorXd&                    p,
     const std::vector<Real>&           ni,
     Real                               Vt,
-    Real                               fieldFactor = 1.0)
+    Real                               fieldFactor = 1.0,
+    bool                               populationFlux = false)
 {
     if (!usesElementEdgeGssLauxAvalancheSource(config)) {
         throw std::invalid_argument(
@@ -4843,21 +4846,31 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
         record.electronMobilities[local] = electronMobility;
         record.holeMobilities[local] = holeMobility;
         record.electronSignedEdgeFlux[local] =
-            electronMobility > 0.0
-            ? sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            electronMobility <= 0.0 ? 0.0
+            : populationFlux
+            ? sgBoltzmannPopulationContinuityFlux(
+                n(static_cast<int>(node0)), n(static_cast<int>(node1)),
+                ni.at(node0), ni.at(node1),
+                (psi(static_cast<int>(node1)) - psi(static_cast<int>(node0))),
+                Vt, electronMobility * Vt * fieldFactor / edgeLength, true)
+            : sgElectronContinuityFluxFromQuasiFermiVariableNi(
                 ni.at(node0), ni.at(node1),
                 psi(static_cast<int>(node0)), psi(static_cast<int>(node1)),
                 phin(static_cast<int>(node0)), phin(static_cast<int>(node1)),
-                Vt, electronMobility * Vt * fieldFactor / edgeLength)
-            : 0.0;
+                Vt, electronMobility * Vt * fieldFactor / edgeLength);
         record.holeSignedEdgeFlux[local] =
-            holeMobility > 0.0
-            ? sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            holeMobility <= 0.0 ? 0.0
+            : populationFlux
+            ? sgBoltzmannPopulationContinuityFlux(
+                p(static_cast<int>(node0)), p(static_cast<int>(node1)),
+                ni.at(node0), ni.at(node1),
+                -(psi(static_cast<int>(node1)) - psi(static_cast<int>(node0))),
+                Vt, holeMobility * Vt * fieldFactor / edgeLength, true)
+            : sgHoleContinuityFluxFromQuasiFermiVariableNi(
                 ni.at(node0), ni.at(node1),
                 psi(static_cast<int>(node0)), psi(static_cast<int>(node1)),
                 phip(static_cast<int>(node0)), phip(static_cast<int>(node1)),
-                Vt, holeMobility * Vt * fieldFactor / edgeLength)
-            : 0.0;
+                Vt, holeMobility * Vt * fieldFactor / edgeLength);
     }
 
     record.electronCurrentVector = gssLauxTri3CurrentVector(
@@ -4902,7 +4915,7 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
                 config, mobilityConfig, mobility, cellEdgeIds, mesh, doping,
                 cellMaterials, cellId, localPsi, localPhin, localPhip,
                 localElectronDensity, localHoleDensity, localIntrinsicDensity,
-                Vt, fieldFactor);
+                Vt, fieldFactor, populationFlux);
         for (std::size_t localNode = 0; localNode < 3; ++localNode) {
             record.electronSourceIntegrals[localNode] =
                 sharedSourceIntegrals.electron[localNode];
@@ -4932,7 +4945,8 @@ elementEdgeGssLauxAvalancheSourceRecords(
     const VectorXd&                    p,
     const std::vector<Real>&           ni,
     Real                               Vt,
-    Real                               fieldFactor = 1.0)
+    Real                               fieldFactor = 1.0,
+    bool                               populationFlux = false)
 {
     const auto cellEdges = buildCellEdgeMap(edgeCells, mesh);
     std::vector<ElementEdgeGssLauxAvalancheSourceRecord> records;
@@ -4943,7 +4957,7 @@ elementEdgeGssLauxAvalancheSourceRecords(
                 config, impact, mobilityConfig, mobility,
                 cellEdges.at(static_cast<std::size_t>(cellId)),
                 mesh, doping, cellMaterials, cellId, psi, phin, phip, n, p,
-                ni, Vt, fieldFactor));
+                ni, Vt, fieldFactor, populationFlux));
     }
     return records;
 }
@@ -5042,7 +5056,8 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     bool                               collectElectronSgDiagnostics = false,
     const CarrierStatisticsConfig&     carrierStatistics = {},
     const std::vector<Real>&           Nc = {},
-    const std::vector<Real>&           Nv = {})
+    const std::vector<Real>&           Nv = {},
+    bool                               populationFlux = false)
 {
     std::vector<SgEdgeCurrentAvalancheSourceRecord> records;
     records.reserve(mesh.numEdges());
@@ -5125,7 +5140,11 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         if (!fermiDirac) {
             evaluation.bernoulliArgument = (psi(j) - psi(i)) / Vt
                 + std::log(ni[edge.n0] / ni[edge.n1]);
-            evaluation.continuityFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            evaluation.continuityFlux = populationFlux
+                ? sgBoltzmannPopulationContinuityFlux(
+                    n(i), n(j), ni[edge.n0], ni[edge.n1],
+                    psi(j) - psi(i), Vt, coefficient, true)
+                : sgElectronContinuityFluxFromQuasiFermiVariableNi(
                 ni[edge.n0], ni[edge.n1], psi(i), psi(j), phin(i), phin(j),
                 Vt, coefficient);
             return evaluation;
@@ -5158,7 +5177,11 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         if (!fermiDirac) {
             evaluation.bernoulliArgument = (psi(j) - psi(i)) / Vt
                 + std::log(ni[edge.n0] / ni[edge.n1]);
-            evaluation.continuityFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            evaluation.continuityFlux = populationFlux
+                ? sgBoltzmannPopulationContinuityFlux(
+                    p(i), p(j), ni[edge.n0], ni[edge.n1],
+                    psi(i) - psi(j), Vt, coefficient, true)
+                : sgHoleContinuityFluxFromQuasiFermiVariableNi(
                 ni[edge.n0], ni[edge.n1], psi(i), psi(j), phip(i), phip(j),
                 Vt, coefficient);
             return evaluation;
@@ -5433,7 +5456,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real conservedTotalFluxMagnitude =
             conservedTotalCurrentFluxMagnitude(
                 electronContinuityFlux01, holeContinuityFlux01);
-        if (collectElectronSgDiagnostics && !fermiDirac) {
+        if (collectElectronSgDiagnostics && !fermiDirac && !populationFlux) {
             record.electronSgDiagnosticsCollected = true;
             record.electronSgFluxDecomposition =
                 sgElectronContinuityFluxFromQuasiFermiVariableNiDecomposition(
@@ -5771,7 +5794,8 @@ inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponent
     Real                               fieldFactor = 1.0,
     const CarrierStatisticsConfig&     carrierStatistics = {},
     const std::vector<Real>&           Nc = {},
-    const std::vector<Real>&           Nv = {})
+    const std::vector<Real>&           Nv = {},
+    bool                               populationFlux = false)
 {
     SgAvalancheSourceComponentIntegrals source;
     source.electron.assign(static_cast<std::size_t>(mesh.numNodes()), 0.0);
@@ -5797,7 +5821,8 @@ inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponent
         false,
         carrierStatistics,
         Nc,
-        Nv);
+        Nv,
+        populationFlux);
     for (const auto& record : records) {
         addMappedEdgeSourceToNodes(
             config, source.electron, edgeCells, mesh, record,
@@ -5838,7 +5863,8 @@ currentDensityAvalancheSourceComponentIntegrals(
     Real                               fieldFactor = 1.0,
     const CarrierStatisticsConfig&     carrierStatistics = {},
     const std::vector<Real>&           Nc = {},
-    const std::vector<Real>&           Nv = {})
+    const std::vector<Real>&           Nv = {},
+    bool                               populationFlux = false)
 {
     if (usesIalElementAvalancheSource(config) || usesPhuMobElementAvalancheSource(config)) {
         SgAvalancheSourceComponentIntegrals source;
@@ -5872,7 +5898,7 @@ currentDensityAvalancheSourceComponentIntegrals(
             static_cast<std::size_t>(mesh.numNodes()), 0.0);
         const auto records = elementEdgeGssLauxAvalancheSourceRecords(
             config, impact, mobilityConfig, mobility, edgeCells, mesh, doping,
-            cellMaterials, psi, phin, phip, n, p, ni, Vt, fieldFactor);
+            cellMaterials, psi, phin, phip, n, p, ni, Vt, fieldFactor, populationFlux);
         for (const auto& record : records) {
             const Cell& cell = mesh.getCell(record.cellId);
             for (std::size_t localNode = 0; localNode < 3; ++localNode) {
@@ -5892,7 +5918,7 @@ currentDensityAvalancheSourceComponentIntegrals(
         return sgEdgeCurrentAvalancheSourceComponentIntegrals(
             config, impact, mobilityConfig, mobility, edgeCells, mesh, doping,
             cellMaterials, psi, phin, phip, n, p, ni, Vt, fieldFactor,
-            carrierStatistics, Nc, Nv);
+            carrierStatistics, Nc, Nv, populationFlux);
     }
 
     SgAvalancheSourceComponentIntegrals source;
@@ -5934,12 +5960,13 @@ inline std::vector<Real> currentDensityAvalancheSourceIntegrals(
     Real                               fieldFactor = 1.0,
     const CarrierStatisticsConfig&     carrierStatistics = {},
     const std::vector<Real>&           Nc = {},
-    const std::vector<Real>&           Nv = {})
+    const std::vector<Real>&           Nv = {},
+    bool                               populationFlux = false)
 {
     return currentDensityAvalancheSourceComponentIntegrals(
         config, impact, mobilityConfig, mobility, edgeCells, mesh, doping,
         cellMaterials, psi, phin, phip, n, p, ni, Vt, fieldFactor,
-        carrierStatistics, Nc, Nv).combined;
+        carrierStatistics, Nc, Nv, populationFlux).combined;
 }
 
 inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(

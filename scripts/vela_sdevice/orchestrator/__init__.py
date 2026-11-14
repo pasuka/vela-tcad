@@ -163,7 +163,7 @@ class DeviceRun:
                 options=EmitOptions(exit_on_failure=self.options.exit_on_failure, threads=self.options.threads,
                     plot_final_only=self.options.plot_final_only, vtu_binary=self.options.vtu_binary,
                     keep_intermediate=self.options.keep_intermediate, allow_lossy=self.options.allow_lossy,
-                    defer_current_times=True), sidecar=sidecar)
+                    defer_current_times=True, pn2d_population=getattr(self.options, "pn2d_population", False)), sidecar=sidecar)
             self._write_plan()
             self.log("INFO", "Multi-stage PLT time resets per stage; sign factor +1 (WP10 pending)")
             if self.interrupted:

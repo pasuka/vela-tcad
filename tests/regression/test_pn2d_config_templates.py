@@ -39,30 +39,53 @@ def all_strings(value: Any):
 
 
 class Pn2dConfigTemplatesTest(unittest.TestCase):
+    def assert_compensated_defaults(self, config, target_count):
+        solver, sweep = config["solver"], config["sweep"]
+        self.assertEqual(solver["method"], "newton")
+        self.assertEqual(solver["state_variables"], "potential_density")
+        self.assertEqual(solver["primary_variable_coordinates"], "unit")
+        self.assertTrue(solver["compensated_population_state"])
+        self.assertEqual(solver["population_stopping_rule"], "native_approx")
+        self.assertEqual(solver["population_update_convergence"]["digits"], 5)
+        self.assertEqual(solver["carrier_row_convergence"]["mode"], "report")
+        self.assertEqual(solver["global_continuity_closure"]["mode"], "report")
+        self.assertFalse(solver["continuity_row_scaling"]["enabled"])
+        self.assertEqual(sweep["step_growth_mode"], "newton_iterations")
+        self.assertEqual(sweep["continuation"]["predictor"]["mode"], "linear")
+        self.assertTrue(sweep["preserve_step_after_output_clip"])
+        self.assertEqual(sweep["vtk_bias_points"][0], sweep["start"])
+        self.assertEqual(sweep["vtk_bias_points"][-1], sweep["stop"])
+        self.assertEqual(len(sweep["vtk_bias_points"]), target_count)
+
     def test_iv_defaults_capture_qualified_forward_models(self) -> None:
         config, manifest = render_named_template("pn2d_iv")
+        self.assert_compensated_defaults(config, 201)
         self.assertEqual(config["sweep"]["mode"], "iv")
-        self.assertEqual(config["sweep"]["initial_step"], 1.0e-3)
-        self.assertEqual(config["sweep"]["min_step"], 1.0e-8)
-        self.assertEqual(config["sweep"]["max_step"], 0.025)
+        self.assertEqual(config["sweep"]["stop"], 10.0)
+        self.assertEqual(config["sweep"]["initial_step"], 0.01)
+        self.assertAlmostEqual(config["sweep"]["min_step"], 1.0e-7)
+        self.assertEqual(config["sweep"]["max_step"], 0.25)
         self.assertEqual(config["sweep"]["growth_factor"], 1.3)
         self.assertEqual(config["solver"]["mobility"]["model"], "masetti")
         self.assertEqual(
             config["solver"]["mobility"]["doping_concentration_basis"],
-            "cell_reconstructed_total_impurity",
+            "total_impurity",
         )
         self.assertEqual(config["solver"]["impact_ionization"]["model"], "none")
-        self.assertEqual(manifest["template_version"], 1)
+        self.assertEqual(manifest["template_version"], 2)
 
     def test_bv_defaults_capture_sentaurus_aligned_models(self) -> None:
         config, manifest = render_named_template("pn2d_bv")
+        self.assert_compensated_defaults(config, 401)
         self.assertEqual(config["sweep"]["mode"], "bv_reverse")
-        self.assertEqual(config["sweep"]["initial_step"], 1.0e-4)
-        self.assertEqual(config["sweep"]["min_step"], 1.0e-10)
-        self.assertEqual(config["sweep"]["max_step"], 0.05)
+        self.assertEqual(config["sweep"]["stop"], -20.0)
+        self.assertEqual(config["sweep"]["initial_step"], 0.002)
+        self.assertAlmostEqual(config["sweep"]["min_step"], 2.0e-9)
+        self.assertEqual(config["sweep"]["max_step"], 1.0)
         self.assertEqual(config["sweep"]["growth_factor"], 1.2)
         self.assertEqual(config["solver"]["max_iter"], 80)
         self.assertEqual(config["solver"]["mobility"]["model"], "masetti_field")
+        self.assertEqual(config["solver"]["mobility"]["high_field_gradient_discretization"], "transport_cell_vector")
         self.assertEqual(
             config["solver"]["mobility"]["doping_concentration_basis"],
             "total_impurity",
@@ -83,7 +106,7 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
             manifest["parameters"]["avalanche_current_support_profile"],
             "element_edge_sg_gss_laux",
         )
-        self.assertEqual(manifest["template_version"], 4)
+        self.assertEqual(manifest["template_version"], 5)
         self.assertEqual(manifest["overrides"], {})
         self.assertEqual(
             manifest["resolved_profile"],
@@ -109,6 +132,8 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
             {"avalanche_current_support_profile": "legacy_cell_reconstructed"},
         )
         impact = config["solver"]["impact_ionization"]
+        self.assertEqual(config["solver"]["method"], "gummel_newton")
+        self.assertFalse(config["solver"].get("compensated_population_state", False))
         for name, value in BV_AVALANCHE_CURRENT_SUPPORT_PROFILES[
             "legacy_cell_reconstructed"
         ].items():
@@ -121,6 +146,23 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
             manifest["overrides"],
             {"avalanche_current_support_profile": "legacy_cell_reconstructed"},
         )
+        self.assertEqual(manifest["parameters"]["solver_profile"], "legacy")
+        with self.assertRaisesRegex(TemplateError, "compensated BV requires"):
+            render_named_template("pn2d_bv", {
+                "avalanche_current_support_profile": "legacy_cell_reconstructed",
+                "solver_profile": "compensated",
+            })
+
+    def test_iv_voltage_override_rescales_cmd_steps_and_output_targets(self) -> None:
+        config, _ = render_named_template("pn2d_iv", {"stop_voltage": 0.8})
+        self.assert_compensated_defaults(config, 201)
+        self.assertAlmostEqual(config["sweep"]["initial_step"], 0.0008)
+        self.assertAlmostEqual(config["sweep"]["max_step"], 0.02)
+
+        legacy, _ = render_named_template("pn2d_iv", {"solver_profile": "legacy"})
+        self.assertEqual(legacy["solver"]["method"], "gummel_newton")
+        self.assertEqual(legacy["sweep"]["stop"], 20.0)
+        self.assertNotIn("vtk_bias_points", legacy["sweep"])
 
     def test_bv_sg_laux_default_profile_is_atomic(self) -> None:
         config, manifest = render_named_template(
@@ -143,7 +185,7 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
         self.assertEqual(
             config["solver"]["global_continuity_closure"]["mode"], "report"
         )
-        self.assertNotIn("quasi_fermi_reference", config["solver"])
+        self.assertEqual(config["solver"]["quasi_fermi_reference"], "none")
         self.assertEqual(
             manifest["overrides"],
             {"avalanche_current_support_profile": "element_edge_sg_gss_laux"},

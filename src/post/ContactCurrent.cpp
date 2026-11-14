@@ -188,7 +188,7 @@ ContactCurrentResult ContactCurrent::computeFromResidual(
     const int N = static_cast<int>(assembler.numNodes());
     const int phinOffset = N;
     const int phipOffset = 2 * N;
-    const VectorXd r = assembler.usesBvMethodsOperator()?assembler.bvMethodsTransportResidual(x):assembler.residual(x, CoupledDDBoundaryConditions{});
+    const VectorXd r = assembler.usesBvMethodsOperator()?assembler.bvMethodsTransportResidual(x,BvMethodsTransportPurpose::contactOutput):assembler.residual(x, CoupledDDBoundaryConditions{});
     const Real continuityScale = assembler.continuityResidualScale();
     const Real currentLineFactor = scaling_.enabled
         ? scaling_.currentDensityLineIntegralFactor
@@ -219,6 +219,34 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     if (contact == nullptr)
         throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
 
+    if (solution.populationLow.size()) {
+        if (!overrides.holeQuasiFermiDropByEdge.empty())
+            throw std::invalid_argument("Compensated population current does not support edge overrides");
+        auto coordinates = scaling_;
+        coordinates.stateVariables = "potential_density";
+        RecombinationModelConfig none;
+        none.mechanisms.clear();
+        CoupledDDAssembler assembler(mesh_,matdb_,doping_,thermalVoltage_,mobilityConfig_,none,
+            bandgapConfig_,ImpactIonizationModelConfig{},{},{},coordinates,{},carrierStatistics_,
+            electronQuantumPotentialConfig_);
+        const auto transport = assembler.compensatedPopulationDiagnostics(
+            solution.psi,solution.n,solution.p,solution.populationLow,{},false);
+        long double electron = 0., hole = 0.;
+        for (Index node : contact->node_ids) {
+            electron += transport.unconstrainedTerms[node].electronFlux;
+            hole += transport.unconstrainedTerms[node].holeFlux;
+        }
+        const Real factor = -constants::q * assembler.continuityResidualScale() *
+            scaling_.currentDensityLineIntegralFactor;
+        ContactCurrentDetailedResult result;
+        result.totals.electronCurrent = static_cast<Real>(electron*factor);
+        result.totals.holeCurrent = static_cast<Real>(hole*factor);
+        result.totals.totalCurrent = static_cast<Real>((electron-hole)*factor);
+        result.precision.electronCurrentCompensated = result.totals.electronCurrent;
+        result.precision.holeCurrentCompensated = result.totals.holeCurrent;
+        result.precision.totalCurrentCompensated = result.totals.totalCurrent;
+        return result;
+    }
     if(scaling_.coupledOperator=="bvmethods_tri3_qf") {
         if(!overrides.holeQuasiFermiDropByEdge.empty() || solution.packedLow.size()!=0)
             throw std::invalid_argument("BVMethods contact current overrides/split state unqualified");
@@ -574,11 +602,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             &solution.psi,
             &mobilityState);
 
-        // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
-        // use the cancellation-free quasi-Fermi balanced form, including the
-        // variable-ni generalization needed for BGN/effective-ni edges.  The
-        // density-based form B(-u)*n0 - B(+u)*n1 does not cancel flat
-        // quasi-Fermi levels when ni varies across the edge.
+        // Use the same SG flux as the coupled continuity residual.
         const Index idxI = edge.n0;
         const Index idxJ = edge.n1;
         const Real ni_i = ni_[idxI];
@@ -623,6 +647,11 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                         n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
                         electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
+            } else if (solution.stateVariables == "potential_density" &&
+                       (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field")) {
+                electronContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
+                    n_i, n_j, ni_i, ni_j,
+                    dpsi, thermalVoltage_, coef, bgnEnabled_);
             } else {
                 const Real electronPsiFromNode0Qf = electronPsi_i - phin_i;
                 const Real electronPsiFromNode0QfAtJ =
@@ -666,6 +695,11 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     sgHoleFermiDiracContinuityFluxLongDouble(
                         p_i, p_j, etaI, etaJ, driftPotential,
                         holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.transport == "effective_band_sg");
+            } else if (solution.stateVariables == "potential_density" &&
+                       (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") && !holeQfDropOverrideApplied) {
+                holeContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
+                    p_i, p_j, ni_i, ni_j,
+                    -dpsi, thermalVoltage_, coef, bgnEnabled_);
             } else {
                 const Real holePsiFromNode0Qf = holePsi_i - phip_i_forHole;
                 const Real holePsiFromNode0QfAtJ =

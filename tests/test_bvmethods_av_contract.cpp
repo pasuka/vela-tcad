@@ -3,11 +3,51 @@
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
+#include <bit>
 #include <cmath>
+#include <cstdint>
+#include <limits>
+#include "vela/physics/PreparedElementLombardi.h"
 #include "vela/physics/experimental/PopulationRecombination.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 using namespace vela::experimental;
 using Catch::Approx;
+
+TEST_CASE("Per-cell Lombardi powers preserve mobility values and tangents",
+          "[av_contract][lombardi]")
+{
+    const vela::MobilityModelConfig config;
+    vela::LombardiParameters electron;
+    electron.B = 9e4;
+    electron.C = 1e3;
+    electron.delta = 9e12;
+    electron.eta = 9e28;
+    auto hole = electron;
+    hole.A = 2.7;
+    hole.C = 1.1e3;
+    const auto preparedN = vela::prepareElementLombardi(1e-9, 1e22, 300., electron, config);
+    const auto preparedP = vela::prepareElementLombardi(2e-9, 1e24, 300., hole, config);
+    const auto bits = [](double x) { return std::bit_cast<std::uint64_t>(x); };
+
+    for (double field : {0., 1e-20, 1., 1e3, -2e5, 1e8,
+                         std::numeric_limits<double>::infinity()}) {
+        vela::LombardiCellPowers cache;
+        for (int vertex = 0; vertex < 3; ++vertex) {
+            for (bool isElectron : {true, false}) {
+                const double bulk = 0.1 + vertex * 0.02;
+                const auto& parameters = isElectron ? electron : hole;
+                const auto& prepared = isElectron ? preparedN : preparedP;
+                const auto base = vela::evaluatePreparedElementLombardi(
+                    bulk, field, prepared, parameters, config);
+                const auto reused = vela::evaluatePreparedElementLombardi(
+                    bulk, field, prepared, parameters, config, &cache, isElectron);
+                REQUIRE(bits(reused.mobility) == bits(base.mobility));
+                REQUIRE(bits(reused.bulkDerivative) == bits(base.bulkDerivative));
+                REQUIRE(bits(reused.fieldDerivative) == bits(base.fieldDerivative));
+            }
+        }
+    }
+}
 
 TEST_CASE("Tri3 SG retains diffusion and both endpoint derivatives beyond exponential range",
           "[av_contract][tri3_ad]")
@@ -728,6 +768,44 @@ TEST_CASE("BVMethods residual values are independent of derivative request and r
 }
 
 
+TEST_CASE("BVMethods port transport uses the current packed population state", "[bvmethods_profile][population_core]") {
+    using namespace vela;
+    ProfileFixture fixture;
+    const auto qfAssembler = fixture.assembler();
+    const auto qf = fixture.point();
+    fixture.scaling.stateVariables = "potential_density";
+    const auto assembler = fixture.assembler();
+    const VectorXd state = assembler->packPopulation(
+        qf.head(fixture.mesh.numNodes()),
+        qfAssembler->electronDensity(qf),
+        qfAssembler->holeDensity(qf));
+    VectorXd changed = state;
+    changed[fixture.mesh.numNodes() + 1] *= 1.125;
+    const auto initial = assembler->bvMethodsTransportResidual(state);
+    const auto next = assembler->bvMethodsTransportResidual(changed);
+    REQUIRE(initial.allFinite());
+    REQUIRE(next.allFinite());
+    REQUIRE(exactValueBits(next) != exactValueBits(initial));
+
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalValue)) == exactValueBits(initial));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalLinearization)) == exactValueBits(initial));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::terminalValidation)) == exactValueBits(next));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::contactOutput)) == exactValueBits(next));
+
+    VectorXd invalid = changed;
+    invalid[fixture.mesh.numNodes() + 1] = 0.;
+    REQUIRE_FALSE(assembler->bvMethodsTransportResidual(
+        invalid, BvMethodsTransportPurpose::terminalValue).allFinite());
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        changed, BvMethodsTransportPurpose::contactOutput)) == exactValueBits(next));
+    REQUIRE(exactValueBits(assembler->bvMethodsTransportResidual(
+        state, BvMethodsTransportPurpose::terminalValue)) == exactValueBits(initial));
+}
+
 TEST_CASE("BVMethods fused diagnostics retain constrained and free physical equations", "[bvmethods_profile][population_core]") {
     using namespace vela;ProfileFixture f;auto qf=f.assembler();const auto x=f.point();
     for(bool population:{false,true}) {
@@ -1112,5 +1190,39 @@ TEST_CASE("Population recombination preserves equilibrium cancellation and has n
         REQUIRE(e.derivative[0]==0.);
         REQUIRE(e.derivative[3]==values[1]);
         REQUIRE(e.derivative[6]==values[0]);
+    }
+}
+
+
+TEST_CASE("Scalar Tri3 transport retains SG value branches and depleted quotient checks", "[bvmethods_profile]") {
+    using namespace vela::experimental;
+    const std::array<double,3> area{.5,.25,.125}, edge{.25,.5,.75};
+    const std::array<double,3> mobility{300.,450.,600.}, einstein{1.,1.25,1.};
+    const double vt=.025852;
+    for(const auto& density : {std::array<double,3>{2e15,2e15,2.00000001e15},
+                              std::array<double,3>{1e-280,1.5e-280,2e-280},
+                              std::array<double,3>{1e-250,1e-100,1e20}}) {
+        for(const auto& qf : {std::array<double,3>{0.,1e-14,-1e-14},
+                             std::array<double,3>{0.,2.,-2.}}) {
+            std::array<AvJet,3> d,q,m,g;
+            for(std::size_t k=0;k<3;++k) {
+                d[k]=AvJet(density[k]);d[k].derivative[k]=1e200;
+                q[k]=AvJet::variable(qf[k],k+3);m[k]=AvJet(mobility[k]);g[k]=AvJet(einstein[k]);
+            }
+            std::array<double,3> logs;
+            for(std::size_t k=0;k<3;++k) {
+                const auto j=(k+1)%3;
+                logs[k]=populationTransportLogRatio(density[j],density[k],1e200,1e200);
+                REQUIRE(logs[k]==avLogRatio(d[j],d[k]).value);
+            }
+            for(bool electron : {true,false}) {
+                const auto reference=evaluateBvMethodsTri3Transport(area,edge,d,q,m,vt,electron,g);
+                const auto scalar=evaluateBvMethodsTri3TransportValues(area,edge,density,qf,mobility,vt,electron,einstein,logs);
+                for(std::size_t k=0;k<3;++k) {
+                    REQUIRE(scalar.edges[k]==reference.edgeFlux_per_cm_s[k].value);
+                    REQUIRE(scalar.nodes[k]==reference.nodeFlux_per_cm_s[k].value);
+                }
+            }
+        }
     }
 }

@@ -301,6 +301,8 @@ struct NewtonConfig {
     std::string populationDerivativeRecovery;
     std::string primaryVariableCoordinates;
     std::string populationStoppingRule;
+    DensityUpdateConvergenceConfig populationUpdateConvergence;
+    bool compensatedPopulationState = false;
     std::string populationSgCurrent = "quasi_fermi";
     std::string populationWriteback = "independent"; ///< Opt-in Boltzmann psi-rounding compensation.
     std::string populationSgBootstrapLinearization = "unchanged";
@@ -1020,7 +1022,8 @@ public:
     makeArclengthConvergenceEvaluator(const std::string& activeContact) const;
     DensityUpdateErrorEvaluator makeArclengthUpdateErrorEvaluator(
         const std::string& activeContact,
-        const DensityUpdateConvergenceConfig& config) const;
+        const DensityUpdateConvergenceConfig& config,
+        bool includeContactVoltage = true) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the
@@ -1077,6 +1080,7 @@ private:
         const std::unordered_map<std::string, Real>* contactLowOverride = nullptr) const;
     std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler(
         const DDSolution* referenceState = nullptr) const;
+    NewtonResult solveCompensatedPopulation(const DDSolution& initial) const;
     DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;

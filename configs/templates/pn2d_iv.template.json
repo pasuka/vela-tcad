@@ -99,6 +99,11 @@
     }
   },
   "parameters": {
+    "solver_profile": {
+      "choices": ["compensated", "legacy"],
+      "default": "compensated",
+      "type": "string"
+    },
     "materials_file": {
       "default": "inputs/materials.json",
       "path": true,
@@ -151,7 +156,7 @@
       "type": "string"
     },
     "stop_voltage": {
-      "default": 20.0,
+      "default": 10.0,
       "type": "number"
     },
     "sweep_diagnostics": {
@@ -174,5 +179,5 @@
   },
   "template": "pn2d_iv",
   "template_schema": "vela.simulation-template.v1",
-  "version": 1
+  "version": 2
 }

@@ -1,4 +1,6 @@
 #include "vela/io/DDSolutionState.h"
+#include "vela/numerics/ExpansionProductSum.h"
+#include <tuple>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -48,6 +50,15 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
             s.metadata["population_potential_unit"]="V";
             s.metadata["authoritative_fields"]={"population_psi_normalized","population_electrons_internal","population_holes_internal"};
         }
+    }
+    if (solution.populationLow.size()) {
+        const int count = solution.psi.size();
+        if (solution.stateVariables != "potential_density" ||
+            solution.populationPsi.size() || solution.populationLow.size() != 3*count)
+            throw std::invalid_argument("Incomplete compensated population state");
+        field("population_psi_low_V",solution.populationLow.head(count));
+        field("population_electrons_low_internal",solution.populationLow.segment(count,count));
+        field("population_holes_low_internal",solution.populationLow.tail(count));
     }
     for (const char* name : {"electrons_m3", "holes_m3"})
         for (auto& v : s.fields.at(name)) v = units.internalConcentrationToM3(v);
@@ -129,6 +140,35 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
         s.populationPotentialScale_V=archive.metadata.at("population_potential_scale_V");
         s.populationPotentialOrigin_V=archive.metadata.at("population_potential_origin_V").get<double>();
         if(!s.hasConsistentPopulationPotential())throw std::invalid_argument("inconsistent population potential coordinates");
+    }
+    if (archive.fields.contains("population_psi_low_V")) {
+        const int count = archive.nodeCount;
+        const double stored = archive.metadata.at("population_concentration_m3_per_internal");
+        const double current = scaling.unitSystem().internalConcentrationToM3(1.);
+        s.populationLow.resize(3*count);
+        VectorXd values;
+        field("population_psi_low_V",values);
+        s.populationLow.head(count) = values;
+        for (const auto& [name,density,offset] :
+             {std::tuple{"population_electrons_internal",&s.n,count},
+              std::tuple{"population_holes_internal",&s.p,2*count}}) {
+            const char* lowField = offset == count ? "population_electrons_low_internal" :
+                "population_holes_low_internal";
+            field(lowField,values);
+            if (stored == current) {
+                s.populationLow.segment(offset,count) = values;
+                continue;
+            }
+            const auto& high = archive.fields.at(name);
+            const double ratio = stored/current;
+            for (int i = 0; i < count; ++i) {
+                experimental::ExpansionProductSum product;
+                product.addProduct({high[i],values[i]},ratio);
+                const auto converted = product.parts();
+                (*density)[i] = converted.high;
+                s.populationLow[offset+i] = converted.low;
+            }
+        }
     }
     s.electronQuantumPotential = VectorXd::Zero(s.psi.size());
     if (archive.fields.contains("electron_quantum_potential_V")) field("electron_quantum_potential_V", s.electronQuantumPotential);

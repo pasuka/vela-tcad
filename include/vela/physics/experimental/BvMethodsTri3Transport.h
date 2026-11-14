@@ -74,4 +74,70 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
     return out;
 }
 
+// The population columns for different vertices have disjoint support.
+// Reproduce the dual log-ratio branch without constructing either jet.
+inline double populationTransportLogRatio(double to,double from,double toTangent,double fromTangent)
+{
+    if(!(to>0.) || !(from>0.))throw std::domain_error("AV log requires positive density");
+    const double ratio=to/from;
+    if(avRatioInOrdinaryRange(ratio) && std::isfinite(toTangent/from) &&
+       std::isfinite((0.-ratio*fromTangent)/from))
+        return std::log(ratio);
+    return std::log(to)-std::log(from);
+}
+
+inline double tri3BernoulliValue(double x)
+{
+    if(std::abs(x)<1e-5) {
+        const double z=x*x;
+        return 1.-x/2.+z/12.-z*z/720.+z*z*z/30240.;
+    }
+    if(x>50.) {
+        const double e=std::exp(-x);
+        return x*e/(1.-e);
+    }
+    if(x<-50.)return -x/(1.-std::exp(x));
+    return x/std::expm1(x);
+}
+
+struct Tri3TransportValues {
+    std::array<double,3> edges{},nodes{};
+};
+
+inline Tri3TransportValues evaluateBvMethodsTri3TransportValues(
+    const std::array<double,3>& areas,const std::array<double,3>& edgeCoefficients,
+    const std::array<double,3>& density,const std::array<double,3>& qf,
+    const std::array<double,3>& mobility,double thermalVoltage,bool electron,
+    const std::array<double,3>& einstein,const std::array<double,3>& logRatio)
+{
+    if(!(thermalVoltage>0.))throw std::invalid_argument("Transport requires positive thermal voltage");
+    double area=0.,average=0.;
+    for(std::size_t k=0;k<3;++k) {
+        if(!(areas[k]>=0.))throw std::invalid_argument("Negative transport averaging area");
+        if(!(density[k]>0.) || !(mobility[k]>=0.))
+            throw std::domain_error("Invalid transport density or mobility");
+        area+=areas[k];
+        average=average+areas[k]*mobility[k];
+    }
+    if(!(area>0.))throw std::invalid_argument("Transport requires positive averaging area");
+    average=average/area;
+    Tri3TransportValues out;
+    for(std::size_t k=0;k<3;++k) {
+        if(!(edgeCoefficients[k]>=0.) || !(einstein[k]>0.))
+            throw std::invalid_argument("Invalid transport coefficient or Einstein factor");
+        const auto j=(k+1)%3;
+        const double thermal=thermalVoltage*einstein[k];
+        const double coefficient=edgeCoefficients[k]*average*thermal;
+        const double delta=(electron?1.:-1.)*(qf[j]-qf[k])/thermal;
+        const double argument=logRatio[k]+delta;
+        const double flux=std::abs(delta)>50.
+            ? coefficient*(density[k]*tri3BernoulliValue(-argument)-density[j]*tri3BernoulliValue(argument))
+            : coefficient*density[j]*tri3BernoulliValue(argument)*std::expm1(delta);
+        out.edges[k]=flux;
+        out.nodes[k]=out.nodes[k]+flux;
+        out.nodes[j]=out.nodes[j]-flux;
+    }
+    return out;
+}
+
 } // namespace vela::experimental

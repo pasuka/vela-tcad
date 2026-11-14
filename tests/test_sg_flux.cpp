@@ -48,6 +48,33 @@ TEST_CASE("Homogeneous SG preserves sub-femtovolt conductive response", "[sg][pn
         ni, psi, psi, 0.0, 0.0, vt, coef) == 0.0);
 }
 
+TEST_CASE("Population SG resolves small fluxes from endpoint densities", "[sg][pn2d_population]")
+{
+    const Real vt = 0.02585;
+    const Real density = 1.0e15;
+    const Real coef = 0.73;
+    const Real dpsi = 1.0e-21;
+    const Real linearResponse = coef * density * dpsi / vt;
+
+    for (const Real signedDpsi : {dpsi, -dpsi}) {
+        const Real flux = sgBoltzmannPopulationContinuityFlux(
+            density, density, 1.0, 1.0, signedDpsi, vt, coef, false);
+        REQUIRE(flux / linearResponse == Approx(std::copysign(1.0, signedDpsi)).epsilon(1e-12));
+    }
+
+    // With zero potential drop and ni1/ni0 = 2, the Bernoulli weights
+    // are 2*log(2) and log(2). Reversing the edge reverses the flux.
+    const Real withNiDrift = sgBoltzmannPopulationContinuityFlux(
+        3.0, 5.0, 4.0, 8.0, 0.0, vt, coef, true);
+    REQUIRE(withNiDrift == Approx(coef * std::log(2.0)).epsilon(1e-12));
+    REQUIRE(sgBoltzmannPopulationContinuityFlux(
+        5.0, 3.0, 8.0, 4.0, 0.0, vt, coef, true) == Approx(-withNiDrift));
+    REQUIRE(sgBoltzmannPopulationContinuityFlux(
+        3.0, 5.0, 4.0, 8.0, 0.0, vt, coef, false) == Approx(-2.0 * coef));
+    REQUIRE(sgBoltzmannPopulationContinuityFlux(
+        0.0, 5.0, 4.0, 8.0, 0.0, vt, coef, true) == Approx(-5.0 * coef * std::log(2.0)));
+}
+
 // ---------------------------------------------------------------------------
 // Pure diffusion (psi_j = psi_i -> dpsi = 0, u = 0, B(0) = 1)
 // ---------------------------------------------------------------------------
@@ -1252,6 +1279,67 @@ TEST_CASE("ContactCurrent and coupled probes share the configured Boltzmann SG k
             Approx(firstElectronFlux[1]).epsilon(2.0e-13));
 }
 
+TEST_CASE("Population SG terminal current uses the same live densities as the residual",
+          "[sg][pn2d_population][contact_current]")
+{
+    DeviceMesh mesh = makeContactedSiliconSquareMesh(1.0e-6);
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    const auto mobility = mobilityModelConfig("constant");
+    DDScalingSpec scaling;
+    scaling.stateVariables = "potential_density";
+    CoupledDDAssembler assembler(mesh, matdb, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"none"}), {}, {}, {}, {}, scaling);
+
+    DDSolution solution;
+    solution.stateVariables = scaling.stateVariables;
+    solution.psi = VectorXd::Constant(4, -20.0);
+    solution.phin = solution.phip = VectorXd::Constant(4, -20.0);
+    solution.n.resize(4);
+    solution.p.resize(4);
+    solution.n << 1e15, 4e15, 4e15, 1e15;
+    solution.p << 8e20, 2e20, 2e20, 8e20;
+    CoupledDDState state;
+    state.psi = solution.psi;
+    state.n = solution.n;
+    state.p = solution.p;
+    const auto x = assembler.pack(state);
+    const auto terms = assembler.carrierContinuityTermDiagnostics(x, {});
+    const auto residual = assembler.residual(x, {});
+    const auto detailed = ContactCurrent(mesh, matdb, doping, mobility, constants::T0)
+        .computeDetailed(solution, "left");
+
+    REQUIRE(!detailed.edges.empty());
+    Real holeFlux = 0.0;
+    Real electronFlux = 0.0;
+    for (const auto& edge : detailed.edges) {
+        const int i = static_cast<int>(edge.node0);
+        const int j = static_cast<int>(edge.node1);
+        const Real edgeFactor = constants::Vt_300 / edge.edgeLength_m;
+        REQUIRE(edge.electronContinuityFlux ==
+            Approx(edge.mun * edgeFactor * (solution.n(i) - solution.n(j))).epsilon(1e-12));
+        REQUIRE(edge.holeContinuityFlux ==
+            Approx(edge.mup * edgeFactor * (solution.p(i) - solution.p(j))).epsilon(1e-12));
+        holeFlux += edge.outwardSign * edge.edgeCouple_m * edge.holeContinuityFlux;
+        electronFlux += edge.outwardSign * edge.edgeCouple_m * edge.electronContinuityFlux;
+    }
+    REQUIRE(holeFlux != 0.0);
+    REQUIRE(electronFlux != 0.0);
+    Real residualElectronFlux = 0.0;
+    Real residualHoleFlux = 0.0;
+    const Index nodeCount = mesh.numNodes();
+    for (const auto node : mesh.contacts().front().node_ids) {
+        const Real electronRow = residual(nodeCount + node);
+        const Real holeRow = residual(2 * nodeCount + node);
+        REQUIRE(electronRow == Approx(terms.at(node).electronFlux).epsilon(1e-12));
+        REQUIRE(holeRow == Approx(terms.at(node).holeFlux).epsilon(1e-12));
+        residualElectronFlux += electronRow;
+        residualHoleFlux += holeRow;
+    }
+    REQUIRE(std::abs(residualElectronFlux) == Approx(std::abs(electronFlux)).epsilon(1e-12));
+    REQUIRE(std::abs(residualHoleFlux) == Approx(std::abs(holeFlux)).epsilon(1e-12));
+}
+
 TEST_CASE("ContactCurrent integrates element quasi-Fermi-gradient current on exact boundary cells",
           "[element-current][contact_current]")
 {
@@ -1609,4 +1697,21 @@ TEST_CASE("DDAssembler cached geometry matches fresh reference assembly", "[sg][
         mesh, matdb, doping, constants::Vt_300, mobilityConfig, noRecombination,
         CarrierType::Hole, psi, n, p);
     requireSystemsMatch(cached.matrix(), cached.rhs(), referenceHoles.A, referenceHoles.b);
+}
+
+TEST_CASE("Population SG retains sub-ULP endpoint corrections", "[sg][population]") {
+    using vela::sgBoltzmannPopulationContinuityFlux;
+    constexpr double vt = 0.025;
+    constexpr double population = 1e16;
+    constexpr double correction = 1e-18;
+    REQUIRE(sgBoltzmannPopulationContinuityFlux(population,population,1.,1.,0.,vt,1.,false) == 0.);
+    const double fromPotential = sgBoltzmannPopulationContinuityFlux(
+        population,population,1.,1.,0.,vt,1.,false,0.,0.,vt*correction);
+    const double fromDensity = sgBoltzmannPopulationContinuityFlux(
+        population,population,1.,1.,0.,vt,1.,false,correction,0.);
+    REQUIRE(std::abs(fromPotential/(population*correction)-1.) < 1e-14);
+    REQUIRE(std::abs(fromDensity/fromPotential-1.) < 1e-14);
+    const double balanced = sgBoltzmannPopulationContinuityFlux(
+        population,population,1.,1.,0.,vt,1.,false,0.,correction,vt*correction);
+    REQUIRE(std::abs(balanced) < 1e-16);
 }

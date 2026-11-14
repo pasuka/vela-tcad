@@ -10,7 +10,10 @@ class BvMethodsCoupledRuntime final : public CoupledStateRuntime {
 public:
     explicit BvMethodsCoupledRuntime(const CoupledDDAssembler& owner);
     ~BvMethodsCoupledRuntime();
-    VectorXd transportResidual(const VectorXd&) const;
+    VectorXd transportResidual(const VectorXd& x) const override {
+        return transportResidual(x, BvMethodsTransportPurpose::other);
+    }
+    VectorXd transportResidual(const VectorXd&, BvMethodsTransportPurpose) const;
     SparseMatrixd transportJacobian(const VectorXd& x) const override { return transportJacobian(x,nullptr); }
     SparseMatrixd transportJacobian(const VectorXd&,const VectorXd* columns) const;
     VectorXd residual(const VectorXd&, const CoupledDDBoundaryConditions&) const;

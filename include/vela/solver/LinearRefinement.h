@@ -1,6 +1,7 @@
 #pragma once
 // Optional high-precision residual accumulation for sparse iterative refinement.
 #include "vela/solver/LinearSolver.h"
+#include "vela/core/PerformanceProfiler.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <algorithm>
 #include <cmath>
@@ -21,11 +22,18 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
                                  const vela::VectorXd& step) {
     if (J.rows() != F.size() || J.cols() != step.size() || !F.allFinite() || !step.allFinite())
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
+    ScopedPerformanceTimer timer("linear.mp_defect.total");
+    incrementPerformanceCounter("linear.mp_defect.calls");
     std::vector<MP> r(F.size()), denominator(F.size());
     for (int i=0;i<F.size();++i) { r[i]=MP(F(i)); denominator[i]=abs(r[i]); }
+    // Reuse the identical 100-digit conversion of each direction coordinate.
+    // Products and row accumulation keep their original precision and order.
+    std::vector<MP> preciseStep;
+    preciseStep.reserve(static_cast<std::size_t>(step.size()));
+    for (int col=0;col<step.size();++col) preciseStep.emplace_back(step(col));
     for (int col=0;col<J.outerSize();++col)
         for (vela::SparseMatrixd::InnerIterator it(J,col);it;++it) {
-            const MP term=MP(it.value())*MP(step(it.col()));
+            const MP term=MP(it.value())*preciseStep[it.col()];
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
     Defect answer{vela::VectorXd(F.size()),0,vela::VectorXd::Zero(F.size())};
@@ -40,6 +48,10 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
         throw std::runtime_error("Nonfinite linear refinement defect");
     return answer;
 }
+
+// BVMethods requests this only for the PARDISO bordered path.
+bool useBvMethodsEftDefect();
+Defect eftDefect(const SparseMatrixd&, const VectorXd&, const VectorXd&);
 
 template<class Solve, class Observer>
 vela::VectorXd refineWithSolve(const vela::SparseMatrixd& J, const vela::VectorXd& F,

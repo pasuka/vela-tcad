@@ -63,6 +63,9 @@ struct CoupledDDBoundaryConditions {
     std::unordered_map<Index, CoupledDDThermionicBoundary> thermionic;
     // Optional normalized tails for the explicit split-DD boundary contract.
     std::unordered_map<Index, Real> psiLow, phinLow, phipLow;
+    // Exact neutral densities and built-in potentials for compensated ohmic rows.
+    std::unordered_map<Index, std::array<Real, 3>> ohmicPopulation;
+    std::unordered_map<Index, Real> ohmicBias;
 };
 
 // Diagnostic-only frozen inputs for one-stage feedback substitutions.  The
@@ -326,6 +329,10 @@ struct CoupledDDAssemblyAuditOptions {
     bool compensated = false;
 };
 
+enum class BvMethodsTransportPurpose {
+    other, terminalValue, terminalLinearization, terminalValidation, contactOutput
+};
+
 class CoupledDDAssembler {
     friend class BvMethodsCoupledRuntime;
     friend class LegacyPopulationRuntime;
@@ -356,7 +363,8 @@ public:
         }
     }
     /// Source-free element transport for terminal totals and their derivative.
-    VectorXd bvMethodsTransportResidual(const VectorXd& x) const;
+    VectorXd bvMethodsTransportResidual(const VectorXd& x,
+        BvMethodsTransportPurpose purpose=BvMethodsTransportPurpose::other) const;
     SparseMatrixd bvMethodsTransportJacobian(const VectorXd& x) const;
     SparseMatrixd populationJacobianInColumns(const VectorXd&,const CoupledDDBoundaryConditions&,
         const VectorXd& columns,bool approximate=false) const;
@@ -409,9 +417,18 @@ public:
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
     bool usesPopulationState() const { return scaling_.stateVariables == "potential_density"; }
+    bool usesLegacyPopulationState() const {
+        return usesPopulationState() && !usesBvMethodsOperator() &&
+            carrierStatisticsModel_ == CarrierStatisticsModel::Boltzmann &&
+            (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field");
+    }
     /// Physical internal densities; potential fields keep the existing scaled pack contract.
     VectorXd packPopulation(const VectorXd& psi_V, const VectorXd& n, const VectorXd& p) const;
     PopulationPhysicalFields populationPhysicalFields(const VectorXd& x) const;
+    CoupledDDPhysicalDiagnostics compensatedPopulationDiagnostics(
+        const VectorXd& psi_V, const VectorXd& n, const VectorXd& p,
+        const VectorXd& low, const CoupledDDBoundaryConditions& bcs,
+        bool includeImpactIonization=true, SparseMatrixd* transportJacobian=nullptr) const;
 
     /// Store quasi-Fermi unknowns as contact-referenced increments.  The
     /// public CoupledDDState and boundary-condition values remain scaled
@@ -607,6 +624,12 @@ public:
 
 private:
     bool diagnosticFreezeTransportQfMobility_ = false;
+    VectorXd legacyPopulationQfCoordinates(const VectorXd& populations) const;
+    SparseMatrixd legacyPopulationJacobian(const SparseMatrixd& qfJacobian,
+                                           const VectorXd& populations,
+                                           const CoupledDDBoundaryConditions& bcs) const;
+    Real legacyPopulationContactTarget(Index node, Real qf,
+                                       const CoupledDDBoundaryConditions& bcs, bool electron) const;
     void validateExperimentalNonlocalState(const VectorXd&,
         const experimental::TunnelingSourceAssembly&,
         const experimental::TunnelingBandState&,

@@ -46,37 +46,24 @@ def field_fixture(root, bias=0.0):
 
 
 class CheckOnlyManifestTests(unittest.TestCase):
-    def test_versioned_inventory_wins_over_latest_alias(self):
+    def test_check_only_grid_rejects_changed_doping_and_source_provenance(self):
+        archive = 'bvmethods_sentaurus2018'
+        paths, _ = a.checked_gate_grid(archive, 'n1_msh')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            repository = root / 'reference_tcad' / 'case'
-            repository.mkdir(parents=True)
-            pinned = {'case': 'case', 'version': 'v1', 'artifacts': []}
-            (repository / 'artifact_manifest_v1.json').write_text(json.dumps(pinned))
-            (repository / 'artifact_manifest.json').write_text(json.dumps({'case': 'case', 'version': 'v4'}))
-            with patch.object(a, 'REPO', root):
-                manifest, path = a.check_only_manifest(root / 'staging', 'case', 'v1')
-            self.assertEqual(pinned, manifest)
-            self.assertEqual('artifact_manifest_v1.json', path.name)
-
-    def test_staged_identity_drift_is_rejected(self):
-        for case, version in [('different', 'v1'), ('case', 'v4')]:
-            with self.subTest(case=case, version=version), tempfile.TemporaryDirectory() as directory:
-                root = Path(directory)
-                base = root / 'staging' / 'case' / 'v1'
-                base.mkdir(parents=True)
-                (base / 'artifact_manifest.json').write_text(json.dumps({'case': case, 'version': version}))
-                with patch.object(a, 'REPO', root), self.assertRaisesRegex(ValueError, 'identity mismatch'):
-                    a.check_only_manifest(root / 'staging', 'case', 'v1')
-
-    def test_latest_different_version_cannot_replace_missing_pinned_inventory(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            repository = root / 'reference_tcad' / 'case'
-            repository.mkdir(parents=True)
-            (repository / 'artifact_manifest.json').write_text(json.dumps({'case': 'case', 'version': 'v4'}))
-            with patch.object(a, 'REPO', root), self.assertRaisesRegex(ValueError, 'identity mismatch'):
-                a.check_only_manifest(root / 'staging', 'case', 'v1')
+            for path in paths:
+                shutil.copyfile(path, root / path.name)
+            manifest = a.read_json(a.GATE_FIXTURES / 'manifest.json')
+            path = root / 'manifest.json'
+            path.write_text(json.dumps(manifest))
+            with patch.object(a, 'GATE_FIXTURES', root):
+                (root / 'n1_msh.dat').write_bytes(b'changed doping')
+                with self.assertRaisesRegex(ValueError, 'fixture hash mismatch: n1_msh.dat'):
+                    a.checked_gate_grid(archive, 'n1_msh')
+                manifest['grids'][archive]['source_tdr']['version'] = 'v4'
+                path.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, 'source TDR provenance mismatch'):
+                    a.checked_gate_grid(archive, 'n1_msh')
 
 
 class AvalancheQualificationTests(unittest.TestCase):
@@ -131,6 +118,25 @@ class AvalancheQualificationTests(unittest.TestCase):
         self.assertIsNone(self.admit()[0])
         self.decks[1]['mesh_geometry']['node_volume_policy'] = 'mixed_voronoi'
         self.mesh['qualification']['non_obtuse'] = False
+        self.assertIsNone(self.admit()[0])
+
+    def test_compensated_path_requires_its_sidecar_and_both_stage_policies(self):
+        new = self.q['compensated_population']
+        self.assertEqual(a.sha(a.COMPENSATED_BV_SIDECAR), new['sidecar_sha256'])
+        self.assertTrue(self.admit()[0])
+        for deck in self.decks:
+            deck['solver']['compensated_population_state'] = True
+        new['stage_policy_sha256'] = [a.stage_policy_sha256(deck) for deck in self.decks]
+        self.assertIsNone(self.admit()[0])
+        self.provenance['sidecar_sha256'] = new['sidecar_sha256']
+        qualified, _ = self.admit()
+        self.assertEqual(new['id'], qualified['id'])
+        self.assertEqual(self.q['spatial'], qualified['spatial'])
+        self.assertEqual(self.q['anchors'], qualified['anchors'])
+        self.decks[0]['solver']['compensated_population_state'] = False
+        self.assertIsNone(self.admit()[0])
+        self.decks[0]['solver']['compensated_population_state'] = True
+        self.decks[1]['solver']['compensated_population_state'] = False
         self.assertIsNone(self.admit()[0])
 
     def test_partial_pins_and_duplicate_anchors_are_rejected(self):
@@ -251,6 +257,7 @@ class CurveTests(unittest.TestCase):
         self.case=self.contract['cases']['pn2d_iv']
         self.ref=[{'bias_V':b,'I':i} for b,i in [(0.,0.),(.1,1e-15),(.2,1e-13),(.3,1e-11)]]
         self.cand=[dict(r,currents=[r['I'],-r['I']]) for r in self.ref]
+        self.output_biases=[row['bias_V'] for row in self.ref]
 
     def test_same_contact_three_point_sign_and_inconsistent_sign(self):
         self.assertEqual(a.sign_evidence(self.ref,self.cand)['factor'],1.)
@@ -261,10 +268,53 @@ class CurveTests(unittest.TestCase):
         with self.assertRaises(ValueError):a.sign_evidence(self.ref,self.cand[:2])
 
     def test_frozen_oom_sign_and_conservation_are_independent(self):
-        self.assertEqual(a.curve_metrics(self.ref,self.cand,self.case,self.contract)['status'],'pass')
+        self.assertEqual(a.curve_metrics(self.ref,self.cand,self.case,self.contract,output_biases=self.output_biases)['status'],'pass')
         for change in (lambda r:dict(r,I=10*r['I']),lambda r:dict(r,I=-r['I']),lambda r:dict(r,currents=[r['I'],0.])):
-            self.assertEqual(a.curve_metrics(self.ref,[change(r) for r in self.cand],self.case,self.contract)['status'],'fail')
+            self.assertEqual(a.curve_metrics(self.ref,[change(r) for r in self.cand],self.case,self.contract,
+                                             output_biases=self.output_biases)['status'],'fail')
         with self.assertRaisesRegex(ValueError,'cover'):a.curve_metrics(self.ref,self.cand[:-1],self.case,self.contract)
+
+    def test_pn2d_iv_low_bias_kcl_is_report_only_through_50_mV(self):
+        low_bias = [dict(bias_V=bias, I=1e-18, currents=[1e-18, 0.0]) for bias in (0.0, 0.05)]
+        cand = low_bias + self.cand[1:]
+        output_biases = self.output_biases + [0.05]
+        metrics = a.curve_metrics(self.ref, cand, self.case, self.contract, output_biases=output_biases)
+        self.assertEqual(metrics['status'], 'pass')
+        self.assertEqual(metrics['max_kcl_relative'], 1.0)
+        self.assertEqual(metrics['max_enforced_kcl_relative'], 0.0)
+        self.assertEqual(metrics['kcl_report_only']['points'], [
+            dict(bias_V=bias, absolute_imbalance_A_per_um=1e-18, kcl_relative=1.0)
+            for bias in (0.0, 0.05)
+        ])
+        above_window = dict(low_bias[-1], bias_V=0.0500001)
+        self.assertEqual(a.curve_metrics(self.ref, cand + [above_window], self.case, self.contract,
+                                         output_biases=output_biases + [above_window['bias_V']])['status'], 'fail')
+        zero_case = self.contract['cases']['pn2d_0v']
+        self.assertEqual(a.curve_metrics(self.ref[:1], low_bias[:1], zero_case, self.contract)['status'], 'fail')
+
+    def test_iv_intermediate_points_report_kcl_and_output_points_enforce_it(self):
+        intermediate = dict(bias_V=0.07116874304, I=1e-17, currents=[1e-17, -0.9e-17])
+        cand = self.cand[:1] + [intermediate] + self.cand[1:]
+        metrics = a.curve_metrics(self.ref, cand, self.case, self.contract, output_biases=self.output_biases)
+        self.assertEqual(metrics['status'], 'pass')
+        self.assertEqual(metrics['kcl_enforced_points'], 3)
+        self.assertAlmostEqual(metrics['max_kcl_relative'], 0.1)
+        self.assertEqual(metrics['max_enforced_kcl_relative'], 0.0)
+        self.assertIn(intermediate['bias_V'], [point['bias_V'] for point in metrics['kcl_report_only']['points']])
+
+        output = dict(cand[2], currents=[1e-15, 0.0])
+        failing = a.curve_metrics(self.ref, cand[:2] + [output] + cand[3:], self.case, self.contract,
+                                  output_biases=self.output_biases)
+        self.assertEqual(failing['status'], 'fail')
+        self.assertEqual(failing['max_enforced_kcl_relative'], 1.0)
+        with self.assertRaisesRegex(ValueError, 'missing an accepted CMD output point'):
+            a.curve_metrics(self.ref, cand, self.case, self.contract, output_biases=self.output_biases + [0.15])
+
+    def test_iv_output_points_come_from_cmd_plot_schedule(self):
+        cmd = a.REPO / 'reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd'
+        expected = [i * 0.05 for i in range(201)]
+        for actual, bias in zip(a.requested_output_biases(cmd, 'Anode'), expected, strict=True):
+            self.assertAlmostEqual(actual, bias, places=12)
 
     def test_nonfinite_measurements_fail_closed(self):
         for v in ('nan','inf','-inf'):
@@ -275,8 +325,15 @@ class CurveTests(unittest.TestCase):
         def curve(knee):
             return [{'bias_V':b,'I':-10**(-19+.1*abs(b)+.4*max(0.,abs(b)-knee))} for b in settings['biases_V']]
         reference = curve(19.6)
-        self.assertEqual(a.breakdown_knee_metrics(reference,reference,settings)['status'],'pass')
-        self.assertEqual(a.breakdown_knee_metrics(reference,curve(19.1),settings)['status'],'fail')
+        self.assertEqual(a.breakdown_knee_metrics(reference, reference, settings)['status'], 'pass')
+        accepted = a.breakdown_knee_metrics(reference, curve(19.418), settings)
+        self.assertEqual(accepted['status'], 'pass')
+        self.assertAlmostEqual(accepted['absolute_error_V'], 0.182)
+        self.assertAlmostEqual(accepted['relative_error'], 0.182 / 19.6)
+        self.assertEqual(accepted['maximum_relative_error'], 0.01)
+        rejected = a.breakdown_knee_metrics(reference, curve(19.4), settings)
+        self.assertGreater(rejected['relative_error'], 0.01)
+        self.assertEqual(rejected['status'], 'fail')
         with self.assertRaisesRegex(ValueError,'exact breakdown-knee bias'):
             a.breakdown_knee_metrics(reference,reference[:-1],settings)
         with self.assertRaisesRegex(ValueError,'duplicate'):
@@ -284,7 +341,7 @@ class CurveTests(unittest.TestCase):
 
     def test_opposite_sign_fails_even_without_shared_biases(self):
         cand=[{'bias_V':b,'I':-10**(20*b-17),'currents':[1e-12,-1e-12]} for b in (0.,.19,.31)]
-        self.assertFalse(a.curve_metrics(self.ref,cand,self.case,self.contract)['same_sign'])
+        self.assertFalse(a.curve_metrics(self.ref,cand,self.case,self.contract,output_biases=[0.,.19,.31])['same_sign'])
 
 
 class FieldTests(unittest.TestCase):

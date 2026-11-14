@@ -2137,6 +2137,11 @@ void validatePopulationNumerics(const NewtonConfig& c)
        (c.stateVariables!="potential_density" || c.coupledOperator!="legacy" ||
         c.carrierStatistics.model!="boltzmann"))
         throw std::invalid_argument("population_writeback compensation requires legacy Boltzmann potential_density");
+    if (c.compensatedPopulationState &&
+        (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
+         !c.inputScaling.isUnitScaling() || c.primaryVariableCoordinates != "unit" ||
+         c.contactBoundaryMinorityElectronRelaxation))
+        throw std::invalid_argument("Compensated population state requires legacy unit-scaled density coordinates and neutral ohmic contacts");
     if(c.stateVariables!="potential_density")return;
     for(double v:{c.populationMinimumDensity_cm3,c.populationPredictorLowDensity_cm3})
         if(!std::isfinite(v)||v<0.)throw std::invalid_argument("population density limits must be finite and nonnegative");
@@ -2458,7 +2463,28 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
     cfg.primaryVariableCoordinates=json.value("primary_variable_coordinates",cfg.primaryVariableCoordinates);
     cfg.populationStoppingRule=json.value("population_stopping_rule",cfg.populationStoppingRule);
+    cfg.compensatedPopulationState = json.value("compensated_population_state", false);
     resolvePopulationDefaults(cfg);
+    if (json.contains("population_update_convergence")) {
+        const auto& metric = json.at("population_update_convergence");
+        if (cfg.stateVariables != "potential_density" || cfg.populationStoppingRule != "native_approx")
+            throw std::invalid_argument("population_update_convergence requires potential_density and native_approx");
+        if (!metric.is_object())
+            throw std::invalid_argument("population_update_convergence must be an object");
+        for (auto field = metric.begin(); field != metric.end(); ++field) {
+            if (field.key() != "digits" && field.key() != "potential_reference_V" &&
+                field.key() != "electron_reference_cm3" && field.key() != "hole_reference_cm3")
+                throw std::invalid_argument("unknown population_update_convergence field: " + field.key());
+        }
+        if (metric.contains("digits") && !metric.at("digits").is_number_integer())
+            throw std::invalid_argument("population_update_convergence digits must be an integer");
+        auto& update = cfg.populationUpdateConvergence;
+        update.digits = metric.value("digits", update.digits);
+        update.potentialReference_V = metric.value("potential_reference_V", update.potentialReference_V);
+        update.electronReference_cm3 = metric.value("electron_reference_cm3", update.electronReference_cm3);
+        update.holeReference_cm3 = metric.value("hole_reference_cm3", update.holeReference_cm3);
+        validateDensityUpdateConvergence(update);
+    }
     cfg.populationSgCurrent=json.value("population_sg_current",cfg.populationSgCurrent);
     cfg.populationSgBootstrapLinearization=json.value("population_sg_bootstrap_linearization",cfg.populationSgBootstrapLinearization);
     cfg.populationWriteback=json.value("population_writeback",cfg.populationWriteback);
@@ -4260,6 +4286,10 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
                 setSplitBoundaryTarget(bcs,2,nid,0.,hpBias,potentialScale,VbiasLow);
                 continue;
             }
+            if (cfg_.compensatedPopulationState) {
+                bcs.ohmicPopulation.emplace(nid, std::array<Real,3>{psiBuiltIn, equilibrium.n, equilibrium.p});
+                bcs.ohmicBias.emplace(nid, Vbias);
+            }
             if (Ndop >= 0.0) {
                 bcs.phin[nid] = Vbias / potentialScale;
                 if (relaxMinorityOnNContact)
@@ -4411,6 +4441,8 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             "NewtonSolver::makeArclengthSystem: positive density trials require "
             "classical Boltzmann carrier statistics without quantum potential.");
     }
+    if (cfg_.compensatedPopulationState)
+        throw std::invalid_argument("Compensated population state requires voltage-controlled Newton");
     if(cfg_.splitDDState)throw std::invalid_argument("Split DD arclength updates are not qualified");
     if (!(biasFiniteDifferenceStep_V > 0.0) ||
         !std::isfinite(biasFiniteDifferenceStep_V)) {
@@ -4762,7 +4794,8 @@ NewtonSolver::makeArclengthConvergenceEvaluator(const std::string& activeContact
 
 DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
     const std::string& activeContact,
-    const DensityUpdateConvergenceConfig& config) const
+    const DensityUpdateConvergenceConfig& config,
+    bool includeContactVoltage) const
 {
     validateDensityUpdateConvergence(config);
     if (cfg_.splitDDState || cfg_.electronQuantumPotential.enabled)
@@ -4778,6 +4811,8 @@ DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
     }
     if (!foundContact || aliases == 0)
         throw std::invalid_argument("density update stopping requires a named nonempty contact");
+    if (!includeContactVoltage)
+        aliases = 0;
     const Real potentialScale = assembler->usesScaledState() ? assembler->potentialScale() : 1.;
     const Real densityToCm3 = cfg_.inputScaling.unitSystem().concentrationM3PerInternal()*1e-6;
     return [this, assembler, activeContact, config, aliases, potentialScale, densityToCm3](
@@ -4878,13 +4913,13 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     functional.value = [assembler, residualWeights, scale](
                            const VectorXd& x, Real) {
         const VectorXd residual =
-            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, CoupledDDBoundaryConditions{});
+            assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValue):assembler->residual(x, CoupledDDBoundaryConditions{});
         return scale * residualWeights.dot(residual);
     };
     functional.linearize = [assembler, residualWeights, scale](
                                const VectorXd& x, Real) {
         const CoupledDDBoundaryConditions noBoundaryConditions;
-        const VectorXd residual = assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x, noBoundaryConditions);
+        const VectorXd residual = assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalLinearization):assembler->residual(x, noBoundaryConditions);
         const SparseMatrixd jacobian =
             assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportJacobian(x):assembler->assembleJacobian(x, noBoundaryConditions);
         ArclengthScalarLinearization result;
@@ -4900,7 +4935,7 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     if(assembler->usesPopulationState()&&assembler->usesBvMethodsOperator()) {
         functional.linearizeInColumns=[assembler,residualWeights,scale](const VectorXd& x,Real,const VectorXd& columns){
             ArclengthScalarLinearization result;
-            result.value=scale*residualWeights.dot(assembler->bvMethodsTransportResidual(x));
+            result.value=scale*residualWeights.dot(assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalLinearization));
             result.stateDerivative=scale*weightedSparseRows(assembler->bvMethodsTransportJacobianInColumns(x,columns),residualWeights);
             result.parameterDerivative=0.;return result;
         };
@@ -4938,8 +4973,18 @@ Real NewtonSolver::evaluateStateTerminalCurrent(const DDSolution& state,
     // exact QF coordinate frame instead of choosing a new geometric origin.
     if(state.packedLow.size()!=0)
         assembler->setQuasiFermiReferenceFields(state.electronQfReference,state.holeQfReference);
+    if (state.populationLow.size()) {
+        const auto terms = assembler->compensatedPopulationDiagnostics(
+            state.psi,state.n,state.p,state.populationLow,{},false);
+        long double sum = 0.;
+        for (Index node : contact->node_ids) {
+            const auto& row = terms.unconstrainedTerms[node];
+            sum += static_cast<long double>(row.holeFlux) - row.electronFlux;
+        }
+        return static_cast<Real>(sum*constants::q*assembler->continuityResidualScale()*currentScale);
+    }
     const auto x=packReferencedSolution(*assembler,state,{});
-    const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x):assembler->residual(x,{});const int N=mesh_.numNodes();
+    const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValidation):assembler->residual(x,{});const int N=mesh_.numNodes();
     long double sum=0;
     for(auto i:contact->node_ids)sum+=static_cast<long double>(residual(2*N+i))-static_cast<long double>(residual(N+i));
     return static_cast<Real>(sum*static_cast<long double>(constants::q)*assembler->continuityResidualScale()*currentScale);
@@ -7212,6 +7257,19 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    if (state.populationLow.size()) {
+        auto physical = assembler.compensatedPopulationDiagnostics(
+            state.psi,state.n,state.p,state.populationLow,bcs);
+        NewtonCarrierTermDiagnosticsEvaluation evaluation;
+        evaluation.residual.raw = std::move(physical.residual);
+        evaluation.residual.blockNorms = blockResidualInfo(evaluation.residual.raw,mesh_.numNodes());
+        evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+        evaluation.residual.scaledState = assembler.usesScaledState();
+        evaluation.residual.potentialScale = potentialScale;
+        evaluation.rows = solvedEquationTerms ? std::move(physical.constrainedTerms) :
+            std::move(physical.unconstrainedTerms);
+        return evaluation;
+    }
     const VectorXd x = packReferencedSolution(assembler, state, bcs);
     const VectorXd raw = assembler.residual(x, bcs);
 
@@ -7750,7 +7808,7 @@ NewtonResult NewtonSolver::solve() const
 NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization() const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -7799,7 +7857,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
     if(cfg_.stateVariables=="potential_density") {
-        auto c=cfg_;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
         auto result=NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
         // Poisson may solve in QF coordinates, but its checkpoint belongs to
         // the caller's population contract. Keep the computed n/p untouched.

@@ -1,4 +1,7 @@
 #pragma once
+#include <optional>
+#include <bit>
+#include <cstdint>
 
 #include "vela/equation/AssemblerUtils.h"
 #include <limits>
@@ -60,13 +63,15 @@ class BvMethodsTri3Operator {
  struct NodeStatistics {double n=0.,p=0.,dn=0.,dp=0.,etaN=0.,etaP=0.,tangentN=1.,tangentP=1.;};
  // Values depend on the node state, not on the cell's local AD slot. Keep
  // this scratch local to one assembly; no reuse across states or owners.
- std::vector<NodeStatistics> nodeStatistics(const BvMethodsQfState& state,bool inverse,const VectorXd* columns=nullptr) const {
+ std::vector<NodeStatistics> nodeStatistics(const BvMethodsQfState& state,bool inverse,const VectorXd* columns=nullptr,bool slopes=true) const {
   const auto units=problem_.newton.inputScaling.unitSystem();
   std::vector<NodeStatistics> result(problem_.mesh.numNodes());
   for(std::size_t i=0;i<result.size();++i)if(electronActive_[i]) {
    auto& a=result[i];a.n=units.internalConcentrationToCm3(state.n[i]);a.p=units.internalConcentrationToCm3(state.p[i]);
-   a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
-   a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+   if(slopes) {
+    a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
+    a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+   }
    // Evaluate extremely depleted columns in a relative local direction,
    // then undo that direction scale only after flux/source cancellation.
    // State values and global population coordinates remain unchanged.
@@ -130,7 +135,7 @@ public:
   }
  }
 
- BvMethodsTri3Evaluation evaluate(const BvMethodsQfState& state,bool derivatives,const VectorXd* columns=nullptr) const {
+ BvMethodsTri3Evaluation evaluate(const BvMethodsQfState& state,bool derivatives,const VectorXd* columns=nullptr,bool reuseGeneration=true) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
@@ -174,11 +179,17 @@ public:
    }
    const auto result=experimental::evaluateBvMethodsTri3Avalanche(a.geometry,ns,ps,fn,fp,mn,mp,en,hp,vt_,electron_,hole_,
        directPopulationSg_?&directN:nullptr,directPopulationSg_?&directP:nullptr);
-   if(result.electronZeroNorm&&experimental::avCoefficient(en,electron_).value>0)++out.zeroActiveElectron;
-   if(result.holeZeroNorm&&experimental::avCoefficient(hp,hole_).value>0)++out.zeroActiveHole;
-   const auto genN=experimental::avCoefficient(en,electron_)*mn*experimental::avNorm(result.electronParticleCurrentWithoutMobility);
-   const auto genP=experimental::avCoefficient(hp,hole_)*mp*experimental::avNorm(result.holeParticleCurrentWithoutMobility);
-   for(int k=0;k<3;++k){auto node=a.nodes[k];out.electronGeneration[node]+=a.geometry.boxAreas_cm2[k]*genN.value*factor_;out.holeGeneration[node]+=a.geometry.boxAreas_cm2[k]*genP.value*factor_;const auto& g=result.nodeGeneration_per_cm_s[k];if(!std::isfinite(g.value))throw std::runtime_error("Nonfinite candidate AV source");out.allGeneration[node]+=g.value;
+   double genN=result.electronGeneration_cm3_s,genP=result.holeGeneration_cm3_s;
+   if(reuseGeneration) {
+    out.zeroActiveElectron+=result.electronActiveAtZero;
+    out.zeroActiveHole+=result.holeActiveAtZero;
+   } else {
+    if(result.electronZeroNorm&&experimental::avCoefficient(en,electron_).value>0)++out.zeroActiveElectron;
+    if(result.holeZeroNorm&&experimental::avCoefficient(hp,hole_).value>0)++out.zeroActiveHole;
+    genN=(experimental::avCoefficient(en,electron_)*mn*experimental::avNorm(result.electronParticleCurrentWithoutMobility)).value;
+    genP=(experimental::avCoefficient(hp,hole_)*mp*experimental::avNorm(result.holeParticleCurrentWithoutMobility)).value;
+   }
+   for(int k=0;k<3;++k){auto node=a.nodes[k];out.electronGeneration[node]+=a.geometry.boxAreas_cm2[k]*genN*factor_;out.holeGeneration[node]+=a.geometry.boxAreas_cm2[k]*genP*factor_;const auto& g=result.nodeGeneration_per_cm_s[k];if(!std::isfinite(g.value))throw std::runtime_error("Nonfinite candidate AV source");out.allGeneration[node]+=g.value;
     for(int block=1;block<=2;++block){if(!(block==1?electronActive_[node]:holeActive_[node]))continue;const int row=block*n+node;out.source[row]-=g.value*factor_;
      if(derivatives)for(int j=0;j<9;++j){const double tangent=j<3?1.:(j<6?nodes[a.nodes[j%3]].tangentN:nodes[a.nodes[j%3]].tangentP);const int column=(j/3)*n+a.nodes[j%3];const double d=columns?(-g.derivative[j]*factor_*potentialScale_)*((*columns)[column]/tangent):(-g.derivative[j]*factor_*potentialScale_)/tangent;if(d!=0)entries.emplace_back(row,(j/3)*n+a.nodes[j%3],d);}
     }
@@ -188,7 +199,8 @@ public:
  }
  // Diagnostic approximate linearization only: retain the live mobility value,
  // but omit its tangent. Production calls retain the full derivative default.
- BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.) const {
+ BvMethodsTri3Evaluation transport(const BvMethodsQfState& state,bool derivatives,bool generalized,bool coefficientAveraging=false,bool freezeMobilityDerivatives=false,const VectorXd* columns=nullptr,double statisticalFloor_cm3=0.,
+    bool reuseLombardiPowers=false) const {
   const auto units=problem_.newton.inputScaling.unitSystem();const int n=problem_.mesh.numNodes();BvMethodsTri3Evaluation out;
   out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
   std::vector<Eigen::Triplet<double>> entries;if(derivatives)entries.reserve(cells_.size()*54);
@@ -214,9 +226,14 @@ public:
    const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
+   std::optional<LombardiCellPowers> powers;
+   if (reuseLombardiPowers && !derivatives)
+    powers.emplace();
    auto mobility=[&](bool e,const AvJet& drive,int local){auto node=a.nodes[local];
     const double low=e?a.bulkN[local]:a.bulkP[local];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
-    const auto surface=evaluatePreparedElementLombardi(low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_);
+    const auto surface=evaluatePreparedElementLombardi(
+        low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_,
+        powers ? &*powers : nullptr,e);
     const auto high=evaluateElementCanali(surface.mobility,drive.value,hf,100./cfg_.internalFieldToVPerM);
     const double scale=units.internalMobilityToM2PerVS(1.)*1e4;AvJet mu(high.mobility*scale);
     for(int k=0;k<9;++k)mu.derivative[k]=(high.lowDerivative*surface.fieldDerivative*normal.derivative[k]+high.fieldDerivative*drive.derivative[k])*scale;
@@ -273,6 +290,94 @@ public:
    }
   }
   out.jacobian.resize(3*n,3*n);if(derivatives)out.jacobian.setFromTriplets(entries.begin(),entries.end());return out;
+ }
+ bool supportsTransportValues(const BvMethodsQfState& state) const {
+  return state.populationCoordinates && !directPopulationSg_;
+ }
+
+ BvMethodsTri3Evaluation transportValues(const BvMethodsQfState& state,bool generalized,
+    bool coefficientAveraging,bool reuseLombardiPowers,bool valueOnlyCanali,bool auditCanali) const {
+  if(!supportsTransportValues(state))throw std::invalid_argument("Scalar Tri3 transport requires population QF SG");
+  const auto units=problem_.newton.inputScaling.unitSystem();
+  const int n=problem_.mesh.numNodes();
+  BvMethodsTri3Evaluation out;
+  out.electronGeneration=VectorXd::Zero(n);out.holeGeneration=VectorXd::Zero(n);
+  out.absoluteSource=VectorXd::Zero(3*n);out.source=VectorXd::Zero(3*n);out.allGeneration=VectorXd::Zero(n);
+  out.jacobian.resize(3*n,3*n);
+  const auto nodes=nodeStatistics(state,true,nullptr,false);
+  const double dc=units.internalConcentrationToCm3(1.)/potentialScale_;
+  const double mobilityScale=units.internalMobilityToM2PerVS(1.)*1e4;
+  for(const auto& a:cells_) {
+   std::array<double,3> psi,fn,fp;
+   for(int k=0;k<3;++k) {
+    const auto i=a.nodes[k];psi[k]=state.psi[i];fn[k]=state.phin[i];fp[k]=state.phip[i];
+   }
+   const auto& cell=geo_.highFieldCells[a.id];
+   const auto& s=cell.stencil;
+   auto field=[&](const std::array<double,3>& z) {
+    return std::hypot((z[1]-z[0])*s[0]+(z[2]-z[0])*s[2],(z[1]-z[0])*s[1]+(z[2]-z[0])*s[3]);
+   };
+   const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
+   const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
+                         +(psi[2]-psi[0])*(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
+   const double normal=rawNormal>0.?rawNormal:(rawNormal<0.?-rawNormal:0.);
+   std::optional<LombardiCellPowers> powers;
+   if(reuseLombardiPowers)powers.emplace();
+   const auto& coefficients=problem_.mesh.poissonCellEdgeCoefficients(a.id);
+   const std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
+   auto areas=a.geometry.boxAreas_cm2;
+   if(coefficientAveraging) {
+    const auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);
+    for(int k=0;k<3;++k)areas[k]=weights[k]*units.areaM2PerInternal()*1e4;
+   }
+   for(int block=1;block<=2;++block) {
+    const bool electron=block==1;
+    const auto& lp=electron?cfg_.electronLombardi:cfg_.holeLombardi;
+    const auto& hf=electron?cfg_.electronField:cfg_.holeField;
+    const auto& prepared=electron?lombardiN_:lombardiP_;
+    const auto& bulk=electron?a.bulkN:a.bulkP;
+    const double drive=electron?en:hp;
+    std::array<double,3> density,tangent,eta,mobility,logRatio,einstein{1.,1.,1.};
+    for(int k=0;k<3;++k) {
+     const auto i=a.nodes[k];const auto& node=nodes[i];
+     density[k]=electron?node.n:node.p;
+     tangent[k]=dc*(electron?node.tangentN:node.tangentP);
+     eta[k]=electron?node.etaN:node.etaP;
+     const auto surface=evaluatePreparedElementLombardi(bulk[k],normal,prepared[i],lp,cfg_,powers?&*powers:nullptr,electron);
+     const double cutoff=100./cfg_.internalFieldToVPerM;
+     const auto valueOnly=[&] {
+      return static_cast<Real>(elementCanali(static_cast<long double>(surface.mobility),
+          static_cast<long double>(drive),hf,cutoff));
+     };
+     const double mobilityValue=valueOnlyCanali ? valueOnly()
+        : evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility;
+     if(auditCanali) {
+      const double reference=evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility;
+      if(std::bit_cast<std::uint64_t>(mobilityValue)!=std::bit_cast<std::uint64_t>(reference))
+       throw std::runtime_error("BVMethods value-only Canali mobility mismatch");
+     }
+     mobility[k]=mobilityValue*mobilityScale;
+    }
+    for(int k=0;k<3;++k) {
+     const int j=(k+1)%3;
+     logRatio[k]=experimental::populationTransportLogRatio(density[j],density[k],tangent[j],tangent[k]);
+     if(!generalized)continue;
+     if(std::abs(logRatio[k])>1e-10)einstein[k]=(eta[j]-eta[k])/logRatio[k];
+     else {
+      const auto stats=experimental::JoyceDixonStatistics::evaluate((eta[j]+eta[k])/2.);
+      einstein[k]=std::max(1.,stats.value/stats.first);
+     }
+    }
+    const auto flux=experimental::evaluateBvMethodsTri3TransportValues(areas,edge,density,electron?fn:fp,
+       mobility,vt_,electron,einstein,logRatio);
+    for(int k=0;k<3;++k) {
+     const int row=block*n+a.nodes[k];
+     out.source[row]+=flux.nodes[k]*factor_;
+     out.absoluteSource[row]+=(std::abs(flux.edges[k])+std::abs(flux.edges[(k+2)%3]))*factor_;
+    }
+   }
+  }
+  return out;
  }
 };
 } // namespace vela::detail

@@ -309,3 +309,29 @@ TEST_CASE("Population potential archive retains nonzero normalized bits and vali
     REQUIRE_THROWS(archiveDDSolution(out,shifted));
     s.psi[0]+=1.;REQUIRE_FALSE(s.hasConsistentPopulationPotential());REQUIRE_THROWS(archiveDDSolution(s,example().metadata));
 }
+
+TEST_CASE("Compensated population HDF5 restart preserves all low components", "[state_archive][population]") {
+    Workspace workspace;
+    const auto original = example();
+    vela::DDSolution solution;
+    solution.stateVariables = "potential_density";
+    solution.phin = solution.phip = vela::VectorXd::Zero(3);
+    solution.psi.resize(3);
+    solution.n.resize(3);
+    solution.p.resize(3);
+    solution.psi << 1., -1., 0.5;
+    solution.n << 1e16, 2e16, 3e16;
+    solution.p << 2e16, 3e16, 1e16;
+    solution.populationLow.resize(9);
+    solution.populationLow << 1e-30, -1e-30, 1e-30, 1e-12, -1e-12, 1e-12, -1e-12, 1e-12, -1e-12;
+    const auto path = workspace.root/"compensated.h5";
+    vela::writeStateArchive(path,vela::archiveDDSolution(solution,original.metadata));
+    auto archive = vela::readStateArchive(path,3,std::string(64,'a'));
+    const auto restored = vela::restoreDDSolution(archive);
+    REQUIRE(restored.psi == solution.psi);
+    REQUIRE(restored.n == solution.n);
+    REQUIRE(restored.p == solution.p);
+    REQUIRE(restored.populationLow == solution.populationLow);
+    archive.fields.erase("population_holes_low_internal");
+    REQUIRE_THROWS(vela::restoreDDSolution(archive));
+}
