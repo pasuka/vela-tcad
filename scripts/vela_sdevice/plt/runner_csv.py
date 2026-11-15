@@ -35,6 +35,7 @@ the logical names in :data:`DEFAULT_COLUMN_MAP`.
 
 from __future__ import annotations
 
+from bisect import bisect_left
 import csv
 import math
 import os
@@ -68,9 +69,17 @@ def filter_rows(rows: Iterable[Mapping[str, Any]],
         if plt_write != ALL_ACCEPTED_STEPS:
             raise ValueError(f"unsupported plt_write value {plt_write!r}")
         return list(rows)
-    requested = [float(t) for t in plt_write]
-    return [row for row in rows
-            if any(abs(float(row[TIME_DATASET]) - t) <= T_MATCH_TOLERANCE for t in requested)]
+    requested = sorted(filter(math.isfinite, map(float, plt_write)))
+    if not requested:
+        return []
+    selected = []
+    for row in rows:
+        time = float(row[TIME_DATASET])
+        pos = bisect_left(requested, time)
+        if ((pos < len(requested) and abs(time - requested[pos]) <= T_MATCH_TOLERANCE)
+                or (pos > 0 and abs(time - requested[pos - 1]) <= T_MATCH_TOLERANCE)):
+            selected.append(row)
+    return selected
 
 
 def rows_from_runner_csv(main_csv_path: PathLike,

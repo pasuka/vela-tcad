@@ -71,6 +71,9 @@ PN2D uses the shared Release build, `sentaurus_u2022_12` constants and the check
 It runs equilibrium, the complete IV and compensated BV sweeps, and both
 compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
 requested biases, current and conservation gates, and saved spatial fields.
+The compensated BV and eight M3 forward CTests select UMFPACK when CMake
+finds it. Builds without UMFPACK run those same cases and acceptance checks
+with Eigen SparseLU.
 The SDE test generates and reimports the PN2D mesh twice with pinned Gmsh.
 The job uploads JSON reports and logs as `pn2d-release-regression`.
 

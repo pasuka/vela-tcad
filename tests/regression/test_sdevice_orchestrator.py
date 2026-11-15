@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -101,6 +102,36 @@ class OrchestratorTests(unittest.TestCase):
         self.assertTrue(started.is_set(), "Slow background publication was not exercised")
         self.assertTrue((self.root / "final_des.vtu").is_file())
         self.assertFalse((self.work / ".lock").exists())
+
+    def test_unchanged_csv_is_published_once_until_final_read(self):
+        from vela_sdevice.orchestrator.outputs import OutputPublisher
+
+        stage = {
+            "csv": "stage00.csv", "current_file": "current_des.plt",
+            "electrode_voltages_start_V": {"anode": 0.},
+            "electrode_voltages_goal_V": {"anode": 1.},
+            "plt_write": "all_accepted_steps", "vtu_write": {"series": []},
+        }
+        result = SimpleNamespace(stage_plan={"stages": [stage], "electrodes": [{"name": "anode"}]},
+                                 decks=[{"sweep": {"contact": "anode"}}])
+        publisher = OutputPublisher(self.root, self.root, result)
+        path = self.root / stage["csv"]
+        path.write_text("bias_V,current_total_A_per_um\n0,1e-12\n")
+        with patch.object(publisher, "_publish_current", wraps=publisher._publish_current) as publish:
+            self.assertEqual(len(publisher.update(0)), 1)
+            self.assertEqual(len(publisher.update(0)), 1)
+            self.assertEqual(publish.call_count, 1)
+            with path.open("a") as stream:
+                stream.write("1,2e-12")
+            self.assertEqual(len(publisher.update(0)), 1)
+            with path.open("a") as stream:
+                stream.write("\n")
+            self.assertEqual(len(publisher.update(0)), 2)
+            self.assertEqual(len(publisher.update(0, final=True)), 2)
+            self.assertEqual(publish.call_count, 4)
+        self.assertEqual(len(publisher.completed_rows[stage["current_file"]]), 2)
+        _, rows = read_plt_document((self.root / stage["current_file"]).read_text())
+        self.assertEqual([row["time"] for row in rows], [0., 1.])
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(dir=REPO / "build", prefix="wp5_test_")

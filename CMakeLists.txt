@@ -1965,9 +1965,13 @@ if(VELA_ENABLE_PN2D_CI)
         list(APPEND _pn2d_ci_cases ${_variant}-forward ${_variant}-reverse)
     endforeach()
     foreach(_case IN LISTS _pn2d_ci_cases)
+        set(_pn2d_solver_args)
+        if(TARGET PkgConfig::UMFPACK AND (_case STREQUAL "bv" OR _case MATCHES "-forward$"))
+            list(APPEND _pn2d_solver_args --linear-solver umfpack)
+        endif()
         add_test(NAME pn2d_ci_${_case}
             COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} ${_case} ${_pn2d_ci_args}
-                --launcher $<TARGET_FILE:sd-sim>)
+                --launcher $<TARGET_FILE:sd-sim> ${_pn2d_solver_args})
         set_tests_properties(pn2d_ci_${_case} PROPERTIES
             FIXTURES_REQUIRED pn2d_ci_reference LABELS "pn2d-ci;sdevice" TIMEOUT 5400)
         vela_set_windows_msys2_test_path(pn2d_ci_${_case})
