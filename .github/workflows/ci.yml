@@ -11,6 +11,7 @@ on:
         options:
           - all
           - pn2d
+          - bvmethods
         default: pn2d
 
 jobs:
@@ -24,6 +25,9 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       VELA_LINEAR_THREADS: '1'
       PYTHONUTF8: '1'
+      VELA_MKL_VERSION: '2026.1.0'
+      MKL_THREADING_LAYER: SEQUENTIAL
+      MKL_NUM_THREADS: '1'
       P6_ARCHIVE: vela-sde-ubuntu26.04.tar.gz
       REQUESTED_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'all' }}
 
@@ -94,15 +98,38 @@ jobs:
             build/gmsh-probe/fail_report.json
           if-no-files-found: error
 
+      - name: Cache Intel oneMKL runtime
+        if: env.REQUESTED_SUITE != 'pn2d'
+        id: mkl-cache
+        uses: actions/cache@v4
+        with:
+          path: .ci-onemkl
+          key: onemkl-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.VELA_MKL_VERSION }}
+
+      - name: Install Intel oneMKL runtime on cache miss
+        if: env.REQUESTED_SUITE != 'pn2d' && steps.mkl-cache.outputs.cache-hit != 'true'
+        run: |
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/mkl-venv"
+          "$RUNNER_TEMP/mkl-venv/bin/python" -m pip install --only-binary=:all: \
+            --prefix "$PWD/.ci-onemkl" "mkl==$VELA_MKL_VERSION"
+
+      - name: Expose Intel oneMKL runtime
+        if: env.REQUESTED_SUITE != 'pn2d'
+        run: |
+          runtime="$(realpath .ci-onemkl/lib/libmkl_rt.so.3)"
+          test -s "$runtime"
+          test -s "$(dirname "$runtime")/libmkl_sequential.so.3"
+          printf 'VELA_MKL_RT_LIBRARY=%s\n' "$runtime" >> "$GITHUB_ENV"
+          printf 'LD_LIBRARY_PATH=%s\n' "$(dirname "$runtime")${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
       - name: Configure Release build
-        # This job has no MKL runtime; keep PARDISO and optional OpenMP backends disabled.
         run: |
           set -euo pipefail
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 -DVELA_ENABLE_PN2D_CI=ON \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
-            -DVELA_ENABLE_MKL_PARDISO=OFF \
+            -DVELA_ENABLE_BVMETHODS_CI=ON \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
             -DVELA_ENABLE_STRUMPACK=OFF | tee configure.log
@@ -111,7 +138,7 @@ jobs:
           grep -F 'METIS ordering enabled' configure.log
           grep -F 'Eigen headers:' configure.log
           grep -F 'Boost headers and PFR:' configure.log
-          grep -F 'oneMKL PARDISO runtime backend disabled' configure.log
+          grep -F 'oneMKL PARDISO runtime backend enabled' configure.log
           grep -F 'VELA_BOOST_PFR_HEADERS_WORK - Success' configure.log
 
       - name: Build
@@ -120,6 +147,8 @@ jobs:
           args=(--build build --parallel 2)
           if [[ "$REQUESTED_SUITE" == pn2d ]]; then
             args+=(--target sd-sim vela_example_runner)
+          elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
+            args+=(--target sd-sim vela_example_runner test_mkl_pardiso)
           fi
           cmake "${args[@]}"
 
@@ -151,6 +180,9 @@ jobs:
                 --output-junit "$PWD/build/ctest.xml")
           if [[ "$REQUESTED_SUITE" == pn2d ]]; then
             args+=(-L '^pn2d-ci$')
+          elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
+            build/test_mkl_pardiso '[mkl_runtime]'
+            args+=(-L '^bvmethods-ci$')
           fi
           ctest "${args[@]}"
 
@@ -167,15 +199,17 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload CTest and PN2D reports
+      - name: Upload CTest regression reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pn2d-release-regression
+          name: release-regression
           path: |
             build/ctest.xml
             build/pn2d-reports/*.json
             build/pn2d-reports/*.log
+            build/bvmethods-reports/*.json
+            build/bvmethods-reports/*.log
             build/Testing/Temporary/LastTest.log
           if-no-files-found: warn
           retention-days: 14

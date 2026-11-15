@@ -113,3 +113,27 @@ covered using temporary data and retained fixtures. Shared avalanche helper
 tests are `test_sentaurus_avalanche_replay.py` and
 `test_sentaurus_avalanche_controls.py`; the standalone contact override test
 is `test_sentaurus_contact_overrides.py`.
+
+### BVMethods full breakdown CI
+
+Enable `VELA_ENABLE_BVMETHODS_CI=ON` in a Release build with
+`VELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12`. Build `sd-sim` and
+`vela_example_runner`, set `VELA_MKL_RT_LIBRARY` to the installed oneMKL runtime
+and expose its dependencies through the platform library search path. Run
+`ctest --test-dir <build> --output-on-failure --no-tests=error -L "^bvmethods-ci$"`.
+
+The CTest fixture stages the SHA-256-pinned DF-ISE pair in
+[`reference_tcad/sdevice_check_only`](../../reference_tcad/sdevice_check_only/manifest.json).
+For a fresh export with the qualified TDX and original TDR, configure
+`-DVELA_BVMETHODS_TDX=<tdx-executable>` and
+`-DVELA_BVMETHODS_TDR=<n1_msh.tdr>`. The fixture calls
+`tdx -dd -M 0 -S 0 n1_msh.tdr n1_msh` and checks the output hashes against the
+same manifest. The GitHub runner uses the pinned files directly.
+
+The test runs the qualified U-2022.12 BVMethods CMD and sidecar through
+`sd-sim` with single-thread PARDISO. It checks the stage chain, the original
+drain current stop, the interpolated BV, the native 0-100 V current curve and
+the accepted-point numerical checks. The native curve is bounded at 100 V. Its interpolated current gate is 2%
+with a 1e-12 A/um denominator floor. BV uses the first 1e-4 A/um
+crossing and a 0.5% tolerance against the qualified 6.673833 V anchor.
+Reports are written to `<build>/bvmethods-reports/`.

@@ -168,13 +168,11 @@ configuration fails if the state-storage dependencies are unavailable. The
 optional TDR import tools can be disabled with `VELA_ENABLE_HDF5=OFF` without
 disabling HDF5 state storage.
 
-The oneMKL PARDISO shared-solver backend is disabled by default
-(`VELA_ENABLE_MKL_PARDISO=OFF`), including in GitHub CI. To compile support on
-Windows or Linux, add `-DVELA_ENABLE_MKL_PARDISO=ON` to the configure command
-(for example, `cmake --preset windows-ucrt64-debug -DVELA_ENABLE_MKL_PARDISO=ON`),
-then build with the matching preset. No MKL SDK is needed for compilation;
-selecting `VELA_LINEAR_SOLVER=pardiso_mkl` at runtime additionally requires the
-installed runtime path and its dependent-library search path, as described in
+The oneMKL PARDISO backend is compiled by default on Windows and Linux.
+Override this with `-DVELA_ENABLE_MKL_PARDISO=OFF`. An existing CMake cache
+retains its previous setting. Compilation needs no MKL SDK. Explicit
+runtime selection with `VELA_LINEAR_SOLVER=pardiso_mkl` requires the installed
+runtime path and its dependent-library search path, as described in
 [the configuration reference](docs/config_schema.md).
 
 ### Windows / MSYS2 UCRT64

@@ -698,14 +698,10 @@ numeric factors; unavailable UMFPACK and failed solves raise errors rather than
 silently changing backends. This override is independent of the electrothermal
 configuration below; it does not select a different physical model.
 
-The oneMKL PARDISO backend is a compile-time option, disabled by default.
-Configure with `-DVELA_ENABLE_MKL_PARDISO=ON` on Windows or Linux to build it.
-The default `OFF` excludes the adapter, its test runtime libraries and its
-dynamic-loader link dependency; explicitly selecting `pardiso_mkl` then raises
-an error naming the required CMake option. The disabled-build rejection test
-still runs without MKL. GitHub CI explicitly uses `OFF`.
-Existing CMake caches retain an explicit selection; reconfigure with
-`-DVELA_ENABLE_MKL_PARDISO=OFF` to disable a previously enabled build.
+The oneMKL PARDISO adapter is compiled by default on Windows and Linux. Set
+`-DVELA_ENABLE_MKL_PARDISO=OFF` to exclude the adapter, mock runtime libraries
+and dynamic-loader link dependency. Existing CMake caches retain their setting.
+Explicit selection in a disabled build raises an error naming the CMake option.
 
 In an enabled build, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
 runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
