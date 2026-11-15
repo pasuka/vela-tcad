@@ -534,6 +534,14 @@ elseif(NOT VELA_SPARSELU_ORDERING STREQUAL "COLAMD")
 endif()
 message(STATUS "Eigen SparseLU ordering: ${VELA_SPARSELU_ORDERING}")
 
+# Residual replay observes rounded operands, and paired fluxes and
+# scalar/AD evaluations share their rounding order across translation units.
+# Keep that order on FMA-capable targets, including for inline kernels in
+# consumers. Explicit std::fma calls still perform fused operations.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(vela_core PUBLIC -ffp-contract=off)
+endif()
+
 if(MSVC)
     set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS /fp:strict)
     set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
