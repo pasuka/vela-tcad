@@ -436,16 +436,12 @@ inline Scalar localAdHoleSgFlux(
 
 template <typename Scalar>
 inline std::array<Scalar, 2> localAdGssLauxCurrentVector(
-    const DeviceMesh& mesh,
-    const Cell& cell,
+    const std::array<Point2, 3>& basis,
     const std::array<Scalar, 3>& signedEdgeCurrent)
 {
     std::array<Scalar, 2> result{Scalar(0.0), Scalar(0.0)};
     for (std::size_t edge = 0; edge < 3; ++edge) {
-        std::array<Real, 3> basis{};
-        basis[edge] = 1.0;
-        const Point2 column =
-            gssLauxTri3CurrentVector(mesh, cell, basis);
+        const Point2& column = basis[edge];
         result[0] = result[0] + signedEdgeCurrent[edge] * Scalar(column.x());
         result[1] = result[1] + signedEdgeCurrent[edge] * Scalar(column.y());
     }
@@ -666,10 +662,10 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
     Real Vt,
     Real fieldFactor,
     bool populationFlux = false,
-    const std::array<long double, 3>* edgePotentialDrops = nullptr,
+    const std::array<vela::ArithmeticReal, 3>* edgePotentialDrops = nullptr,
     const std::array<Real, 3>* relativeElectronCorrections = nullptr,
     const std::array<Real, 3>* relativeHoleCorrections = nullptr,
-    const std::array<long double, 3>* edgePotentialCorrections = nullptr)
+    const std::array<vela::ArithmeticReal, 3>* edgePotentialCorrections = nullptr)
 {
     if (!usesElementEdgeGssLauxAvalancheSource(impactConfig)) {
         throw std::invalid_argument(
@@ -782,7 +778,7 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
                     Vt, coefficient, true,
                     corrections ? (*corrections)[local] : 0.,
                     corrections ? (*corrections)[next] : 0.,
-                    edgePotentialCorrections ? (electron ? 1.L : -1.L) * (*edgePotentialCorrections)[local] : 0.L);
+                    edgePotentialCorrections ? (electron ? VELA_ARITHMETIC_LITERAL(1.) : -VELA_ARITHMETIC_LITERAL(1.)) * (*edgePotentialCorrections)[local] : VELA_ARITHMETIC_LITERAL(0.));
             } else {
                 const Real niOffset = ni[local] > 0.0 && ni[next] > 0.0
                     ? std::log(ni[next] / ni[local]) : 0.0;
@@ -819,16 +815,22 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
             : Scalar(0.0);
     }
 
-    const auto electronCurrent =
-        localAdGssLauxCurrentVector(mesh, cell, electronFlux);
-    const auto holeCurrent =
-        localAdGssLauxCurrentVector(mesh, cell, holeFlux);
+    // Both carriers and the vertex source mapping use the same cell geometry.
+    const auto partialVolumes = tri3ElementEdgeBoxPartialVolumes(mesh, cell);
+    std::array<Point2, 3> currentBasis;
+    for (std::size_t edge = 0; edge < currentBasis.size(); ++edge) {
+        std::array<Real, 3> fluxBasis{};
+        fluxBasis[edge] = 1.0;
+        currentBasis[edge] = gssLauxTri3CurrentVector(mesh, cell, fluxBasis, partialVolumes);
+    }
+    const auto electronCurrent = localAdGssLauxCurrentVector(currentBasis, electronFlux);
+    const auto holeCurrent = localAdGssLauxCurrentVector(currentBasis, holeFlux);
     const Scalar electronGeneration =
         electronAlpha *
         localAdNorm2(electronCurrent[0], electronCurrent[1]);
     const Scalar holeGeneration =
         holeAlpha * localAdNorm2(holeCurrent[0], holeCurrent[1]);
-    const auto vertexMeasures = tri3ElementVertexBoxMeasures(mesh, cell);
+    const auto vertexMeasures = tri3ElementVertexBoxMeasures(partialVolumes);
     ElementEdgeGssLauxLocalSourceIntegrals<Scalar> source{};
     for (std::size_t localNode = 0; localNode < 3; ++localNode) {
         const Scalar measure =

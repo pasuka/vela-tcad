@@ -804,6 +804,12 @@ Newton numerical and geometry controls added for explicit validation profiles:
   raw/constrained updates, 100-digit linear defects and per-row backward
   errors, central residual changes and free continuity-row masks. These
   diagnostics do not establish nonlinear or external-load convergence.
+- `solver.arithmetic_precision` selects `double` (default) or `extended80`
+  for intermediate arithmetic. State vectors, sparse matrices and direct
+  linear solver interfaces use binary64 in both modes. For native JSON runs,
+  use `vela_example_runner` for `double` and `vela_example_runner_extended80`
+  for `extended80`. The extended runner is built when the compiler provides
+  a 64-bit significand and an 80-bit extended exponent range in `long double`.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
@@ -1249,14 +1255,10 @@ Only the long-double SparseLU variant changes factorization/solve precision. Exp
 zeros do not count as couplings. These backends do not cache factors, change
 assembly or acceptance, or become defaults. The selection applies to all shared
 linear solves, including auxiliary Poisson and Woodbury RHS solves.
-The oneMKL PARDISO backend is a compile-time option, disabled by default.
-Configure with `-DVELA_ENABLE_MKL_PARDISO=ON` on Windows or Linux to build it.
-The default `OFF` excludes the adapter, its test runtime libraries and its
-dynamic-loader link dependency; explicitly selecting `pardiso_mkl` then raises
-an error naming the required CMake option. The disabled-build rejection test
-still runs without MKL. GitHub CI explicitly uses `OFF`.
-Existing CMake caches retain an explicit selection; reconfigure with
-`-DVELA_ENABLE_MKL_PARDISO=OFF` to disable a previously enabled build.
+The oneMKL PARDISO adapter is compiled by default on Windows and Linux. Set
+`-DVELA_ENABLE_MKL_PARDISO=OFF` to exclude the adapter, mock runtime libraries
+and dynamic-loader link dependency. Existing CMake caches retain their setting.
+Explicit selection in a disabled build raises an error naming the CMake option.
 
 In an enabled build, `VELA_LINEAR_SOLVER=pardiso_mkl` explicitly selects the
 runtime backend. Set `VELA_MKL_RT_LIBRARY` to the absolute path
@@ -1293,15 +1295,15 @@ An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 the direct path of `auto`; a PARDISO error is returned without backend fallback.
 
 For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
-solve, the original-system defect calculation defaults to compensated EFT
-accumulation with extended `long double` finalization when supported.
-Out-of-range EFT rows are recomputed in extended precision. A detected
-discarded-tail cancellation is recomputed from the exact binary64 inputs
-using rational arithmetic. The weighted absolute defect, componentwise
-backward error and original correction rules retain their existing tolerances.
-Platforms without suitable extended precision use EFT with MP100 finalization
-and `std::from_chars` conversion. Floating-point environments unsupported by
-EFT use the original MP100 path. Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
+solve, the original-system defect calculation uses compensated EFT
+accumulation. Finalization uses the selected arithmetic precision.
+Out-of-range rows use exact rational arithmetic in `double` and widened
+arithmetic in `extended80`. A detected discarded-tail cancellation is
+recomputed from the exact binary64 inputs using rational arithmetic.
+The weighted absolute defect, componentwise backward error and original
+correction rules retain their existing tolerances. Floating-point
+environments unsupported by EFT use the original MP100 path.
+Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
 compare against EFT with MP100 finalization, or `VELA_BVMETHODS_MP100_DEFECT=1`
 to select the original all-MP100 defect path.
 The explicitly selected `direct_bordered_qr` policy retains its QR preference.
@@ -1309,8 +1311,10 @@ In an embedding process, MKL must permit LP64 initialization before other MKL
 calls; preinitialized NumPy/MKL and Python API compatibility need separate
 qualification. Runtime paths belong in local environment configuration.
 
-In BVMethods potential-density mode with quasi-Fermi SG, coupled residual
-assembly reuses identical long-double Lombardi powers within each element.
+BVMethods device and terminal transport Jacobians reuse identical long-double
+Lombardi powers within each element, including the approximate device
+Jacobian. Coupled residual and terminal-current assembly also reuse these
+powers in potential-density mode with quasi-Fermi SG.
 Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
 against uncached evaluation. The cache is scoped to one element evaluation.
 
@@ -1325,7 +1329,27 @@ Scalar Tri3 transport computes the Canali mobility value in long double.
 Set `VELA_BVMETHODS_CANALI_VALUE_ONLY=0` before launch to use the full Canali
 evaluation for scalar transport, or set `VELA_BVMETHODS_CANALI_VALUE_AUDIT=1`
 to compute both paths and check the mobility bit pattern at every evaluation.
-Jacobian and avalanche assembly retain the full evaluation.
+BVMethods avalanche residual assembly also computes only the Canali mobility
+value when it does not assemble avalanche derivatives. Full Canali evaluations
+in BVMethods transport and avalanche assembly reuse the common long-double power
+for the mobility and its derivatives.
+Set `VELA_BVMETHODS_DISABLE_CANALI_AV_VALUE=1` to restore full Canali evaluation
+for avalanche residuals, or `VELA_BVMETHODS_DISABLE_CANALI_SHARED_POWER=1` to
+restore separate power evaluations. `VELA_BVMETHODS_CANALI_OPTIMIZATION_AUDIT=1`
+compares the active optimized evaluations with the original bit patterns and
+checks the assembled avalanche source.
+
+BVMethods potential-density mode with quasi-Fermi SG also uses scalar avalanche
+residual assembly by default when no avalanche derivatives are requested.
+The scalar device transport passes the two carrier mobilities at each
+element's representative vertex to avalanche assembly for the same state.
+Set `VELA_BVMETHODS_DISABLE_AV_MOBILITY_REUSE=1` before launch to recompute
+those mobilities. Set `VELA_BVMETHODS_AV_VALUE_MODE=dual` to restore dual
+avalanche residual assembly, or `shadow` to return the dual result and
+check scalar source terms, generation rates, zero-current diagnostics and
+reused mobilities bit for bit. Derivative requests and cells outside the
+scalar arithmetic range use dual assembly. Calls without eligible scalar
+device transport compute avalanche mobility independently.
 
 BVMethods potential-density contact and circuit current evaluations reuse the
 last source-free transport vector when the packed state matches bit for bit

@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "vela/equation/SplitDDRuntime.h"
+#include "vela/equation/SplitDDOperator.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/io/DDSolutionCsv.h"
@@ -8,11 +9,35 @@
 #include "vela/numerics/SplitDDState.h"
 #include "vela/simulation/DCSweepPredictor.h"
 #include "vela/core/PhysicalConstants.h"
+#include "../src/equation/SplitMeshFingerprint.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 using namespace vela;
+
+TEST_CASE("Split mesh fingerprint preserves SHA-1 block padding and checkpoint format") {
+    using detail::splitMeshFingerprint;
+    REQUIRE(splitMeshFingerprint("") == "sha1:da39a3ee5e6b4b0d3255bfef95601890afd80709");
+    REQUIRE(splitMeshFingerprint(std::string(55, 'a')) == "sha1:c1c8bbdc22796e28c0e15163d20899b65621d65a");
+    REQUIRE(splitMeshFingerprint(std::string(56, 'a')) == "sha1:c2db330f6083854c99d4b5bfb6e8f29f201be699");
+    REQUIRE(splitMeshFingerprint(std::string(64, 'a')) == (BOOST_VERSION < 108600
+        ? "sha1:98ba824b5c16427bd7a1122a5a442a25ec644d"
+        : "sha1:0098ba824b5c16427bd7a1122a5a442a25ec644d"));
+    REQUIRE(splitMeshFingerprint(std::string(65, 'a')) == "sha1:11655326c708d70319be2610e8a57d9a5b959d3b");
+}
+
+TEST_CASE("Split DD field norm retains the software precision over a wide exponent range") {
+    using split_dd::Wide;
+    REQUIRE(split_dd::fieldSquareRoot(Wide(0)) == 0);
+    for (int exponent : {-3001, -45, 0, 73, 3001}) {
+        const Wide squared = ldexp(Wide("0.79"), exponent);
+        const auto root = split_dd::fieldSquareRoot(squared);
+        REQUIRE(root > 0);
+        REQUIRE(abs(root * root / squared - 1) < Wide("1e-97"));
+    }
+}
+
 namespace {
 nlohmann::json fixture() {
     nlohmann::json d={{"schema","vela.split-dd-operator.v1"},{"mesh_fingerprint","fixture"},

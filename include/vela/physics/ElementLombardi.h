@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/ElementHighField.h"
 #include <cmath>
 #include <stdexcept>
@@ -34,19 +35,19 @@ inline ElementLombardiResult evaluateElementLombardi(Real bulk,Real field,
     const MobilityModelConfig& config) {
     if(bulk<=0)return {0,0,0};
     if(!std::isfinite(distance) || !std::isfinite(field))return {bulk,1,0};
-    const long double F=std::abs(field)*config.internalFieldToVPerM;
-    const long double D=std::max(0.,distance)*config.internalLengthToM;
-    const long double N=impurity*config.internalConcentrationToM3;
-    const long double M=bulk*config.internalMobilityToM2PerVS;
-    const long double inv=elementLombardiInverse(F,D,N,temperature,p);
-    const long double mu=1/(1/M+inv),factor=(mu/M)*(mu/M);
-    long double derivative=0;
+    const vela::ArithmeticReal F=std::abs(field)*config.internalFieldToVPerM;
+    const vela::ArithmeticReal D=std::max(0.,distance)*config.internalLengthToM;
+    const vela::ArithmeticReal N=impurity*config.internalConcentrationToM3;
+    const vela::ArithmeticReal M=bulk*config.internalMobilityToM2PerVS;
+    const vela::ArithmeticReal inv=elementLombardiInverse(F,D,N,temperature,p);
+    const vela::ArithmeticReal mu=1/(1/M+inv),factor=(mu/M)*(mu/M);
+    vela::ArithmeticReal derivative=0;
     if(F>0) {
-        const long double C=p.C*std::pow((long double)temperature/300,-p.k)*std::pow((N+p.N2)/p.N0,p.lambda);
-        const long double z=C*std::pow(F,2.L/3),den=p.B+z;
-        const long double ac=(p.B+z/3)/(den*den);
-        const long double sr=p.A*std::pow(F/100,p.A)/(p.delta*F)+3*F*F/p.eta;
-        const long double damp=p.criticalLength>1?1:std::exp(-D/p.criticalLength);
+        const vela::ArithmeticReal C=p.C*std::pow((vela::ArithmeticReal)temperature/300,-p.k)*std::pow((N+p.N2)/p.N0,p.lambda);
+        const vela::ArithmeticReal z=C*std::pow(F,VELA_ARITHMETIC_LITERAL(2.)/3),den=p.B+z;
+        const vela::ArithmeticReal ac=(p.B+z/3)/(den*den);
+        const vela::ArithmeticReal sr=p.A*std::pow(F/100,p.A)/(p.delta*F)+3*F*F/p.eta;
+        const vela::ArithmeticReal damp=p.criticalLength>1?1:std::exp(-D/p.criticalLength);
         derivative=-mu*mu*damp*(p.acousticFactor*ac+p.roughnessFactor*sr)*
             config.internalFieldToVPerM/config.internalMobilityToM2PerVS;
     }

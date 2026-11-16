@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/NonlocalPathBandToBand.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -33,8 +34,8 @@ PhysicalConstants physical(TunnelingConstants c) {
     check(c == TunnelingConstants::SentaurusT202203, "unknown constant profile");
     return {1.602192e-19, 6.626176e-34, 1.380662e-23, 9.109534e-31};
 }
-long double sum(const std::vector<Real>& x) {
-    long double total = 0;
+vela::ArithmeticReal sum(const std::vector<Real>& x) {
+    vela::ArithmeticReal total = 0;
     for (Real v : x) { check(std::isfinite(v), "nonfinite source integral"); total += v; }
     return total;
 }
@@ -172,7 +173,7 @@ void TunnelingBandState::validate() const {
 }
 void TunnelingEndpoint::validate(const TunnelingBandState& s) const {
     check(!weights.empty(), "empty endpoint support");
-    long double total = 0;
+    vela::ArithmeticReal total = 0;
     std::set<Index> seen;
     for (const auto& [node, weight] : weights) {
         check(node < s.nodes.size() && nonnegative(weight) && seen.insert(node).second, "invalid endpoint weight");
@@ -239,11 +240,11 @@ void NonlocalPairSources::validate(const TunnelingBandState& s) const {
         holeIntegrals_per_m_s.size() == s.nodes.size(), "nonlocal source size mismatch");
     check(balanceError() <= 1e-12, "pair transfer conservation failure");
     const auto expected = distributePairEvents(s, ledger);
-    long double absolute = 0, discrepancy = 0;
-    for (const auto& event : ledger) absolute += std::abs(static_cast<long double>(event.signedRate_per_m_s));
+    vela::ArithmeticReal absolute = 0, discrepancy = 0;
+    for (const auto& event : ledger) absolute += std::abs(static_cast<vela::ArithmeticReal>(event.signedRate_per_m_s));
     for (Index i = 0; i < s.nodes.size(); ++i) {
-        discrepancy += std::abs(static_cast<long double>(electronIntegrals_per_m_s[i]) - expected.electronIntegrals_per_m_s[i]);
-        discrepancy += std::abs(static_cast<long double>(holeIntegrals_per_m_s[i]) - expected.holeIntegrals_per_m_s[i]);
+        discrepancy += std::abs(static_cast<vela::ArithmeticReal>(electronIntegrals_per_m_s[i]) - expected.electronIntegrals_per_m_s[i]);
+        discrepancy += std::abs(static_cast<vela::ArithmeticReal>(holeIntegrals_per_m_s[i]) - expected.holeIntegrals_per_m_s[i]);
     }
     check(absolute == 0 ? discrepancy == 0 : discrepancy / absolute <= 1e-12,
         "source distribution differs from event ledger");
@@ -262,10 +263,10 @@ void NonlocalPairSources::validate(const TunnelingBandState& s) const {
     }
 }
 Real NonlocalPairSources::balanceError() const {
-    long double absolute = 0;
+    vela::ArithmeticReal absolute = 0;
     for (const auto& e : ledger) {
         check(std::isfinite(e.signedRate_per_m_s), "nonfinite pair ledger");
-        absolute += std::abs(static_cast<long double>(e.signedRate_per_m_s));
+        absolute += std::abs(static_cast<vela::ArithmeticReal>(e.signedRate_per_m_s));
     }
     const auto e = sum(electronIntegrals_per_m_s), h = sum(holeIntegrals_per_m_s);
     if (absolute == 0) {
@@ -291,7 +292,7 @@ std::vector<Real> NonlocalPairSources::volumeRates(bool electron, const std::vec
 Real NonlocalPairSources::currentPerUm(bool electron, Real factor, TunnelingConstants c) const {
     check(positive(factor), "positive AreaFactor required");
     const Real result = static_cast<Real>(sum(electron ? electronIntegrals_per_m_s : holeIntegrals_per_m_s) *
-        tunnelingElementaryCharge(c) * 1e-6L * factor);
+        tunnelingElementaryCharge(c) * VELA_ARITHMETIC_LITERAL(1e-6) * factor);
     check(std::isfinite(result), "unrepresentable source current");
     return result;
 }

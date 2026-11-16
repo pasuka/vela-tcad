@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/NonlocalPathCellSource.h"
 #include <algorithm>
 #include <cmath>
@@ -13,7 +14,7 @@ void check(bool ok,const char* text) {if(!ok) throw std::invalid_argument(text);
 bool positive(Real v) {return std::isfinite(v) && v>0;}
 Real softplus(Real v) {return std::max(v,Real(0))+std::log1p(std::exp(-std::abs(v)));}
 Real sample(const TunnelingEndpoint& e,const std::vector<Real>& v) {
-    long double out=0;for(const auto& [n,w]:e.weights) out+=static_cast<long double>(w)*v.at(n);
+    vela::ArithmeticReal out=0;for(const auto& [n,w]:e.weights) out+=static_cast<vela::ArithmeticReal>(w)*v.at(n);
     return static_cast<Real>(out);
 }
 struct Profile {
@@ -46,10 +47,10 @@ Real scalar(const Profile& p,Real lower,Real upper,Real globalEv,Real globalEc,
     Index end=0;while(end<p.ec.size() && p.ec[end]>energy) ++end;
     check(end>0 && end<p.ec.size(),"missing first conduction turn");
     const auto a=tunnelingFractionIntegrals(std::vector<TunnelingBandKnot>(p.bands.begin(),p.bands.begin()+end+1),energy,mc,mv,hb);
-    long double gap=0;
+    vela::ArithmeticReal gap=0;
     for(Index i=1;i<p.bands.size();++i) {
         const Real lo=std::max(xs,p.bands[i-1].distance_m),hi=std::min(xe,p.bands[i].distance_m);
-        if(lo<hi) gap+=static_cast<long double>(hi-lo)*(interpolate(p,p.coefficient,lo)+interpolate(p,p.coefficient,hi))/2;
+        if(lo<hi) gap+=static_cast<vela::ArithmeticReal>(hi-lo)*(interpolate(p,p.coefficient,lo)+interpolate(p,p.coefficient,hi))/2;
     }
     const Real en=interpolate(p,p.efn,xe),ep=interpolate(p,p.efp,xs),delta=(ep-en)/kt;
     if(delta==0) return 0;
@@ -118,7 +119,7 @@ std::vector<Real> tunnelingFirstCrossingWeights(const std::vector<Real>& v,Real 
         if(v[i]<record) {record=v[i];lowest=i;}
     }
     weights[lowest]+=std::max(Real(0),std::min(upper,record)-lower)/width;
-    long double sum=0;for(Real w:weights) sum+=w;
+    vela::ArithmeticReal sum=0;for(Real w:weights) sum+=w;
     check(std::abs(sum-1)<=tol,"first crossing collection does not cover window");return weights;
 }
 
@@ -181,9 +182,22 @@ TunnelingSourceAssembly assembleNonlocalPathCellSources(const TunnelingGeometryM
                 };
                 const Real root=evaluate(lower,upper);
                 if(upper-lower<=policy.minimumWidth_kT*kt) samples.push_back({lower,upper,root});else visit(lower,upper,root,0);
-                record.energySamples=samples.size();long double signedTotal=0;
+                record.energySamples=samples.size();vela::ArithmeticReal signedTotal=0;
                 for(const auto& a:samples) {
-                    const Real rate=static_cast<Real>(static_cast<long double>(a.value)*record.seedArea_m2/geometry.sourceChord_m);signedTotal+=rate;
+                    Real rate;
+                    if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Double) {
+                        // Apply the combined exponent after spatial weighting
+                        // so a representable subnormal event survives.
+                        int valueExponent, areaExponent, chordExponent;
+                        const Real value = std::frexp(a.value, &valueExponent);
+                        const Real area = std::frexp(record.seedArea_m2, &areaExponent);
+                        const Real chord = std::frexp(geometry.sourceChord_m, &chordExponent);
+                        rate = std::scalbn(value * area / chord, valueExponent + areaExponent - chordExponent);
+                    } else {
+                        rate = static_cast<Real>(static_cast<ArithmeticReal>(a.value) *
+                                                 record.seedArea_m2 / geometry.sourceChord_m);
+                    }
+                    signedTotal += rate;
                     const auto ew=tunnelingFirstCrossingWeights(p.ec,a.lower,a.upper),hw=tunnelingFirstCrossingWeights(p.ev,a.lower,a.upper);
                     // Cartesian pairing preserves each marginal without an
                     // empirical renormalization, source floor, or lost contact.

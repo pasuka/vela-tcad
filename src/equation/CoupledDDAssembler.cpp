@@ -1,3 +1,6 @@
+#include "vela/core/ArithmeticPrecision.h"
+#include "vela/numerics/ExpansionProductSum.h"
+#include "vela/numerics/SplitCoordinate.h"
 #include "vela/equation/experimental/ResidualAudit.h"
 #include "vela/equation/ExtendedPoissonResidual.h"
 #include "vela/physics/detail/MobilityChainProduct.h"
@@ -225,9 +228,9 @@ Real referencedValueRelativeTo(
     Real anchorReference_V)
 {
     return static_cast<Real>(
-        (static_cast<long double>(reference_V) -
-         static_cast<long double>(anchorReference_V)) +
-        static_cast<long double>(increment_V));
+        (static_cast<vela::ArithmeticReal>(reference_V) -
+         static_cast<vela::ArithmeticReal>(anchorReference_V)) +
+        static_cast<vela::ArithmeticReal>(increment_V));
 }
 
 Real referencedDifference(
@@ -237,10 +240,10 @@ Real referencedDifference(
     Real increment1_V)
 {
     return static_cast<Real>(
-        (static_cast<long double>(reference1_V) -
-         static_cast<long double>(reference0_V)) +
-        (static_cast<long double>(increment1_V) -
-         static_cast<long double>(increment0_V)));
+        (static_cast<vela::ArithmeticReal>(reference1_V) -
+         static_cast<vela::ArithmeticReal>(reference0_V)) +
+        (static_cast<vela::ArithmeticReal>(increment1_V) -
+         static_cast<vela::ArithmeticReal>(increment0_V)));
 }
 
 bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
@@ -714,6 +717,7 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
     edgeAssemblyKernels_.resize(mesh_.numEdges());
     const bool cacheMobility = !surfaceMobilityEnabled_ &&
         !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob";
+    const bool cacheIntrinsicDrift = bgnEnabled_ && usesLegacyPopulationState();
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -733,6 +737,15 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
         kernel.avalancheSourceArea = detail::avalancheSourceEdgeArea(
             impactIonizationConfig_, edgeCells_, mesh_, edgeId,
             &cellMaterials_);
+        if (cacheIntrinsicDrift && ni_[edge.n0] > 0. && ni_[edge.n1] > 0.) {
+            if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Double) {
+                const auto ratio = sgPopulationLogRatioCompensated(ni_[edge.n1], ni_[edge.n0]);
+                kernel.populationIntrinsicLogRatio = ratio.hi;
+                kernel.populationIntrinsicLogRatioTail = ratio.lo;
+            } else {
+                kernel.populationIntrinsicLogRatio = sgPopulationLogRatio(ni_[edge.n1], ni_[edge.n0]);
+            }
+        }
         if (usesFermiDirac_) {
             kernel.electronLogNiNc0 =
                 std::log(niElectron_[edge.n0] / Nc_[edge.n0]);
@@ -1364,9 +1377,9 @@ PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const Vect
             // Deep-off QF differences can be much smaller than either the
             // band potential or the statistical term. Round only after their
             // subtraction so a tiny edge drive survives the inverse map.
-            const long double psi = s.psi_V[i];
-            const long double thermal = Vt_;
-            const long double ni = ni_[i];
+            const vela::ArithmeticReal psi = s.psi_V[i];
+            const vela::ArithmeticReal thermal = Vt_;
+            const vela::ArithmeticReal ni = ni_[i];
             s.phin_V[i] = static_cast<Real>(psi - thermal * std::log(s.n[i] / ni));
             s.phip_V[i] = static_cast<Real>(psi + thermal * std::log(s.p[i] / ni));
             continue;
@@ -1877,16 +1890,27 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         electrons.minCoeff() <= 0. || holes.minCoeff() <= 0.)
         throw std::domain_error("Compensated populations must be positive and finite");
 
-    const auto highDrop = [&](Index i, Index j) { return static_cast<long double>(psi[j]) - psi[i]; };
-    const auto lowDrop = [&](Index i, Index j) { return static_cast<long double>(low[j]) - low[i]; };
+    constexpr bool binary64 = compiledArithmeticPrecision == ArithmeticPrecision::Double;
+    const auto highDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(psi[j]) - psi[i]; };
+    const auto lowDrop = [&](Index i, Index j) { return static_cast<vela::ArithmeticReal>(low[j]) - low[i]; };
     const auto drop = [&](Index i, Index j) { return highDrop(i,j) + lowDrop(i,j); };
     const auto qfDrop = [&](bool electron, Index i, Index j) {
         const auto& density = electron ? n : p;
         const auto& correction = electron ? en : hp;
-        const long double logDensity = sgPopulationLogRatio(density[j],density[i]);
-        const long double logCorrection = std::log1p(static_cast<long double>(correction[j])) -
-            std::log1p(static_cast<long double>(correction[i]));
-        const long double sign = electron ? -1.L : 1.L;
+        if constexpr (binary64) {
+            const double sign = electron ? -1. : 1.;
+            auto logDensity = sgPopulationLogRatioCompensated(density[j], density[i]);
+            const auto logNi = sgPopulationLogRatioCompensated(ni_[i], ni_[j]);
+            logDensity = logDensity.added(logNi).added(
+                numerics::SplitCoordinate::sum(std::log1p(correction[j]), -std::log1p(correction[i])));
+            return static_cast<ArithmeticReal>(numerics::SplitCoordinate::sum(psi[j], -psi[i])
+                .added(numerics::SplitCoordinate::sum(low[j], -low[i]))
+                .added(logDensity.scaled(sign * Vt_)).hi);
+        }
+        const vela::ArithmeticReal logDensity = sgPopulationLogRatio(density[j],density[i]);
+        const vela::ArithmeticReal logCorrection = std::log1p(static_cast<vela::ArithmeticReal>(correction[j])) -
+            std::log1p(static_cast<vela::ArithmeticReal>(correction[i]));
+        const vela::ArithmeticReal sign = electron ? -VELA_ARITHMETIC_LITERAL(1.) : VELA_ARITHMETIC_LITERAL(1.);
         return (highDrop(i,j)/Vt_ + sign * (logDensity - sgPopulationLogRatio(ni_[j],ni_[i]))) * Vt_
             + (lowDrop(i,j) + sign * Vt_ * logCorrection);
     };
@@ -1915,7 +1939,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     CoupledDDPhysicalDiagnostics result;
     auto& terms = result.unconstrainedTerms;
     terms.resize(count);
-    std::vector<long double> poisson(count), electronFlux(count), holeFlux(count);
+    std::vector<ArithmeticReal> poisson(binary64 ? 0 : count), electronFlux(count), holeFlux(count);
+    std::vector<experimental::ExpansionProductSum> poissonPair(binary64 ? count : 0);
     const Real sourceFactor = scaling_.unitSystem.continuitySourceIntegralFactor();
     const Real continuityScale = continuityResidualScale();
     const Real poissonScale = scaling_.permittivityReference_F_per_m * scaling_.V0;
@@ -1934,9 +1959,26 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         const auto& edge = edgeAssemblyKernels_[id];
         const Index i = edge.n0, j = edge.n1;
         const auto dpsi = drop(i,j);
-        const auto dielectric = edge.poissonCoupling * dpsi;
-        poisson[i] -= dielectric;
-        poisson[j] += dielectric;
+        if constexpr (binary64) {
+            // A rounded edge drop or product makes the absolute Poisson floor
+            // unreachable even when the state retains the Newton correction.
+            const auto high = numerics::SplitCoordinate::sum(psi[j], -psi[i]);
+            const auto tail = numerics::SplitCoordinate::sum(low[j], -low[i]);
+            experimental::ExpansionProductSum flux;
+            flux.addProduct(edge.poissonCoupling, high.hi);
+            flux.addProduct(edge.poissonCoupling, high.lo);
+            flux.addProduct(edge.poissonCoupling, tail.hi);
+            flux.addProduct(edge.poissonCoupling, tail.lo);
+            const auto parts = flux.parts();
+            poissonPair[i].add(-parts.high);
+            poissonPair[i].add(-parts.low);
+            poissonPair[j].add(parts.high);
+            poissonPair[j].add(parts.low);
+        } else {
+            const auto dielectric = edge.poissonCoupling * dpsi;
+            poisson[i] -= dielectric;
+            poisson[j] += dielectric;
+        }
         if (transportJacobian) {
             const Real g = edge.poissonCoupling * scaling_.V0 / poissonScale;
             scatter(i,j,i,g);
@@ -1956,7 +1998,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             if (transportJacobian) {
                 const int offset = electron ? count : 2*count;
                 const Real eta = static_cast<Real>(sign*dpsi/Vt_ +
-                    (bgnEnabled_ ? sgPopulationLogRatio(ni_[j],ni_[i]) : 0.L));
+                    edge.populationIntrinsicLogRatio);
                 const Real derivative = -sign * coef * scaling_.V0 / Vt_ *
                     (bernoulliDerivative(-eta)*density[i] + bernoulliDerivative(eta)*density[j]);
                 scatter(offset+i,offset+j,i,-derivative);
@@ -1964,9 +2006,21 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
                 scatter(offset+i,offset+j,offset+i,coef*bernoulli(-eta)*density[i]);
                 scatter(offset+i,offset+j,offset+j,-coef*bernoulli(eta)*density[j]);
             }
-            return sgBoltzmannPopulationContinuityFlux(
-                density[i],density[j],ni_[i],ni_[j],sign*highDrop(i,j),Vt_,coef,bgnEnabled_,
-                correction[i],correction[j],sign*lowDrop(i,j));
+            if constexpr (binary64) {
+                auto eta = numerics::SplitCoordinate::sum(sign * psi[j], -sign * psi[i]).divided(Vt_);
+                if (bgnEnabled_)
+                    eta = eta.added({static_cast<Real>(edge.populationIntrinsicLogRatio),
+                                     edge.populationIntrinsicLogRatioTail});
+                return sgBoltzmannPopulationContinuityFluxFromDrift(
+                    density[i], density[j], eta, Vt_, coef,
+                    correction[i], correction[j], static_cast<Real>(sign * lowDrop(i,j)));
+            }
+            ArithmeticReal eta = sign * highDrop(i,j) / Vt_;
+            if (bgnEnabled_)
+                eta += edge.populationIntrinsicLogRatio;
+            return sgBoltzmannPopulationContinuityFluxFromDrift(
+                density[i], density[j], eta, Vt_, coef,
+                correction[i], correction[j], sign * lowDrop(i,j));
         };
         const Real fe = sg(CarrierType::Electron,n,en,enFields);
         const Real fh = sg(CarrierType::Hole,p,hp,hpFields);
@@ -1987,7 +2041,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             const Index anchor = cell.node_ids.front();
             std::array<Real,3> localPsi{}, localPhin{}, localPhip{}, localN{}, localP{}, localNi{};
             std::array<Real,3> localEn{}, localHp{};
-            std::array<long double,3> drops{}, dropCorrections{};
+            std::array<vela::ArithmeticReal,3> drops{}, dropCorrections{};
             for (std::size_t k = 0; k < 3; ++k) {
                 const Index i = cell.node_ids[k], j = cell.node_ids[(k+1)%3];
                 localPsi[k] = static_cast<Real>(drop(anchor,i));
@@ -2000,6 +2054,8 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
                 localHp[k] = hp[i];
                 drops[k] = highDrop(i,j);
                 dropCorrections[k] = lowDrop(i,j);
+                if constexpr (binary64)
+                    dropCorrections[k] += numerics::SplitCoordinate::sum(psi[j], -psi[i]).lo;
             }
             const auto source = detail::elementEdgeGssLauxAvalancheSourceIntegralsLocal<Real>(
                 impactIonizationConfig_,mobilityConfig_,*mobility_,cellEdges_[id],mesh_,
@@ -2024,12 +2080,19 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         term.holeFlux = static_cast<Real>(holeFlux[i]);
         term.electronImpact = term.holeImpact = -term.impactCombinedSource;
         if (recombination_.srhEnabled()) {
-            const long double logExcess = sgPopulationLogRatio(n[i],ni_[i]) +
-                sgPopulationLogRatio(p[i],ni_[i]) +
-                (std::log1p(static_cast<long double>(en[i])) +
-                 std::log1p(static_cast<long double>(hp[i])));
-            const Real excess = static_cast<Real>(static_cast<long double>(ni_[i])*ni_[i] *
-                std::expm1(logExcess));
+            Real excess;
+            if constexpr (binary64) {
+                experimental::ExpansionProductSum product;
+                product.addProduct({n[i], low[count+i]}, {p[i], low[2*count+i]});
+                product.addProduct(-ni_[i], ni_[i]);
+                excess = product.value();
+            } else {
+                const ArithmeticReal logExcess = sgPopulationLogRatio(n[i],ni_[i]) +
+                    sgPopulationLogRatio(p[i],ni_[i]) +
+                    (std::log1p(static_cast<ArithmeticReal>(en[i])) +
+                     std::log1p(static_cast<ArithmeticReal>(hp[i])));
+                excess = static_cast<Real>(static_cast<ArithmeticReal>(ni_[i])*ni_[i] * std::expm1(logExcess));
+            }
             term.electronRecombination = term.holeRecombination =
                 recombination_.srhRateFromExcessProduct(excess,electrons[i],holes[i],ni_[i],
                     recombination_.srhDopingConcentration(doping_.donors(i),doping_.acceptors(i))) *
@@ -2039,17 +2102,29 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             term.electronRecombination + term.electronImpact);
         term.holeResidual = static_cast<Real>(holeFlux[i] +
             term.holeRecombination + term.holeImpact);
-        const long double netDoping = doping_.netDoping(i);
-        const long double charge =
-            (netDoping >= 0.L
-                ? (static_cast<long double>(n[i])-netDoping)-p[i]
-                : n[i]-(static_cast<long double>(p[i])+netDoping)) * poissonDopantVol_[i] +
-            static_cast<long double>(n[i]) * (poissonElectronVol_[i]-poissonDopantVol_[i]) -
-            static_cast<long double>(p[i]) * (poissonHoleVol_[i]-poissonDopantVol_[i]) +
-            static_cast<long double>(low[count+i])*poissonElectronVol_[i] -
-            static_cast<long double>(low[2*count+i])*poissonHoleVol_[i];
-        result.residual[i] = static_cast<Real>((poisson[i] +
-            constants::q*scaling_.chargeAreaFactor*charge-fixedInterfaceChargeRhs_[i])/poissonScale);
+        if constexpr (binary64) {
+            experimental::ExpansionProductSum charge;
+            charge.addProduct(poissonElectronVol_[i], n[i]);
+            charge.addProduct(-poissonHoleVol_[i], p[i]);
+            charge.addProduct(-poissonDopantVol_[i], doping_.netDoping(i));
+            charge.addProduct(poissonElectronVol_[i], low[count+i]);
+            charge.addProduct(-poissonHoleVol_[i], low[2*count+i]);
+            poissonPair[i].addProduct(charge.parts(), constants::q * scaling_.chargeAreaFactor);
+            poissonPair[i].add(-fixedInterfaceChargeRhs_[i]);
+            result.residual[i] = poissonPair[i].value() / poissonScale;
+        } else {
+            const ArithmeticReal netDoping = doping_.netDoping(i);
+            const ArithmeticReal charge =
+                (netDoping >= 0.
+                    ? (static_cast<ArithmeticReal>(n[i])-netDoping)-p[i]
+                    : n[i]-(static_cast<ArithmeticReal>(p[i])+netDoping)) * poissonDopantVol_[i] +
+                static_cast<ArithmeticReal>(n[i]) * (poissonElectronVol_[i]-poissonDopantVol_[i]) -
+                static_cast<ArithmeticReal>(p[i]) * (poissonHoleVol_[i]-poissonDopantVol_[i]) +
+                static_cast<ArithmeticReal>(low[count+i])*poissonElectronVol_[i] -
+                static_cast<ArithmeticReal>(low[2*count+i])*poissonHoleVol_[i];
+            result.residual[i] = static_cast<Real>((poisson[i] +
+                constants::q*scaling_.chargeAreaFactor*charge-fixedInterfaceChargeRhs_[i])/poissonScale);
+        }
         if (transportJacobian) {
             const Real scale = constants::q * scaling_.chargeAreaFactor / poissonScale;
             add(i,count+i,scale*poissonElectronVol_[i]*n[i]);
@@ -2525,7 +2600,7 @@ VectorXd CoupledDDAssembler::residualImpl(
            : detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return electronQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phinOffset() + node)) * potentialScale; },
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
@@ -2535,7 +2610,7 @@ VectorXd CoupledDDAssembler::residualImpl(
            : detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return holeQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phipOffset() + node)) * potentialScale; },
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
@@ -3282,7 +3357,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
            : detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return electronQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phinOffset() + node)) * potentialScale; },
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
@@ -3292,7 +3367,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
            : detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return holeQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phipOffset() + node)) * potentialScale; },
               fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
@@ -3690,14 +3765,14 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         ? detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return electronQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phinOffset() + node)) * potentialScale; },
               fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
         ? detail::transportCellVectorReferencedGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_,
               [&](Index node) { return holeQuasiFermiReferenceAt(node); },
-              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              [&](Index node) { return static_cast<vela::ArithmeticReal>(x(phipOffset() + node)) * potentialScale; },
               fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
@@ -5217,7 +5292,7 @@ SparseMatrixd CoupledDDAssembler::assembleSourceDiagnosticJacobian(
                 mesh_, mesh_.getCell(cell),
                 [&](Index node) { return electron ? electronQuasiFermiReferenceAt(node)
                                                   : holeQuasiFermiReferenceAt(node); },
-                [&](Index node) { return static_cast<long double>(x(offset + node)) * potentialScale; },
+                [&](Index node) { return static_cast<vela::ArithmeticReal>(x(offset + node)) * potentialScale; },
                 valid, area);
             cache.areas[cell] = area;
             cache.valid[cell] = valid;

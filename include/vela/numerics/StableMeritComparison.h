@@ -1,6 +1,7 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
-#include <boost/multiprecision/cpp_int.hpp>
+#include "vela/numerics/ExactBinary64.h"
 #include <bit>
 #include <cstdint>
 #include <cmath>
@@ -13,8 +14,8 @@ struct Comparison {
     bool accepted = false;
     bool exactFallback = false;
     int sign = 0;
-    long double delta = 0;
-    long double roundoffBound = 0;
+    vela::ArithmeticReal delta = 0;
+    vela::ArithmeticReal roundoffBound = 0;
 };
 
 // Every finite binary64 square is an integer multiple of 2^-2148.
@@ -34,21 +35,21 @@ inline Comparison compare(const vela::VectorXd& current, const vela::VectorXd& t
     if (current.size() != trial.size()) throw std::invalid_argument("merit vector size mismatch");
     Comparison out;
     if (!current.allFinite() || !trial.allFinite()) return out;
-    long double sum = 0, correction = 0, absolute = 0;
+    vela::ArithmeticReal sum = 0, correction = 0, absolute = 0;
     bool currentZero = true, trialZero = true;
     for (int i = 0; i < current.size(); ++i) {
-        const long double x = current(i), y = trial(i);
+        const vela::ArithmeticReal x = current(i), y = trial(i);
         currentZero = currentZero && x == 0;
         trialZero = trialZero && y == 0;
-        const long double term = (y - x) * (y + x);
-        const long double next = sum + term;
+        const vela::ArithmeticReal term = (y - x) * (y + x);
+        const vela::ArithmeticReal next = sum + term;
         correction += std::abs(sum) >= std::abs(term)
             ? (sum - next) + term : (term - next) + sum;
         sum = next;
         absolute += std::abs(term);
     }
     out.delta = sum + correction;
-    out.roundoffBound = 32 * std::numeric_limits<long double>::epsilon() * absolute;
+    out.roundoffBound = 32 * std::numeric_limits<vela::ArithmeticReal>::epsilon() * absolute;
     if (std::isfinite(out.delta) && std::isfinite(out.roundoffBound)
         && std::abs(out.delta) > out.roundoffBound) {
         out.sign = out.delta < 0 ? -1 : 1;
@@ -82,22 +83,22 @@ inline Comparison compareBlocks(const vela::VectorXd& current, const vela::Vecto
     Comparison out;
     if(!current.allFinite() || !trial.allFinite())return out;
     const int n=current.size()/3;
-    long double sum=0,correction=0,absolute=0;
+    vela::ArithmeticReal sum=0,correction=0,absolute=0;
     bool currentZero=true,trialZero=true;
     for(int b=0;b<3;++b) {
         if(weights[b]==0.)continue;
-        const long double coefficient=static_cast<long double>(weights[b])/safe[b]/safe[b];
+        const vela::ArithmeticReal coefficient=static_cast<vela::ArithmeticReal>(weights[b])/safe[b]/safe[b];
         for(int i=b*n;i<(b+1)*n;++i) {
-            const long double x=current(i),y=trial(i);
+            const vela::ArithmeticReal x=current(i),y=trial(i);
             currentZero=currentZero && x==0;trialZero=trialZero && y==0;
-            const long double term=((y-x)*(y+x))*coefficient;
-            const long double next=sum+term;
+            const vela::ArithmeticReal term=((y-x)*(y+x))*coefficient;
+            const vela::ArithmeticReal next=sum+term;
             correction+=std::abs(sum)>=std::abs(term)?(sum-next)+term:(term-next)+sum;
             sum=next;absolute+=std::abs(term);
         }
     }
     out.delta=sum+correction;
-    out.roundoffBound=64*std::numeric_limits<long double>::epsilon()*absolute;
+    out.roundoffBound=64*std::numeric_limits<vela::ArithmeticReal>::epsilon()*absolute;
     if(std::isfinite(out.delta) && std::isfinite(out.roundoffBound) && std::abs(out.delta)>out.roundoffBound)
         out.sign=out.delta<0?-1:1;
     else {
@@ -110,8 +111,9 @@ inline Comparison compareBlocks(const vela::VectorXd& current, const vela::Vecto
             cpp_int difference=0;
             for(int i=b*n;i<(b+1)*n;++i)
                 difference+=squaredInteger(trial(i))-squaredInteger(current(i));
-            const cpp_rational denominator=cpp_rational(safe[b])*cpp_rational(safe[b]);
-            exact+=cpp_rational(difference)*cpp_rational(weights[b])/denominator;
+            const cpp_rational scale = exact_binary64::fromDouble(safe[b]);
+            const cpp_rational weight = exact_binary64::fromDouble(weights[b]);
+            exact += cpp_rational(difference) * weight / (scale * scale);
         }
         out.sign=exact<0?-1:exact>0?1:0;
     }

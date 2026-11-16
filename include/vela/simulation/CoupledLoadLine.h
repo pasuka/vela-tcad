@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/simulation/LoadLineResidual.h"
 #include "vela/solver/LinearSolver.h"
@@ -653,31 +654,31 @@ public:
                     result.trace.back().rawStateUpdate = deltaState;
                     result.trace.back().rawPredictedDeviceResidual =
                         f + jacobian * deltaState + fLambda * deltaVoltage;
-                    // Evaluate the original, unscaled system in long double.
+                    // Evaluate the original, unscaled system in vela::ArithmeticReal.
                     // This is a diagnostic, never an acceptance override.
-                    std::vector<long double> sums(f.size()), denominators(f.size());
+                    std::vector<vela::ArithmeticReal> sums(f.size()), denominators(f.size());
                     for (Eigen::Index i = 0; i < f.size(); ++i) {
-                        const long double term = static_cast<long double>(fLambda(i)) * deltaVoltage;
-                        sums[i] = static_cast<long double>(linearizedDeviceResidual(i)) + term;
-                        denominators[i] = std::abs(static_cast<long double>(linearizedDeviceResidual(i))) + std::abs(term);
+                        const vela::ArithmeticReal term = static_cast<vela::ArithmeticReal>(fLambda(i)) * deltaVoltage;
+                        sums[i] = static_cast<vela::ArithmeticReal>(linearizedDeviceResidual(i)) + term;
+                        denominators[i] = std::abs(static_cast<vela::ArithmeticReal>(linearizedDeviceResidual(i))) + std::abs(term);
                     }
                     for (int k = 0; k < jacobian.outerSize(); ++k)
                         for (SparseMatrixd::InnerIterator e(jacobian, k); e; ++e) {
-                            const long double term = static_cast<long double>(e.value()) * deltaState(e.col());
+                            const vela::ArithmeticReal term = static_cast<vela::ArithmeticReal>(e.value()) * deltaState(e.col());
                             sums[e.row()] += term;
                             denominators[e.row()] += std::abs(term);
                         }
-                    long double error = 0;
+                    vela::ArithmeticReal error = 0;
                     for (Eigen::Index i = 0; i < f.size(); ++i)
                         if (denominators[i] > 0)
                             error = std::max(error, std::abs(sums[i]) / denominators[i]);
-                    const long double voltageTerm =
-                        (static_cast<long double>(config_.voltageCoefficient) +
-                         static_cast<long double>(resistance_ohm_um) * currentLinearization.parameterDerivative) * deltaVoltage;
-                    long double loadSum = result.loadLineResidual_V + voltageTerm;
-                    long double loadDenom = std::abs(static_cast<long double>(result.loadLineResidual_V)) + std::abs(voltageTerm);
+                    const vela::ArithmeticReal voltageTerm =
+                        (static_cast<vela::ArithmeticReal>(config_.voltageCoefficient) +
+                         static_cast<vela::ArithmeticReal>(resistance_ohm_um) * currentLinearization.parameterDerivative) * deltaVoltage;
+                    vela::ArithmeticReal loadSum = result.loadLineResidual_V + voltageTerm;
+                    vela::ArithmeticReal loadDenom = std::abs(static_cast<vela::ArithmeticReal>(result.loadLineResidual_V)) + std::abs(voltageTerm);
                     for (Eigen::Index i = 0; i < deltaState.size(); ++i) {
-                        const long double term = static_cast<long double>(resistance_ohm_um) *
+                        const vela::ArithmeticReal term = static_cast<vela::ArithmeticReal>(resistance_ohm_um) *
                             currentLinearization.stateDerivative(i) * deltaState(i);
                         loadSum += term;
                         loadDenom += std::abs(term);
@@ -1378,7 +1379,7 @@ private:
             (system_.postProtectionDerivativeRecovery?system_.protectedJacobianInColumns:system_.bootstrapJacobianInColumns);
         const SparseMatrixd deviceJacobian=relative?direct(state.x,state.lambda,coordinates.head(n)):
             selectedJacobian(state.x,state.lambda);
-        const auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
+        auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
         const ArclengthScalarLinearization currentLinearization=relative?
             currentLinearization_.linearizeInColumns(state.x,state.lambda,coordinates.head(n)):
             currentLinearization_.linearize(state.x,state.lambda);
@@ -1422,14 +1423,24 @@ private:
                 triplets.emplace_back(entry.row(), entry.col(), entry.value());
             }
         }
+        bool circuitDependsOnState = false;
         for (Eigen::Index row = 0; row < n; ++row) {
             if (fLambda(row) != 0.0)
                 triplets.emplace_back(row, n, fLambda(row));
             const Real value = circuitStateDerivative(row);
-            if (value != 0.0)
+            if (value != 0.0) {
                 triplets.emplace_back(n, row, value);
+                circuitDependsOnState = true;
+            }
         }
         triplets.emplace_back(n, n, circuitVoltageDerivative);
+        // A scalar circuit row prescribes the voltage increment exactly. A
+        // rounded nonzero increment on a homogeneous row would have unit
+        // componentwise backward error regardless of its magnitude.
+        const int circuitRow = static_cast<int>(n);
+        if (!circuitDependsOnState && circuitVoltageDerivative != 0.0 &&
+            std::find(prescribed.begin(), prescribed.end(), circuitRow) == prescribed.end())
+            prescribed.push_back(circuitRow);
 
         SparseMatrixd rawAugmented(n + 1, n + 1);
         rawAugmented.setFromTriplets(triplets.begin(), triplets.end());

@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/SplitDDOperator.h"
 #include "vela/equation/CoupledDDAssembler.h"
@@ -7,10 +8,8 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/IalTransport.h"
 #include "vela/numerics/StableBoltzmannSg.h"
-#include <boost/uuid/detail/sha1.hpp>
+#include "SplitMeshFingerprint.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
-#include <iomanip>
-#include <sstream>
 #include <algorithm>
 
 namespace vela {
@@ -536,7 +535,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     }
     for(Index c=0;c<mesh_.numCells();++c){const auto& cell=mesh_.getCell(c);geometry.push_back({cell.node_ids[0],cell.node_ids[1],cell.node_ids[2],cell.region_id});}
     for(const auto& contact:mesh_.contacts())geometry.push_back({contact.name,contact.node_ids});
-    boost::uuids::detail::sha1 hasher;auto serialized=geometry.dump();hasher.process_bytes(serialized.data(),serialized.size());boost::uuids::detail::sha1::digest_type digest;hasher.get_digest(digest);std::ostringstream id;id<<"sha1:";for(auto z:digest)id<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(z);j["mesh_fingerprint"]=id.str();
+    j["mesh_fingerprint"] = detail::splitMeshFingerprint(geometry.dump());
     const auto& pm=mobilityConfig_.phuMob;const auto& en=pm.donorSpecies==PhuMobDonorSpecies::Arsenic?pm.electronArsenic:pm.electronPhosphorus;const auto& hp=pm.holeBoron;
     j["phumob"]={{"electron",{en.muMax,en.muMin,en.theta,en.nRef,en.alpha}},{"hole",{hp.muMax,hp.muMin,hp.theta,hp.nRef,hp.alpha}},
       {"common",{pm.donorClusterReference,pm.acceptorClusterReference,pm.donorClusterCoefficient,pm.acceptorClusterCoefficient,pm.electronMassRatio,pm.holeMassRatio,pm.conwellWeisskopfFactor,pm.brooksHerringFactor,pm.electronHoleScatteringFactor,pm.holeElectronScatteringFactor,pm.gA,pm.gB,pm.gC,pm.gAlpha,pm.gAlphaPrime,pm.gBeta,pm.gGamma,pm.internalConcentrationToCm3,pm.internalMobilityToCm2PerVS}}};
@@ -560,9 +559,9 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
             Real x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
             Real nx=mobilityConfig_.surface.cellNormalX[cid],ny=mobilityConfig_.surface.cellNormalY[cid];
             Real f=mobilityConfig_.surface.coordinateFieldFactor*mobilityConfig_.internalFieldToVPerM;
-            const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);long double volume=(long double)measures[0]+measures[1]+measures[2];
+            const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];
             nlohmann::json distances=nlohmann::json::array(),weights=nlohmann::json::array();
-            for(int k=0;k<3;++k){distances.push_back(mobilityConfig_.surface.nodeDistances[cell.node_ids[k]]*mobilityConfig_.internalLengthToM);weights.push_back(static_cast<Real>((long double)measures[k]/volume));}
+            for(int k=0;k<3;++k){distances.push_back(mobilityConfig_.surface.nodeDistances[cell.node_ids[k]]*mobilityConfig_.internalLengthToM);weights.push_back(static_cast<Real>((vela::ArithmeticReal)measures[k]/volume));}
             surfaceCell[cid]=static_cast<int>(s["cells"].size());
             s["cells"].push_back({{"nodes",cell.node_ids},{"distances_m",distances},{"weights",weights},{"stencil",{(y2*nx-x2*ny)/det*f,(-y1*nx+x1*ny)/det*f}}});
             if(usesElementHighField(mobilityConfig_)) {
@@ -573,7 +572,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     }
     j["continuity_scale"]=cs;j["field_factor"]=fieldFactor;j["current_factor"]=constants::q*cs*(scaling_.enabled?scaling_.currentDensityLineIntegralFactor:1.)*1e-6;
     for(Index e=0;e<mesh_.numEdges();++e){const auto& edge=mesh_.getEdge(e);if(edge.length<1e-30)continue;j["poisson_edges"].push_back({edge.n0,edge.n1,edgeAssemblyKernels_[e].poissonCoupling});
-        nlohmann::json weights=nlohmann::json::array(),ports=nlohmann::json::object();long double total=0;
+        nlohmann::json weights=nlohmann::json::array(),ports=nlohmann::json::object();vela::ArithmeticReal total=0;
         if(ial) {
             // Only the active-support marker is needed here: IAL mobility
             // weights come exclusively from its independently checked geometry.
@@ -582,7 +581,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
                 weights.push_back({edge.n0,1.});
         } else {
             for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;total+=detail::cellBoxEdgeCoefficient(mesh_,cid,e);}
-            if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);long double volume=(long double)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((long double)g*measures[k]/volume/total)});}
+            if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((vela::ArithmeticReal)g*measures[k]/volume/total)});}
         }
         if(couple_[e]>0)for(const auto& c:mesh_.contacts()){bool i=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n0)!=c.node_ids.end();bool h=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n1)!=c.node_ids.end();if(i!=h)ports[c.name]=i?1.:-1.;}
         j["transport_edges"].push_back({{"id",e},{"i",edge.n0},{"j",edge.n1},{"coefficient",Vt_*fieldFactor*couple_[e]/edge.length/cs},{"weights",weights},{"ports",ports},{"length",edge.length},{"couple",couple_[e]},
@@ -590,7 +589,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
         if(enormal && !ial) {
             auto& ws=j["transport_edges"].back()["cell_weights"];ws=nlohmann::json::array();
             if(total>0)for(Index cid:edgeCells_[e])if(surfaceCell[cid]>=0) {
-                const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g!=0)ws.push_back({surfaceCell[cid],static_cast<Real>((long double)g/total)});
+                const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g!=0)ws.push_back({surfaceCell[cid],static_cast<Real>((vela::ArithmeticReal)g/total)});
             }
         }
     }

@@ -40,6 +40,10 @@ public:
         product(coefficient.low, direction);
     }
 
+    void addProduct(double coefficient, double direction) {
+        product(coefficient, direction);
+    }
+
     // Corrections below the ULP of a Newton direction must survive as well.
     void addProduct(ExpansionCoefficient coefficient, ExpansionCoefficient direction) {
         addProduct(coefficient, direction.high);

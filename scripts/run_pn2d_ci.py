@@ -62,12 +62,12 @@ def stage_inputs(source, output, deck, spec, experiment, branch):
         shutil.copyfile(source / sidecar, output / sidecar)
 
 
-def run_sdevice(launcher, output, deck, log, compensated):
-    args = [str(launcher), '--physical-constants-profile', 'codata2018',
+def run_sdevice(launcher, output, deck, log, compensated, linear_solver):
+    args = [str(launcher), '--physical-constants-profile', 'sentaurus_u2022_12',
             '--threads', '1', '--allow-lossy', '--exit-on-failure']
     if compensated:
         args.append('--pn2d-population')
-    env = dict(os.environ, VELA_PYTHON=sys.executable, VELA_LINEAR_SOLVER='sparselu',
+    env = dict(os.environ, VELA_PYTHON=sys.executable, VELA_LINEAR_SOLVER=linear_solver,
                VELA_BIN=str(launcher.parent))
     with log.open('w', encoding='utf-8') as stream:
         subprocess.run([*args, deck], cwd=output, env=env, stdout=stream,
@@ -185,6 +185,7 @@ def main():
     parser.add_argument('--reference', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--launcher', type=Path)
+    parser.add_argument('--linear-solver', choices=('sparselu', 'umfpack'), default='sparselu')
     args = parser.parse_args()
     case = args.case
     if case == 'stage':
@@ -222,7 +223,8 @@ def main():
         output = Path(folder).resolve()
         stage_inputs(source, output, deck, spec, experiment, branch)
         try:
-            run, status, plan = run_sdevice(args.launcher.resolve(), output, deck, log, case != '0v')
+            run, status, plan = run_sdevice(args.launcher.resolve(), output, deck, log,
+                                            case != '0v', args.linear_solver)
             if is_base:
                 result = compare_base(case, source, output / deck, run, status, plan)
             else:

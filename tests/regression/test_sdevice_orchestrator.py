@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -102,6 +103,36 @@ class OrchestratorTests(unittest.TestCase):
         self.assertTrue((self.root / "final_des.vtu").is_file())
         self.assertFalse((self.work / ".lock").exists())
 
+    def test_unchanged_csv_is_published_once_until_final_read(self):
+        from vela_sdevice.orchestrator.outputs import OutputPublisher
+
+        stage = {
+            "csv": "stage00.csv", "current_file": "current_des.plt",
+            "electrode_voltages_start_V": {"anode": 0.},
+            "electrode_voltages_goal_V": {"anode": 1.},
+            "plt_write": "all_accepted_steps", "vtu_write": {"series": []},
+        }
+        result = SimpleNamespace(stage_plan={"stages": [stage], "electrodes": [{"name": "anode"}]},
+                                 decks=[{"sweep": {"contact": "anode"}}])
+        publisher = OutputPublisher(self.root, self.root, result)
+        path = self.root / stage["csv"]
+        path.write_text("bias_V,current_total_A_per_um\n0,1e-12\n")
+        with patch.object(publisher, "_publish_current", wraps=publisher._publish_current) as publish:
+            self.assertEqual(len(publisher.update(0)), 1)
+            self.assertEqual(len(publisher.update(0)), 1)
+            self.assertEqual(publish.call_count, 1)
+            with path.open("a") as stream:
+                stream.write("1,2e-12")
+            self.assertEqual(len(publisher.update(0)), 1)
+            with path.open("a") as stream:
+                stream.write("\n")
+            self.assertEqual(len(publisher.update(0)), 2)
+            self.assertEqual(len(publisher.update(0, final=True)), 2)
+            self.assertEqual(publish.call_count, 4)
+        self.assertEqual(len(publisher.completed_rows[stage["current_file"]]), 2)
+        _, rows = read_plt_document((self.root / stage["current_file"]).read_text())
+        self.assertEqual([row["time"] for row in rows], [0., 1.])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(dir=REPO / "build", prefix="wp5_test_")
         self.root = Path(self.temp.name)
@@ -135,6 +166,25 @@ class OrchestratorTests(unittest.TestCase):
 
     def calls(self):
         return [json.loads(line) for line in self.count.read_text().splitlines()] if self.count.exists() else []
+
+    def test_arithmetic_precision_dispatches_before_first_solve(self):
+        source = self.cmd.read_text()
+        missing = str(self.root / "missing-runner")
+        for setting in ("", "ExtendedPrecision", "ExtendedPrecision(80)"):
+            with self.subTest(setting=setting):
+                self.cmd.write_text(source.replace("Solve {", f"Math {{ {setting} }} Solve {{", 1))
+                # A wrong dispatch tries the deliberately absent executable.
+                # Invoke the CLI directly to avoid the fixture's constants probe.
+                env = dict(self.env,
+                           VELA_EXAMPLE_RUNNER=missing if setting else str(FAKE),
+                           VELA_EXAMPLE_RUNNER_EXTENDED80=str(FAKE) if setting else missing)
+                done = subprocess.run([sys.executable, "-m", "vela_sdevice", "device", "-i", str(self.cmd)],
+                                      cwd=self.root, env=env, capture_output=True, text=True, timeout=30)
+                self.assert_exit(0, done)
+                stage = json.loads((self.work / "stage_plan.json").read_text())["stages"][0]
+                solver = json.loads((self.work / stage["deck"]).read_text())["solver"]
+                self.assertEqual(solver.get("arithmetic_precision", "double"),
+                                 "extended80" if setting else "double")
 
     def test_ok_outputs_log_and_manifest(self):
         done = self.call()

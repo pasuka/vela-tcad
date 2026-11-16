@@ -2,6 +2,7 @@
 #include <optional>
 #include <stdexcept>
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
@@ -163,10 +164,10 @@ struct DDSolution {
         if (hasReferencedElectronQuasiFermi() &&
             hasReferencedHoleQuasiFermi()) {
             return static_cast<Real>(
-                (static_cast<long double>(holeQuasiFermiReferenceAt(node)) -
-                 static_cast<long double>(electronQuasiFermiReferenceAt(node))) +
-                (static_cast<long double>(phipIncrement(node)) -
-                 static_cast<long double>(phinIncrement(node))));
+                (static_cast<vela::ArithmeticReal>(holeQuasiFermiReferenceAt(node)) -
+                 static_cast<vela::ArithmeticReal>(electronQuasiFermiReferenceAt(node))) +
+                (static_cast<vela::ArithmeticReal>(phipIncrement(node)) -
+                 static_cast<vela::ArithmeticReal>(phinIncrement(node))));
         }
         return holeQuasiFermiAt(node) - electronQuasiFermiAt(node);
     }

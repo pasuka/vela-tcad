@@ -92,17 +92,21 @@ its authoritative scripts, reports, and acceptance boundary.
 
 ## PN2D Release regression
 
-The `CI` workflow runs the PN2D job on every push and pull request. To run it
-manually, open **CI** under **Actions**, choose **Run workflow**, select the branch and set
-`suite=pn2d`. Choose `all` to also run the existing Debug and SDE packaging jobs.
+The `CI` workflow includes PN2D in the full Release CTest run on every push and
+pull request. To run only PN2D manually, open **CI** under **Actions**, choose
+**Run workflow**, select the branch and set `suite=pn2d`. Choose `all` to include
+the full Release suite and SDE offline package qualification.
 The default branch must expose the workflow before GitHub offers manual runs.
 With GitHub CLI, use `gh workflow run ci.yml --ref <branch> -f suite=pn2d`.
 
-The PN2D job uses a Release build, CODATA2018 constants and the checked-in
+PN2D uses the shared Release build, `sentaurus_u2022_12` constants and the checked-in
 [reference archive](../../reference_tcad/pn2d_sentaurus2018/ci/README.md).
 It runs equilibrium, the complete IV and compensated BV sweeps, and both
 compensated sweeps for all eight M3 variants through `sd-sim`. It checks the
 requested biases, current and conservation gates, and saved spatial fields.
+The compensated BV and eight M3 forward CTests select UMFPACK when CMake
+finds it. Builds without UMFPACK run those same cases and acceptance checks
+with Eigen SparseLU.
 The SDE test generates and reimports the PN2D mesh twice with pinned Gmsh.
 The job uploads JSON reports and logs as `pn2d-release-regression`.
 
@@ -111,7 +115,7 @@ For a local Linux run with the build dependencies and Gmsh runtime above:
 ```bash
 cmake -S . -B build-pn2d -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DPython3_EXECUTABLE=/usr/bin/python3 \
-  -DVELA_ENABLE_PN2D_CI=ON -DVELA_PHYSICAL_CONSTANTS_PROFILE=codata2018
+  -DVELA_ENABLE_PN2D_CI=ON -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12
 cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
 ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
 ```
@@ -247,3 +251,27 @@ sub-ULP driving forces, edge-orientation reversal, common-ni fallback and explic
 unavailability for edges without transport support. Diagnostics must leave the
 production residual, current and low coordinates unchanged. Its 200-digit SG
 reference holds production mobility fixed and does not qualify a device state.
+
+### BVMethods full breakdown CI
+
+Enable `VELA_ENABLE_BVMETHODS_CI=ON` in a Release build with
+`VELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12`. Build `sd-sim` and
+`vela_example_runner`, set `VELA_MKL_RT_LIBRARY` to the installed oneMKL runtime
+and expose its dependencies through the platform library search path. Run
+`ctest --test-dir <build> --output-on-failure --no-tests=error -L "^bvmethods-ci$"`.
+
+The CTest fixture stages the SHA-256-pinned DF-ISE pair in
+[`reference_tcad/sdevice_check_only`](../../reference_tcad/sdevice_check_only/manifest.json).
+For a fresh export with the qualified TDX and original TDR, configure
+`-DVELA_BVMETHODS_TDX=<tdx-executable>` and
+`-DVELA_BVMETHODS_TDR=<n1_msh.tdr>`. The fixture calls
+`tdx -dd -M 0 -S 0 n1_msh.tdr n1_msh` and checks the output hashes against the
+same manifest. The GitHub runner uses the pinned files directly.
+
+The test runs the qualified U-2022.12 BVMethods CMD and sidecar through
+`sd-sim` with single-thread PARDISO. It checks the stage chain, the original
+drain current stop, the interpolated BV, the native 0-100 V current curve and
+the accepted-point numerical checks. The native curve is bounded at 100 V. Its interpolated current gate is 2%
+with a 1e-12 A/um denominator floor. BV uses the first 1e-4 A/um
+crossing and a 0.5% tolerance against the qualified 6.673833 V anchor.
+Reports are written to `<build>/bvmethods-reports/`.

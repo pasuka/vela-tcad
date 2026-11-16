@@ -132,7 +132,12 @@ endif()
 option(VELA_ENABLE_GPROF "Instrument Vela targets for GNU gprof" OFF)
 option(VELA_ENABLE_LTO "Enable conservative link-time optimization for Vela targets" OFF)
 option(VELA_ENABLE_UMFPACK "Use SuiteSparse UMFPACK for robust bordered solves when available" ON)
-option(VELA_ENABLE_MKL_PARDISO "Build the opt-in oneMKL PARDISO runtime backend" OFF)
+set(_vela_mkl_pardiso_default OFF)
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(_vela_mkl_pardiso_default ON)
+endif()
+option(VELA_ENABLE_MKL_PARDISO "Build the oneMKL PARDISO runtime backend" ${_vela_mkl_pardiso_default})
+unset(_vela_mkl_pardiso_default)
 option(VELA_ENABLE_METIS "Enable optional METIS ordering experiments" ON)
 option(VELA_ENABLE_MUMPS "Enable optional OpenMP MUMPS direct solver" ON)
 option(VELA_ENABLE_SUPERLU_MT "Enable optional OpenMP SuperLU_MT direct solver" ON)
@@ -557,6 +562,14 @@ elseif(NOT VELA_SPARSELU_ORDERING STREQUAL "COLAMD")
 endif()
 message(STATUS "Eigen SparseLU ordering: ${VELA_SPARSELU_ORDERING}")
 
+# Residual replay observes rounded operands, and paired fluxes and
+# scalar/AD evaluations share their rounding order across translation units.
+# Keep that order on FMA-capable targets, including for inline kernels in
+# consumers. Explicit std::fma calls still perform fused operations.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(vela_core PUBLIC -ffp-contract=off)
+endif()
+
 if(MSVC)
     set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_OPTIONS /fp:strict)
     set_property(SOURCE src/solver/EftLinearDefect.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_STRICT_EFT_FP=1)
@@ -659,6 +672,30 @@ endif()
 # ---------------------------------------------------------------------------
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
+
+# Each runner links a single arithmetic implementation. Keep both core builds
+# on the same dependency, compiler-option and source configuration.
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles([=[
+    #include <limits>
+    static_assert(std::numeric_limits<long double>::radix == 2);
+    static_assert(std::numeric_limits<long double>::digits == 64);
+    static_assert(std::numeric_limits<long double>::max_exponent == 16384);
+    int main() {}
+]=] VELA_HAS_EXTENDED80)
+if(VELA_HAS_EXTENDED80)
+    add_library(vela_core_extended80 STATIC)
+    foreach(_property IN ITEMS SOURCES INCLUDE_DIRECTORIES INTERFACE_INCLUDE_DIRECTORIES
+            COMPILE_DEFINITIONS INTERFACE_COMPILE_DEFINITIONS COMPILE_OPTIONS
+            INTERFACE_COMPILE_OPTIONS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES INTERFACE_LINK_OPTIONS)
+        get_property(_value TARGET vela_core PROPERTY ${_property})
+        set_property(TARGET vela_core_extended80 PROPERTY ${_property} "${_value}")
+    endforeach()
+    target_compile_definitions(vela_core_extended80 PUBLIC VELA_ARITHMETIC_EXTENDED80=1)
+    add_executable(vela_example_runner_extended80 src/tools/vela_example_runner.cpp)
+    target_link_libraries(vela_example_runner_extended80 PRIVATE vela_core_extended80)
+    add_dependencies(vela_example_runner vela_example_runner_extended80)
+endif()
 
 # Independent validation entry; experiment controls are not simulation-schema options.
 add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
@@ -793,6 +830,9 @@ endif()
 # WP11: install only the frontend's runtime closure, never reference fixtures.
 # Keep both the documented root launcher and the conventional bin/ entry point.
 set(_vela_distribution_targets vela sd-sim vela_example_runner)
+if(TARGET vela_example_runner_extended80)
+    list(APPEND _vela_distribution_targets vela_example_runner_extended80)
+endif()
 if(TARGET sentaurus_import)
     list(APPEND _vela_distribution_targets sentaurus_import)
 endif()
@@ -1131,6 +1171,7 @@ target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2Wit
 
 # Header-only policy test: no solver rebuild or commercial inputs are needed.
 add_executable(test_bvmethods_step_control tests/test_bvmethods_step_control.cpp)
+target_include_directories(test_bvmethods_step_control PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(test_bvmethods_step_control PRIVATE Catch2::Catch2WithMain nlohmann_json::nlohmann_json)
 
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
@@ -2061,8 +2102,8 @@ vela_set_windows_msys2_test_path(sdevice_e2e_gates)
 
 option(VELA_ENABLE_PN2D_CI "Register the full PN2D GRD/DAT numerical and modeling suite" OFF)
 if(VELA_ENABLE_PN2D_CI)
-    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "codata2018")
-        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=codata2018")
+    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12")
+        message(FATAL_ERROR "The PN2D CI reference suite requires VELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12")
     endif()
     set(_pn2d_ci_runner ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_pn2d_ci.py)
     set(_pn2d_ci_args --reference ${CMAKE_CURRENT_BINARY_DIR}/pn2d-reference
@@ -2075,9 +2116,13 @@ if(VELA_ENABLE_PN2D_CI)
         list(APPEND _pn2d_ci_cases ${_variant}-forward ${_variant}-reverse)
     endforeach()
     foreach(_case IN LISTS _pn2d_ci_cases)
+        set(_pn2d_solver_args)
+        if(TARGET PkgConfig::UMFPACK AND (_case STREQUAL "bv" OR _case MATCHES "-forward$"))
+            list(APPEND _pn2d_solver_args --linear-solver umfpack)
+        endif()
         add_test(NAME pn2d_ci_${_case}
             COMMAND ${Python3_EXECUTABLE} ${_pn2d_ci_runner} ${_case} ${_pn2d_ci_args}
-                --launcher $<TARGET_FILE:sd-sim>)
+                --launcher $<TARGET_FILE:sd-sim> ${_pn2d_solver_args})
         set_tests_properties(pn2d_ci_${_case} PROPERTIES
             FIXTURES_REQUIRED pn2d_ci_reference LABELS "pn2d-ci;sdevice" TIMEOUT 5400)
         vela_set_windows_msys2_test_path(pn2d_ci_${_case})
@@ -2087,6 +2132,32 @@ if(VELA_ENABLE_PN2D_CI)
     set_tests_properties(pn2d_ci_sde PROPERTIES LABELS "pn2d-ci;sde")
     vela_set_windows_msys2_test_path(pn2d_ci_stage)
     vela_set_windows_msys2_test_path(pn2d_ci_sde)
+endif()
+
+option(VELA_ENABLE_BVMETHODS_CI "Register the full BVMethods GRD/DAT regression" OFF)
+if(VELA_ENABLE_BVMETHODS_CI)
+    if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12" OR NOT VELA_ENABLE_MKL_PARDISO)
+        message(FATAL_ERROR "BVMethods CI requires sentaurus_u2022_12 constants and oneMKL PARDISO support")
+    endif()
+    set(_bvmethods_ci_runner ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_bvmethods_ci.py)
+    set(_bvmethods_ci_output ${CMAKE_CURRENT_BINARY_DIR}/bvmethods-reports)
+    set(VELA_BVMETHODS_TDX "" CACHE FILEPATH "Optional tdx executable for regenerating BVMethods test inputs")
+    set(VELA_BVMETHODS_TDR "" CACHE FILEPATH "Original BVMethods n1_msh.tdr for optional TDX export")
+    set(_bvmethods_stage_args)
+    if(VELA_BVMETHODS_TDX AND VELA_BVMETHODS_TDR)
+        list(APPEND _bvmethods_stage_args --tdx "${VELA_BVMETHODS_TDX}" --tdr "${VELA_BVMETHODS_TDR}")
+    elseif(VELA_BVMETHODS_TDX OR VELA_BVMETHODS_TDR)
+        message(FATAL_ERROR "Set both VELA_BVMETHODS_TDX and VELA_BVMETHODS_TDR to regenerate BVMethods inputs")
+    endif()
+    add_test(NAME bvmethods_ci_stage COMMAND ${Python3_EXECUTABLE} ${_bvmethods_ci_runner}
+        stage --output ${_bvmethods_ci_output} ${_bvmethods_stage_args})
+    set_tests_properties(bvmethods_ci_stage PROPERTIES FIXTURES_SETUP bvmethods_ci_inputs LABELS bvmethods-ci)
+    add_test(NAME bvmethods_ci_full_bv COMMAND ${Python3_EXECUTABLE} ${_bvmethods_ci_runner}
+        run --output ${_bvmethods_ci_output} --launcher $<TARGET_FILE:sd-sim>)
+    set_tests_properties(bvmethods_ci_full_bv PROPERTIES
+        FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400)
+    vela_set_windows_msys2_test_path(bvmethods_ci_stage)
+    vela_set_windows_msys2_test_path(bvmethods_ci_full_bv)
 endif()
 
 add_test(NAME sdevice_gate_contact_mapping

@@ -18,13 +18,38 @@ bool enabledEnvironmentFlag(const char* name) {
     return value && std::string_view(value)=="1";
 }
 
+detail::CanaliEvaluationOptions canaliEvaluationOptions() {
+    static const detail::CanaliEvaluationOptions mode{
+        !enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_CANALI_AV_VALUE"),
+        !enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_CANALI_SHARED_POWER"),
+        enabledEnvironmentFlag("VELA_BVMETHODS_CANALI_OPTIMIZATION_AUDIT")
+    };
+    return mode;
+}
+
 enum class TransportValueMode { dual, shadow, scalar };
+bool lombardiPowerReuseEnabled() {
+    static const bool enabled=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE");
+    return enabled;
+}
+
 TransportValueMode transportValueMode() {
     static const auto mode=[] {
         const char* value=std::getenv("VELA_BVMETHODS_TRI3_VALUE_MODE");
         if(value && std::string_view(value)=="shadow")return TransportValueMode::shadow;
         if(!value || !*value || std::string_view(value)=="scalar")return TransportValueMode::scalar;
         return TransportValueMode::dual;
+    }();
+    return mode;
+}
+
+enum class AvalancheValueMode { dual, shadow, scalar };
+AvalancheValueMode avalancheValueMode() {
+    static const auto mode=[] {
+        const char* value=std::getenv("VELA_BVMETHODS_AV_VALUE_MODE");
+        if(value && std::string_view(value)=="shadow")return AvalancheValueMode::shadow;
+        if(!value || !*value || std::string_view(value)=="scalar")return AvalancheValueMode::scalar;
+        return AvalancheValueMode::dual;
     }();
     return mode;
 }
@@ -177,10 +202,12 @@ struct BvMethodsCoupledRuntime::Impl {
         return s;
     }
     detail::BvMethodsTri3Evaluation assembleTransport(const detail::BvMethodsQfState& state,
-        bool jac,bool approximate,const VectorXd* columns,double floor,bool reusePowers,
-        std::string_view stage) const {
-        const auto mode=jac || !element->supportsTransportValues(state)
+        bool jac,bool approximate,const VectorXd* columns,double floor,
+        std::string_view stage,detail::BvMethodsRepresentativeMobilities* mobilityValues=nullptr) const {
+        const bool supportsScalarValues=element->supportsTransportValues(state);
+        const auto mode=jac || !supportsScalarValues
             ? TransportValueMode::dual : transportValueMode();
+        const bool reusePowers=(jac || supportsScalarValues) && lombardiPowerReuseEnabled();
         static const bool auditCanali=enabledEnvironmentFlag("VELA_BVMETHODS_CANALI_VALUE_AUDIT");
         static const bool valueOnlyCanali=[] {
             const char* value=std::getenv("VELA_BVMETHODS_CANALI_VALUE_ONLY");
@@ -191,11 +218,13 @@ struct BvMethodsCoupledRuntime::Impl {
             if(auditCanali)incrementPerformanceCounter("bvmethods.tri3.canali_audit_transport_calls");
             incrementPerformanceCounter("bvmethods.tri3.scalar_value_calls");
             ScopedPerformanceTimer timer(stage);
-            return element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali);
+            return element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali,valueOnlyCanali?mobilityValues:nullptr);
         }
         auto reference=[&] {
             ScopedPerformanceTimer timer(stage);
-            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers);
+            const auto canali=canaliEvaluationOptions();
+            if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_transport");
+            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers,canali);
         }();
         if(mode==TransportValueMode::shadow) {
             incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
@@ -225,7 +254,7 @@ struct BvMethodsCoupledRuntime::Impl {
             } else lastPortValueState=x;
             lastPortPurpose=purpose;
         }
-        auto result=assembleTransport(makeState(x),jac,false,nullptr,0.,false,
+        auto result=assembleTransport(makeState(x),jac,false,nullptr,0.,
             jac?"bvmethods.tri3.terminal_jacobian":portTransportStage(purpose));
         if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
         return result;
@@ -240,19 +269,68 @@ struct BvMethodsCoupledRuntime::Impl {
     }
     Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr,bool freezeStatisticalFloor=true)const {
         Evaluation out;out.state=makeState(x);const auto& s=out.state;const int n=s.n.size();
-        static const bool enableLombardiPowReuse = [] {
-            const char* flag = std::getenv("VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE");
-            return !flag || std::string_view(flag) != "1";
-        }();
-        const bool reuseLombardiPowers = enableLombardiPowReuse && !jac &&
-            s.populationCoordinates && owner.scaling_.populationSgCurrent == "quasi_fermi";
+        const auto valueMode=avalancheValueMode();
+        static const bool reuseMobility=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_MOBILITY_REUSE");
+        static const bool reuseGeneration=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_GENERATION_REUSE");
+        const auto canali=canaliEvaluationOptions();
+        const bool derivatives=jac&&!approximate;
+        const bool scalarEligible=!derivatives&&element->supportsTransportValues(s)&&
+            reuseGeneration&&canali.avalancheValueOnly;
+        // Both consumers see this exact state and cell order. The buffer
+        // is discarded before the residual can be cached or reused.
+        detail::BvMethodsRepresentativeMobilities representatives;
+        const bool collectMobility=!jac&&owner.impactIonizationCoupled_&&scalarEligible&&
+            reuseMobility&&valueMode!=AvalancheValueMode::dual;
         out.transport=assembleTransport(s,jac,approximate,columns,
             approximate&&freezeStatisticalFloor?owner.scaling_.populationSgBootstrapFloor_cm3:0.,
-            reuseLombardiPowers,jac?"bvmethods.tri3.device_jacobian":"bvmethods.tri3.device_residual");
+            jac?"bvmethods.tri3.device_jacobian":"bvmethods.tri3.device_residual",
+            collectMobility?&representatives:nullptr);
+        const auto* mobilityValues=representatives.empty()?nullptr:&representatives;
         if(owner.impactIonizationCoupled_) {
-            static const bool reuseGeneration=!enabledEnvironmentFlag("VELA_BVMETHODS_DISABLE_AV_GENERATION_REUSE");
             ScopedPerformanceTimer timer(jac&&!approximate?"bvmethods.tri3.avalanche_jacobian":"bvmethods.tri3.avalanche_residual");
-            out.av=element->evaluate(s,jac&&!approximate,columns,reuseGeneration);
+            if(canali.avalancheValueOnly&&!derivatives)incrementPerformanceCounter("bvmethods.tri3.canali_av_value");
+            if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_av");
+            const bool scalar=scalarEligible&&valueMode==AvalancheValueMode::scalar;
+            out.av=element->evaluate(s,derivatives,columns,reuseGeneration,canali,scalar,
+                scalar?mobilityValues:nullptr);
+            if(!derivatives) {
+                incrementPerformanceCounter("bvmethods.av.zero_norm_electron",out.av.zeroNormElectron);
+                incrementPerformanceCounter("bvmethods.av.zero_norm_hole",out.av.zeroNormHole);
+                incrementPerformanceCounter("bvmethods.av.zero_active_electron",out.av.zeroActiveElectron);
+                incrementPerformanceCounter("bvmethods.av.zero_active_hole",out.av.zeroActiveHole);
+                const auto count=[](const detail::BvMethodsTri3Evaluation& result) {
+                    incrementPerformanceCounter("bvmethods.av.scalar_cells",result.scalarCells);
+                    incrementPerformanceCounter("bvmethods.av.fallback_cells",result.fallbackCells);
+                    incrementPerformanceCounter("bvmethods.av.reused_mobility_cells",result.reusedMobilityCells);
+                    incrementPerformanceCounter("bvmethods.av.audited_mobility_pairs",result.auditedMobilityPairs);
+                };
+                if(scalarEligible&&valueMode==AvalancheValueMode::shadow) {
+                    const auto candidate=element->evaluate(s,false,columns,reuseGeneration,canali,true,
+                        mobilityValues,mobilityValues!=nullptr);
+                    count(candidate);
+                    if(!equalStateBits(out.av.source,candidate.source) ||
+                       !equalStateBits(out.av.allGeneration,candidate.allGeneration) ||
+                       !equalStateBits(out.av.electronGeneration,candidate.electronGeneration) ||
+                       !equalStateBits(out.av.holeGeneration,candidate.holeGeneration) ||
+                       out.av.zeroNormElectron!=candidate.zeroNormElectron ||
+                       out.av.zeroNormHole!=candidate.zeroNormHole ||
+                       out.av.zeroActiveElectron!=candidate.zeroActiveElectron ||
+                       out.av.zeroActiveHole!=candidate.zeroActiveHole)
+                        throw std::runtime_error("AV scalar frozen-state mismatch");
+                    incrementPerformanceCounter("bvmethods.av.shadow_checks");
+                } else count(out.av);
+            }
+            if(canali.audit) {
+                const auto baseline=element->evaluate(s,derivatives,columns,reuseGeneration);
+                if(!equalStateBits(out.av.source,baseline.source) ||
+                   !equalStateBits(out.av.allGeneration,baseline.allGeneration) ||
+                   !equalStateBits(out.av.electronGeneration,baseline.electronGeneration) ||
+                   !equalStateBits(out.av.holeGeneration,baseline.holeGeneration) ||
+                   out.av.zeroActiveElectron!=baseline.zeroActiveElectron ||
+                   out.av.zeroActiveHole!=baseline.zeroActiveHole)
+                    throw std::runtime_error("Canali avalanche source bit mismatch");
+                incrementPerformanceCounter("bvmethods.tri3.canali_av_audit");
+            }
         }
         else {out.av.source=VectorXd::Zero(3*n);out.av.allGeneration=VectorXd::Zero(n);out.av.jacobian.resize(3*n,3*n);out.av.electronGeneration=VectorXd::Zero(n);out.av.holeGeneration=VectorXd::Zero(n);}
         out.srh=VectorXd::Zero(3*n);std::vector<Eigen::Triplet<double>> entries;
@@ -462,7 +540,7 @@ VectorXd BvMethodsCoupledRuntime::transportResidual(const VectorXd& x,BvMethodsT
 }
 SparseMatrixd BvMethodsCoupledRuntime::transportJacobian(const VectorXd& x,const VectorXd* columns)const {
     auto& p=*impl_;p.sync();
-    if(columns){if(!p.owner.usesPopulationState()||columns->size()!=x.size()||!columns->allFinite()||(columns->array()<=0.).any())throw std::invalid_argument("Invalid population transport columns");return p.assembleTransport(p.makeState(x),true,false,columns,0.,false,"bvmethods.tri3.terminal_jacobian").jacobian;}
+    if(columns){if(!p.owner.usesPopulationState()||columns->size()!=x.size()||!columns->allFinite()||(columns->array()<=0.).any())throw std::invalid_argument("Invalid population transport columns");return p.assembleTransport(p.makeState(x),true,false,columns,0.,"bvmethods.tri3.terminal_jacobian").jacobian;}
     return p.transport(x,true).jacobian;
 }
 std::vector<CoupledDDPoissonTermDiagnostic> BvMethodsCoupledRuntime::populationPoissonTerms(

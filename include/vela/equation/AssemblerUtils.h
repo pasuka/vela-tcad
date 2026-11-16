@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/IalTransport.h"
 
 /**
@@ -250,6 +251,7 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
 {
     std::vector<std::vector<Index>> edgeCells(mesh.numEdges());
     std::unordered_map<Index, Index> pairToEdge;
+    pairToEdge.reserve(mesh.numEdges());
     const Index N = mesh.numNodes();
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
@@ -335,11 +337,11 @@ inline std::array<Real,3> cellBoxNodeMeasures(const DeviceMesh& mesh,Index cellI
     if (mesh.poissonPermittivityPolicy() != BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
         throw std::invalid_argument("Element box measures require cell_material geometry.");
     const auto& cell=mesh.getCell(cellId);const auto& g=mesh.poissonCellEdgeCoefficients(cellId);
-    std::array<long double,3> measures{};
+    std::array<vela::ArithmeticReal,3> measures{};
     for(std::size_t k=0;k<3;++k) {
         const auto& a=mesh.getNode(cell.node_ids[k]);const auto& b=mesh.getNode(cell.node_ids[(k+1)%3]);
-        const long double dx=(long double)b.x-a.x,dy=(long double)b.y-a.y;
-        const long double value=g[k]*(dx*dx+dy*dy)/4;
+        const vela::ArithmeticReal dx=(vela::ArithmeticReal)b.x-a.x,dy=(vela::ArithmeticReal)b.y-a.y;
+        const vela::ArithmeticReal value=g[k]*(dx*dx+dy*dy)/4;
         measures[k]+=value;measures[(k+1)%3]+=value;
     }
     return {static_cast<Real>(measures[0]),static_cast<Real>(measures[1]),static_cast<Real>(measures[2])};
@@ -1728,7 +1730,7 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
         populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
         throw std::invalid_argument("element_box_phumob requires complete live nodal electron and hole densities.");
     const auto measures=cellBoxNodeMeasures(mesh,cid);const auto& cell=mesh.getCell(cid);
-    long double sum=0,volume=0;
+    vela::ArithmeticReal sum=0,volume=0;
     for(std::size_t k=0;k<3;++k) {
         const Index node=cell.node_ids[k];
         const Real impurity=doping.totalImpurity(node);
@@ -1750,7 +1752,7 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
             const auto drive=elementHighFieldDrive(*config,mesh,cid,*psi,carrier==CarrierType::Electron?populations->phin:populations->phip);
             mu=evaluateElementCanali(mu,drive.field,carrier==CarrierType::Electron?config->electronField:config->holeField,100./config->internalFieldToVPerM).mobility;
         }
-        sum+=(long double)measures[k]*mu;volume+=measures[k];
+        sum+=(vela::ArithmeticReal)measures[k]*mu;volume+=measures[k];
     }
     if(!(volume>0)) throw std::invalid_argument("Element box mobility requires positive sum of vertex measures.");
     return static_cast<Real>(sum/volume);
@@ -1765,13 +1767,13 @@ inline Real elementBoxEdgeMobility(const std::vector<std::vector<Index>>& edgeCe
         (config.edgeAveraging=="element_box" && (config.model=="constant" || config.model=="masetti"));
     if (!supported || config.dopingConcentrationBasis!="total_impurity")
         throw std::invalid_argument("Unsupported element box mobility model or doping basis.");
-    long double weighted=0,geometry=0;
+    vela::ArithmeticReal weighted=0,geometry=0;
     for(Index cid:edgeCells.at(edgeId)) {
         const auto& material=cellMaterials.at(cid);
         if(material.ni<=0 && material.mun<=0 && material.mup<=0) continue;
         const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
         if(g==0) continue;
-        weighted+=(long double)g*elementBoxCellMobility(mesh,doping,mobility,material,cid,carrier,&config,populations,psi);geometry+=g;
+        weighted+=(vela::ArithmeticReal)g*elementBoxCellMobility(mesh,doping,mobility,material,cid,carrier,&config,populations,psi);geometry+=g;
     }
     return geometry>0?static_cast<Real>(weighted/geometry):0.;
 }
@@ -1789,7 +1791,7 @@ inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
     const DopingModel& doping,const std::vector<Material>& materials,Index edgeId,
     CarrierType carrier,const MobilityModelConfig& config,const VectorXd& n,const VectorXd& p,const VectorXd* psi=nullptr,const VectorXd* phin=nullptr,const VectorXd* phip=nullptr)
 {
-    long double geometry=0;
+    vela::ArithmeticReal geometry=0;
     for(Index cid:edgeCells.at(edgeId)) {
         const auto& mat=materials.at(cid);
         if(mat.ni<=0 && mat.mun<=0 && mat.mup<=0) continue;
@@ -1805,14 +1807,14 @@ inline std::vector<ElementBoxPhuMobDerivative> elementBoxPhuMobDerivatives(
         const Real g=cellBoxEdgeCoefficient(mesh,cid,edgeId);
         if(g==0) continue;
         const auto measures=cellBoxNodeMeasures(mesh,cid);
-        const long double volume=(long double)measures[0]+measures[1]+measures[2];
+        const vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];
         if(!(volume>0)) throw std::invalid_argument("PhuMob cell volume must be positive.");
         for(std::size_t k=0;k<3;++k) {
             const Index node=mesh.getCell(cid).node_ids[k];
             auto derivative=evaluatePhuMobLogDensityDerivatives(carrier,
                 {doping.donors(node),doping.acceptors(node),n(node),p(node),
                  mat.temperature_K.value_or(300.0)},config.phuMob);
-            const long double weight=(long double)g*measures[k]/volume/geometry;
+            const vela::ArithmeticReal weight=(vela::ArithmeticReal)g*measures[k]/volume/geometry;
             if(usesElementDistanceLombardi(config)) {
                 if(!psi)throw std::invalid_argument("Element Lombardi Jacobian requires live potential");
                 const auto& cell=mesh.getCell(cid);const Real field=liveSurfaceNormalFieldForCell(config,mesh,*psi,cid);
@@ -2187,16 +2189,10 @@ inline Real angleBetween(const Point2& a, const Point2& b)
     return std::acos(cosTheta);
 }
 
-inline Real geniusTri3TruncatedPartialVolumeWithEdge(
+inline std::array<Real, 3> geniusTri3TruncatedPartialVolumes(
     const DeviceMesh& mesh,
-    const Cell&       cell,
-    Index             edgeNode0,
-    Index             edgeNode1)
+    const Cell&       cell)
 {
-    const int localEdge = tri3LocalEdgeIndex(cell, edgeNode0, edgeNode1);
-    if (localEdge < 0)
-        return 0.0;
-
     const std::array<Index, 3> ids = {
         cell.node_ids[0], cell.node_ids[1], cell.node_ids[2]};
     const std::array<Point2, 3> p = {
@@ -2207,7 +2203,7 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         64.0 * std::numeric_limits<Real>::epsilon() * lengthScale;
     const Real det = triangleSignedDoubleArea(p[0], p[1], p[2]);
     if (std::abs(det) <= 1.0e-300)
-        return 0.0;
+        return {};
 
     const Real a2 = p[0].squaredNorm();
     const Real b2 = p[1].squaredNorm();
@@ -2270,8 +2266,22 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         }
     }
 
-    return 0.5 * lengths[static_cast<std::size_t>(localEdge)] *
-           std::max(0.0, dt[static_cast<std::size_t>(localEdge)]);
+    std::array<Real, 3> volumes{};
+    for (std::size_t i = 0; i < volumes.size(); ++i)
+        volumes[i] = 0.5 * lengths[i] * std::max(0.0, dt[i]);
+    return volumes;
+}
+
+inline Real geniusTri3TruncatedPartialVolumeWithEdge(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    Index             edgeNode0,
+    Index             edgeNode1)
+{
+    const int localEdge = tri3LocalEdgeIndex(cell, edgeNode0, edgeNode1);
+    if (localEdge < 0)
+        return 0.0;
+    return geniusTri3TruncatedPartialVolumes(mesh, cell)[static_cast<std::size_t>(localEdge)];
 }
 
 inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
@@ -2282,16 +2292,7 @@ inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
         throw std::invalid_argument(
             "element-edge GSS/Laux reconstruction requires a Tri3 cell");
     }
-    std::array<Real, 3> partialVolumes{};
-    for (int localEdge = 0; localEdge < 3; ++localEdge) {
-        const Index node0 =
-            cell.node_ids[static_cast<std::size_t>(localEdge)];
-        const Index node1 =
-            cell.node_ids[static_cast<std::size_t>((localEdge + 1) % 3)];
-        partialVolumes[static_cast<std::size_t>(localEdge)] =
-            geniusTri3TruncatedPartialVolumeWithEdge(
-                mesh, cell, node0, node1);
-    }
+    auto partialVolumes = geniusTri3TruncatedPartialVolumes(mesh, cell);
     const Real exactArea = 0.5 * std::abs(triangleSignedDoubleArea(
         meshPoint(mesh, cell.node_ids[0]),
         meshPoint(mesh, cell.node_ids[1]),
@@ -2310,11 +2311,8 @@ inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
 }
 
 inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
-    const DeviceMesh& mesh,
-    const Cell&       cell)
+    const std::array<Real, 3>& edgePartialVolumes)
 {
-    const auto edgePartialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
     std::array<Real, 3> vertexMeasures{};
     for (int localEdge = 0; localEdge < 3; ++localEdge) {
         const Real halfMeasure =
@@ -2324,6 +2322,13 @@ inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
             halfMeasure;
     }
     return vertexMeasures;
+}
+
+inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
+    const DeviceMesh& mesh,
+    const Cell&       cell)
+{
+    return tri3ElementVertexBoxMeasures(tri3ElementEdgeBoxPartialVolumes(mesh, cell));
 }
 
 inline Point2 solveTri3EdgeProjectionPair(
@@ -2346,7 +2351,8 @@ inline Point2 solveTri3EdgeProjectionPair(
 inline Point2 gssLauxTri3CurrentVector(
     const DeviceMesh&          mesh,
     const Cell&                cell,
-    const std::array<Real, 3>& signedEdgeCurrent)
+    const std::array<Real, 3>& signedEdgeCurrent,
+    const std::array<Real, 3>& partialVolumes)
 {
     if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
         throw std::invalid_argument(
@@ -2389,8 +2395,6 @@ inline Point2 gssLauxTri3CurrentVector(
         return low == 0 ? high - 1 : 2;
     };
 
-    const auto partialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
     std::array<Point2, 3> edgeVectors{};
     for (int target = 0; target < 3; ++target) {
         std::array<int, 2> others{};
@@ -2432,6 +2436,15 @@ inline Point2 gssLauxTri3CurrentVector(
         partialVolumes[0] * edgeVectors[0] +
         partialVolumes[1] * edgeVectors[1] +
         partialVolumes[2] * edgeVectors[2]) / totalVolume;
+}
+
+inline Point2 gssLauxTri3CurrentVector(
+    const DeviceMesh&          mesh,
+    const Cell&                cell,
+    const std::array<Real, 3>& signedEdgeCurrent)
+{
+    return gssLauxTri3CurrentVector(
+        mesh, cell, signedEdgeCurrent, tri3ElementEdgeBoxPartialVolumes(mesh, cell));
 }
 
 inline Real geniusTruncatedEdgeSourceVolume(
@@ -3445,10 +3458,10 @@ inline Point2 cellReferencedScalarGradient(
     const Index anchor = cell.node_ids.front();
     return cellScalarGradient(mesh, cell, [&](Index node) {
         return static_cast<Real>(
-            (static_cast<long double>(referenceAt(node)) -
-             static_cast<long double>(referenceAt(anchor))) +
-            (static_cast<long double>(incrementAt(node)) -
-             static_cast<long double>(incrementAt(anchor))));
+            (static_cast<vela::ArithmeticReal>(referenceAt(node)) -
+             static_cast<vela::ArithmeticReal>(referenceAt(anchor))) +
+            (static_cast<vela::ArithmeticReal>(incrementAt(node)) -
+             static_cast<vela::ArithmeticReal>(incrementAt(anchor))));
     }, valid, area);
 }
 
@@ -5486,18 +5499,18 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                 std::abs(record.electronSgProductionSignedFluxNative),
                 record.electronSgFluxDecomposition.highPrecisionReferenceTermScale,
                 Real{1.0e-300}});
-            const long double referenceScaleLong =
-                static_cast<long double>(referenceScale);
-            const long double referenceFluxLong = static_cast<long double>(
+            const vela::ArithmeticReal referenceScaleLong =
+                static_cast<vela::ArithmeticReal>(referenceScale);
+            const vela::ArithmeticReal referenceFluxLong = static_cast<vela::ArithmeticReal>(
                 record.electronSgFluxDecomposition.highPrecisionReferenceFlux);
             record.electronSgProductionVsReferenceRelativeError =
                 static_cast<Real>(std::abs(
-                    static_cast<long double>(
+                    static_cast<vela::ArithmeticReal>(
                         record.electronSgProductionSignedFluxNative)
                     - referenceFluxLong) / referenceScaleLong);
             record.electronSgStableVsReferenceRelativeError =
                 static_cast<Real>(std::abs(
-                    static_cast<long double>(
+                    static_cast<vela::ArithmeticReal>(
                         record.electronSgFluxDecomposition.stableFactorizedFlux)
                     - referenceFluxLong) / referenceScaleLong);
         } else if (collectElectronSgDiagnostics) {

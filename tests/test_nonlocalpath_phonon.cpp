@@ -382,7 +382,7 @@ TEST_CASE("Airy spectral reference has positive integral and an independent deri
     long double previous=1;
     for(long double y:{8.L,16.L,32.L}) {
         const long double asym=exp(-4*pow(y,1.5L)/3)/(8*acos(-1.L)*y);
-        const long double error=abs(asym/spectrum(y)-1);
+        const long double error=std::abs(asym/spectrum(y)-1);
         REQUIRE(error<previous);previous=error;
         REQUIRE(error<.1L);
     }

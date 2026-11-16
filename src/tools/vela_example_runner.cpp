@@ -7,6 +7,7 @@
 #include "vela/io/StateIdentity.h"
 #endif
 #include "vela/io/MeshReader.h"
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
@@ -55,6 +56,17 @@ void usage(const char* argv0)
               << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n"
               << "       " << argv0 << " --dc-worker-linear-reuse  (alias; reuse is enabled by default)\n"
               << "       " << argv0 << " --dc-worker-no-linear-reuse  (disable cross-request analysis cache)\n";
+}
+
+void validateArithmeticPrecision(const nlohmann::json& cfg)
+{
+    const auto name = cfg.contains("solver")
+        ? cfg.at("solver").value("arithmetic_precision", std::string("double"))
+        : std::string("double");
+    if (vela::arithmeticPrecisionFromString(name) != vela::compiledArithmeticPrecision)
+        throw std::invalid_argument("solver.arithmetic_precision=" + name +
+            (name == "extended80" ? " requires vela_example_runner_extended80"
+                                  : " requires vela_example_runner"));
 }
 
 struct RuntimeLogOverrideGuard {
@@ -4584,6 +4596,7 @@ int runDCWorker(bool reuseLinearAnalysis = true)
             std::ifstream input(path);
             if (!input) throw std::runtime_error("Cannot open worker config: " + path);
             auto cfg = vela::canonicalizeDeck(nlohmann::json::parse(input));
+            validateArithmeticPrecision(cfg);
             if (cfg.value("simulation_type", std::string("dc_sweep")) != "dc_sweep")
                 throw std::invalid_argument("--dc-worker accepts only dc_sweep configs");
             if (request.contains("initial_state_vds_hex"))
@@ -4670,6 +4683,7 @@ int main(int argc, char** argv)
         nlohmann::json cfg;
         ifs >> cfg;
         cfg = vela::canonicalizeDeck(cfg);
+        validateArithmeticPrecision(cfg);
         const std::string type = cfg.value("simulation_type", cfg.contains("sweep") ? "dc_sweep" : "poisson");
         std::optional<vela::RuntimeLogSession> runnerLogSession;
         if (type != "dc_sweep" && type != "poisson")
@@ -4677,6 +4691,7 @@ int main(int argc, char** argv)
 
         nlohmann::json status;
         status["config"] = configFile;
+        status["arithmetic_precision"] = vela::arithmeticPrecisionName(vela::compiledArithmeticPrecision);
         status["simulation_type"] = type;
         status["converged"] = true;
 

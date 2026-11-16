@@ -11,19 +11,25 @@ on:
         options:
           - all
           - pn2d
+          - bvmethods
         default: pn2d
 
 jobs:
   build-and-test:
-    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all'
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    timeout-minutes: 120
     permissions:
       contents: read
     env:
       OMP_NUM_THREADS: '1'
       OPENBLAS_NUM_THREADS: '1'
       VELA_LINEAR_THREADS: '1'
+      PYTHONUTF8: '1'
+      VELA_MKL_VERSION: '2026.1.0'
+      MKL_THREADING_LAYER: SEQUENTIAL
+      MKL_NUM_THREADS: '1'
+      P6_ARCHIVE: vela-sde-ubuntu26.04.tar.gz
+      REQUESTED_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'all' }}
 
     steps:
       - name: Checkout repository
@@ -71,8 +77,13 @@ jobs:
           /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; jsonschema.Draft202012Validator({'type': 'object'}).validate({}); print(h5py.version.info)"
           patchelf --version
 
+      - name: Cache pinned Gmsh wheel
+        uses: actions/cache@v4
+        with:
+          path: build/gmsh-inputs
+          key: sde-gmsh-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_external_runtimes.json') }}
+
       - name: Install pinned Gmsh Python API runtime
-        # Share configs/sde_external_runtimes.json with the SDE qualification job.
         run: |
           /usr/bin/python3 scripts/prepare_sde_external_gmsh.py \
             --assets build/gmsh-inputs --runtime build/external-gmsh
@@ -93,149 +104,145 @@ jobs:
             build/gmsh-probe/fail_report.json
           if-no-files-found: error
 
-      - name: Configure debug build
-        # This job has no MKL runtime; keep PARDISO and optional OpenMP backends disabled.
+      - name: Cache Intel oneMKL runtime
+        if: env.REQUESTED_SUITE != 'pn2d'
+        id: mkl-cache
+        uses: actions/cache@v4
+        with:
+          path: .ci-onemkl
+          key: onemkl-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.VELA_MKL_VERSION }}
+
+      - name: Install Intel oneMKL runtime on cache miss
+        if: env.REQUESTED_SUITE != 'pn2d' && steps.mkl-cache.outputs.cache-hit != 'true'
+        run: |
+          /usr/bin/python3 -m venv "$RUNNER_TEMP/mkl-venv"
+          "$RUNNER_TEMP/mkl-venv/bin/python" -m pip install --only-binary=:all: \
+            --prefix "$PWD/.ci-onemkl" "mkl==$VELA_MKL_VERSION"
+
+      - name: Expose Intel oneMKL runtime
+        if: env.REQUESTED_SUITE != 'pn2d'
+        run: |
+          runtime="$(realpath .ci-onemkl/lib/libmkl_rt.so.3)"
+          test -s "$runtime"
+          test -s "$(dirname "$runtime")/libmkl_sequential.so.3"
+          printf 'VELA_MKL_RT_LIBRARY=%s\n' "$runtime" >> "$GITHUB_ENV"
+          printf 'LD_LIBRARY_PATH=%s\n' "$(dirname "$runtime")${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
+      - name: Cache pinned Eigen and HighFive sources
+        id: cmake-source-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps/vela_eigen-src
+            build/_deps/highfive-src
+          key: cmake-sources-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Configure Release build
+        env:
+          CMAKE_SOURCE_CACHE_HIT: ${{ steps.cmake-source-cache.outputs.cache-hit }}
         run: |
           set -euo pipefail
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+          sources=()
+          if [[ "$CMAKE_SOURCE_CACHE_HIT" == 'true' ]]; then
+            if [[ -f build/_deps/vela_eigen-src/Eigen/Version ]]; then
+              sources+=("-DFETCHCONTENT_SOURCE_DIR_VELA_EIGEN=$PWD/build/_deps/vela_eigen-src")
+            fi
+            if [[ -f build/_deps/highfive-src/CMakeLists.txt ]]; then
+              sources+=("-DFETCHCONTENT_SOURCE_DIR_HIGHFIVE=$PWD/build/_deps/highfive-src")
+            fi
+          fi
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DPython3_EXECUTABLE=/usr/bin/python3 \
+            -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 -DVELA_ENABLE_PN2D_CI=ON \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
-            -DVELA_ENABLE_MKL_PARDISO=OFF \
+            -DVELA_ENABLE_BVMETHODS_CI=ON \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
-            -DVELA_ENABLE_STRUMPACK=OFF | tee configure.log
+            -DVELA_ENABLE_STRUMPACK=OFF "${sources[@]}" | tee configure.log
           grep -F 'SuiteSparse UMFPACK bordered solver enabled' configure.log
           grep -F 'SuiteSparse SPQR bordered solver enabled' configure.log
           grep -F 'METIS ordering enabled' configure.log
           grep -F 'Eigen headers:' configure.log
           grep -F 'Boost headers and PFR:' configure.log
-          grep -F 'oneMKL PARDISO runtime backend disabled' configure.log
+          grep -F 'oneMKL PARDISO runtime backend enabled' configure.log
           grep -F 'VELA_BOOST_PFR_HEADERS_WORK - Success' configure.log
 
       - name: Build
-        run: cmake --build build --parallel
+        id: build
+        run: |
+          args=(--build build --parallel 2)
+          if [[ "$REQUESTED_SUITE" == pn2d ]]; then
+            args+=(--target sd-sim vela_example_runner)
+          elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
+            args+=(--target sd-sim vela_example_runner test_mkl_pardiso)
+          fi
+          cmake "${args[@]}"
 
-      - name: Run test suite
-        run: ctest --test-dir build --output-on-failure
+      - name: Cache locked SDE offline inputs
+        if: env.REQUESTED_SUITE == 'all'
+        uses: actions/cache@v4
+        with:
+          path: build/p6-assets
+          key: sde-offline-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_offline_inputs.json') }}
 
-  sde-modeling:
-    if: github.event_name != 'workflow_dispatch' || inputs.suite == 'all'
-    name: SDE modeling qualification
-    runs-on: ubuntu-26.04
-    timeout-minutes: 60
-    permissions:
-      contents: read
-    defaults:
-      run:
-        shell: bash
-    env:
-      OMP_NUM_THREADS: '1'
-      OPENBLAS_NUM_THREADS: '1'
-      VELA_LINEAR_THREADS: '1'
-      PYTHONUTF8: '1'
-      P6_PYTHON: /usr/bin/python3
-      P6_BUILD: build-p6
-      P6_ARCHIVE: vela-sde-ubuntu26.04.tar.gz
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Ubuntu build tools
+      - name: Assemble and relocate the offline SDE package
+        if: env.REQUESTED_SUITE == 'all'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ pkg-config \
-            libboost-dev libeigen3-dev libspdlog-dev nlohmann-json3-dev catch2 \
-            libhdf5-dev libsuitesparse-dev libmetis-dev libglu1-mesa patchelf \
-            python3-venv python3-jsonschema python3-numpy python3-h5py python3-pil
-          cmake -S . -B build-p6 -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DPython3_EXECUTABLE=/usr/bin/python3 -DVELA_ENABLE_MKL_PARDISO=OFF \
-            -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF -DVELA_ENABLE_STRUMPACK=OFF
-      - name: Build runtime programs independently
-        run: cmake --build "$P6_BUILD" --target sd-sim vela vela_example_runner sentaurus_import --parallel 2
-      - name: Fetch hash-locked offline build inputs
-        run: '"$P6_PYTHON" scripts/prepare_sde_offline_assets.py --assets "$P6_BUILD/p6-assets"'
-      - name: Prepare separately supplied Gmsh runtime
-        run: '"$P6_PYTHON" scripts/prepare_sde_external_gmsh.py --assets "$P6_BUILD/gmsh-inputs" --runtime "$P6_BUILD/external-gmsh"'
-      - name: Assemble package without network access
-        run: '"$P6_PYTHON" scripts/package_sde_modeling.py --assets "$P6_BUILD/p6-assets" --output "$P6_BUILD/packages/$P6_ARCHIVE"'
-      - name: Relocate extracted package
+          set -euo pipefail
+          /usr/bin/python3 scripts/prepare_sde_offline_assets.py --assets build/p6-assets
+          /usr/bin/python3 scripts/package_sde_modeling.py --assets build/p6-assets --output "build/packages/$P6_ARCHIVE"
+          relocated="$PWD/build/relocated tools"
+          mkdir -p "$relocated"
+          /usr/bin/python3 -m tarfile -e "build/packages/$P6_ARCHIVE" "$relocated" --filter data
+          {
+            printf 'VELA_P6_PACKAGE=%s\n' "$relocated/vela-sde"
+            printf 'VELA_REFERENCE_SDE_TEST_OUTPUT=%s\n' "$PWD/build/baseline-corpus"
+          } >> "$GITHUB_ENV"
+
+      - name: Qualify the relocated SDE package on eight sources twice
+        if: env.REQUESTED_SUITE == 'all'
         run: |
-          "$P6_PYTHON" -c 'import os,tarfile,zipfile,pathlib; b=pathlib.Path(os.environ["P6_BUILD"]); p=b/"packages"/os.environ["P6_ARCHIVE"]; d=b/"relocated tools"; d.mkdir(); (zipfile.ZipFile(p).extractall(d) if p.suffix==".zip" else tarfile.open(p).extractall(d,filter="data"))'
-          "$P6_PYTHON" -c 'import os,pathlib; f=pathlib.Path(os.environ["GITHUB_ENV"]); b=pathlib.Path(os.environ["P6_BUILD"]); f.open("a").write("VELA_P6_PACKAGE="+str((b/"relocated tools/vela-sde").resolve())+"\nVELA_REFERENCE_SDE_TEST_OUTPUT="+str((b/"baseline-corpus").resolve())+"\n")'
-      - name: Eight sources twice in the isolated package
-        run: |
-          "$P6_PYTHON" scripts/qualify_sde_package.py --package-root "$VELA_P6_PACKAGE" \
-            --output-dir "$P6_BUILD/package-corpus" --gmsh-python "$VELA_GMSH_PYTHON" \
+          /usr/bin/python3 scripts/qualify_sde_package.py --package-root "$VELA_P6_PACKAGE" \
+            --output-dir build/package-corpus --gmsh-python "$VELA_GMSH_PYTHON" \
             --gmsh-library "$VELA_GMSH_LIBRARY" --gmsh-executable "$VELA_GMSH_EXECUTABLE"
-      - name: Required modeling and package regressions
+
+      - name: Run CTest
+        if: success() || (failure() && steps.build.outcome == 'success')
         run: |
-          ctest --test-dir "$P6_BUILD" --output-on-failure --no-tests=error --parallel 2 \
-            -R '^(sde_p6_package|sde_p6_validation|sde_integral_control|sde_sdevice_checks|reference_sde_cases|sentaurus_sde_frontend|sentaurus_ir_v2_contract|sentaurus_mesh_builder|sentaurus_device_e2e_contract|sentaurus_gmsh_m[1-5]|sdevice_mesh_import|sdevice_vela_launcher|gmsh_python_runtime|pn2d_config_templates)$'
-      - name: Retain package and structured qualification only
-        if: always()
+          args=(--test-dir build --output-on-failure --no-tests=error --parallel 4
+                --output-junit "$PWD/build/ctest.xml")
+          if [[ "$REQUESTED_SUITE" == pn2d ]]; then
+            args+=(-L '^pn2d-ci$')
+          elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
+            build/test_mkl_pardiso '[mkl_runtime]'
+            args+=(-L '^bvmethods-ci$')
+          fi
+          ctest "${args[@]}"
+
+      - name: Retain SDE package and structured qualification
+        if: always() && env.REQUESTED_SUITE == 'all'
         uses: actions/upload-artifact@v4
         with:
           name: sde-qualification-ubuntu26.04
           path: |
-            ${{ env.P6_BUILD }}/packages/*
-            ${{ env.P6_BUILD }}/package-corpus/qualification.json
-            ${{ env.P6_BUILD }}/package-corpus/**/fail_report.json
-            ${{ env.P6_BUILD }}/baseline-corpus/case_summary.json
+            build/packages/*
+            build/package-corpus/qualification.json
+            build/package-corpus/**/fail_report.json
+            build/baseline-corpus/case_summary.json
           if-no-files-found: warn
           retention-days: 14
 
-  pn2d:
-    name: PN2D Release regression
-    runs-on: ubuntu-26.04
-    timeout-minutes: 120
-    permissions:
-      contents: read
-    env:
-      OMP_NUM_THREADS: '1'
-      OPENBLAS_NUM_THREADS: '1'
-      VELA_LINEAR_THREADS: '1'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up GCC
-        uses: egor-tensin/setup-gcc@v2
-        with:
-          version: 16
-          platform: x64
-
-      - name: Install build and modeling dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ pkg-config \
-            libboost-dev libeigen3-dev libspdlog-dev nlohmann-json3-dev catch2 \
-            libhdf5-dev libsuitesparse-dev libmetis-dev libglu1-mesa \
-            python3-venv python3-jsonschema python3-numpy python3-h5py python3-pil
-
-      - name: Prepare pinned Gmsh runtime
-        run: |
-          /usr/bin/python3 scripts/prepare_sde_external_gmsh.py \
-            --assets build-pn2d/gmsh-inputs --runtime build-pn2d/external-gmsh
-
-      - name: Build PN2D Release executables
-        run: |
-          cmake -S . -B build-pn2d -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DPython3_EXECUTABLE=/usr/bin/python3 \
-            -DVELA_PHYSICAL_CONSTANTS_PROFILE=codata2018 -DVELA_ENABLE_PN2D_CI=ON \
-            -DVELA_ENABLE_MKL_PARDISO=OFF -DVELA_ENABLE_MUMPS=OFF \
-            -DVELA_ENABLE_SUPERLU_MT=OFF -DVELA_ENABLE_STRUMPACK=OFF
-          cmake --build build-pn2d --target sd-sim vela_example_runner --parallel 2
-
-      - name: Run PN2D modeling and numerical regressions
-        run: |
-          ctest --test-dir build-pn2d --output-on-failure --no-tests=error \
-            --parallel 4 -L '^pn2d-ci$'
-
-      - name: Upload PN2D reports
+      - name: Upload CTest regression reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pn2d-release-regression
+          name: release-regression
           path: |
-            build-pn2d/pn2d-reports/*.json
-            build-pn2d/pn2d-reports/*.log
-            build-pn2d/Testing/Temporary/LastTest.log
+            build/ctest.xml
+            build/pn2d-reports/*.json
+            build/pn2d-reports/*.log
+            build/bvmethods-reports/*.json
+            build/bvmethods-reports/*.log
+            build/Testing/Temporary/LastTest.log
           if-no-files-found: warn
           retention-days: 14

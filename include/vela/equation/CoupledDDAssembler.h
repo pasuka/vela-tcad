@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 #include "vela/equation/ChargeSpec.h"
 #include "vela/equation/DDAssembler.h"
@@ -688,6 +689,8 @@ private:
         Real holeLogNiNv0 = 0.0;
         Real holeLogNiNv1 = 0.0;
         Real holeDriftOffset = 0.0;
+        vela::ArithmeticReal populationIntrinsicLogRatio = VELA_ARITHMETIC_LITERAL(0.0);
+        double populationIntrinsicLogRatioTail = 0.;
         bool activeTransport = false;
         std::array<Index, maxEdgeAvalancheStencilNodes> avalancheStencilNodes{};
         std::uint8_t avalancheStencilNodeCount = 0;

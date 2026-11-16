@@ -51,6 +51,8 @@ class OutputPublisher:
         self.published = set()
         self.last_vtu = None
         self.last_signature = None
+        self.last_csv_key = None
+        self.last_records = []
         self.stage_rows = []
         self.accepted_index = 0
         # Explicit FilePrefix/Time names are reserved across the entire plan.
@@ -66,7 +68,24 @@ class OutputPublisher:
 
     def update(self, index, *, final=False):
         stage = self.result.stage_plan["stages"][index]
-        records = accepted_records(self.work / stage["csv"])
+        path = self.work / stage["csv"]
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            key = (index, None)
+        else:
+            key = (index, stat.st_dev, stat.st_ino, stat.st_size,
+                   stat.st_mtime_ns, stat.st_ctime_ns)
+        # An append during publication changes the next poll's key. Always
+        # re-read the finished CSV when committing the stage.
+        if final or key != self.last_csv_key:
+            records = self._publish_current(index, stage, path, final=final)
+            self.last_csv_key, self.last_records = key, records
+        self._publish_fields(index, stage, final=final)
+        return self.last_records
+
+    def _publish_current(self, index, stage, csv_path, *, final):
+        records = accepted_records(csv_path)
         if records:
             # Give WP8 a stable snapshot of complete rows. Reading the live
             # CSV twice can expose a row the runner is still writing.
@@ -104,6 +123,9 @@ class OutputPublisher:
                 self.last_signature = signature
             if final:
                 self.completed_rows[stage["current_file"]] = prior + selected
+        return records
+
+    def _publish_fields(self, index, stage, *, final):
         for source in sorted(self.work.glob(f"stage{index:02d}_*.vtu")):
             if str(source) in self.published:
                 continue
@@ -151,4 +173,3 @@ class OutputPublisher:
                 target = self._path(name)
                 shutil.copyfile(self.last_vtu, target)
                 self.outputs.add(str(target))
-        return records

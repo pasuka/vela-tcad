@@ -432,11 +432,13 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         except (sv.SchemaError, sv.ValidationError) as error:
             raise DeckEmitError("E409", file="sidecar", detail=str(error)) from error
         protected = {"tau_n_s", "tau_p_s", "auger_cn_cm6_per_s", "auger_cp_cm6_per_s",
-                     "srh_doping_dependence", "hole_quantum_potential"}
+                     "srh_doping_dependence", "hole_quantum_potential", "arithmetic_precision"}
         if protected.intersection(sidecar.get("solver", {})):
-            raise DeckEmitError("E409", file="sidecar", detail="physical parameters belong to the cmd/par")
+            raise DeckEmitError("E409", file="sidecar", detail="physical parameters and arithmetic precision belong to the cmd/par")
     decisions = []
     solver = _physics(ir, report, decisions)
+    if "arithmetic_precision" in ir["math"]:
+        solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
     contacts, electrodes = _contacts(ir, mesh, report, decisions)
     if mesh["angles"]["obtuse_element_count"]:
         _decision(decisions, "mesh.angles", mesh["angles"], "mesh_geometry.node_volume_policy",

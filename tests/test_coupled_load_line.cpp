@@ -1,11 +1,13 @@
 #include "vela/simulation/CarrierReducedLoadLine.h"
 #include "vela/simulation/CommonRelativeLinearSolve.h"
 #include "vela/numerics/WeightedSparseRows.h"
+#include "vela/core/PerformanceProfiler.h"
 #include "vela/simulation/CoupledLoadLine.h"
 #include "vela/solver/PopulationState.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace vela;
 
@@ -231,6 +233,64 @@ TEST_CASE("resistor analytic diode audits raw and representable applied directio
     const auto schur=CoupledLoadLineNewton(device,port.value,cfg,port).solve(seed,targetOuter,resistance);
     REQUIRE(schur.converged);
     REQUIRE(schur.state.lambda==Catch::Approx(report.state.lambda).margin(1e-11));
+}
+
+TEST_CASE("Fixed voltage is eliminated exactly from the bordered Newton system",
+          "[coupled_load_line][resistor_contract]")
+{
+    ArclengthSystem device;
+    device.residual = [](const VectorXd& x, Real voltage) {
+        VectorXd f(2);
+        f << x(0) + x(1) - voltage - 1., x(0) + 2. * x(1) - 3.;
+        return f;
+    };
+    device.jacobian = [](const VectorXd&, Real) {
+        SparseMatrixd j(2, 2);
+        j.insert(0, 0) = 1.;
+        j.insert(1, 0) = 1.;
+        j.insert(0, 1) = 1.;
+        j.insert(1, 1) = 2.;
+        return j;
+    };
+    device.parameterDerivative = [](const VectorXd&, Real) {
+        VectorXd direction(2);
+        direction << -1., 0.;
+        return direction;
+    };
+    device.solveJacobian = [](const VectorXd&, Real, const VectorXd& b, VectorXd& x) {
+        x.resize(2);
+        x << 2. * b(0) - b(1), b(1) - b(0);
+        return true;
+    };
+    device.prescribedRows = [](const VectorXd&, Real) { return std::vector<int>{}; };
+    ArclengthScalarFunctional port;
+    port.value = [](const VectorXd&, Real) { return 0.; };
+    port.linearize = [](const VectorXd& x, Real) {
+        ArclengthScalarLinearization result;
+        result.stateDerivative = VectorXd::Zero(x.size());
+        return result;
+    };
+    CoupledLoadLineConfig config;
+    config.linearSolver = "direct_bordered";
+    config.directRefinementSteps = 1;
+    constexpr Real target = .5;
+    for (const Real initialVoltage : {target, .25}) {
+        CAPTURE(initialVoltage);
+        PerformanceProfiler profiler({true, "unused.json"});
+        ActivePerformanceProfilerScope active(&profiler);
+        const auto result = CoupledLoadLineNewton(device, port.value, config, port)
+            .solve({VectorXd::Zero(2), initialVoltage}, target, 1.);
+        INFO(result.failureReason);
+        REQUIRE(result.converged);
+        REQUIRE(result.state.lambda == target);
+        REQUIRE(result.state.x(0) == Catch::Approx(0.).margin(1e-12));
+        REQUIRE(result.state.x(1) == Catch::Approx(1.5).margin(1e-12));
+        const auto observations = profiler.toJson().at("observations");
+        REQUIRE(observations.contains("linear.reduced_rows"));
+        const auto& rows = observations.at("linear.reduced_rows");
+        REQUIRE(rows.at("min") == 2.);
+        REQUIRE(rows.at("max") == 2.);
+    }
 }
 
 namespace {

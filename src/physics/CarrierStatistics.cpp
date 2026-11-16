@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/experimental/JoyceDixonStatistics.h"
 #include "vela/core/PhysicsCallCounters.h"
@@ -470,7 +471,7 @@ GeneralizedSrhCarrierState generalizedSrhCarrierState(
     state.normalizedSplitting=quasiFermiSplitting_V/Vt;
     state.equilibriumProduct=state.electronDegeneracy*state.holeDegeneracy*ni*ni;
     if(!std::isfinite(state.equilibriumProduct) || state.equilibriumProduct==0.)
-        state.equilibriumProduct=static_cast<Real>(std::exp((long double)state.logEquilibriumProduct));
+        state.equilibriumProduct=static_cast<Real>(std::exp((vela::ArithmeticReal)state.logEquilibriumProduct));
     const Real split=state.normalizedSplitting;
     // Keep the accurate expm1 path near equilibrium. Outside that range,
     // combine logs before exponentiation instead of clipping independent factors.
@@ -479,8 +480,8 @@ GeneralizedSrhCarrierState generalizedSrhCarrierState(
         state.excessProduct=state.equilibriumProduct*std::expm1(split);
     else if(ni==0. || split==0.)state.excessProduct=0.;
     else {
-        const long double magnitude=std::exp((long double)state.logEquilibriumProduct+
-            (split>0.?split:0.))*-std::expm1(-std::abs((long double)split));
+        const vela::ArithmeticReal magnitude=std::exp((vela::ArithmeticReal)state.logEquilibriumProduct+
+            (split>0.?split:0.))*-std::expm1(-std::abs((vela::ArithmeticReal)split));
         state.excessProduct=std::copysign(static_cast<Real>(magnitude),split);
     }
     return state;
@@ -490,7 +491,7 @@ Real generalizedSrhExcessDirectionalDerivative(
     const GeneralizedSrhCarrierState& state,Real dLogGammaN,
     Real dLogGammaP,Real dNormalizedSplitting)
 {
-    using Wide=long double;
+    using Wide=vela::ArithmeticReal;
     const Wide dLogProduct=Wide(dLogGammaN)+dLogGammaP;
     const auto scaledExp=[](Wide logarithm,Wide direction) {
         if(direction==0.)return Wide(0.);

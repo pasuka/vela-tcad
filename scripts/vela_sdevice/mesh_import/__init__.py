@@ -224,22 +224,27 @@ def _load_dfise(grd_path: Path) -> dict:
         regions.append({"id": region_id, "name": name, "material": map_material(material),
                         "source_material": material, "cell_ids": cell_ids})
 
-    # contact adjacency: the region owning a triangle that contains both edge nodes
-    node_sets = [(set(tri["node_ids"]), tri["region_id"]) for tri in triangles]
+    # Index only boundary vertices. Intersect the incident triangles of each
+    # edge's endpoints instead of scanning every triangle for every edge.
+    incident = {node: set() for boundary in contacts + interfaces
+                for edge in boundary["edge_node_ids"] for node in edge}
+    for tri in triangles:
+        for node in tri["node_ids"]:
+            if node in incident:
+                incident[node].add(tri["id"])
     for contact in contacts:
-        for pair in contact["edge_node_ids"]:
-            pair_set = set(pair)
-            for nodes, region_id in node_sets:
-                if pair_set <= nodes:
-                    contact["adjacent_regions"].add(region_id)
-                    break
+        for a, b in contact["edge_node_ids"]:
+            adjacent_cells = incident[a] & incident[b]
+            if adjacent_cells:
+                # Keep the first owning triangle when a contact is shared.
+                contact["adjacent_regions"].add(triangles[min(adjacent_cells)]["region_id"])
 
     for interface in interfaces:
         boundary_nodes = {node for edge in interface["edge_node_ids"] for node in edge}
         if boundary_nodes != set(interface["node_ids"]) or not boundary_nodes:
             raise MeshImportError("E402", f"interface '{interface['name']}' has points outside its edges")
-        for pair in interface["edge_node_ids"]:
-            adjacent = {region_id for nodes, region_id in node_sets if set(pair) <= nodes}
+        for a, b in interface["edge_node_ids"]:
+            adjacent = {triangles[cell]["region_id"] for cell in incident[a] & incident[b]}
             if len(adjacent) != 2:
                 raise MeshImportError("E402", f"interface '{interface['name']}' must separate two volume regions")
             interface["adjacent_regions"].update(adjacent)

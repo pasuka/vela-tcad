@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "vela/solver/LinearRefinement.h"
 #include "vela/numerics/StableMeritComparison.h"
+#include "vela/numerics/ExactBinary64.h"
 #include "vela/equation/ExtendedPoissonResidual.h"
 #include "vela/numerics/SplitCoordinate.h"
 #include "vela/solver/NewtonSolver.h"
@@ -52,6 +53,19 @@ TEST_CASE("Weak row ledger preserves enforced floor and ignored qualification", 
     REQUIRE(ledger[2].blocksAcceptance);
     REQUIRE(after.blockingViolationCount==1);
     c.mode="off";evaluateCarrierRowConvergence(rows,c,&ledger);REQUIRE(ledger.empty());
+}
+
+TEST_CASE("Exact defect conversion preserves binary64 rounding without promotion", "[linear_refinement][precision_contract]") {
+    using namespace vela::exact_binary64;
+    const double minimum = std::numeric_limits<double>::min();
+    const double maximum = std::numeric_limits<double>::max();
+    for (double value : {0., 1., -1., 0.1, minimum, maximum})
+        REQUIRE(toNormalDouble(fromDouble(value)) == value);
+    REQUIRE(toNormalDouble(fromDouble(std::numeric_limits<double>::denorm_min())) == 0.);
+    const auto halfUlp = fromDouble(0x1p-53);
+    REQUIRE(toNormalDouble(fromDouble(1.) + halfUlp) == 1.);
+    REQUIRE(toNormalDouble(fromDouble(1.) + 3 * halfUlp) == 1. + 0x1p-51);
+    REQUIRE(std::isinf(toNormalDouble(fromDouble(maximum) * 2)));
 }
 
 TEST_CASE("Split coordinates accumulate reversible updates below one ULP") {

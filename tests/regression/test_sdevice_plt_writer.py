@@ -252,6 +252,8 @@ class FilterRowsTest(unittest.TestCase):
         self.assertEqual(plt.filter_rows(rows, "all_accepted_steps"), rows)
         self.assertEqual(plt.filter_rows(rows, [0.0, 0.5 + 5.0e-10, 1.0]), [rows[0], rows[2], rows[4]])
         self.assertEqual(plt.filter_rows(rows, [0.5 + 2.0e-9]), [])
+        self.assertEqual(plt.filter_rows(rows, [1.0, 0.5 - 5.0e-10, 0.0, 0.0]),
+                         [rows[0], rows[2], rows[4]])
         self.assertEqual(plt.filter_rows(rows, []), [])
         with self.assertRaises(ValueError):
             plt.filter_rows(rows, "every_step")

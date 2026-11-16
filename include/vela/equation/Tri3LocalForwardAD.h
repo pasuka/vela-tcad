@@ -1,10 +1,13 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <limits>
+#include <numbers>
 
 namespace vela::detail {
 
@@ -90,19 +93,36 @@ inline Tri3LocalForwardDual dualAbs(const Tri3LocalForwardDual& operand)
 }
 
 // A structural zero stays zero even when exp(x) is outside double range.
-// For nonzero finite directions, combine exponents before narrowing to avoid
-// losing a representable derivative to an intermediate overflow/underflow.
-inline Real dualExponentialDirection(Real x,Real exponential,Real direction)
+inline Real dualExponentialDirection(Real x, Real exponential, Real direction)
 {
-    if(direction==0.)return 0.;
-    const Real ordinary=exponential*direction;
-    if(std::isfinite(ordinary) && ordinary!=0.)return ordinary;
-    if(std::isfinite(x) && std::isfinite(direction)) {
-        const long double magnitude=std::exp((long double)x+
-            std::log(std::abs((long double)direction)));
-        return std::copysign(static_cast<Real>(magnitude),direction);
-    }
-    return ordinary;
+    if (direction == 0.)
+        return 0.;
+    const Real ordinary = exponential * direction;
+    if (exponential >= std::numeric_limits<Real>::min() &&
+        std::isfinite(ordinary) && ordinary != 0.)
+        return ordinary;
+    if (!std::isfinite(x) || !std::isfinite(direction))
+        return ordinary;
+
+    // Outside this bound no nonzero finite double direction can recover a
+    // representable result. It also bounds the exponent passed to ldexp.
+    constexpr Real exponentLimit = 2048.;
+    if (x <= -exponentLimit)
+        return std::copysign(0., direction);
+    if (x >= exponentLimit)
+        return std::copysign(std::numeric_limits<Real>::infinity(), direction);
+
+    // Reduce x by an integer multiple of ln(2). The high part has enough
+    // trailing zero bits for an exact product with expPower in double.
+    constexpr auto ln2High = VELA_ARITHMETIC_LITERAL(0x1.62e42fee00000p-1);
+    constexpr auto ln2Low = VELA_ARITHMETIC_LITERAL(1.908214929270587816144265680755e-10);
+    const auto argument = static_cast<ArithmeticReal>(x);
+    const int expPower = static_cast<int>(argument * std::numbers::log2e_v<ArithmeticReal>);
+    const auto reduced = (argument - expPower * ln2High) - expPower * ln2Low;
+    int directionPower;
+    const auto directionFraction = std::frexp(static_cast<ArithmeticReal>(direction), &directionPower);
+    return static_cast<Real>(std::ldexp(std::exp(reduced) * directionFraction,
+                                       expPower + directionPower));
 }
 
 inline Tri3LocalForwardDual dualExp(const Tri3LocalForwardDual& operand)

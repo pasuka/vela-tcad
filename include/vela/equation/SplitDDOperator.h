@@ -1,11 +1,35 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/numerics/SplitDDState.h"
 #include "vela/physics/ElementLombardi.h"
 #include <map>
 #include <array>
+#include <cmath>
 #include <functional>
 
 namespace vela::split_dd {
+inline Wide fieldSquareRoot(const Wide& squaredField)
+{
+    if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Extended80) {
+        return sqrt(squaredField);
+    } else {
+        if (squaredField == 0) return 0;
+        // The software square root in Boost seeds its integer algorithm with
+        // a native long double. Normalize the field before using a double
+        // seed and finish in the existing software format.
+        int exponent;
+        Wide fraction = frexp(squaredField, &exponent);
+        if (exponent % 2 != 0) {
+            fraction *= 2;
+            --exponent;
+        }
+        Wide root = std::sqrt(static_cast<double>(fraction));
+        for (int iteration = 0; iteration < 4; ++iteration)
+            root = (root + fraction / root) / 2;
+        return ldexp(root, exponent / 2);
+    }
+}
+
 // Qualification operator for the exported plain-PhuMob/Boltzmann/OldSlotboom
 // geometry bundle. All state-dependent quantities consume State::potential;
 // no double projection, cached nodal populations, or frozen mobilities are used.
@@ -153,7 +177,7 @@ public:
                     const auto& s=cell["hfs_stencil"];
                     Wide gx=(z[j]-z[i])*Wide(s[0].get<double>())+(z[k]-z[i])*Wide(s[2].get<double>());
                     Wide gy=(z[j]-z[i])*Wide(s[1].get<double>())+(z[k]-z[i])*Wide(s[3].get<double>());
-                    drive[b]=sqrt(gx*gx+gy*gy);
+                    drive[b]=fieldSquareRoot(gx*gx+gy*gy);
                 }
                 std::array<Wide,2> mu{{0,0}};
                 for(int v=0;v<3;++v) {

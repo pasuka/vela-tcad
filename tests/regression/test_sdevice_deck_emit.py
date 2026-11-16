@@ -119,6 +119,31 @@ class DeckEmitterTests(unittest.TestCase):
         result = emit(ir, options=EmitOptions(pn2d_population=True))
         self.assertEqual(result.decks[-1]["sweep"]["continuation"]["predictor"]["mode"], "none")
 
+    def test_math_extended_precision_is_applied_to_each_solve_stage(self):
+        source = FIXTURES / "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd"
+        text = source.read_text(encoding="utf-8").replace("File {", 'File { Parameter="models.par" ', 1)
+        for setting, expected in (("", "double"), ("-ExtendedPrecision", "double"),
+                                  ("ExtendedPrecision", "extended80"),
+                                  ("eXtEnDeDpReCiSiOn(80)", "extended80")):
+            with self.subTest(setting=setting):
+                ir = parse_cmd_text(text.replace("Math {", f"Math {{\n{setting}", 1),
+                                    path_name=source.name)
+                self.assertTrue(ir["verdict"]["accepted"], ir["errors"])
+                sv.validate(sv.load_schema(REPO / "schemas/vela.sentaurus_execution_ir.v2.schema.json"), ir)
+                self.assertFalse(any("extendedprecision" in item["keyword"].lower()
+                                     for item in ir["math"]["ignored"]))
+                decks = emit(ir).decks
+                self.assertGreater(len(decks), 1)
+                self.assertTrue(all(deck["solver"].get("arithmetic_precision", "double") == expected
+                                    for deck in decks))
+        for setting in ("ExtendedPrecision(128)", "ExtendedPrecision(256)", "ExtendedPrecision()",
+                        "-ExtendedPrecision(80)", "ExtendedPrecision=80", "ExtendedPrecision{80}"):
+            with self.subTest(setting=setting):
+                ir = parse_cmd_text(text.replace("Math {", f"Math {{\n{setting}", 1),
+                                    path_name=source.name)
+                self.assertFalse(ir["verdict"]["accepted"])
+                self.assertIn("ExtendedPrecision", str(ir["errors"]))
+
     def test_old_slotboom_fermi_correction_and_explicit_nofermi(self):
         for fermi in (False, True):
             for nofermi in (False, True):

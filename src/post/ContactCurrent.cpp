@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/core/PhysicalConstants.h"
@@ -27,9 +28,9 @@ Real referencedValueRelativeTo(Real valueReference,
                                Real targetReference)
 {
     return static_cast<Real>(
-        (static_cast<long double>(valueReference) -
-         static_cast<long double>(targetReference)) +
-        static_cast<long double>(valueIncrement));
+        (static_cast<vela::ArithmeticReal>(valueReference) -
+         static_cast<vela::ArithmeticReal>(targetReference)) +
+        static_cast<vela::ArithmeticReal>(valueIncrement));
 }
 
 struct NeumaierSum {
@@ -62,17 +63,17 @@ std::pair<VectorXd, VectorXd> contactQuasiFermi(const DDSolution& solution)
     if (hasReferencedElectronQf) {
         for (int i = 0; i < electronQf.size(); ++i) {
             electronQf(i) = static_cast<Real>(
-                static_cast<long double>(
+                static_cast<vela::ArithmeticReal>(
                     solution.electronQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(solution.phinIncrement(i)));
+                static_cast<vela::ArithmeticReal>(solution.phinIncrement(i)));
         }
     }
     if (hasReferencedHoleQf) {
         for (int i = 0; i < holeQf.size(); ++i) {
             holeQf(i) = static_cast<Real>(
-                static_cast<long double>(
+                static_cast<vela::ArithmeticReal>(
                     solution.holeQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(solution.phipIncrement(i)));
+                static_cast<vela::ArithmeticReal>(solution.phipIncrement(i)));
         }
     }
     return {std::move(electronQf), std::move(holeQf)};
@@ -231,7 +232,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             electronQuantumPotentialConfig_);
         const auto transport = assembler.compensatedPopulationDiagnostics(
             solution.psi,solution.n,solution.p,solution.populationLow,{},false);
-        long double electron = 0., hole = 0.;
+        vela::ArithmeticReal electron = 0., hole = 0.;
         for (Index node : contact->node_ids) {
             electron += transport.unconstrainedTerms[node].electronFlux;
             hole += transport.unconstrainedTerms[node].holeFlux;
@@ -325,8 +326,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     ContactCurrentDetailedResult detailed;
     NeumaierSum electronCurrentCompensated;
     NeumaierSum holeCurrentCompensated;
-    long double electronCurrentLongDouble = 0.0L;
-    long double holeCurrentLongDouble = 0.0L;
+    vela::ArithmeticReal electronCurrentLongDouble = VELA_ARITHMETIC_LITERAL(0.0);
+    vela::ArithmeticReal holeCurrentLongDouble = VELA_ARITHMETIC_LITERAL(0.0);
     if (mobilityConfig_.carrierCurrentDiscretization ==
         "element_qf_gradient") {
         if (contact->edge_node_ids.empty()) {
@@ -527,20 +528,20 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             ? solution.holeQuasiFermiReferenceAt(i) : 0.0;
         const Real holeReference_j = hasReferencedHoleQf
             ? solution.holeQuasiFermiReferenceAt(j) : 0.0;
-        const long double electronQfDropLong = hasReferencedElectronQf
-            ? (static_cast<long double>(electronReference_j) -
-               static_cast<long double>(electronReference_i)) +
-              (static_cast<long double>(phin_j) -
-               static_cast<long double>(phin_i))
-            : static_cast<long double>(solution.phin(j)) -
-              static_cast<long double>(solution.phin(i));
-        const long double holeQfDropLong = hasReferencedHoleQf
-            ? (static_cast<long double>(holeReference_j) -
-               static_cast<long double>(holeReference_i)) +
-              (static_cast<long double>(phip_j) -
-               static_cast<long double>(phip_i))
-            : static_cast<long double>(solution.phip(j)) -
-              static_cast<long double>(solution.phip(i));
+        const vela::ArithmeticReal electronQfDropLong = hasReferencedElectronQf
+            ? (static_cast<vela::ArithmeticReal>(electronReference_j) -
+               static_cast<vela::ArithmeticReal>(electronReference_i)) +
+              (static_cast<vela::ArithmeticReal>(phin_j) -
+               static_cast<vela::ArithmeticReal>(phin_i))
+            : static_cast<vela::ArithmeticReal>(solution.phin(j)) -
+              static_cast<vela::ArithmeticReal>(solution.phin(i));
+        const vela::ArithmeticReal holeQfDropLong = hasReferencedHoleQf
+            ? (static_cast<vela::ArithmeticReal>(holeReference_j) -
+               static_cast<vela::ArithmeticReal>(holeReference_i)) +
+              (static_cast<vela::ArithmeticReal>(phip_j) -
+               static_cast<vela::ArithmeticReal>(phip_i))
+            : static_cast<vela::ArithmeticReal>(solution.phip(j)) -
+              static_cast<vela::ArithmeticReal>(solution.phip(i));
         const Real electronQfDrop = static_cast<Real>(electronQfDropLong);
         const Real holeQfDrop = static_cast<Real>(holeQfDropLong);
         const bool sentaurusExponential =
@@ -571,8 +572,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             phip_j_forHole = phip_i_forHole + holeDropIt->second;
             holeQfDropOverrideApplied = true;
         }
-        const long double holeQfDropForFluxLong = holeQfDropOverrideApplied
-            ? static_cast<long double>(holeDropIt->second)
+        const vela::ArithmeticReal holeQfDropForFluxLong = holeQfDropOverrideApplied
+            ? static_cast<vela::ArithmeticReal>(holeDropIt->second)
             : holeQfDropLong;
         const Real holeQfDropForFlux =
             static_cast<Real>(holeQfDropForFluxLong);
@@ -613,7 +614,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         Real holeGeneralizedFactor = 1.0;
         Real holeGeneralizedArgument = dpsi / thermalVoltage_;
         Real electronContinuityFlux01 = 0.0;
-        long double electronContinuityFluxLongDouble01 = 0.0L;
+        vela::ArithmeticReal electronContinuityFluxLongDouble01 = VELA_ARITHMETIC_LITERAL(0.0);
         Real electronFlux01 = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * thermalVoltage_ * fieldFactor / edgeLength;
@@ -667,7 +668,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             electronFlux01 = -electronContinuityFlux01;
         }
         Real holeContinuityFlux01 = 0.0;
-        long double holeContinuityFluxLongDouble01 = 0.0L;
+        vela::ArithmeticReal holeContinuityFluxLongDouble01 = VELA_ARITHMETIC_LITERAL(0.0);
         Real holeFlux01 = 0.0;
         if (mup > 0.0) {
             const Real coef = mup * thermalVoltage_ * fieldFactor / edgeLength;
@@ -766,18 +767,18 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real holeCurrent = constants::q * outwardSign * holeFlux01 * couple_[e] * currentLineFactor;
         const Real holeDriftCurrent = constants::q * outwardSign * holeDriftFlux01 * couple_[e] * currentLineFactor;
         const Real holeDiffusionCurrent = constants::q * outwardSign * holeDiffusionFlux01 * couple_[e] * currentLineFactor;
-        const long double electronCurrentLongDoubleEdge =
-            -static_cast<long double>(constants::q) *
-            static_cast<long double>(outwardSign) *
+        const vela::ArithmeticReal electronCurrentLongDoubleEdge =
+            -static_cast<vela::ArithmeticReal>(constants::q) *
+            static_cast<vela::ArithmeticReal>(outwardSign) *
             electronContinuityFluxLongDouble01 *
-            static_cast<long double>(couple_[e]) *
-            static_cast<long double>(currentLineFactor);
-        const long double holeCurrentLongDoubleEdge =
-            -static_cast<long double>(constants::q) *
-            static_cast<long double>(outwardSign) *
+            static_cast<vela::ArithmeticReal>(couple_[e]) *
+            static_cast<vela::ArithmeticReal>(currentLineFactor);
+        const vela::ArithmeticReal holeCurrentLongDoubleEdge =
+            -static_cast<vela::ArithmeticReal>(constants::q) *
+            static_cast<vela::ArithmeticReal>(outwardSign) *
             holeContinuityFluxLongDouble01 *
-            static_cast<long double>(couple_[e]) *
-            static_cast<long double>(currentLineFactor);
+            static_cast<vela::ArithmeticReal>(couple_[e]) *
+            static_cast<vela::ArithmeticReal>(currentLineFactor);
 
         detailed.totals.electronCurrent += electronCurrent;
         detailed.totals.electronDriftCurrent += electronDriftCurrent;
@@ -815,10 +816,10 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             electronReference_j, phin_j, electronReference_i);
         edgeDiag.electronSgPsi0Relative = electronPsi_i;
         edgeDiag.electronSgPsi1Relative = static_cast<Real>(
-            static_cast<long double>(psi_j) -
-            static_cast<long double>(electronReference_i) -
-            static_cast<long double>(1.0 - exponentialWeight) *
-                static_cast<long double>(quantum_j));
+            static_cast<vela::ArithmeticReal>(psi_j) -
+            static_cast<vela::ArithmeticReal>(electronReference_i) -
+            static_cast<vela::ArithmeticReal>(1.0 - exponentialWeight) *
+                static_cast<vela::ArithmeticReal>(quantum_j));
         edgeDiag.holeQfDropOverrideApplied = holeQfDropOverrideApplied;
         edgeDiag.n0 = n_i;
         edgeDiag.n1 = n_j;

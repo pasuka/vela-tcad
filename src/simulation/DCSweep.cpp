@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepExperiment.h"
 #include "vela/simulation/AdaptiveVoltageStepControl.h"
@@ -8743,7 +8744,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         pendingConvergence = coupledConvergence(
                             pendingCoupled.state.x, pendingCoupled.state.lambda);
                         const DDSolution candidate = coupledStateUnpacker(pendingCoupled.state.x);
-                        long double kcl = 0.0L;
+                        vela::ArithmeticReal kcl = VELA_ARITHMETIC_LITERAL(0.0);
                         Real electronTerminalAbsSum = 0., holeTerminalAbsSum = 0.;
                         Real actualDirectedCurrent = std::numeric_limits<Real>::quiet_NaN();
                         bool finiteCurrents = true;
@@ -9986,9 +9987,9 @@ TerminalKclAcceptanceEvaluation evaluateTerminalKclAcceptance(
     const std::vector<Real>& terminalCurrents,
     Real minCurrentToResidualRatio)
 {
-    long double signedResidual = 0.0L;
+    vela::ArithmeticReal signedResidual = VELA_ARITHMETIC_LITERAL(0.0);
     for (const Real current : terminalCurrents)
-        signedResidual += static_cast<long double>(current);
+        signedResidual += static_cast<vela::ArithmeticReal>(current);
 
     TerminalKclAcceptanceEvaluation evaluation;
     evaluation.residual = static_cast<Real>(std::abs(signedResidual));

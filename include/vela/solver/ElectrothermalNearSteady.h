@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 #include <algorithm>
 #include <array>
@@ -21,7 +22,7 @@ inline NearSteadyRebase rebaseSmallElectrothermalQf(VectorXd& x,VectorXd& electr
         Real& reference=k==0?electrons[i]:holes[i];Real& increment=x[4*i+k+1];
         const Real physical=reference+increment;
         if(reference!=0. && std::abs(physical)<=1e-3) {
-            const long double error=(static_cast<long double>(reference)+increment)-physical;
+            const vela::ArithmeticReal error=(static_cast<vela::ArithmeticReal>(reference)+increment)-physical;
             result.maxRoundingEstimate_V=std::max(result.maxRoundingEstimate_V,static_cast<Real>(std::abs(error)));
             reference=0.;increment=physical;++result.changed[k];
         }

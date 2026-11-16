@@ -67,9 +67,10 @@ def topology(mesh: dict) -> Counter:
                    for t in mesh["triangles"])
 
 
-def mesh_with_edges(output: Path) -> dict:
+def mesh_with_edges(output: Path, *, bundle: dict | None = None) -> dict:
     mesh = json.loads((output / "mesh.json").read_text())
-    bundle = json.loads((output / "mesh_field_bundle.json").read_text())
+    if bundle is None:
+        bundle = json.loads((output / "mesh_field_bundle.json").read_text())
     tags = {c["name"]: c["physical_tag"] for c in bundle["contacts"]}
     for contact in mesh["contacts"]:
         contact["edge_node_ids"] = [line["node_ids"] for line in bundle["lines"]
@@ -84,7 +85,8 @@ def contacts(mesh: dict) -> dict:
 
 
 def compare_native(original: Path, imported: Path) -> None:
-    a = mesh_with_edges(original)
+    bundle = json.loads((original / "mesh_field_bundle.json").read_text())
+    a = mesh_with_edges(original, bundle=bundle)
     b = json.loads((imported / "mesh.json").read_text())
     require(len(a["nodes"]) == len(b["nodes"]), "native node count mismatch")
     for x, y in zip(a["nodes"], b["nodes"]):
@@ -100,7 +102,6 @@ def compare_native(original: Path, imported: Path) -> None:
     require(topology(a) == topology(b), "native region/topology mismatch")
     require({r["name"]: r["material"] for r in a["regions"]} ==
             {r["name"]: r["material"] for r in b["regions"] if r["cell_ids"]}, "native material mismatch")
-    bundle = json.loads((original / "mesh_field_bundle.json").read_text())
     require({r["name"] for r in b.get("interfaces", [])} ==
             {r["name"] for r in bundle["interfaces"]}, "native interface identity mismatch")
     for interface in bundle["interfaces"]:
@@ -125,8 +126,8 @@ def compare_native(original: Path, imported: Path) -> None:
 
 
 def check_contract(output: Path, contract: dict) -> dict:
-    mesh = mesh_with_edges(output)
     bundle = json.loads((output / "mesh_field_bundle.json").read_text())
+    mesh = mesh_with_edges(output, bundle=bundle)
     require(bundle["coordinate_unit"] == "um" and
             bundle["field_units"]["concentration"] == "cm^-3", "unit mismatch")
     require({m["name"] for m in bundle["materials"]} == set(contract["materials"]),

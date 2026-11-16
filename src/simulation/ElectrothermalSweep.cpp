@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/solver/ElectrothermalStepControl.h"
 #include "vela/solver/ElectrothermalIterationControl.h"
@@ -90,7 +91,7 @@ bool predict(json& cfg,const json& previous,double ratio) {
         for(int k:{0,3}) x[4*i+k]+=ratio*(x[4*i+k]-old[4*i+k]);
         for(int k:{1,2}) {
             const auto* key=k==1?"electron_qf_reference_V":"hole_qf_reference_V";
-            const long double change=static_cast<long double>(cfg.at(key).at(i).get<double>())-
+            const vela::ArithmeticReal change=static_cast<vela::ArithmeticReal>(cfg.at(key).at(i).get<double>())-
                 previous.at(key).at(i).get<double>()+x[4*i+k]-old[4*i+k];
             x[4*i+k]+=ratio*static_cast<double>(change);
         }
@@ -99,7 +100,7 @@ bool predict(json& cfg,const json& previous,double ratio) {
     if(!std::all_of(x.begin(),x.end(),[](double v){return std::isfinite(v);})) return false;
     cfg["referenced_state_interleaved"]=x;
     for(std::size_t i=0;i<x.size()/4;++i) for(int k:{1,2})
-        x[4*i+k]=static_cast<double>(static_cast<long double>(x[4*i+k])+cfg.at(k==1?"electron_qf_reference_V":"hole_qf_reference_V").at(i).get<double>());
+        x[4*i+k]=static_cast<double>(static_cast<vela::ArithmeticReal>(x[4*i+k])+cfg.at(k==1?"electron_qf_reference_V":"hole_qf_reference_V").at(i).get<double>());
     cfg["state_interleaved"]=x; return true;
 }
 json curveSummary(const json& r) {
@@ -339,10 +340,10 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
                         const auto value=old.at("referenced_state_interleaved").get<std::vector<double>>();
                         if(value.size()!=seed.size())throw std::invalid_argument("Local history layout differs");
                         for(std::size_t i=0;i<seed.size()/4;++i)for(int k=0;k<4;++k) {
-                            long double difference=static_cast<long double>(value[4*i+k])-anchor[4*i+k];
+                            vela::ArithmeticReal difference=static_cast<vela::ArithmeticReal>(value[4*i+k])-anchor[4*i+k];
                             if(k==1 || k==2) {
                                 const auto* key=k==1?"electron_qf_reference_V":"hole_qf_reference_V";
-                                difference+=static_cast<long double>(old.at(key).at(i).get<double>())-state.at(key).at(i).get<double>();
+                                difference+=static_cast<vela::ArithmeticReal>(old.at(key).at(i).get<double>())-state.at(key).at(i).get<double>();
                             }
                             seed[4*i+k]+=coefficients.weights[j]*static_cast<double>(difference);
                         }
