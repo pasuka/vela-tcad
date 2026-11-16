@@ -77,6 +77,12 @@ jobs:
           /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; jsonschema.Draft202012Validator({'type': 'object'}).validate({}); print(h5py.version.info)"
           patchelf --version
 
+      - name: Cache pinned Gmsh wheel
+        uses: actions/cache@v4
+        with:
+          path: build/gmsh-inputs
+          key: sde-gmsh-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_external_runtimes.json') }}
+
       - name: Install pinned Gmsh Python API runtime
         run: |
           /usr/bin/python3 scripts/prepare_sde_external_gmsh.py \
@@ -122,9 +128,29 @@ jobs:
           printf 'VELA_MKL_RT_LIBRARY=%s\n' "$runtime" >> "$GITHUB_ENV"
           printf 'LD_LIBRARY_PATH=%s\n' "$(dirname "$runtime")${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
 
+      - name: Cache pinned Eigen and HighFive sources
+        id: cmake-source-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps/vela_eigen-src
+            build/_deps/highfive-src
+          key: cmake-sources-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('CMakeLists.txt') }}
+
       - name: Configure Release build
+        env:
+          CMAKE_SOURCE_CACHE_HIT: ${{ steps.cmake-source-cache.outputs.cache-hit }}
         run: |
           set -euo pipefail
+          sources=()
+          if [[ "$CMAKE_SOURCE_CACHE_HIT" == 'true' ]]; then
+            if [[ -f build/_deps/vela_eigen-src/Eigen/Version ]]; then
+              sources+=("-DFETCHCONTENT_SOURCE_DIR_VELA_EIGEN=$PWD/build/_deps/vela_eigen-src")
+            fi
+            if [[ -f build/_deps/highfive-src/CMakeLists.txt ]]; then
+              sources+=("-DFETCHCONTENT_SOURCE_DIR_HIGHFIVE=$PWD/build/_deps/highfive-src")
+            fi
+          fi
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 -DVELA_ENABLE_PN2D_CI=ON \
@@ -132,7 +158,7 @@ jobs:
             -DVELA_ENABLE_BVMETHODS_CI=ON \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
-            -DVELA_ENABLE_STRUMPACK=OFF | tee configure.log
+            -DVELA_ENABLE_STRUMPACK=OFF "${sources[@]}" | tee configure.log
           grep -F 'SuiteSparse UMFPACK bordered solver enabled' configure.log
           grep -F 'SuiteSparse SPQR bordered solver enabled' configure.log
           grep -F 'METIS ordering enabled' configure.log
@@ -151,6 +177,13 @@ jobs:
             args+=(--target sd-sim vela_example_runner test_mkl_pardiso)
           fi
           cmake "${args[@]}"
+
+      - name: Cache locked SDE offline inputs
+        if: env.REQUESTED_SUITE == 'all'
+        uses: actions/cache@v4
+        with:
+          path: build/p6-assets
+          key: sde-offline-inputs-v1-ubuntu26.04-${{ runner.arch }}-${{ hashFiles('configs/sde_offline_inputs.json') }}
 
       - name: Assemble and relocate the offline SDE package
         if: env.REQUESTED_SUITE == 'all'
