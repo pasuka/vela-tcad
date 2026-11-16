@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/SiliconThermalPhysics.h"
 #include "vela/core/PhysicalConstants.h"
 #include <algorithm>
@@ -25,8 +26,8 @@ inline Real electrothermalStorageDifference(Real oldDensity,Real newDensity,Real
     if(!(oldDensity>=0. && newDensity>=0. && area>=0.) || !std::isfinite(oldDensity) ||
        !std::isfinite(newDensity) || !std::isfinite(area))
         throw std::invalid_argument("Invalid pseudo storage difference");
-    return static_cast<Real>((hole?1.L:-1.L)*constants::q*area*
-        (static_cast<long double>(newDensity)-oldDensity));
+    return static_cast<Real>((hole?VELA_ARITHMETIC_LITERAL(1.):-VELA_ARITHMETIC_LITERAL(1.))*constants::q*area*
+        (static_cast<vela::ArithmeticReal>(newDensity)-oldDensity));
 }
 // Storage per unit device depth [C/m]. Its derivative divided by tau [s]
 // has the same units and sign convention as the steady continuity Jacobian.

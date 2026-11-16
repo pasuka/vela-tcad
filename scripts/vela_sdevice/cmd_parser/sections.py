@@ -705,7 +705,7 @@ def parse_current_plot_block(block: Block, ctx: ParseContext) -> dict:
 
 _MATH_RECORDED = {"transient", "method", "submethod", "cnormprint", "wallclock",
                   "checkundefinedmodels", "parameterinheritance", "cylindrical", "rhsmin", "rhsfactor",
-                  "rhsandupdateconvergence", "extendedprecision", "digits_dg", "errref_dg",
+                  "rhsandupdateconvergence", "digits_dg", "errref_dg",
                   "numberofsolverthreads", "acmethod", "acsubmethod", "iterations_dg", "damped",
                   "stackednewtonweights", "newdiscretization", "elementvolumeavalanche", "avalpostprocessing",
                   "avalflatelementexclusion", "elementedgecurrent", "avalanche", "gradquasifermi",
@@ -728,6 +728,7 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
             base = lower[1:] if negated else lower
             group: Optional[List[Token]] = None
             value: Optional[Token] = None
+            brace_group = False
             if stream.at_punct("("):
                 _, group, _ = stream.take_group()
             if stream.at_punct("="):
@@ -735,6 +736,7 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                 value = stream.take_value()
             elif stream.at_punct("{"):
                 _, group, _ = stream.take_group()
+                brace_group = True
             text = assignment_text(key, value)
             if base == "iterations":
                 math["iterations"] = parse_int(value, "Iterations")
@@ -764,6 +766,13 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                                             "line": key.line, "finding_id": "W102"})
                     ctx.warn("W102", key.line, section, ctx.source.slice(key.start, (value or key).end),
                              kw=f"ErrRef({group[0].value if group else ''})")
+            elif base == "extendedprecision":
+                if brace_group or value is not None or (group is not None and (negated or len(group) != 1)):
+                    raise SyntaxIssue("Expected ExtendedPrecision, ExtendedPrecision(80), or -ExtendedPrecision",
+                                      key.line, text)
+                if group is not None and parse_int(group[0], "ExtendedPrecision") != 80:
+                    raise SyntaxIssue("Only ExtendedPrecision(80) is supported", key.line, text)
+                math["arithmetic_precision"] = "double" if negated else "extended80"
             elif base == "extrapolate":
                 math["extrapolate"] = not negated
                 for option in group or []:

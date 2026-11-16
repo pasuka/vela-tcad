@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "vela/equation/SplitDDRuntime.h"
+#include "vela/equation/SplitDDOperator.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/io/DDSolutionCsv.h"
@@ -13,6 +14,18 @@
 #include <filesystem>
 #include <fstream>
 using namespace vela;
+
+TEST_CASE("Split DD field norm retains the software precision over a wide exponent range") {
+    using split_dd::Wide;
+    REQUIRE(split_dd::fieldSquareRoot(Wide(0)) == 0);
+    for (int exponent : {-3001, -45, 0, 73, 3001}) {
+        const Wide squared = ldexp(Wide("0.79"), exponent);
+        const auto root = split_dd::fieldSquareRoot(squared);
+        REQUIRE(root > 0);
+        REQUIRE(abs(root * root / squared - 1) < Wide("1e-97"));
+    }
+}
+
 namespace {
 nlohmann::json fixture() {
     nlohmann::json d={{"schema","vela.split-dd-operator.v1"},{"mesh_fingerprint","fixture"},

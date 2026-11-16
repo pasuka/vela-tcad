@@ -1,6 +1,8 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
+#include "vela/numerics/SplitCoordinate.h"
 
 namespace vela {
 
@@ -57,17 +59,23 @@ Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef);
  */
 Real sgBoltzmannPopulationContinuityFlux(
     Real population0, Real population1, Real ni0, Real ni1,
-    long double signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
-    Real relativeCorrection0 = 0., Real relativeCorrection1 = 0., long double signedDpsiCorrection = 0.L);
+    vela::ArithmeticReal signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
+    Real relativeCorrection0 = 0., Real relativeCorrection1 = 0., vela::ArithmeticReal signedDpsiCorrection = VELA_ARITHMETIC_LITERAL(0.));
 
 /// Use precomputed dimensionless drift, including the oriented intrinsic-density
 /// log ratio when enabled. The signed potential correction is still in volts.
 Real sgBoltzmannPopulationContinuityFluxFromDrift(
-    Real population0, Real population1, long double eta, Real Vt, Real coef,
-    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection);
+    Real population0, Real population1, vela::ArithmeticReal eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, vela::ArithmeticReal signedDpsiCorrection);
+
+Real sgBoltzmannPopulationContinuityFluxFromDrift(
+    Real population0, Real population1, numerics::SplitCoordinate eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, Real signedDpsiCorrection);
 
 // Stable logarithm of a positive ratio, including neighboring populations.
-long double sgPopulationLogRatio(Real numerator, Real denominator);
+vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator);
+
+numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real denominator);
 
 /**
  * @brief Balanced electron continuity flux for Boltzmann quasi-Fermi variables.
@@ -323,13 +331,13 @@ Real sgHoleFermiDiracContinuityFlux(
 /// drops.  The drop is supplied directly so callers can form it from
 /// increment/reference components without first reconstructing an absolute
 /// quasi-Fermi potential in double precision.
-long double sgElectronFermiDiracQuantumContinuityFluxLongDouble(
+vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
     Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef);
-long double sgHoleFermiDiracContinuityFluxLongDouble(
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef);
+vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef);
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.

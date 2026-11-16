@@ -1,4 +1,5 @@
 // Experimental four-equation state audit; qualification is recorded externally.
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/ElectrothermalAssembler.h"
 #include "vela/solver/ElectrothermalIterationControl.h"
 #include "vela/solver/ElectrothermalDensityUpdate.h"
@@ -257,8 +258,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             for(Index i=0;i<mesh.numNodes();++i)for(int k=1;k<=2;++k){
                 Real& reference=k==1?eReference[i]:hReference[i];Real& increment=x[4*i+k];
                 if(std::abs(increment)<=1e-3)continue;
-                const Real next=static_cast<Real>(static_cast<long double>(reference)+increment);
-                increment=static_cast<Real>((static_cast<long double>(reference)-next)+increment);
+                const Real next=static_cast<Real>(static_cast<vela::ArithmeticReal>(reference)+increment);
+                increment=static_cast<Real>((static_cast<vela::ArithmeticReal>(reference)-next)+increment);
                 reference=next;changed=true;
             }
             return changed;
@@ -348,8 +349,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                    !seed.allFinite() || !er.allFinite() || !hr.allFinite())
                     throw std::invalid_argument("Invalid tangent source state");
                 for(Index i=0;i<mesh.numNodes();++i) {
-                    seed[4*i+1]=static_cast<Real>((static_cast<long double>(er[i])-eReference[i])+seed[4*i+1]);
-                    seed[4*i+2]=static_cast<Real>((static_cast<long double>(hr[i])-hReference[i])+seed[4*i+2]);
+                    seed[4*i+1]=static_cast<Real>((static_cast<vela::ArithmeticReal>(er[i])-eReference[i])+seed[4*i+1]);
+                    seed[4*i+2]=static_cast<Real>((static_cast<vela::ArithmeticReal>(hr[i])-hReference[i])+seed[4*i+2]);
                 }
                 // Assemble at the accepted source bias/state, before any target
                 // contact projection. Its final Jacobian is freshly factorized.
@@ -418,8 +419,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                         throw std::invalid_argument("Invalid predictor state/reference");
                     for(Index i=0;i<mesh.numNodes();++i) {
                         if(!(trial[4*i+3]>50. && trial[4*i+3]<5000.))throw std::invalid_argument("Invalid predictor temperature");
-                        trial[4*i+1]=static_cast<Real>((static_cast<long double>(er[i])-eReference[i])+trial[4*i+1]);
-                        trial[4*i+2]=static_cast<Real>((static_cast<long double>(hr[i])-hReference[i])+trial[4*i+2]);
+                        trial[4*i+1]=static_cast<Real>((static_cast<vela::ArithmeticReal>(er[i])-eReference[i])+trial[4*i+1]);
+                        trial[4*i+2]=static_cast<Real>((static_cast<vela::ArithmeticReal>(hr[i])-hReference[i])+trial[4*i+2]);
                     }
                     // Apply exactly the same finite-contact projection as the primary seed.
                     for(const auto& [i,contact]:bc.holeRecombination)
@@ -1006,8 +1007,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                         if((recoveryEReferences[j].array()==eReference.array()).all() &&
                            (recoveryHReferences[j].array()==hReference.array()).all())continue;
                         for(Index i=0;i<mesh.numNodes();++i) {
-                            samples[j][4*i+1]=static_cast<Real>((static_cast<long double>(recoveryEReferences[j][i])-eReference[i])+samples[j][4*i+1]);
-                            samples[j][4*i+2]=static_cast<Real>((static_cast<long double>(recoveryHReferences[j][i])-hReference[i])+samples[j][4*i+2]);
+                            samples[j][4*i+1]=static_cast<Real>((static_cast<vela::ArithmeticReal>(recoveryEReferences[j][i])-eReference[i])+samples[j][4*i+1]);
+                            samples[j][4*i+2]=static_cast<Real>((static_cast<vela::ArithmeticReal>(recoveryHReferences[j][i])-hReference[i])+samples[j][4*i+2]);
                         }
                         residuals[j]=assemble(samples[j],false).residual;++recoveryReassemblies;
                     }

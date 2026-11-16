@@ -561,6 +561,10 @@ schema 之外、golden 夹具所依赖的确定性规则：
 7. **Math 默认值**：`iterations=50`、`digits=5`、`rel_err_control=true`、`extrapolate=false`、
    `derivatives=true`、`aval_derivatives=true`、`compute_ionization_integrals=false`、
    `break_at_ion_integral=null`、`exit_on_failure=false`、`number_of_threads=1`；`ErrRef` 缺省 null。
+   省略 `ExtendedPrecision` 或写 `-ExtendedPrecision` 时使用 `double`。
+   `ExtendedPrecision` 和 `ExtendedPrecision(80)` 均映射到
+   `solver.arithmetic_precision="extended80"`，由 `sd-sim` 选择对应的求解器。
+   其他位数会在解析时被拒绝。编译器没有 80 位格式时，扩展模式在实际求解前报告缺少求解器。
    记录并忽略的关键字进入 `math.ignored`（关键字按原拼写）并各发一条 W102。
 8. **Solve 语句与 stage**：`Poisson` 裸语句 → `statements[].kind="poisson"`，stage 视同
    `Coupled{Poisson}`；`Coupled` 无 `Iterations` → `iterations=null`；顶层 `Plot(FilePrefix=)`

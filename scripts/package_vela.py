@@ -33,7 +33,7 @@ def tar_permissions(item):
         item.mode = 0o755
     elif item.isfile():
         name = PurePosixPath(item.name)
-        executable = (item.name in ("vela/vela", "vela/bin/vela", "vela/sd-sim", "vela/bin/sd-sim", "vela/bin/vela_example_runner", "vela/bin/sentaurus_import")
+        executable = (item.name in ("vela/vela", "vela/bin/vela", "vela/sd-sim", "vela/bin/sd-sim", "vela/bin/vela_example_runner", "vela/bin/vela_example_runner_extended80", "vela/bin/sentaurus_import")
                       or item.name.startswith("vela/bin/python/bin/") or ".so" in name.name)
         item.mode = 0o755 if executable else 0o644
     return item

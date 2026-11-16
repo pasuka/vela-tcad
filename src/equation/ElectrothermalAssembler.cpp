@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/ElectrothermalAssembler.h"
 #include "vela/core/ElectrothermalCostProfile.h"
 #include "vela/discretization/ThermalSgCurrent.h"
@@ -326,8 +327,8 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             // Preserve sub-ULP QF increments and avoid subtracting two nearly
             // equal densities. The small-eta expansion has relative O(delta^2)
             // error below 1e-12 and exactly vanishes at equilibrium.
-            const Real delta=static_cast<Real>((static_cast<long double>(ref(i,false))-bias+
-                x[4*i+2]-(static_cast<long double>(psi[i])-potential))/vt);
+            const Real delta=static_cast<Real>((static_cast<vela::ArithmeticReal>(ref(i,false))-bias+
+                x[4*i+2]-(static_cast<vela::ArithmeticReal>(psi[i])-potential))/vt);
             const Real eta=equilibrium.holeEta.value;
             const Real excess=std::abs(delta)<1e-6 ? equilibrium.Nv_m3.value*delta*
                 (fermiDiracHalfDerivative(eta)+.5*delta*fermiDiracHalfSecondDerivative(eta)) : p.value-p0.value;

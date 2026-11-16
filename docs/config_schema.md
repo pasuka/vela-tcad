@@ -382,6 +382,12 @@ Newton numerical and geometry controls added for explicit validation profiles:
   raw/constrained updates, 100-digit linear defects and per-row backward
   errors, central residual changes and free continuity-row masks. These
   diagnostics do not establish nonlinear or external-load convergence.
+- `solver.arithmetic_precision` selects `double` (default) or `extended80`
+  for intermediate arithmetic. State vectors, sparse matrices and direct
+  linear solver interfaces use binary64 in both modes. For native JSON runs,
+  use `vela_example_runner` for `double` and `vela_example_runner_extended80`
+  for `extended80`. The extended runner is built when the compiler provides
+  a 64-bit significand and an 80-bit extended exponent range in `long double`.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
@@ -738,15 +744,15 @@ An explicit `VELA_LINEAR_SOLVER=pardiso_mkl` also selects PARDISO for the full
 the direct path of `auto`; a PARDISO error is returned without backend fallback.
 
 For the `bvmethods_tri3_qf` coupled sweep with a directly bordered PARDISO
-solve, the original-system defect calculation defaults to compensated EFT
-accumulation with extended `long double` finalization when supported.
-Out-of-range EFT rows are recomputed in extended precision. A detected
-discarded-tail cancellation is recomputed from the exact binary64 inputs
-using rational arithmetic. The weighted absolute defect, componentwise
-backward error and original correction rules retain their existing tolerances.
-Platforms without suitable extended precision use EFT with MP100 finalization
-and `std::from_chars` conversion. Floating-point environments unsupported by
-EFT use the original MP100 path. Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
+solve, the original-system defect calculation uses compensated EFT
+accumulation. Finalization uses the selected arithmetic precision.
+Out-of-range rows use exact rational arithmetic in `double` and widened
+arithmetic in `extended80`. A detected discarded-tail cancellation is
+recomputed from the exact binary64 inputs using rational arithmetic.
+The weighted absolute defect, componentwise backward error and original
+correction rules retain their existing tolerances. Floating-point
+environments unsupported by EFT use the original MP100 path.
+Set `VELA_BVMETHODS_EFT_MP100_FINISH=1` to
 compare against EFT with MP100 finalization, or `VELA_BVMETHODS_MP100_DEFECT=1`
 to select the original all-MP100 defect path.
 The explicitly selected `direct_bordered_qr` policy retains its QR preference.

@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/NonlocalPathPhononKernel.h"
 #include <algorithm>
 #include <cmath>
@@ -7,7 +8,7 @@
 
 namespace vela::experimental {
 namespace {
-using Wide = long double;
+using Wide = vela::ArithmeticReal;
 constexpr Wide representationTolerance = 128 * std::numeric_limits<Real>::epsilon();
 void require(bool ok, const char* message) { if (!ok) throw std::invalid_argument(message); }
 bool positive(Real x) { return std::isfinite(x) && x > 0; }
@@ -28,10 +29,10 @@ Wide inverseSqrtIntegral(Wide a, Wide b, Wide length) {
     return 2 * length / sum;
 }
 Wide gapIntegral(Wide a, Wide b, Wide length) {
-    if (a == b) return length * std::pow(a, -1.25L);
+    if (a == b) return length * std::pow(a, -VELA_ARITHMETIC_LITERAL(1.25));
     const Wide relative = (b - a) / a;
-    const Wide logarithm = std::abs(relative) < .5L ? std::log1p(relative) : std::log(b) - std::log(a);
-    return length * std::pow(a, -1.25L) * (-4 * std::expm1(-.25L * logarithm) / std::expm1(logarithm));
+    const Wide logarithm = std::abs(relative) < VELA_ARITHMETIC_LITERAL(.5) ? std::log1p(relative) : std::log(b) - std::log(a);
+    return length * std::pow(a, -VELA_ARITHMETIC_LITERAL(1.25)) * (-4 * std::expm1(-VELA_ARITHMETIC_LITERAL(.25) * logarithm) / std::expm1(logarithm));
 }
 Wide softplus(Wide x) { return std::max(x, Wide(0)) + std::log1p(std::exp(-std::abs(x))); }
 Wide logWindow(Wide exponent) {
@@ -172,7 +173,7 @@ PhononTunnelingResult evaluatePhononTunneling(const TunnelingBandProfile& profil
         (-std::expm1(-phononArgument))) : std::log1p(2 / std::expm1(phononArgument));
     const Wide logBase = std::log(Wide(masses.coupling_J2_m_per_kg)) + logThermal -
         std::log(64 * std::numbers::pi_v<Wide> * std::numbers::pi_v<Wide> * Wide(config.phononEnergy_J)) +
-        .5L * (std::log(mv) + std::log(mc) - std::log(h) - std::log(length) - .5L * std::log(2 * mr)) +
+        VELA_ARITHMETIC_LITERAL(.5) * (std::log(mv) + std::log(mc) - std::log(h) - std::log(length) - VELA_ARITHMETIC_LITERAL(.5) * std::log(2 * mr)) +
         std::log(gapSum) - std::log(reciprocalV) - std::log(reciprocalC);
     const Wide logV = logWindow(2 * mv * reservoirs.valenceAvailableEnergy_J / (hbar * hbar) * reciprocalV);
     const Wide logC = logWindow(2 * mc * reservoirs.conductionAvailableEnergy_J / (hbar * hbar) * reciprocalC);

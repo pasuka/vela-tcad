@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/SiliconThermalPhysics.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/core/PhysicalConstants.h"
@@ -28,8 +29,8 @@ int main(int argc,char**argv){try{
             const double ec=s.at("reference_conduction_band_eV"),ev=s.at("reference_valence_band_eV");
             if(!std::isfinite(ec)||!std::isfinite(ev))throw std::invalid_argument("Nonfinite reference band");
             const double vt=vela::constants::kb/vela::constants::q*s.at("temperature_K").get<double>();
-            const double en=static_cast<double>(-static_cast<long double>(s.value("electron_qf_reference_V",0.))-s.at("electron_qf_V").get<double>()-ec)/vt;
-            const double ep=static_cast<double>(static_cast<long double>(s.value("hole_qf_reference_V",0.))+s.at("hole_qf_V").get<double>()+ev)/vt;
+            const double en=static_cast<double>(-static_cast<vela::ArithmeticReal>(s.value("electron_qf_reference_V",0.))-s.at("electron_qf_V").get<double>()-ec)/vt;
+            const double ep=static_cast<double>(static_cast<vela::ArithmeticReal>(s.value("hole_qf_reference_V",0.))+s.at("hole_qf_V").get<double>()+ev)/vt;
             row["electrons_at_native_band_m3"]=r.Nc_m3.value*vela::fermiDiracHalf(en);
             row["holes_at_native_band_m3"]=r.Nv_m3.value*vela::fermiDiracHalf(ep);
         }

@@ -14,6 +14,7 @@
 #include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -22,6 +23,25 @@
 
 using namespace vela;
 using Catch::Approx;
+
+TEST_CASE("Population log ratio retains its small cancellation term in binary64", "[sg][population]") {
+    using Reference = boost::multiprecision::cpp_dec_float_100;
+    const std::array ratios{
+        std::pair{1., std::nextafter(1., 2.)},
+        std::pair{std::nextafter(std::sqrt(2.), 1.), 1.},
+        std::pair{std::nextafter(std::sqrt(2.), 2.), 1.},
+        std::pair{1.037e19, 6.421e18},
+        std::pair{std::numeric_limits<double>::max(), std::numeric_limits<double>::denorm_min()},
+    };
+    for (const auto& [a, b] : ratios) {
+        const auto forward = sgPopulationLogRatioCompensated(a, b);
+        const auto reverse = sgPopulationLogRatioCompensated(b, a);
+        const Reference expected = log(Reference(a) / Reference(b));
+        const Reference found = Reference(forward.hi) + Reference(forward.lo);
+        REQUIRE(abs(found - expected) < Reference("5e-21"));
+        REQUIRE(abs(found + Reference(reverse.hi) + Reference(reverse.lo)) < Reference("5e-21"));
+    }
+}
 
 TEST_CASE("Homogeneous SG preserves sub-femtovolt conductive response", "[sg][pn2d]")
 {

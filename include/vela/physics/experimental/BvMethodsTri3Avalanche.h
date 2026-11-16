@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include <array>
 #include <cmath>
@@ -103,11 +104,11 @@ inline AvJet avExponentialCoefficient(const AvJet& field,double a,double b)
     if(finite)return result;
     // A exp(-B/E) can have a finite zero value AND zero tangent although
     // differentiating -B/E first overflows. Keep the combined exponent.
-    const long double exponent=-(long double)b/field.value;
-    const long double value=(long double)a*std::exp(exponent);
+    const vela::ArithmeticReal exponent=-(vela::ArithmeticReal)b/field.value;
+    const vela::ArithmeticReal value=(vela::ArithmeticReal)a*std::exp(exponent);
     result.value=static_cast<double>(value);
-    const long double slope=std::exp(std::log((long double)a)+
-        std::log((long double)b)-2*std::log((long double)field.value)+exponent);
+    const vela::ArithmeticReal slope=std::exp(std::log((vela::ArithmeticReal)a)+
+        std::log((vela::ArithmeticReal)b)-2*std::log((vela::ArithmeticReal)field.value)+exponent);
     for(std::size_t k=0;k<result.derivative.size();++k)
         result.derivative[k]=static_cast<double>(slope*field.derivative[k]);
     return result;

@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/MobilityModel.h"
 #include <cmath>
 #include <stdexcept>
@@ -24,25 +25,25 @@ template<class T> T elementCanali(const T& low,const T& field,
 struct ElementCanaliValue {Real mobility,lowDerivative,fieldDerivative;};
 inline ElementCanaliValue evaluateElementCanali(Real low,Real field,
     const FieldMobilityParameters& p,Real cutoff) {
-    const long double mu=elementCanali((long double)low,(long double)field,p,cutoff);
+    const vela::ArithmeticReal mu=elementCanali((vela::ArithmeticReal)low,(vela::ArithmeticReal)field,p,cutoff);
     if(field<cutoff || low<=0)return {static_cast<Real>(mu),1.,0.};
-    const long double z=(long double)low*field/p.saturationVelocity;
-    const long double dm=std::pow(1+std::pow(z,(long double)p.beta),-1-1/(long double)p.beta);
+    const vela::ArithmeticReal z=(vela::ArithmeticReal)low*field/p.saturationVelocity;
+    const vela::ArithmeticReal dm=std::pow(1+std::pow(z,(vela::ArithmeticReal)p.beta),-1-1/(vela::ArithmeticReal)p.beta);
     return {static_cast<Real>(mu),static_cast<Real>(dm),
-        static_cast<Real>(-(long double)low*low/p.saturationVelocity*std::pow(z,(long double)p.beta-1)*dm)};
+        static_cast<Real>(-(vela::ArithmeticReal)low*low/p.saturationVelocity*std::pow(z,(vela::ArithmeticReal)p.beta-1)*dm)};
 }
 inline ElementCanaliValue evaluateElementCanaliSharedPower(Real low,Real field,
     const FieldMobilityParameters& p,Real cutoff) {
     if(!(p.saturationVelocity>0.) || !(p.beta>1.) || !(cutoff>0.))
         throw std::invalid_argument("Element Canali requires positive vsat, beta > 1 and cutoff");
     if(field<cutoff || low<=0)return {low,1.,0.};
-    const long double beta=p.beta;
-    const long double z=static_cast<long double>(low)*field/p.saturationVelocity;
-    const long double base=1+std::pow(z,beta);
-    const long double mu=static_cast<long double>(low)/std::pow(base,1/beta);
-    const long double dm=std::pow(base,-1-1/beta);
+    const vela::ArithmeticReal beta=p.beta;
+    const vela::ArithmeticReal z=static_cast<vela::ArithmeticReal>(low)*field/p.saturationVelocity;
+    const vela::ArithmeticReal base=1+std::pow(z,beta);
+    const vela::ArithmeticReal mu=static_cast<vela::ArithmeticReal>(low)/std::pow(base,1/beta);
+    const vela::ArithmeticReal dm=std::pow(base,-1-1/beta);
     return {static_cast<Real>(mu),static_cast<Real>(dm),
-        static_cast<Real>(-static_cast<long double>(low)*low/p.saturationVelocity*std::pow(z,beta-1)*dm)};
+        static_cast<Real>(-static_cast<vela::ArithmeticReal>(low)*low/p.saturationVelocity*std::pow(z,beta-1)*dm)};
 }
 
 }

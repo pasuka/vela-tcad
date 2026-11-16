@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/discretization/Bernoulli.h"
 #include "vela/physics/CarrierStatistics.h"
@@ -79,25 +80,25 @@ Real finiteCancellationCondition(Real leftTerm,
         ? condition
         : std::numeric_limits<Real>::max();
 }
-long double longDoubleBernoulli(long double value)
+vela::ArithmeticReal longDoubleBernoulli(vela::ArithmeticReal value)
 {
-    if (std::abs(value) < 1.0e-12L)
-        return 1.0L - value * 0.5L + value * value / 12.0L;
-    if (value > 50.0L) {
-        const long double expNegative = std::exp(-value);
-        return value * expNegative / (1.0L - expNegative);
+    if (std::abs(value) < VELA_ARITHMETIC_LITERAL(1.0e-12))
+        return VELA_ARITHMETIC_LITERAL(1.0) - value * VELA_ARITHMETIC_LITERAL(0.5) + value * value / VELA_ARITHMETIC_LITERAL(12.0);
+    if (value > VELA_ARITHMETIC_LITERAL(50.0)) {
+        const vela::ArithmeticReal expNegative = std::exp(-value);
+        return value * expNegative / (VELA_ARITHMETIC_LITERAL(1.0) - expNegative);
     }
-    if (value < -50.0L) {
-        const long double expValue = std::exp(value);
-        return -value / (1.0L - expValue);
+    if (value < -VELA_ARITHMETIC_LITERAL(50.0)) {
+        const vela::ArithmeticReal expValue = std::exp(value);
+        return -value / (VELA_ARITHMETIC_LITERAL(1.0) - expValue);
     }
     return value / std::expm1(value);
 }
 
-Real finiteRealFromLongDouble(long double value)
+Real finiteRealFromLongDouble(vela::ArithmeticReal value)
 {
-    const long double maximum =
-        static_cast<long double>(std::numeric_limits<Real>::max());
+    const vela::ArithmeticReal maximum =
+        static_cast<vela::ArithmeticReal>(std::numeric_limits<Real>::max());
     if (std::isnan(value))
         return 0.0;
     if (value >= maximum)
@@ -130,22 +131,86 @@ Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef)
     return coef * (w.b_plus * p0 - w.b_minus * p1);
 }
 
-long double sgPopulationLogRatio(Real numerator, Real denominator)
+vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
 {
-    const long double low = std::min(numerator, denominator);
-    const long double high = std::max(numerator, denominator);
-    const long double relativeDifference = (high - low) / low;
-    const long double magnitude = std::isfinite(relativeDifference)
+    const vela::ArithmeticReal low = std::min(numerator, denominator);
+    const vela::ArithmeticReal high = std::max(numerator, denominator);
+    const vela::ArithmeticReal relativeDifference = (high - low) / low;
+    const vela::ArithmeticReal magnitude = std::isfinite(relativeDifference)
         ? std::log1p(relativeDifference) : std::log(high) - std::log(low);
     return numerator < denominator ? -magnitude : magnitude;
 }
 
+numerics::SplitCoordinate sgPopulationLogRatioCompensated(Real numerator, Real denominator)
+{
+    using numerics::SplitCoordinate;
+    if (!(numerator > 0. && denominator > 0. && std::isfinite(numerator) && std::isfinite(denominator)))
+        throw std::domain_error("Expected finite positive SG populations");
+    if (numerator == denominator) return {};
+    // The positive ratio reduces to m * 2^e with m close to one. Evaluate
+    // log(m) = 2*atanh((m-1)/(m+1)) without rounding the ratio first.
+    int aExponent, bExponent;
+    double a = std::frexp(numerator, &aExponent);
+    const double b = std::frexp(denominator, &bExponent);
+    int exponent = aExponent - bExponent;
+    constexpr double sqrtTwo = 0x1.6a09e667f3bcdp+0;
+    if (a > b * sqrtTwo) {
+        a *= .5;
+        ++exponent;
+    } else if (b > a * sqrtTwo) {
+        a *= 2.;
+        --exponent;
+    }
+    const auto sum = SplitCoordinate::sum(a, b);
+    const double difference = a - b;  // Exact for the reduced ratio.
+    const double high = difference / sum.hi;
+    const auto t = SplitCoordinate::sum(high, (std::fma(-high, sum.hi, difference) - high * sum.lo) / sum.hi);
+    const auto t2 = t.multiplied(t);
+    // |t| <= 0.172. Rounding the terms after t^5 contributes less than
+    // 1e-21. The first omitted term after t^25 is smaller still.
+    constexpr SplitCoordinate oneFifth{0x1.999999999999ap-3, -0x1.999999999999ap-57};
+    constexpr SplitCoordinate oneThird{0x1.5555555555555p-2, 0x1.5555555555555p-56};
+    constexpr SplitCoordinate logTwo{0x1.62e42fefa39efp-1, 0x1.abc9e3b39803fp-56};
+    auto lowTerms = oneFifth;
+    if (std::abs(t.hi) > 1e-3) {
+        double polynomial = 1. / 25.;
+        for (int k = 11; k >= 3; --k)
+            polynomial = 1. / (2 * k + 1) + t2.hi * polynomial;
+        lowTerms = lowTerms.added(t2.scaled(polynomial));
+    }
+    const auto series = oneThird.added(t2.multiplied(lowTerms));
+    const auto logMantissa = t.added(t.multiplied(t2).multiplied(series)).scaled(2.);
+    return exponent == 0 ? logMantissa : logMantissa.added(logTwo.scaled(exponent));
+}
+
+namespace {
+Real populationFluxFromLogImbalance(Real population0, Real population1, ArithmeticReal eta,
+                                   Real coef, Real correction0, Real correction1, ArithmeticReal logRatio)
+{
+    if (logRatio >= 0.)
+        return static_cast<Real>(coef * longDoubleBernoulli(-eta) * population0
+            * (ArithmeticReal(1.) + correction0) * (-std::expm1(-logRatio)));
+    return static_cast<Real>(coef * longDoubleBernoulli(eta) * population1
+        * (ArithmeticReal(1.) + correction1) * std::expm1(logRatio));
+}
+} // namespace
+
 Real sgBoltzmannPopulationContinuityFlux(
     Real population0, Real population1, Real ni0, Real ni1,
-    long double signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
-    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection)
+    vela::ArithmeticReal signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
+    Real relativeCorrection0, Real relativeCorrection1, vela::ArithmeticReal signedDpsiCorrection)
 {
-    long double eta = static_cast<long double>(signedDpsi) / Vt;
+    if constexpr (compiledArithmeticPrecision == ArithmeticPrecision::Double) {
+        if (std::isfinite(signedDpsi) && Vt > 0. && std::isfinite(signedDpsi / Vt)) {
+            auto eta = numerics::SplitCoordinate{static_cast<Real>(signedDpsi), 0.}.divided(Vt);
+            if (includeNiGradientDrift && ni0 > 0. && ni1 > 0.)
+                eta = eta.added(sgPopulationLogRatioCompensated(ni1, ni0));
+            return sgBoltzmannPopulationContinuityFluxFromDrift(
+                population0, population1, eta, Vt, coef, relativeCorrection0, relativeCorrection1,
+                static_cast<Real>(signedDpsiCorrection));
+        }
+    }
+    vela::ArithmeticReal eta = static_cast<vela::ArithmeticReal>(signedDpsi) / Vt;
     if (includeNiGradientDrift && ni0 > 0.0 && ni1 > 0.0)
         eta += sgPopulationLogRatio(ni1, ni0);
     return sgBoltzmannPopulationContinuityFluxFromDrift(
@@ -154,8 +219,8 @@ Real sgBoltzmannPopulationContinuityFlux(
 }
 
 Real sgBoltzmannPopulationContinuityFluxFromDrift(
-    Real population0, Real population1, long double eta, Real Vt, Real coef,
-    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection)
+    Real population0, Real population1, vela::ArithmeticReal eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, vela::ArithmeticReal signedDpsiCorrection)
 {
     if (population0 <= 0.0 || population1 <= 0.0) {
         return static_cast<Real>(coef * (longDoubleBernoulli(-eta) * population0
@@ -164,17 +229,30 @@ Real sgBoltzmannPopulationContinuityFluxFromDrift(
 
     // B(-eta) = exp(eta) * B(eta). Factor out the larger term and
     // evaluate the small relative imbalance without subtracting two fluxes.
-    const long double deltaEta = signedDpsiCorrection / Vt;
-    const long double logLeftOverRight = eta + sgPopulationLogRatio(population0, population1)
-        + (deltaEta + std::log1p(static_cast<long double>(relativeCorrection0))
-           - std::log1p(static_cast<long double>(relativeCorrection1)));
+    const vela::ArithmeticReal deltaEta = signedDpsiCorrection / Vt;
+    const vela::ArithmeticReal logLeftOverRight = eta + sgPopulationLogRatio(population0, population1)
+        + (deltaEta + std::log1p(static_cast<vela::ArithmeticReal>(relativeCorrection0))
+           - std::log1p(static_cast<vela::ArithmeticReal>(relativeCorrection1)));
     eta += deltaEta;
-    if (logLeftOverRight >= 0.0L) {
-        return static_cast<Real>(coef * longDoubleBernoulli(-eta) * population0
-            * (1.L + relativeCorrection0) * (-std::expm1(-logLeftOverRight)));
-    }
-    return static_cast<Real>(coef * longDoubleBernoulli(eta) * population1
-        * (1.L + relativeCorrection1) * std::expm1(logLeftOverRight));
+    return populationFluxFromLogImbalance(
+        population0, population1, eta, coef, relativeCorrection0, relativeCorrection1, logLeftOverRight);
+}
+
+Real sgBoltzmannPopulationContinuityFluxFromDrift(
+    Real population0, Real population1, numerics::SplitCoordinate eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, Real signedDpsiCorrection)
+{
+    if (population0 <= 0. || population1 <= 0.)
+        return sgBoltzmannPopulationContinuityFluxFromDrift(
+            population0, population1, ArithmeticReal(eta.hi), Vt, coef,
+            relativeCorrection0, relativeCorrection1, signedDpsiCorrection);
+    const auto correction = numerics::SplitCoordinate{signedDpsiCorrection, 0.}.divided(Vt);
+    const double logCorrection0 = std::log1p(relativeCorrection0);
+    const double logCorrection1 = std::log1p(relativeCorrection1);
+    const auto imbalance = eta.added(sgPopulationLogRatioCompensated(population0, population1))
+        .added(correction).added(numerics::SplitCoordinate::sum(logCorrection0, -logCorrection1));
+    return populationFluxFromLogImbalance(population0, population1, eta.added(correction).hi,
+                                          coef, relativeCorrection0, relativeCorrection1, imbalance.hi);
 }
 
 Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
@@ -345,38 +423,38 @@ sgElectronContinuityFluxFromQuasiFermiVariableNiDecomposition(
     result.cancellationCondition = finiteCancellationCondition(
         result.leftTerm, result.rightTerm, result.signedDifference);
 
-    const long double ni0Long = static_cast<long double>(ni0);
-    const long double ni1Long = static_cast<long double>(ni1);
-    const long double psi0Long = static_cast<long double>(psi0);
-    const long double psi1Long = static_cast<long double>(psi1);
-    const long double phin0Long = static_cast<long double>(phin0);
-    const long double phin1Long = static_cast<long double>(phin1);
-    const long double VtLong = static_cast<long double>(Vt);
-    const long double coefLong = static_cast<long double>(coef);
-    const long double endpointExponent0Long =
+    const vela::ArithmeticReal ni0Long = static_cast<vela::ArithmeticReal>(ni0);
+    const vela::ArithmeticReal ni1Long = static_cast<vela::ArithmeticReal>(ni1);
+    const vela::ArithmeticReal psi0Long = static_cast<vela::ArithmeticReal>(psi0);
+    const vela::ArithmeticReal psi1Long = static_cast<vela::ArithmeticReal>(psi1);
+    const vela::ArithmeticReal phin0Long = static_cast<vela::ArithmeticReal>(phin0);
+    const vela::ArithmeticReal phin1Long = static_cast<vela::ArithmeticReal>(phin1);
+    const vela::ArithmeticReal VtLong = static_cast<vela::ArithmeticReal>(Vt);
+    const vela::ArithmeticReal coefLong = static_cast<vela::ArithmeticReal>(coef);
+    const vela::ArithmeticReal endpointExponent0Long =
         (psi0Long - phin0Long) / VtLong;
-    const long double endpointExponent1Long =
+    const vela::ArithmeticReal endpointExponent1Long =
         (psi1Long - phin1Long) / VtLong;
-    const long double clampedExponent0Long = std::clamp(
-        endpointExponent0Long, -500.0L, 500.0L);
-    const long double clampedExponent1Long = std::clamp(
-        endpointExponent1Long, -500.0L, 500.0L);
-    const long double n0Long = ni0Long * std::exp(clampedExponent0Long);
-    const long double n1Long = ni1Long * std::exp(clampedExponent1Long);
-    long double etaLong = (psi1Long - psi0Long) / VtLong;
+    const vela::ArithmeticReal clampedExponent0Long = std::clamp(
+        endpointExponent0Long, -VELA_ARITHMETIC_LITERAL(500.0), VELA_ARITHMETIC_LITERAL(500.0));
+    const vela::ArithmeticReal clampedExponent1Long = std::clamp(
+        endpointExponent1Long, -VELA_ARITHMETIC_LITERAL(500.0), VELA_ARITHMETIC_LITERAL(500.0));
+    const vela::ArithmeticReal n0Long = ni0Long * std::exp(clampedExponent0Long);
+    const vela::ArithmeticReal n1Long = ni1Long * std::exp(clampedExponent1Long);
+    vela::ArithmeticReal etaLong = (psi1Long - psi0Long) / VtLong;
     if (ni0 > 0.0 && ni1 > 0.0 && includeNiGradientDrift)
         etaLong += std::log(ni1Long / ni0Long);
-    const long double leftTermLong =
+    const vela::ArithmeticReal leftTermLong =
         longDoubleBernoulli(-etaLong) * n0Long;
-    const long double rightTermLong =
+    const vela::ArithmeticReal rightTermLong =
         longDoubleBernoulli(etaLong) * n1Long;
-    const long double referenceTermScaleLong =
+    const vela::ArithmeticReal referenceTermScaleLong =
         std::abs(coefLong)
         * (std::abs(leftTermLong) + std::abs(rightTermLong));
-    long double referenceFluxLong = 0.0L;
+    vela::ArithmeticReal referenceFluxLong = VELA_ARITHMETIC_LITERAL(0.0);
     if (!result.flatQuasiFermiShortCircuit) {
         if (ni0 > 0.0 && ni1 > 0.0) {
-            long double logLeftOverRightLong =
+            vela::ArithmeticReal logLeftOverRightLong =
                 (phin1Long - phin0Long) / VtLong;
             if (!includeNiGradientDrift)
                 logLeftOverRightLong += std::log(ni0Long / ni1Long);
@@ -643,47 +721,47 @@ Real sgHoleFermiDiracContinuityFlux(
         (bernoulli(argument) * p0 - bernoulli(-argument) * p1);
 }
 
-long double sgElectronFermiDiracQuantumContinuityFluxLongDouble(
+vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
     Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef)
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef)
 {
     if (!(qmDensity1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
-        quasiFermiDrop == 0.0L) {
-        return 0.0L;
+        quasiFermiDrop == VELA_ARITHMETIC_LITERAL(0.0)) {
+        return VELA_ARITHMETIC_LITERAL(0.0);
     }
-    const long double factor = static_cast<long double>(
+    const vela::ArithmeticReal factor = static_cast<vela::ArithmeticReal>(
         sgGeneralizedEinsteinFactor(
             fermiDensity0, fermiDensity1, eta0, eta1));
-    const long double thermalVoltage = static_cast<long double>(Vt);
-    const long double argument = static_cast<long double>(driftPotential) /
+    const vela::ArithmeticReal thermalVoltage = static_cast<vela::ArithmeticReal>(Vt);
+    const vela::ArithmeticReal argument = static_cast<vela::ArithmeticReal>(driftPotential) /
         (thermalVoltage * factor);
-    const long double logarithmicLeftOverRight =
+    const vela::ArithmeticReal logarithmicLeftOverRight =
         quasiFermiDrop / (thermalVoltage * factor);
-    return static_cast<long double>(coef) * factor *
+    return static_cast<vela::ArithmeticReal>(coef) * factor *
         longDoubleBernoulli(argument) *
-        static_cast<long double>(qmDensity1) *
+        static_cast<vela::ArithmeticReal>(qmDensity1) *
         std::expm1(logarithmicLeftOverRight);
 }
 
-long double sgHoleFermiDiracContinuityFluxLongDouble(
+vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    long double quasiFermiDrop, Real Vt, Real coef)
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef)
 {
     if (!(p1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
-        quasiFermiDrop == 0.0L) {
-        return 0.0L;
+        quasiFermiDrop == VELA_ARITHMETIC_LITERAL(0.0)) {
+        return VELA_ARITHMETIC_LITERAL(0.0);
     }
-    const long double factor = static_cast<long double>(
+    const vela::ArithmeticReal factor = static_cast<vela::ArithmeticReal>(
         sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1));
-    const long double thermalVoltage = static_cast<long double>(Vt);
-    const long double argument = static_cast<long double>(driftPotential) /
+    const vela::ArithmeticReal thermalVoltage = static_cast<vela::ArithmeticReal>(Vt);
+    const vela::ArithmeticReal argument = static_cast<vela::ArithmeticReal>(driftPotential) /
         (thermalVoltage * factor);
-    const long double logarithmicLeftOverRight =
+    const vela::ArithmeticReal logarithmicLeftOverRight =
         -quasiFermiDrop / (thermalVoltage * factor);
-    return static_cast<long double>(coef) * factor *
+    return static_cast<vela::ArithmeticReal>(coef) * factor *
         longDoubleBernoulli(-argument) *
-        static_cast<long double>(p1) *
+        static_cast<vela::ArithmeticReal>(p1) *
         std::expm1(logarithmicLeftOverRight);
 }
 

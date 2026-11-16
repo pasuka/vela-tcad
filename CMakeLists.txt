@@ -650,6 +650,30 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# Each runner links a single arithmetic implementation. Keep both core builds
+# on the same dependency, compiler-option and source configuration.
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles([=[
+    #include <limits>
+    static_assert(std::numeric_limits<long double>::radix == 2);
+    static_assert(std::numeric_limits<long double>::digits == 64);
+    static_assert(std::numeric_limits<long double>::max_exponent == 16384);
+    int main() {}
+]=] VELA_HAS_EXTENDED80)
+if(VELA_HAS_EXTENDED80)
+    add_library(vela_core_extended80 STATIC)
+    foreach(_property IN ITEMS SOURCES INCLUDE_DIRECTORIES INTERFACE_INCLUDE_DIRECTORIES
+            COMPILE_DEFINITIONS INTERFACE_COMPILE_DEFINITIONS COMPILE_OPTIONS
+            INTERFACE_COMPILE_OPTIONS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES INTERFACE_LINK_OPTIONS)
+        get_property(_value TARGET vela_core PROPERTY ${_property})
+        set_property(TARGET vela_core_extended80 PROPERTY ${_property} "${_value}")
+    endforeach()
+    target_compile_definitions(vela_core_extended80 PUBLIC VELA_ARITHMETIC_EXTENDED80=1)
+    add_executable(vela_example_runner_extended80 src/tools/vela_example_runner.cpp)
+    target_link_libraries(vela_example_runner_extended80 PRIVATE vela_core_extended80)
+    add_dependencies(vela_example_runner vela_example_runner_extended80)
+endif()
+
 # Independent validation entry; experiment controls are not simulation-schema options.
 add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
 target_link_libraries(vela_bvmethods_experiment PRIVATE vela_core)
@@ -781,6 +805,9 @@ endif()
 # WP11: install only the frontend's runtime closure, never reference fixtures.
 # Keep both the documented root launcher and the conventional bin/ entry point.
 set(_vela_distribution_targets vela sd-sim vela_example_runner)
+if(TARGET vela_example_runner_extended80)
+    list(APPEND _vela_distribution_targets vela_example_runner_extended80)
+endif()
 if(TARGET sentaurus_import)
     list(APPEND _vela_distribution_targets sentaurus_import)
 endif()

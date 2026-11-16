@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include <cmath>
 
@@ -12,7 +13,7 @@ inline detail::Tri3LocalForwardDual populationRecombinationExcess(
     const detail::Tri3LocalForwardDual& gammaN,
     const detail::Tri3LocalForwardDual& gammaP,double ni)
 {
-    using Wide=long double;
+    using Wide=vela::ArithmeticReal;
     Wide q=Wide(gammaN.value)*gammaP.value;
     Wide qError=std::fma(Wide(gammaN.value),Wide(gammaP.value),-q);
     for(Wide factor:{Wide(ni),Wide(ni)}) {

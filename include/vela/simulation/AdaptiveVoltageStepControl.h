@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/core/ArithmeticPrecision.h"
 
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -188,8 +189,8 @@ inline std::optional<double> guardedOuterStep(double proposed, const OuterStepCo
     double allowed = std::min(proposed, control.maximum);
     if (deltaInner != 0.) {
         // Long double avoids intermediate overflow for a very small secant slope.
-        const long double bound = static_cast<long double>(innerLimit) *
-            std::abs(static_cast<long double>(deltaOuter)) / std::abs(static_cast<long double>(deltaInner));
+        const vela::ArithmeticReal bound = static_cast<vela::ArithmeticReal>(innerLimit) *
+            std::abs(static_cast<vela::ArithmeticReal>(deltaOuter)) / std::abs(static_cast<vela::ArithmeticReal>(deltaInner));
         if (bound < allowed) allowed = static_cast<double>(bound);
     }
     // Do not silently exceed the requested inner limit by clamping upward.

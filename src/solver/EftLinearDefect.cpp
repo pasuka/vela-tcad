@@ -1,7 +1,7 @@
 
 #include "vela/solver/LinearRefinement.h"
-
-#include <boost/multiprecision/cpp_int.hpp>
+#include "vela/core/ArithmeticPrecision.h"
+#include "vela/numerics/ExactBinary64.h"
 
 #include <bit>
 #include <cfenv>
@@ -136,18 +136,11 @@ double convert(const MP& value) {
     const auto result = std::from_chars(text.data(), end, parsed, std::chars_format::scientific);
     return result.ec == std::errc{} && result.ptr == end ? parsed : static_cast<double>(value);
 }
-using Exact = boost::multiprecision::cpp_rational;
+using Exact = exact_binary64::Rational;
 
-// Cover products of any two finite binary64 inputs, including subnormals.
-constexpr bool hasExtendedPrecision =
-    std::numeric_limits<long double>::is_iec559 &&
-    std::numeric_limits<long double>::digits >= 64 &&
-    std::numeric_limits<long double>::max_exponent > 4096 &&
-    std::numeric_limits<long double>::min_exponent < -4096;
-
-double convert(long double value) {
+double convert(ArithmeticReal value) {
     // Preserve the existing result policy for binary64 subnormals.
-    const long double magnitude = std::abs(value);
+    const ArithmeticReal magnitude = std::abs(value);
     if (magnitude < std::numeric_limits<double>::min()) return 0.;
     if (magnitude > std::numeric_limits<double>::max()) {
         const double infinity = std::numeric_limits<double>::infinity();
@@ -157,9 +150,15 @@ double convert(long double value) {
 }
 
 double convert(const Exact& value) {
-    static const Exact minimum(std::numeric_limits<double>::min());
-    if (abs(value) < minimum) return 0.;
-    return value.convert_to<double>();
+    return exact_binary64::toNormalDouble(value);
+}
+
+template<class Number>
+Number exactInput(double value) {
+    if constexpr (std::is_same_v<Number, Exact>)
+        return exact_binary64::fromDouble(value);
+    else
+        return Number(value);
 }
 
 template<class Number>
@@ -182,8 +181,8 @@ void accumulateFallback(const SparseMatrixd& J, const VectorXd& step,
         for (SparseMatrixd::InnerIterator it(J, col); it; ++it) {
             const auto row = index[it.row()];
             if (row < 0) continue;
-            if (!direction) direction.emplace(step(col));
-            const Number product = Number(it.value()) * *direction;
+            if (!direction) direction.emplace(exactInput<Number>(step(col)));
+            const Number product = exactInput<Number>(it.value()) * *direction;
             fallback[row].residual += product;
             fallback[row].denominator += abs(product);
         }
@@ -193,13 +192,17 @@ void accumulateFallback(const SparseMatrixd& J, const VectorXd& step,
 
 template<class Number>
 Defect eftDefectImpl(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step) {
-    constexpr bool nativeFinish = std::is_same_v<Number, long double>;
+    constexpr bool nativeFinish = std::is_same_v<Number, ArithmeticReal>;
+    constexpr bool extended = compiledArithmeticPrecision == ArithmeticPrecision::Extended80;
     using std::abs;
     ScopedPerformanceTimer timer("linear.mp_defect.total");
     incrementPerformanceCounter("linear.mp_defect.calls");
     incrementPerformanceCounter("linear.eft_defect.calls");
-    incrementPerformanceCounter(nativeFinish ? "linear.eft_defect.long_double_calls"
-                                              : "linear.eft_defect.mp100_finish_calls");
+    if constexpr (nativeFinish)
+        incrementPerformanceCounter(extended ? "linear.eft_defect.long_double_calls"
+                                             : "linear.eft_defect.double_calls");
+    else
+        incrementPerformanceCounter("linear.eft_defect.mp100_finish_calls");
     std::vector<Row> rows;
     {
         ScopedPerformanceTimer stage("linear.eft_defect.accumulate");
@@ -212,7 +215,7 @@ Defect eftDefectImpl(const SparseMatrixd& J, const VectorXd& F, const VectorXd& 
 
     Defect result{VectorXd(F.size()), 0., VectorXd::Zero(F.size())};
     std::vector<FallbackRow<Number>> fallback;
-    std::vector<FallbackRow<Exact>> exactCancellation;
+    std::vector<FallbackRow<Exact>> exactFallback;
     std::uint64_t rangeRows = 0, cancellationRows = 0;
     auto writeRow = [&]<class Value>(Eigen::Index row, const Value& residual, const Value& denominator) {
         using std::abs;
@@ -234,27 +237,30 @@ Defect eftDefectImpl(const SparseMatrixd& J, const VectorXd& F, const VectorXd& 
                     continue;
                 }
                 ++cancellationRows;
-                if constexpr (nativeFinish) {
-                    // The discarded EFT tail can exceed the precision of long double.
-                    const Exact value(F(i));
-                    exactCancellation.push_back({i, value, abs(value)});
-                    continue;
-                }
             } else {
                 ++rangeRows;
+            }
+            if constexpr (nativeFinish) {
+                // Recompute discarded tails exactly. Binary64 also needs
+                // exact products for rows that exceed its exponent range.
+                if (!extended || row.fallback == FallbackReason::none) {
+                    const Exact value = exact_binary64::fromDouble(F(i));
+                    exactFallback.push_back({i, value, abs(value)});
+                    continue;
+                }
             }
             const Number value(F(i));
             fallback.push_back({i, value, abs(value)});
         }
     }
-    if (!fallback.empty() || !exactCancellation.empty()) {
+    if (!fallback.empty() || !exactFallback.empty()) {
         ScopedPerformanceTimer stage("linear.eft_defect.fallback");
         accumulateFallback(J, step, fallback, writeRow);
-        if constexpr (nativeFinish) accumulateFallback(J, step, exactCancellation, writeRow);
+        if constexpr (nativeFinish) accumulateFallback(J, step, exactFallback, writeRow);
     }
     if (!result.values.allFinite() || !result.componentwiseBackwardErrors.allFinite())
         throw std::runtime_error("Nonfinite linear refinement defect");
-    incrementPerformanceCounter("linear.eft_defect.rows", rows.size() - fallback.size() - exactCancellation.size());
+    incrementPerformanceCounter("linear.eft_defect.rows", rows.size() - fallback.size() - exactFallback.size());
     incrementPerformanceCounter("linear.eft_defect.range_fallback_rows", rangeRows);
     incrementPerformanceCounter("linear.eft_defect.cancellation_fallback_rows", cancellationRows);
     return result;
@@ -273,11 +279,9 @@ Defect eftDefect(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     FloatingEnvironment environment;
     if (environment.supported()) {
-        if constexpr (hasExtendedPrecision) {
-            const char* forceMp100 = std::getenv("VELA_BVMETHODS_EFT_MP100_FINISH");
-            if (!forceMp100 || std::string_view(forceMp100) != "1")
-                return eftDefectImpl<long double>(J, F, step);
-        }
+        const char* forceMp100 = std::getenv("VELA_BVMETHODS_EFT_MP100_FINISH");
+        if (!forceMp100 || std::string_view(forceMp100) != "1")
+            return eftDefectImpl<ArithmeticReal>(J, F, step);
         return eftDefectImpl<MP>(J, F, step);
     }
 #endif

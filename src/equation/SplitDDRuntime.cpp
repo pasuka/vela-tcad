@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/equation/SplitDDOperator.h"
 #include "vela/equation/CoupledDDAssembler.h"
@@ -320,9 +321,9 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
             Real x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
             Real nx=mobilityConfig_.surface.cellNormalX[cid],ny=mobilityConfig_.surface.cellNormalY[cid];
             Real f=mobilityConfig_.surface.coordinateFieldFactor*mobilityConfig_.internalFieldToVPerM;
-            const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);long double volume=(long double)measures[0]+measures[1]+measures[2];
+            const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];
             nlohmann::json distances=nlohmann::json::array(),weights=nlohmann::json::array();
-            for(int k=0;k<3;++k){distances.push_back(mobilityConfig_.surface.nodeDistances[cell.node_ids[k]]*mobilityConfig_.internalLengthToM);weights.push_back(static_cast<Real>((long double)measures[k]/volume));}
+            for(int k=0;k<3;++k){distances.push_back(mobilityConfig_.surface.nodeDistances[cell.node_ids[k]]*mobilityConfig_.internalLengthToM);weights.push_back(static_cast<Real>((vela::ArithmeticReal)measures[k]/volume));}
             surfaceCell[cid]=static_cast<int>(s["cells"].size());
             s["cells"].push_back({{"nodes",cell.node_ids},{"distances_m",distances},{"weights",weights},{"stencil",{(y2*nx-x2*ny)/det*f,(-y1*nx+x1*ny)/det*f}}});
             if(usesElementHighField(mobilityConfig_)) {
@@ -333,16 +334,16 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
     }
     j["continuity_scale"]=cs;j["field_factor"]=fieldFactor;j["current_factor"]=constants::q*cs*(scaling_.enabled?scaling_.currentDensityLineIntegralFactor:1.)*1e-6;
     for(Index e=0;e<mesh_.numEdges();++e){const auto& edge=mesh_.getEdge(e);if(edge.length<1e-30)continue;j["poisson_edges"].push_back({edge.n0,edge.n1,edgeAssemblyKernels_[e].poissonCoupling});
-        nlohmann::json weights=nlohmann::json::array(),ports=nlohmann::json::object();long double total=0;
+        nlohmann::json weights=nlohmann::json::array(),ports=nlohmann::json::object();vela::ArithmeticReal total=0;
         for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;total+=detail::cellBoxEdgeCoefficient(mesh_,cid,e);}
-        if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);long double volume=(long double)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((long double)g*measures[k]/volume/total)});}
+        if(total>0)for(Index cid:edgeCells_[e]){const auto& m=cellMaterials_[cid];if(m.ni<=0&&m.mun<=0&&m.mup<=0)continue;if(m.temperature_K.value_or(300.)!=300.||m.mun<=0||m.mup<=0)throw std::invalid_argument("Split DD requires 300 K silicon transport");Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g==0)continue;const auto measures=detail::cellBoxNodeMeasures(mesh_,cid);vela::ArithmeticReal volume=(vela::ArithmeticReal)measures[0]+measures[1]+measures[2];for(int k=0;k<3;++k)weights.push_back({mesh_.getCell(cid).node_ids[k],static_cast<Real>((vela::ArithmeticReal)g*measures[k]/volume/total)});}
         if(couple_[e]>0)for(const auto& c:mesh_.contacts()){bool i=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n0)!=c.node_ids.end();bool h=std::find(c.node_ids.begin(),c.node_ids.end(),edge.n1)!=c.node_ids.end();if(i!=h)ports[c.name]=i?1.:-1.;}
         j["transport_edges"].push_back({{"id",e},{"i",edge.n0},{"j",edge.n1},{"coefficient",Vt_*fieldFactor*couple_[e]/edge.length/cs},{"weights",weights},{"ports",ports},{"length",edge.length},{"couple",couple_[e]},
             {"length_m",scaling_.unitSystem.internalLengthToMeters(edge.length)},{"couple_m",scaling_.unitSystem.internalLengthToMeters(couple_[e])}});
         if(enormal) {
             auto& ws=j["transport_edges"].back()["cell_weights"];ws=nlohmann::json::array();
             if(total>0)for(Index cid:edgeCells_[e])if(surfaceCell[cid]>=0) {
-                const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g!=0)ws.push_back({surfaceCell[cid],static_cast<Real>((long double)g/total)});
+                const Real g=detail::cellBoxEdgeCoefficient(mesh_,cid,e);if(g!=0)ws.push_back({surfaceCell[cid],static_cast<Real>((vela::ArithmeticReal)g/total)});
             }
         }
     }

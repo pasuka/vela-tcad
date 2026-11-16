@@ -25,7 +25,11 @@ from .support import RunError, RunLock, write_json
 
 
 def executable(name, bin_dir):
-    variable = "VELA_EXAMPLE_RUNNER" if name == "vela_example_runner" else "VELA_SENTAURUS_IMPORT"
+    variable = {
+        "vela_example_runner": "VELA_EXAMPLE_RUNNER",
+        "vela_example_runner_extended80": "VELA_EXAMPLE_RUNNER_EXTENDED80",
+        "sentaurus_import": "VELA_SENTAURUS_IMPORT",
+    }[name]
     override = os.environ.get(variable)
     if override:
         path = Path(override).resolve()
@@ -130,7 +134,9 @@ class DeviceRun:
                 if not path.is_file():
                     raise RunError(identifier, f"{key.capitalize()} file '{path}' not found")
             location = Path(os.environ.get("VELA_BIN", Path(sys.argv[0]).resolve().parent))
-            runner = executable("vela_example_runner", location)
+            precision = self.ir["math"].get("arithmetic_precision", "double")
+            runner_name = "vela_example_runner_extended80" if precision == "extended80" else "vela_example_runner"
+            runner = executable(runner_name, location)
             importer = executable("sentaurus_import", location)
             mesh = import_grid(self.cmd.parent / self.ir["files"]["grid"]["resolved"], self.work,
                                importer=importer[0] if importer else None)
@@ -172,7 +178,7 @@ class DeviceRun:
                 self.log("INFO", "Check-only gates passed; runner not invoked")
             else:
                 if runner is None:
-                    raise RunError("E202", "Option 'runner' cannot be resolved in VELA_BIN or PATH")
+                    raise RunError("E202", f"Runner '{runner_name}' for {precision} arithmetic cannot be resolved")
                 self.publisher = OutputPublisher(self.cmd.parent, self.work, self.result)
                 count = 1 if self.options.initial_only else len(self.result.decks)
                 for index in range(count):

@@ -621,10 +621,10 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
     Real Vt,
     Real fieldFactor,
     bool populationFlux = false,
-    const std::array<long double, 3>* edgePotentialDrops = nullptr,
+    const std::array<vela::ArithmeticReal, 3>* edgePotentialDrops = nullptr,
     const std::array<Real, 3>* relativeElectronCorrections = nullptr,
     const std::array<Real, 3>* relativeHoleCorrections = nullptr,
-    const std::array<long double, 3>* edgePotentialCorrections = nullptr)
+    const std::array<vela::ArithmeticReal, 3>* edgePotentialCorrections = nullptr)
 {
     if (!usesElementEdgeGssLauxAvalancheSource(impactConfig)) {
         throw std::invalid_argument(
@@ -726,7 +726,7 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
                     Vt, coefficient, true,
                     corrections ? (*corrections)[local] : 0.,
                     corrections ? (*corrections)[next] : 0.,
-                    edgePotentialCorrections ? (electron ? 1.L : -1.L) * (*edgePotentialCorrections)[local] : 0.L);
+                    edgePotentialCorrections ? (electron ? VELA_ARITHMETIC_LITERAL(1.) : -VELA_ARITHMETIC_LITERAL(1.)) * (*edgePotentialCorrections)[local] : VELA_ARITHMETIC_LITERAL(0.));
             } else {
                 const Real niOffset = ni[local] > 0.0 && ni[next] > 0.0
                     ? std::log(ni[next] / ni[local]) : 0.0;

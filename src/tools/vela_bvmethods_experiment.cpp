@@ -1,5 +1,6 @@
 // Independent experimental entry: production JSON schemas and defaults are unchanged.
 #define main velaStandardEntryMain
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela_example_runner.cpp"
 #undef main
 #include "vela/simulation/DCSweepExperiment.h"
@@ -65,7 +66,7 @@ int checkpointExperiment(const std::string& file) {
             {"rejected",t.candidateRejectedByRecovery},{"model_review",t.bootstrapModelRetry},
             {"linear_review",!t.bootstrapLinearFailureReason.empty()},
             {"rms",t.updateError.rms},{"candidate_rms",t.candidateUpdateError.rms}});
-        long double kcl=0.;
+        vela::ArithmeticReal kcl=0.;
         for(const auto& contact:problem.mesh.contacts()) {
             const auto current=owner.makeArclengthContactCurrentFunctional(contact.name,
                 units.currentDensityAM2PerInternal()*units.lengthMPerInternal()*1e-6);

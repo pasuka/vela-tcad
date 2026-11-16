@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/numerics/WeightedSparseRows.h"
 #include "vela/numerics/StableMeritComparison.h"
 #include "vela/equation/SplitDDRuntime.h"
@@ -69,9 +70,9 @@ VectorXd packReferencedSolution(
     // Subtract physical references before nondimensionalizing even for
     // six-column external states; scaled subtraction loses tiny QF drops.
     for (int i = 0; i < N; ++i) {
-        packed(N + i) = static_cast<Real>((static_cast<long double>(state.phin(i)) -
+        packed(N + i) = static_cast<Real>((static_cast<vela::ArithmeticReal>(state.phin(i)) -
             assembler.electronQuasiFermiReferenceAt(static_cast<Index>(i))) / potentialScale);
-        packed(2 * N + i) = static_cast<Real>((static_cast<long double>(state.phip(i)) -
+        packed(2 * N + i) = static_cast<Real>((static_cast<vela::ArithmeticReal>(state.phip(i)) -
             assembler.holeQuasiFermiReferenceAt(static_cast<Index>(i))) / potentialScale);
     }
     if (state.hasReferencedElectronQuasiFermi()) {
@@ -81,28 +82,28 @@ VectorXd packReferencedSolution(
             // an absolute quasi-Fermi value first discards deep-off increments
             // below the ULP of the contact bias.  Subtract references before
             // adding the increment so an unchanged reference is exact.
-            const long double increment =
-                (static_cast<long double>(
+            const vela::ArithmeticReal increment =
+                (static_cast<vela::ArithmeticReal>(
                      state.electronQuasiFermiReferenceAt(i)) -
-                 static_cast<long double>(
+                 static_cast<vela::ArithmeticReal>(
                      assembler.electronQuasiFermiReferenceAt(
                          static_cast<Index>(i)))) +
-                static_cast<long double>(state.phinIncrement(i));
+                static_cast<vela::ArithmeticReal>(state.phinIncrement(i));
             packed(N + i) = static_cast<Real>(
-                increment / static_cast<long double>(potentialScale));
+                increment / static_cast<vela::ArithmeticReal>(potentialScale));
         }
     }
     if (state.hasReferencedHoleQuasiFermi()) {
         for (int i = 0; i < N; ++i) {
-            const long double increment =
-                (static_cast<long double>(
+            const vela::ArithmeticReal increment =
+                (static_cast<vela::ArithmeticReal>(
                      state.holeQuasiFermiReferenceAt(i)) -
-                 static_cast<long double>(
+                 static_cast<vela::ArithmeticReal>(
                      assembler.holeQuasiFermiReferenceAt(
                          static_cast<Index>(i)))) +
-                static_cast<long double>(state.phipIncrement(i));
+                static_cast<vela::ArithmeticReal>(state.phipIncrement(i));
             packed(2 * N + i) = static_cast<Real>(
-                increment / static_cast<long double>(potentialScale));
+                increment / static_cast<vela::ArithmeticReal>(potentialScale));
         }
     }
     if(state.hasConsistentPackedState() && state.packedPotentialScale_V==potentialScale) {
@@ -4007,12 +4008,12 @@ DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
         for (const auto& [node, value] : bcs.phip) holeFree[node] = false;
         const auto [dn, dp] = assembler->carrierDensityTangent(before, direction);
         const auto n = assembler->electronDensity(after), p = assembler->holeDensity(after);
-        std::array<long double, 4> squares{};
+        std::array<vela::ArithmeticReal, 4> squares{};
         bool valid = true;
-        const long double amplification = std::pow(10.L, config.digits);
+        const vela::ArithmeticReal amplification = std::pow(VELA_ARITHMETIC_LITERAL(10.), config.digits);
         auto add = [&](int block, Real state, Real delta, Real reference) {
-            const long double normalized = amplification * static_cast<long double>(delta) /
-                (std::abs(static_cast<long double>(state)) + reference);
+            const vela::ArithmeticReal normalized = amplification * static_cast<vela::ArithmeticReal>(delta) /
+                (std::abs(static_cast<vela::ArithmeticReal>(state)) + reference);
             valid = valid && std::isfinite(state) && std::isfinite(delta) &&
                 std::isfinite(normalized);
             squares[block] += normalized*normalized;
@@ -4032,7 +4033,7 @@ DensityUpdateErrorEvaluator NewtonSolver::makeArclengthUpdateErrorEvaluator(
         }
         for (std::size_t i=0; i<aliases; ++i)
             add(3, voltageAfter, rawVoltageDirection, config.contactReference_V);
-        long double total = 0.;
+        vela::ArithmeticReal total = 0.;
         std::size_t count = 0;
         for (int k=0; k<4; ++k) {
             count += result.counts[k]; total += squares[k];
@@ -4133,18 +4134,18 @@ Real NewtonSolver::evaluateStateTerminalCurrent(const DDSolution& state,
     if (state.populationLow.size()) {
         const auto terms = assembler->compensatedPopulationDiagnostics(
             state.psi,state.n,state.p,state.populationLow,{},false);
-        long double sum = 0.;
+        vela::ArithmeticReal sum = 0.;
         for (Index node : contact->node_ids) {
             const auto& row = terms.unconstrainedTerms[node];
-            sum += static_cast<long double>(row.holeFlux) - row.electronFlux;
+            sum += static_cast<vela::ArithmeticReal>(row.holeFlux) - row.electronFlux;
         }
         return static_cast<Real>(sum*constants::q*assembler->continuityResidualScale()*currentScale);
     }
     const auto x=packReferencedSolution(*assembler,state,{});
     const auto residual=assembler->usesBvMethodsOperator()?assembler->bvMethodsTransportResidual(x,BvMethodsTransportPurpose::terminalValidation):assembler->residual(x,{});const int N=mesh_.numNodes();
-    long double sum=0;
-    for(auto i:contact->node_ids)sum+=static_cast<long double>(residual(2*N+i))-static_cast<long double>(residual(N+i));
-    return static_cast<Real>(sum*static_cast<long double>(constants::q)*assembler->continuityResidualScale()*currentScale);
+    vela::ArithmeticReal sum=0;
+    for(auto i:contact->node_ids)sum+=static_cast<vela::ArithmeticReal>(residual(2*N+i))-static_cast<vela::ArithmeticReal>(residual(N+i));
+    return static_cast<Real>(sum*static_cast<vela::ArithmeticReal>(constants::q)*assembler->continuityResidualScale()*currentScale);
 }
 
 NewtonTerminalCurrentAdjointEvaluation
@@ -4275,24 +4276,24 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(
             if ((electronMajority || !holeMajority) && electronTransportEdge) {
                 const Real drop = state.hasReferencedElectronQuasiFermi()
                     ? static_cast<Real>(
-                        (static_cast<long double>(
+                        (static_cast<vela::ArithmeticReal>(
                             state.electronQuasiFermiReferenceAt(j)) -
-                         static_cast<long double>(
+                         static_cast<vela::ArithmeticReal>(
                             state.electronQuasiFermiReferenceAt(i))) +
-                        (static_cast<long double>(state.phinIncrement(j)) -
-                         static_cast<long double>(state.phinIncrement(i))))
+                        (static_cast<vela::ArithmeticReal>(state.phinIncrement(j)) -
+                         static_cast<vela::ArithmeticReal>(state.phinIncrement(i))))
                     : state.phin(j) - state.phin(i);
                 maxDrop = std::max(maxDrop, std::abs(drop));
             }
             if ((holeMajority || !electronMajority) && holeTransportEdge) {
                 const Real drop = state.hasReferencedHoleQuasiFermi()
                     ? static_cast<Real>(
-                        (static_cast<long double>(
+                        (static_cast<vela::ArithmeticReal>(
                             state.holeQuasiFermiReferenceAt(j)) -
-                         static_cast<long double>(
+                         static_cast<vela::ArithmeticReal>(
                             state.holeQuasiFermiReferenceAt(i))) +
-                        (static_cast<long double>(state.phipIncrement(j)) -
-                         static_cast<long double>(state.phipIncrement(i))))
+                        (static_cast<vela::ArithmeticReal>(state.phipIncrement(j)) -
+                         static_cast<vela::ArithmeticReal>(state.phipIncrement(i))))
                     : state.phip(j) - state.phip(i);
                 maxDrop = std::max(maxDrop, std::abs(drop));
             }
@@ -7363,12 +7364,12 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             if (bcs.phin.find(node) == bcs.phin.end() &&
                 std::abs(initial.phin(i) - reconstructed) <=
                     consistencyTolerance) {
-                const long double repartitioned =
-                    (static_cast<long double>(initial.electronQuasiFermiReferenceAt(i)) -
-                     static_cast<long double>(assembler.electronQuasiFermiReferenceAt(node))) +
-                    static_cast<long double>(initial.phinIncrement(i));
+                const vela::ArithmeticReal repartitioned =
+                    (static_cast<vela::ArithmeticReal>(initial.electronQuasiFermiReferenceAt(i)) -
+                     static_cast<vela::ArithmeticReal>(assembler.electronQuasiFermiReferenceAt(node))) +
+                    static_cast<vela::ArithmeticReal>(initial.phinIncrement(i));
                 x(N + i) = static_cast<Real>(
-                    repartitioned / static_cast<long double>(potentialScale));
+                    repartitioned / static_cast<vela::ArithmeticReal>(potentialScale));
             }
         }
     }
@@ -7383,12 +7384,12 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             if (bcs.phip.find(node) == bcs.phip.end() &&
                 std::abs(initial.phip(i) - reconstructed) <=
                     consistencyTolerance) {
-                const long double repartitioned =
-                    (static_cast<long double>(initial.holeQuasiFermiReferenceAt(i)) -
-                     static_cast<long double>(assembler.holeQuasiFermiReferenceAt(node))) +
-                    static_cast<long double>(initial.phipIncrement(i));
+                const vela::ArithmeticReal repartitioned =
+                    (static_cast<vela::ArithmeticReal>(initial.holeQuasiFermiReferenceAt(i)) -
+                     static_cast<vela::ArithmeticReal>(assembler.holeQuasiFermiReferenceAt(node))) +
+                    static_cast<vela::ArithmeticReal>(initial.phipIncrement(i));
                 x(2 * N + i) = static_cast<Real>(
-                    repartitioned / static_cast<long double>(potentialScale));
+                    repartitioned / static_cast<vela::ArithmeticReal>(potentialScale));
             }
         }
     }

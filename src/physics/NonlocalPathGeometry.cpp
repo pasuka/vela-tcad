@@ -1,3 +1,4 @@
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/NonlocalPathGeometry.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -168,9 +169,9 @@ TunnelingGeometryResult NonlocalPathGeometry::trace(const TunnelingBandState& s,
     auto& path = result.path;
     path.id = id; path.identity = s.identity;
     path.points.push_back({start, support(cell, start), false});
-    long double startValence = 0;
-    for (const auto& [node, w] : path.points[0].support.weights) startValence += static_cast<long double>(w) * s.nodes[node].valence_J;
-    const long double energy = startValence - c.valenceOffset_J;
+    vela::ArithmeticReal startValence = 0;
+    for (const auto& [node, w] : path.points[0].support.weights) startValence += static_cast<vela::ArithmeticReal>(w) * s.nodes[node].valence_J;
+    const vela::ArithmeticReal energy = startValence - c.valenceOffset_J;
     path.energyLower_J = path.energyUpper_J = static_cast<Real>(energy);
     auto finish = [&](TunnelingTermination reason) {
         path.termination = reason;
@@ -187,8 +188,8 @@ TunnelingGeometryResult NonlocalPathGeometry::trace(const TunnelingBandState& s,
     for (Index iteration = 0; iteration < options.maximumSegments; ++iteration) {
         const auto& triangle = mesh_.cells[cell];
         const auto w = weights(cell, point);
-        long double barrier = c.conductionOffset_J - energy;
-        for (Index i = 0; i < 3; ++i) barrier += static_cast<long double>(w[i]) * s.nodes[triangle.nodes[i]].conduction_J;
+        vela::ArithmeticReal barrier = c.conductionOffset_J - energy;
+        for (Index i = 0; i < 3; ++i) barrier += static_cast<vela::ArithmeticReal>(w[i]) * s.nodes[triangle.nodes[i]].conduction_J;
         if (barrier <= 0) return finish(travelled == 0 ? TunnelingTermination::NoBarrier : TunnelingTermination::Complete);
         const Real slope = gradient(cell, s, false).dot(direction);
         Real distance = std::numeric_limits<Real>::infinity();
@@ -340,12 +341,12 @@ std::vector<TunnelingGeometryResult> NonlocalPathGeometry::traceFromCells(
         p.points.push_back(onFace(seed,lf,center+lo*direction));
         if(r.sourceChord_m>c.maximumPathLength_m) {
             const auto exit=onFace(seed,face,center+hi*direction);
-            long double upper=0,entryEc=0,exitEc=0;
+            vela::ArithmeticReal upper=0,entryEc=0,exitEc=0;
             for(const auto& [n,w]:p.points.front().support.weights) {
-                upper+=static_cast<long double>(w)*s.nodes[n].valence_J;
-                entryEc+=static_cast<long double>(w)*s.nodes[n].conduction_J;
+                upper+=static_cast<vela::ArithmeticReal>(w)*s.nodes[n].valence_J;
+                entryEc+=static_cast<vela::ArithmeticReal>(w)*s.nodes[n].conduction_J;
             }
-            for(const auto& [n,w]:exit.support.weights) exitEc+=static_cast<long double>(w)*s.nodes[n].conduction_J;
+            for(const auto& [n,w]:exit.support.weights) exitEc+=static_cast<vela::ArithmeticReal>(w)*s.nodes[n].conduction_J;
             // Ec is P1 on the entire source chord. If both endpoints exceed
             // its highest available energy, no conduction turn can lie in
             // the shorter retained domain. Otherwise the chord is unresolved.
@@ -360,7 +361,7 @@ std::vector<TunnelingGeometryResult> NonlocalPathGeometry::traceFromCells(
         p.integrationIntervals_m.emplace_back(0,travelled);
         r.segments.push_back({p.points[0].support,p.points[1].support,0,travelled});
         auto band=[&](const TunnelingEndpoint& e,bool ev) {
-            long double v=0;for(const auto& [n,w]:e.weights) v+=static_cast<long double>(w)*(ev?s.nodes[n].valence_J:s.nodes[n].conduction_J);
+            vela::ArithmeticReal v=0;for(const auto& [n,w]:e.weights) v+=static_cast<vela::ArithmeticReal>(w)*(ev?s.nodes[n].valence_J:s.nodes[n].conduction_J);
             return static_cast<Real>(v);
         };
         const Real lower=std::max(globalEc,band(p.points.back().support,true));

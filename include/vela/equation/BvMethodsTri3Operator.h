@@ -2,6 +2,7 @@
 #include <optional>
 #include <bit>
 #include <cstdint>
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/physics/experimental/BvMethodsAvValues.h"
 
 #include "vela/equation/AssemblerUtils.h"
@@ -221,8 +222,8 @@ public:
       const auto& hf=e?cfg_.electronField:cfg_.holeField;
       const auto surface=evaluatePreparedElementLombardi(e?a.bulkN[rep]:a.bulkP[rep],normal,
           e?lombardiN_[node]:lombardiP_[node],lp,cfg_);
-      const auto value=static_cast<Real>(elementCanali(static_cast<long double>(surface.mobility),
-          static_cast<long double>(drive),hf,cutoff));
+      const auto value=static_cast<Real>(elementCanali(static_cast<vela::ArithmeticReal>(surface.mobility),
+          static_cast<vela::ArithmeticReal>(drive),hf,cutoff));
       if(canali.audit && !CanaliEvaluationOptions::same(value,
           evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility))
        throw std::runtime_error("Canali avalanche value bit mismatch");
@@ -282,8 +283,8 @@ public:
     const double cutoff=100./cfg_.internalFieldToVPerM;
     const double scale=units.internalMobilityToM2PerVS(1.)*1e4;
     if(!derivatives && canali.avalancheValueOnly) {
-     const auto value=static_cast<Real>(elementCanali(static_cast<long double>(surface.mobility),
-        static_cast<long double>(drive.value),hf,cutoff));
+     const auto value=static_cast<Real>(elementCanali(static_cast<vela::ArithmeticReal>(surface.mobility),
+        static_cast<vela::ArithmeticReal>(drive.value),hf,cutoff));
      if(canali.audit && !CanaliEvaluationOptions::same(value,evaluateElementCanali(surface.mobility,drive.value,hf,cutoff).mobility))
       throw std::runtime_error("Canali avalanche value bit mismatch");
      return AvJet(value*scale);
@@ -480,8 +481,8 @@ public:
      const auto surface=evaluatePreparedElementLombardi(bulk[k],normal,prepared[i],lp,cfg_,powers?&*powers:nullptr,electron);
      const double cutoff=100./cfg_.internalFieldToVPerM;
      const auto valueOnly=[&] {
-      return static_cast<Real>(elementCanali(static_cast<long double>(surface.mobility),
-          static_cast<long double>(drive),hf,cutoff));
+      return static_cast<Real>(elementCanali(static_cast<vela::ArithmeticReal>(surface.mobility),
+          static_cast<vela::ArithmeticReal>(drive),hf,cutoff));
      };
      const double mobilityValue=valueOnlyCanali ? valueOnly()
         : evaluateElementCanali(surface.mobility,drive,hf,cutoff).mobility;

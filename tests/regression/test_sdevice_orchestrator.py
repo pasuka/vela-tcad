@@ -167,6 +167,25 @@ class OrchestratorTests(unittest.TestCase):
     def calls(self):
         return [json.loads(line) for line in self.count.read_text().splitlines()] if self.count.exists() else []
 
+    def test_arithmetic_precision_dispatches_before_first_solve(self):
+        source = self.cmd.read_text()
+        missing = str(self.root / "missing-runner")
+        for setting in ("", "ExtendedPrecision", "ExtendedPrecision(80)"):
+            with self.subTest(setting=setting):
+                self.cmd.write_text(source.replace("Solve {", f"Math {{ {setting} }} Solve {{", 1))
+                # A wrong dispatch tries the deliberately absent executable.
+                # Invoke the CLI directly to avoid the fixture's constants probe.
+                env = dict(self.env,
+                           VELA_EXAMPLE_RUNNER=missing if setting else str(FAKE),
+                           VELA_EXAMPLE_RUNNER_EXTENDED80=str(FAKE) if setting else missing)
+                done = subprocess.run([sys.executable, "-m", "vela_sdevice", "device", "-i", str(self.cmd)],
+                                      cwd=self.root, env=env, capture_output=True, text=True, timeout=30)
+                self.assert_exit(0, done)
+                stage = json.loads((self.work / "stage_plan.json").read_text())["stages"][0]
+                solver = json.loads((self.work / stage["deck"]).read_text())["solver"]
+                self.assertEqual(solver.get("arithmetic_precision", "double"),
+                                 "extended80" if setting else "double")
+
     def test_ok_outputs_log_and_manifest(self):
         done = self.call()
         self.assert_exit(0, done)

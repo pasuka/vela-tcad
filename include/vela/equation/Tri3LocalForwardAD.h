@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 
 #include <array>
@@ -98,8 +99,8 @@ inline Real dualExponentialDirection(Real x,Real exponential,Real direction)
     const Real ordinary=exponential*direction;
     if(std::isfinite(ordinary) && ordinary!=0.)return ordinary;
     if(std::isfinite(x) && std::isfinite(direction)) {
-        const long double magnitude=std::exp((long double)x+
-            std::log(std::abs((long double)direction)));
+        const vela::ArithmeticReal magnitude=std::exp((vela::ArithmeticReal)x+
+            std::log(std::abs((vela::ArithmeticReal)direction)));
         return std::copysign(static_cast<Real>(magnitude),direction);
     }
     return ordinary;
