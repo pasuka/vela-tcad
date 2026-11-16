@@ -1241,7 +1241,7 @@ private:
             (system_.postProtectionDerivativeRecovery?system_.protectedJacobianInColumns:system_.bootstrapJacobianInColumns);
         const SparseMatrixd deviceJacobian=relative?direct(state.x,state.lambda,coordinates.head(n)):
             selectedJacobian(state.x,state.lambda);
-        const auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
+        auto prescribed=system_.prescribedRows?system_.prescribedRows(state.x,state.lambda):diagonalConstraintRows(deviceJacobian);
         const ArclengthScalarLinearization currentLinearization=relative?
             currentLinearization_.linearizeInColumns(state.x,state.lambda,coordinates.head(n)):
             currentLinearization_.linearize(state.x,state.lambda);
@@ -1285,14 +1285,24 @@ private:
                 triplets.emplace_back(entry.row(), entry.col(), entry.value());
             }
         }
+        bool circuitDependsOnState = false;
         for (Eigen::Index row = 0; row < n; ++row) {
             if (fLambda(row) != 0.0)
                 triplets.emplace_back(row, n, fLambda(row));
             const Real value = circuitStateDerivative(row);
-            if (value != 0.0)
+            if (value != 0.0) {
                 triplets.emplace_back(n, row, value);
+                circuitDependsOnState = true;
+            }
         }
         triplets.emplace_back(n, n, circuitVoltageDerivative);
+        // A scalar circuit row prescribes the voltage increment exactly. A
+        // rounded nonzero increment on a homogeneous row would have unit
+        // componentwise backward error regardless of its magnitude.
+        const int circuitRow = static_cast<int>(n);
+        if (!circuitDependsOnState && circuitVoltageDerivative != 0.0 &&
+            std::find(prescribed.begin(), prescribed.end(), circuitRow) == prescribed.end())
+            prescribed.push_back(circuitRow);
 
         SparseMatrixd rawAugmented(n + 1, n + 1);
         rawAugmented.setFromTriplets(triplets.begin(), triplets.end());
