@@ -6,9 +6,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/PhysicalConstants.h"
-#include <boost/uuid/detail/sha1.hpp>
-#include <iomanip>
-#include <sstream>
+#include "SplitMeshFingerprint.h"
 #include <algorithm>
 
 namespace vela {
@@ -297,7 +295,7 @@ std::shared_ptr<SplitDDRuntime> CoupledDDAssembler::buildSplitRuntime() const {
         Real doping=recombination_.srhDopingConcentration(doping_.donors(i),doping_.acceptors(i));j["node_physics"].push_back({doping_.donors(i),doping_.acceptors(i),recombination_.electronLifetime(doping),recombination_.holeLifetime(doping),srhVol_[i]*sourceFactor/cs});}
     for(Index c=0;c<mesh_.numCells();++c){const auto& cell=mesh_.getCell(c);geometry.push_back({cell.node_ids[0],cell.node_ids[1],cell.node_ids[2],cell.region_id});}
     for(const auto& contact:mesh_.contacts())geometry.push_back({contact.name,contact.node_ids});
-    boost::uuids::detail::sha1 hasher;auto serialized=geometry.dump();hasher.process_bytes(serialized.data(),serialized.size());boost::uuids::detail::sha1::digest_type digest;hasher.get_digest(digest);std::ostringstream id;id<<"sha1:";for(auto z:digest)id<<std::hex<<std::setfill('0')<<std::setw(2)<<unsigned(z);j["mesh_fingerprint"]=id.str();
+    j["mesh_fingerprint"] = detail::splitMeshFingerprint(geometry.dump());
     const auto& pm=mobilityConfig_.phuMob;const auto& en=pm.donorSpecies==PhuMobDonorSpecies::Arsenic?pm.electronArsenic:pm.electronPhosphorus;const auto& hp=pm.holeBoron;
     j["phumob"]={{"electron",{en.muMax,en.muMin,en.theta,en.nRef,en.alpha}},{"hole",{hp.muMax,hp.muMin,hp.theta,hp.nRef,hp.alpha}},
       {"common",{pm.donorClusterReference,pm.acceptorClusterReference,pm.donorClusterCoefficient,pm.acceptorClusterCoefficient,pm.electronMassRatio,pm.holeMassRatio,pm.conwellWeisskopfFactor,pm.brooksHerringFactor,pm.electronHoleScatteringFactor,pm.holeElectronScatteringFactor,pm.gA,pm.gB,pm.gC,pm.gAlpha,pm.gAlphaPrime,pm.gBeta,pm.gGamma,pm.internalConcentrationToCm3,pm.internalMobilityToCm2PerVS}}};

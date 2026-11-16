@@ -1129,6 +1129,7 @@ target_link_libraries(test_coupled_load_line PRIVATE vela_core Catch2::Catch2Wit
 
 # Header-only policy test: no solver rebuild or commercial inputs are needed.
 add_executable(test_bvmethods_step_control tests/test_bvmethods_step_control.cpp)
+target_include_directories(test_bvmethods_step_control PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(test_bvmethods_step_control PRIVATE Catch2::Catch2WithMain nlohmann_json::nlohmann_json)
 
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
