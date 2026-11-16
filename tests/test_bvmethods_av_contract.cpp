@@ -1159,9 +1159,16 @@ TEST_CASE("AV exponential has finite directions at extremely small positive fiel
 TEST_CASE("AD exponential scales finite directions before narrowing",
           "[av_contract][tri3_ad][range]")
 {
-    for(double x:{-800.,800.}) {
-        AvJet input(x);input.derivative[0]=x>0.?1e-100:1e100;
-        const double expected=double(std::exp((long double)x)*input.derivative[0]);
+    using HP = boost::multiprecision::cpp_dec_float_100;
+    const std::array<std::array<double, 2>, 5> cases{{
+        {-800., 1e100}, {800., 1e-100}, {-740., 1e100}, {-745., -1e100}, {1420., 1e-310}
+    }};
+    for (const auto& [x, direction] : cases) {
+        CAPTURE(x, direction);
+        AvJet input(x);
+        input.derivative[0] = direction;
+        const double expected = static_cast<double>(exp(HP(x)) * HP(direction));
+        REQUIRE(std::isnormal(expected));
         for(const auto result:{vela::detail::dualExp(input),vela::detail::dualExpm1(input)}) {
             REQUIRE(std::isfinite(result.derivative[0]));
             REQUIRE(result.derivative[0]==Approx(expected).epsilon(3e-14));
