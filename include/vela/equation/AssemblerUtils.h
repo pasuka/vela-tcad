@@ -247,6 +247,7 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
 {
     std::vector<std::vector<Index>> edgeCells(mesh.numEdges());
     std::unordered_map<Index, Index> pairToEdge;
+    pairToEdge.reserve(mesh.numEdges());
     const Index N = mesh.numNodes();
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
@@ -2135,16 +2136,10 @@ inline Real angleBetween(const Point2& a, const Point2& b)
     return std::acos(cosTheta);
 }
 
-inline Real geniusTri3TruncatedPartialVolumeWithEdge(
+inline std::array<Real, 3> geniusTri3TruncatedPartialVolumes(
     const DeviceMesh& mesh,
-    const Cell&       cell,
-    Index             edgeNode0,
-    Index             edgeNode1)
+    const Cell&       cell)
 {
-    const int localEdge = tri3LocalEdgeIndex(cell, edgeNode0, edgeNode1);
-    if (localEdge < 0)
-        return 0.0;
-
     const std::array<Index, 3> ids = {
         cell.node_ids[0], cell.node_ids[1], cell.node_ids[2]};
     const std::array<Point2, 3> p = {
@@ -2155,7 +2150,7 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         64.0 * std::numeric_limits<Real>::epsilon() * lengthScale;
     const Real det = triangleSignedDoubleArea(p[0], p[1], p[2]);
     if (std::abs(det) <= 1.0e-300)
-        return 0.0;
+        return {};
 
     const Real a2 = p[0].squaredNorm();
     const Real b2 = p[1].squaredNorm();
@@ -2218,8 +2213,22 @@ inline Real geniusTri3TruncatedPartialVolumeWithEdge(
         }
     }
 
-    return 0.5 * lengths[static_cast<std::size_t>(localEdge)] *
-           std::max(0.0, dt[static_cast<std::size_t>(localEdge)]);
+    std::array<Real, 3> volumes{};
+    for (std::size_t i = 0; i < volumes.size(); ++i)
+        volumes[i] = 0.5 * lengths[i] * std::max(0.0, dt[i]);
+    return volumes;
+}
+
+inline Real geniusTri3TruncatedPartialVolumeWithEdge(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    Index             edgeNode0,
+    Index             edgeNode1)
+{
+    const int localEdge = tri3LocalEdgeIndex(cell, edgeNode0, edgeNode1);
+    if (localEdge < 0)
+        return 0.0;
+    return geniusTri3TruncatedPartialVolumes(mesh, cell)[static_cast<std::size_t>(localEdge)];
 }
 
 inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
@@ -2230,16 +2239,7 @@ inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
         throw std::invalid_argument(
             "element-edge GSS/Laux reconstruction requires a Tri3 cell");
     }
-    std::array<Real, 3> partialVolumes{};
-    for (int localEdge = 0; localEdge < 3; ++localEdge) {
-        const Index node0 =
-            cell.node_ids[static_cast<std::size_t>(localEdge)];
-        const Index node1 =
-            cell.node_ids[static_cast<std::size_t>((localEdge + 1) % 3)];
-        partialVolumes[static_cast<std::size_t>(localEdge)] =
-            geniusTri3TruncatedPartialVolumeWithEdge(
-                mesh, cell, node0, node1);
-    }
+    auto partialVolumes = geniusTri3TruncatedPartialVolumes(mesh, cell);
     const Real exactArea = 0.5 * std::abs(triangleSignedDoubleArea(
         meshPoint(mesh, cell.node_ids[0]),
         meshPoint(mesh, cell.node_ids[1]),
@@ -2258,11 +2258,8 @@ inline std::array<Real, 3> tri3ElementEdgeBoxPartialVolumes(
 }
 
 inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
-    const DeviceMesh& mesh,
-    const Cell&       cell)
+    const std::array<Real, 3>& edgePartialVolumes)
 {
-    const auto edgePartialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
     std::array<Real, 3> vertexMeasures{};
     for (int localEdge = 0; localEdge < 3; ++localEdge) {
         const Real halfMeasure =
@@ -2272,6 +2269,13 @@ inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
             halfMeasure;
     }
     return vertexMeasures;
+}
+
+inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
+    const DeviceMesh& mesh,
+    const Cell&       cell)
+{
+    return tri3ElementVertexBoxMeasures(tri3ElementEdgeBoxPartialVolumes(mesh, cell));
 }
 
 inline Point2 solveTri3EdgeProjectionPair(
@@ -2294,7 +2298,8 @@ inline Point2 solveTri3EdgeProjectionPair(
 inline Point2 gssLauxTri3CurrentVector(
     const DeviceMesh&          mesh,
     const Cell&                cell,
-    const std::array<Real, 3>& signedEdgeCurrent)
+    const std::array<Real, 3>& signedEdgeCurrent,
+    const std::array<Real, 3>& partialVolumes)
 {
     if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
         throw std::invalid_argument(
@@ -2337,8 +2342,6 @@ inline Point2 gssLauxTri3CurrentVector(
         return low == 0 ? high - 1 : 2;
     };
 
-    const auto partialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
     std::array<Point2, 3> edgeVectors{};
     for (int target = 0; target < 3; ++target) {
         std::array<int, 2> others{};
@@ -2380,6 +2383,15 @@ inline Point2 gssLauxTri3CurrentVector(
         partialVolumes[0] * edgeVectors[0] +
         partialVolumes[1] * edgeVectors[1] +
         partialVolumes[2] * edgeVectors[2]) / totalVolume;
+}
+
+inline Point2 gssLauxTri3CurrentVector(
+    const DeviceMesh&          mesh,
+    const Cell&                cell,
+    const std::array<Real, 3>& signedEdgeCurrent)
+{
+    return gssLauxTri3CurrentVector(
+        mesh, cell, signedEdgeCurrent, tri3ElementEdgeBoxPartialVolumes(mesh, cell));
 }
 
 inline Real geniusTruncatedEdgeSourceVolume(

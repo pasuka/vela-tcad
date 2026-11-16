@@ -67,6 +67,9 @@ TEST_CASE("Population SG resolves small fluxes from endpoint densities", "[sg][p
     const Real withNiDrift = sgBoltzmannPopulationContinuityFlux(
         3.0, 5.0, 4.0, 8.0, 0.0, vt, coef, true);
     REQUIRE(withNiDrift == Approx(coef * std::log(2.0)).epsilon(1e-12));
+    REQUIRE(sgBoltzmannPopulationContinuityFluxFromDrift(
+        3.0, 5.0, std::log(2.0L), vt, coef, 0.0, 0.0, 0.0L) ==
+            Approx(coef * std::log(2.0)).epsilon(1e-12));
     REQUIRE(sgBoltzmannPopulationContinuityFlux(
         5.0, 3.0, 8.0, 4.0, 0.0, vt, coef, true) == Approx(-withNiDrift));
     REQUIRE(sgBoltzmannPopulationContinuityFlux(
@@ -1710,6 +1713,8 @@ TEST_CASE("Population SG retains sub-ULP endpoint corrections", "[sg][population
     const double fromDensity = sgBoltzmannPopulationContinuityFlux(
         population,population,1.,1.,0.,vt,1.,false,correction,0.);
     REQUIRE(std::abs(fromPotential/(population*correction)-1.) < 1e-14);
+    REQUIRE(sgBoltzmannPopulationContinuityFluxFromDrift(
+        population, population, 0.0L, vt, 1., 0., 0., vt*correction) == fromPotential);
     REQUIRE(std::abs(fromDensity/fromPotential-1.) < 1e-14);
     const double balanced = sgBoltzmannPopulationContinuityFlux(
         population,population,1.,1.,0.,vt,1.,false,0.,correction,vt*correction);

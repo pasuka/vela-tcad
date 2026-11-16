@@ -148,7 +148,15 @@ Real sgBoltzmannPopulationContinuityFlux(
     long double eta = static_cast<long double>(signedDpsi) / Vt;
     if (includeNiGradientDrift && ni0 > 0.0 && ni1 > 0.0)
         eta += sgPopulationLogRatio(ni1, ni0);
+    return sgBoltzmannPopulationContinuityFluxFromDrift(
+        population0, population1, eta, Vt, coef,
+        relativeCorrection0, relativeCorrection1, signedDpsiCorrection);
+}
 
+Real sgBoltzmannPopulationContinuityFluxFromDrift(
+    Real population0, Real population1, long double eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection)
+{
     if (population0 <= 0.0 || population1 <= 0.0) {
         return static_cast<Real>(coef * (longDoubleBernoulli(-eta) * population0
             - longDoubleBernoulli(eta) * population1));

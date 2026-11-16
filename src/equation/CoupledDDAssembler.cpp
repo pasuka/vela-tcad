@@ -635,6 +635,7 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
     edgeAssemblyKernels_.resize(mesh_.numEdges());
     const bool cacheMobility = !surfaceMobilityEnabled_ &&
         !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob";
+    const bool cacheIntrinsicDrift = bgnEnabled_ && usesLegacyPopulationState();
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -654,6 +655,8 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
         kernel.avalancheSourceArea = detail::avalancheSourceEdgeArea(
             impactIonizationConfig_, edgeCells_, mesh_, edgeId,
             &cellMaterials_);
+        if (cacheIntrinsicDrift && ni_[edge.n0] > 0. && ni_[edge.n1] > 0.)
+            kernel.populationIntrinsicLogRatio = sgPopulationLogRatio(ni_[edge.n1], ni_[edge.n0]);
         if (usesFermiDirac_) {
             kernel.electronLogNiNc0 =
                 std::log(ni_[edge.n0] / Nc_[edge.n0]);
@@ -1830,7 +1833,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
             if (transportJacobian) {
                 const int offset = electron ? count : 2*count;
                 const Real eta = static_cast<Real>(sign*dpsi/Vt_ +
-                    (bgnEnabled_ ? sgPopulationLogRatio(ni_[j],ni_[i]) : 0.L));
+                    edge.populationIntrinsicLogRatio);
                 const Real derivative = -sign * coef * scaling_.V0 / Vt_ *
                     (bernoulliDerivative(-eta)*density[i] + bernoulliDerivative(eta)*density[j]);
                 scatter(offset+i,offset+j,i,-derivative);
@@ -1838,9 +1841,12 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
                 scatter(offset+i,offset+j,offset+i,coef*bernoulli(-eta)*density[i]);
                 scatter(offset+i,offset+j,offset+j,-coef*bernoulli(eta)*density[j]);
             }
-            return sgBoltzmannPopulationContinuityFlux(
-                density[i],density[j],ni_[i],ni_[j],sign*highDrop(i,j),Vt_,coef,bgnEnabled_,
-                correction[i],correction[j],sign*lowDrop(i,j));
+            long double eta = sign * highDrop(i,j) / Vt_;
+            if (bgnEnabled_)
+                eta += edge.populationIntrinsicLogRatio;
+            return sgBoltzmannPopulationContinuityFluxFromDrift(
+                density[i], density[j], eta, Vt_, coef,
+                correction[i], correction[j], sign * lowDrop(i,j));
         };
         const Real fe = sg(CarrierType::Electron,n,en,enFields);
         const Real fh = sg(CarrierType::Hole,p,hp,hpFields);

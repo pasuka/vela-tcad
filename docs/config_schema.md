@@ -756,8 +756,8 @@ qualification. Runtime paths belong in local environment configuration.
 
 BVMethods device and terminal transport Jacobians reuse identical long-double
 Lombardi powers within each element, including the approximate device
-Jacobian. Coupled residual assembly also reuses these powers in
-potential-density mode with quasi-Fermi SG.
+Jacobian. Coupled residual and terminal-current assembly also reuse these
+powers in potential-density mode with quasi-Fermi SG.
 Set `VELA_BVMETHODS_DISABLE_LOMBARDI_POW_REUSE=1` before launch to compare
 against uncached evaluation. The cache is scoped to one element evaluation.
 

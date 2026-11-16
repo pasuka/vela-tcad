@@ -617,6 +617,7 @@ private:
         Real holeLogNiNv0 = 0.0;
         Real holeLogNiNv1 = 0.0;
         Real holeDriftOffset = 0.0;
+        long double populationIntrinsicLogRatio = 0.0L;
         bool activeTransport = false;
         std::array<Index, maxEdgeAvalancheStencilNodes> avalancheStencilNodes{};
         std::uint8_t avalancheStencilNodeCount = 0;

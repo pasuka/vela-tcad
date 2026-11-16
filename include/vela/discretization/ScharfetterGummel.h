@@ -60,6 +60,12 @@ Real sgBoltzmannPopulationContinuityFlux(
     long double signedDpsi, Real Vt, Real coef, bool includeNiGradientDrift,
     Real relativeCorrection0 = 0., Real relativeCorrection1 = 0., long double signedDpsiCorrection = 0.L);
 
+/// Use precomputed dimensionless drift, including the oriented intrinsic-density
+/// log ratio when enabled. The signed potential correction is still in volts.
+Real sgBoltzmannPopulationContinuityFluxFromDrift(
+    Real population0, Real population1, long double eta, Real Vt, Real coef,
+    Real relativeCorrection0, Real relativeCorrection1, long double signedDpsiCorrection);
+
 // Stable logarithm of a positive ratio, including neighboring populations.
 long double sgPopulationLogRatio(Real numerator, Real denominator);
 
