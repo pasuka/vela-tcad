@@ -340,7 +340,7 @@ BVProcessProbeResult evaluateBVProcessProbe(
         thermalVoltage);
     const auto mobility = makeMobilityModel(mobilityConfig);
     const auto impact = makeImpactIonizationModel(impactConfig);
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<bool> contactNodes = detail::contactNodeMask(mesh);
 
     if (detail::usesElementEdgeGssLauxAvalancheSource(impactConfig)) {

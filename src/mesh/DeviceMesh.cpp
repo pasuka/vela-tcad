@@ -44,11 +44,13 @@ void DeviceMesh::addContact(const Contact& contact)
 void DeviceMesh::buildEdgesOnly()
 {
     edges_.clear();
+    edgeCells_.clear();
 
     // Map from sorted node pair -> edge index in edges_
     std::map<std::pair<Index,Index>, Index> edgeMap;
 
-    for (const auto& cell : cells_) {
+    for (Index cellId = 0; cellId < cells_.size(); ++cellId) {
+        const auto& cell = cells_[cellId];
         if (cell.type != CellType::Tri3) continue;
         if (cell.node_ids.size() < 3) continue;
 
@@ -64,8 +66,8 @@ void DeviceMesh::buildEdgesOnly()
             Index b = nids[(e + 1) % 3];
             if (a > b) std::swap(a, b);
 
-            auto key = std::make_pair(a, b);
-            if (edgeMap.find(key) == edgeMap.end()) {
+            const auto [entry, inserted] = edgeMap.try_emplace(std::make_pair(a, b), edges_.size());
+            if (inserted) {
                 Edge edge;
                 edge.id = edges_.size();
                 edge.n0 = a;
@@ -79,9 +81,10 @@ void DeviceMesh::buildEdgesOnly()
                 edge.couple = 0.0; // Box coupling computed after edge generation
                 edge.transport_couple = -1.0;
 
-                edgeMap[key] = edge.id;
                 edges_.push_back(std::move(edge));
+                edgeCells_.emplace_back();
             }
+            edgeCells_[entry->second].push_back(cellId);
         }
     }
 

@@ -3290,7 +3290,7 @@ void NewtonSolver::configureAssemblerNumerics(
         ++seedRank;
     }
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh_);
     std::vector<std::vector<std::pair<Index, Real>>> adjacency(mesh_.numNodes());
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         bool activeTransport = false;
@@ -6977,7 +6977,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                     "electron_quantum_potential sentaurus_step requires "
                     "include_insulators=false.");
             }
-            const auto edgeCells = detail::buildEdgeCellMap(mesh_);
+            const auto& edgeCells = detail::buildEdgeCellMap(mesh_);
             for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
                 if (edgeCells[edgeId].size() != 2)
                     continue;

@@ -736,7 +736,7 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
     SweepTransportDiagnostics diagnostics;
     ScopedPerformanceTimer timer("post.transport_diagnostics");
     updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
@@ -898,7 +898,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
 {
     ScopedPerformanceTimer timer("post.continuity_balance");
     updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
@@ -3665,7 +3665,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true);
     const std::vector<Real> sweepNv =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, false);
-    const auto sweepEdgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& sweepEdgeCells = detail::buildEdgeCellMap(mesh);
     const auto sweepCellMaterials = detail::buildCellMaterials(mesh, matdb, temperature_K);
     const auto sweepMobility = makeMobilityModel(mobilityConfig);
     const auto sweepImpactIonization = makeImpactIonizationModel(sweepImpactIonizationConfig);

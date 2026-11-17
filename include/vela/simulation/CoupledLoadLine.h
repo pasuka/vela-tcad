@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <limits>
 #include <optional>
@@ -20,6 +21,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -423,6 +425,10 @@ public:
             std::numeric_limits<Real>::quiet_NaN();
         bool repeatIteration = false;
         bool omitNext=false;
+        std::optional<std::unique_ptr<LinearSolver>> retainedPardiso;
+        const char* reuseAnalysis=std::getenv("VELA_BVMETHODS_REUSE_BORDERED_ANALYSIS");
+        if(config_.bvMethodsEftDefect && reuseAnalysis && std::string_view(reuseAnalysis)=="1")
+            retainedPardiso.emplace();
         for (int iter = 0; iter <= config_.maxIterations; iter += repeatIteration ? 0 : 1) {
             repeatIteration = false;
             VectorXd f;
@@ -550,7 +556,8 @@ public:
                     linearizedDeviceResidual,
                     fLambda, result.loadLineResidual_V,
                     resistance_ohm_um, deltaState, deltaVoltage,
-                    result.failureReason,selectedJacobian,fullDerivative,config_.reportModelQuality?&result.trace.back():nullptr);
+                    result.failureReason,selectedJacobian,fullDerivative,retainedPardiso?&*retainedPardiso:nullptr,
+                    config_.reportModelQuality?&result.trace.back():nullptr);
                 if (!updateSolved && system_.automaticDerivativeRecovery && !fullDerivative &&
                     recovery.probeAfterBootstrapLinearFailure()) {
                     auto& trace=result.trace.back();
@@ -564,7 +571,8 @@ public:
                     updateSolved=solveDirectBorderedUpdate(result.state,
                         linearizedDeviceResidual,fLambda,result.loadLineResidual_V,
                         resistance_ohm_um,deltaState,deltaVoltage,
-                        result.failureReason,selectedJacobian,true,config_.reportModelQuality?&result.trace.back():nullptr);
+                        result.failureReason,selectedJacobian,true,retainedPardiso?&*retainedPardiso:nullptr,
+                        config_.reportModelQuality?&result.trace.back():nullptr);
                     if(!updateSolved) {
                         result.failureReason="bootstrap linear solve failed: "+trace.bootstrapLinearFailureReason+
                             "; full Jacobian retry failed: "+result.failureReason;
@@ -1224,6 +1232,7 @@ private:
                                    Real& deltaVoltage,
                                    std::string& failureReason,
                                    const std::function<SparseMatrixd(const VectorXd&,Real)>& selectedJacobian,bool fullDerivative,
+                                   std::unique_ptr<LinearSolver>* retainedPardiso,
                                    CoupledLoadLineResult::IterationTrace* report=nullptr) const
     {
         if(report) {
@@ -1433,11 +1442,15 @@ private:
         // An explicit PARDISO selection must reach the full bordered matrix,
         // including refinement solves, rather than only auxiliary device solves.
         // Keep the historical default and the explicit QR policy unchanged.
-        std::unique_ptr<LinearSolver> pardiso;
+        std::unique_ptr<LinearSolver> localPardiso;
+        auto& pardiso=retainedPardiso?*retainedPardiso:localPardiso;
         if (config_.linearSolver != "direct_bordered_qr" &&
             LinearSolver::selectedBackend() == "pardiso_mkl") {
             try {
-                pardiso = std::make_unique<LinearSolver>("pardiso_mkl");
+                // A retained solver still compares the exact reduced sparsity.
+                // Recompute numeric factors for each distinct Newton update.
+                if (pardiso) pardiso->clearNumericCache();
+                else pardiso = std::make_unique<LinearSolver>("pardiso_mkl");
                 scaledUpdate = pardiso->solve(augmented, rhs, prescribed);
                 recordCandidate("pardiso_mkl", augmented, scaledUpdate);
             } catch (const std::exception& error) {

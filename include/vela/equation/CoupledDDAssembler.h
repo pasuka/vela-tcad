@@ -722,7 +722,7 @@ private:
     std::vector<Material> cellMaterials_;
 
     // Mesh-derived quantities cached at construction time.
-    std::vector<std::vector<Index>> edgeCells_;
+    const std::vector<std::vector<Index>>& edgeCells_;
     std::vector<std::vector<Index>> nodeCells_;
     std::vector<std::vector<Index>> cellEdges_;
     std::vector<std::vector<Index>> nodeEdges_;

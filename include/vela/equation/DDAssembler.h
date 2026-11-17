@@ -200,7 +200,7 @@ private:
 
     // Mesh-derived quantities cached at construction time.
     std::vector<Material> cellMaterials_;
-    std::vector<std::vector<Index>> edgeCells_;
+    const std::vector<std::vector<Index>>& edgeCells_;
     std::vector<std::vector<Index>> nodeCells_;
     std::vector<Real> vol_;
     std::vector<Real> poissonChargeVol_;

@@ -103,6 +103,10 @@ struct BvMethodsCoupledRuntime::Impl {
     };
     mutable std::array<Entry<Evaluation>,2> evaluations;
     mutable std::array<Entry<detail::BvMethodsTri3Evaluation>,2> transports;
+    bool reuseEvaluation() const {
+        static const bool experiment=enabledEnvironmentFlag("VELA_BVMETHODS_REUSE_TRI3_EVALUATIONS");
+        return owner.bvMethodsEvaluationReuse_ || experiment;
+    }
     // Source-free transport values are independent of the port and its weights.
     // Keep the last packed state only, within this immutable runtime.
     mutable Entry<VectorXd> portValue;
@@ -173,7 +177,7 @@ struct BvMethodsCoupledRuntime::Impl {
         const auto en=owner.electronQuasiFermiReferenceField(),hp=owner.holeQuasiFermiReferenceField();
         if(!en.isZero(0.) || !hp.isZero(0.))
             throw std::invalid_argument("bvmethods_tri3_qf v1 requires zero-reference ordinary QF coordinates");
-        if(owner.bvMethodsEvaluationReuse_) {
+        if(reuseEvaluation()) {
             const auto same=[](const VectorXd& a,const VectorXd& b){return a.size()==b.size() &&
                 (a.size()==0 || std::memcmp(a.data(),b.data(),sizeof(Real)*a.size())==0);};
             if(!same(en,electronReference)||!same(hp,holeReference)) {
@@ -241,7 +245,10 @@ struct BvMethodsCoupledRuntime::Impl {
     detail::BvMethodsTri3Evaluation transport(const VectorXd& x,bool jac,
         BvMethodsTransportPurpose purpose=BvMethodsTransportPurpose::other) const {
         auto& cached=transports[jac?1:0];
-        if(owner.bvMethodsEvaluationReuse_&&cached.matches(x))return *cached.value;
+        if(reuseEvaluation()&&cached.matches(x)) {
+            incrementPerformanceCounter("bvmethods.tri3.transport_cache.hits");
+            return *cached.value;
+        }
         static const bool audit=enabledEnvironmentFlag("VELA_BVMETHODS_TRI3_CONTACT_AUDIT");
         std::optional<ScopedPerformanceTimer> repeatTimer;
         if(audit && activePerformanceProfiler() && !jac && purpose!=BvMethodsTransportPurpose::other) {
@@ -255,15 +262,18 @@ struct BvMethodsCoupledRuntime::Impl {
         }
         auto result=assembleTransport(makeState(x),jac,false,nullptr,0.,
             jac?"bvmethods.tri3.terminal_jacobian":portTransportStage(purpose));
-        if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
+        if(reuseEvaluation()){cached.state=x;cached.value=result;}
         return result;
     }
     Evaluation evaluate(const VectorXd& x,bool jac)const {
-        if(!owner.bvMethodsEvaluationReuse_)return compute(x,jac);
+        if(!reuseEvaluation())return compute(x,jac);
         sync();auto& cached=evaluations[jac?1:0];
-        if(owner.bvMethodsEvaluationReuse_&&cached.matches(x))return *cached.value;
+        if(cached.matches(x)) {
+            incrementPerformanceCounter("bvmethods.tri3.evaluation_cache.hits");
+            return *cached.value;
+        }
         auto result=compute(x,jac);
-        if(owner.bvMethodsEvaluationReuse_){cached.state=x;cached.value=result;}
+        cached.state=x;cached.value=result;
         return result;
     }
     Evaluation compute(const VectorXd& x,bool jac,bool approximate=false,const VectorXd* columns=nullptr,bool freezeStatisticalFloor=true)const {

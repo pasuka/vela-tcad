@@ -3392,7 +3392,7 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
                                const EdgeMobilityDriveOverride* driveOverride,
                                const std::string& driveOverrideProvenance)
 {
-    const auto edgeCells = vela::detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = vela::detail::buildEdgeCellMap(mesh);
     const auto cellMaterials = vela::detail::buildCellMaterials(
         mesh, matdb, newton.temperature_K);
     vela::detail::validateElementBoxMobilityContext(mesh,newton.mobility,newton.regionResolvedInterfaceAssembly);

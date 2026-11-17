@@ -73,6 +73,10 @@ TEST_CASE("DeviceMesh: edge count for two triangles sharing a diagonal", "[mesh]
     // Two triangles on a unit square share the diagonal (0-2).
     // Unique edges: (0,1),(1,2),(0,2),(2,3),(0,3) -> 5 edges
     REQUIRE(mesh.numEdges() == 5);
+    const std::vector<std::vector<Index>> expected{{0}, {0}, {0, 1}, {1}, {1}};
+    REQUIRE(mesh.edgeCells() == expected);
+    mesh.buildEdges();
+    REQUIRE(mesh.edgeCells() == expected);
 }
 
 TEST_CASE("DeviceMesh: all edge lengths are positive", "[mesh]")

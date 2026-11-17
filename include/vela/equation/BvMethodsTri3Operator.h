@@ -130,7 +130,7 @@ public:
   geo_.model="phumob_field_lombardi";geo_.edgeAveraging="element_box_phumob";
   geo_.surface.discretization="element_distance_gradient";geo_.highFieldGradientDiscretization="element_vertex_partial_layer";
   geo_.surface.cellNormalX.clear();geo_.surface.cellNormalY.clear();geo_.surface.cellDistances.clear();geo_.surface.nodeDistances.clear();geo_.highFieldCells.clear();
-  auto ec=detail::buildEdgeCellMap(mesh);detail::updateSurfaceMobilityCellGeometry(geo_,mesh,ec,initial.psi,cfg_.surface.coordinateFieldFactor,&materials_);
+  const auto& ec = detail::buildEdgeCellMap(mesh);detail::updateSurfaceMobilityCellGeometry(geo_,mesh,ec,initial.psi,cfg_.surface.coordinateFieldFactor,&materials_);
   auto bc=cfg_;bc.model="masetti";bulk_=makeMobilityModel(bc);
   const auto& ion=problem.newton.impactIonization;
   auto invcm=[&](double a){return units.internalInverseLengthToMInv(a)/100.;};

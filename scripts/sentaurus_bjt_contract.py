@@ -69,6 +69,9 @@ def mesh_roots(bundle, x):
     roots=[]
     for triangle in bundle['triangles']:
         ids=triangle['node_ids']
+        a, b, c = (points[i] for i in ids)
+        if x < min(a['x'], b['x'], c['x'])-1e-12 or x > max(a['x'], b['x'], c['x'])+1e-12:
+            continue
         intersections=[]
         for i in range(3):
             a,b=points[ids[i]],points[ids[(i+1)%3]]

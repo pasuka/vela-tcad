@@ -144,7 +144,7 @@ private:
     const DeviceMesh& mesh_;
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
-    std::vector<std::vector<Index>> edgeCells_;
+    const std::vector<std::vector<Index>>& edgeCells_;
     std::vector<Real> couple_;
     MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;

@@ -199,7 +199,7 @@ FixedStateOperatorAuditResult evaluateFixedStateOperators(
     const std::vector<Real> ni = detail::buildValidatedEffectiveNodeNi(
         "FixedStateOperatorAudit", mesh, materials, dopingModel,
         config.bandgapNarrowing, thermalVoltage);
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh);
     MobilityModelConfig mobilityConfig = config.mobility;
     if (isSurfaceMobilityModel(mobilityConfig)) {
         detail::updateSurfaceMobilityCellGeometry(

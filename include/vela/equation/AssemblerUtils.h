@@ -244,31 +244,9 @@ inline std::vector<Real> computeNodeScalarGradientMagnitudes(const VectorXd& val
 inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh, Real fieldFactor = 1.0);
 
 /// Build edge -> adjacent cell ids map.
-inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
+inline const std::vector<std::vector<Index>>& buildEdgeCellMap(const DeviceMesh& mesh)
 {
-    std::vector<std::vector<Index>> edgeCells(mesh.numEdges());
-    std::unordered_map<Index, Index> pairToEdge;
-    pairToEdge.reserve(mesh.numEdges());
-    const Index N = mesh.numNodes();
-    for (Index e = 0; e < mesh.numEdges(); ++e) {
-        const Edge& edge = mesh.getEdge(e);
-        pairToEdge[edge.n0 * N + edge.n1] = e;
-    }
-    for (Index c = 0; c < mesh.numCells(); ++c) {
-        const auto& cell = mesh.getCell(c);
-        if (cell.node_ids.size() < 3) continue;
-        const Index nids[3] = {
-            cell.node_ids[0], cell.node_ids[1], cell.node_ids[2]};
-        for (int k = 0; k < 3; ++k) {
-            Index a = nids[k];
-            Index b = nids[(k + 1) % 3];
-            if (a > b) std::swap(a, b);
-            auto it = pairToEdge.find(a * N + b);
-            if (it != pairToEdge.end())
-                edgeCells[it->second].push_back(c);
-        }
-    }
-    return edgeCells;
+    return mesh.edgeCells();
 }
 
 /// Return one triangle's positive box-couple contribution to an edge.
@@ -550,7 +528,7 @@ inline std::vector<Real> computeScopedTransportSignedAverageBoxNodeVolumes(
 
     std::vector<Real> volume = computeNodeVolumes(mesh);
     std::vector<bool> selected(mesh.numNodes(), false);
-    const auto edgeCells = buildEdgeCellMap(mesh);
+    const auto& edgeCells = buildEdgeCellMap(mesh);
     for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
         const Edge& edge = mesh.getEdge(edgeId);
         if (edgeCells.at(edgeId).size() == 1) {
@@ -873,7 +851,7 @@ inline std::vector<Point2> cellFirstAreaWeightedSgCurrentVectors(
     FluxAccessor&&    signedFlux,
     ActiveAccessor&&  activeEdge)
 {
-    const auto edgeCells = buildEdgeCellMap(mesh);
+    const auto& edgeCells = buildEdgeCellMap(mesh);
     const auto cellEdges = buildCellEdgeMap(edgeCells, mesh);
     std::vector<Point2> sums(
         static_cast<std::size_t>(mesh.numNodes()), Point2::Zero());

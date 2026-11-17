@@ -77,6 +77,7 @@ public:
     const std::vector<Node>&    nodes()    const { return nodes_;    }
     const std::vector<Edge>&    edges()    const { return edges_;    }
     const std::vector<Cell>&    cells()    const { return cells_;    }
+    const std::vector<std::vector<Index>>& edgeCells() const { return edgeCells_; }
     const std::vector<Region>&  regions()  const { return regions_;  }
     const std::vector<Contact>& contacts() const { return contacts_; }
 
@@ -87,6 +88,7 @@ private:
 
     std::vector<Node>    nodes_;
     std::vector<Edge>    edges_;
+    std::vector<std::vector<Index>> edgeCells_;
     std::vector<Cell>    cells_;
     std::vector<Region>  regions_;
     std::vector<Contact> contacts_;

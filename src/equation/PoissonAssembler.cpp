@@ -54,7 +54,7 @@ void PoissonAssembler::assemble()
 {
     const Index N = mesh_.numNodes();
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh_);
     const auto cellMaterials = detail::buildCellMaterials(
         mesh_, matdb_, constants::T0);
     const auto vol       = detail::computePoissonChargeVolumes(

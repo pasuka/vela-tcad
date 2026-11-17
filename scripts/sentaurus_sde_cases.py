@@ -84,9 +84,11 @@ def contacts(mesh: dict) -> dict:
             Counter(tuple(sorted(edge)) for edge in c["edge_node_ids"])) for c in mesh["contacts"]}
 
 
-def compare_native(original: Path, imported: Path) -> None:
-    bundle = json.loads((original / "mesh_field_bundle.json").read_text())
-    a = mesh_with_edges(original, bundle=bundle)
+def compare_native(original: Path, imported: Path, *, bundle: dict | None = None,
+                   mesh: dict | None = None) -> None:
+    if bundle is None:
+        bundle = json.loads((original / "mesh_field_bundle.json").read_text())
+    a = mesh if mesh is not None else mesh_with_edges(original, bundle=bundle)
     b = json.loads((imported / "mesh.json").read_text())
     require(len(a["nodes"]) == len(b["nodes"]), "native node count mismatch")
     for x, y in zip(a["nodes"], b["nodes"]):
@@ -125,9 +127,12 @@ def compare_native(original: Path, imported: Path) -> None:
             close(x, y, f"native {name} mismatch")
 
 
-def check_contract(output: Path, contract: dict) -> dict:
-    bundle = json.loads((output / "mesh_field_bundle.json").read_text())
-    mesh = mesh_with_edges(output, bundle=bundle)
+def check_contract(output: Path, contract: dict, *, bundle: dict | None = None,
+                   mesh: dict | None = None) -> dict:
+    if bundle is None:
+        bundle = json.loads((output / "mesh_field_bundle.json").read_text())
+    if mesh is None:
+        mesh = mesh_with_edges(output, bundle=bundle)
     require(bundle["coordinate_unit"] == "um" and
             bundle["field_units"]["concentration"] == "cm^-3", "unit mismatch")
     require({m["name"] for m in bundle["materials"]} == set(contract["materials"]),
@@ -280,11 +285,13 @@ def run_case(case: dict, output: Path, runtime: Path, repeat: int) -> dict:
             manifest = json.loads((output / "run_manifest.json").read_text())
             require(manifest["status"] == "generated" and manifest["cross_format"]["status"] == "passed",
                     "cross-format check failed")
-            quality = check_contract(output, case["contract"])
+            bundle = json.loads((output / "mesh_field_bundle.json").read_text())
+            mesh = mesh_with_edges(output, bundle=bundle)
+            quality = check_contract(output, case["contract"], bundle=bundle, mesh=mesh)
             row["stages"]["export"] = "passed"
             with tempfile.TemporaryDirectory(prefix="native-import-", dir=output.parent) as tmp:
                 import_grid(output / "device.grd", Path(tmp))
-                compare_native(output, Path(tmp))
+                compare_native(output, Path(tmp), bundle=bundle, mesh=mesh)
             row["stages"]["native_import"] = "passed"
             hashes = {name: digest(output / name) for name in PRIMARY}
             runs.append({"sha256": hashes, "mesh_quality": quality,

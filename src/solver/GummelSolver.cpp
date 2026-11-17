@@ -1137,7 +1137,7 @@ void writeDDSolutionVTK(const std::string& filename,
     const Real Vt = constants::kb * temperature_K / constants::q;
     const std::unique_ptr<BandgapNarrowing> bgn =
         makeBandgapNarrowingModel(bandgapNarrowingConfig);
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh);
     MobilityModelConfig resolvedMobilityConfig = mobilityConfig;
     std::vector<Real> nodeSurfaceNormalField_V_cm(N, 0.0);
     if (isSurfaceMobilityModel(resolvedMobilityConfig)) {
