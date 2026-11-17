@@ -2035,6 +2035,15 @@ if(VELA_ENABLE_BVMETHODS_CI)
         FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400)
     vela_set_windows_msys2_test_path(bvmethods_ci_stage)
     vela_set_windows_msys2_test_path(bvmethods_ci_full_bv)
+    foreach(_method IN ITEMS ABA_poisson ABA_coupled voltage2current)
+        set(_test bvmethods_ci_${_method})
+        add_test(NAME ${_test} COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_bvmethods_method_ci.py ${_method}
+            --output ${_bvmethods_ci_output}/${_method} --launcher $<TARGET_FILE:sd-sim>)
+        set_tests_properties(${_test} PROPERTIES
+            FIXTURES_REQUIRED bvmethods_ci_inputs LABELS "bvmethods-ci;sdevice" TIMEOUT 5400)
+        vela_set_windows_msys2_test_path(${_test})
+    endforeach()
 endif()
 
 option(VELA_ENABLE_REFERENCE_U2022_CI "Register the Gate, Schottky IV and BJT M1 U-2022.12 sd-sim regressions" OFF)

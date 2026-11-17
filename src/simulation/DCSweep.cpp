@@ -33,6 +33,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/PathIonizationIntegral.h"
+#include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/post/TerminalCharge.h"
 #include "vela/post/StoredCharge.h"
 #include "vela/solver/NewtonSolver.h"
@@ -1749,9 +1750,10 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         if (!circuit.is_object())
             throw std::invalid_argument("DCSweep: sweep.external_circuit must be an object.");
         const std::string mode = circuit.value("mode", std::string("series_resistor"));
-        if (mode != "series_resistor")
+        if (mode != "series_resistor" && mode != "prescribed_current")
             throw std::invalid_argument(
-                "DCSweep: sweep.external_circuit.mode must be 'series_resistor'.");
+                "DCSweep: sweep.external_circuit.mode must be series_resistor or prescribed_current.");
+        sweep.externalResistor.prescribedCurrent = mode == "prescribed_current";
         sweep.externalResistor.enabled = circuit.value("enabled", true);
         sweep.externalResistor.solver =
             circuit.value("solver", sweep.externalResistor.solver);
@@ -1819,7 +1821,14 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         }
         sweep.externalResistor.coupledVoltageCoefficient = circuit.value(
             "coupled_voltage_coefficient",
-            sweep.externalResistor.coupledVoltageCoefficient);
+            sweep.externalResistor.prescribedCurrent ? 0.0 : 1.0);
+        if (sweep.externalResistor.prescribedCurrent &&
+            (sweep.externalResistor.solver != "coupled_newton" ||
+             sweep.externalResistor.coupledStepControl != "quasistationary" ||
+             sweep.externalResistor.coupledVoltageCoefficient != 0.0 ||
+             sweep.initialStateFile.empty()))
+            throw std::invalid_argument("DCSweep: prescribed_current requires coupled Newton, "
+                                        "Quasistationary controls, and an accepted restart state.");
         sweep.externalResistor.currentDirectionalStep = circuit.value(
             "current_directional_step",
             sweep.externalResistor.currentDirectionalStep);
@@ -2158,11 +2167,16 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         parsed.breakRank = pathCfg.value("break_rank", parsed.breakRank);
         parsed.breakValue = pathCfg.value("break_value", parsed.breakValue);
         parsed.drivingForce = pathCfg.value("driving_force", parsed.drivingForce);
-        parsed.stopField_V_per_m =
-            pathCfg.value("stop_field_V_per_m", parsed.stopField_V_per_m);
-        parsed.electronStopField_V_per_m = pathCfg.value(
+        const auto pathField = [&](const char* key, Real defaultValue) {
+            if (!pathCfg.contains(key))
+                return defaultValue;
+            const Real value = pathCfg.at(key).get<Real>();
+            return scaling.isDeckFormatVersion2() ? Real{100.0} * value : value;
+        };
+        parsed.stopField_V_per_m = pathField("stop_field_V_per_m", parsed.stopField_V_per_m);
+        parsed.electronStopField_V_per_m = pathField(
             "electron_stop_field_V_per_m", parsed.electronStopField_V_per_m);
-        parsed.holeStopField_V_per_m = pathCfg.value(
+        parsed.holeStopField_V_per_m = pathField(
             "hole_stop_field_V_per_m", parsed.holeStopField_V_per_m);
         parsed.meanDefinition = pathCfg.value(
             "mean_definition", parsed.meanDefinition);
@@ -2182,8 +2196,14 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             "tracing_qf_relative_floor", parsed.tracingQfRelativeFloor);
         parsed.tracingDirection =
             pathCfg.value("tracing_direction", parsed.tracingDirection);
-        parsed.seedField_V_per_m =
-            pathCfg.value("seed_field_V_per_m", parsed.seedField_V_per_m);
+        parsed.seedField_V_per_m = pathField("seed_field_V_per_m", parsed.seedField_V_per_m);
+        if (pathCfg.contains("seed_peak_window_V_per_m")) {
+            const Real window = pathField("seed_peak_window_V_per_m", 0.0);
+            if (!std::isfinite(window) || window < 0.0 || parsed.tracingMode != "continuous_cell")
+                throw std::invalid_argument(
+                    "DCSweep: seed peak window must be finite and non-negative and requires continuous_cell.");
+            parsed.seedPeakWindow_V_per_m = window;
+        }
         if (!std::isfinite(parsed.breakValue) || parsed.breakValue <= 0.0) {
             throw std::invalid_argument(
                 "DCSweep: path_ionization_integrals.break_value must be positive and finite.");
@@ -3508,11 +3528,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (sweep.stepGrowthMode == "newton_iterations") {
         const bool supportedCircuit = !sweep.externalResistor.enabled ||
             sweep.externalResistor.solver == "coupled_newton";
-        if (solverMethod != SolverMethod::Newton || !supportedCircuit ||
+        const bool poissonAba = solverMethod == SolverMethod::PoissonOnly &&
+            sweep.diagnostics.pathIonizationIntegrals.enabled;
+        if ((solverMethod != SolverMethod::Newton && !poissonAba) || !supportedCircuit ||
             sweep.voltageToCurrent.enabled || sweep.continuation.arclength.enabled) {
             throw std::invalid_argument(
                 "DCSweep: sweep.step_growth_mode='newton_iterations' requires "
-                "solver.method='newton' and an ordinary voltage sweep "
+                "solver.method='newton' or Poisson ABA and a compatible voltage sweep "
                 "without external-circuit, current-control, or arclength continuation, "
                 "except series_resistor solver='coupled_newton'.");
         }
@@ -3919,6 +3941,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             header.push_back("contact_" + contact.name + "_hole_A_per_um");
             header.push_back("contact_" + contact.name + "_total_A_per_um");
         }
+    }
+    const bool ionizationStopEnabled = sweep.diagnostics.pathIonizationIntegrals.enabled &&
+        sweep.diagnostics.pathIonizationIntegrals.breakRank > 0;
+    if (ionizationStopEnabled) {
+        header.insert(header.end(), {"ionization_stop_criterion", "path_ionization_max_electron",
+            "path_ionization_max_hole", "path_ionization_break_rank_value", "path_avalanche_current_A_per_um"});
     }
     const bool currentStopCriteriaEnabled = sweep.breakdown.hasCurrentCriteria();
     if (currentStopCriteriaEnabled) {
@@ -5611,6 +5639,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     };
 
     VtuSurfaceGeometryCache vtuSurfaceGeometry;
+    std::optional<detail::BvMethodsTri3Context> abaSourceContext;
+    std::unique_ptr<detail::BvMethodsTri3Operator> abaSourceOperator;
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
@@ -5902,7 +5932,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::vector<PathIonizationSegment> samples;
             samples.reserve(records.size());
             const PhysicalUnitSystem& pathUnits = sweep.scaling.unitSystem();
+            Real pathSourceIntegral = 0.0;
             for (const auto& record : records) {
+                pathSourceIntegral += record.edgeSourceIntegral;
                 const Node& edgeNode0 = mesh.getNode(record.node0);
                 const Node& edgeNode1 = mesh.getNode(record.node1);
                 const Real directionX = record.edgeLength > 0.0
@@ -5930,6 +5962,33 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     directionY});
             }
             const auto& pathCfg = sweep.diagnostics.pathIonizationIntegrals;
+            const Real pathSourceScale = pathUnits.internalInverseLengthToMInv(1.0) *
+                pathUnits.internalContinuityParticleFluxToPerM2PerS(1.0) *
+                pathUnits.areaM2PerInternal();
+            Real avalancheCurrent = constants::q * pathSourceIntegral * pathSourceScale * 1.0e-6;
+            if (newton.coupledOperator == "bvmethods_tri3_qf" &&
+                pathCfg.drivingForce == "solver" &&
+                pathImpactConfig.couplingMode == "postprocess_only" &&
+                pathImpactConfig.drivingForce == "quasi_fermi_gradient") {
+                const detail::BvMethodsQfState state{sol.psi, sol.phin, sol.phip, sol.n, sol.p,
+                    newton.stateVariables == "potential_density"};
+                if (!abaSourceOperator) {
+                    abaSourceContext.emplace(detail::BvMethodsTri3Context{mesh, matdb, doping,
+                        {mobilityConfig, pathImpactConfig, sweep.scaling,
+                         carrierStatisticsModel(sweepCarrierStatistics)}});
+                    const Real line = pathUnits.currentDensityAM2PerInternal() *
+                        pathUnits.lengthMPerInternal() * ddScaling.C0 * ddScaling.D0;
+                    abaSourceOperator = std::make_unique<detail::BvMethodsTri3Operator>(
+                        *abaSourceContext, state, sweepNc, sweepNv, ddScaling.V0, line,
+                        constants::kb * temperature_K / constants::q, effectiveNi,
+                        newton.populationSgCurrent == "band_population");
+                }
+                // The Tri3 source integrates generation per centimetre of
+                // device depth. A micrometre is 1e-4 cm.
+                avalancheCurrent = constants::q * 1.0e-4 *
+                    abaSourceOperator->evaluate(state, false).allGeneration.sum();
+            }
+            point.extraFields.emplace_back("path_avalanche_current_A_per_um", avalancheCurrent);
             PathIonizationIntegrationOptions pathIntegrationOptions;
             pathIntegrationOptions.electronMinimumDrivingField =
                 pathCfg.electronStopField_V_per_m;
@@ -5947,11 +6006,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 const bool continuousUsesEparallel =
                     detail::usesSentaurusEparallelAvalancheDrivingForce(
                         pathImpactConfig);
-                if (!continuousUsesEparallel &&
+                const bool continuousUsesGradQf =
+                    pathImpactConfig.drivingForce == "quasi_fermi_gradient";
+                if (!continuousUsesEparallel && !continuousUsesGradQf &&
                     pathImpactConfig.drivingForce != "electric_field") {
                     throw std::invalid_argument(
                         "DCSweep: continuous_cell path tracing currently "
-                        "supports driving_force='electric_field' or 'eparallel'.");
+                        "supports electric_field, eparallel, or quasi_fermi_gradient.");
                 }
                 std::vector<Point2> nodeElectricVector(mesh.numNodes(), Point2::Zero());
                 std::vector<Point2> nodeElectronCurrent(mesh.numNodes(), Point2::Zero());
@@ -6194,6 +6255,32 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         }
                     }
                     const Index bestNode = cell.node_ids[bestVertex];
+                    Real electronDrive = nodeElectronDrive[bestNode];
+                    Real holeDrive = nodeHoleDrive[bestNode];
+                    if (continuousUsesGradQf) {
+                        bool validElectron = false;
+                        bool validHole = false;
+                        Real area = 0.0;
+                        const Point2 electronGradient = detail::cellScalarGradient(
+                            mesh, cell, [&](Index node) { return sol.phin(node); },
+                            validElectron, area);
+                        const Point2 holeGradient = detail::cellScalarGradient(
+                            mesh, cell, [&](Index node) { return sol.phip(node); },
+                            validHole, area);
+                        if (!validElectron || !validHole)
+                            continue;
+                        electronDrive = fieldFactor * electronGradient.norm();
+                        holeDrive = fieldFactor * holeGradient.norm();
+                        if (detail::cellUsesContactElectricFieldFallback(pathImpactConfig, mesh, cell)) {
+                            const auto potential = [&](Index node) { return sol.psi(node); };
+                            electronDrive = detail::contactElectricFallbackImpactField(
+                                pathImpactConfig, mesh, cell, potentialGradient,
+                                electronDrive, potential, fieldFactor);
+                            holeDrive = detail::contactElectricFallbackImpactField(
+                                pathImpactConfig, mesh, cell, potentialGradient,
+                                holeDrive, potential, fieldFactor);
+                        }
+                    }
                     CellIonizationSample sample;
                     sample.cellId = cellId;
                     sample.electricFieldVPerM = Point2{
@@ -6203,16 +6290,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             -potentialGradient.y() * fieldFactor)};
                     sample.electronDrivingField =
                         pathUnits.internalElectricFieldToVPerM(
-                            nodeElectronDrive[bestNode]);
+                            electronDrive);
                     sample.holeDrivingField =
                         pathUnits.internalElectricFieldToVPerM(
-                            nodeHoleDrive[bestNode]);
+                            holeDrive);
                     sample.electronAlpha =
                         pathUnits.internalInverseLengthToMInv(
-                            nodeElectronAlpha[bestNode]);
+                            continuousUsesGradQf ? pathImpact->electronCoefficient(electronDrive)
+                                                 : nodeElectronAlpha[bestNode]);
                     sample.holeAlpha =
                         pathUnits.internalInverseLengthToMInv(
-                            nodeHoleAlpha[bestNode]);
+                            continuousUsesGradQf ? pathImpact->holeCoefficient(holeDrive)
+                                                 : nodeHoleAlpha[bestNode]);
                     for (std::size_t local = 0; local < 3; ++local) {
                         const Index nodeId = cell.node_ids[local];
                         sample.nodeIds[local] = nodeId;
@@ -6306,7 +6395,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     : pathCfg.tracingVector == "sentaurus_eparallel_adaptive"
                         ? ContinuousPathTracingPolicy::SentaurusEparallelAdaptive
                         : ContinuousPathTracingPolicy::Configured,
-                    pathCfg.tracingQfRelativeFloor);
+                    pathCfg.tracingQfRelativeFloor,
+                    pathCfg.seedPeakWindow_V_per_m);
             } else {
                 analysis = analyzeIonizationPaths(
                     static_cast<std::size_t>(mesh.numNodes()),
@@ -6772,6 +6862,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 }
                 for (const Real value : values)
                     row.push_back(formatReal(currentPerInternalDepthToAPerUm(sweep.scaling, value)));
+            }
+        }
+        if (ionizationStopEnabled) {
+            const bool stopped = point.breakdownCriterion.rfind("path_ionization_integral_rank_", 0) == 0;
+            row.push_back(stopped ? point.breakdownCriterion : std::string());
+            for (const char* name : {"path_ionization_max_electron", "path_ionization_max_hole",
+                                    "path_ionization_break_rank_value", "path_avalanche_current_A_per_um"}) {
+                const auto it = std::find_if(point.extraFields.begin(), point.extraFields.end(),
+                    [name](const auto& value) { return value.first == name; });
+                row.push_back(it == point.extraFields.end() ? std::string{} : formatReal(it->second));
             }
         }
         if (currentStopCriteriaEnabled) {
@@ -8791,6 +8891,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 boundaryObservation.loadLineResidual_V =
                     pendingCoupled.loadLineResidual_V;
                 boundaryObservation.evaluations = pendingCoupled.iterations + 1;
+                if (sweep.externalResistor.prescribedCurrent) {
+                    const auto currentScale = sweep.externalResistor.resistance_ohm_um;
+                    boundaryObservation.mode = "current";
+                    boundaryObservation.outerVoltage_V = pendingCoupled.state.lambda;
+                    boundaryObservation.seriesResistance_ohm_um = 0.0;
+                    boundaryObservation.loadLineResidual_V = 0.0;
+                    boundaryObservation.targetCurrent_A_per_um =
+                        sweep.externalResistor.currentDirection * outerVoltage / currentScale;
+                    boundaryObservation.currentResidual_A_per_um =
+                        sweep.externalResistor.currentDirection * pendingCoupled.loadLineResidual_V / currentScale;
+                }
                 recordPoint(
                     pendingCoupled.state.lambda,
                     attempt,

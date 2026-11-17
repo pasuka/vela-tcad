@@ -693,6 +693,12 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             sweep["breakdown"] = breakdown
         if not math_cfg["aval_derivatives"] and "impact_ionization" in deck["solver"]:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
+        if math_cfg.get("aval_postprocessing"):
+            deck["solver"]["impact_ionization"]["coupling_mode"] = "postprocess_only"
+            _decision(decisions, "AvalPostProcessing", True,
+                      "solver.impact_ionization.coupling_mode", "postprocess_only",
+                      "Evaluate impact ionization without adding an avalanche source to the continuity equations",
+                      stage=index)
         deck["sweep"] = sweep
         use_sidecar = sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"])
         if use_sidecar:
@@ -738,7 +744,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                           "Explicit atomic discretization; coefficients and physical models unchanged", "W207", index)
             if sidecar.get("bvmethods_operator_profile"):
                 try:
-                    bundle = apply_bvmethods_profile(deck, ir, entry, sidecar, source_stage=source)
+                    bundle = apply_bvmethods_profile(deck, ir, entry, sidecar, source_stage=source,
+                                                     initial_current=current_starts.get(index))
                 except ValueError as error:
                     raise DeckEmitError("E409", file="sidecar", detail=str(error)) from error
                 entry["sidecar_overrides"].append("bvmethods_operator_profile")

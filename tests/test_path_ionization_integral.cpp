@@ -6,6 +6,30 @@
 
 using namespace vela;
 
+TEST_CASE("continuous ABA peak window keeps every eligible cell",
+          "[impact][path_ionization]")
+{
+    std::vector<CellIonizationSample> cells{
+        {10, {0, 1, 2}, {Point2{0, 0}, Point2{1, 0}, Point2{0, 1}},
+         {0, -1, 0}, Point2{10, 0}, 1, 1, 2, 1},
+        {11, {1, 3, 2}, {Point2{1, 0}, Point2{1, 1}, Point2{0, 1}},
+         {-1, -1, 0}, Point2{9.5, 0}, 1, 1, 2, 1},
+        {12, {4, 5, 6}, {Point2{2, 0}, Point2{3, 0}, Point2{2, 1}},
+         {0, -1, 0}, Point2{8, 0}, 1, 1, 2, 1},
+    };
+    const auto result = analyzeContinuousCellIonizationPaths(
+        7, cells, 0, 0., 0.,
+        ContinuousPathDirection::Bidirectional, {},
+        ContinuousPathRetention::AllSeedTrajectories,
+        ContinuousPathSeedMode::CellLocalMaxima,
+        ContinuousPathTracingPolicy::CellElectricField, 0., 1.);
+    REQUIRE(result.paths.size() == 2);
+    for (const auto& path : result.paths) {
+        REQUIRE((path.seedCellId == 10 || path.seedCellId == 11));
+        REQUIRE(path.seedField >= 9.);
+    }
+}
+
 TEST_CASE("Sentaurus path ionization integral preserves equal-alpha limit",
           "[impact][path-ionization]")
 {

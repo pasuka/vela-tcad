@@ -203,11 +203,11 @@ class DeviceRun:
                     self.log("STAGE", f"Begin stage {index}: {stage['kind']}")
                     status, records, stderr = self._execute(index, runner)
                     reached, voltages = self._reached(index, records)
-                    stopped = self._current_break_reached(index, records)
+                    stopped = self._break_reached(index, records)
                     runtime = {"index": index, "runner_exit_code": status, "goal_reached": reached,
                                "accepted_points": len(records), "reached_voltages_V": voltages}
                     if stopped:
-                        runtime["stop_criterion_reached"] = "current"
+                        runtime["stop_criterion_reached"] = stopped
                     self.manifest["stages"].append(runtime)
                     self.log("STAGE", json.dumps(runtime))
                     if self.interrupted:
@@ -399,12 +399,17 @@ class DeviceRun:
         outer = float(last.get("outer_voltage_V") or last["bias_V"])
         return abs(outer - stage["electrode_voltages_goal_V"][contact]) <= 1e-12, voltages
 
-    def _current_break_reached(self, index, records):
-        """A configured current stop completes a stage without reaching its goal."""
+    def _break_reached(self, index, records):
+        """A configured physical stop completes a stage before the sweep goal."""
         if not records:
-            return False
+            return None
         last = records[-1]
-        for criterion in self.result.stage_plan["stages"][index].get("break", {}).get("current", []):
+        criteria = self.result.stage_plan["stages"][index].get("break", {})
+        if ionization := criteria.get("ionization_integral"):
+            event = last.get("ionization_stop_criterion", "")
+            if event.startswith(f"path_ionization_integral_rank_{ionization['rank']}_"):
+                return "ionization_integral"
+        for criterion in criteria.get("current", []):
             contact = criterion["contact"]
             value = last.get(f"contact_{contact}_total_A_per_um")
             if value in (None, "") and last.get("current_contact") == contact:
@@ -415,5 +420,5 @@ class DeviceRun:
             if ("abs_val_A_per_um" in criterion and abs(value) >= criterion["abs_val_A_per_um"] or
                     "min_val_A_per_um" in criterion and value <= criterion["min_val_A_per_um"] or
                     "max_val_A_per_um" in criterion and value >= criterion["max_val_A_per_um"]):
-                return True
-        return False
+                return "current"
+        return None

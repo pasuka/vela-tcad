@@ -920,7 +920,8 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
     ContinuousPathRetention retention,
     ContinuousPathSeedMode seedMode,
     ContinuousPathTracingPolicy tracingPolicy,
-    Real tracingQfRelativeFloor)
+    Real tracingQfRelativeFloor,
+    std::optional<Real> seedPeakWindow)
 {
     if (!std::isfinite(tracingQfRelativeFloor) ||
         tracingQfRelativeFloor < 0.0 || tracingQfRelativeFloor > 1.0) {
@@ -933,6 +934,10 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
         throw std::invalid_argument(
             "analyzeContinuousCellIonizationPaths: field thresholds must be "
             "finite and non-negative.");
+    }
+    if (seedPeakWindow && (!std::isfinite(*seedPeakWindow) || *seedPeakWindow < 0.0)) {
+        throw std::invalid_argument(
+            "analyzeContinuousCellIonizationPaths: peak window must be finite and non-negative.");
     }
 
     PathIonizationAnalysis result;
@@ -993,7 +998,13 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
         }
     }
 
-    const Real seedThreshold = std::max(minimumElectricField, minimumSeedField);
+    Real seedThreshold = std::max(minimumElectricField, minimumSeedField);
+    if (seedPeakWindow) {
+        Real peak = 0.0;
+        for (const auto& cell : cellSamples)
+            peak = std::max(peak, cell.electricFieldVPerM.norm());
+        seedThreshold = std::max(seedThreshold, peak - *seedPeakWindow);
+    }
     constexpr Real relativeTolerance = 1.0e-12;
     struct ContinuousSeed {
         std::size_t sampleIndex = 0;
@@ -1009,7 +1020,7 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
     };
     std::vector<ContinuousSeed> seeds;
     const bool useNodalField =
-        seedMode == ContinuousPathSeedMode::NodalLocalMaxima &&
+        !seedPeakWindow && seedMode == ContinuousPathSeedMode::NodalLocalMaxima &&
         std::any_of(
             nodeFieldCount.begin(), nodeFieldCount.end(),
             [](std::size_t count) { return count > 0; });
@@ -1083,7 +1094,7 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
                     break;
                 }
             }
-            if (localMaximum) {
+            if (seedPeakWindow || localMaximum) {
                 seeds.push_back({
                     sampleIndex,
                     std::numeric_limits<Index>::max(),

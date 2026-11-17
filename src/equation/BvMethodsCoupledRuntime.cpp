@@ -124,9 +124,14 @@ struct BvMethodsCoupledRuntime::Impl {
         if(std::abs(a.Vt_*constants::q/constants::kb-300.)>1e-8 ||
            a.electronQuantumPotentialConfig_.enabled || a.carrierDiagonalFloor_.enabled)
             fail("requires 300 K classical DD without carrier diagonal floors");
-        if(a.mobilityConfig_.model!="masetti_field_lombardi")
+        const auto& av=a.impactIonizationConfig_;
+        const bool poissonAba=a.mobilityConfig_.model=="constant" &&
+            (av.model=="none" ||
+             (av.couplingMode=="postprocess_only" && av.drivingForce=="electric_field"));
+        if(!poissonAba && a.mobilityConfig_.model!="masetti_field_lombardi")
             fail("requires masetti_field_lombardi mobility parameters");
-        if(a.mobilityConfig_.highFieldDrivingForce!="quasi_fermi_gradient" || !a.mobilityConfig_.jacobianFieldDerivatives)
+        if(!poissonAba && (a.mobilityConfig_.highFieldDrivingForce!="quasi_fermi_gradient" ||
+                           !a.mobilityConfig_.jacobianFieldDerivatives))
             fail("requires quasi_fermi_gradient mobility and live field derivatives");
         if(a.mobilityConfig_.dopingConcentrationBasis!="total_impurity")
             fail("requires total_impurity mobility concentration basis");
@@ -134,11 +139,11 @@ struct BvMethodsCoupledRuntime::Impl {
             fail("only SRH recombination is qualified");
         if(a.mesh_.poissonPermittivityPolicy()!=BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial)
             fail("requires cell_material Poisson geometry");
-        const auto& av=a.impactIonizationConfig_;
         if(av.model!="none" && (av.model!="van_overstraeten" ||
-           av.couplingMode!="self_consistent" || av.sourceJacobianMode!="local_ad"))
-            fail("requires self-consistent Van Overstraeten with local_ad");
-        if(av.model!="none" && (av.drivingForce!="quasi_fermi_gradient" || av.generation!="current_density" ||
+           (av.couplingMode=="self_consistent" && av.sourceJacobianMode!="local_ad")))
+            fail("requires Van Overstraeten with local_ad for self-consistent avalanche");
+        if(av.model!="none" && ((!poissonAba && av.drivingForce!="quasi_fermi_gradient") ||
+           (!poissonAba && av.generation!="current_density") ||
            av.minimumField!=0. || av.quasiFermiCarrierTruncation!=0. || av.electronDrivingForceRefDensity!=0. ||
            av.holeDrivingForceRefDensity!=0. || av.sourceGeometryScale!=1. || av.sourceVolumeFactor!=0. ||
            av.aScale!=1. || av.bScale!=1.))

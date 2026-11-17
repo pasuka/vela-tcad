@@ -312,6 +312,7 @@
         "extrapolate": {"type": "boolean", "default": false},
         "derivatives": {"type": "boolean", "default": true},
         "aval_derivatives": {"type": "boolean", "default": true},
+        "aval_postprocessing": {"type": "boolean", "default": false},
         "compute_ionization_integrals": {"type": "boolean", "default": false},
         "break_at_ion_integral": {
           "oneOf": [

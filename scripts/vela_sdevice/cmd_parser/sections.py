@@ -707,7 +707,7 @@ _MATH_RECORDED = {"transient", "method", "submethod", "cnormprint", "wallclock",
                   "checkundefinedmodels", "parameterinheritance", "cylindrical", "rhsmin", "rhsfactor",
                   "rhsandupdateconvergence", "digits_dg", "errref_dg",
                   "numberofsolverthreads", "acmethod", "acsubmethod", "iterations_dg", "damped",
-                  "stackednewtonweights", "newdiscretization", "elementvolumeavalanche", "avalpostprocessing",
+                  "stackednewtonweights", "newdiscretization", "elementvolumeavalanche",
                   "avalflatelementexclusion", "elementedgecurrent", "avalanche", "gradquasifermi",
                   "exitonfailure_dg", "spice_gmin", "traps", "currentweighting", "conductivemetal",
                   "-metalconductivity", "metalconductivity", "extrapolate_dg", "printvolume", "surfaceconductivity",
@@ -782,6 +782,8 @@ def parse_math_block(block: Block, ctx: ParseContext, math: dict) -> None:
                 math["derivatives"] = not negated
             elif base == "avalderivatives":
                 math["aval_derivatives"] = not negated
+            elif base == "avalpostprocessing":
+                math["aval_postprocessing"] = not negated
             elif base == "computeionizationintegrals":
                 math["compute_ionization_integrals"] = not negated
             elif base == "breakationintegral":

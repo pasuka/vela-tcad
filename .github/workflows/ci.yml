@@ -245,8 +245,9 @@ jobs:
             build/ctest.xml
             build/pn2d-reports/*.json
             build/pn2d-reports/*.log
-            build/bvmethods-reports/*.json
-            build/bvmethods-reports/*.log
+            build/bvmethods-reports/**/*.json
+            build/bvmethods-reports/**/*.log
+            build/bvmethods-reports/**/*.csv
             build/reference-u2022-reports/*/result.json
             build/reference-u2022-reports/*/*/sd-sim.log
             build/reference-u2022-reports/*/*/*_vela/fail_report.json

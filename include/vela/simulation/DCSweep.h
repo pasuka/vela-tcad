@@ -119,6 +119,7 @@ struct PathIonizationDiagnosticsConfig {
     Real tracingQfRelativeFloor = 5.1e-3;
     std::string tracingDirection = "bidirectional"; ///< bidirectional/along_vector/opposite_vector.
     Real seedField_V_per_m = 0.0; ///< Optional local-maximum qualification.
+    std::optional<Real> seedPeakWindow_V_per_m; ///< Seed all cells within this window of the global peak.
 };
 
 struct TriangleGssSourceDiagnosticsConfig {
@@ -249,6 +250,7 @@ struct SweepInitializationConfig {
 
 struct ExternalResistorControlConfig {
     bool enabled = false;
+    bool prescribedCurrent = false;
     std::string solver = "nested_scalar";
     Real resistance_ohm_um = 0.0;
     Real currentDirection = 1.0;

@@ -100,6 +100,7 @@ share/vela/materials/default_materials.json text eol=lf
 # Native follow-up manifests and evidence retain their recorded byte hashes.
 reference_tcad/bvmethods_sentaurus2018/source/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 reference_tcad/bvmethods_sentaurus2018/zero_qs_controls/**/*.cmd text eol=lf
+reference_tcad/bvmethods_sentaurus2018/u2022_12_20261117_methods/** text eol=lf
 reference_tcad/bvmethods_sentaurus2018/artifact_manifest*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Preserve verbatim TDX text exports sealed by the check-only manifest.
 reference_tcad/sdevice_check_only/*.grd -text -whitespace

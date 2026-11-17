@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <vector>
 
 namespace vela {
@@ -206,7 +207,8 @@ PathIonizationAnalysis analyzeContinuousCellIonizationPaths(
         ContinuousPathSeedMode::NodalLocalMaxima,
     ContinuousPathTracingPolicy tracingPolicy =
         ContinuousPathTracingPolicy::Configured,
-    Real tracingQfRelativeFloor = 0.0);
+    Real tracingQfRelativeFloor = 0.0,
+    std::optional<Real> seedPeakWindow = std::nullopt);
 
 /// Return the nth-largest mean integral (one-based), or zero when unavailable.
 Real nthLargestMeanIonizationIntegral(

@@ -1,0 +1,69 @@
+{
+  "version": "U-2022.12",
+  "native_binary_sha256": "f41e9b6ff4f47791653a1a1e6a9de15a78e1d628bdae06f192a3d0e8e691547a",
+  "library_cmd_sha256": "14197d46758aa284e94d05a2458729e8d6acac2ade339afc38ca6edc23e259ad",
+  "mesh_sha256": "7cd3968f5dd0e3cd63ef62ed0fcced465dd33bea465167f0be8139c16025902e",
+  "par_sha256": "618d0467ee2608a76c7d3bf1dead41d5cc4709c73ad8dcfb59e341636c2630f3",
+  "evidence_sha256": "86c44152d0f0db8641a1e9f3b0f20674b1a232c7ae8cfb1171e57d0e67221ae0",
+  "cases": {
+    "ABA_poisson": {
+      "files": {
+        "run.cmd": "8318923e284b2f386a7ca46eecfd5c27da934ff2b0bd665c1fb7ca3cd227e695",
+        "native.csv": "0d2f8bfd9b36f4581662bed6c4f4140e3e513f3311e0d17b25e9a3be9a815e3f"
+      },
+      "native_plt_sha256": "d7cccd280fb1e737a7034fc4c9822bb6214665070b6aaed69766d6dd8f6ca1ac",
+      "native_log_sha256": "7010d37aafe7dd2c3ea985df120733c69b47b358f3adb41f2092ad0b1361883e",
+      "original_cmd_sha256": "8318923e284b2f386a7ca46eecfd5c27da934ff2b0bd665c1fb7ca3cd227e695",
+      "removed_nonlocalpath": false,
+      "elapsed_s": 5.752969980239868,
+      "points": 21,
+      "final_inner_V": 9.23345270404012,
+      "stop": "ionization_integral",
+      "rank": 1,
+      "threshold": 1.1,
+      "crossing_bracket_V": [
+        6.953688047654,
+        9.23345270404012
+      ]
+    },
+    "ABA_coupled": {
+      "files": {
+        "run.cmd": "2f58aabceef5ecfea32b7215be13c9cc5ec7bae16cbc873889151d6c8d8feb9d",
+        "native.csv": "834bdf01a97505459563abd90877e742f99929d5df14b25b1ad302cc1b1c44a9"
+      },
+      "native_plt_sha256": "7c24cb574839f560dafba2fbca8e95ed70287fcca5f8bda3134538110e2a1bbd",
+      "native_log_sha256": "90bed90220cec88523b889bee78f45c51bd9223fa828c9ca8717221b05a34c11",
+      "original_cmd_sha256": "8049173cacdcbdc23f83856e05a46f3ba0eb4374d537599a5dab87046aaf4326",
+      "removed_nonlocalpath": true,
+      "elapsed_s": 21.688543558120728,
+      "points": 24,
+      "final_inner_V": 10.4942457129757,
+      "stop": "ionization_integral",
+      "rank": 1,
+      "threshold": 1.1,
+      "crossing_bracket_V": [
+        8.27007954584187,
+        10.4942457129757
+      ]
+    },
+    "voltage2current": {
+      "files": {
+        "run.cmd": "530d87a4a33f5fc7774bfdd7fd00344843b42e017319465c79e0b74bb6d46553",
+        "native.csv": "d1d2440fc21648ec7dc6a8f5675c27228f9b2e70b05edfaea7ed8f02ca1fb628"
+      },
+      "native_plt_sha256": "226f43a334b93dfe8696fdb4f94d6f8dfcbafeed279d00d711f58649ef72aadc",
+      "native_log_sha256": "10d446c09c799240ee301b24618d023f4ed04b9fc84c955d2039c78aed2f889e",
+      "original_cmd_sha256": "d3ecc66b25e4259036bbe77d2e8ac438ee00429e7160f2492f1c8dfbdb8a295f",
+      "removed_nonlocalpath": true,
+      "elapsed_s": 77.87751960754395,
+      "points": 110,
+      "final_inner_V": 7.33278626169723,
+      "stop": "current_goal",
+      "initial_current_A_per_um": 5.07668289068165e-08,
+      "final_current_A_per_um": 0.0013,
+      "breakdown_current_A_per_um": 0.0001,
+      "BV_inner_V": 6.673891677689804,
+      "BV_relative_tolerance": 0.02
+    }
+  }
+}

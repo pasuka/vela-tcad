@@ -9,6 +9,37 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class BVMethodsCmdProfileTests(unittest.TestCase):
+    def test_current_goal_rebases_adaptive_steps_on_measured_current(self):
+        deck, ir, stage, _ = self.inputs()
+        deck["solver"]["carrier_row_convergence"] = {"mode": "enforce"}
+        deck["solver"]["global_continuity_closure"] = {"mode": "enforce"}
+        deck["sweep"].pop("external_circuit")
+        deck["sweep"]["voltage_to_current"] = {
+            "switch_voltage_V": 6.0, "current_direction": 1,
+            "current_points_A_per_um": [0.0013],
+        }
+        stage["sweep"] = {"mode": "current", "stop_current_A_per_um": 0.0013}
+        source = {"iterations": 20, "t_control": {
+            "initial_step": 1e-6, "min_step": 1e-9, "max_step": 0.05,
+            "increment": 1.41, "decrement": 2,
+        }}
+        apply_bvmethods_profile(deck, ir, stage, {
+            "solver": {"global_continuity_closure": {"mode": "enforce"}}
+        }, source_stage=source, initial_current=5e-8)
+        sweep = deck["sweep"]
+        circuit = sweep["external_circuit"]
+        scale = circuit["resistance_ohm_um"]
+        span = 0.0013 - 5e-8
+        self.assertAlmostEqual(sweep["start"]/scale, 5e-8, delta=1e-20)
+        self.assertAlmostEqual(sweep["stop"]/scale, 0.0013, delta=1e-20)
+        for name, multiplier in (("initial", 1e-6), ("min", 1e-9), ("max", 0.05)):
+            self.assertAlmostEqual(sweep[f"{name}_step"]/scale, multiplier*span, delta=1e-16)
+        self.assertEqual(circuit["mode"], "prescribed_current")
+        self.assertEqual(circuit["max_iterations"], 20)
+        self.assertEqual(circuit["physical_acceptance_mode"], "enforce")
+        self.assertEqual(deck["solver"]["carrier_row_convergence"]["mode"], "report")
+        self.assertEqual(deck["solver"]["global_continuity_closure"]["mode"], "enforce")
+
     def test_approximate_stopping_reads_math_update_references_and_preserves_override(self):
         d, ir, stage, _ = self.inputs()
         ir["math"].update(digits=6, err_ref_electron_cm3=2e10, err_ref_hole_cm3=3e10)

@@ -141,6 +141,15 @@ with a 1e-12 A/um denominator floor. BV uses the first 1e-4 A/um
 crossing and a 0.5% tolerance against the qualified 6.673833 V anchor.
 Reports are written to `<build>/bvmethods-reports/`.
 
+The shared fixture also supplies `bvmethods_ci_ABA_poisson`,
+`bvmethods_ci_ABA_coupled`, and `bvmethods_ci_voltage2current`. The versioned
+[method references](../../reference_tcad/bvmethods_sentaurus2018/u2022_12_20261117_methods/reference.json)
+use native U-2022.12 runs on the same mesh and material inputs, with BTBT off.
+The two ABA regressions check the physical integral stop and its crossing
+bracket. The switched run checks the 6 V handoff, current tracking, KCL and
+current-interpolated BV. Reports use separate subdirectories for the three
+methods.
+
 ## Schottky and BJT U-2022.12 numerical regression
 
 Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register `reference_u2022_gate_contacts`,

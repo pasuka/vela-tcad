@@ -129,9 +129,14 @@ public:
   ni_.resize(n);for(int i=0;i<n;++i){nc_[i]=units.internalConcentrationToCm3(nc[i]);nv_[i]=units.internalConcentrationToCm3(nv[i]);if(directPopulationSg_)ni_[i]=units.internalConcentrationToCm3(ni[i]);}
   geo_.model="phumob_field_lombardi";geo_.edgeAveraging="element_box_phumob";
   geo_.surface.discretization="element_distance_gradient";geo_.highFieldGradientDiscretization="element_vertex_partial_layer";
+  if(cfg_.model=="constant"){
+   // Build the shared stencils even though constant transport does not use the field.
+   geo_.highFieldDrivingForce="quasi_fermi_gradient";
+   geo_.jacobianFieldDerivatives=true;
+  }
   geo_.surface.cellNormalX.clear();geo_.surface.cellNormalY.clear();geo_.surface.cellDistances.clear();geo_.surface.nodeDistances.clear();geo_.highFieldCells.clear();
   const auto& ec = detail::buildEdgeCellMap(mesh);detail::updateSurfaceMobilityCellGeometry(geo_,mesh,ec,initial.psi,cfg_.surface.coordinateFieldFactor,&materials_);
-  auto bc=cfg_;bc.model="masetti";bulk_=makeMobilityModel(bc);
+  auto bc=cfg_;if(bc.model!="constant")bc.model="masetti";bulk_=makeMobilityModel(bc);
   const auto& ion=problem.newton.impactIonization;
   auto invcm=[&](double a){return units.internalInverseLengthToMInv(a)/100.;};
   auto fieldcm=[&](double a){return units.internalElectricFieldToVPerM(a)/100.;};
@@ -363,11 +368,13 @@ public:
     powers.emplace();
    auto mobility=[&](bool e,const AvJet& drive,int local){auto node=a.nodes[local];
     const double low=e?a.bulkN[local]:a.bulkP[local];const auto& lp=e?cfg_.electronLombardi:cfg_.holeLombardi;const auto& hf=e?cfg_.electronField:cfg_.holeField;
+    const double scale=units.internalMobilityToM2PerVS(1.)*1e4;
+    if(cfg_.model=="constant")return AvJet(low*scale);
     const auto surface=evaluatePreparedElementLombardi(
         low,normal.value,e?lombardiN_[node]:lombardiP_[node],lp,cfg_,
         powers ? &*powers : nullptr,e);
     const auto high=canali.full(surface.mobility,drive.value,hf,100./cfg_.internalFieldToVPerM);
-    const double scale=units.internalMobilityToM2PerVS(1.)*1e4;AvJet mu(high.mobility*scale);
+    AvJet mu(high.mobility*scale);
     for(int k=0;k<9;++k)mu.derivative[k]=(high.lowDerivative*surface.fieldDerivative*normal.derivative[k]+high.fieldDerivative*drive.derivative[k])*scale;
     return mu;
    };
@@ -478,6 +485,10 @@ public:
      density[k]=electron?node.n:node.p;
      tangent[k]=dc*(electron?node.tangentN:node.tangentP);
      eta[k]=electron?node.etaN:node.etaP;
+     if(cfg_.model=="constant"){
+      mobility[k]=bulk[k]*mobilityScale;
+      continue;
+     }
      const auto surface=evaluatePreparedElementLombardi(bulk[k],normal,prepared[i],lp,cfg_,powers?&*powers:nullptr,electron);
      const double cutoff=100./cfg_.internalFieldToVPerM;
      const auto valueOnly=[&] {

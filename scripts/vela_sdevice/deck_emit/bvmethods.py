@@ -20,18 +20,24 @@ POPULATION_QF_DEFAULTS = {
 }
 
 
-def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
+def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None, initial_current=None):
     solver, sweep = deck["solver"], deck["sweep"]
     mobility, avalanche = solver["mobility"], solver["impact_ionization"]
-    if (mobility["model"] != "masetti_field_lombardi" or
-            mobility.get("high_field_driving_force") != "quasi_fermi_gradient" or
-            solver.get("carrier_statistics", {}).get("model") != "fermi_dirac" or
-            solver.get("bandgap_narrowing", {}).get("model") != "old_slotboom" or
+    math_config = ir["math"]
+    aba = math_config.get("compute_ionization_integrals") and math_config.get("break_at_ion_integral") is not None
+    poisson_aba = (aba and mobility["model"] == "constant" and
+                   avalanche.get("driving_force") == "electric_field" and not solver.get("recombination"))
+    coupled_aba = aba and math_config.get("aval_postprocessing", False)
+    if (solver.get("carrier_statistics", {}).get("model") != "fermi_dirac" or
             avalanche["model"] != "van_overstraeten" or
-            avalanche.get("driving_force") != "quasi_fermi_gradient" or
             solver.get("band_to_band", {}).get("model", "none") != "none" or
             set(solver.get("recombination", [])) - {"srh"} or
-            solver["temperature_K"] != 300 or not ir["math"]["aval_derivatives"]):
+            solver["temperature_K"] != 300 or not math_config["aval_derivatives"] or
+            (not poisson_aba and
+             (mobility["model"] != "masetti_field_lombardi" or
+              mobility.get("high_field_driving_force") != "quasi_fermi_gradient" or
+              solver.get("bandgap_narrowing", {}).get("model") != "old_slotboom" or
+              avalanche.get("driving_force") != "quasi_fermi_gradient"))):
         raise ValueError("BVMethods profile requires classical 300 K Fermi/OldSlotboom, Masetti/Enormal/GradQF, SRH and GradQF VanOverstraeten with AvalDerivatives; BTBT is unsupported")
     requested = sidecar.get("solver", {})
     if requested.get("quasi_fermi_reference", "none") != "none" or requested.get("continuity_row_scaling", {}).get("enabled", False):
@@ -113,15 +119,63 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None):
             solver[key] = dict(requested[key])
     if solver["method"] not in ("poisson_only", "frozen_state"):
         solver.update(method="newton", warm_start=True)
-    avalanche.update(coupling_mode="self_consistent", source_jacobian="local_ad")
+    avalanche.update(coupling_mode="postprocess_only" if poisson_aba or coupled_aba else "self_consistent",
+                     source_jacobian="local_ad")
+    if coupled_aba:
+        path = sweep["diagnostics"]["path_ionization_integrals"]
+        path.setdefault("tracing_mode", "continuous_cell")
+        path.setdefault("tracing_vector", "electric_field_rk4")
+        if path["tracing_mode"] == "continuous_cell":
+            # ComputeAtMaxElectricField(delta=1e4 V/cm) is the CMD default.
+            path.setdefault("seed_peak_window_V_per_cm", 1e4)
+            path.setdefault("stop_field_V_per_cm", 1.0)
     solver["band_to_band"] = {"model": "none"}
-    for key, value in (("coefficient_eV", .009), ("reference_doping_cm3", 1e17), ("smoothing", .5)):
-        solver["bandgap_narrowing"].setdefault(key, value)
+    if solver.get("bandgap_narrowing", {}).get("model") == "old_slotboom":
+        for key, value in (("coefficient_eV", .009), ("reference_doping_cm3", 1e17), ("smoothing", .5)):
+            solver["bandgap_narrowing"].setdefault(key, value)
     solver["region_resolved_interface_assembly"] = {"poisson_charge_node_volume": "signed_transport"}
     deck["mesh_geometry"].update(GEOMETRY)
-    if solver["method"] == "newton":
+    if solver["method"] == "newton" or aba:
         sweep.setdefault("step_growth_mode", "newton_iterations")
+    if stage.get("sweep", {}).get("mode") == "voltage" and (aba or not sweep.get("external_circuit")):
+        sweep.update(stop_below_minimum_step=True, preserve_step_after_output_clip=True)
+        if not stage["required_t"]:
+            delta = sweep["stop"] - sweep["start"]
+            sweep["step"] = delta
+            stage["sweep"]["step_V"] = delta
     sweep.setdefault("stop_on_failure", True)
+    if stage.get("sweep", {}).get("mode") == "current":
+        if variables != "potential_density" or stage["required_t"]:
+            raise ValueError("BVMethods adaptive current control requires potential_density without Plot Time points")
+        controls = source_stage["t_control"]
+        control = sweep.pop("voltage_to_current")
+        direction = control["current_direction"]
+        goal = stage["sweep"]["stop_current_A_per_um"]
+        initial = 0.0 if initial_current is None else initial_current
+        if direction * (goal - initial) <= 0.0:
+            raise ValueError("BVMethods adaptive current control requires a positive directed current span")
+        # Reuse the bordered equation with its potential coefficient set to zero.
+        # This factor only scales the current row; the drain has no physical resistor.
+        current_scale = 1e7
+        start, stop = current_scale * direction * initial, current_scale * direction * goal
+        span = stop - start
+        sweep.pop("bias_points", None)
+        sweep.update(start=start, stop=stop, step=span,
+                     initial_step=span * (controls["initial_step"] if controls["initial_step"] is not None else .1),
+                     min_step=span * (controls["min_step"] if controls["min_step"] is not None else .001),
+                     max_step=span * (controls["max_step"] if controls["max_step"] is not None else 1.0),
+                     growth_factor=controls["increment"] or 2.0,
+                     shrink_factor=1.0 / (controls["decrement"] or 2.0))
+        sweep["external_circuit"] = {
+            "mode": "prescribed_current", "resistance_ohm_um": current_scale,
+            "current_direction": direction, "initial_inner_voltage_V": control["switch_voltage_V"],
+            "physical_acceptance_mode": "enforce",
+        }
+        # These Vela-only continuity ratios are diagnostic unless explicitly
+        # selected. The current control and terminal KCL are enforced separately.
+        for key in ("carrier_row_convergence", "global_continuity_closure"):
+            if key not in requested and key in solver:
+                solver[key]["mode"] = "report"
     numerical_circuit = sidecar.get("sweep", {}).get("external_circuit", {})
     if "coupled_max_step_retries" in numerical_circuit:
         sweep["max_retries"] = numerical_circuit["coupled_max_step_retries"]

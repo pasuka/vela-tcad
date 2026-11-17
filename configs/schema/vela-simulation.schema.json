@@ -448,7 +448,7 @@
               "type": "integer"
             },
             "mode": {
-              "const": "series_resistor"
+              "enum": ["series_resistor", "prescribed_current"]
             },
             "physical_acceptance_mode": {"enum": ["enforce", "report"], "description": "Independent load, carrier, continuity and KCL quality gate; default report for native_approx, enforce for legacy. Nonfinite states always reject."},
             "load_line_convergence_mode": {
@@ -462,7 +462,8 @@
             },
             "resistance_ohm_um": {
               "exclusiveMinimum": 0.0,
-              "type": "number"
+              "type": "number",
+              "description": "Physical series resistance, or the current-equation row scale in prescribed_current mode."
             },
             "voltage_tolerance_V": {
               "exclusiveMinimum": 0.0,
