@@ -6782,10 +6782,14 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     BacktrackingLineSearch lineSearch(lineSearchConfig);
     LinearSolver linearSolver;
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
-        const SparseMatrixd jacobian = cfg_.jacobian == "finite_difference"
-            ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
-            : assembler.assembleJacobian(x, bcs);
-        const SparseMatrixd poissonBlock = sparseBlock(jacobian, 0, 0, N, N);
+        const auto poissonBlock = [&] {
+            if (cfg_.jacobian == "finite_difference")
+                return sparseBlock(assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep),
+                                   0, 0, N, N);
+            if (assembler.usesBvMethodsOperator())
+                return assembler.assemblePoissonJacobian(x, bcs);
+            return sparseBlock(assembler.assembleJacobian(x, bcs), 0, 0, N, N);
+        }();
         VectorXd step = VectorXd::Zero(3 * N);
         try {
             step.head(N) = linearSolver.solve(poissonBlock, -residual.head(N));

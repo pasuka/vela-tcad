@@ -341,6 +341,36 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
 #include "vela/simulation/CoupledLoadLine.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/solver/experimental/ExactValueBits.h"
+
+TEST_CASE("BVMethods Poisson-only assembly preserves the coupled potential block",
+          "[bvmethods_profile][poisson_only]")
+{
+    using namespace vela;
+    for (const bool scaled : {false, true}) {
+        ProfileFixture fixture;
+        fixture.scaling.enabled = scaled;
+        fixture.scaling.V0 = .043;
+        fixture.scaling.permittivityReference_F_per_m = 1.04e-10;
+        fixture.scaling.chargeAreaFactor = .24;
+        auto assembler = fixture.assembler();
+        const VectorXd state = scaled ? (fixture.point() / fixture.scaling.V0).eval() : fixture.point();
+        CoupledDDBoundaryConditions bc;
+        for (const bool constrained : {false, true}) {
+            if (constrained) {
+                bc.psi[0] = state(0);
+                bc.psi[5] = state(5);
+                bc.phin[0] = state(6);
+                bc.phip[0] = state(12);
+            }
+            CAPTURE(scaled, constrained);
+            const auto coupled = assembler->assembleJacobian(state, bc);
+            SparseMatrixd potential = coupled.block(0, 0, 6, 6);
+            potential.makeCompressed();
+            CHECK(experimental::exactValueBits(assembler->assemblePoissonJacobian(state, bc)) ==
+                  experimental::exactValueBits(potential));
+        }
+    }
+}
 TEST_CASE("BVMethods frozen mobility tangent preserves live transport and conservation", "[bvmethods_profile]") {
     using namespace vela;ProfileFixture f;auto a=f.assembler();const auto x=f.point();
     detail::BvMethodsQfState s{x.head(6),x.segment(6,6),x.tail(6),a->electronDensity(x),a->holeDensity(x)};

@@ -4824,6 +4824,70 @@ CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl(
     return jacobian;
 }
 
+Real CoupledDDAssembler::poissonChargePotentialDerivative(
+    Index node, Real dnDpsi, Real dpDpsi) const
+{
+    const Real chargeAreaFactor = scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
+    return (-constants::q * dpDpsi * poissonHoleVol_[node]
+            + constants::q * dnDpsi * poissonElectronVol_[node]) * chargeAreaFactor;
+}
+
+SparseMatrixd CoupledDDAssembler::assemblePoissonJacobian(
+    const VectorXd& x, const CoupledDDBoundaryConditions& bcs) const
+{
+    const int nodes = static_cast<int>(mesh_.numNodes());
+    if (usesPopulationState() || splitDDEnabled_ || x.size() != 3 * nodes)
+        throw std::invalid_argument("Poisson Jacobian block requires ordinary 3*N QF coordinates");
+    if (auto runtime = bvMethodsRuntime())
+        return runtime->poissonJacobian(x, bcs);
+
+    ScopedPerformanceTimer timer("dd.poisson_jacobian");
+    // Retain the explicit zeros in the potential block of the coupled pattern.
+    std::vector<Eigen::Triplet<Real>> pattern;
+    pattern.reserve(mesh_.numNodes() + 2 * mesh_.numEdges());
+    for (int row = 0; row < nodes; ++row)
+        pattern.emplace_back(row, row, 0.0);
+    for (const Edge& edge : mesh_.edges()) {
+        if (!bcs.psi.contains(edge.n0))
+            pattern.emplace_back(edge.n0, edge.n1, 0.0);
+        if (!bcs.psi.contains(edge.n1))
+            pattern.emplace_back(edge.n1, edge.n0, 0.0);
+    }
+    SparseMatrixd block(nodes, nodes);
+    block.setFromTriplets(pattern.begin(), pattern.end());
+
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const Real rowScale = scaling_.permittivityReference_F_per_m * potentialScale;
+    const auto add = [&](int row, int col, Real value) {
+        if (value != 0.0 && !bcs.psi.contains(row))
+            block.coeffRef(row, col) += scaling_.enabled ? value * potentialScale / rowScale : value;
+    };
+    // Diagonals use the original edge order, followed by the charge derivative.
+    for (const auto& edge : edgeAssemblyKernels_) {
+        if (edge.length < 1.0e-30)
+            continue;
+        const Real coupling = edge.poissonCoupling;
+        add(edge.n0, edge.n0, coupling);
+        add(edge.n0, edge.n1, -coupling);
+        add(edge.n1, edge.n0, -coupling);
+        add(edge.n1, edge.n1, coupling);
+    }
+    const VectorXd psi = x.head(nodes) * potentialScale;
+    for (int row = 0; row < nodes; ++row) {
+        if (bcs.psi.contains(row)) {
+            block.coeffRef(row, row) = 1.0;
+            continue;
+        }
+        const Real dnDeta = electronDensityDerivativeEtaAt(row,
+            psi(row) - electronQuasiFermiReferenceAt(row), x(phinOffset() + row) * potentialScale);
+        const Real dpDeta = holeDensityDerivativeEta(ni_[row], Nv_[row],
+            psi(row) - holeQuasiFermiReferenceAt(row), x(phipOffset() + row) * potentialScale,
+            Vt_, carrierStatisticsModel_);
+        add(row, row, poissonChargePotentialDerivative(row, dnDeta / Vt_, -(dpDeta / Vt_)));
+    }
+    return block;
+}
+
 SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs) const
@@ -7586,9 +7650,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real dpi_dphip = dpDeta / Vt_;
 
         add(psiOffset() + ii, psiOffset() + ii,
-            (-constants::q * dpi_dpsi * poissonHoleVol_[i]
-             + constants::q * dni_dpsi * poissonElectronVol_[i]) *
-                chargeAreaFactor);
+            poissonChargePotentialDerivative(i, dni_dpsi, dpi_dpsi));
         add(psiOffset() + ii, phinOffset() + ii,
             constants::q * dni_dphin * poissonElectronVol_[i] *
                 chargeAreaFactor);

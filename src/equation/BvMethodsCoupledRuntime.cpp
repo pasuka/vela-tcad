@@ -496,6 +496,16 @@ SparseMatrixd BvMethodsCoupledRuntime::jacobian(const VectorXd& x,const CoupledD
         if(!p.constrained(v.row(),b))t.emplace_back(v.row(),v.col(),v.value());
     SparseMatrixd result(3*n,3*n);result.setFromTriplets(t.begin(),t.end());return result;
 }
+SparseMatrixd BvMethodsCoupledRuntime::poissonJacobian(
+    const VectorXd& x, const CoupledDDBoundaryConditions& b) const
+{
+    auto& p = *impl_;
+    p.validateBoundary(b);
+    p.sync();
+    if (x.size() != 3 * static_cast<Eigen::Index>(p.active.size()) || !x.allFinite())
+        throw std::invalid_argument("bvmethods_tri3_qf: invalid QF state");
+    return p.poisson->assemblePoissonJacobian(x, b);
+}
 std::vector<CoupledDDCarrierTermDiagnostic> BvMethodsCoupledRuntime::terms(const VectorXd& x,const CoupledDDBoundaryConditions& b,bool includeImpact)const {
     auto& p=*impl_;p.validateBoundary(b);p.sync();const auto e=p.evaluate(x,false);
     return p.termsFrom(e,p.residualFrom(x,b,e),b,includeImpact);

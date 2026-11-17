@@ -473,6 +473,11 @@ public:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;
 
+    /// Assemble the potential block at fixed quasi-Fermi coordinates.
+    SparseMatrixd assemblePoissonJacobian(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
+
     SparseMatrixd finiteDifferenceJacobian(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
@@ -670,6 +675,7 @@ private:
     Real electronDensityDerivativeEtaAt(Index node,
                                         Real psiRelative_V,
                                         Real phinIncrement_V) const;
+    Real poissonChargePotentialDerivative(Index node, Real dnDpsi, Real dpDpsi) const;
     std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnosticsImpl(
         const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
         const VectorXd& suppliedElectronDensity, const VectorXd& suppliedHoleDensity,
