@@ -136,7 +136,11 @@
     "vtk_binary": false,
     "csv_all_contacts": true,
     "write_state_file": "stage01_state.h5",
-    "predictor": "linear",
+    "continuation": {
+      "predictor": {
+        "mode": "linear"
+      }
+    },
     "initial_state_file": "stage00_state.h5",
     "vtk_bias_points": [
       0.0,

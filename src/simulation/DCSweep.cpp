@@ -1327,11 +1327,6 @@ HybridHandoffConfig hybridHandoffConfigFromJson(const nlohmann::json& solverJson
     return hybrid;
 }
 
-bool isAllowedSweepPredictorMode(const std::string& mode)
-{
-    return mode == "none" || mode == "constant" || mode == "linear" || mode == "secant";
-}
-
 bool isAllowedSweepPredictorField(const std::string& field)
 {
     return field == "psi" || field == "phin" || field == "phip";
@@ -1340,24 +1335,16 @@ bool isAllowedSweepPredictorField(const std::string& field)
 void parseSweepContinuationConfig(const nlohmann::json& sweepJson,
                                   DCSweepConfig&        sweep)
 {
+    if (const auto mode = detail::configuredDCSweepPredictorMode(sweepJson)) {
+        sweep.continuation.predictor.mode = *mode;
+        sweep.continuation.predictorConfigured = true;
+    }
     if (!sweepJson.contains("continuation"))
         return;
     const auto& continuation = sweepJson.at("continuation");
-    if (!continuation.is_object())
-        throw std::invalid_argument("DCSweep: sweep.continuation must be an object.");
 
     if (continuation.contains("predictor")) {
         const auto& predictor = continuation.at("predictor");
-        if (!predictor.is_object())
-            throw std::invalid_argument(
-                "DCSweep: sweep.continuation.predictor must be an object.");
-        sweep.continuation.predictor.mode =
-            predictor.value("mode", sweep.continuation.predictor.mode);
-        if (!isAllowedSweepPredictorMode(sweep.continuation.predictor.mode)) {
-            throw std::invalid_argument(
-                "DCSweep: sweep.continuation.predictor.mode must be one of "
-                "'none', 'constant', 'linear', or 'secant'.");
-        }
         if (predictor.contains("fields")) {
             const auto& fields = predictor.at("fields");
             if (!fields.is_array())
@@ -8755,7 +8742,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             auto attemptCoupledOuterPoint =
                 [&](Real outerVoltage, Real attemptedOuterStep, int retryCount)
                     -> detail::DCSweepStepAttemptResult {
-                    auto result = attemptCoupledSeed(outerVoltage, attemptedOuterStep, retryCount, true);
+                    const bool extrapolate = !sweep.continuation.predictorConfigured ||
+                        detail::dcsweepModeExtrapolates(sweep.continuation.predictor.mode);
+                    auto result = attemptCoupledSeed(outerVoltage, attemptedOuterStep, retryCount, extrapolate);
                     if (!result.converged && pendingUsedSecant &&
                         sweep.externalResistor.coupledContinuationEnabled &&
                         sweep.externalResistor.coupledRetryAcceptedSeed) {

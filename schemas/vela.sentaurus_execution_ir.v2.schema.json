@@ -381,6 +381,7 @@
           "not_damped": {"type": "integer", "minimum": 0},
           "goal": {"$ref": "#/definitions/goal"},
           "t_control": {"$ref": "#/definitions/t_control"},
+          "extrapolate": {"type": "boolean"},
           "current_mode_contacts": {
             "type": "array",
             "items": {"type": "string"},
@@ -546,6 +547,7 @@
         "options": {"type": "object", "description": "Other Coupled(...) options recorded verbatim, e.g. LineSearchDamping."},
         "goal": {"$ref": "#/definitions/goal"},
         "t_control": {"$ref": "#/definitions/t_control"},
+        "extrapolate": {"type": "boolean"},
         "body": {"type": "array", "items": {"$ref": "#/definitions/statement"}, "description": "quasistationary: inner statements (one coupled plus optional plot/current_plot)."},
         "file_prefix": {"type": "string"},
         "time": {"$ref": "#/definitions/time_spec"},

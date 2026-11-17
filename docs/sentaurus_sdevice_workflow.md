@@ -296,7 +296,7 @@ runner 以 ASCII 暂存名读写输入与运行日志，编排器在段结束后
 | File/Grid/Parameter | `.tdr` 或二维三角形 DF-ISE `.grd` + 同名 `.dat`；必须声明参数文件 | TDR 需实际 HDF5 importer；坐标 um，掺杂 cm^-3。DF-ISE 支持全局节点掺杂和按单个材料区声明 `validity` 的 TDX 节点掺杂，区域内按全局节点编号升序；`sdevice_mesh_import` |
 | Electrode | 大小写敏感的接触名，Voltage、栅 Barrier/WorkFunction/Material、Schottky、Resist/Resistor | 不支持分布电阻或掺杂多晶硅栅；电阻只可在扫描接触；`sdevice_gate_contact_mapping`/`sdevice_deck_emit` |
 | Physics | 等温 DD、Boltzmann/Fermi、常数/Masetti 迁移率、高场、SRH/Auger、OldSlotboom、VanOverstraeten、已映射带间隧穿与固定电荷 | 有效作用域需可表达；`.par` 活跃参数逐项门控；IALMob/热输运及未映射系数模型拒绝；`sdevice_materials` |
-| Math | 线程、Iterations、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria；解析并记录 Digits/RelErrControl/ErrRef | stage Iterations 映射 max_iter；Digits/RelErrControl/ErrRef 记录 W201，不替代 Vela 接受规则；其他无等价项按消息目录警告 |
+| Math | 线程、Iterations、Extrapolate、ExitOnFailure、AvalDerivatives、已映射 BreakCriteria；解析并记录 Digits/RelErrControl/ErrRef | stage Iterations 映射 max_iter；Extrapolate 映射到扫段的 `sweep.continuation.predictor.mode`，同段的 `Quasistationary(Extrapolate ...)` 或 `-Extrapolate` 优先；Digits/RelErrControl/ErrRef 记录 W201，不替代 Vela 接受规则 |
 | Solve | 初始/续接 Coupled、单接触 Quasistationary 电压或电流目标、Save/Load、Plot/CurrentPlot Time、NewCurrentPrefix | HDF5 状态链；Current Time 在实际运行时绑定；多 Goal/Transient/Continuation/ACCoupled/System 拒绝 |
 | ABA/外接电阻/电流目标/Schottky | 解析、校验、deck 发射已有覆盖；门控成功可生成计划 | `sdevice_deck_emit` + WP12 中性网格 `--check`；除具名验收外，原生数值资格未建立 |
 | Plot | 第 3.3 节数据名、`/Vector`、VTU/PVD、ASCII 或 inline base64 binary | 不能提供的已识别字段 W202；坐标采样/积分/极值 CurrentPlot 请求 W105/W106 |

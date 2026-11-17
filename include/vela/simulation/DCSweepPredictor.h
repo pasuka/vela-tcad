@@ -4,14 +4,70 @@
 #include "vela/equation/SplitDDRuntime.h"
 #include "vela/solver/PopulationState.h"
 #include "vela/numerics/ExpansionProductSum.h"
+#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace vela::detail {
+
+inline bool dcsweepModeExtrapolates(const std::string& mode)
+{
+    return mode == "linear" || mode == "secant";
+}
+
+inline bool isAllowedSweepPredictorMode(const std::string& mode)
+{
+    return mode == "none" || mode == "constant" || dcsweepModeExtrapolates(mode);
+}
+
+inline std::optional<std::string> configuredDCSweepPredictorMode(const nlohmann::json& sweep)
+{
+    std::optional<std::string> legacy;
+    if (sweep.contains("predictor")) {
+        const auto& value = sweep.at("predictor");
+        if (value.is_boolean())
+            legacy = value.get<bool>() ? "linear" : "none";
+        else if (value.is_string())
+            legacy = value.get<std::string>();
+        else
+            throw std::invalid_argument("DCSweep: sweep.predictor must be a mode string or a boolean.");
+
+        if (*legacy == "disabled" || *legacy == "off")
+            legacy = "none";
+        if (!isAllowedSweepPredictorMode(*legacy))
+            throw std::invalid_argument(
+                "DCSweep: unsupported sweep.predictor mode. Use sweep.continuation.predictor.mode.");
+    }
+
+    if (!sweep.contains("continuation"))
+        return legacy;
+    const auto& continuation = sweep.at("continuation");
+    if (!continuation.is_object())
+        throw std::invalid_argument("DCSweep: sweep.continuation must be an object.");
+    if (!continuation.contains("predictor"))
+        return legacy;
+    const auto& predictor = continuation.at("predictor");
+    if (!predictor.is_object())
+        throw std::invalid_argument("DCSweep: sweep.continuation.predictor must be an object.");
+    for (const auto& item : predictor.items()) {
+        const auto& key = item.key();
+        if (key != "mode" && key != "fields" && key != "max_extrapolation_ratio")
+            throw std::invalid_argument("DCSweep: unknown sweep.continuation.predictor field: " + key);
+    }
+    if (predictor.contains("mode") && !predictor.at("mode").is_string())
+        throw std::invalid_argument("DCSweep: sweep.continuation.predictor.mode must be a string.");
+
+    const auto mode = predictor.value("mode", legacy.value_or("none"));
+    if (!isAllowedSweepPredictorMode(mode))
+        throw std::invalid_argument(
+            "DCSweep: sweep.continuation.predictor.mode must be 'none', 'constant', 'linear', or 'secant'.");
+    return mode;
+}
 
 inline void requireMatchingFieldSize(const VectorXd& previous,
                                      const VectorXd& current,

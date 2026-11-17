@@ -5,6 +5,7 @@
 #undef main
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/DCSweepPredictor.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "BvMethodsPopulationNewton.h"
 #include "BvMethodsDerivativeSwitch.h"
@@ -228,7 +229,8 @@ int main(int argc, char** argv) { try {
     const double stopVoltage=cfg.at("sweep").value("stop",100000.);
     const double stopCurrent=cfg.at("sweep").at("breakdown").value("current_abs_A_per_um",.0013);
     const int attemptBudget=m.value("max_outer_attempts",1024);
-    const bool extrapolate=cfg.at("sweep").value("predictor",std::string{"linear"})=="linear";
+    const bool extrapolate = detail::dcsweepModeExtrapolates(
+        detail::configuredDCSweepPredictorMode(cfg.at("sweep")).value_or("linear"));
     Json ph=Json::array();for(const auto& t:poisson.history)ph.push_back({{"iteration",t.iter},{"residual",t.residualNorm},{"alpha",t.dampingFactor}});
     Json report={{"schema","vela.adaptive_derivative_bv.v1"},{"from_cold_poisson",!protectionReplay},{"imported_checkpoint",protectionReplay},
         {"backend",LinearSolver::selectedBackend()},{"poisson",{{"converged",poisson.converged},{"iterations",poisson.iters},{"residual",poisson.finalResidualNorm},{"trace",ph}}},

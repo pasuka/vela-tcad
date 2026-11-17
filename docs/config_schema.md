@@ -3444,9 +3444,19 @@ do not automatically inherit this controller's history.
 
 Sweep continuation fields:
 - `sweep.continuation.predictor.mode`: `none`, `constant`, `linear`, or `secant`.
+  CMD voltage and current ramps emit this field. A bare `Extrapolate` or
+  `-Extrapolate` on a `Quasistationary` stage overrides the global Math setting.
+  The legacy DC alias `sweep.predictor` remains readable. Booleans map to
+  `linear` or `none`, and `off` and `disabled` map to `none`. An explicit
+  canonical mode takes precedence when both fields are present.
 - `sweep.continuation.predictor.fields`: optional subset of `psi`, `phin`, and
   `phip`; omitted non-`none` predictors default to all three fields.
 - `sweep.continuation.predictor.max_extrapolation_ratio`: finite value at least `1`.
+  These two settings configure device-state prediction in ordinary and nested
+  DC solves. In coupled circuit solves, `linear` or `secant` selects the
+  existing whole-state circuit secant and `none` or `constant` uses the last
+  accepted state. Omission retains each runner's default (off for ordinary
+  device-state prediction and on for coupled circuit secant prediction).
 - `sweep.continuation.branch_acceptance.terminal_current_consistency`: when true,
   rejects a converged sweep point if terminal current cancellation is too large.
 - `sweep.continuation.branch_acceptance.min_terminal_current_ratio`: non-negative

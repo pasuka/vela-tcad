@@ -1243,10 +1243,12 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     const DCSweepResult result = sweep.runWithResult(cfgPath.string());
     REQUIRE(result.points.size() > 2);
     REQUIRE(std::filesystem::is_regular_file(restartPath));
+    bool usedSecant = false;
     for (const DCSweepPoint& point : result.points) {
         REQUIRE(point.converged);
         REQUIRE(point.solverMethod == "coupled_load_line_newton");
         const auto acceptance = nlohmann::json::parse(point.validationDiagnostics);
+        usedSecant = usedSecant || acceptance.at("coupled_seed") == "secant";
         REQUIRE(acceptance.at("coupled_acceptance_checked").get<bool>());
         REQUIRE(acceptance.at("terminal_kcl_satisfied").get<bool>());
         REQUIRE(acceptance.at("actual_load_line_satisfied").get<bool>());
@@ -1268,6 +1270,8 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
         REQUIRE(std::stod(coupledRows[i][outerColumn]) == result.points[i - 1].outerVoltage_V);
     }
 
+    nlohmann::json noPredictor;
+    std::ifstream(cfgPath) >> noPredictor;
     const auto restartCsvPath = dir / "coupled_external_resistor_restart.csv";
     const auto restartCfgPath = writeUnitScalingSweepConfig(
         dir,
@@ -1309,6 +1313,16 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     REQUIRE(restarted.points.back().outerVoltage_V ==
             Catch::Approx(0.5).margin(1.0e-12));
     REQUIRE(std::abs(restarted.points.back().loadLineResidual_V) <= 1.0e-7);
+    REQUIRE(usedSecant);
+
+    noPredictor["sweep"]["continuation"]["predictor"]["mode"] = "none";
+    std::ofstream(cfgPath) << noPredictor.dump(2);
+    const DCSweepResult acceptedSeeds = sweep.runWithResult(cfgPath.string());
+    REQUIRE(acceptedSeeds.points.back().outerVoltage_V == Catch::Approx(0.25).margin(1.0e-12));
+    for (const auto& point : acceptedSeeds.points) {
+        REQUIRE(point.converged);
+        CHECK(nlohmann::json::parse(point.validationDiagnostics).at("coupled_seed") == "accepted_state");
+    }
 }
 
 TEST_CASE("DCSweep: augmented iteration feedback controls outer steps and stops on current",
@@ -5221,6 +5235,43 @@ TEST_CASE("DCSweep explicit targets preserve intermediate predictor history",
     const auto initial = csvColumnIndex(implicit.front(), "initial_state_hash");
     const auto parent = csvColumnIndex(implicit.front(), "parent_state_hash");
     REQUIRE(implicit[3][initial] != implicit[3][parent]);
+}
+
+TEST_CASE("DCSweep legacy predictor is equivalent to the canonical JSON field",
+          "[dc_sweep][continuation][predictor]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "predictor_alias.csv";
+    const auto attemptsPath = dir / "attempts.csv";
+    const auto run = [&](const nlohmann::json& config) {
+        auto options = nlohmann::json{
+            {"start", 0.0}, {"stop", 0.03}, {"step", 0.01}, {"write_vtk", false},
+            {"diagnostics", {{"newton_history", {
+                {"enabled", true}, {"attempts_csv_file", attemptsPath.string()}
+            }}}}
+        };
+        options.update(config);
+        const auto path = writeSweepConfig(dir, meshPath, csvPath, options,
+            {{"method", "newton"}, {"max_iter", 80}, {"verbose", false}});
+        const auto result = DCSweep().runWithResult(path.string());
+        REQUIRE_FALSE(result.points.empty());
+        REQUIRE(result.points.back().converged);
+        const auto rows = readCsvRows(attemptsPath);
+        REQUIRE(rows.size() == 5);
+        return rows.back().at(csvColumnIndex(rows.front(), "predictor_state_hash"));
+    };
+    const auto canonical = run({{"continuation", {{"predictor", {{"mode", "linear"}}}}}});
+    REQUIRE_FALSE(canonical.empty());
+    CHECK(run({{"predictor", "linear"}}) == canonical);
+    CHECK(run({{"predictor", false}}).empty());
+    CHECK(run({{"predictor", "linear"},
+               {"continuation", {{"predictor", {{"mode", "none"}}}}}}).empty());
+    REQUIRE_THROWS_WITH(
+        run({{"continuation", {{"predictor", {{"Mode", "linear"}}}}}}),
+        Catch::Matchers::ContainsSubstring("unknown sweep.continuation.predictor field"));
 }
 
 TEST_CASE("DCSweep branch acceptance: measures psi-phin exponent jumps",

@@ -235,6 +235,7 @@ struct SweepArclengthConfig {
 
 struct SweepContinuationConfig {
     SweepPredictorConfig predictor;
+    bool predictorConfigured = false;
     SweepBranchAcceptanceConfig branchAcceptance;
     SweepArclengthConfig arclength;
 };

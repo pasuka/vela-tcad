@@ -6,6 +6,7 @@
 #undef main
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/DCSweepPredictor.h"
 #include "BvMethodsPopulationNewton.h"
 #include "BvMethodsDerivativeSwitch.h"
 #include "BvMethodsAdaptiveStep.h"
@@ -173,7 +174,8 @@ int main(int argc, char** argv) { try {
     const double stopVoltage=cfg.at("sweep").value("stop",100000.);
     const double stopCurrent=cfg.at("sweep").at("breakdown").value("current_abs_A_per_um",.0013);
     const int attemptBudget=m.value("max_outer_attempts",1024);
-    const bool extrapolate=cfg.at("sweep").value("predictor",std::string{"linear"})=="linear";
+    const bool extrapolate = detail::dcsweepModeExtrapolates(
+        detail::configuredDCSweepPredictorMode(cfg.at("sweep")).value_or("linear"));
     Json report={{"schema","vela.derivative_switch.v1"},{"backend",LinearSolver::selectedBackend()},
         {"dimension",d+1},{"outer_V",outer},{"initial_inner_V",initialBias},{"potential_scale_V",v0},
         {"equation_tolerance",eqtol},{"load_tolerance_V",loadtol},{"fraction_tau",tau},

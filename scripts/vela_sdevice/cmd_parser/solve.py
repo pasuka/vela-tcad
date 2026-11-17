@@ -193,6 +193,13 @@ def _parse_quasistationary(head: Token, stream: TokenStream, ctx: ParseContext) 
             statement["goal"] = _parse_goal(inner, ctx, key.line, text)
         elif lower == "dozero":
             statement["t_control"]["do_zero"] = True
+        elif lower in ("extrapolate", "-extrapolate"):
+            statement["extrapolate"] = lower == "extrapolate"
+            if param_stream.at_punct("("):
+                _, options, _ = param_stream.take_group()
+                for option in options:
+                    if option.kind == "word" and not is_number(option.value):
+                        ctx.warn("W111", key.line, SECTION, option.value, kw=option.value)
         elif lower in _T_CONTROL_KEYS:
             param_stream.expect_punct("=")
             statement["t_control"][_T_CONTROL_KEYS[lower]] = parse_number(param_stream.take_value(), key.value)
@@ -323,6 +330,8 @@ def build_stages(statements: List[dict], current_resolved: str) -> List[dict]:
                     stage[key] = inner[0][key]
             if statement.get("goal") is not None:
                 stage["goal"] = statement["goal"]
+            if "extrapolate" in statement:
+                stage["extrapolate"] = statement["extrapolate"]
             stage["t_control"] = statement["t_control"]
         elif kind in ("save", "load"):
             stage = new_stage(kind, index, statement, [], None)

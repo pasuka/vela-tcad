@@ -329,6 +329,27 @@
     "sweep": {
       "additionalProperties": true,
       "properties": {
+        "predictor": {
+          "description": "Legacy DC alias for sweep.continuation.predictor.mode. New decks use continuation.predictor.",
+          "oneOf": [
+            {"type": "boolean"},
+            {"enum": ["none", "constant", "linear", "secant", "off", "disabled"]}
+          ]
+        },
+        "continuation": {
+          "type": "object",
+          "properties": {
+            "predictor": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mode": {"enum": ["none", "constant", "linear", "secant"]},
+                "fields": {"type": "array", "items": {"enum": ["psi", "phin", "phip"]}},
+                "max_extrapolation_ratio": {"type": "number", "minimum": 1}
+              }
+            }
+          }
+        },
         "stop_below_minimum_step": {"type": "boolean", "default": false},
         "preserve_step_after_output_clip": {"type": "boolean", "default": false},
         "contact": {

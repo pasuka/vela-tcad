@@ -103,7 +103,6 @@
     "vtk_binary": false,
     "csv_all_contacts": true,
     "write_state_file": "stage00_state.h5",
-    "predictor": "linear",
     "initialization": {
       "mode": "poisson_block",
       "poisson_max_iter": 100

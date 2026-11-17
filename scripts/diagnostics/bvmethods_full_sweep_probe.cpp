@@ -6,6 +6,7 @@
 #include "../../src/tools/vela_example_runner.cpp"
 #undef main
 #include "vela/simulation/CoupledLoadLine.h"
+#include "vela/simulation/DCSweepPredictor.h"
 #include "BvMethodsAdaptiveStep.h"
 #include <filesystem>
 int main(int argc,char**argv){try{
@@ -19,7 +20,8 @@ int main(int argc,char**argv){try{
  const double correctorVoltageLimit=circuit.contains("max_inner_voltage_step_V")
   ? diagnostics::positiveStepNumber(circuit,"max_inner_voltage_step_V") : .1;
  cfg=canonicalizeDeck(cfg);const fs::path out=argv[2];fs::create_directories(out);
- const bool extrapolate=m.value("extrapolate",diagnostics::stepObject(cfg,"sweep").value("predictor",std::string{"linear"})=="linear");
+ const bool extrapolate=m.value("extrapolate",detail::dcsweepModeExtrapolates(
+     detail::configuredDCSweepPredictorMode(diagnostics::stepObject(cfg,"sweep")).value_or("linear")));
  const double start=m["current"]["inner_V"];
  for(auto&c:cfg["contacts"])if(c["name"]=="drain")c["bias"]=start;
  auto p=loadNewtonProblem(m["config"],cfg);auto solver=makeNewtonSolver(p);const int n=p.mesh.numNodes();

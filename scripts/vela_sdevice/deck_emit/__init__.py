@@ -594,8 +594,14 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                  "growth_factor": 2.0, "shrink_factor": 0.5,
                  "write_vtk": True, "vtk_prefix": f"stage{index:02d}",
                  "vtk_format": "vtu", "vtk_fields": fields, "vtk_binary": options.vtu_binary,
-                 "csv_all_contacts": True, "write_state_file": entry["output_state"],
-                 "predictor": "linear" if math_cfg["extrapolate"] else "none"}
+                 "csv_all_contacts": True, "write_state_file": entry["output_state"]}
+        if entry["kind"] == "sweep":
+            extrapolate = source.get("extrapolate", math_cfg["extrapolate"])
+            predictor = "linear" if extrapolate else "none"
+            sweep["continuation"] = {"predictor": {"mode": predictor}}
+            _decision(decisions, "Extrapolate", extrapolate,
+                      "sweep.continuation.predictor.mode", predictor,
+                      "Use the Quasistationary setting when present, otherwise inherit Math", stage=index)
         if input_state:
             sweep["initial_state_file"] = input_state
         elif method != "poisson_only" and any(s["equations"] == ["Poisson"] for s in group):
@@ -787,11 +793,6 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             # landing targets. Do not insert a second MaxStep-based grid.
             sweep.update(step=v1 - v0, step_growth_mode="newton_iterations",
                          stop_below_minimum_step=True, preserve_step_after_output_clip=True)
-            predictor = sweep.pop("predictor")
-            sweep.setdefault("continuation", {})["predictor"] = {"mode": predictor}
-            _decision(decisions, "Extrapolate", math_cfg["extrapolate"],
-                      "sweep.continuation.predictor.mode", predictor,
-                      "Predict the initial state from the last two accepted voltage states", stage=index)
             _decision(decisions, "Plot", "requested output voltages",
                       "sweep.preserve_step_after_output_clip", True,
                       "Retain the proposed step after a successful first-attempt output landing", stage=index)

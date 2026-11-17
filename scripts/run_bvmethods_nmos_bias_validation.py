@@ -633,16 +633,13 @@ def main() -> int:
                     args.impact_source_mapping_mode
                 )
             write_json(config, runtime)
-        if args.predictor_mode != "none":
-            runtime = read_json(config)
-            runtime.setdefault("sweep", {}).setdefault("continuation", {})[
-                "predictor"
-            ] = {
-                "mode": args.predictor_mode,
-                "fields": ["psi", "phin", "phip"],
-                "max_extrapolation_ratio": 2.0,
-            }
-            write_json(config, runtime)
+        runtime = read_json(config)
+        runtime_sweep = runtime.setdefault("sweep", {})
+        runtime_sweep.pop("predictor", None)
+        runtime_sweep.setdefault("continuation", {})["predictor"] = {
+            "mode": args.predictor_mode,
+        }
+        write_json(config, runtime)
         if args.mobility_model != "masetti_field":
             lombardi = args.mobility_model in {
                 "masetti_lombardi", "masetti_field_lombardi"

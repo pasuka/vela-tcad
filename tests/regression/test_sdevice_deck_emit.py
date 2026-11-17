@@ -119,6 +119,24 @@ class DeckEmitterTests(unittest.TestCase):
         result = emit(ir, options=EmitOptions(pn2d_population=True))
         self.assertEqual(result.decks[-1]["sweep"]["continuation"]["predictor"]["mode"], "none")
 
+    def test_standard_sweep_extrapolation_honors_the_stage_override(self):
+        source = FIXTURES / "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd"
+        text = source.read_text(encoding="utf-8").replace("File {", 'File { Parameter="models.par" ', 1)
+        for global_setting, local_setting, expected in (
+            ("Extrapolate", "", "linear"),
+            ("Extrapolate", "-Extrapolate", "none"),
+            ("-Extrapolate", "Extrapolate", "linear"),
+            ("-Extrapolate", "", "none"),
+        ):
+            with self.subTest(global_setting=global_setting, local_setting=local_setting):
+                cmd = text.replace("  Extrapolate", f"  {global_setting}", 1)
+                cmd = cmd.replace("Quasistationary(", f"Quasistationary( {local_setting}", 1)
+                ir = parse_cmd_text(cmd, path_name=source.name)
+                initial, sweep = (deck["sweep"] for deck in emit(ir).decks)
+                self.assertNotIn("continuation", initial)
+                self.assertNotIn("predictor", sweep)
+                self.assertEqual(sweep["continuation"]["predictor"]["mode"], expected)
+
     def test_math_extended_precision_is_applied_to_each_solve_stage(self):
         source = FIXTURES / "pn2d_sentaurus2018/pn2d_iv_sdevice.cmd"
         text = source.read_text(encoding="utf-8").replace("File {", 'File { Parameter="models.par" ', 1)
