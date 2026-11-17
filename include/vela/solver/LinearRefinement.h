@@ -17,9 +17,10 @@ struct Defect {
     vela::VectorXd componentwiseBackwardErrors;
 };
 
-inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
-                                 const vela::VectorXd& F,
-                                 const vela::VectorXd& step) {
+namespace detail {
+template<class Coefficient>
+Defect accumulateDefect(const SparseMatrixd& J, const VectorXd& F,
+                        const VectorXd& step, Coefficient coefficient) {
     if (J.rows() != F.size() || J.cols() != step.size() || !F.allFinite() || !step.allFinite())
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     ScopedPerformanceTimer timer("linear.mp_defect.total");
@@ -34,7 +35,7 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
     for (int col=0;col<step.size();++col) preciseStep.emplace_back(step(col));
     for (int col=0;col<J.outerSize();++col)
         for (vela::SparseMatrixd::InnerIterator it(J,col);it;++it) {
-            const MP term=MP(it.value())*preciseStep[it.col()];
+            const MP term=coefficient(it)*preciseStep[it.col()];
             r[it.row()]+=term; denominator[it.row()]+=abs(term);
         }
     Defect answer{vela::VectorXd(F.size()),0,vela::VectorXd::Zero(F.size())};
@@ -49,6 +50,38 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
         throw std::runtime_error("Nonfinite linear refinement defect");
     return answer;
 }
+} // namespace detail
+
+inline Defect highPrecisionDefect(const SparseMatrixd& J, const VectorXd& F,
+                                 const VectorXd& step) {
+    return detail::accumulateDefect(J, F, step,
+        [](const SparseMatrixd::InnerIterator& entry) { return MP(entry.value()); });
+}
+
+// Scoped to one linear system. The original matrix must remain unchanged.
+class PreparedMpDefect {
+public:
+    explicit PreparedMpDefect(const SparseMatrixd& matrix) : matrix_(matrix) {
+        ScopedPerformanceTimer timer("linear.mp_defect.prepare");
+        coefficients_.reserve(static_cast<std::size_t>(matrix_.nonZeros()));
+        for (int col = 0; col < matrix_.outerSize(); ++col)
+            for (SparseMatrixd::InnerIterator entry(matrix_, col); entry; ++entry)
+                coefficients_.emplace_back(entry.value());
+    }
+    PreparedMpDefect(SparseMatrixd&&) = delete;
+
+    Defect evaluate(const VectorXd& residual, const VectorXd& step) const {
+        std::size_t index = 0;
+        return detail::accumulateDefect(matrix_, residual, step,
+            [&](const SparseMatrixd::InnerIterator&) -> const MP& {
+                return coefficients_[index++];
+            });
+    }
+
+private:
+    const SparseMatrixd& matrix_;
+    std::vector<MP> coefficients_;
+};
 
 // BVMethods requests this only for the PARDISO bordered path.
 bool useBvMethodsEftDefect();
@@ -63,12 +96,20 @@ vela::VectorXd refineWithSolve(const vela::SparseMatrixd& J, const vela::VectorX
         throw std::invalid_argument("Invalid linear refinement dimensions/count");
     if (!rowWeights.allFinite() || (rowWeights.array() <= 0).any())
         throw std::invalid_argument("Refinement row weights must be finite and positive");
+    if (corrections == 0) {
+        const Defect defect = highPrecisionDefect(J, F, step);
+        observe(0, step, defect);
+        return step;
+    }
+
     vela::SparseMatrixd scaled=J;
     for (int col=0;col<scaled.outerSize();++col)
         for (vela::SparseMatrixd::InnerIterator it(scaled,col);it;++it)
             it.valueRef()*=rowWeights(it.row());
+
+    const PreparedMpDefect prepared(J);
     for (int k=0;k<=corrections;++k) {
-        const Defect defect=highPrecisionDefect(J,F,step);
+        const Defect defect = prepared.evaluate(F, step);
         observe(k,step,defect);
         if (k<corrections) {
             step+=solve(scaled,(-defect.values.cwiseProduct(rowWeights)).eval());

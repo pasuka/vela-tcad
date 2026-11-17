@@ -1598,8 +1598,19 @@ private:
         if (config_.directRefinementSteps > 0 || config_.minimumOriginalCorrections>0 || system_.makeTrial) {
             // Always measure the original system, including a candidate obtained
             // from a regularized factorization or the row-scaled QR path.
-            const auto calculateDefect = config_.linearDefectEvaluator(bool(pardiso));
-            auto defect = calculateDefect(rawAugmented, -rawRhs, update);
+            const auto evaluateDefect = config_.linearDefectEvaluator(bool(pardiso));
+            const int minimumCorrections = config_.minimumOriginalCorrections;
+            const VectorXd originalResidual = -rawRhs;
+            std::optional<linear_refinement::PreparedMpDefect> prepared;
+            // A mandatory correction will check another direction against this same matrix.
+            if (evaluateDefect == linear_refinement::highPrecisionDefect && minimumCorrections > 0)
+                prepared.emplace(rawAugmented);
+            const auto calculateDefect = [&](const VectorXd& direction) {
+                if (prepared)
+                    return prepared->evaluate(originalResidual, direction);
+                return evaluateDefect(rawAugmented, originalResidual, direction);
+            };
+            auto defect = calculateDefect(update);
             constexpr Real backwardTolerance = 1.0e-10;
             const auto reportDefect=[&]() {
                 if(report) {
@@ -1611,7 +1622,6 @@ private:
             reportDefect();
             const auto defectScore=[&](const auto& d){return std::max(d.backwardMax/backwardTolerance,
                 infinityNorm(d.values.cwiseProduct(rowScale))/linearTolerance);};
-            const int minimumCorrections=config_.minimumOriginalCorrections;
             if (minimumCorrections>0 || defectScore(defect)>1.) {
                 LinearSolver correctionLu("sparselu");
                 // Population columns span many decades. Its mandatory
@@ -1641,7 +1651,7 @@ private:
                         failureReason = "direct bordered refinement update is non-finite";
                         return false;
                     }
-                    auto next = calculateDefect(rawAugmented, -rawRhs, candidate);
+                    auto next = calculateDefect(candidate);
                     if (k>=minimumCorrections && defectScore(next) >= defectScore(defect))
                         break;
                     update = std::move(candidate);

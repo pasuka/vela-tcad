@@ -66,7 +66,17 @@ TEST_CASE("Refinement recovers a weak carrier direction through its configured s
         return solver.solve(normalized, normalizedRhs);
     };
     const auto step = linear_refinement::refineWithSolve(J, F, weights, initial,
-        conditionedSolve, 2, [](int, const VectorXd&, const linear_refinement::Defect&) {});
+        conditionedSolve, 2, [&](int iteration, const VectorXd& direction,
+                                 const linear_refinement::Defect& cached) {
+            const auto fresh = linear_refinement::highPrecisionDefect(J, F, direction);
+            CAPTURE(iteration);
+            CHECK(experimental::exactValueBits(cached.values) ==
+                  experimental::exactValueBits(fresh.values));
+            CHECK(experimental::exactValueBits(cached.componentwiseBackwardErrors) ==
+                  experimental::exactValueBits(fresh.componentwiseBackwardErrors));
+            CHECK(experimental::exactValueBits(cached.backwardMax) ==
+                  experimental::exactValueBits(fresh.backwardMax));
+        });
     REQUIRE(calls == 2);
     CHECK((step - expected).norm() < 1e-13);
     const auto defect = linear_refinement::highPrecisionDefect(J, F, step);
