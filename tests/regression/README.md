@@ -143,16 +143,24 @@ Reports are written to `<build>/bvmethods-reports/`.
 
 ## Schottky and BJT U-2022.12 numerical regression
 
-Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register
-`reference_u2022_schottky_iv` and `reference_u2022_bjt_m1`. Both tests use
-the built `vela_example_runner` with unit-scaled potential and carrier
-densities, checked-in neutral mesh and doping inputs, and U-2022.12 silicon
-parameters. The [Schottky manifest](../../reference_tcad/schottky_charon_sentaurus2018/ci_u2022_12/manifest.json)
+Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register `reference_u2022_gate_contacts`,
+`reference_u2022_schottky_iv`, and `reference_u2022_bjt_m1`. All three run their
+CMDs through the built `sd-sim` with the U-2022.12 constants profile. CI enables
+them in the full suite and exposes `suite=reference-u2022` for a manual run.
+
+Gate checks zero barrier, +0.55 V barrier, and a nonzero work-function offset
+against the frozen analytical flat-band references. It checks 41 surface
+potential snapshots per CMD, brackets the flat-band crossing, and requires
+the flat-band voltages and the barrier shift to agree within 1 mV. The
+[Gate manifest](../../reference_tcad/gate_reference/ci_u2022_12/manifest.json)
+pins a GRD/DAT mesh generated from `gate_sde.cmd` using Gmsh 4.15.2.
+
+The [Schottky manifest](../../reference_tcad/schottky_charon_sentaurus2018/ci_u2022_12/manifest.json)
 and [BJT manifest](../../reference_tcad/genius_bjt_sentaurus2022/ci_u2022_12/manifest.json)
-record the original SDevice and TDX input hashes. The checked-in input checksums
-use LF line endings so a platform's checkout convention does not change them.
-CTest uses the normalized native current curves and needs no Sentaurus runtime,
-license or TDR.
+pin the tested CMDs, parameter overrides, numerical sidecars and normalized
+reference currents. Schottky reuses the existing TDX GRD/DAT export. The BJT
+GRD/DAT files serialize the validated neutral mesh and species concentrations.
+Checksums use LF line endings. The tests run without Sentaurus, TDR or Gmsh.
 
 Schottky checks the complete 0-to-1 V forward sweep against 24 native
 positive-bias points (0.5 dex), monotonicity, and terminal current balance.
@@ -160,19 +168,19 @@ BJT M1 initializes at 0 V, ramps the base to 0.70 V, and compares both terminal
 balance and all 31 collector output points through 3.0 V. In the 0.5-to-3.0 V
 window, each terminal current and the current gain must agree to 0.05 dex.
 Its numerical regression uses EFT for the linear defect checks and records
-the required collector points in CSV. Set `vtk_bias_points` to the collector
-voltages where field files are needed.
+the requested collector points in CSV. `sd-sim` publishes only the final
+collector field, with intermediate runner artifacts in the report directory.
 
 BJT uses single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
 absolute path of the installed MKL runtime. Schottky uses UMFPACK when
-available and Eigen SparseLU otherwise. Configure and run the opt-in group
+available and Eigen SparseLU otherwise, as does Gate. Configure and run the opt-in group
 with a Release build:
 
 ```bash
 cmake -S . -B build-u2022 -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 \
   -DVELA_ENABLE_MKL_PARDISO=ON -DVELA_ENABLE_REFERENCE_U2022_CI=ON
-cmake --build build-u2022 --target vela_example_runner
+cmake --build build-u2022 --target sd-sim vela_example_runner
 ctest --test-dir build-u2022 --output-on-failure --no-tests=error -L '^reference-u2022$'
 ```
 

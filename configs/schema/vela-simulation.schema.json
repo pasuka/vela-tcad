@@ -99,7 +99,7 @@
               "carrier_statistics": {"type": "object", "properties": {"model": {"const": "fermi_dirac_joyce_dixon"}}, "required": ["model"]}}},
             {"properties": {
               "coupled_operator": {"const": "legacy"},
-              "carrier_statistics": {"type": "object", "properties": {"model": {"const": "boltzmann"}}},
+              "carrier_statistics": {"type": "object", "properties": {"model": {"enum": ["boltzmann", "fermi_dirac"]}}},
               "population_derivative_recovery": {"const": "full"},
               "population_sg_current": {"const": "quasi_fermi"}}}
           ], "properties": {
@@ -180,7 +180,7 @@
             "hole_reference_cm3": {"type": "number", "exclusiveMinimum": 0}
           }
         },
-        "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode supports the BVMethods operator or classical Boltzmann transport."},
+        "state_variables": {"type": "string", "enum": ["potential_quasi_fermi", "potential_density"], "description": "Nonlinear primary state. Population mode supports the BVMethods operator or legacy Boltzmann and Fermi-Dirac transport."},
         "population_sg_bootstrap_linearization": {"enum": ["unchanged", "floor_adjacent_edges"], "default": "unchanged", "description": "Opt-in approximate-only SG population feedback freezing on carrier edges touching the configured positive density floor; requires potential_density and quasi_fermi SG."},
         "population_sg_current": {"enum": ["quasi_fermi", "band_population"], "default": "quasi_fermi", "description": "Experimental direct population/ni-band SG arithmetic; band_population requires potential_density."},
         "population_derivative_recovery": {"enum": ["full", "automatic", "after_protection"], "description": "Population only: full, automatic controller, or Full entry with mobility/AV tangents omitted only after protected writeback (after_protection)."},

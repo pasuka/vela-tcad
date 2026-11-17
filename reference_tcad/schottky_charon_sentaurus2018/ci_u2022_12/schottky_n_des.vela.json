@@ -1,0 +1,45 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "sentaurus_step_control": true,
+  "solver": {
+    "method": "newton",
+    "reltol": 1e-05,
+    "line_search": false,
+    "warm_start": true,
+    "state_variables": "potential_density",
+    "primary_variable_coordinates": "unit",
+    "population_stopping_rule": "native_approx",
+    "population_update_convergence": {
+      "digits": 6,
+      "electron_reference_cm3": 100000000.0,
+      "hole_reference_cm3": 100000000.0
+    },
+    "global_continuity_closure": {
+      "mode": "report",
+      "tolerance": 0.01,
+      "source_floor": 1e-14
+    },
+    "quasi_fermi_reference": "none",
+    "continuity_row_scaling": {
+      "enabled": false
+    },
+    "quasi_fermi_update_limit_V": 0.0,
+    "carrier_row_convergence": {
+      "mode": "report"
+    }
+  },
+  "sweep": {
+    "vtk_fields": [
+      "ElectrostaticPotential"
+    ],
+    "diagnostics": {
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": [
+          "anode",
+          "cathode"
+        ]
+      }
+    }
+  }
+}

@@ -3412,9 +3412,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         std::unordered_map<std::string, Real> filtered;
         for (const auto& [name, bias] : allBiases) {
             const auto specIt = contactSpecs.find(name);
-            if (specIt != contactSpecs.end() &&
-                specIt->second.type == ContactType::MetalGate) {
-                continue;
+            if (specIt != contactSpecs.end()) {
+                const auto& spec = specIt->second;
+                // A thermionic Robin contact constrains carrier flux, so its
+                // quasi-Fermi potentials need not equal the applied voltage.
+                if (spec.type == ContactType::MetalGate ||
+                    (spec.type == ContactType::Schottky && spec.emissionModel == "thermionic_robin")) {
+                    continue;
+                }
             }
             filtered.emplace(name, bias);
         }

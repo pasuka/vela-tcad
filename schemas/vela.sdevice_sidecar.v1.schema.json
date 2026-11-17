@@ -22,6 +22,10 @@
       ],
       "description": "Explicit qualified 300 K Tri3 numerical operator and Fermi approximation; cmd/par retain physical laws and coefficients. Basic state Plot fields only."
     },
+    "sentaurus_step_control": {
+      "const": true,
+      "description": "Use Newton-work-based voltage step growth and retain the proposed step after landing on an output point. Voltage targets and step bounds come from the CMD."
+    },
     "description": {"type": "string"},
     "apply_to": {
       "type": "array",

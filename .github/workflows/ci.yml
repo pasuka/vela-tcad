@@ -12,6 +12,7 @@ on:
           - all
           - pn2d
           - bvmethods
+          - reference-u2022
         default: pn2d
 
 jobs:
@@ -155,7 +156,7 @@ jobs:
             -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 -DVELA_ENABLE_PN2D_CI=ON \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
-            -DVELA_ENABLE_BVMETHODS_CI=ON \
+            -DVELA_ENABLE_BVMETHODS_CI=ON -DVELA_ENABLE_REFERENCE_U2022_CI=ON \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
             -DVELA_ENABLE_STRUMPACK=OFF "${sources[@]}" | tee configure.log
@@ -173,7 +174,7 @@ jobs:
           args=(--build build --parallel 2)
           if [[ "$REQUESTED_SUITE" == pn2d ]]; then
             args+=(--target sd-sim vela_example_runner)
-          elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
+          elif [[ "$REQUESTED_SUITE" == bvmethods || "$REQUESTED_SUITE" == reference-u2022 ]]; then
             args+=(--target sd-sim vela_example_runner test_mkl_pardiso)
           fi
           cmake "${args[@]}"
@@ -216,6 +217,9 @@ jobs:
           elif [[ "$REQUESTED_SUITE" == bvmethods ]]; then
             build/test_mkl_pardiso '[mkl_runtime]'
             args+=(-L '^bvmethods-ci$')
+          elif [[ "$REQUESTED_SUITE" == reference-u2022 ]]; then
+            build/test_mkl_pardiso '[mkl_runtime]'
+            args+=(-L '^reference-u2022$')
           fi
           ctest "${args[@]}"
 
@@ -243,6 +247,10 @@ jobs:
             build/pn2d-reports/*.log
             build/bvmethods-reports/*.json
             build/bvmethods-reports/*.log
+            build/reference-u2022-reports/*/result.json
+            build/reference-u2022-reports/*/*/sd-sim.log
+            build/reference-u2022-reports/*/*/*_vela/fail_report.json
+            build/reference-u2022-reports/*/*/*_vela/stage*_runner.log
             build/Testing/Temporary/LastTest.log
           if-no-files-found: warn
           retention-days: 14

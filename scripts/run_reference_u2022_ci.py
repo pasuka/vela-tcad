@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Run the U-2022.12 Schottky and BJT M1 numerical regressions."""
+"""Run the gate, Schottky IV and BJT M1 numerical regressions through sd-sim."""
 
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import csv
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
+from check_sdevice_gate_contact_mapping import flatband_from_samples, read_vtu_potential
 from compare_genius_bjt_sentaurus_vela import compare_model
 from run_schottky_reference_workflow import audit_kcl, audit_stage_b, compare_curves, read_csv
 
@@ -23,6 +25,7 @@ REFERENCE_ROOT = Path(__file__).resolve().parents[1] / "reference_tcad"
 CASES = {
     "schottky_iv": "schottky_charon_sentaurus2018",
     "bjt_m1": "genius_bjt_sentaurus2022",
+    "gate_contacts": "gate_reference",
 }
 
 
@@ -42,61 +45,87 @@ def verify_inputs(fixture):
             raise ValueError(f"Reference input checksum mismatch: {fixture / name}")
 
 
-def run_stages(runner, fixture, output, env, report):
-    config = read_json(fixture / "simulation.json")
-    simulation = config["simulation"]
-    for field in ("mesh_file", "node_doping_file", "materials_file"):
-        simulation[field] = str((fixture / simulation[field]).resolve(strict=True))
-    contacts = {entry["name"]: entry for entry in simulation["contacts"]}
-    state = None
-    for stage in config["stages"]:
-        name = stage["name"]
-        deck = deepcopy(simulation)
-        deck["solver"]["max_iter"] = stage.get("max_iter", deck["solver"]["max_iter"])
-        sweep = deck["sweep"]
-        sweep.update(stage["sweep"])
-        contact = contacts[sweep["contact"]]
-        sweep["start"] = contact["bias"]
-        sweep["diagnostics"] = {
-            "terminal_balance": {
-                "enabled": True,
-                "contacts": list(contacts),
-                "csv_file": str(output / f"{name}-terminal.csv"),
-            }
-        }
-        if state is not None:
-            sweep["initial_state_file"] = str(state)
-        state = output / f"{name}-final.h5"
-        sweep["write_state_file"] = str(state)
-        curve = output / f"{name}.csv"
-        deck["output_csv"] = str(curve)
-        config_path = output / f"{name}.json"
-        write_json(config_path, deck)
-        log_path = output / f"{name}-runner.log"
-        started = time.monotonic()
-        with log_path.open("wb") as log:
-            result = subprocess.run(
-                [str(runner), "--config", str(config_path)],
-                cwd=output, env=env, stdout=log, stderr=subprocess.STDOUT,
-            )
-        rows = read_csv(curve) if curve.is_file() else []
-        accepted = [row for row in rows if row["converged"] == "1"]
-        last_bias = float(accepted[-1]["bias_V"]) if accepted else None
-        reached = last_bias is not None and math.isclose(last_bias, sweep["stop"], rel_tol=0.0, abs_tol=1e-9)
-        report["stages"].append({
-            "stage": name, "exit_code": result.returncode, "seconds": time.monotonic() - started,
-            "accepted": len(accepted), "failed_rows": len(rows) - len(accepted),
-            "goal_V": sweep["stop"], "last_accepted_V": last_bias,
-        })
-        if result.returncode or not reached or not state.is_file():
-            tail = "\n".join(log_path.read_text(errors="replace").splitlines()[-12:])
-            raise RuntimeError(f"{name} failed to finish at {sweep['stop']} V. See {log_path}\n{tail}")
-        contact["bias"] = sweep["stop"]
-        write_json(output / "result.json", report)
+def stage_inputs(fixture, output, stem, grid):
+    output.mkdir()
+    for name in (stem + ".cmd", stem + ".vela.json", "models.par"):
+        shutil.copyfile(fixture / name, output / name)
+    for path in grid:
+        shutil.copyfile(path, output / path.name)
 
 
-def schottky_gates(fixture, output, report):
-    rows = [row for row in read_csv(output / "forward.csv") if row["converged"] == "1"]
+def run_sdevice(launcher, output, stem, env, report, *, final_only=False):
+    command = [str(launcher), "--physical-constants-profile", "sentaurus_u2022_12",
+               "--threads", "1", "--exit-on-failure", "-q"]
+    if final_only:
+        command.append("--plot-final-only")
+    log_path = output / "sd-sim.log"
+    started = time.monotonic()
+    with log_path.open("wb") as log:
+        result = subprocess.run([*command, stem + ".cmd"], cwd=output, env=env,
+                                stdout=log, stderr=subprocess.STDOUT)
+    run = output / (stem + "_vela")
+    status_path = run / "run_manifest.json"
+    status = read_json(status_path) if status_path.is_file() else {}
+    report["runs"].append({"deck": stem, "exit_code": result.returncode,
+                           "seconds": time.monotonic() - started,
+                           "stages": status.get("stages", [])})
+    if result.returncode != 0:
+        tail = "\n".join(log_path.read_text(errors="replace").splitlines()[-12:])
+        raise RuntimeError(f"{stem}: sd-sim failed. See {log_path}\n{tail}")
+    plan = read_json(run / "stage_plan.json")["stages"]
+    if (status["exit_code"] != 0 or len(status["stages"]) != len(plan)
+            or not all(stage["goal_reached"] and stage["runner_exit_code"] == 0
+                       and stage["accepted_points"] > 0 for stage in status["stages"])
+            or not all((run / stage["output_state"]).is_file() for stage in plan)):
+        raise RuntimeError(f"{stem}: incomplete sd-sim stage sequence")
+    return run, plan
+
+
+def gate_cases(launcher, fixture, output, env, report):
+    reference = read_json(fixture.parent / "source/wp14_gate_inputs.json")
+    grid = [fixture / f"gate_msh.{ext}" for ext in ("grd", "dat")]
+    results = {}
+    report["flatband"] = results
+    for case in ("barrier_zero", "barrier_positive", "workfunction"):
+        stem = case + "_sdevice"
+        work = output / case
+        stage_inputs(fixture, work, stem, grid)
+        run, plan = run_sdevice(launcher, work, stem, env, report)
+        nodes = read_json(run / "mesh.json")["nodes"]
+        silicon_top = reference["geometry_um"]["silicon_thickness"]
+        interface = [row["id"] for row in nodes if math.isclose(row["y"], silicon_top, abs_tol=1e-12)]
+        substrate = [row["id"] for row in nodes if math.isclose(row["y"], 0.0, abs_tol=1e-12)]
+        if not interface or not substrate:
+            raise ValueError("Gate mesh has no silicon interface or substrate probe")
+        [series] = plan[-1]["vtu_write"]["series"]
+        spec = reference["variants"][case]
+        if len(series["t"]) != spec["samples"]:
+            raise ValueError(f"{case}: incorrect number of requested field snapshots")
+        lo, hi = spec["scan_biases_V"]
+        samples = {}
+        for index, t in enumerate(series["t"], start=series["global_index_start"]):
+            path = work / series["pattern"].replace("NNNN", f"{index:04d}")
+            bias, potential = read_vtu_potential(path)
+            if (not math.isclose(bias, lo + (hi - lo) * t, abs_tol=1e-9)
+                    or len(potential) != len(nodes) or not all(map(math.isfinite, potential))):
+                raise ValueError(f"{path.name}: incorrect bias or invalid potential")
+            samples[bias] = (math.fsum(potential[i] for i in interface) / len(interface)
+                             - math.fsum(potential[i] for i in substrate) / len(substrate))
+        if len(samples) != spec["samples"] or not samples[min(samples)] < 0 < samples[max(samples)]:
+            raise ValueError(f"{case}: scan does not bracket flat band")
+        measured = flatband_from_samples(samples)
+        expected = spec["expected_flatband_V"]
+        results[case] = {"measured_V": measured, "expected_V": expected,
+                         "error_V": measured - expected, "samples": len(samples),
+                         "surface_minus_bulk_V": samples}
+    offset = results["barrier_positive"]["measured_V"] - results["barrier_zero"]["measured_V"]
+    report["barrier_shift_V"] = offset
+    return abs(offset - 0.55) <= 1e-3 and all(abs(row["error_V"]) <= 1e-3 for row in results.values())
+
+
+def schottky_gates(fixture, run, stage, report):
+    curve_path = run / stage["csv"]
+    rows = [row for row in read_csv(curve_path) if row["converged"] == "1"]
     points = [
         {key: float(row[key]) for key in ("bias_V", "current_total_A_per_um")}
         for row in rows
@@ -105,7 +134,7 @@ def schottky_gates(fixture, output, report):
     branch = audit_stage_b(rows)
     components = audit_kcl(rows)
     terminals = {}
-    for row in read_csv(output / "forward-terminal.csv"):
+    for row in read_csv(curve_path.with_name(curve_path.stem + "_terminal_balance.csv")):
         if row["converged"] == "1":
             bias = float(row["bias_V"])
             terminals.setdefault(bias, {})[row["contact"]] = float(row["current_total_A_per_um"])
@@ -128,14 +157,15 @@ def schottky_gates(fixture, output, report):
     )
 
 
-def bjt_gates(fixture, output, report):
+def bjt_gates(fixture, run, stage, report):
+    curve_path = run / stage["csv"]
     contract = read_json(fixture.parent / "contracts" / "comparison_thresholds.json")
     parity = contract["wp3_wp5_vela_comparison"]["numerical_parity"]
     points, summary = compare_model(
-        "M1", fixture / "sentaurus_reference.csv", output / "collector-terminal.csv",
+        "M1", fixture / "sentaurus_reference.csv", curve_path.with_name(curve_path.stem + "_terminal_balance.csv"),
         tuple(parity["active_region_VCE_range_V"]), parity["models"]["M1"],
     )
-    with (output / "comparison.csv").open("w", newline="", encoding="utf-8") as handle:
+    with (run.parent / "comparison.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(points[0]))
         writer.writeheader()
         writer.writerows(points)
@@ -146,27 +176,42 @@ def bjt_gates(fixture, output, report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("case", choices=CASES)
-    parser.add_argument("--runner", required=True, type=Path)
+    parser.add_argument("--launcher", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--linear-solver", required=True, choices=("pardiso_mkl", "umfpack", "sparselu"))
     args = parser.parse_args()
-    runner = args.runner.resolve(strict=True)
+    launcher = args.launcher.resolve(strict=True)
     fixture = REFERENCE_ROOT / CASES[args.case] / "ci_u2022_12"
     args.output.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix=f"{args.case}-", dir=args.output.resolve()))
     env = dict(
-        os.environ, VELA_LINEAR_SOLVER=args.linear_solver, VELA_LINEAR_THREADS="1",
+        os.environ, VELA_PYTHON=sys.executable, VELA_BIN=str(launcher.parent),
+        VELA_LINEAR_SOLVER=args.linear_solver, VELA_LINEAR_THREADS="1",
         MKL_THREADING_LAYER="SEQUENTIAL", MKL_NUM_THREADS="1", OMP_NUM_THREADS="1",
         OPENBLAS_NUM_THREADS="1",
     )
     env.pop("MKL_CBWR", None)
-    report = {"case": args.case, "linear_solver": args.linear_solver, "status": "incomplete", "stages": []}
+    report = {"case": args.case, "linear_solver": args.linear_solver, "status": "incomplete", "runs": []}
     print(f"Reports: {output}", flush=True)
     try:
         verify_inputs(fixture)
-        run_stages(runner, fixture, output, env, report)
-        gates = schottky_gates if args.case == "schottky_iv" else bjt_gates
-        report["status"] = "passed" if gates(fixture, output, report) else "gate_failed"
+        if args.case == "gate_contacts":
+            passed = gate_cases(launcher, fixture, output, env, report)
+        else:
+            schottky = args.case == "schottky_iv"
+            stem = "schottky_n_des" if schottky else "bjt_m1_des"
+            mesh = "schottky_n_msh" if schottky else "bjt_msh"
+            grid_dir = REFERENCE_ROOT / "sdevice_check_only" if schottky else fixture
+            work = output / "inputs"
+            stage_inputs(fixture, work, stem, [grid_dir / f"{mesh}.{ext}" for ext in ("grd", "dat")])
+            run, plan = run_sdevice(launcher, work, stem, env, report, final_only=True)
+            expected = [("anode", 1.0)] if schottky else [("base", 0.7), ("collector", 3.0)]
+            actual = [(stage["sweep"]["contact"], stage["sweep"]["stop_V"]) for stage in plan[1:]]
+            if plan[0]["kind"] != "equilibrium" or actual != expected:
+                raise ValueError(f"Unexpected {args.case} stage sequence: {actual}")
+            gates = schottky_gates if schottky else bjt_gates
+            passed = gates(fixture, run, plan[-1], report)
+        report["status"] = "passed" if passed else "gate_failed"
     finally:
         write_json(output / "result.json", report)
     print(f"{args.case}: {report['status']}")

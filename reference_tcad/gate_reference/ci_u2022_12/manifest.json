@@ -1,0 +1,18 @@
+{
+  "physical_constants_profile": "sentaurus_u2022_12",
+  "mesh_provenance": "Vela SDE gate_sde.cmd, Gmsh 4.15.2, DF-ISE export",
+  "reference": "../source/wp14_gate_inputs.json",
+  "files_sha256_lf": {
+    "../source/wp14_gate_inputs.json": "6b29e77805cd324ea048a08b35fe1f313b2de3131f10c4dd54a12cf69a443415",
+    "../source/gate_sde.cmd": "927b10215c7fc1017da596fa6cce1b34d51382d6b8484b22176ba00874b177a3",
+    "barrier_positive_sdevice.cmd": "a0d8f96d7ee00758ed0669bab3ee931387967d5dbe5465b238a362f2aec13aca",
+    "barrier_positive_sdevice.vela.json": "a465e4227af0525fe889c57d615adaf80814862cb0b1a74c43b455fb88c90394",
+    "barrier_zero_sdevice.cmd": "23b8bda07de7ec717d76ad7d9ef2f27559e1b8a3dedfabbaa82f73021d66acb0",
+    "barrier_zero_sdevice.vela.json": "a465e4227af0525fe889c57d615adaf80814862cb0b1a74c43b455fb88c90394",
+    "gate_msh.dat": "5eb2658e95efb929380d1942849576c07eac258ae6939d6a7e4aa1d7794e69cc",
+    "gate_msh.grd": "369a2436cb7b53cf7c1e05eea6aee262f335b1f07b28f739ed0f668cc889eabd",
+    "models.par": "7399cbd4e3df62f1fe3ef4fe7842f88cdb83c6d97c5ff7e399bcd3bac7765983",
+    "workfunction_sdevice.cmd": "544260b3a7521f2e59400d69c02d127d05c02020ff1e803891d174a3c3d3c908",
+    "workfunction_sdevice.vela.json": "a465e4227af0525fe889c57d615adaf80814862cb0b1a74c43b455fb88c90394"
+  }
+}

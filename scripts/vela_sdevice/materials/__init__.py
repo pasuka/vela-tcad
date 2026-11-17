@@ -159,6 +159,8 @@ _SI_FACTORS: Dict[Tuple[str, str], Tuple[str, str, float]] = {
     ("Auger", "A"): ("cm^6/s", "m^6/s", 1.0e-12),
     ("Auger", "B"): ("cm^6/s", "m^6/s", 1.0e-12),
     ("Auger", "C"): ("cm^6/s", "m^6/s", 1.0e-12),
+    ("Auger", "H"): ("1", "1", 1.0),
+    ("Auger", "N0"): ("cm^-3", "m^-3", 1.0e6),
     ("OldSlotboom", "Ebgn"): ("eV", "eV", 1.0),
     ("OldSlotboom", "Nref"): ("cm^-3", "m^-3", 1.0e6),
     ("OldSlotboom", "C"): ("1", "1", 1.0),
@@ -530,6 +532,12 @@ def _refine(param: _Param, classification: pmap.Classification, section_values: 
             ctx: _Context) -> Tuple[str, str, Optional[str]]:
     """Return ``(status, reason, refinement)`` after the emitter's inert/frozen rules."""
     status, reason = classification.status, classification.reason
+    # A zero Auger enhancement preserves the constant-coefficient model and
+    # keeps the unused N0 out of the generated solver configuration.
+    if param.section == "Auger" and status == pmap.STATUS_EXACT:
+        inert = _INERT_RULES.get((param.section, param.base_name))
+        if inert and (why := inert(param.values, section_values, ctx)):
+            return status, why, "inert"
     if status in (pmap.STATUS_EXACT, pmap.STATUS_FROZEN, pmap.STATUS_INACTIVE):
         return status, reason, None
     rule = _INERT_RULES.get((param.section, param.base_name))
@@ -710,7 +718,8 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
                 if section in relevant_sections:
                     numeric[param.raw_name] = param.values
                     if classification.entry and classification.entry.target and \
-                            classification.entry.target.startswith("solver."):
+                            classification.entry.target.startswith("solver.") and \
+                            not (section == "Auger" and refinement == "inert"):
                         _route_solver_parameter(report, vela_name, section, param, classification.entry.target,
                                                 status, ctx.temperature_K)
             if section in relevant_sections:
@@ -753,6 +762,11 @@ def _route_solver_parameter(report: dict, material: str, section: str, param: _P
                              model=pmap.SECTION_MODELS.get(section, section), status="unit_unmapped")
     unit_par, unit_si, factor = units
     values = _numbers(param.values)
+    if section == "Auger" and param.base_name in ("H", "N0"):
+        if len(values) != 2 or any(not math.isfinite(value) or value < 0
+                                   or (param.base_name == "N0" and value == 0) for value in values):
+            raise MaterialsError("E404", path=f"{material}.{section}.{param.raw_name}",
+                                 model="Auger", status="invalid_carrier_pair")
     targets = _split_target(target, len(values))
     carriers = ["electron", "hole"] if len(values) == 2 else [None]
     for value, path, carrier in zip(values, targets, carriers):

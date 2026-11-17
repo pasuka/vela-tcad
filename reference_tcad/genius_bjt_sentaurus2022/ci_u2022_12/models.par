@@ -1,0 +1,7 @@
+* Overrides for the U-2022.12 isothermal reference. Remaining values use the Vela material library.
+Material = "Silicon" {
+  Auger {
+    H = 3.46667, 8.25688
+    N0 = 1e18, 1e18
+  }
+}

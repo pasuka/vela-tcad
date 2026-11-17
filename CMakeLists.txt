@@ -2037,7 +2037,7 @@ if(VELA_ENABLE_BVMETHODS_CI)
     vela_set_windows_msys2_test_path(bvmethods_ci_full_bv)
 endif()
 
-option(VELA_ENABLE_REFERENCE_U2022_CI "Register the Schottky IV and BJT M1 U-2022.12 regressions" OFF)
+option(VELA_ENABLE_REFERENCE_U2022_CI "Register the Gate, Schottky IV and BJT M1 U-2022.12 sd-sim regressions" OFF)
 if(VELA_ENABLE_REFERENCE_U2022_CI)
     if(NOT VELA_PHYSICAL_CONSTANTS_PROFILE STREQUAL "sentaurus_u2022_12" OR NOT VELA_ENABLE_MKL_PARDISO)
         message(FATAL_ERROR "Schottky and BJT reference regressions require sentaurus_u2022_12 and oneMKL PARDISO support")
@@ -2046,14 +2046,14 @@ if(VELA_ENABLE_REFERENCE_U2022_CI)
     if(TARGET PkgConfig::UMFPACK)
         set(_reference_u2022_schottky_solver umfpack)
     endif()
-    foreach(_case IN ITEMS schottky_iv bjt_m1)
+    foreach(_case IN ITEMS gate_contacts schottky_iv bjt_m1)
         set(_reference_u2022_solver pardiso_mkl)
-        if(_case STREQUAL "schottky_iv")
+        if(NOT _case STREQUAL "bjt_m1")
             set(_reference_u2022_solver ${_reference_u2022_schottky_solver})
         endif()
         add_test(NAME reference_u2022_${_case}
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_reference_u2022_ci.py
-                ${_case} --runner $<TARGET_FILE:vela_example_runner>
+                ${_case} --launcher $<TARGET_FILE:sd-sim>
                 --output ${CMAKE_CURRENT_BINARY_DIR}/reference-u2022-reports
                 --linear-solver ${_reference_u2022_solver})
         set_tests_properties(reference_u2022_${_case} PROPERTIES LABELS "reference;reference-u2022" TIMEOUT 2400)

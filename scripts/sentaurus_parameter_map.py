@@ -486,12 +486,12 @@ def _rows() -> list[MappingEntry]:
                 "polynomial collapses to its value at the frozen temperature"
             ),
         ))
-    for name in ("H", "N0"):
+    for name, field in (("H", "enhancement"), ("N0", "reference_density_m3")):
         rows.append(MappingEntry(
             section="Auger", parameter=name,
-            status=STATUS_UNSUPPORTED_MODEL, target=None,
+            status=STATUS_EXACT,
+            target=f"solver.auger_density_dependence.{{carrier}}.{field}",
             requires_model="Auger",
-            note="carrier-density enhancement term is not implemented",
         ))
 
     # -- Bandgap narrowing ----------------------------------------------

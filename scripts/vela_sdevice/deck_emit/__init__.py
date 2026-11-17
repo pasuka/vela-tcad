@@ -432,7 +432,8 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         except (sv.SchemaError, sv.ValidationError) as error:
             raise DeckEmitError("E409", file="sidecar", detail=str(error)) from error
         protected = {"tau_n_s", "tau_p_s", "auger_cn_cm6_per_s", "auger_cp_cm6_per_s",
-                     "srh_doping_dependence", "hole_quantum_potential", "arithmetic_precision"}
+                     "srh_doping_dependence", "hole_quantum_potential", "arithmetic_precision",
+                     "auger_density_dependence"}
         if protected.intersection(sidecar.get("solver", {})):
             raise DeckEmitError("E409", file="sidecar", detail="physical parameters and arithmetic precision belong to the cmd/par")
     decisions = []
@@ -687,8 +688,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
         if not math_cfg["aval_derivatives"] and "impact_ionization" in deck["solver"]:
             deck["solver"]["impact_ionization"]["source_jacobian"] = "frozen"
         deck["sweep"] = sweep
-        if sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"]):
-            overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile")}
+        use_sidecar = sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"])
+        if use_sidecar:
+            overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile", "sentaurus_step_control")}
             if "external_circuit" not in sweep and "sweep" in overrides:
                 overrides["sweep"].pop("external_circuit", None)
             _merge(deck, overrides,
@@ -775,29 +777,30 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                 _decision(decisions, "RelErrControl", True, "solver.population_update_convergence", update,
                           "Use the CMD relative update threshold; native RhsMin mapping is unavailable on PN2D",
                           stage=index)
-            if entry["kind"] == "sweep":
-                if method == "poisson_only":
-                    raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
-                # Use the CMD Goal and requested output biases as the only
-                # landing targets. Do not insert a second MaxStep-based grid.
-                sweep.update(step=v1 - v0, step_growth_mode="newton_iterations",
-                             stop_below_minimum_step=True, preserve_step_after_output_clip=True)
-                predictor = sweep.pop("predictor")
-                sweep.setdefault("continuation", {})["predictor"] = {"mode": predictor}
-                _decision(decisions, "Extrapolate", math_cfg["extrapolate"],
-                          "sweep.continuation.predictor.mode", predictor,
-                          "Predict the initial state from the last two accepted voltage states", stage=index)
-                _decision(decisions, "Plot", "requested output voltages",
-                          "sweep.preserve_step_after_output_clip", True,
-                          "Retain the proposed step after a successful first-attempt output landing", stage=index)
-                retries = math.ceil((math.log(controls["max_step"]) - math.log(controls["min_step"]))
-                                    / math.log(controls["decrement"]))
-                if retries > 2_147_483_647:
-                    raise DeckEmitError("E407", detail="Quasistationary controls imply an unrepresentable retry count")
-                sweep["max_retries"] = retries
-                entry["sweep"]["step_V"] = v1 - v0
+            if entry["kind"] == "sweep" and method == "poisson_only":
+                raise DeckEmitError("E407", detail="PN2D population sweep requires coupled continuity equations")
             _decision(decisions, "PN2D population", True, "solver.primary_variable_coordinates", "unit",
                       "Scale the primary potential and concentrations with the existing Unit references", stage=index)
+        sentaurus_steps = options.pn2d_population or (use_sidecar and sidecar.get("sentaurus_step_control"))
+        if sentaurus_steps and entry.get("sweep", {}).get("mode") == "voltage":
+            # Use the CMD Goal and requested output biases as the only
+            # landing targets. Do not insert a second MaxStep-based grid.
+            sweep.update(step=v1 - v0, step_growth_mode="newton_iterations",
+                         stop_below_minimum_step=True, preserve_step_after_output_clip=True)
+            predictor = sweep.pop("predictor")
+            sweep.setdefault("continuation", {})["predictor"] = {"mode": predictor}
+            _decision(decisions, "Extrapolate", math_cfg["extrapolate"],
+                      "sweep.continuation.predictor.mode", predictor,
+                      "Predict the initial state from the last two accepted voltage states", stage=index)
+            _decision(decisions, "Plot", "requested output voltages",
+                      "sweep.preserve_step_after_output_clip", True,
+                      "Retain the proposed step after a successful first-attempt output landing", stage=index)
+            retries = math.ceil((math.log(controls["max_step"]) - math.log(controls["min_step"]))
+                                / math.log(controls["decrement"]))
+            if retries > 2_147_483_647:
+                raise DeckEmitError("E407", detail="Quasistationary controls imply an unrepresentable retry count")
+            sweep["max_retries"] = retries
+            entry["sweep"]["step_V"] = v1 - v0
         if any(c["type"] == "schottky" for c in contacts) and deck["solver"]["method"] not in ("newton", "frozen_state"):
             raise DeckEmitError("E407", detail="thermionic Schottky contacts require the Newton path")
         geometry = deck["mesh_geometry"]

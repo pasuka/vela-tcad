@@ -12,6 +12,11 @@
     "sentaurus_reference.csv": "a33e38dfe7aeb37c5fc3b932b9d8fdf0bb0e3478a084cdac3e74c1cb3cfc863c",
     "../vela/mesh.json": "f9086e086a149ea69051d4a863ba5611e34cc059df667334eb4a8266e870b397",
     "../vela/doping.csv": "28d4b4caa9ea2ed905ac9ad0ba631d715c44a78e97b2e89a60c0edeeb2e41d6b",
-    "../source/schottky_n_des.cmd": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+    "../source/schottky_n_des.cmd": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+    "../../sdevice_check_only/schottky_n_msh.grd": "69a45c088b752472698d03934c39cffe5aa9ebb90da13398bc33e3b2d511da20",
+    "../../sdevice_check_only/schottky_n_msh.dat": "be44ca691164f35da91162c0dadbb98900c346c9da555781814f39e7c2783afb",
+    "models.par": "a4d79856c73e144d324900fbf2082cbe6a0cbaed59b6cb16abb762b5c6bbe132",
+    "schottky_n_des.cmd": "57edc4459ce1cdb979a944238c0eb39321e46e56494adf2bf1c4dd319634729f",
+    "schottky_n_des.vela.json": "a2c7d09a537908161b39331ac95ce162a9faecb4bd830f03a0bdace361302642"
   }
 }
