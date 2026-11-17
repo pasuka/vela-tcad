@@ -40,7 +40,6 @@ public:
         if(!unit_)references={VectorXd::Ones(initial.x.size()),1.,1.};
         references.validate(initial.x.size());
         const PrimaryVariableCoordinates coordinates(references);
-        const auto device=unit_?coordinates.system(system_):system_;
         const auto port=unit_?coordinates.port(port_):port_;
         const auto metric=unit_?coordinates.metric(metric_):metric_;
         auto config=config_;
@@ -62,28 +61,49 @@ public:
             }
             return load;
         };
-        // The mapped stopping report and the original-system audit request the
-        // same physical border at a fixed state. Reuse its exact coefficients,
-        // not a reconstructed/rounded Unit matrix. Entries, raw residual and
-        // derivative choice remain separate; no cache survives this target.
+        // The Unit solve and the physical audit start from the same unscaled
+        // derivatives. Cache them at the exact state and bias for this target.
+        // Direct assembly in extreme relative columns still uses its own path.
         ArclengthState assemblyState;
         bool assemblyValid=false,fullValid=false,approximateValid=false,residualValid=false;
-        SparseMatrixd fullBorder,approximateBorder;
-        VectorXd physicalResidual;
-        const auto atAssemblyState=[&](const ArclengthState& state) {
-            const bool same=assemblyValid && state.x.size()==assemblyState.x.size() &&
-                std::memcmp(state.x.data(),assemblyState.x.data(),state.x.size()*sizeof(Real))==0 &&
-                std::memcmp(&state.lambda,&assemblyState.lambda,sizeof(Real))==0;
+        bool jacobianValid=false,parameterDerivativeValid=false;
+        SparseMatrixd fullBorder,approximateBorder,physicalJacobian;
+        VectorXd physicalResidual,physicalParameterDerivative;
+        const auto atAssemblyState=[&](const VectorXd& x, Real bias) {
+            const bool same=assemblyValid && x.size()==assemblyState.x.size() &&
+                std::memcmp(x.data(),assemblyState.x.data(),x.size()*sizeof(Real))==0 &&
+                std::memcmp(&bias,&assemblyState.lambda,sizeof(Real))==0;
             if(!same) {
-                assemblyState=state;assemblyValid=true;
+                assemblyState={x,bias};assemblyValid=true;
                 fullValid=approximateValid=residualValid=false;
+                jacobianValid=parameterDerivativeValid=false;
             }
         };
+        auto physicalSystem = system_;
+        if (unit_) {
+            physicalSystem.jacobian = [&](const VectorXd& x, Real bias) {
+                atAssemblyState(x, bias);
+                if (!jacobianValid) {
+                    physicalJacobian = system_.jacobian(x, bias);
+                    jacobianValid = true;
+                }
+                return physicalJacobian;
+            };
+            physicalSystem.parameterDerivative = [&](const VectorXd& x, Real bias) {
+                atAssemblyState(x, bias);
+                if (!parameterDerivativeValid) {
+                    physicalParameterDerivative = system_.parameterDerivative(x, bias);
+                    parameterDerivativeValid = true;
+                }
+                return physicalParameterDerivative;
+            };
+        }
+        const auto device=unit_?coordinates.system(physicalSystem):physicalSystem;
         const auto physicalBorder=[&](const ArclengthState& state,bool full)->const SparseMatrixd& {
-            atAssemblyState(state);
+            atAssemblyState(state.x,state.lambda);
             auto& valid=full?fullValid:approximateValid;
             auto& matrix=full?fullBorder:approximateBorder;
-            if(!valid) {matrix=border(state,resistance,full);valid=true;}
+            if(!valid) {matrix=border(physicalSystem,state,resistance,full);valid=true;}
             return matrix;
         };
         CoupledLoadLineCallbacks hooks;
@@ -105,10 +125,9 @@ public:
             b[b.size()-1]=physicalLoad(physical).physicalRhs();
             VectorXd direction(b.size());direction.head(dx.size())=coordinates.physical(dx);
             direction[dx.size()]=dv*references.voltage;
-            const auto calculateDefect = config.bvMethodsEftDefect &&
+            const auto calculateDefect = config.linearDefectEvaluator(
                 config.linearSolver != "direct_bordered_qr" &&
-                LinearSolver::selectedBackend() == "pardiso_mkl"
-                ? linear_refinement::eftDefect : linear_refinement::highPrecisionDefect;
+                LinearSolver::selectedBackend() == "pardiso_mkl");
             const auto defect=calculateDefect(A,-b,direction);
             const auto rows=auditRows(A,b,system_.columnScales(physical));
             trace.physicalLinearAbsolute=defect.values.cwiseProduct(rows).cwiseAbs().maxCoeff();
@@ -121,7 +140,7 @@ public:
         if(approximateNativeStop_)hooks.stoppingRule=[&](const ArclengthState& state,
             const VectorXd& f,CoupledLoadLineResult& result) {
             const auto physical=coordinates.physical(state);
-            atAssemblyState(physical);
+            atAssemblyState(physical.x,physical.lambda);
             physicalResidual=f;residualValid=true;
             const Real L=physicalLoad(physical).voltage_V;
             if(!physical.x.allFinite() || !std::isfinite(physical.lambda) || !f.allFinite() || !std::isfinite(L))
@@ -160,12 +179,12 @@ public:
     }
 
 private:
-    SparseMatrixd border(const ArclengthState& state,Real R,bool full) const {
+    SparseMatrixd border(const ArclengthSystem& system, const ArclengthState& state,Real R,bool full) const {
         const int n=state.x.size();
-        const auto J=full?system_.jacobian(state.x,state.lambda):
-            (system_.postProtectionDerivativeRecovery?system_.protectedJacobian(state.x,state.lambda):
-                system_.bootstrapJacobian(state.x,state.lambda));
-        const auto f=system_.parameterDerivative(state.x,state.lambda);
+        const auto J=full?system.jacobian(state.x,state.lambda):
+            (system.postProtectionDerivativeRecovery?system.protectedJacobian(state.x,state.lambda):
+                system.bootstrapJacobian(state.x,state.lambda));
+        const auto f=system.parameterDerivative(state.x,state.lambda);
         const auto port=port_.linearize(state.x,state.lambda);
         std::vector<Eigen::Triplet<Real>> entries;
         for(int k=0;k<J.outerSize();++k)for(SparseMatrixd::InnerIterator t(J,k);t;++t)entries.emplace_back(t.row(),t.col(),t.value());

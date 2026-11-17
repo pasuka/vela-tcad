@@ -1239,6 +1239,12 @@ CoupledDDState CoupledDDAssembler::unpack(const VectorXd& x) const
 }
 
 PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const VectorXd& x) const {
+    return populationPhysicalFieldsWithEta(x, nullptr);
+}
+
+PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFieldsWithEta(
+    const VectorXd& x, VectorXd* fermiEta) const
+{
     const int n=mesh_.numNodes();
     if(!usesPopulationState() || x.size()!=3*n)
         throw std::invalid_argument("invalid population physical-field contract");
@@ -1247,6 +1253,7 @@ PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const Vect
     s.psi_V=x.head(n)*(scaling_.enabled?scaling_.V0:1.);
     s.n=x.segment(n,n);s.p=x.tail(n);
     s.phin_V=VectorXd::Zero(n);s.phip_V=VectorXd::Zero(n);
+    if (fermiEta) fermiEta->resize(2*n);
     for(int i=0;i<n;++i) {
         if(ni_[i]<=0.) {
             if(s.n[i]!=0. || s.p[i]!=0.)throw std::domain_error("inactive population slots must be zero");
@@ -1264,8 +1271,10 @@ PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const Vect
             s.phip_V[i] = static_cast<Real>(psi + thermal * std::log(s.p[i] / ni));
             continue;
         }
-        s.phin_V[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],s.psi_V[i],s.n[i],Vt_,carrierStatistics_);
-        s.phip_V[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],s.psi_V[i],s.p[i],Vt_,carrierStatistics_);
+        s.phin_V[i]=electronQuasiFermiPotential(ni_[i],Nc_[i],s.psi_V[i],s.n[i],Vt_,carrierStatistics_,
+                                             fermiEta ? &(*fermiEta)[i] : nullptr);
+        s.phip_V[i]=holeQuasiFermiPotential(ni_[i],Nv_[i],s.psi_V[i],s.p[i],Vt_,carrierStatistics_,
+                                         fermiEta ? &(*fermiEta)[n+i] : nullptr);
     }
     return s;
 }
@@ -1282,9 +1291,10 @@ VectorXd CoupledDDAssembler::packPopulation(const VectorXd& psi, const VectorXd&
     return y;
 }
 
-VectorXd CoupledDDAssembler::legacyPopulationQfCoordinates(const VectorXd& populations) const
+VectorXd CoupledDDAssembler::legacyPopulationQfCoordinates(
+    const VectorXd& populations, VectorXd* fermiEta) const
 {
-    const auto fields = populationPhysicalFields(populations);
+    const auto fields = populationPhysicalFieldsWithEta(populations, fermiEta);
     const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
     const int count = static_cast<int>(mesh_.numNodes());
     VectorXd coordinates = populations;
@@ -1324,6 +1334,7 @@ static Real populationDensityEtaSlope(Real density, Real densityOfStates,
 
 SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
     const SparseMatrixd& qfJacobian, const VectorXd& populations,
+    const VectorXd& fermiEta,
     const CoupledDDBoundaryConditions& bcs) const
 {
     // Apply the chain rule in the original residual row units. Poisson and
@@ -1346,8 +1357,8 @@ SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
         for (int i = 0; i < count; ++i) {
             if (ni_[i] <= 0.0)
                 continue;
-            fermiSlopes(i) = populationDensityEtaSlope(populations(count + i), Nc_[i], carrierStatisticsModel_);
-            fermiSlopes(count + i) = populationDensityEtaSlope(populations(2 * count + i), Nv_[i], carrierStatisticsModel_);
+            fermiSlopes(i) = Nc_[i] * fermiDiracHalfDerivative(fermiEta(i), carrierStatisticsModel_);
+            fermiSlopes(count + i) = Nv_[i] * fermiDiracHalfDerivative(fermiEta(count + i), carrierStatisticsModel_);
         }
     }
     std::vector<Eigen::Triplet<Real>> entries;
@@ -4818,7 +4829,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const CoupledDDBoundaryConditions& bcs) const
 {
     if(auto runtime=bvMethodsRuntime())return runtime->jacobian(state,bcs);
-    const VectorXd qf = usesLegacyPopulationState() ? legacyPopulationQfCoordinates(state) : VectorXd{};
+    VectorXd fermiEta;
+    const VectorXd qf = usesLegacyPopulationState()
+        ? legacyPopulationQfCoordinates(state, usesFermiDirac_ ? &fermiEta : nullptr)
+        : VectorXd{};
     const VectorXd& x = usesLegacyPopulationState() ? qf : state;
     ScopedPerformanceTimer timer("dd.jacobian");
     incrementPerformanceCounter("dd.jacobian_calls");
@@ -7963,7 +7977,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     incrementPerformanceCounter("jacobian.endpoint_cache_hits", endpointCacheHits);
     incrementPerformanceCounter("jacobian.endpoint_cache_misses", endpointCacheMisses);
     if (usesLegacyPopulationState()) {
-        auto transformed = legacyPopulationJacobian(J, state, bcs);
+        auto transformed = legacyPopulationJacobian(J, state, fermiEta, bcs);
         if (!populationEntries.empty()) {
             SparseMatrixd direct(J.rows(), J.cols());
             direct.setFromTriplets(populationEntries.begin(), populationEntries.end());

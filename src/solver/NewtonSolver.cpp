@@ -1615,6 +1615,12 @@ void resolvePopulationDefaults(NewtonConfig& c) {
 
 void validatePopulationNumerics(const NewtonConfig& c)
 {
+    if (c.populationLinearDefect != "mp100" && c.populationLinearDefect != "eft")
+        throw std::invalid_argument("population_linear_defect must be mp100 or eft");
+    if (c.populationLinearDefect == "eft" &&
+        (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
+         c.primaryVariableCoordinates != "unit"))
+        throw std::invalid_argument("population_linear_defect=eft requires legacy Unit population coordinates");
     if (c.compensatedPopulationState &&
         (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
          c.carrierStatistics.model != "boltzmann" ||
@@ -1879,6 +1885,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         "quasi_fermi_trust_region_min_multiplier",
         cfg.quasiFermiTrustRegionMinMultiplier);
     cfg.linearRefinementIterations = json.value("linear_refinement_iterations", 0);
+    cfg.populationLinearDefect = json.value("population_linear_defect", cfg.populationLinearDefect);
     if (json.contains("legacy_edge_jacobian_steps")) {
         const auto& steps = json.at("legacy_edge_jacobian_steps");
         if (!steps.is_object()) throw std::invalid_argument("legacy_edge_jacobian_steps must be an object");
@@ -6577,6 +6584,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
 {
     if(cfg_.stateVariables=="potential_density") {
         auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        c.populationLinearDefect = "mp100"; // This temporary solver only initializes Poisson.
         return NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).buildPoissonBlockInitialization();
     }
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -6624,6 +6632,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 {
     if(cfg_.stateVariables=="potential_density") {
         auto c=cfg_;c.compensatedPopulationState=false;c.stateVariables="potential_quasi_fermi";c.populationDerivativeRecovery="full";c.primaryVariableCoordinates="physical";c.populationStoppingRule="legacy";c.populationSgCurrent="quasi_fermi";c.populationSgBootstrapLinearization="unchanged";
+        c.populationLinearDefect = "mp100";
         auto result=NewtonSolver(mesh_,matdb_,doping_,contactBiases_,c,fixedCharges_,sheetCharges_,contactSpecs_).solvePoissonOnly(initial);
         // Poisson may solve in QF coordinates, but its checkpoint belongs to
         // the caller's population contract. Keep the computed n/p untouched.

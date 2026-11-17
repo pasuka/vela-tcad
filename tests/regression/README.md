@@ -159,6 +159,9 @@ positive-bias points (0.5 dex), monotonicity, and terminal current balance.
 BJT M1 initializes at 0 V, ramps the base to 0.70 V, and compares both terminal
 balance and all 31 collector output points through 3.0 V. In the 0.5-to-3.0 V
 window, each terminal current and the current gain must agree to 0.05 dex.
+Its numerical regression uses EFT for the linear defect checks and records
+the required collector points in CSV. Set `vtk_bias_points` to the collector
+voltages where field files are needed.
 
 BJT uses single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
 absolute path of the installed MKL runtime. Schottky uses UMFPACK when

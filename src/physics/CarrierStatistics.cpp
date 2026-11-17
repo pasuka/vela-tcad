@@ -269,30 +269,38 @@ Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
 }
 
 Real electronQuasiFermiPotential(Real ni, Real Nc, Real psi, Real n, Real Vt,
-                                 const CarrierStatisticsConfig& config)
+                                 const CarrierStatisticsConfig& config, Real* etaOut)
 {
     const CarrierStatisticsModel model = carrierStatisticsModel(config);
     validateDensityArguments(ni, Nc, Vt, model);
     if (!(n > 0.0) || ni == 0.0)
         throw std::invalid_argument("electronQuasiFermiPotential: densities must be positive.");
-    if (!usesFermiDirac(model))
-        return psi - Vt * std::log(n / ni);
+    if (!usesFermiDirac(model)) {
+        const Real eta = std::log(n / ni);
+        if (etaOut) *etaOut = eta;
+        return psi - Vt * eta;
+    }
     const Real eta=model==CarrierStatisticsModel::FermiDiracJoyceDixon
         ? experimental::JoyceDixonStatistics::inverseDensity(n,Nc) : inverseFermiDiracHalf(n / Nc, model);
+    if (etaOut) *etaOut = eta;
     return psi - Vt * (eta - std::log(ni / Nc));
 }
 
 Real holeQuasiFermiPotential(Real ni, Real Nv, Real psi, Real p, Real Vt,
-                             const CarrierStatisticsConfig& config)
+                             const CarrierStatisticsConfig& config, Real* etaOut)
 {
     const CarrierStatisticsModel model = carrierStatisticsModel(config);
     validateDensityArguments(ni, Nv, Vt, model);
     if (!(p > 0.0) || ni == 0.0)
         throw std::invalid_argument("holeQuasiFermiPotential: densities must be positive.");
-    if (!usesFermiDirac(model))
-        return psi + Vt * std::log(p / ni);
+    if (!usesFermiDirac(model)) {
+        const Real eta = std::log(p / ni);
+        if (etaOut) *etaOut = eta;
+        return psi + Vt * eta;
+    }
     const Real eta=model==CarrierStatisticsModel::FermiDiracJoyceDixon
         ? experimental::JoyceDixonStatistics::inverseDensity(p,Nv) : inverseFermiDiracHalf(p / Nv, model);
+    if (etaOut) *etaOut = eta;
     return psi + Vt * (eta - std::log(ni / Nv));
 }
 

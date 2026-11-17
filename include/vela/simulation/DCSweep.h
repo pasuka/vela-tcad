@@ -346,6 +346,7 @@ struct DCSweepConfig {
     /// Biases the adaptive sweep must land on exactly; a VTK file is written at
     /// each of them even when `writeVtk` is false.
     std::vector<Real> vtkBiasPoints;
+    std::vector<Real> mandatoryBiasPoints;
     /// Append electron/hole/total current columns for every mesh contact.
     bool csvAllContacts = false;
     std::string csvFile = "dc_sweep.csv";

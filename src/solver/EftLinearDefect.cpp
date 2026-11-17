@@ -273,18 +273,36 @@ bool useBvMethodsEftDefect() {
     return !value || std::string_view(value) != "1";
 }
 
-Defect eftDefect(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step) {
+namespace {
+std::optional<Defect> tryEftDefect(const SparseMatrixd& J, const VectorXd& F,
+                                  const VectorXd& step, bool allowMp100Finish) {
 #if defined(VELA_STRICT_EFT_FP) && defined(VELA_EFT_MXCSR)
     if (J.rows() != F.size() || J.cols() != step.size() || !F.allFinite() || !step.allFinite())
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     FloatingEnvironment environment;
     if (environment.supported()) {
-        const char* forceMp100 = std::getenv("VELA_BVMETHODS_EFT_MP100_FINISH");
-        if (!forceMp100 || std::string_view(forceMp100) != "1")
-            return eftDefectImpl<ArithmeticReal>(J, F, step);
-        return eftDefectImpl<MP>(J, F, step);
+        if (allowMp100Finish) {
+            const char* forceMp100 = std::getenv("VELA_BVMETHODS_EFT_MP100_FINISH");
+            if (forceMp100 && std::string_view(forceMp100) == "1")
+                return eftDefectImpl<MP>(J, F, step);
+        }
+        return eftDefectImpl<ArithmeticReal>(J, F, step);
     }
 #endif
+    return std::nullopt;
+}
+} // namespace
+
+Defect eftDefectWithoutMp100(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step) {
+    auto defect = tryEftDefect(J, F, step, false);
+    if (!defect)
+        throw std::runtime_error("EFT linear defect requires strict IEEE binary64, round-to-nearest and gradual underflow");
+    return std::move(*defect);
+}
+
+Defect eftDefect(const SparseMatrixd& J, const VectorXd& F, const VectorXd& step) {
+    if (auto defect = tryEftDefect(J, F, step, true))
+        return std::move(*defect);
     incrementPerformanceCounter("linear.eft_defect.whole_call_fallbacks");
     return highPrecisionDefect(J, F, step);
 }

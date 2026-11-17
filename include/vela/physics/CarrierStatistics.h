@@ -136,9 +136,9 @@ Real holeDensityDerivativeEta(Real ni, Real Nv, Real psi, Real phip, Real Vt,
                               CarrierStatisticsModel model);
 
 Real electronQuasiFermiPotential(Real ni, Real Nc, Real psi, Real n, Real Vt,
-                                 const CarrierStatisticsConfig& config);
+                                 const CarrierStatisticsConfig& config, Real* eta = nullptr);
 Real holeQuasiFermiPotential(Real ni, Real Nv, Real psi, Real p, Real Vt,
-                             const CarrierStatisticsConfig& config);
+                             const CarrierStatisticsConfig& config, Real* eta = nullptr);
 
 /**
  * @brief Charge-neutral equilibrium state used by ideal Ohmic contacts.

@@ -556,9 +556,13 @@ public:
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
 
 private:
-    VectorXd legacyPopulationQfCoordinates(const VectorXd& populations) const;
+    PopulationPhysicalFields populationPhysicalFieldsWithEta(const VectorXd& x,
+                                                             VectorXd* fermiEta) const;
+    VectorXd legacyPopulationQfCoordinates(const VectorXd& populations,
+                                          VectorXd* fermiEta = nullptr) const;
     SparseMatrixd legacyPopulationJacobian(const SparseMatrixd& qfJacobian,
                                            const VectorXd& populations,
+                                           const VectorXd& fermiEta,
                                            const CoupledDDBoundaryConditions& bcs) const;
     Real legacyPopulationContactTarget(Index node, Real qf,
                                        const CoupledDDBoundaryConditions& bcs, bool electron) const;

@@ -97,10 +97,11 @@ TEST_CASE("Unavailable native RHS mapping cannot authorize stopping without a va
 TEST_CASE("Unit stopping and physical audit share exact assemblies within one target only",
           "[coupled_load_line][primary_coordinates]") {
     auto s=linearPopulationSystem();const auto p=linearPort();
-    int jacobians=0,residuals=0;
-    const auto J=s.jacobian;const auto F=s.residual;
+    int jacobians=0,residuals=0,parameterDerivatives=0;
+    const auto J=s.jacobian;const auto F=s.residual;const auto dF=s.parameterDerivative;
     s.jacobian=[&](const VectorXd& x,Real v){++jacobians;return J(x,v);};
     s.residual=[&](const VectorXd& x,Real v){++residuals;return F(x,v);};
+    s.parameterDerivative=[&](const VectorXd& x,Real v){++parameterDerivatives;return dF(x,v);};
     CoupledLoadLineConfig c;c.linearSolver="direct_bordered";c.lineSearchMode="full_step";
     c.applyDeviceUpdateLimit=false;c.applyVoltageUpdateLimit=false;c.maxIterations=2;
     c.minimumOriginalCorrections=1;
@@ -110,13 +111,14 @@ TEST_CASE("Unit stopping and physical audit share exact assemblies within one ta
     ArclengthState seed{VectorXd(3),1.};seed.x<<1.,1e20,.01;
     PopulationCoordinateNewton solver(s,p.value,c,p,metric,refs(),true,true,{1.,1.,1.});
     for(double target:{10.,11.}) {
-        const int beforeJ=jacobians,beforeF=residuals;
+        const int beforeJ=jacobians,beforeF=residuals,beforeDF=parameterDerivatives;
         const auto result=solver.solve(seed,target,1e7);
         INFO(result.failureReason);REQUIRE(result.converged);
         REQUIRE(result.iterations==1);
-        // Initial and final physical borders plus the solver's separate direct
-        // column assembly. The audit reuses the initial physical border/F.
-        REQUIRE(jacobians-beforeJ==3);
+        // Initial and final assemblies are shared across the Unit solve,
+        // physical audit and mapped stopping check.
+        REQUIRE(jacobians-beforeJ==2);
+        REQUIRE(parameterDerivatives-beforeDF==2);
         REQUIRE(residuals-beforeF==3);
         REQUIRE(result.trace.front().physicalLinearAbsolute<=1e-8);
         REQUIRE(result.trace.front().physicalLinearBackward<=1e-10);

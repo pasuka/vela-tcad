@@ -134,6 +134,7 @@
       "state_variables": "potential_density",
       "primary_variable_coordinates": "unit",
       "population_stopping_rule": "native_approx",
+      "population_linear_defect": "eft",
       "population_update_convergence": {
         "digits": 5,
         "electron_reference_cm3": 10000000.0,
@@ -210,7 +211,7 @@
             "mode": "linear"
           }
         },
-        "vtk_bias_points": [
+        "required_bias_points": [
           0.1,
           0.2,
           0.3,

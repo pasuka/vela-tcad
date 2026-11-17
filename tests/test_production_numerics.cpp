@@ -361,6 +361,11 @@ TEST_CASE("BVMethods EFT defect covers cancellation and binary64 range fallbacks
     REQUIRE((actual.values.array()==expected.values.array()).all());
     REQUIRE((actual.componentwiseBackwardErrors.array()==expected.componentwiseBackwardErrors.array()).all());
     REQUIRE(actual.backwardMax==expected.backwardMax);
+#if (defined(__GNUC__) || defined(_MSC_VER)) && (defined(__x86_64__) || defined(_M_X64))
+    const auto strict = eftDefectWithoutMp100(matrix, f, direction);
+    REQUIRE((strict.values.array()==expected.values.array()).all());
+    REQUIRE((strict.componentwiseBackwardErrors.array()==expected.componentwiseBackwardErrors.array()).all());
+#endif
     direction(0)=std::numeric_limits<double>::quiet_NaN();
     REQUIRE_THROWS_AS(eftDefect(matrix,f,direction),std::invalid_argument);
 }

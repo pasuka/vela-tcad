@@ -1709,16 +1709,22 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         }
         sweep.vtkFieldDataEnabled = true;
     }
-    if (j.contains("vtk_bias_points")) {
-        const auto& biasPoints = j.at("vtk_bias_points");
+    const auto readBiasPoints = [&](const char* key, std::vector<Real>& out) {
+        if (!j.contains(key))
+            return;
+        const auto& biasPoints = j.at(key);
         if (!biasPoints.is_array())
-            throw std::invalid_argument("DCSweep: sweep.vtk_bias_points must be an array of numbers.");
+            throw std::invalid_argument(std::string("DCSweep: sweep.") + key + " must be an array of numbers.");
         for (const auto& entry : biasPoints) {
             if (!entry.is_number() || !std::isfinite(entry.get<Real>()))
-                throw std::invalid_argument("DCSweep: sweep.vtk_bias_points entries must be finite numbers.");
-            sweep.vtkBiasPoints.push_back(entry.get<Real>());
+                throw std::invalid_argument(std::string("DCSweep: sweep.") + key + " entries must be finite numbers.");
+            out.push_back(entry.get<Real>());
         }
-    }
+    };
+    readBiasPoints("required_bias_points", sweep.mandatoryBiasPoints);
+    readBiasPoints("vtk_bias_points", sweep.vtkBiasPoints);
+    sweep.mandatoryBiasPoints.insert(sweep.mandatoryBiasPoints.end(),
+        sweep.vtkBiasPoints.begin(), sweep.vtkBiasPoints.end());
     sweep.csvAllContacts = j.value("csv_all_contacts", sweep.csvAllContacts);
     sweep.initialStateFile = j.value("initial_state_file", std::string{});
     sweep.writeStateFile = j.value("write_state_file", std::string{});
@@ -8318,6 +8324,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             CoupledLoadLineConfig coupledConfig;
             coupledConfig.bvMethodsEftDefect = newton.coupledOperator == "bvmethods_tri3_qf" &&
                 linear_refinement::useBvMethodsEftDefect();
+            coupledConfig.eftLinearDefectWithoutMp100 = newton.populationLinearDefect == "eft";
             const auto* experiment=experimental::activeDCSweepExperiment();
             if(experiment) {
                 coupledConfig.bootstrapModelGuardEnabled=experiment->bootstrapModelGuardEnabled;
@@ -9082,7 +9089,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 control.stopRequested = [&]() {
                     return sweepStopRequestedByCriterion(points.back());
                 };
-                control.mandatoryPoints = sweep.vtkBiasPoints;
+                control.mandatoryPoints = sweep.mandatoryBiasPoints;
                 detail::runDCSweepStepControl(control, solveOuterPoint,
                     [&](const detail::DCSweepStepControlEvent& event) {
                         if (event.converged)
@@ -9683,7 +9690,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     stepControl.stopOnFailure = sweep.stopOnFailure;
     stepControl.stopBelowMinimum = sweep.stopBelowMinimumStep;
     stepControl.preserveStepAfterOutputClip = sweep.preserveStepAfterOutputClip;
-    stepControl.mandatoryPoints = sweep.vtkBiasPoints;
+    stepControl.mandatoryPoints = sweep.mandatoryBiasPoints;
     stepControl.stopRequested = [&]() {
         return !points.empty() && sweepStopRequestedByCriterion(points.back());
     };

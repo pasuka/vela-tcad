@@ -85,7 +85,16 @@ struct CoupledLoadLineConfig {
     /// the first factor solve already passes. Zero is the explicit legacy path.
     int minimumOriginalCorrections = 0;
     bool bvMethodsEftDefect = false;
+    bool eftLinearDefectWithoutMp100 = false;
     DensityUpdateConvergenceConfig updateConvergence;
+
+    auto linearDefectEvaluator(bool pardiso) const {
+        if (eftLinearDefectWithoutMp100)
+            return linear_refinement::eftDefectWithoutMp100;
+        if (bvMethodsEftDefect && pardiso)
+            return linear_refinement::eftDefect;
+        return linear_refinement::highPrecisionDefect;
+    }
 };
 
 inline Real coupledEffectiveEquationTolerance(
@@ -1589,8 +1598,7 @@ private:
         if (config_.directRefinementSteps > 0 || config_.minimumOriginalCorrections>0 || system_.makeTrial) {
             // Always measure the original system, including a candidate obtained
             // from a regularized factorization or the row-scaled QR path.
-            const auto calculateDefect = config_.bvMethodsEftDefect && pardiso
-                ? linear_refinement::eftDefect : linear_refinement::highPrecisionDefect;
+            const auto calculateDefect = config_.linearDefectEvaluator(bool(pardiso));
             auto defect = calculateDefect(rawAugmented, -rawRhs, update);
             constexpr Real backwardTolerance = 1.0e-10;
             const auto reportDefect=[&]() {

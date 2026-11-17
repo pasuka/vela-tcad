@@ -7,7 +7,7 @@
     "bjt_msh.tdr": "e903e4dec4fae1fbb3e4921ea2a8f405ea491ab13c953b86d7866ce27b923e91"
   },
   "files_sha256_lf": {
-    "simulation.json": "1ac88a89943d53d6da84044ac82e3b7a26f3b18903f3f34588e8c5a1983c3bae",
+    "simulation.json": "dac878733bde3e931c3c7948a5096322cd30b0f9de45f5daf19a263eec35b474",
     "materials.json": "d9cf2905bdf998a8eab6e1d86e3c55feac2015782cbdb035081ae6799d80256c",
     "sentaurus_reference.csv": "5ea1ba65756664b0d849e2cee0fb9d16e05cb2c22c9645d7078b485f2973e33a",
     "../vela/input/mesh.json": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",

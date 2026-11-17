@@ -260,7 +260,7 @@ Newton numerical and geometry controls added for explicit validation profiles:
   it extrapolates positive carrier concentrations in log space.
   PN2D IV and BV sweeps select `sweep.preserve_step_after_output_clip: true` to
   reuse the proposed step after a first-attempt landing at an intermediate
-  `vtk_bias_points` voltage shortened the step. A rejected step uses the
+  `required_bias_points` or `vtk_bias_points` voltage shortened the step. A rejected step uses the
   configured reduction and the accepted retry determines subsequent growth.
   Each CMD Goal and requested output bias is landed exactly. Different Newton
   outcomes can produce different adaptive trajectories. Full PN2D IV/BV and
@@ -370,6 +370,12 @@ Newton numerical and geometry controls added for explicit validation profiles:
   solve each correction with the same row weights, configured L2 row/column
   equilibration and backend. This does not
   alter nonlinear acceptance criteria or enable refinement in other solvers.
+- `solver.population_linear_defect` selects `mp100` (default) or `eft` for
+  legacy `potential_density` solves in Unit primary coordinates. `eft` uses
+  error-free binary64 accumulation with an exact row fallback in double
+  mode. Both choices retain the original linear accuracy checks. The explicit
+  EFT mode requires round-to-nearest, gradual underflow and strict binary64
+  support in the build.
 - `solver.legacy_edge_jacobian_steps`: optional object with positive finite
   `transport` (default `1e-6`) and `avalanche` (default `1e-7`). For the legacy
   edge transport and finite-difference edge avalanche source Jacobian, the
@@ -2614,12 +2620,13 @@ Output and current fields:
   stage, using the existing voltage/current tolerance; it does not change
   convergence or stopping decisions. Omitting the object preserves the
   previous VTU bytes and metadata set.
-- vtk_bias_points: optional array of biases the adaptive sweep must land on
-  exactly (to 1e-12 V). Each becomes an additional accepted point with a VTK
-  file even when `write_vtk` is false; the adaptive step size is not changed,
-  so all other visited biases are identical to a run without the list.
-  Points outside `[start, stop]` or equal to a nominal target are ignored.
-  Explicit `bias_points` sweeps do not use this key.
+- `required_bias_points`: optional bias targets the adaptive sweep must visit
+  exactly. These targets use the same clipping and continuation rules as
+  `vtk_bias_points`. They follow `write_vtk` for field output.
+- `vtk_bias_points`: optional bias targets that also request a VTK file,
+  including with `write_vtk: false`. To export a subset of required bias
+  points, list that subset here and set `write_vtk: false`. Both lists apply
+  to adaptive sweeps.
 - csv_all_contacts: when `true`, the sweep CSV gains
   `contact_<name>_electron_A_per_um`, `contact_<name>_hole_A_per_um` and
   `contact_<name>_total_A_per_um` for every mesh contact (the monitored

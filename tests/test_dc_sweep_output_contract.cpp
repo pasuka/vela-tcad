@@ -5,6 +5,7 @@
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/io/CSVWriter.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
@@ -377,6 +378,28 @@ TEST_CASE("DCSweep writes TDR-named .vtu files at mandatory bias points with the
         REQUIRE(std::isfinite(cathode));
         // Two-terminal device: the currents balance to solver precision.
         REQUIRE(std::abs(anode + cathode) <= 1.0e-6 * std::max(std::abs(anode), 1.0e-30) + 1.0e-20);
+    }
+}
+
+TEST_CASE("DCSweep lands on required bias points independently of field export",
+          "[dc_sweep][output_contract]") {
+    const auto dir = makeUniqueDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshMicrometers(dir);
+    auto cfg = baseConfig(dir, mesh, dir / "sweep.csv");
+    cfg["sweep"]["required_bias_points"] = {0.05, 0.1};
+    cfg["sweep"]["vtk_bias_points"] = {0.1};
+    cfg["sweep"]["write_vtk"] = false;
+    cfg["sweep"]["vtk_fields"] = {"ElectrostaticPotential"};
+    const auto path = writeConfig(dir, cfg, "required.json");
+
+    const auto result = DCSweep{}.runWithResult(path.string());
+    for (const Real bias : {0.05, 0.1}) {
+        const auto point = std::find_if(result.points.begin(), result.points.end(),
+            [bias](const DCSweepPoint& row) { return std::abs(row.bias-bias)<1e-12; });
+        REQUIRE(point != result.points.end());
+        REQUIRE(point->converged);
+        CHECK(point->outputVtk.empty() == (bias == 0.05));
     }
 }
 

@@ -182,6 +182,7 @@ struct NewtonConfig {
     Real quasiFermiTrustRegionMinMultiplier = 1.0; ///< Positive minimum multiplier used by adaptive contraction.
     // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
     int linearRefinementIterations = 0;
+    std::string populationLinearDefect = "mp100";
     Real legacyTransportJacobianStep = 1e-6;
     Real legacyAvalancheJacobianStep = 1e-7;
     std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.

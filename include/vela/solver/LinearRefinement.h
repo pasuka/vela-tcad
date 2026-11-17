@@ -24,6 +24,7 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
         throw std::invalid_argument("Invalid refinement defect dimensions or input");
     ScopedPerformanceTimer timer("linear.mp_defect.total");
     incrementPerformanceCounter("linear.mp_defect.calls");
+    incrementPerformanceCounter("linear.mp100_defect.calls");
     std::vector<MP> r(F.size()), denominator(F.size());
     for (int i=0;i<F.size();++i) { r[i]=MP(F(i)); denominator[i]=abs(r[i]); }
     // Reuse the identical 100-digit conversion of each direction coordinate.
@@ -52,6 +53,7 @@ inline Defect highPrecisionDefect(const vela::SparseMatrixd& J,
 // BVMethods requests this only for the PARDISO bordered path.
 bool useBvMethodsEftDefect();
 Defect eftDefect(const SparseMatrixd&, const VectorXd&, const VectorXd&);
+Defect eftDefectWithoutMp100(const SparseMatrixd&, const VectorXd&, const VectorXd&);
 
 template<class Solve, class Observer>
 vela::VectorXd refineWithSolve(const vela::SparseMatrixd& J, const vela::VectorXd& F,
