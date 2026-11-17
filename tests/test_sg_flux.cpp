@@ -730,6 +730,53 @@ TEST_CASE("element quasi-Fermi-gradient analytic Jacobian matches finite differe
     REQUIRE(delta.norm() / scale < 2.0e-6);
 }
 
+TEST_CASE("Fermi population Jacobian preserves transport and ohmic density constraints",
+          "[sg][population][fermi-dirac][jacobian]")
+{
+    const DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    const MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    const auto mobility = mobilityModelConfig("masetti");
+    DDScalingSpec scaling;
+    scaling.stateVariables = "potential_density";
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+    CoupledDDAssembler assembler(mesh, matdb, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"srh", "auger"}), {}, {}, {}, {},
+        scaling, {}, statistics);
+
+    CoupledDDState state;
+    state.psi = VectorXd::Constant(3, 0.6);
+    state.psi(1) += 0.015;
+    state.n.resize(3);
+    state.p.resize(3);
+    state.n << 2e25, 4e25, 7e24;
+    state.p << 1e23, 3e24, 2e25;
+    const auto x = assembler.pack(state);
+    CoupledDDBoundaryConditions boundary;
+    const auto fields = assembler.populationPhysicalFields(x);
+    boundary.psi[0] = state.psi(0);
+    boundary.phin[0] = fields.phin_V(0);
+    boundary.phip[0] = fields.phip_V(0);
+    const auto residual = assembler.residual(x, boundary);
+    REQUIRE(std::abs(residual(3)) < 1e-14);
+    REQUIRE(std::abs(residual(6)) < 1e-14);
+
+    VectorXd direction(9);
+    direction.head(3) << 0.02, -0.01, 0.015;
+    direction.segment(3, 3) = state.n * 0.07;
+    direction.tail(3) = state.p * -0.05;
+    constexpr Real h = 1e-5;
+    const VectorXd finiteDifference =
+        (assembler.residual(x + h * direction, boundary) -
+         assembler.residual(x - h * direction, boundary)) / (2 * h);
+    const VectorXd analytic = assembler.assembleJacobian(x, boundary) * direction;
+    for (Eigen::Index row = 0; row < analytic.size(); ++row) {
+        const Real scale = std::max(std::abs(finiteDifference(row)), Real{1e-12});
+        INFO("row = " << row);
+        REQUIRE(std::abs(analytic(row) - finiteDifference(row)) < 5e-6 * scale);
+    }
+}
+
 TEST_CASE("mobility doping bases distinguish net, total, and cell reconstruction",
           "[sg][mobility][doping-basis]")
 {

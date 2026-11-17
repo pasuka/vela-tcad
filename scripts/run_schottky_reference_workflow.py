@@ -171,11 +171,11 @@ def _log_interpolate(points: list[dict[str, float]], bias: float) -> float:
     raise ValueError(f"candidate curve does not bracket {bias:g} V")
 
 
-def compare_curves(candidate: list[dict[str, float]]) -> dict[str, Any]:
+def compare_curves(candidate: list[dict[str, float]], reference_path: Path = REFERENCE) -> dict[str, Any]:
     reference = [
         {"bias_V": float(row["bias_V"]),
          "current_total_A_per_um": float(row["current_total_A_per_um"])}
-        for row in read_csv(REFERENCE)
+        for row in read_csv(reference_path)
         if float(row["bias_V"]) > 0.0
     ]
     comparisons = []

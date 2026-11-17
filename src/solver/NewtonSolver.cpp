@@ -1617,6 +1617,7 @@ void validatePopulationNumerics(const NewtonConfig& c)
 {
     if (c.compensatedPopulationState &&
         (c.stateVariables != "potential_density" || c.coupledOperator != "legacy" ||
+         c.carrierStatistics.model != "boltzmann" ||
          !c.inputScaling.isUnitScaling() || c.primaryVariableCoordinates != "unit" ||
          c.contactBoundaryMinorityElectronRelaxation))
         throw std::invalid_argument("Compensated population state requires legacy unit-scaled density coordinates and neutral ohmic contacts");
@@ -1632,8 +1633,8 @@ void validatePopulationNumerics(const NewtonConfig& c)
     reject(c.splitDDState || c.electronQuantumPotential.enabled,
         "split or quantum state formulations");
     if(c.coupledOperator=="legacy") {
-        reject(c.carrierStatistics.model!="boltzmann" || c.mobility.model=="ialmob" ||
-            c.poissonResidualPrecision!="double", "legacy non-Boltzmann, IALMob or extended Poisson assembly");
+        reject(c.mobility.model=="ialmob" || c.poissonResidualPrecision!="double",
+            "legacy IALMob or extended Poisson assembly");
         reject(c.populationDerivativeRecovery!="full" || c.populationSgCurrent!="quasi_fermi",
             "BVMethods-specific numerical controls with the legacy operator");
     }

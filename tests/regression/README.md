@@ -140,3 +140,38 @@ the accepted-point numerical checks. The native curve is bounded at 100 V. Its i
 with a 1e-12 A/um denominator floor. BV uses the first 1e-4 A/um
 crossing and a 0.5% tolerance against the qualified 6.673833 V anchor.
 Reports are written to `<build>/bvmethods-reports/`.
+
+## Schottky and BJT U-2022.12 numerical regression
+
+Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register
+`reference_u2022_schottky_iv` and `reference_u2022_bjt_m1`. Both tests use
+the built `vela_example_runner` with unit-scaled potential and carrier
+densities, checked-in neutral mesh and doping inputs, and U-2022.12 silicon
+parameters. The [Schottky manifest](../../reference_tcad/schottky_charon_sentaurus2018/ci_u2022_12/manifest.json)
+and [BJT manifest](../../reference_tcad/genius_bjt_sentaurus2022/ci_u2022_12/manifest.json)
+record the original SDevice and TDX input hashes. The checked-in input checksums
+use LF line endings so a platform's checkout convention does not change them.
+CTest uses the normalized native current curves and needs no Sentaurus runtime,
+license or TDR.
+
+Schottky checks the complete 0-to-1 V forward sweep against 24 native
+positive-bias points (0.5 dex), monotonicity, and terminal current balance.
+BJT M1 initializes at 0 V, ramps the base to 0.70 V, and compares both terminal
+balance and all 31 collector output points through 3.0 V. In the 0.5-to-3.0 V
+window, each terminal current and the current gain must agree to 0.05 dex.
+
+BJT uses single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
+absolute path of the installed MKL runtime. Schottky uses UMFPACK when
+available and Eigen SparseLU otherwise. Configure and run the opt-in group
+with a Release build:
+
+```bash
+cmake -S . -B build-u2022 -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 \
+  -DVELA_ENABLE_MKL_PARDISO=ON -DVELA_ENABLE_REFERENCE_U2022_CI=ON
+cmake --build build-u2022 --target vela_example_runner
+ctest --test-dir build-u2022 --output-on-failure --no-tests=error -L '^reference-u2022$'
+```
+
+Each run writes its configs, curves, logs and `result.json` to a fresh directory
+under the build's `reference-u2022-reports/` directory.

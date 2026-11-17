@@ -1,0 +1,127 @@
+{
+  "simulation": {
+    "simulation_type": "dc_sweep",
+    "mesh_file": "../vela/mesh.json",
+    "scaling": {
+      "mode": "unit_scaling"
+    },
+    "node_doping_file": "../vela/doping.csv",
+    "doping": [
+      {
+        "region": "R.Silicon",
+        "donors": 1.0000000000000034e+16,
+        "acceptors": 0.0
+      }
+    ],
+    "contacts": [
+      {
+        "name": "cathode",
+        "type": "ohmic",
+        "bias": 0.0
+      },
+      {
+        "name": "anode",
+        "type": "schottky",
+        "barrier_eV": 0.7000000000000002,
+        "electron_surface_recombination_velocity_m_per_s": 4910000.0,
+        "hole_surface_recombination_velocity_m_per_s": 2740000.0,
+        "emission_model": "thermionic_robin",
+        "bias": 0.0
+      }
+    ],
+    "solver": {
+      "method": "newton",
+      "max_iter": 25,
+      "reltol": 1e-05,
+      "diagnostics": false,
+      "warm_start": true,
+      "recombination": [
+        "srh"
+      ],
+      "srh_doping_dependence": {
+        "electron": {
+          "tau_min_s": 0.0,
+          "tau_max_s": 1e-05,
+          "reference_doping_m3": 1e+16,
+          "gamma": 1.0
+        },
+        "hole": {
+          "tau_min_s": 0.0,
+          "tau_max_s": 3e-06,
+          "reference_doping_m3": 1e+16,
+          "gamma": 1.0
+        },
+        "enabled": false
+      },
+      "taun": 1e-05,
+      "taup": 3e-06,
+      "state_variables": "potential_density",
+      "primary_variable_coordinates": "unit",
+      "population_stopping_rule": "native_approx",
+      "damping_factor": 1.0,
+      "line_search": false,
+      "population_update_convergence": {
+        "digits": 6,
+        "electron_reference_cm3": 100000000.0,
+        "hole_reference_cm3": 100000000.0
+      },
+      "global_continuity_closure": {
+        "mode": "report",
+        "tolerance": 0.01,
+        "source_floor": 1e-14
+      }
+    },
+    "validation": {
+      "check_contact_quasi_fermi_bias": false
+    },
+    "materials_file": "materials.json",
+    "physical_constants_profile": "sentaurus_u2022_12",
+    "state_format": "hdf5",
+    "sweep": {
+      "mode": "iv",
+      "step": 1.0,
+      "contact": "anode",
+      "current_contact": "anode",
+      "initial_step": 0.01,
+      "min_step": 1e-06,
+      "max_step": 0.05,
+      "growth_factor": 1.35,
+      "shrink_factor": 0.5,
+      "step_growth_mode": "newton_iterations",
+      "stop_below_minimum_step": true,
+      "preserve_step_after_output_clip": true,
+      "max_retries": 16,
+      "stop_on_failure": true,
+      "vtk_bias_points": [],
+      "write_vtk": false
+    }
+  },
+  "stages": [
+    {
+      "name": "equilibrium",
+      "sweep": {
+        "stop": 0.0,
+        "continuation": {
+          "predictor": {
+            "mode": "none"
+          }
+        },
+        "initialization": {
+          "mode": "poisson_block"
+        }
+      },
+      "max_iter": 100
+    },
+    {
+      "name": "forward",
+      "sweep": {
+        "stop": 1.0,
+        "continuation": {
+          "predictor": {
+            "mode": "linear"
+          }
+        }
+      }
+    }
+  ]
+}

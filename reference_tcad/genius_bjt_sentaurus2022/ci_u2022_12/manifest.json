@@ -1,0 +1,18 @@
+{
+  "sentaurus_version": "U-2022.12",
+  "native_input_sha256": {
+    "bjt_msh.grd": "ab5a42f3066a0a7f53e3f58c44decddef8e71f4bcc12f8d6de05e8b0e4237934",
+    "bjt_msh.dat": "2e98d3a2ab4b8ebfc4ef5c5a177d259fd56b77aa6ff6a33008df839e139d4c40",
+    "bjt_m1_des.cmd": "d8c71fe1f17f46b117cd066c8b870488070e0c6a835036c0ad71b281bd06a044",
+    "bjt_msh.tdr": "e903e4dec4fae1fbb3e4921ea2a8f405ea491ab13c953b86d7866ce27b923e91"
+  },
+  "files_sha256_lf": {
+    "simulation.json": "1ac88a89943d53d6da84044ac82e3b7a26f3b18903f3f34588e8c5a1983c3bae",
+    "materials.json": "d9cf2905bdf998a8eab6e1d86e3c55feac2015782cbdb035081ae6799d80256c",
+    "sentaurus_reference.csv": "5ea1ba65756664b0d849e2cee0fb9d16e05cb2c22c9645d7078b485f2973e33a",
+    "../vela/input/mesh.json": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
+    "../vela/input/doping.csv": "312bd1f60d9019b403e73720321a38709dbb0cb7722829601e3415cc87173f1a",
+    "../source/bjt_m1_des.cmd": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27",
+    "../contracts/comparison_thresholds.json": "b94f7aee6b6914d34a08d6e0942f4bc89d699c653c5f61bfd899794b00fa6874"
+  }
+}

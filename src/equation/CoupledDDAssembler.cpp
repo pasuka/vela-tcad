@@ -547,9 +547,9 @@ CoupledDDAssembler::CoupledDDAssembler(
        (scaling_.populationSgCurrent!="quasi_fermi"&&!usesPopulationState()))
         throw std::invalid_argument("invalid population SG arithmetic mode");
     if (usesLegacyPopulationState() &&
-        (carrierStatistics_.model != "boltzmann" || mobilityConfig_.model == "ialmob" ||
+        (carrierStatistics_.model == "fermi_dirac_joyce_dixon" || mobilityConfig_.model == "ialmob" ||
          scaling_.populationSgCurrent != "quasi_fermi"))
-        throw std::invalid_argument("Legacy population coordinates require classical Boltzmann transport");
+        throw std::invalid_argument("Legacy population coordinates require classical Boltzmann or Fermi integral transport without IALMob");
     if (mobilityConfig_.edgeAveraging=="element_box_phumob" &&
         (usesFermiDirac_ || impactIonizationConfig_.model!="none"))
         throw std::invalid_argument("element_box_phumob currently requires Boltzmann statistics and disabled avalanche.");
@@ -1253,7 +1253,7 @@ PopulationPhysicalFields CoupledDDAssembler::populationPhysicalFields(const Vect
             continue;
         }
         if(!(s.n[i]>0.) || !(s.p[i]>0.))throw std::domain_error("positive population state required");
-        if (usesLegacyPopulationState()) {
+        if (usesLegacyPopulationState() && !usesFermiDirac_) {
             // Deep-off QF differences can be much smaller than either the
             // band potential or the statistical term. Round only after their
             // subtraction so a tiny edge drive survives the inverse map.
@@ -1302,8 +1302,24 @@ Real CoupledDDAssembler::legacyPopulationContactTarget(
     if (psi == bcs.psi.end() || !(ni_[node] > 0.0))
         throw std::invalid_argument("Legacy population contacts require prescribed potential on a semiconductor");
     const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    if (usesFermiDirac_) {
+        // Use the potential relative to the imposed quasi-Fermi voltage.
+        const Real potential = (psi->second - qf) * scale;
+        return electron
+            ? vela::electronDensity(ni_[node], Nc_[node], potential, 0.0, Vt_, carrierStatisticsModel_)
+            : vela::holeDensity(ni_[node], Nv_[node], potential, 0.0, Vt_, carrierStatisticsModel_);
+    }
     const Real eta = (psi->second - qf) * scale / Vt_;
     return ni_[node] * std::exp(electron ? eta : -eta);
+}
+
+static Real populationDensityEtaSlope(Real density, Real densityOfStates,
+                                      CarrierStatisticsModel statistics)
+{
+    if (!usesFermiDirac(statistics))
+        return density;
+    const Real eta = inverseFermiDiracHalf(density / densityOfStates, statistics);
+    return densityOfStates * fermiDiracHalfDerivative(eta, statistics);
 }
 
 SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
@@ -1317,9 +1333,23 @@ SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
     const Real vtScaled = Vt_ / (scaling_.enabled ? scaling_.V0 : 1.0);
     VectorXd prescribed = VectorXd::Zero(3 * count);
     for (const auto& [node, value] : bcs.phin)
-        prescribed(count + node) = -vtScaled / legacyPopulationContactTarget(node, value, bcs, true);
+        prescribed(count + node) = -vtScaled /
+            populationDensityEtaSlope(legacyPopulationContactTarget(node, value, bcs, true),
+                                      Nc_[node], carrierStatisticsModel_);
     for (const auto& [node, value] : bcs.phip)
-        prescribed(2 * count + node) = vtScaled / legacyPopulationContactTarget(node, value, bcs, false);
+        prescribed(2 * count + node) = vtScaled /
+            populationDensityEtaSlope(legacyPopulationContactTarget(node, value, bcs, false),
+                                      Nv_[node], carrierStatisticsModel_);
+    VectorXd fermiSlopes;
+    if (usesFermiDirac_) {
+        fermiSlopes.resize(2 * count);
+        for (int i = 0; i < count; ++i) {
+            if (ni_[i] <= 0.0)
+                continue;
+            fermiSlopes(i) = populationDensityEtaSlope(populations(count + i), Nc_[i], carrierStatisticsModel_);
+            fermiSlopes(count + i) = populationDensityEtaSlope(populations(2 * count + i), Nv_[i], carrierStatisticsModel_);
+        }
+    }
     std::vector<Eigen::Triplet<Real>> entries;
     entries.reserve(2 * static_cast<std::size_t>(qfJacobian.nonZeros()));
     for (int col = 0; col < qfJacobian.outerSize(); ++col) {
@@ -1335,7 +1365,8 @@ SparseMatrixd CoupledDDAssembler::legacyPopulationJacobian(
             }
             entries.emplace_back(entry.row(), col % count, entry.value());
             const Real sign = col < 2 * count ? -1.0 : 1.0;
-            entries.emplace_back(entry.row(), col, (entry.value() / populations(col)) * (sign * vtScaled));
+            const Real densitySlope = usesFermiDirac_ ? fermiSlopes(col - count) : populations(col);
+            entries.emplace_back(entry.row(), col, (entry.value() / densitySlope) * (sign * vtScaled));
         }
     }
     SparseMatrixd jacobian(qfJacobian.rows(), qfJacobian.cols());
@@ -1740,7 +1771,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
     const bool supportedMobility = mobilityConfig_.model == "masetti" ||
         mobilityConfig_.model == "masetti_field" ||
         (mobilityConfig_.model == "constant" && !impactIonizationEnabled_);
-    if (!usesLegacyPopulationState() || !scaling_.enabled ||
+    if (!usesLegacyPopulationState() || usesFermiDirac_ || !scaling_.enabled ||
         psi.size() != count || n.size() != count || p.size() != count ||
         low.size() != 3 * count || !low.allFinite() || !bcs.thermionic.empty() ||
         (!bcs.psi.empty() && (bcs.ohmicPopulation.size() != bcs.psi.size() ||
@@ -3015,11 +3046,13 @@ VectorXd CoupledDDAssembler::residualImpl(
         const Real vtScaled = Vt_ / potentialScale;
         for (const auto& [node, value] : bcs.phin) {
             const Real target = legacyPopulationContactTarget(node, value, bcs, true);
-            r(phinOffset() + node) = -vtScaled * ((n(node) - target) / target);
+            r(phinOffset() + node) = -vtScaled *
+                ((n(node) - target) / populationDensityEtaSlope(target, Nc_[node], carrierStatisticsModel_));
         }
         for (const auto& [node, value] : bcs.phip) {
             const Real target = legacyPopulationContactTarget(node, value, bcs, false);
-            r(phipOffset() + node) = vtScaled * ((p(node) - target) / target);
+            r(phipOffset() + node) = vtScaled *
+                ((p(node) - target) / populationDensityEtaSlope(target, Nv_[node], carrierStatisticsModel_));
         }
     }
 
@@ -4796,7 +4829,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     const VectorXd n = electronDensity(state);
     const VectorXd p = holeDensity(state);
-    const bool directPopulationTransport = usesLegacyPopulationState() &&
+    const bool directPopulationTransport = usesLegacyPopulationState() && !usesFermiDirac_ &&
         (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") &&
         mobilityConfig_.edgeAveraging == "legacy" &&
         mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge" &&

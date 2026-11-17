@@ -203,12 +203,14 @@ Newton numerical and geometry controls added for explicit validation profiles:
 - `solver.state_variables`: BVMethods defaults to `potential_density`; legacy
   operators retain `potential_quasi_fermi`. Explicit values override this
   operator-scoped default. The legacy operator accepts explicit population
-  state for classical Boltzmann transport. The PN2D Masetti SG profiles
+  state for classical Boltzmann and integral Fermi–Dirac transport. The
+  integral Fermi–Dirac path uses the existing quasi-Fermi SG operator and
+  transforms its Jacobian with the local Fermi density slope. The PN2D Masetti SG profiles
   assemble the transport and high-field mobility Jacobian contributions directly
   in psi, n and p. The element-edge GSS-Laux avalanche Jacobian seeds these same
   variables in local AD and uses the supplied populations in the SG factors.
   GradQF driving fields still derive their quasi-Fermi potentials from the
-  population state. In legacy population mode, the SG edge fluxes use the
+  population state. In the Boltzmann population path, the SG edge fluxes use the
   solved potentials and densities with cancellation-resistant Bernoulli
   evaluation. Residual row units are unchanged. Other legacy contributions can
   use the existing QF-to-population

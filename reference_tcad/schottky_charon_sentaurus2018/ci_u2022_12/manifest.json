@@ -1,0 +1,17 @@
+{
+  "sentaurus_version": "U-2022.12",
+  "native_input_sha256": {
+    "schottky_n_msh.grd": "69a45c088b752472698d03934c39cffe5aa9ebb90da13398bc33e3b2d511da20",
+    "schottky_n_msh.dat": "be44ca691164f35da91162c0dadbb98900c346c9da555781814f39e7c2783afb",
+    "schottky_n_des.cmd": "42784fc33dc125b1ca70b0d8cba95abb9944b63a8e34e7e04ba8ad44c69cd5f0",
+    "schottky_n_msh.tdr": "a7ed99b7cdd3de619f1a7839729a5defa82f7763ad5cfd39e130fc1242d35f2c"
+  },
+  "files_sha256_lf": {
+    "simulation.json": "bc7e6798bb468683a89a4a30991ae2dec402db389c2f1a039a2377c34b402f13",
+    "materials.json": "61324afc11aa6950f61a74149f1c54a011ab7417403e5c0615eab33c91de3d36",
+    "sentaurus_reference.csv": "a33e38dfe7aeb37c5fc3b932b9d8fdf0bb0e3478a084cdac3e74c1cb3cfc863c",
+    "../vela/mesh.json": "f9086e086a149ea69051d4a863ba5611e34cc059df667334eb4a8266e870b397",
+    "../vela/doping.csv": "28d4b4caa9ea2ed905ac9ad0ba631d715c44a78e97b2e89a60c0edeeb2e41d6b",
+    "../source/schottky_n_des.cmd": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00"
+  }
+}
