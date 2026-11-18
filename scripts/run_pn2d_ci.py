@@ -62,15 +62,20 @@ def stage_inputs(source, output, deck, spec, experiment, branch):
         shutil.copyfile(source / sidecar, output / sidecar)
 
 
-def run_sdevice(launcher, output, deck, log, compensated, linear_solver):
-    args = [str(launcher), '--physical-constants-profile', 'sentaurus_u2022_12',
+def sdevice_arguments(deck, compensated):
+    args = ['--physical-constants-profile', 'sentaurus_u2022_12',
             '--threads', '1', '--allow-lossy', '--exit-on-failure']
     if compensated:
         args.append('--pn2d-population')
+    return [*args, deck]
+
+
+def run_sdevice(launcher, output, deck, log, compensated, linear_solver):
+    args = [str(launcher), *sdevice_arguments(deck, compensated)]
     env = dict(os.environ, VELA_PYTHON=sys.executable, VELA_LINEAR_SOLVER=linear_solver,
                VELA_BIN=str(launcher.parent))
     with log.open('w', encoding='utf-8') as stream:
-        subprocess.run([*args, deck], cwd=output, env=env, stdout=stream,
+        subprocess.run(args, cwd=output, env=env, stdout=stream,
                        stderr=subprocess.STDOUT, check=True)
     run = output / (Path(deck).stem + '_vela')
     status = acceptance.read_json(run / 'run_manifest.json')
