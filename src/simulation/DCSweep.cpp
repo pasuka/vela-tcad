@@ -5641,6 +5641,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     VtuSurfaceGeometryCache vtuSurfaceGeometry;
     std::optional<detail::BvMethodsTri3Context> abaSourceContext;
     std::unique_ptr<detail::BvMethodsTri3Operator> abaSourceOperator;
+    struct PathTracingCellGeometry {
+        std::array<Point2, 3> points;
+        std::array<Real, 3> angleWeights;
+        std::size_t largestAngleVertex = 0;
+    };
+    struct PathTracingGeometry {
+        std::vector<PathTracingCellGeometry> cells;
+        std::vector<bool> boundaryBand;
+    };
+    std::optional<PathTracingGeometry> pathTracingGeometry;
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
@@ -6014,6 +6024,58 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         "DCSweep: continuous_cell path tracing currently "
                         "supports electric_field, eparallel, or quasi_fermi_gradient.");
                 }
+                if (!pathTracingGeometry) {
+                    pathTracingGeometry.emplace();
+                    auto& geometry = *pathTracingGeometry;
+                    geometry.cells.resize(mesh.numCells());
+                    std::map<std::pair<Index, Index>, std::size_t> transportEdgeUseCount;
+                    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+                        if (cellId >= sweepCellMaterials.size() ||
+                            !detail::isTransportMaterial(sweepCellMaterials[cellId])) {
+                            continue;
+                        }
+                        const Cell& cell = mesh.getCell(cellId);
+                        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+                            continue;
+                        auto& cellGeometry = geometry.cells[cellId];
+                        const auto& points = cellGeometry.points;
+                        for (std::size_t local = 0; local < 3; ++local) {
+                            const Node& node = mesh.getNode(cell.node_ids[local]);
+                            cellGeometry.points[local] = Point2{node.x, node.y};
+                        }
+                        Real largestAngle = -1.0;
+                        for (std::size_t local = 0; local < 3; ++local) {
+                            const std::size_t next = (local + 1) % 3;
+                            const Point2 incoming = points[(local + 2) % 3] - points[local];
+                            const Point2 outgoing = points[next] - points[local];
+                            const Real angle = detail::angleBetween(incoming, outgoing);
+                            cellGeometry.angleWeights[local] = std::max(angle, Real{1.0e-30});
+                            if (angle > largestAngle) {
+                                largestAngle = angle;
+                                cellGeometry.largestAngleVertex = local;
+                            }
+                            ++transportEdgeUseCount[std::minmax(cell.node_ids[local], cell.node_ids[next])];
+                        }
+                    }
+                    geometry.boundaryBand.assign(mesh.numNodes(), false);
+                    for (const auto& [edge, count] : transportEdgeUseCount) {
+                        if (count == 1) {
+                            geometry.boundaryBand[edge.first] = true;
+                            geometry.boundaryBand[edge.second] = true;
+                        }
+                    }
+                    // Surface maxima reconstructed from P1 fields can lie
+                    // one or two mesh edges inside the transport boundary.
+                    for (int ring = 0; ring < 2; ++ring) {
+                        auto expanded = geometry.boundaryBand;
+                        for (const auto& entry : transportEdgeUseCount) {
+                            const auto& [a, b] = entry.first;
+                            if (geometry.boundaryBand[a] || geometry.boundaryBand[b])
+                                expanded[a] = expanded[b] = true;
+                        }
+                        geometry.boundaryBand = std::move(expanded);
+                    }
+                }
                 std::vector<Point2> nodeElectricVector(mesh.numNodes(), Point2::Zero());
                 std::vector<Point2> nodeElectronCurrent(mesh.numNodes(), Point2::Zero());
                 std::vector<Point2> nodeHoleCurrent(mesh.numNodes(), Point2::Zero());
@@ -6090,19 +6152,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             return sol.phip(static_cast<int>(node));
                         }, validHoleGradient, holeDoubleArea);
                     const Point2 cellElectric = -fieldFactor * potentialGradient;
-                    std::array<Point2, 3> points{};
                     for (std::size_t local = 0; local < 3; ++local) {
-                        const Node& node = mesh.getNode(cell.node_ids[local]);
-                        points[local] = Point2{node.x, node.y};
-                    }
-                    for (std::size_t local = 0; local < 3; ++local) {
-                        const Point2 incoming =
-                            points[(local + 2) % 3] - points[local];
-                        const Point2 outgoing =
-                            points[(local + 1) % 3] - points[local];
-                        const Real weight = std::max(
-                            detail::angleBetween(incoming, outgoing),
-                            Real{1.0e-30});
+                        const Real weight = pathTracingGeometry->cells[cellId].angleWeights[local];
                         const Index node = cell.node_ids[local];
                         recoveredNodeElectric[node] += weight * cellElectric;
                         if (validElectronGradient) {
@@ -6162,6 +6213,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         holeCurrent = recoveredNodeHoleDirection[node];
                     }
                     nodeElectricField[node] = electric;
+                    // GradQF replaces these per-node coefficients with per-cell values.
+                    if (continuousUsesGradQf)
+                        continue;
                     nodeElectronDrive[node] = continuousUsesEparallel
                         ? detail::sentaurusEparallelAvalancheDrivingField(
                               electric, electronCurrent)
@@ -6174,47 +6228,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         pathImpact->electronCoefficient(nodeElectronDrive[node]);
                     nodeHoleAlpha[node] =
                         pathImpact->holeCoefficient(nodeHoleDrive[node]);
-                }
-
-                std::map<std::pair<Index, Index>, std::size_t>
-                    transportEdgeUseCount;
-                for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
-                    if (cellId >= sweepCellMaterials.size() ||
-                        !detail::isTransportMaterial(sweepCellMaterials[cellId])) {
-                        continue;
-                    }
-                    const Cell& cell = mesh.getCell(cellId);
-                    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
-                        continue;
-                    for (std::size_t local = 0; local < 3; ++local) {
-                        const Index a = cell.node_ids[local];
-                        const Index b = cell.node_ids[(local + 1) % 3];
-                        ++transportEdgeUseCount[std::minmax(a, b)];
-                    }
-                }
-                std::vector<bool> transportBoundaryNode(mesh.numNodes(), false);
-                for (const auto& [edge, count] : transportEdgeUseCount) {
-                    if (count == 1) {
-                        transportBoundaryNode[edge.first] = true;
-                        transportBoundaryNode[edge.second] = true;
-                    }
-                }
-                // P1 reconstruction can place one surface maximum one or two
-                // mesh edges inside the literal boundary. Use the same
-                // two-ring neighborhood as numbered peak grouping so every
-                // alias of that surface peak selects the same tracing family.
-                std::vector<bool> transportBoundaryBand = transportBoundaryNode;
-                for (int ring = 0; ring < 2; ++ring) {
-                    std::vector<bool> expanded = transportBoundaryBand;
-                    for (const auto& [edge, count] : transportEdgeUseCount) {
-                        (void)count;
-                        if (transportBoundaryBand[edge.first] ||
-                            transportBoundaryBand[edge.second]) {
-                            expanded[edge.first] = true;
-                            expanded[edge.second] = true;
-                        }
-                    }
-                    transportBoundaryBand = std::move(expanded);
                 }
 
                 std::vector<CellIonizationSample> cellSamples;
@@ -6236,25 +6249,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     if (!validGradient)
                         continue;
 
-                    std::array<Point2, 3> internalPoints{};
-                    std::size_t bestVertex = 0;
-                    Real bestAngle = -1.0;
-                    for (std::size_t local = 0; local < 3; ++local) {
-                        const Node& node = mesh.getNode(cell.node_ids[local]);
-                        internalPoints[local] = Point2{node.x, node.y};
-                    }
-                    for (std::size_t local = 0; local < 3; ++local) {
-                        const Point2 incoming =
-                            internalPoints[(local + 2) % 3] - internalPoints[local];
-                        const Point2 outgoing =
-                            internalPoints[(local + 1) % 3] - internalPoints[local];
-                        const Real angle = detail::angleBetween(incoming, outgoing);
-                        if (angle > bestAngle) {
-                            bestAngle = angle;
-                            bestVertex = local;
-                        }
-                    }
-                    const Index bestNode = cell.node_ids[bestVertex];
+                    const auto& cellGeometry = pathTracingGeometry->cells[cellId];
+                    const auto& internalPoints = cellGeometry.points;
+                    const Index bestNode = cell.node_ids[cellGeometry.largestAngleVertex];
                     Real electronDrive = nodeElectronDrive[bestNode];
                     Real holeDrive = nodeHoleDrive[bestNode];
                     if (continuousUsesGradQf) {
@@ -6344,7 +6341,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 : 0.0;
                         sample.vertexNetDoping[local] = doping.netDoping(nodeId);
                         sample.vertexTransportBoundary[local] =
-                            transportBoundaryBand[nodeId];
+                            pathTracingGeometry->boundaryBand[nodeId];
                         sample.vertexTracingDirections[local] =
                             pathCfg.tracingVector == "electron_current"
                                 ? (recoveredNodeElectronCurrent[nodeId].norm() >=
