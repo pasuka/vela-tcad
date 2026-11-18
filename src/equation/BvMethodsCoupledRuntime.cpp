@@ -1,4 +1,5 @@
 #include "vela/equation/BvMethodsCoupledRuntime.h"
+#include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/equation/BvMethodsTri3Operator.h"
 #include "vela/physics/experimental/PopulationRecombination.h"
@@ -177,6 +178,8 @@ struct BvMethodsCoupledRuntime::Impl {
         const auto& u=context.newton.inputScaling.unitSystem();
         const double line=u.currentDensityAM2PerInternal()*u.lengthMPerInternal()*continuity;
         element=std::make_unique<detail::BvMethodsTri3Operator>(context,state,a.Nc_,a.Nv_,scale,line,a.Vt_,a.ni_,a.scaling_.populationSgCurrent=="band_population");
+        observePerformanceValue("bvmethods.tri3.mobility_significand_bits",
+                                std::numeric_limits<ArithmeticReal>::digits);
     }
     void sync()const {
         const auto en=owner.electronQuasiFermiReferenceField(),hp=owner.holeQuasiFermiReferenceField();

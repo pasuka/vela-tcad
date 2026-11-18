@@ -1,5 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include "vela/core/ArithmeticPrecision.h"
+#include "vela/core/PerformanceProfiler.h"
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
@@ -334,6 +336,19 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
     f.statistics.model="fermi_dirac_joyce_dixon";f.mobility.dopingConcentrationBasis="net_doping";unsupported=f.assembler();REQUIRE_THROWS_AS(unsupported->residual(x,{}),std::invalid_argument);
     const auto legacy=newtonConfigFromJson(nlohmann::json::object());REQUIRE(legacy.coupledOperator=="legacy");
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{{"coupled_operator","unknown"}}),std::invalid_argument);
+}
+
+TEST_CASE("BVMethods reports the active mobility precision", "[bvmethods_profile]") {
+    using namespace vela;
+    PerformanceProfiler profiler({.enabled = true});
+    ActivePerformanceProfilerScope scope(&profiler);
+    ProfileFixture fixture;
+    auto assembler = fixture.assembler();
+    REQUIRE(assembler->residual(fixture.point(), {}).allFinite());
+    const auto report = profiler.toJson();
+    const auto& precision = report.at("observations").at("bvmethods.tri3.mobility_significand_bits");
+    CHECK(precision.at("min") == std::numeric_limits<ArithmeticReal>::digits);
+    CHECK(precision.at("max") == std::numeric_limits<ArithmeticReal>::digits);
 }
 
 #include "vela/post/ContactCurrent.h"

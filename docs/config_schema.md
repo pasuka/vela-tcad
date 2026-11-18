@@ -396,6 +396,8 @@ Newton numerical and geometry controls added for explicit validation profiles:
   use `vela_example_runner` for `double` and `vela_example_runner_extended80`
   for `extended80`. The extended runner is built when the compiler provides
   a 64-bit significand and an 80-bit extended exponent range in `long double`.
+  For BVMethods Tri3, performance reports expose the effective Canali and
+  Lombardi arithmetic width as `bvmethods.tri3.mobility_significand_bits`.
 - `solver.poisson_residual_precision`: `double` (default) or `binary128`.
   The latter forms physical potential and Boltzmann charge from the packed
   state and retained quasi-Fermi references in software binary128 arithmetic,
