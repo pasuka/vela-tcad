@@ -357,11 +357,17 @@ class KnownOverstatementTest(unittest.TestCase):
         with self.assertRaises(pmap.ParameterMapError):
             pmap.assert_importable([result], allow_lossy=True)
 
-    def test_auger_density_enhancement_blocks_the_import(self):
-        """Vela's Auger is constant-coefficient; H/N0 cannot be honoured."""
-        for name in ("H", "N0"):
-            result = pmap.classify("Auger", name, active_models=["Auger"])
-            self.assertEqual(result.status, pmap.STATUS_UNSUPPORTED_MODEL)
+    def test_auger_density_enhancement_maps_to_both_carriers(self):
+        cases = (
+            ("H", (3.46667, 8.25688), "solver.auger_density_dependence.{carrier}.enhancement"),
+            ("N0", (1e18, 2e18), "solver.auger_density_dependence.{carrier}.reference_density_m3"),
+        )
+        for name, values, target in cases:
+            with self.subTest(parameter=name):
+                result = pmap.classify("Auger", name, active_models=["Auger"], values=values)
+                self.assertEqual(result.status, pmap.STATUS_EXACT)
+                self.assertEqual(result.to_json()["target"], target)
+                pmap.assert_importable([result])
 
     def test_auger_coefficients_are_approximations_not_exact(self):
         for name in ("A", "B", "C"):
@@ -461,8 +467,6 @@ class CorpusClassificationTest(unittest.TestCase):
         _, report = pmap.classify_ir(self.pn2d, PN2D_ACTIVE_MODELS)
         blocked = {(item.section, item.parameter) for item in report.blocking}
         self.assertEqual(blocked, {
-            ("Auger", "H"),
-            ("Auger", "N0"),
             ("Bandgap", "Bgn2Chi"),
             ("Bandgap", "alpha2"),
             ("Bandgap", "beta2"),

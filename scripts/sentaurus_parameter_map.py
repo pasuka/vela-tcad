@@ -482,8 +482,8 @@ def _rows() -> list[MappingEntry]:
             target="solver.auger_cn_m6_per_s / solver.auger_cp_m6_per_s",
             requires_model="Auger",
             note=(
-                "Vela Auger has constant Cn/Cp only; the A/B/C temperature "
-                "polynomial collapses to its value at the frozen temperature"
+                "The A/B/C temperature polynomial collapses to fixed Cn/Cp "
+                "at the frozen temperature"
             ),
         ))
     for name, field in (("H", "enhancement"), ("N0", "reference_density_m3")):
