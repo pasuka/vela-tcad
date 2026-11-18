@@ -86,7 +86,8 @@ def gate_cases(launcher, fixture, output, env, report):
     grid = [fixture / f"gate_msh.{ext}" for ext in ("grd", "dat")]
     results = {}
     report["flatband"] = results
-    for case in ("barrier_zero", "barrier_positive", "workfunction"):
+    for case in ("barrier_zero", "barrier_positive", "barrier_negative",
+                 "workfunction", "workfunction_zero"):
         stem = case + "_sdevice"
         work = output / case
         stage_inputs(fixture, work, stem, grid)
@@ -118,9 +119,16 @@ def gate_cases(launcher, fixture, output, env, report):
         results[case] = {"measured_V": measured, "expected_V": expected,
                          "error_V": measured - expected, "samples": len(samples),
                          "surface_minus_bulk_V": samples}
-    offset = results["barrier_positive"]["measured_V"] - results["barrier_zero"]["measured_V"]
-    report["barrier_shift_V"] = offset
-    return abs(offset - 0.55) <= 1e-3 and all(abs(row["error_V"]) <= 1e-3 for row in results.values())
+    zero_barrier = results["barrier_zero"]["measured_V"]
+    expected_shifts = (
+        ("barrier_shift_V", "barrier_positive", 0.55),
+        ("negative_barrier_shift_V", "barrier_negative", -0.30),
+        ("zero_workfunction_shift_V", "workfunction_zero", 0.0),
+    )
+    for field, case, _ in expected_shifts:
+        report[field] = results[case]["measured_V"] - zero_barrier
+    return (all(abs(report[field] - target) <= 1e-3 for field, _, target in expected_shifts)
+            and all(abs(row["error_V"]) <= 1e-3 for row in results.values()))
 
 
 def schottky_gates(fixture, run, stage, report):

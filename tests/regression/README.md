@@ -157,10 +157,11 @@ Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register `reference_u2022_gate_contac
 CMDs through the built `sd-sim` with the U-2022.12 constants profile. CI enables
 them in the full suite and exposes `suite=reference-u2022` for a manual run.
 
-Gate checks zero barrier, +0.55 V barrier, and a nonzero work-function offset
-against the frozen analytical flat-band references. It checks 41 surface
-potential snapshots per CMD, brackets the flat-band crossing, and requires
-the flat-band voltages and the barrier shift to agree within 1 mV. The
+Gate checks zero barrier, +0.55 V and -0.30 V barriers, and both zero and
+nonzero work-function offsets against the frozen analytical flat-band references.
+It checks 41 surface potential snapshots per CMD and brackets the flat-band
+crossing. The flat-band voltages, signed barrier shifts and zero work-function
+shift must each agree with their reference values within 1 mV. The
 [Gate manifest](../../reference_tcad/gate_reference/ci_u2022_12/manifest.json)
 pins a GRD/DAT mesh generated from `gate_sde.cmd` using Gmsh 4.15.2.
 
