@@ -6,6 +6,10 @@
   "type": "object",
   "required": ["schema"],
   "additionalProperties": false,
+  "anyOf": [
+    {"not": {"required": ["bvmethods_statistics"]}},
+    {"required": ["bvmethods_operator_profile"]}
+  ],
   "properties": {
     "schema": {"const": "vela.sdevice_sidecar.v1"},
     "high_field_gradient_discretization": {
@@ -21,6 +25,10 @@
         "bvmethods_tri3_qf"
       ],
       "description": "Explicit qualified 300 K Tri3 numerical operator and Fermi approximation; cmd/par retain physical laws and coefficients. Basic state Plot fields only."
+    },
+    "bvmethods_statistics": {
+      "enum": ["fermi_dirac_joyce_dixon", "fermi_dirac"],
+      "description": "Explicit numerical statistics for the BVMethods profile. The default is Joyce-Dixon."
     },
     "sentaurus_step_control": {
       "const": true,

@@ -676,6 +676,8 @@ endif()
 
 # Independent validation entry; experiment controls are not simulation-schema options.
 add_executable(vela_bvmethods_experiment src/tools/vela_bvmethods_experiment.cpp)
+add_executable(vela_tri3_box_audit EXCLUDE_FROM_ALL src/tools/vela_tri3_box_audit.cpp)
+target_link_libraries(vela_tri3_box_audit PRIVATE vela_core)
 target_link_libraries(vela_bvmethods_experiment PRIVATE vela_core)
 
 # Explicit diagnostic build; not installed or included in normal builds.

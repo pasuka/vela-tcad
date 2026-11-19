@@ -542,9 +542,9 @@ CoupledDDAssembler::CoupledDDAssembler(
 {
     if (carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential &&
         (carrierStatistics_.model != "fermi_dirac" ||
-         scaling_.coupledOperator != "legacy" || impactIonizationEnabled_))
+         (scaling_.coupledOperator == "legacy" && impactIonizationEnabled_)))
         throw std::invalid_argument(
-            "Effective-potential SG requires integral Fermi-Dirac statistics, the standard DD operator, and no impact ionization.");
+            "Effective-potential SG requires integral Fermi statistics and disables standard DD impact ionization.");
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
     if (scaling_.stateVariables != "potential_quasi_fermi" && scaling_.stateVariables != "potential_density")
         throw std::invalid_argument("unknown coupled state_variables");

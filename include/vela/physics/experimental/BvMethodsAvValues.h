@@ -28,6 +28,8 @@ inline double avCoefficientValue(double field,const AvCoefficient& p)
     const auto exponential=[&](double a,double b) {
         return a==0.?0.:a*std::exp(-b/field);
     };
+    if (!p.smoothSwitch)
+        return field < p.switchField ? exponential(p.lowA,p.lowB) : exponential(p.highA,p.highB);
     const double low=exponential(p.lowA,p.lowB);
     if(field<=.95*p.switchField)return low;
     const double high=exponential(p.highA,p.highB);
@@ -51,17 +53,22 @@ inline std::array<double,2> avParticleCurrentValues(
     std::array<double,2> j{};
     std::size_t edge=0;
     const double sign=electron?1.:-1.;
+    const auto edgeFlux = [&](std::size_t from, std::size_t to, double length) {
+        const double delta=(sign/thermalVoltage)*(qf[to]-qf[from]);
+        const double argument=populationTransportLogRatio(density[to],density[from],tangent[to],tangent[from])+delta;
+        const double coefficient=-sign*thermalVoltage/length;
+        return detail::sgBalancedEdgeFlux(coefficient, density[from], density[to],
+            delta, delta, argument, tri3BernoulliValue, [](double x) { return std::expm1(x); });
+    };
+    if (g.usesGssLaux)
+        return avGssLauxCurrent<double>(g, edgeFlux);
     for(std::size_t i=0;i<3;++i)if(i!=r) {
         const double dx=g.points_cm[i][0]-g.points_cm[r][0];
         const double dy=g.points_cm[i][1]-g.points_cm[r][1];
         const double length=std::hypot(dx,dy);
         if(!(length>0.))throw std::invalid_argument("Degenerate AV edge");
         t[edge]={dx/length,dy/length};
-        const double delta=(sign/thermalVoltage)*(qf[i]-qf[r]);
-        const double argument=populationTransportLogRatio(density[i],density[r],tangent[i],tangent[r])+delta;
-        const double coefficient=-sign*thermalVoltage/length;
-        j[edge] = detail::sgBalancedEdgeFlux(coefficient, density[r], density[i],
-            delta, delta, argument, tri3BernoulliValue, [](double x) { return std::expm1(x); });
+        j[edge] = edgeFlux(r,i,length);
         ++edge;
     }
     const double determinant=t[0][0]*t[1][1]-t[0][1]*t[1][0];

@@ -244,6 +244,7 @@ struct NewtonConfig {
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
     std::string coupledOperator = "legacy"; ///< legacy or bvmethods_tri3_qf.
+    BvMethodsNumericalOptions bvMethodsNumerics;
     // Empty defaults resolve identically in JSON and direct C++ construction:
     // BVMethods uses population/Unit/event recovery; legacy operators retain QF.
     std::string stateVariables;

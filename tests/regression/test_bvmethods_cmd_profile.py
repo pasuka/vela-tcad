@@ -9,6 +9,20 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class BVMethodsCmdProfileTests(unittest.TestCase):
+    def test_integral_statistics_is_explicit_and_requires_the_tri3_profile(self):
+        from scripts.vela_sdevice import schema_validator as validator
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        schema = validator.load_schema(root / "schemas/vela.sdevice_sidecar.v1.schema.json")
+        sidecar = {"schema": "vela.sdevice_sidecar.v1", "bvmethods_statistics": "fermi_dirac"}
+        self.assertTrue(validator.collect_errors(schema, sidecar))
+        sidecar["bvmethods_operator_profile"] = "bvmethods_tri3_qf"
+        validator.validate(schema, sidecar)
+        deck, ir, stage, _ = self.inputs()
+        selected = apply_bvmethods_profile(deck, ir, stage, sidecar)
+        self.assertEqual(selected["statistics_approximation"], "fermi_dirac")
+        self.assertEqual(deck["solver"]["carrier_statistics"]["model"], "fermi_dirac")
+
     def test_current_goal_rebases_adaptive_steps_on_measured_current(self):
         deck, ir, stage, _ = self.inputs()
         deck["solver"]["carrier_row_convergence"] = {"mode": "enforce"}

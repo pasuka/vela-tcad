@@ -5988,7 +5988,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 if (!abaSourceOperator) {
                     abaSourceContext.emplace(detail::BvMethodsTri3Context{mesh, matdb, doping,
                         {mobilityConfig, pathImpactConfig, sweep.scaling,
-                         carrierStatisticsModel(sweepCarrierStatistics)}});
+                         carrierStatisticsModel(sweepCarrierStatistics), newton.bvMethodsNumerics}});
                     const Real line = pathUnits.currentDensityAM2PerInternal() *
                         pathUnits.lengthMPerInternal() * ddScaling.C0 * ddScaling.D0;
                     abaSourceOperator = std::make_unique<detail::BvMethodsTri3Operator>(

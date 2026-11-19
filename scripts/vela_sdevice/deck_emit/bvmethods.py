@@ -49,9 +49,10 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None, init
             raise ValueError("partial BVMethods geometry override")
     if not sweep["vtk_fields"] or set(sweep["vtk_fields"]) - STATE_FIELDS:
         raise ValueError("BVMethods CMD profile currently requires explicit basic-state Plot fields; current/source Plot fields are not qualified")
-    # Fermi remains enabled. Select the explicit numerical approximation already
-    # qualified with this operator, retaining all cmd/par model coefficients.
-    solver["carrier_statistics"]["model"] = "fermi_dirac_joyce_dixon"
+    statistics = sidecar.get("bvmethods_statistics", "fermi_dirac_joyce_dixon")
+    if statistics not in ("fermi_dirac_joyce_dixon", "fermi_dirac"):
+        raise ValueError("Invalid BVMethods Fermi statistics selection")
+    solver["carrier_statistics"]["model"] = statistics
     solver["coupled_operator"] = "bvmethods_tri3_qf"
     variables = requested.get("state_variables", "potential_density")
     if variables not in ("potential_quasi_fermi", "potential_density"):
@@ -235,6 +236,6 @@ def apply_bvmethods_profile(deck, ir, stage, sidecar, *, source_stage=None, init
             delta = sweep["stop"] - sweep["start"]
             sweep["step"] = delta
             stage["sweep"]["step_V"] = delta
-    return {"operator": "bvmethods_tri3_qf", "statistics_approximation": "fermi_dirac_joyce_dixon",
+    return {"operator": "bvmethods_tri3_qf", "statistics_approximation": statistics,
             "coordinates": "potential_density" if variables == "potential_density" else "zero_reference", "geometry": GEOMETRY,
             "scope": "explicit numerical profile; cmd/par retain physical laws and coefficients"}

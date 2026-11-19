@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/equation/BvMethodsNumericalOptions.h"
 
 #include "vela/core/Types.h"
 #include "vela/core/UnitScaling.h"
@@ -63,6 +64,7 @@ struct RegionResolvedInterfaceAssemblyConfig {
 
 struct DDScalingSpec {
     std::string coupledOperator = "legacy"; ///< Explicit BVMethods contract; independent of scaling.
+    BvMethodsNumericalOptions bvMethodsNumerics;
     std::string stateVariables = "potential_quasi_fermi";
     std::string populationSgCurrent = "quasi_fermi";
     Real populationSgBootstrapFloor_cm3 = 0.; ///< Zero disables local statistical feedback freezing.

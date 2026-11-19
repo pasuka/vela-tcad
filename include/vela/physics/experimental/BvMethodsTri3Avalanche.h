@@ -2,6 +2,7 @@
 
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/discretization/SgFluxArithmetic.h"
+#include "vela/discretization/Tri3CurrentReconstruction.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include <array>
 #include <cmath>
@@ -90,6 +91,7 @@ inline AvJet avSgFlux(const AvJet& coefficient,const AvJet& from,const AvJet& to
 
 struct AvCoefficient {
     double lowA=0.,lowB=1.,highA=0.,highB=1.,switchField=4e5;
+    bool smoothSwitch=true;
 };
 
 inline AvJet avExponentialCoefficient(const AvJet& field,double a,double b)
@@ -114,6 +116,9 @@ inline AvJet avExponentialCoefficient(const AvJet& field,double a,double b)
 inline AvJet avCoefficient(const AvJet& field,const AvCoefficient& p)
 {
     if(field.value<=0.) return {};
+    if (!p.smoothSwitch)
+        return field.value < p.switchField ? avExponentialCoefficient(field,p.lowA,p.lowB)
+                                          : avExponentialCoefficient(field,p.highA,p.highB);
     const auto low=avExponentialCoefficient(field,p.lowA,p.lowB);
     if(field.value<=.95*p.switchField) return low;
     const auto high=avExponentialCoefficient(field,p.highA,p.highB);
@@ -131,7 +136,33 @@ struct AvTri3Geometry {
     std::size_t representative=0;
     std::array<double,4> currentProjection{1.,0.,0.,1.};
     std::array<std::size_t,3> nodeOrder{0,1,2};
+    std::array<double,3> gssEdgePartialVolumes_cm2{};
+    bool usesGssLaux=false;
 };
+
+template<class Scalar, class EvaluateEdge>
+std::array<Scalar, 2> avGssLauxCurrent(const AvTri3Geometry& geometry, EvaluateEdge evaluateEdge)
+{
+    std::array<std::array<double, 2>, 3> tangents;
+    std::array<double, 3> lengths;
+    std::array<Scalar, 3> currents;
+    for (std::size_t i = 0; i < lengths.size(); ++i) {
+        const auto j = (i + 1) % lengths.size();
+        const auto& from = geometry.points_cm[i];
+        const auto& to = geometry.points_cm[j];
+        const double dx = to[0] - from[0], dy = to[1] - from[1];
+        lengths[i] = std::hypot(dx, dy);
+        if (!(lengths[i] > 0.0))
+            throw std::invalid_argument("Degenerate AV edge");
+        tangents[i] = {dx / lengths[i], dy / lengths[i]};
+        currents[i] = evaluateEdge(i, j, lengths[i]);
+    }
+    const auto j = detail::gssLauxCurrent(tangents, lengths,
+        geometry.gssEdgePartialVolumes_cm2, currents);
+    const auto& p = geometry.currentProjection;
+    return {Scalar(p[0]) * j[0] + Scalar(p[1]) * j[1],
+            Scalar(p[2]) * j[0] + Scalar(p[3]) * j[1]};
+}
 
 inline std::array<AvJet,2> avParticleCurrentWithoutMobility(
     const AvTri3Geometry& g,const std::array<AvJet,3>& density,
@@ -145,15 +176,20 @@ inline std::array<AvJet,2> avParticleCurrentWithoutMobility(
     std::array<std::array<double,2>,2> t{};
     std::array<AvJet,2> j{};std::size_t edge=0;
     const double sign=electron?1.:-1.;
+    const auto edgeFlux = [&](std::size_t from, std::size_t to, double length) {
+        const auto delta = AvJet(sign/thermalVoltage)*(qf[to]-qf[from]);
+        const auto argument = avLogRatio(density[to],density[from])+delta;
+        return avSgFlux(AvJet(-sign*thermalVoltage/length),density[from],density[to],delta,argument);
+    };
+    if (g.usesGssLaux)
+        return avGssLauxCurrent<AvJet>(g, edgeFlux);
     for(std::size_t i=0;i<3;++i)if(i!=r){
         const double dx=g.points_cm[i][0]-g.points_cm[r][0];
         const double dy=g.points_cm[i][1]-g.points_cm[r][1];
         const double length=std::hypot(dx,dy);
         if(!(length>0.))throw std::invalid_argument("Degenerate AV edge");
         t[edge]={dx/length,dy/length};
-        const auto delta=AvJet(sign/thermalVoltage)*(qf[i]-qf[r]);
-        const auto argument=avLogRatio(density[i],density[r])+delta;
-        j[edge]=avSgFlux(AvJet(-sign*thermalVoltage/length),density[r],density[i],delta,argument);
+        j[edge]=edgeFlux(r,i,length);
         ++edge;
     }
     const double determinant=t[0][0]*t[1][1]-t[0][1]*t[1][0];

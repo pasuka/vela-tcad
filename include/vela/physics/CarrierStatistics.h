@@ -94,6 +94,16 @@ Real fermiDiracHalfDerivative(Real eta);
 Real fermiDiracHalfSecondDerivative(Real eta);
 Real inverseFermiDiracHalf(Real value);
 
+struct IntegralFermiPopulation {
+    Real eta;
+    Real densitySlope; ///< d(population)/d(eta), in the supplied population units.
+    Real logGamma;
+    Real logGammaRatioSlope; ///< d(log gamma)/d(population / DOS).
+};
+
+/// Integral Fermi statistics from a positive physical population and DOS.
+IntegralFermiPopulation integralFermiPopulation(Real population, Real dos);
+
 /// All four operations resolve the same explicitly selected approximation.
 Real fermiDiracHalf(Real eta, CarrierStatisticsModel model);
 Real fermiDiracHalfDerivative(Real eta, CarrierStatisticsModel model);

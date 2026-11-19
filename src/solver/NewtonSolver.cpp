@@ -1629,6 +1629,12 @@ void resolvePopulationDefaults(NewtonConfig& c) {
 
 void validatePopulationNumerics(const NewtonConfig& c)
 {
+    if (c.coupledOperator != "bvmethods_tri3_qf" && c.bvMethodsNumerics != BvMethodsNumericalOptions{})
+        throw std::invalid_argument("bvmethods_numerics requires bvmethods_tri3_qf");
+    if (c.coupledOperator == "bvmethods_tri3_qf" && c.populationSgCurrent == "band_population" &&
+        (c.carrierStatistics.model != "fermi_dirac_joyce_dixon" ||
+         c.bvMethodsNumerics.avalancheCurrent != BvMethodsAvalancheCurrent::RepresentativeVertex))
+        throw std::invalid_argument("band_population requires Joyce-Dixon and representative-vertex avalanche current");
     if (c.populationLinearDefect != "mp100" && c.populationLinearDefect != "eft")
         throw std::invalid_argument("population_linear_defect must be mp100 or eft");
     if (c.populationLinearDefect == "eft" &&
@@ -1920,6 +1926,23 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.stableMeritComparison = json.value("stable_merit_comparison", cfg.stableMeritComparison);
     cfg.splitDDState = json.value("split_dd_state",cfg.splitDDState);
     cfg.coupledOperator = json.value("coupled_operator",cfg.coupledOperator);
+    if (json.contains("bvmethods_numerics")) {
+        const auto& options = json.at("bvmethods_numerics");
+        if (cfg.coupledOperator != "bvmethods_tri3_qf" || !options.is_object())
+            throw std::invalid_argument("bvmethods_numerics requires a BVMethods options object");
+        for (const auto& [name, value] : options.items()) {
+            if (name == "avalanche_weights" && value == "coefficient_box")
+                cfg.bvMethodsNumerics.avalancheWeights = BvMethodsAvalancheWeights::CoefficientBox;
+            else if (name == "avalanche_current" && value == "gss_laux")
+                cfg.bvMethodsNumerics.avalancheCurrent = BvMethodsAvalancheCurrent::GssLaux;
+            else if (name == "avalanche_switch" && value == "sharp")
+                cfg.bvMethodsNumerics.avalancheSwitch = BvMethodsAvalancheSwitch::Sharp;
+            else if (!(name == "avalanche_weights" && value == "truncated_box") &&
+                     !(name == "avalanche_current" && value == "representative_vertex") &&
+                     !(name == "avalanche_switch" && value == "smooth"))
+                throw std::invalid_argument("Invalid BVMethods numerical option: " + name);
+        }
+    }
     cfg.stateVariables = json.value("state_variables",cfg.stateVariables);
     cfg.primaryVariableCoordinates=json.value("primary_variable_coordinates",cfg.primaryVariableCoordinates);
     cfg.populationStoppingRule=json.value("population_stopping_rule",cfg.populationStoppingRule);
@@ -3004,8 +3027,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if(cfg.coupledOperator=="bvmethods_tri3_qf") {
         if(cfg.splitDDState || cfg.electronQuantumPotential.enabled)
             throw std::invalid_argument("BVMethods profile requires ordinary classical QF coordinates");
-        if(cfg.carrierStatistics.model!="fermi_dirac_joyce_dixon")
-            throw std::invalid_argument("BVMethods profile requires explicit Joyce-Dixon statistics");
+        if (!usesFermiDirac(cfg.carrierStatistics))
+            throw std::invalid_argument("BVMethods profile requires explicit Fermi statistics");
     } else if(cfg.carrierStatistics.model=="fermi_dirac_joyce_dixon") {
         throw std::invalid_argument("Joyce-Dixon Newton dispatch requires bvmethods_tri3_qf");
     }
@@ -3207,6 +3230,7 @@ DDScalingSpec NewtonSolver::buildScalingSpec() const
 {
     DDScalingSpec scaling;
     scaling.coupledOperator = cfg_.coupledOperator;
+    scaling.bvMethodsNumerics = cfg_.bvMethodsNumerics;
     scaling.stateVariables = cfg_.stateVariables;
     scaling.populationSgCurrent = cfg_.populationSgCurrent;
     scaling.populationSgBootstrapFloor_cm3 = cfg_.populationSgBootstrapLinearization=="floor_adjacent_edges"?cfg_.populationMinimumDensity_cm3:0.;

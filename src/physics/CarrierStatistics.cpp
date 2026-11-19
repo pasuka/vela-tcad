@@ -169,6 +169,29 @@ Real fermiDiracHalf(Real eta, CarrierStatisticsModel model) {
     return model == CarrierStatisticsModel::FermiDiracJoyceDixon
         ? experimental::JoyceDixonStatistics::evaluate(eta).value : fermiDiracHalf(eta);
 }
+
+IntegralFermiPopulation integralFermiPopulation(Real population, Real dos)
+{
+    if (!(population > 0.0 && dos > 0.0 && std::isfinite(population) && std::isfinite(dos)))
+        throw std::invalid_argument("Fermi population requires positive finite population and DOS");
+    const Real ratio = population / dos;
+    const Real eta = ratio < std::numeric_limits<Real>::min()
+        ? std::log(population) - std::log(dos) : inverseFermiDiracHalf(ratio);
+    // Invert the fugacity series F = z + a z^2 + b z^3 before taking log(F/z).
+    // In the dilute limit this retains the derivative that log(F)-eta loses.
+    if (ratio < 1e-5) {
+        constexpr Real a = -0.35355339059327376220; // -2^-3/2
+        constexpr Real b = 0.19245008972987525484;  //  3^-3/2
+        constexpr Real quadratic = b - 1.5 * a * a;
+        const Real slope = a + 2.0 * quadratic * ratio;
+        return {eta, population / (1.0 - ratio * slope),
+                ratio * (a + quadratic * ratio), slope};
+    }
+    const Real derivative = fermiDiracHalfDerivative(eta);
+    const Real densitySlope = dos * derivative;
+    return {eta, densitySlope, std::log(ratio) - eta,
+            1.0 / ratio - 1.0 / derivative};
+}
 Real fermiDiracHalfDerivative(Real eta, CarrierStatisticsModel model) {
     return model == CarrierStatisticsModel::FermiDiracJoyceDixon
         ? experimental::JoyceDixonStatistics::evaluate(eta).first : fermiDiracHalfDerivative(eta);

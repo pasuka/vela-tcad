@@ -3,6 +3,7 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
+
 #include "vela/physics/experimental/ReferencedPopulation.h"
 #include "vela/physics/experimental/FermiSgDifferential.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
@@ -16,6 +17,24 @@
 
 using Catch::Approx;
 using namespace vela;
+
+TEST_CASE("Integral Fermi population keeps the dilute degeneracy tangent", "[carrier_statistics]")
+{
+    const double dos = 3e19;
+    const auto dilute = vela::integralFermiPopulation(1e-300, dos);
+    REQUIRE(dilute.densitySlope == 1e-300);
+    REQUIRE(dilute.eta == Catch::Approx(std::log(1e-300) - std::log(dos)));
+    REQUIRE(dilute.logGammaRatioSlope == Catch::Approx(-std::pow(2.0, -1.5)));
+    for (double ratio : {1e-6, 1e-3, .1, 1., 100.}) {
+        const auto center = vela::integralFermiPopulation(ratio * dos, dos);
+        const double step = ratio * 1e-4;
+        const auto plus = vela::integralFermiPopulation((ratio + step) * dos, dos);
+        const auto minus = vela::integralFermiPopulation((ratio - step) * dos, dos);
+        REQUIRE(vela::fermiDiracHalf(center.eta) == Catch::Approx(ratio).epsilon(1e-12));
+        REQUIRE((plus.logGamma - minus.logGamma) / (2 * step) ==
+                Catch::Approx(center.logGammaRatioSlope).epsilon(5e-6));
+    }
+}
 
 TEST_CASE("Referenced population preserves finite coupled increments before charge formation",
           "[carrier_statistics][referenced_population]")

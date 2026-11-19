@@ -30,6 +30,7 @@ struct BvMethodsTri3Context {
   ImpactIonizationModelConfig impactIonization;
   UnitScalingConfig inputScaling;
   CarrierStatisticsModel statistics;
+  BvMethodsNumericalOptions numerics{};
  } newton;
 };
 using experimental::AvJet;
@@ -83,12 +84,18 @@ class BvMethodsTri3Operator {
   Index id;
   std::array<Index,3> nodes;
   experimental::AvTri3Geometry geometry;
+  std::array<double,3> transportAreas_cm2;
   std::array<Point2,3> shape;
   Point2 distanceGradient;
   std::array<double,3> bulkN,bulkP;
  };
  std::vector<CellCache> cells_;
  experimental::AvCoefficient electron_,hole_;
+ experimental::JoyceDixonJet statisticsJet(double eta) const {
+  if (problem_.newton.statistics == CarrierStatisticsModel::FermiDiracJoyceDixon)
+   return experimental::JoyceDixonStatistics::evaluate(eta);
+  return {fermiDiracHalf(eta), fermiDiracHalfDerivative(eta), fermiDiracHalfSecondDerivative(eta)};
+ }
  struct NodeStatistics {double n=0.,p=0.,dn=0.,dp=0.,etaN=0.,etaP=0.,tangentN=1.,tangentP=1.;};
  // Values depend on the node state, not on the cell's local AD slot. Keep
  // this scratch local to one assembly; no reuse across states or owners.
@@ -97,9 +104,17 @@ class BvMethodsTri3Operator {
   std::vector<NodeStatistics> result(problem_.mesh.numNodes());
   for(std::size_t i=0;i<result.size();++i)if(electronActive_[i]) {
    auto& a=result[i];a.n=units.internalConcentrationToCm3(state.n[i]);a.p=units.internalConcentrationToCm3(state.p[i]);
-   if(slopes) {
-    a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
-    a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+   if(problem_.newton.statistics == CarrierStatisticsModel::FermiDirac && (slopes || inverse)) {
+    const auto n = integralFermiPopulation(a.n,nc_[i]);
+    const auto p = integralFermiPopulation(a.p,nv_[i]);
+    a.dn=n.densitySlope/vt_;a.dp=p.densitySlope/vt_;
+    a.etaN=n.eta;a.etaP=p.eta;
+   } else {
+    if(slopes) {
+     a.dn=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.n,nc_[i])/vt_;
+     a.dp=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(a.p,nv_[i])/vt_;
+    }
+    if(inverse){a.etaN=experimental::JoyceDixonStatistics::inverseDensity(a.n,nc_[i]);a.etaP=experimental::JoyceDixonStatistics::inverseDensity(a.p,nv_[i]);}
    }
    // Evaluate extremely depleted columns in a relative local direction,
    // then undo that direction scale only after flux/source cancellation.
@@ -109,7 +124,6 @@ class BvMethodsTri3Operator {
     if(a.p<std::sqrt(std::numeric_limits<double>::min()))a.tangentP=a.p;
     if(columns){a.tangentN=(*columns)[result.size()+i];a.tangentP=(*columns)[2*result.size()+i];}
    }
-   if(inverse){a.etaN=experimental::JoyceDixonStatistics::inverseDensity(a.n,nc_[i]);a.etaP=experimental::JoyceDixonStatistics::inverseDensity(a.p,nv_[i]);}
   }
   return result;
  }
@@ -142,6 +156,7 @@ public:
   auto fieldcm=[&](double a){return units.internalElectricFieldToVPerM(a)/100.;};
   electron_={invcm(ion.electronALow),fieldcm(ion.electronBLow),invcm(ion.electronAHigh),fieldcm(ion.electronBHigh),fieldcm(ion.switchField)};
   hole_={invcm(ion.holeALow),fieldcm(ion.holeBLow),invcm(ion.holeAHigh),fieldcm(ion.holeBHigh),fieldcm(ion.switchField)};
+  electron_.smoothSwitch=hole_.smoothSwitch=problem.newton.numerics.avalancheSwitch==BvMethodsAvalancheSwitch::Smooth;
   for(Index cid=0;cid<mesh.numCells();++cid){if(materials_[cid].ni<=0)continue;
    const auto& c=mesh.getCell(cid);CellCache a;a.id=cid;
    for(auto i:c.node_ids){electronActive_[i]=true;holeActive_[i]=true;}
@@ -150,10 +165,19 @@ public:
    const double x1=p1.x-p0.x,y1=p1.y-p0.y,x2=p2.x-p0.x,y2=p2.y-p0.y,det=x1*y2-x2*y1;
    a.shape[1]={y2/det,-x2/det};a.shape[2]={-y1/det,x1/det};a.shape[0]=-a.shape[1]-a.shape[2];
    const auto weights=detail::tri3ElementVertexBoxMeasures(mesh,c);
+   const auto avalancheWeights = problem.newton.numerics.avalancheWeights == BvMethodsAvalancheWeights::CoefficientBox
+       ? conservativeCoefficientBoxMeasures(mesh,cid) : weights;
    double total=0;for(double w:weights)total+=w;
    int rep=0;for(int k=1;k<3;++k)if(weights[k]>weights[rep]+128*std::numeric_limits<double>::epsilon()*total)rep=k;
    a.geometry.representative=rep;
-   for(int k=0;k<3;++k){auto i=a.nodes[k];a.geometry.boxAreas_cm2[k]=weights[k]*units.areaM2PerInternal()*1e4;
+   if(problem.newton.numerics.avalancheCurrent==BvMethodsAvalancheCurrent::GssLaux) {
+    a.geometry.usesGssLaux=true;
+    const auto partial=tri3ElementEdgeBoxPartialVolumes(mesh,c);
+    for(int k=0;k<3;++k)a.geometry.gssEdgePartialVolumes_cm2[k]=partial[k]*units.areaM2PerInternal()*1e4;
+   }
+   for(int k=0;k<3;++k){auto i=a.nodes[k];
+    a.transportAreas_cm2[k]=weights[k]*units.areaM2PerInternal()*1e4;
+    a.geometry.boxAreas_cm2[k]=avalancheWeights[k]*units.areaM2PerInternal()*1e4;
     auto imp=problem.doping.totalImpurity(i);a.bulkN[k]=bulk_->electronMobility(materials_[cid],imp,0,0);a.bulkP[k]=bulk_->holeMobility(materials_[cid],imp,0,0);
    }
    a.distanceGradient=a.shape[1]*(geo_.surface.nodeDistances[a.nodes[1]]-geo_.surface.nodeDistances[a.nodes[0]])+a.shape[2]*(geo_.surface.nodeDistances[a.nodes[2]]-geo_.surface.nodeDistances[a.nodes[0]]);
@@ -397,15 +421,16 @@ public:
     int j=(k+1)%3;if(directPopulationSg_ && a.geometry.nodeOrder[k]>a.geometry.nodeOrder[j])std::swap(k,j);
     auto log=experimental::avLogRatio(population[j],population[k]);
     if(std::abs(log.value)>1e-10)return (eta[j]-eta[k])/log;
-    const auto mid=(eta[j]+eta[k])/AvJet(2);const auto jet=experimental::JoyceDixonStatistics::evaluate(mid.value);
-    AvJet value(std::max(1.,jet.value/jet.first));
-    if(value.value>1.)for(int z=0;z<9;++z)value.derivative[z]=(1-jet.value*jet.second/(jet.first*jet.first))*mid.derivative[z];
+    const auto mid=(eta[j]+eta[k])/AvJet(2);
+    const auto stats=statisticsJet(mid.value);
+    AvJet value(std::max(1.,stats.value/stats.first));
+    if(value.value>1.)for(int z=0;z<9;++z)value.derivative[z]=(1-stats.value*stats.second/(stats.first*stats.first))*mid.derivative[z];
     return value;
    };
    if(generalized)for(int k=0;k<3;++k){gn[k]=einstein(ns,etaN,k);gp[k]=einstein(ps,etaP,k);}
    const auto& coefficients=problem_.mesh.poissonCellEdgeCoefficients(a.id);
    std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
-   auto averagingAreas=a.geometry.boxAreas_cm2;
+   auto averagingAreas=a.transportAreas_cm2;
    if(coefficientAveraging){auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);for(int k=0;k<3;++k)averagingAreas[k]=weights[k]*units.areaM2PerInternal()*1e4;}
    std::array<AvJet,3> an,ap;
    if(directPopulationSg_){
@@ -469,7 +494,7 @@ public:
    if(reuseLombardiPowers)powers.emplace();
    const auto& coefficients=problem_.mesh.poissonCellEdgeCoefficients(a.id);
    const std::array<double,3> edge{coefficients[0],coefficients[1],coefficients[2]};
-   auto areas=a.geometry.boxAreas_cm2;
+   auto areas=a.transportAreas_cm2;
    if(coefficientAveraging) {
     const auto weights=detail::cellBoxNodeMeasures(problem_.mesh,a.id);
     for(int k=0;k<3;++k)areas[k]=weights[k]*units.areaM2PerInternal()*1e4;
@@ -514,7 +539,8 @@ public:
      if(!generalized)continue;
      if(std::abs(logRatio[k])>1e-10)einstein[k]=(eta[j]-eta[k])/logRatio[k];
      else {
-      const auto stats=experimental::JoyceDixonStatistics::evaluate((eta[j]+eta[k])/2.);
+      const double mid=(eta[j]+eta[k])/2.;
+      const auto stats=statisticsJet(mid);
       einstein[k]=std::max(1.,stats.value/stats.first);
      }
     }

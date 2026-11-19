@@ -16,6 +16,38 @@
 
 using namespace vela;
 
+TEST_CASE("Tri3 box measures close at right angles and respect Delaunay admission",
+          "[element_edge_avalanche][tri3_unification]")
+{
+    constexpr Real length = 1e-6;
+    constexpr Real area = length * length / 2;
+    for (Real perturbation : {0.1, 1e-13, 0.0, -1e-13, -0.1}) {
+        DeviceMesh mesh;
+        mesh.addNode({0, 0, 0});
+        mesh.addNode({1, length, 0});
+        mesh.addNode({2, perturbation * length, length});
+        mesh.addCell({0, CellType::Tri3, 0, {0, 1, 2}});
+        mesh.addRegion({0, "silicon", "Si", {0}});
+        BoxGeometryBuilder::Options options;
+        options.poissonPermittivityPolicy = BoxGeometryBuilder::PoissonPermittivityPolicy::CellMaterial;
+        options.cellBoxPolicy = BoxGeometryBuilder::CellBoxPolicy::DelaunayTransfer;
+        mesh.buildEdges();
+        const auto checkArea = [&](const auto& weights) {
+            REQUIRE(std::all_of(weights.begin(), weights.end(), [](Real x) { return x >= 0.0; }));
+            REQUIRE((weights[0] + weights[1] + weights[2]) / area ==
+                    Catch::Approx(1.0).epsilon(1e-13));
+        };
+        checkArea(detail::tri3ElementVertexBoxMeasures(mesh, mesh.getCell(0)));
+        if (perturbation < 0.0) {
+            REQUIRE_THROWS_WITH(mesh.buildBoxGeometry(options),
+                Catch::Matchers::ContainsSubstring("globally non-Delaunay"));
+        } else {
+            mesh.buildBoxGeometry(options);
+            checkArea(detail::conservativeCoefficientBoxMeasures(mesh, 0));
+        }
+    }
+}
+
 namespace {
 
 DeviceMesh makeSingleRightTriangle()

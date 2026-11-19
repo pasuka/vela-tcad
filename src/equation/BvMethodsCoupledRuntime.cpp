@@ -117,11 +117,15 @@ struct BvMethodsCoupledRuntime::Impl {
     mutable VectorXd lastPortValueState;
     mutable BvMethodsTransportPurpose lastPortPurpose=BvMethodsTransportPurpose::other;
     explicit Impl(const CoupledDDAssembler& a)
-    :owner(a),context{a.mesh_,a.matdb_,a.doping_,{a.mobilityConfig_,a.impactIonizationConfig_,{},a.carrierStatisticsModel_}},
+    :owner(a),context{a.mesh_,a.matdb_,a.doping_,{a.mobilityConfig_,a.impactIonizationConfig_,{},a.carrierStatisticsModel_,a.scaling_.bvMethodsNumerics}},
      scale(a.scaling_.enabled?a.scaling_.V0:1.),continuity(a.scaling_.enabled?a.scaling_.C0*a.scaling_.D0:1.) {
         const auto fail=[](const char* s){throw std::invalid_argument(std::string("bvmethods_tri3_qf: ")+s);};
-        if(a.carrierStatisticsModel_!=CarrierStatisticsModel::FermiDiracJoyceDixon)
-            fail("requires explicit fermi_dirac_joyce_dixon statistics");
+        if(!usesFermiDirac(a.carrierStatisticsModel_))
+            fail("requires explicit Fermi statistics");
+        if(a.scaling_.populationSgCurrent=="band_population" &&
+           (a.carrierStatisticsModel_==CarrierStatisticsModel::FermiDirac ||
+            a.scaling_.bvMethodsNumerics.avalancheCurrent==BvMethodsAvalancheCurrent::GssLaux))
+            fail("band_population requires Joyce-Dixon statistics and representative-vertex avalanche current");
         if(std::abs(a.Vt_*constants::q/constants::kb-300.)>1e-8 ||
            a.electronQuantumPotentialConfig_.enabled || a.carrierDiagonalFloor_.enabled)
             fail("requires 300 K classical DD without carrier diagonal floors");
@@ -157,7 +161,7 @@ struct BvMethodsCoupledRuntime::Impl {
            (a.scaling_.populationSgBootstrapFloor_cm3>0. &&
             (!a.usesPopulationState() || a.scaling_.populationSgCurrent!="quasi_fermi")))
             fail("statistical bootstrap requires population quasi_fermi SG and a finite nonnegative floor");
-        auto legacy=a.scaling_;legacy.coupledOperator="legacy";legacy.stateVariables="potential_quasi_fermi";legacy.populationSgCurrent="quasi_fermi";legacy.populationSgBootstrapFloor_cm3=0.;
+        auto legacy=a.scaling_;legacy.coupledOperator="legacy";legacy.bvMethodsNumerics={};legacy.stateVariables="potential_quasi_fermi";legacy.populationSgCurrent="quasi_fermi";legacy.populationSgBootstrapFloor_cm3=0.;
         auto noAv=av;noAv.model="none";
         poisson=std::make_unique<CoupledDDAssembler>(a.mesh_,a.matdb_,a.doping_,a.Vt_,
             a.mobilityConfig_,a.recombinationConfig_,a.bandgapNarrowingConfig_,noAv,
@@ -215,6 +219,7 @@ struct BvMethodsCoupledRuntime::Impl {
     detail::BvMethodsTri3Evaluation assembleTransport(const detail::BvMethodsQfState& state,
         bool jac,bool approximate,const VectorXd* columns,double floor,
         std::string_view stage,detail::BvMethodsRepresentativeMobilities* mobilityValues=nullptr) const {
+        const bool generalized=owner.carrierStatistics_.sgFormulation!=FermiSgFormulation::EffectivePotential;
         const bool supportsScalarValues=element->supportsTransportValues(state);
         const auto mode=jac || !supportsScalarValues
             ? TransportValueMode::dual : transportValueMode();
@@ -229,18 +234,18 @@ struct BvMethodsCoupledRuntime::Impl {
             if(auditCanali)incrementPerformanceCounter("bvmethods.tri3.canali_audit_transport_calls");
             incrementPerformanceCounter("bvmethods.tri3.scalar_value_calls");
             ScopedPerformanceTimer timer(stage);
-            return element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali,valueOnlyCanali?mobilityValues:nullptr);
+            return element->transportValues(state,generalized,true,reusePowers,valueOnlyCanali,auditCanali,valueOnlyCanali?mobilityValues:nullptr);
         }
         auto reference=[&] {
             ScopedPerformanceTimer timer(stage);
             const auto canali=canaliEvaluationOptions();
             if(canali.sharedPower)incrementPerformanceCounter("bvmethods.tri3.canali_shared_transport");
-            return element->transport(state,jac,true,true,approximate,columns,floor,reusePowers,canali);
+            return element->transport(state,jac,generalized,true,approximate,columns,floor,reusePowers,canali);
         }();
         if(mode==TransportValueMode::shadow) {
             incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_checks");
             ScopedPerformanceTimer timer("bvmethods.tri3.scalar_shadow");
-            const auto candidate=element->transportValues(state,true,true,reusePowers,valueOnlyCanali,auditCanali);
+            const auto candidate=element->transportValues(state,generalized,true,reusePowers,valueOnlyCanali,auditCanali);
             if(!equalStateBits(reference.source,candidate.source) ||
                !equalStateBits(reference.absoluteSource,candidate.absoluteSource)) {
                 incrementPerformanceCounter("bvmethods.tri3.scalar_shadow_mismatches");
@@ -360,13 +365,20 @@ struct BvMethodsCoupledRuntime::Impl {
             const double tangentP=columns?(*columns)[2*n+i]:(owner.usesPopulationState() && s.p[i]<std::sqrt(std::numeric_limits<double>::min())?s.p[i]:1.);
             auto population=[&](bool electron){
                 const double v=electron?s.n[i]:s.p[i],dos=electron?owner.Nc_[i]:owner.Nv_[i];
-                AvJet a(v);const double d=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(v,dos)/vt;
+                AvJet a(v);
                 if(owner.usesPopulationState())a.derivative[electron?1:2]=(electron?tangentN:tangentP)/scale;
-                else {a.derivative[0]=electron?d:-d;a.derivative[electron?1:2]=electron?-d:d;}
+                else {const double d=densitySlope(v,dos)/vt;a.derivative[0]=electron?d:-d;a.derivative[electron?1:2]=electron?-d:d;}
                 return a;
             };
             const auto nj=population(true),pj=population(false);
             auto gamma=[&](const AvJet& p,double dos){
+                if(owner.carrierStatisticsModel_==CarrierStatisticsModel::FermiDirac) {
+                    const auto statistics=integralFermiPopulation(p.value,dos);
+                    AvJet g(std::exp(statistics.logGamma));
+                    for(int k=0;k<3;++k)
+                        g.derivative[k]=g.value*statistics.logGammaRatioSlope*(p.derivative[k]/dos);
+                    return g;
+                }
                 if(p.value/dos<std::numeric_limits<double>::min())return AvJet(1.);
                 const double logGamma=experimental::JoyceDixonStatistics::primitiveLogGamma(p.value/dos);
                 AvJet g(std::exp(logGamma));
@@ -409,6 +421,12 @@ struct BvMethodsCoupledRuntime::Impl {
     }
     // Direct fixed-population Poisson assembly. No QF forward reconstruction
     // or subtraction of Debye terms from a QF Jacobian is involved.
+    double densitySlope(double population, double dos) const {
+        return owner.carrierStatisticsModel_ == CarrierStatisticsModel::FermiDirac
+            ? integralFermiPopulation(population,dos).densitySlope
+            : experimental::JoyceDixonStatistics::densitySlopeFromPopulation(population,dos);
+    }
+
     std::pair<VectorXd,SparseMatrixd> populationBase(const VectorXd& x,
         const CoupledDDBoundaryConditions& b,bool derivatives,const VectorXd* columns=nullptr)const {
         const auto s=makeState(x);const int n=active.size();
@@ -441,7 +459,7 @@ struct BvMethodsCoupledRuntime::Impl {
                 r[row]=(block==1?s.phin[i]:s.phip[i])/scale-bc.at(i);
                 if(derivatives) {
                     const double c=block==1?s.n[i]:s.p[i],dos=block==1?owner.Nc_[i]:owner.Nv_[i];
-                    const double slope=experimental::JoyceDixonStatistics::densitySlopeFromPopulation(c,dos);
+                    const double slope=densitySlope(c,dos);
                     entries.emplace_back(row,i,columns?(*columns)[i]:1.);
                     entries.emplace_back(row,row,columns?((block==1?-1.:1.)*((*columns)[row]/slope))*owner.Vt_/scale:(block==1?-1.:1.)*owner.Vt_/slope/scale);
                 }

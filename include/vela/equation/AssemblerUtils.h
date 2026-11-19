@@ -20,6 +20,7 @@
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/discretization/Tri3Operators.h"
+#include "vela/discretization/Tri3CurrentReconstruction.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -2294,21 +2295,29 @@ inline std::array<Real, 3> tri3ElementVertexBoxMeasures(
     return tri3ElementVertexBoxMeasures(tri3ElementEdgeBoxPartialVolumes(mesh, cell));
 }
 
-inline Point2 solveTri3EdgeProjectionPair(
-    const Point2& tangentA,
-    Real          valueA,
-    const Point2& tangentB,
-    Real          valueB)
+// Delaunay transfer can redistribute edge coefficients between cells. Before
+// using their vertex measures for a cell source, close their sum to that cell's
+// geometric area and reject materially negative weights.
+inline std::array<Real, 3> conservativeCoefficientBoxMeasures(
+    const DeviceMesh& mesh, Index cellId)
 {
-    const Real determinant =
-        tangentA.x() * tangentB.y() - tangentA.y() * tangentB.x();
-    if (std::abs(determinant) <= 1.0e-14) {
-        throw std::invalid_argument(
-            "parallel triangle edges cannot reconstruct a current vector");
+    const auto& cell = mesh.getCell(cellId);
+    const Real area = 0.5 * std::abs(triangleSignedDoubleArea(
+        meshPoint(mesh, cell.node_ids[0]), meshPoint(mesh, cell.node_ids[1]),
+        meshPoint(mesh, cell.node_ids[2])));
+    auto weights = cellBoxNodeMeasures(mesh, cellId);
+    Real sum = 0.0;
+    for (Real& weight : weights) {
+        if (!std::isfinite(weight) || weight < -128.0 * std::numeric_limits<Real>::epsilon() * area)
+            throw std::invalid_argument("Avalanche coefficient box requires nonnegative vertex measures");
+        weight = std::max(weight, 0.0);
+        sum += weight;
     }
-    return Point2{
-        (valueA * tangentB.y() - tangentA.y() * valueB) / determinant,
-        (tangentA.x() * valueB - valueA * tangentB.x()) / determinant};
+    if (!(area > 0.0 && sum > 0.0 && std::isfinite(sum)))
+        throw std::invalid_argument("Avalanche coefficient box requires positive cell area and measure");
+    for (Real& weight : weights)
+        weight *= area / sum;
+    return weights;
 }
 
 inline Point2 gssLauxTri3CurrentVector(
@@ -2322,83 +2331,18 @@ inline Point2 gssLauxTri3CurrentVector(
             "element-edge GSS/Laux reconstruction requires a Tri3 cell");
     }
 
-    std::array<Point2, 3> tangents{};
-    std::array<Real, 3> lengths{};
-    for (int localEdge = 0; localEdge < 3; ++localEdge) {
-        const Point2 delta =
-            meshPoint(
-                mesh,
-                cell.node_ids[static_cast<std::size_t>(
-                    (localEdge + 1) % 3)]) -
-            meshPoint(
-                mesh,
-                cell.node_ids[static_cast<std::size_t>(localEdge)]);
-        lengths[static_cast<std::size_t>(localEdge)] = delta.norm();
-        if (lengths[static_cast<std::size_t>(localEdge)] <= 1.0e-30) {
-            throw std::invalid_argument(
-                "degenerate triangle edge cannot reconstruct a current vector");
-        }
-        tangents[static_cast<std::size_t>(localEdge)] =
-            delta / lengths[static_cast<std::size_t>(localEdge)];
+    std::array<std::array<Real, 2>, 3> tangents;
+    std::array<Real, 3> lengths;
+    for (std::size_t edge = 0; edge < tangents.size(); ++edge) {
+        const Point2 delta = meshPoint(mesh, cell.node_ids[(edge + 1) % 3]) -
+            meshPoint(mesh, cell.node_ids[edge]);
+        lengths[edge] = delta.norm();
+        if (lengths[edge] <= 1e-30)
+            throw std::invalid_argument("degenerate triangle edge cannot reconstruct a current vector");
+        tangents[edge] = {delta.x() / lengths[edge], delta.y() / lengths[edge]};
     }
-
-    const std::array<Point2, 3> pairVectors = {
-        solveTri3EdgeProjectionPair(
-            tangents[0], signedEdgeCurrent[0],
-            tangents[1], signedEdgeCurrent[1]),
-        solveTri3EdgeProjectionPair(
-            tangents[0], signedEdgeCurrent[0],
-            tangents[2], signedEdgeCurrent[2]),
-        solveTri3EdgeProjectionPair(
-            tangents[1], signedEdgeCurrent[1],
-            tangents[2], signedEdgeCurrent[2])};
-    const auto pairIndex = [](int first, int second) {
-        const int low = std::min(first, second);
-        const int high = std::max(first, second);
-        return low == 0 ? high - 1 : 2;
-    };
-
-    std::array<Point2, 3> edgeVectors{};
-    for (int target = 0; target < 3; ++target) {
-        std::array<int, 2> others{};
-        int next = 0;
-        for (int candidate = 0; candidate < 3; ++candidate) {
-            if (candidate != target)
-                others[static_cast<std::size_t>(next++)] = candidate;
-        }
-        const int first = others[0];
-        const int second = others[1];
-        const Real firstWeight =
-            2.0 * partialVolumes[static_cast<std::size_t>(first)] /
-            lengths[static_cast<std::size_t>(first)];
-        const Real secondWeight =
-            2.0 * partialVolumes[static_cast<std::size_t>(second)] /
-            lengths[static_cast<std::size_t>(second)];
-        const Point2& firstPair =
-            pairVectors[static_cast<std::size_t>(pairIndex(target, first))];
-        const Point2& secondPair =
-            pairVectors[static_cast<std::size_t>(pairIndex(target, second))];
-        const Real weightSum = firstWeight + secondWeight;
-        if (weightSum > 0.0) {
-            edgeVectors[static_cast<std::size_t>(target)] =
-                (firstWeight * firstPair + secondWeight * secondPair) /
-                weightSum;
-        } else {
-            edgeVectors[static_cast<std::size_t>(target)] =
-                0.5 * (firstPair + secondPair);
-        }
-    }
-
-    const Real totalVolume =
-        partialVolumes[0] + partialVolumes[1] + partialVolumes[2];
-    if (totalVolume <= 1.0e-300) {
-        throw std::invalid_argument(
-            "triangle has no positive box partial volume");
-    }
-    return (
-        partialVolumes[0] * edgeVectors[0] +
-        partialVolumes[1] * edgeVectors[1] +
-        partialVolumes[2] * edgeVectors[2]) / totalVolume;
+    const auto current = gssLauxCurrent(tangents, lengths, partialVolumes, signedEdgeCurrent);
+    return {current[0], current[1]};
 }
 
 inline Point2 gssLauxTri3CurrentVector(

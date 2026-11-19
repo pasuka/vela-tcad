@@ -3,6 +3,7 @@
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/discretization/ScharfetterGummel.h"
+#include "vela/physics/experimental/BvMethodsAvValues.h"
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
@@ -333,10 +334,90 @@ TEST_CASE("BVMethods profile preserves equilibrium currents and rejects unsuppor
     using namespace vela;ProfileFixture f;auto a=f.assembler();auto x=f.point();x.segment(6,12).setZero();
     const auto rows=a->carrierContinuityEquationTermDiagnostics(x,{});
     for(int i=0;i<4;++i){REQUIRE(rows[i].electronFlux==0.);REQUIRE(rows[i].holeFlux==0.);REQUIRE(rows[i].electronImpact==0.);REQUIRE(rows[i].electronRecombination==0.);}
-    f.statistics.model="fermi_dirac";auto unsupported=f.assembler();REQUIRE_THROWS_AS(unsupported->residual(x,{}),std::invalid_argument);
+    f.statistics.model="boltzmann";auto unsupported=f.assembler();REQUIRE_THROWS_AS(unsupported->residual(x,{}),std::invalid_argument);
     f.statistics.model="fermi_dirac_joyce_dixon";f.mobility.dopingConcentrationBasis="net_doping";unsupported=f.assembler();REQUIRE_THROWS_AS(unsupported->residual(x,{}),std::invalid_argument);
     const auto legacy=newtonConfigFromJson(nlohmann::json::object());REQUIRE(legacy.coupledOperator=="legacy");
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{{"coupled_operator","unknown"}}),std::invalid_argument);
+}
+
+TEST_CASE("Integral Fermi BVMethods closes equilibrium and differentiates fixed states",
+          "[bvmethods_profile][tri3_unification]")
+{
+    using namespace vela;
+    ProfileFixture fixture;
+    fixture.statistics.model = "fermi_dirac";
+    for (auto sg : {FermiSgFormulation::GeneralizedEinstein, FermiSgFormulation::EffectivePotential}) {
+        fixture.statistics.sgFormulation = sg;
+        fixture.scaling.stateVariables = "potential_quasi_fermi";
+        auto qf = fixture.assembler();
+        const auto nonzero = fixture.point();
+        VectorXd equilibrium = nonzero;
+        equilibrium.tail(12).setZero();
+        for (const auto& row : qf->carrierContinuityEquationTermDiagnostics(equilibrium, {})) {
+            REQUIRE(row.electronFlux == 0.0);
+            REQUIRE(row.holeFlux == 0.0);
+            REQUIRE(row.electronImpact == 0.0);
+        }
+        const VectorXd n = qf->electronDensity(nonzero), p = qf->holeDensity(nonzero);
+        for (bool population : {false, true}) {
+            fixture.scaling.stateVariables = population ? "potential_density" : "potential_quasi_fermi";
+            auto assembler = fixture.assembler();
+            VectorXd state = nonzero;
+            VectorXd direction = VectorXd::LinSpaced(18, -.11, .17);
+            if (population) {
+                state.segment(6, 6) = n;
+                state.tail(6) = p;
+                direction.tail(12).array() *= state.tail(12).array();
+            }
+            const VectorXd rhs = assembler->residual(state, {});
+            REQUIRE(rhs.allFinite());
+            const VectorXd derivative = assembler->assembleJacobian(state, {}) * direction;
+            constexpr Real step = 1e-7;
+            const VectorXd finiteDifference = (assembler->residual(state + step * direction, {}) -
+                assembler->residual(state - step * direction, {})) / (2 * step);
+            for (int block = 0; block < 3; ++block) {
+                const auto exact = derivative.segment(6 * block, 6);
+                const auto finite = finiteDifference.segment(6 * block, 6);
+                REQUIRE((exact - finite).norm() <= 2e-6 * std::max(exact.norm(), finite.norm()));
+            }
+        }
+    }
+}
+
+TEST_CASE("BVMethods GSS Laux preserves affine current and scalar avalanche tangents",
+          "[bvmethods_profile][tri3_unification]")
+{
+    const std::array<AvJet, 3> density{AvJet(2e16), AvJet(2e16), AvJet(2e16)};
+    const std::array<double, 3> values{2e16, 2e16, 2e16}, tangent{1., 1., 1.};
+    const std::array<double, 3> qf{0., .1, -.3};
+    std::array<AvJet, 3> q;
+    for (int i = 0; i < 3; ++i)
+        q[i] = AvJet::variable(qf[i], i);
+    AvTri3Geometry geometry;
+    geometry.points_cm = {{{0., 0.}, {2e-4, 0.}, {.4e-4, 1e-4}}};
+    geometry.gssEdgePartialVolumes_cm2 = {1e-9, 2e-9, 7e-9};
+    geometry.usesGssLaux = true;
+    for (bool electron : {false, true}) {
+        const auto dual = avParticleCurrentWithoutMobility(geometry, density, q, .025, electron);
+        const auto scalar = avParticleCurrentValues(geometry, values, qf, tangent, .025, electron);
+        geometry.usesGssLaux = false;
+        const auto representative = avParticleCurrentWithoutMobility(geometry, density, q, .025, electron);
+        geometry.usesGssLaux = true;
+        for (int i = 0; i < 2; ++i) {
+            REQUIRE(dual[i].value == scalar[i]);
+            REQUIRE(dual[i].value == Approx(representative[i].value).epsilon(1e-13));
+            REQUIRE(std::abs(dual[i].derivative[0] + dual[i].derivative[1] + dual[i].derivative[2])
+                    <= 1e-14 * std::abs(dual[i].derivative[0]));
+        }
+    }
+    const AvCoefficient coefficient{4e5, 1e6, 7e5, 2e6, 4e5, false};
+    for (double field : {3.9e5, 4e5, 4.1e5}) {
+        const auto value = avCoefficient(AvJet::variable(field, 0), coefficient);
+        const bool low = field < coefficient.switchField;
+        const double critical = low ? coefficient.lowB : coefficient.highB;
+        REQUIRE(value.value == avCoefficientValue(field, coefficient));
+        REQUIRE(value.derivative[0] == Approx(value.value * critical / (field * field)).epsilon(1e-13));
+    }
 }
 
 TEST_CASE("BVMethods reports the active mobility precision", "[bvmethods_profile]") {
@@ -1348,8 +1429,6 @@ TEST_CASE("Canali shared power preserves value and both branch-local tangents", 
     p.beta=1.;
     REQUIRE_THROWS_AS(evaluateElementCanaliSharedPower(.1,cutoff,p,cutoff),std::invalid_argument);
 }
-
-#include "vela/physics/experimental/BvMethodsAvValues.h"
 
 TEST_CASE("Scalar AV reproduces dual current, source and zero diagnostics",
           "[av_contract][av_scalar]")

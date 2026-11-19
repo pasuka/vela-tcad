@@ -248,6 +248,35 @@ difference crossing that point cannot establish the local derivative of an
 arbitrarily small nonzero native current. Native zero-state bitwise agreement
 is a separate qualification from autonomous nonlinear convergence.
 
+## Independent numerical controls
+
+The BVMethods sidecar accepts `bvmethods_statistics: "fermi_dirac"` to select
+integral Fermi statistics throughout the coupled operator. In the resulting
+simulation JSON the selector is `solver.carrier_statistics.model`. Explicit
+`sg_formulation: "effective_potential"` is a separate integral-Fermi transport
+control. The default remains Joyce-Dixon with generalized Einstein SG.
+The experimental `band_population` flux requires Joyce-Dixon statistics and the
+representative-vertex current reconstruction.
+
+`solver.bvmethods_numerics` accepts these independent changes to avalanche:
+
+- `avalanche_weights: "coefficient_box"` integrates the source with the
+  coefficient-derived box fractions, normalized to the area of each cell.
+  The control rejects materially negative weights and retains the original
+  representative vertex and transport geometry.
+- `avalanche_current: "gss_laux"` reconstructs the current from the three SG
+  edges using the same GSS/Laux reconstruction as the standard operator.
+- `avalanche_switch: "sharp"` selects the low and high coefficient branches
+  at the prescribed switching field directly. At the switching field the
+  reported tangent is the active high-field branch derivative.
+
+The full BV runner accepts `--numerical-control` for each control separately,
+after validating the locked baseline inputs. It runs the same acceptance
+checks. The `vela_tri3_box_audit` target exports per-cell edge coefficients and
+the two forms of vertex box weighting from an imported mesh JSON. Its default
+input uses the micrometre coordinates emitted by the DF-ISE importer. Pass a
+simulation JSON as the third argument to use its unit and mesh policies.
+
 ## Qualified configuration boundary
 
 Version 1 requires classical 300 K silicon Tri3 DD, cell-material Poisson

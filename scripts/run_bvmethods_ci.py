@@ -158,7 +158,17 @@ def qualify(run, published):
                 continuity_report_failures=sum(not d['global_continuity_satisfied'] for d in checks))
 
 
-def run_case(output, launcher):
+NUMERICAL_CONTROLS = {
+    'coefficient-box': {'solver': {'bvmethods_numerics': {'avalanche_weights': 'coefficient_box'}}},
+    'integral-statistics': {'bvmethods_statistics': 'fermi_dirac'},
+    'effective-sg': {'bvmethods_statistics': 'fermi_dirac',
+                     'solver': {'carrier_statistics': {'sg_formulation': 'effective_potential'}}},
+    'gss-laux': {'solver': {'bvmethods_numerics': {'avalanche_current': 'gss_laux'}}},
+    'sharp-switch': {'solver': {'bvmethods_numerics': {'avalanche_switch': 'sharp'}}},
+}
+
+
+def run_case(output, launcher, numerical_control=None):
     library = os.environ.get('VELA_MKL_RT_LIBRARY') or os.environ.get('VELA_MKL_RT_DLL')
     if not library or not Path(library).is_absolute() or not Path(library).is_file():
         raise ValueError('Set VELA_MKL_RT_LIBRARY to the absolute path of the installed oneMKL runtime')
@@ -168,6 +178,14 @@ def run_case(output, launcher):
         work = Path(folder)
         for source in inputs.iterdir():
             shutil.copyfile(source, work / source.name)
+        if numerical_control:
+            sidecar = work / 'pp5_des.vela.json'
+            data = read_json(sidecar)
+            overrides = NUMERICAL_CONTROLS[numerical_control]
+            data.setdefault('solver', {}).update(overrides.get('solver', {}))
+            if 'bvmethods_statistics' in overrides:
+                data['bvmethods_statistics'] = overrides['bvmethods_statistics']
+            write_json(sidecar, data)
         run = work / 'pp5_des_vela'
         env = dict(os.environ, VELA_PYTHON=sys.executable, VELA_BIN=str(launcher.parent),
                    VELA_LINEAR_SOLVER='pardiso_mkl', VELA_LINEAR_THREADS='1', MKL_NUM_THREADS='1',
@@ -197,6 +215,7 @@ def main():
     parser.add_argument('action', choices=('stage', 'run'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--launcher', type=Path)
+    parser.add_argument('--numerical-control', choices=NUMERICAL_CONTROLS)
     parser.add_argument('--tdx', help='TDX executable name or path')
     parser.add_argument('--tdr', type=Path)
     args = parser.parse_args()
@@ -208,7 +227,7 @@ def main():
     else:
         if args.launcher is None:
             parser.error('--launcher is required for run')
-        run_case(args.output.resolve(), args.launcher.resolve())
+        run_case(args.output.resolve(), args.launcher.resolve(), args.numerical_control)
 
 
 if __name__ == '__main__':
