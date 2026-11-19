@@ -9,6 +9,9 @@ _temporary = None
 
 
 def resource_root() -> Path:
+    package_assets = Path(__file__).resolve().parent / "_assets"
+    if (package_assets / "version.json").is_file():
+        return package_assets
     root = Path(__file__).resolve().parents[2]
     if (root / "schemas").is_dir():
         return root

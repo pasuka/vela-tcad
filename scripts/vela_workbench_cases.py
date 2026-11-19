@@ -60,19 +60,26 @@ def read_cases(directory):
     return {key: Case(source=directory / key, **value) for key, value in manifest.items()}
 
 
-def run_case(launcher, case, directory):
-    """Use the frozen regression arguments, leaving published artifacts in place."""
+def verify_inputs(case, directory):
     for name, checksum in case.hashes.items():
-        copy = directory / name
-        shutil.copyfile(case.source / name, copy)
-        if _hash(copy) != checksum:
+        if _hash(directory / name) != checksum:
             raise ValueError(f"Input checksum mismatch: {name}")
+
+
+def run_case(launcher, case, directory, *, log_level="debug"):
+    """Use the frozen regression arguments, leaving published artifacts in place."""
+    for name in case.hashes:
+        shutil.copyfile(case.source / name, directory / name)
+    verify_inputs(case, directory)
 
     env = dict(os.environ, VELA_LINEAR_SOLVER=case.linear_solver, VELA_LINEAR_THREADS="1")
     if case.linear_solver == "pardiso_mkl":
         env.update(MKL_THREADING_LAYER="SEQUENTIAL", MKL_NUM_THREADS="1", OMP_NUM_THREADS="1")
         env.pop("MKL_CBWR", None)
-    command = [str(launcher), *case.arguments]
+    command = [str(launcher)]
+    if log_level != "debug":
+        command.extend(("--log-level", log_level))
+    command.extend(case.arguments)
     with (directory / "sd-sim.log").open("wb") as log:
         log.write((subprocess.list2cmdline(command) + "\n\n").encode("utf-8"))
         log.flush()
@@ -82,6 +89,10 @@ def run_case(launcher, case, directory):
         )
     if result.returncode:
         return ("Solver exited (code {})", result.returncode)
+    return read_run_status(case, directory)
+
+
+def read_run_status(case, directory):
     work = directory / case.work
     manifest = json.loads((work / "run_manifest.json").read_text(encoding="utf-8"))
     plan = json.loads((work / "stage_plan.json").read_text(encoding="utf-8"))

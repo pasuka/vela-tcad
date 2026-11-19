@@ -5,7 +5,8 @@
 //
 // The child runs in the same working directory with the same standard
 // handles; every argument is forwarded unchanged and the child's exit code is
-// returned as is.  <bin> is <exe dir>/bin when that holds vela_sdevice.pyz,
+// returned as is.  SDS also supports a standalone frontend beside the solver
+// executables. <bin> is <exe dir>/bin when that holds the frontend,
 // otherwise the launcher's own directory.  Environment overrides:
 //   VELA_SDEVICE_PYZ  path of the orchestrator zipapp
 //   VELA_PYTHON       interpreter (path or bare command name)
@@ -212,6 +213,7 @@ fs::path executablePath(const NativeChar* argv0)
 struct Layout {
     fs::path exeDir;
     fs::path binDir;
+    fs::path frontend;
     fs::path pyz;  // empty when not found
     std::vector<fs::path> searched;
 };
@@ -232,6 +234,16 @@ Layout discoverLayout(const fs::path& exePath)
         }
         return layout;
     }
+#ifdef _WIN32
+    for (const auto& bin : {nestedBin, layout.exeDir}) {
+        const auto candidate = bin / L"frontend" / L"vela-sdevice.exe";
+        if (isRegularFile(candidate)) {
+            layout.frontend = candidate;
+            layout.binDir = bin;
+            return layout;
+        }
+    }
+#endif
     for (const fs::path& candidate : {nestedBin / VELA_T("vela_sdevice.pyz"),
                                       layout.exeDir / VELA_T("vela_sdevice.pyz")}) {
         layout.searched.push_back(candidate);
@@ -342,10 +354,10 @@ std::optional<Interpreter> resolveInterpreter(const Layout& layout)
     return std::nullopt;
 }
 
-void prepareChildEnvironment(const Layout& layout, const Interpreter& interpreter)
+void prepareChildEnvironment(const Layout& layout, bool isolated)
 {
     setEnv(VELA_T("PYTHONNOUSERSITE"), VELA_T("1"));
-    if (interpreter.bundled) {
+    if (isolated) {
         // Keep a relocated/read-only package immutable across concurrent runs.
         setEnv(VELA_T("PYTHONDONTWRITEBYTECODE"), VELA_T("1"));
         unsetEnv(VELA_T("PYTHONPATH"));
@@ -474,6 +486,21 @@ int launcherMain(int argc, NativeChar** argv)
 #endif
 
     const Layout layout = discoverLayout(executablePath(argv[0]));
+    std::vector<NativeString> arguments;
+    arguments.reserve(static_cast<std::size_t>(argc) + 1);
+#ifdef VELA_DIRECT_DEVICE_CLI
+    arguments.emplace_back(VELA_T("sd-sim"));
+#endif
+    for (int i = 1; i < argc; ++i) {
+        arguments.emplace_back(argv[i]);
+    }
+    if (!layout.frontend.empty()) {
+        prepareChildEnvironment(layout, true);
+        if (!getEnv(VELA_T("VELA_BIN"))) {
+            setEnv(VELA_T("VELA_BIN"), layout.binDir.native());
+        }
+        return runChild(layout.frontend, arguments);
+    }
     if (layout.pyz.empty()) {
         std::string message = "vela: E202 vela_sdevice.pyz not found; searched:";
         for (const fs::path& candidate : layout.searched) {
@@ -494,17 +521,8 @@ int launcherMain(int argc, NativeChar** argv)
         printErr("vela: using Python from PATH (" + toUtf8(interpreter->path) + ")\n");
     }
 
-    prepareChildEnvironment(layout, *interpreter);
-
-    std::vector<NativeString> arguments;
-    arguments.reserve(static_cast<std::size_t>(argc));
-    arguments.push_back(layout.pyz.native());
-#ifdef VELA_DIRECT_DEVICE_CLI
-    arguments.emplace_back(VELA_T("sd-sim"));
-#endif
-    for (int i = 1; i < argc; ++i) {
-        arguments.emplace_back(argv[i]);
-    }
+    prepareChildEnvironment(layout, interpreter->bundled);
+    arguments.insert(arguments.begin(), layout.pyz.native());
     return runChild(interpreter->path, arguments);
 }
 

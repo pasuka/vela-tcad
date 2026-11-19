@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 from collections import deque
 from hashlib import file_digest
-from importlib import metadata
+import io
 import json
 import os
 from pathlib import Path
@@ -16,52 +16,78 @@ import sysconfig
 import tempfile
 import zipfile
 
-from packaging.requirements import Requirement
 from vela_workbench_cases import prepare_cases
 
 
 SCRIPTS = Path(__file__).resolve().parent
-EXCLUDED = shutil.ignore_patterns("__pycache__", "*.pyc")
+SOURCE_FILES = {".py", ".pyc", ".pyo", ".pyw", ".pyz"}
+ARCHIVE_FILES = {".zip", ".whl", ".egg"}
 MKL_COMPONENTS = ("rt", "sequential", "core", "def", "avx2", "avx512", "avx10", "mc3")
 
 
-def copy_python(target, prefix):
-    stdlib = Path(sysconfig.get_path("stdlib"))
-    site = Path(sysconfig.get_path("purelib"))
-    versioned_lib = target / stdlib.relative_to(prefix)
-    shutil.copytree(stdlib, versioned_lib, ignore=shutil.ignore_patterns(
-        "__pycache__", "*.pyc", "site-packages", "test", "tests", "ensurepip", "idlelib", "config-*",
-    ))
-    bundled_site = target / site.relative_to(prefix)
-    bundled_site.mkdir()
-    packages = set()
-    pending = ["matplotlib"]
-    while pending:
-        package = metadata.distribution(pending.pop())
-        name = package.metadata["Name"]
-        if name in packages:
-            continue
-        packages.add(name)
-        for entry in package.files:
-            path = Path(package.locate_file(entry)).resolve()
-            if not path.is_relative_to(site) or not path.is_file() or path.suffix == ".pyc":
-                continue
-            to = bundled_site / path.relative_to(site)
-            to.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, to)
-        for declaration in package.requires or ():
-            requirement = Requirement(declaration)
-            if not requirement.marker or requirement.marker.evaluate({"extra": ""}):
-                pending.append(requirement.name)
+def compile_frontends(python, source_archive, package, scratch):
+    compile_dir = scratch / "nuitka"
+    compile_dir.mkdir()
+    entry = compile_dir / "vela_sdevice_entry.py"
+    entry.write_text("from vela_sdevice.__main__ import main\nraise SystemExit(main())\n", encoding="utf-8")
+    with zipfile.ZipFile(source_archive) as archive:
+        for name in archive.namelist():
+            if name.startswith("vela_sdevice/_assets/"):
+                archive.extract(name, compile_dir)
 
-    binaries = target / "bin"
-    binaries.mkdir()
-    for name in ("python.exe", "pythonw.exe"):
-        shutil.copy2(prefix / "bin" / name, binaries / name)
-    for module in sorted((prefix / "lib").iterdir()):
-        if module.is_dir() and re.fullmatch(r"(tcl|tk)\d+(\.\d+)?", module.name):
-            shutil.copytree(module, target / "lib" / module.name, ignore=EXCLUDED)
-    return sorted(packages)
+    env = dict(os.environ, PYTHONPATH=str(SCRIPTS))
+    env.pop("PYTHONHOME", None)
+    common = [python, "-m", "nuitka", "--mode=standalone", "--zig",
+              "--assume-yes-for-downloads", f"--jobs={min(os.cpu_count() or 1, 4)}",
+              f"--output-dir={compile_dir}"]
+    builds = (
+        (SCRIPTS / "vela_workbench.py", "SDS-GUI.exe", package / "app", [
+            "--enable-plugin=tk-inter",
+            "--nofollow-import-to=vela_workbench_catalog", "--windows-console-mode=disable",
+        ]),
+        (entry, "vela-sdevice.exe", package / "vela/bin/frontend", [
+            f"--include-data-dir={compile_dir / 'vela_sdevice/_assets'}=vela_sdevice/_assets",
+        ]),
+    )
+    for source, name, target, options in builds:
+        subprocess.run([*common, f"--output-filename={name}", *options, source],
+                       cwd=compile_dir, env=env, check=True)
+        distribution = compile_dir / (source.stem + ".dist")
+        if not (distribution / name).is_file():
+            raise FileNotFoundError(distribution / name)
+        shutil.copytree(distribution, target)
+
+
+def copy_python_licenses(python, destination):
+    paths = subprocess.check_output([
+        python, "-c", "import json, sys, sysconfig; "
+        "print(json.dumps([sys.base_prefix, sysconfig.get_path('purelib')]))",
+    ], text=True)
+    prefix, site = map(Path, json.loads(paths))
+    shutil.copy2(prefix / "LICENSE.txt", destination / "CPython.txt")
+    for metadata in site.glob("*.dist-info"):
+        target = destination / metadata.stem
+        for path in metadata.rglob("*"):
+            name = path.name.lower()
+            if path.is_file() and (name.startswith(("license", "copying", "notice"))
+                                   or "licenses" in path.relative_to(metadata).parts):
+                output = target / path.relative_to(metadata)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, output)
+
+
+def check_archive(archive, prefix=""):
+    for entry in archive.infolist():
+        if entry.is_dir():
+            continue
+        suffix = Path(entry.filename).suffix.lower()
+        if suffix in SOURCE_FILES:
+            raise ValueError(f"Python code in release archive: {prefix}{entry.filename}")
+        with archive.open(entry) as stream:
+            signature = stream.read(4)
+        if suffix in ARCHIVE_FILES or signature in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08"):
+            with zipfile.ZipFile(io.BytesIO(archive.read(entry))) as nested:
+                check_archive(nested, f"{prefix}{entry.filename}!")
 
 
 def copy_pe_imports(paths, destination, search, objdump):
@@ -87,17 +113,10 @@ def copy_pe_imports(paths, destination, search, objdump):
             binaries.append(output)
 
 
-def copy_dll_dependencies(package, prefix):
-    # Python extension imports need their DLLs beside the interpreter,
-    # regardless of the Windows DLL search policy for the solver.
-    objdump = prefix / "bin" / "objdump.exe"
-    python = package / "python"
-    python_bin = python / "bin"
-    vela_bin = package / "vela" / "bin"
-    extensions = (path for path in python.rglob("*") if path.suffix.lower() in {".exe", ".dll", ".pyd"})
-    copy_pe_imports(extensions, python_bin, (prefix / "bin", vela_bin), objdump)
-    engines = (path for path in vela_bin.iterdir() if path.suffix.lower() in {".exe", ".dll"})
-    copy_pe_imports(engines, vela_bin, (prefix / "bin", python_bin), objdump)
+def copy_dll_dependencies(runtime, prefix):
+    binaries = runtime / "bin"
+    engines = (path for path in binaries.iterdir() if path.suffix.lower() in {".exe", ".dll"})
+    copy_pe_imports(engines, binaries, (prefix / "bin",), prefix / "bin/objdump.exe")
 
 
 def stage_build_runtime(build, runtime):
@@ -109,7 +128,6 @@ def stage_build_runtime(build, runtime):
                  "vela_example_runner_extended80", "sentaurus_import"):
         shutil.copy2(build / f"{name}.exe", binaries / f"{name}.exe")
     shutil.copy2(binaries / "sd-sim.exe", runtime / "sd-sim.exe")
-    shutil.copy2(build / "bin/vela_sdevice.pyz", binaries)
     share = runtime / "share/vela"
     for source in (repo / "schemas", repo / "configs/schema"):
         target = share / "schemas"
@@ -121,16 +139,19 @@ def stage_build_runtime(build, runtime):
     shutil.copy2(repo / "LICENSE", runtime)
 
 
-def build_package(args, package):
+def build_package(args, package, scratch):
     prefix = Path(sys.base_prefix).resolve()
     runtime = package / "vela"
     if args.build_dir:
         stage_build_runtime(args.build_dir, runtime)
+        source_archive = args.build_dir / "bin/vela_sdevice.pyz"
     else:
-        shutil.copytree(args.runtime, runtime, ignore=shutil.ignore_patterns("python", "__pycache__"))
-    required = [runtime / "sd-sim.exe", runtime / "bin/vela_example_runner.exe",
-                runtime / "bin/sentaurus_import.exe", runtime / "bin/vela_sdevice.pyz"]
-    for path in required:
+        shutil.copytree(args.runtime, runtime, ignore=shutil.ignore_patterns(
+            "python", "__pycache__", "vela_sdevice.pyz",
+        ))
+        source_archive = args.runtime / "bin/vela_sdevice.pyz"
+    for path in (runtime / "sd-sim.exe", runtime / "bin/vela_example_runner.exe",
+                 runtime / "bin/sentaurus_import.exe", source_archive):
         if not path.is_file():
             raise FileNotFoundError(f"Missing SDevice runtime file: {path}")
     for component in MKL_COMPONENTS:
@@ -139,24 +160,17 @@ def build_package(args, package):
     mkl_licenses = args.mkl / "share/doc/mkl/licensing"
     shutil.copytree(mkl_licenses, package / "licenses/oneMKL")
 
-    packages = copy_python(package / "python", prefix)
-    app = package / "app"
-    app.mkdir()
-    for name in ("vela_workbench.py", "vela_workbench_cases.py", "vela_workbench_results.py",
-                 "vela_workbench_text.py"):
-        shutil.copy2(SCRIPTS / name, app / name)
-    with zipfile.ZipFile(runtime / "bin/vela_sdevice.pyz") as frontend:
-        frontend.extractall(app)
+    compile_frontends(args.nuitka_python, source_archive, package, scratch)
     prepare_cases(package / "cases")
     subprocess.run([prefix / "bin/g++.exe", "-std=c++20", "-O2", "-static", "-mwindows",
                     "-municode", SCRIPTS / "vela_workbench_launcher.cpp", "-o", package / "SDS.exe"],
                    check=True)
-    copy_dll_dependencies(package, prefix)
-    licensed = ["python", "tcl", "tk", *[f"python-{name.lower()}" for name in packages]]
-    for name in licensed:
-        directory = prefix / "share/licenses" / name
-        if directory.is_dir():
-            shutil.copytree(directory, package / "licenses" / name)
+    copy_dll_dependencies(runtime, prefix)
+    copy_python_licenses(args.nuitka_python, package / "licenses")
+    env = dict(os.environ)
+    # Verify that a runtime supplied via --runtime uses the compiled frontend.
+    env.pop("VELA_SDEVICE_PYZ", None)
+    subprocess.run([runtime / "sd-sim.exe", "--version"], cwd=package, env=env, check=True)
     (package / "README.txt").write_text(
         "Semiconductor Device Simulator\n\n"
         "Extract the entire ZIP, then double-click SDS.exe. The application uses the bundled\n"
@@ -167,7 +181,7 @@ def build_package(args, package):
     with (runtime / "sd-sim.exe").open("rb") as stream:
         solver_digest = file_digest(stream, "sha256").hexdigest()
     (package / "PACKAGE.json").write_text(json.dumps(
-        {"python": sys.version.split()[0], "packages": packages, "mkl": "2026.1",
+        {"frontend": "Nuitka standalone", "mkl": "2026.1",
          "sd_sim_sha256": solver_digest,
          "case_count": len(json.loads((package / "cases/cases.json").read_text(encoding="utf-8")))},
         indent=2,
@@ -180,8 +194,14 @@ def main():
     source.add_argument("--runtime", type=Path, help="SDeviceRuntime install directory")
     source.add_argument("--build-dir", type=Path, help="Completed MSYS2 UCRT64 Release build directory")
     parser.add_argument("--mkl", type=Path, required=True, help="oneMKL 2026.1 installation root")
+    parser.add_argument("--nuitka-python", type=Path, required=True,
+                        help="Windows x64 CPython 3.12 with Nuitka and Matplotlib installed")
     parser.add_argument("--output", type=Path, required=True, help="New directory for SDS and its ZIP")
     args = parser.parse_args()
+    for name in ("build_dir", "runtime", "mkl", "nuitka_python"):
+        value = getattr(args, name)
+        if value:
+            setattr(args, name, value.resolve())
     output = args.output.resolve()
     if output.exists():
         parser.error(f"Output directory already exists: {output}")
@@ -190,12 +210,14 @@ def main():
         staging = Path(directory) / "release"
         package = staging / "SDS"
         package.mkdir(parents=True)
-        build_package(args, package)
+        build_package(args, package, Path(directory))
         with zipfile.ZipFile(staging / "SDS-windows-x64.zip", "w", zipfile.ZIP_DEFLATED,
                              compresslevel=3) as archive:
             for path in sorted(package.rglob("*")):
                 if path.is_file():
                     archive.write(path, path.relative_to(staging))
+        with zipfile.ZipFile(staging / "SDS-windows-x64.zip") as archive:
+            check_archive(archive)
         staging.rename(output)
     print(output / "SDS-windows-x64.zip")
 

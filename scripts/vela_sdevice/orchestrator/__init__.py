@@ -17,6 +17,7 @@ import time
 from ..cmd_parser import parse_cmd_file
 from ..deck_emit import DeckEmitError, EmitOptions, bind_current_start, emit_stage_plan, rebase_stage, write_stage_plan
 from ..materials import MaterialsError, active_models_from_ir, emit_materials, write_materials
+from ..log_levels import log_enabled
 from ..mesh_import import MeshImportError, import_grid, check_electrodes
 from ..resources import resource_root
 from .. import schema_validator as sv
@@ -79,7 +80,7 @@ class DeviceRun:
             "stages": [], "outputs": [], "decisions": [], "sidecar_overrides": [], "exit_code": None}
 
     def log(self, level, text):
-        if self.stream:
+        if self.stream and log_enabled(self.options.log_level, level, text):
             self.stream.write(f"[{level}] {text}\n")
             self.stream.flush()
 
@@ -115,7 +116,8 @@ class DeviceRun:
             self.log("HEADER", json.dumps({**self.manifest["version"], "cmd": str(self.cmd),
                 "sha256": self.manifest["sha256"], "time": time.time(), "host": socket.gethostname(), "pid": os.getpid()}))
             self.log("CMD", "Command file echo begins")
-            self.stream.write(self.cmd.read_text(encoding="utf-8-sig", errors="replace") + "\n")
+            if log_enabled(self.options.log_level, "CMD"):
+                self.stream.write(self.cmd.read_text(encoding="utf-8-sig", errors="replace") + "\n")
             self.log("CMD", "Command file echo ends")
             if self.lock.stale:
                 owner = self.lock.previous

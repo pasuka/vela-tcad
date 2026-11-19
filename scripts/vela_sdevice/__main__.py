@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import shutil
 import sys
+from .log_levels import FILE_LOG_LEVELS
 from .materials import default_models_par_path
 from .orchestrator import DeviceRun, version_info
 from .orchestrator.support import RunError
@@ -99,6 +100,8 @@ def main(argv=None):
     device.add_argument("--exit-on-failure", action="store_true")
     device.add_argument("--threads", type=int)
     device.add_argument("--verbose", action="store_true")
+    device.add_argument("--log-level", choices=FILE_LOG_LEVELS, default="debug",
+                        help="Minimum severity in the SDevice output log (default: debug)")
     device.add_argument("--allow-lossy", action="store_true")
     device.add_argument("--physical-constants-profile", choices=("codata2018", "sentaurus_u2022_12"),
                         help="must match the solver build; defaults to sentaurus_u2022_12; codata2018 remains an explicit rollback")

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from vela_sdevice.orchestrator.outputs import accepted_records, vtu_metadata
+from vela_sdevice.output_metadata import accepted_records, vtu_metadata
 from vela_sdevice.plt import read_plt_document
 
 
