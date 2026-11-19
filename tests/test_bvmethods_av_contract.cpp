@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/PerformanceProfiler.h"
+#include "vela/discretization/ScharfetterGummel.h"
 #include "vela/physics/experimental/BvMethodsTri3Avalanche.h"
 #include "vela/physics/experimental/BvMethodsTri3Transport.h"
 #include "vela/physics/experimental/BvMethodsPrimitiveState.h"
@@ -1280,6 +1281,44 @@ TEST_CASE("Scalar Tri3 transport retains SG value branches and depleted quotient
                 for(std::size_t k=0;k<3;++k) {
                     REQUIRE(scalar.edges[k]==reference.edgeFlux_per_cm_s[k].value);
                     REQUIRE(scalar.nodes[k]==reference.nodeFlux_per_cm_s[k].value);
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("Tri3 and effective-potential SG agree for matched transport coefficients",
+          "[bvmethods_profile][av_contract]")
+{
+    const std::array<double, 3> areas{1.0, 2.0, 1.0};
+    const std::array<double, 3> mobility{100.0, 200.0, 300.0};
+    const std::array<double, 3> edges{0.25, 0.5, 0.75};
+    const std::array<double, 3> density{2e15, 4e15, 3e15};
+    const std::array<double, 3> einstein{1.0, 1.0, 1.0};
+    constexpr double vt = 0.025852;
+    constexpr double meanMobility = 200.0;
+    constexpr auto formulation = vela::FermiSgFormulation::EffectivePotential;
+    std::array<double, 3> logs;
+    for (std::size_t i = 0; i < logs.size(); ++i)
+        logs[i] = std::log(density[(i + 1) % 3] / density[i]);
+
+    for (double drive : {0.0, 1e-14, 2.0}) {
+        const std::array<double, 3> qf{0.0, drive, -drive};
+        for (bool electron : {true, false}) {
+            const auto flux = evaluateBvMethodsTri3TransportValues(
+                areas, edges, density, qf, mobility, vt, electron, einstein, logs);
+            for (std::size_t i = 0; i < edges.size(); ++i) {
+                const auto j = (i + 1) % 3;
+                const double coefficient = edges[i] * meanMobility * vt;
+                const double expected = electron
+                    ? vela::sgElectronFermiDiracContinuityFlux(density[i], density[j],
+                        0.0, 0.0, 0.0, qf[i], qf[j], vt, coefficient, formulation)
+                    : vela::sgHoleFermiDiracContinuityFlux(density[i], density[j],
+                        0.0, 0.0, 0.0, qf[i], qf[j], vt, coefficient, formulation);
+                if (drive == 0.0) {
+                    REQUIRE(flux.edges[i] == 0.0);
+                } else {
+                    REQUIRE(flux.edges[i] == Approx(expected).epsilon(2e-13));
                 }
             }
         }

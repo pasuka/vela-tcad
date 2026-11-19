@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/ArithmeticPrecision.h"
+#include "vela/discretization/SgFluxArithmetic.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include <array>
 #include <cmath>
@@ -83,12 +84,8 @@ inline AvJet avBernoulli(const AvJet& x)
 inline AvJet avSgFlux(const AvJet& coefficient,const AvJet& from,const AvJet& to,
                      const AvJet& delta,const AvJet& argument)
 {
-    // B(-a)=exp(a)B(a), a=log(to/from)+delta. The two Bernoulli
-    // terms cannot nearly cancel for |delta|>50, and avoid both an
-    // overflowing expm1(delta) and loss of the tiny endpoint derivative.
-    if(std::abs(delta.value)>50.)
-        return coefficient*(from*avBernoulli(-argument)-to*avBernoulli(argument));
-    return coefficient*to*avBernoulli(argument)*detail::dualExpm1(delta);
+    return detail::sgBalancedEdgeFlux(coefficient, from, to, delta,
+        delta.value, argument, avBernoulli, detail::dualExpm1);
 }
 
 struct AvCoefficient {

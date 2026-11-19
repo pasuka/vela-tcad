@@ -46,6 +46,12 @@ AV/AD range fallbacks preserve finite representable directions. See the
 The BVMethods [state/statistics/SG contract](bvmethods_operator_contract.md) is opt-in;
 the default and PN2D operators retain their existing paths.
 
+BVMethods and the standard assemblers share the projected Tri3 gradient,
+vertex-box mobility averaging, and oriented Scharfetter-Gummel flux arithmetic.
+The scalar and local AD paths share the Tri3 SG branch selection in both
+continuity and avalanche current reconstruction. The BVMethods profile supplies
+its Joyce-Dixon statistics, box measures, and avalanche source weights.
+
 The BVMethods convergence callback requests one stateless physical evaluation
 for its constrained residual, constrained carrier ledger and unconstrained
 closure ledger. Boundary equations remain distinct. Element Lombardi prepares

@@ -60,9 +60,8 @@ inline std::array<double,2> avParticleCurrentValues(
         const double delta=(sign/thermalVoltage)*(qf[i]-qf[r]);
         const double argument=populationTransportLogRatio(density[i],density[r],tangent[i],tangent[r])+delta;
         const double coefficient=-sign*thermalVoltage/length;
-        j[edge]=std::abs(delta)>50.
-            ? coefficient*(density[r]*tri3BernoulliValue(-argument)-density[i]*tri3BernoulliValue(argument))
-            : coefficient*density[i]*tri3BernoulliValue(argument)*std::expm1(delta);
+        j[edge] = detail::sgBalancedEdgeFlux(coefficient, density[r], density[i],
+            delta, delta, argument, tri3BernoulliValue, [](double x) { return std::expm1(x); });
         ++edge;
     }
     const double determinant=t[0][0]*t[1][1]-t[0][1]*t[1][0];

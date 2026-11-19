@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/discretization/Tri3Operators.h"
 #include "vela/physics/experimental/BvMethodsPopulationSg.h"
 
 namespace vela::experimental {
@@ -27,17 +28,13 @@ inline Tri3TransportResult evaluateBvMethodsTri3Transport(
 {
     if(!(thermalVoltage_V>0.))throw std::invalid_argument("Transport requires positive thermal voltage");
     Tri3TransportResult out;
-    double area=0.;
-    for(std::size_t k=0;k<3;++k){
+    for (std::size_t k = 0; k < 3; ++k) {
         if(!(vertexAreas_cm2[k]>=0.))throw std::invalid_argument("Negative transport averaging area");
         if(!(density_cm3[k].value>0.) || !(vertexMobility_cm2_V_s[k].value>=0.))
             throw std::domain_error("Invalid transport density or mobility");
-        area+=vertexAreas_cm2[k];
-        out.elementMobility_cm2_V_s=out.elementMobility_cm2_V_s
-            +AvJet(vertexAreas_cm2[k])*vertexMobility_cm2_V_s[k];
     }
-    if(!(area>0.))throw std::invalid_argument("Transport requires positive averaging area");
-    out.elementMobility_cm2_V_s=out.elementMobility_cm2_V_s/AvJet(area);
+    out.elementMobility_cm2_V_s = detail::tri3VertexAverage<AvJet>(
+        vertexAreas_cm2, [&](std::size_t vertex) { return vertexMobility_cm2_V_s[vertex]; });
     for(std::size_t k=0;k<3;++k){
         if(!(edgeCoefficients[k]>=0.) || !(einsteinFactor[k].value>0.))
             throw std::invalid_argument("Invalid transport coefficient or Einstein factor");
@@ -111,16 +108,13 @@ inline Tri3TransportValues evaluateBvMethodsTri3TransportValues(
     const std::array<double,3>& einstein,const std::array<double,3>& logRatio)
 {
     if(!(thermalVoltage>0.))throw std::invalid_argument("Transport requires positive thermal voltage");
-    double area=0.,average=0.;
-    for(std::size_t k=0;k<3;++k) {
+    for (std::size_t k = 0; k < 3; ++k) {
         if(!(areas[k]>=0.))throw std::invalid_argument("Negative transport averaging area");
         if(!(density[k]>0.) || !(mobility[k]>=0.))
             throw std::domain_error("Invalid transport density or mobility");
-        area+=areas[k];
-        average=average+areas[k]*mobility[k];
     }
-    if(!(area>0.))throw std::invalid_argument("Transport requires positive averaging area");
-    average=average/area;
+    const double average = detail::tri3VertexAverage<double>(
+        areas, [&](std::size_t vertex) { return mobility[vertex]; });
     Tri3TransportValues out;
     for(std::size_t k=0;k<3;++k) {
         if(!(edgeCoefficients[k]>=0.) || !(einstein[k]>0.))
@@ -130,9 +124,8 @@ inline Tri3TransportValues evaluateBvMethodsTri3TransportValues(
         const double coefficient=edgeCoefficients[k]*average*thermal;
         const double delta=(electron?1.:-1.)*(qf[j]-qf[k])/thermal;
         const double argument=logRatio[k]+delta;
-        const double flux=std::abs(delta)>50.
-            ? coefficient*(density[k]*tri3BernoulliValue(-argument)-density[j]*tri3BernoulliValue(argument))
-            : coefficient*density[j]*tri3BernoulliValue(argument)*std::expm1(delta);
+        const double flux = detail::sgBalancedEdgeFlux(coefficient, density[k], density[j],
+            delta, delta, argument, tri3BernoulliValue, [](double x) { return std::expm1(x); });
         out.edges[k]=flux;
         out.nodes[k]=out.nodes[k]+flux;
         out.nodes[j]=out.nodes[j]-flux;

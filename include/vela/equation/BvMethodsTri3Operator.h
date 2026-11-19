@@ -210,8 +210,9 @@ public:
     const auto& cell=geo_.highFieldCells[a.id];
     const auto& s=cell.stencil;
     for(double v:s)safe=safe&&std::abs(v)<=1e30;
-    auto field=[&](const auto& z) {
-     return std::hypot((z[1]-z[0])*s[0]+(z[2]-z[0])*s[2],(z[1]-z[0])*s[1]+(z[2]-z[0])*s[3]);
+    const auto field = [&](const auto& values) {
+     const auto [gx, gy] = tri3Gradient(values, s);
+     return std::hypot(gx, gy);
     };
     const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
     const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)
@@ -277,9 +278,9 @@ public:
      fn[k].derivative[3+k]=-(dc*node.tangentN)/dn;fp[k].derivative[6+k]=(dc*node.tangentP)/dp;
     }
    }
-   const auto& s=geo_.highFieldCells[a.id].stencil;
-   auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
-   const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
+   const auto& fieldCell = geo_.highFieldCells[a.id];
+   const auto en = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fn, fieldCell.stencil));
+   const auto hp = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fp, fieldCell.stencil));
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    auto mobility=[&](bool e,const AvJet& drive){
@@ -358,9 +359,9 @@ public:
      fn[k].derivative[3+k]=-(dc*node.tangentN)/dn;fp[k].derivative[6+k]=(dc*node.tangentP)/dp;
     }
    }
-   const auto& s=geo_.highFieldCells[a.id].stencil;
-   auto field=[&](const std::array<AvJet,3>& z){return experimental::avNorm({(z[1]-z[0])*AvJet(s[0])+(z[2]-z[0])*AvJet(s[2]),(z[1]-z[0])*AvJet(s[1])+(z[2]-z[0])*AvJet(s[3])});};
-   const auto en=field(geo_.highFieldCells[a.id].contact?psi:fn),hp=field(geo_.highFieldCells[a.id].contact?psi:fp);
+   const auto& fieldCell = geo_.highFieldCells[a.id];
+   const auto en = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fn, fieldCell.stencil));
+   const auto hp = experimental::avNorm(tri3Gradient(fieldCell.contact ? psi : fp, fieldCell.stencil));
    const auto rawNormal=(psi[1]-psi[0])*AvJet(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)+(psi[2]-psi[0])*AvJet(a.shape[2].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor);
    const auto normal=detail::dualAbs(rawNormal);int rep=a.geometry.representative;auto node=a.nodes[rep];
    std::optional<LombardiCellPowers> powers;
@@ -456,8 +457,9 @@ public:
    }
    const auto& cell=geo_.highFieldCells[a.id];
    const auto& s=cell.stencil;
-   auto field=[&](const std::array<double,3>& z) {
-    return std::hypot((z[1]-z[0])*s[0]+(z[2]-z[0])*s[2],(z[1]-z[0])*s[1]+(z[2]-z[0])*s[3]);
+   const auto field = [&](const auto& values) {
+    const auto [gx, gy] = tri3Gradient(values, s);
+    return std::hypot(gx, gy);
    };
    const double en=field(cell.contact?psi:fn),hp=field(cell.contact?psi:fp);
    const double rawNormal=(psi[1]-psi[0])*(a.shape[1].dot(a.distanceGradient)*cfg_.surface.coordinateFieldFactor)

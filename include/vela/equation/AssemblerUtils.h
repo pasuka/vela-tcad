@@ -19,6 +19,7 @@
 #include "vela/equation/PoissonChargeVolume.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
+#include "vela/discretization/Tri3Operators.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -1379,7 +1380,7 @@ inline ElementHighFieldDrive elementHighFieldDrive(const MobilityModelConfig& co
     if(!g.contact && (!qf || qf->size()!=psi.size()))throw std::invalid_argument("Element HFS requires live physical quasi-Fermi potentials");
     const auto& z=g.contact?psi:*qf;auto i=cell.node_ids[0],j=cell.node_ids[1],k=cell.node_ids[2];
     const auto& s=g.stencil;
-    const Real gx=(z(j)-z(i))*s[0]+(z(k)-z(i))*s[2],gy=(z(j)-z(i))*s[1]+(z(k)-z(i))*s[3];
+    const auto [gx, gy] = tri3Gradient(std::array<Real, 3>{z(i), z(j), z(k)}, s);
     ElementHighFieldDrive out;out.contact=g.contact;out.field=std::hypot(gx,gy);
     if(out.field>=100./config.internalFieldToVPerM) {
         out.derivative[1]=(gx*s[0]+gy*s[1])/out.field;
@@ -1700,8 +1701,7 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
         populations->electrons->size()!=mesh.numNodes() || populations->holes->size()!=mesh.numNodes()))
         throw std::invalid_argument("element_box_phumob requires complete live nodal electron and hole densities.");
     const auto measures=cellBoxNodeMeasures(mesh,cid);const auto& cell=mesh.getCell(cid);
-    vela::ArithmeticReal sum=0,volume=0;
-    for(std::size_t k=0;k<3;++k) {
+    return static_cast<Real>(tri3VertexAverage<ArithmeticReal, ArithmeticReal>(measures, [&](std::size_t k) {
         const Index node=cell.node_ids[k];
         const Real impurity=doping.totalImpurity(node);
         Real mu=phumob
@@ -1722,10 +1722,8 @@ inline Real elementBoxCellMobility(const DeviceMesh& mesh,const DopingModel& dop
             const auto drive=elementHighFieldDrive(*config,mesh,cid,*psi,carrier==CarrierType::Electron?populations->phin:populations->phip);
             mu=evaluateElementCanali(mu,drive.field,carrier==CarrierType::Electron?config->electronField:config->holeField,100./config->internalFieldToVPerM).mobility;
         }
-        sum+=(vela::ArithmeticReal)measures[k]*mu;volume+=measures[k];
-    }
-    if(!(volume>0)) throw std::invalid_argument("Element box mobility requires positive sum of vertex measures.");
-    return static_cast<Real>(sum/volume);
+        return mu;
+    }));
 }
 
 inline Real elementBoxEdgeMobility(const std::vector<std::vector<Index>>& edgeCells,
@@ -1899,28 +1897,28 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             if (edgeWeight == 0.0)
                 continue;
             const auto measures = boxMasetti ? cellBoxNodeMeasures(mesh, c) : std::array<Real, 3>{1.0, 1.0, 1.0};
-            const Real volume = measures[0] + measures[1] + measures[2];
-            if (cell.node_ids.size() != measures.size() || !(volume > 0.0))
-                throw std::invalid_argument("Vertex Masetti requires a Tri3 cell with positive averaging measure.");
-            Real cellMobility = 0.0;
-            for (std::size_t k = 0; k < measures.size(); ++k) {
+            if (cell.node_ids.size() != measures.size())
+                throw std::invalid_argument("Vertex Masetti requires a Tri3 cell with three vertices.");
+            const auto evaluateVertex = [&](std::size_t k) {
                 const Real impurity = nodeMobilityDopingConcentration(mesh, doping, cell.node_ids[k], c, mobilityConfig);
-                const Real vertexMobility = carrier == CarrierType::Electron
+                return carrier == CarrierType::Electron
                     ? mobility.electronMobility(material, impurity, 0.0, 0.0,
                         electricField, surfaceNormalField, surfaceDistance)
                     : mobility.holeMobility(material, impurity, 0.0, 0.0,
                         electricField, surfaceNormalField, surfaceDistance);
-                if (boxMasetti)
-                    cellMobility += measures[k] * vertexMobility;
-                else if (vertexMobility > 0.0) {
-                    // Same order as the cached scalar kernel and field derivative.
-                    sum += vertexMobility;
-                    ++contributingCells;
-                }
-            }
+            };
             if (boxMasetti) {
-                sum += edgeWeight * (cellMobility / volume);
+                sum += edgeWeight * tri3VertexAverage<Real>(measures, evaluateVertex);
                 boxWeight += edgeWeight;
+            } else {
+                for (std::size_t k = 0; k < measures.size(); ++k) {
+                    const Real vertexMobility = evaluateVertex(k);
+                    if (vertexMobility > 0.0) {
+                        // Same order as the cached scalar kernel and field derivative.
+                        sum += vertexMobility;
+                        ++contributingCells;
+                    }
+                }
             }
             continue;
         }

@@ -1,6 +1,7 @@
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/SgFluxArithmetic.h"
 #include "vela/physics/CarrierStatistics.h"
 
 #include <algorithm>
@@ -122,13 +123,13 @@ SGEdgeWeights sgEdgeWeights(Real dpsi, Real Vt)
 Real sgElectronContinuityFlux(Real n0, Real n1, Real dpsi, Real Vt, Real coef)
 {
     const SGEdgeWeights w = sgEdgeWeights(dpsi, Vt);
-    return coef * (w.b_minus * n0 - w.b_plus * n1);
+    return detail::sgWeightedPopulationDifference(coef, n0, n1, w.b_minus, w.b_plus);
 }
 
 Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef)
 {
     const SGEdgeWeights w = sgEdgeWeights(dpsi, Vt);
-    return coef * (w.b_plus * p0 - w.b_minus * p1);
+    return detail::sgWeightedPopulationDifference(coef, p0, p1, w.b_plus, w.b_minus);
 }
 
 vela::ArithmeticReal sgPopulationLogRatio(Real numerator, Real denominator)
@@ -674,8 +675,10 @@ vela::ArithmeticReal effectivePotentialFermiFluxExtended(
         return VELA_ARITHMETIC_LITERAL(0.0);
     const auto argument = std::log(static_cast<vela::ArithmeticReal>(right))
         - std::log(static_cast<vela::ArithmeticReal>(left)) + reducedDrop;
-    return static_cast<vela::ArithmeticReal>(coef) * longDoubleBernoulli(argument)
-        * static_cast<vela::ArithmeticReal>(right) * std::expm1(reducedDrop);
+    return detail::sgFactorizedPopulationDifference(
+        static_cast<ArithmeticReal>(coef) * longDoubleBernoulli(argument) *
+            static_cast<ArithmeticReal>(right),
+        reducedDrop, [](ArithmeticReal x) { return std::expm1(x); });
 }
 
 } // namespace
@@ -697,8 +700,8 @@ Real sgElectronFermiDiracContinuityFlux(
         n1, argument, logLeftOverRight, coef * factor);
     if (std::isfinite(stable))
         return stable;
-    return coef * factor *
-        (bernoulli(-argument) * n0 - bernoulli(argument) * n1);
+    return detail::sgWeightedPopulationDifference(
+        coef * factor, n0, n1, bernoulli(-argument), bernoulli(argument));
 }
 
 Real sgElectronFermiDiracQuantumContinuityFlux(
@@ -722,9 +725,8 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
         qmDensity1, argument, logLeftOverRight, coef * factor);
     if (std::isfinite(stable))
         return stable;
-    return coef * factor * (
-        bernoulli(-argument) * qmDensity0 -
-        bernoulli(argument) * qmDensity1);
+    return detail::sgWeightedPopulationDifference(
+        coef * factor, qmDensity0, qmDensity1, bernoulli(-argument), bernoulli(argument));
 }
 
 Real sgHoleFermiDiracContinuityFlux(
@@ -744,8 +746,8 @@ Real sgHoleFermiDiracContinuityFlux(
         p1, -argument, logLeftOverRight, coef * factor);
     if (std::isfinite(stable))
         return stable;
-    return coef * factor *
-        (bernoulli(argument) * p0 - bernoulli(-argument) * p1);
+    return detail::sgWeightedPopulationDifference(
+        coef * factor, p0, p1, bernoulli(argument), bernoulli(-argument));
 }
 
 vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
@@ -767,10 +769,10 @@ vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
         (thermalVoltage * factor);
     const vela::ArithmeticReal logarithmicLeftOverRight =
         quasiFermiDrop / (thermalVoltage * factor);
-    return static_cast<vela::ArithmeticReal>(coef) * factor *
-        longDoubleBernoulli(argument) *
-        static_cast<vela::ArithmeticReal>(qmDensity1) *
-        std::expm1(logarithmicLeftOverRight);
+    return detail::sgFactorizedPopulationDifference(
+        static_cast<ArithmeticReal>(coef) * factor * longDoubleBernoulli(argument) *
+            static_cast<ArithmeticReal>(qmDensity1),
+        logarithmicLeftOverRight, [](ArithmeticReal x) { return std::expm1(x); });
 }
 
 vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
@@ -790,10 +792,10 @@ vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
         (thermalVoltage * factor);
     const vela::ArithmeticReal logarithmicLeftOverRight =
         -quasiFermiDrop / (thermalVoltage * factor);
-    return static_cast<vela::ArithmeticReal>(coef) * factor *
-        longDoubleBernoulli(-argument) *
-        static_cast<vela::ArithmeticReal>(p1) *
-        std::expm1(logarithmicLeftOverRight);
+    return detail::sgFactorizedPopulationDifference(
+        static_cast<ArithmeticReal>(coef) * factor * longDoubleBernoulli(-argument) *
+            static_cast<ArithmeticReal>(p1),
+        logarithmicLeftOverRight, [](ArithmeticReal x) { return std::expm1(x); });
 }
 
 double sgElectronFlux(double n0, double n1, double dpsi, double Vt,

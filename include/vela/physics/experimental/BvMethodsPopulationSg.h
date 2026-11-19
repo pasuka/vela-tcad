@@ -55,7 +55,7 @@ inline AvJet populationSgFlux(const AvJet& coefficient,const AvJet& from,
                               const AvJet& to,const AvJet& argument)
 {
     const auto b=populationBernoulliPair(argument);
-    return coefficient*(from*b[1]-to*b[0]);
+    return detail::sgWeightedPopulationDifference(coefficient, from, to, b[1], b[0]);
 }
 
 inline std::array<AvJet,2> populationAvCurrent(const AvTri3Geometry& g,
