@@ -657,16 +657,39 @@ Real stableGeneralizedFermiDifference(Real rightDensity,
     return signedSaturatedExp(logMagnitude, sign);
 }
 
+// Fold the Fermi density correction into the Bernoulli argument while
+// preserving the quasi-Fermi driving drop and exact zero at equilibrium.
+Real effectivePotentialFermiFlux(Real left, Real right, Real reducedDrop, Real coef)
+{
+    if (!(left > 0.0) || !(right > 0.0))
+        return 0.0;
+    return stableGeneralizedFermiDifference(
+        right, std::log(right) - std::log(left) + reducedDrop, reducedDrop, coef);
+}
+
+vela::ArithmeticReal effectivePotentialFermiFluxExtended(
+    Real left, Real right, vela::ArithmeticReal reducedDrop, Real coef)
+{
+    if (!(left > 0.0) || !(right > 0.0))
+        return VELA_ARITHMETIC_LITERAL(0.0);
+    const auto argument = std::log(static_cast<vela::ArithmeticReal>(right))
+        - std::log(static_cast<vela::ArithmeticReal>(left)) + reducedDrop;
+    return static_cast<vela::ArithmeticReal>(coef) * longDoubleBernoulli(argument)
+        * static_cast<vela::ArithmeticReal>(right) * std::expm1(reducedDrop);
+}
+
 } // namespace
 
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, FermiSgFormulation formulation)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (formulation == FermiSgFormulation::EffectivePotential)
+        return effectivePotentialFermiFlux(n0, n1, (quasiFermi1 - quasiFermi0) / Vt, coef);
     const Real factor = sgGeneralizedEinsteinFactor(n0, n1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
     const Real logLeftOverRight = (quasiFermi1 - quasiFermi0) / (Vt * factor);
@@ -682,12 +705,14 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
     Real qmDensity0, Real qmDensity1,
     Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, FermiSgFormulation formulation)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (formulation == FermiSgFormulation::EffectivePotential)
+        return effectivePotentialFermiFlux(qmDensity0, qmDensity1, (quasiFermi1 - quasiFermi0) / Vt, coef);
     const Real factor = sgGeneralizedEinsteinFactor(
         fermiDensity0, fermiDensity1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
@@ -704,12 +729,14 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
 
 Real sgHoleFermiDiracContinuityFlux(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef)
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef, FermiSgFormulation formulation)
 {
     if (quasiFermi0 == quasiFermi1)
         return 0.0;
     if (!(Vt > 0.0))
         return 0.0;
+    if (formulation == FermiSgFormulation::EffectivePotential)
+        return effectivePotentialFermiFlux(p0, p1, (quasiFermi0 - quasiFermi1) / Vt, coef);
     const Real factor = sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1);
     const Real argument = driftPotential / (Vt * factor);
     const Real logLeftOverRight = -(quasiFermi1 - quasiFermi0) / (Vt * factor);
@@ -722,14 +749,16 @@ Real sgHoleFermiDiracContinuityFlux(
 }
 
 vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
-    Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
+    Real qmDensity0, Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef)
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef, FermiSgFormulation formulation)
 {
     if (!(qmDensity1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
         quasiFermiDrop == VELA_ARITHMETIC_LITERAL(0.0)) {
         return VELA_ARITHMETIC_LITERAL(0.0);
     }
+    if (formulation == FermiSgFormulation::EffectivePotential)
+        return effectivePotentialFermiFluxExtended(qmDensity0, qmDensity1, quasiFermiDrop / static_cast<vela::ArithmeticReal>(Vt), coef);
     const vela::ArithmeticReal factor = static_cast<vela::ArithmeticReal>(
         sgGeneralizedEinsteinFactor(
             fermiDensity0, fermiDensity1, eta0, eta1));
@@ -746,12 +775,14 @@ vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
 
 vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef)
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef, FermiSgFormulation formulation)
 {
     if (!(p1 > 0.0) || !(Vt > 0.0) || coef == 0.0 ||
         quasiFermiDrop == VELA_ARITHMETIC_LITERAL(0.0)) {
         return VELA_ARITHMETIC_LITERAL(0.0);
     }
+    if (formulation == FermiSgFormulation::EffectivePotential)
+        return effectivePotentialFermiFluxExtended(p0, p1, -quasiFermiDrop / static_cast<vela::ArithmeticReal>(Vt), coef);
     const vela::ArithmeticReal factor = static_cast<vela::ArithmeticReal>(
         sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1));
     const vela::ArithmeticReal thermalVoltage = static_cast<vela::ArithmeticReal>(Vt);

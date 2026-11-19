@@ -36,14 +36,29 @@
       "type": "object",
       "description": "Merged into deck.solver. Physics model selections are rejected: the emitter owns mobility/recombination/impact_ionization/bandgap_narrowing/carrier_statistics model choices.",
       "additionalProperties": true,
+      "properties": {
+        "mobility": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "edge_averaging": {"enum": ["legacy", "element_box_masetti"]},
+            "jacobian_field_derivatives": {"type": "boolean"}
+          }
+        },
+        "carrier_statistics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sg_formulation": {"enum": ["generalized_einstein", "effective_potential"]}
+          }
+        }
+      },
       "not": {
         "anyOf": [
-          {"required": ["mobility"]},
           {"required": ["recombination"]},
           {"required": ["impact_ionization"]},
           {"required": ["band_to_band"]},
           {"required": ["bandgap_narrowing"]},
-          {"required": ["carrier_statistics"]},
           {"required": ["electron_quantum_potential"]},
           {"required": ["temperature_K"]}
         ]

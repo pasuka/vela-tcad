@@ -518,3 +518,34 @@ TEST_CASE("Generalized excess combines exponential range without clipping the mo
         }
     }
 }
+
+TEST_CASE("Effective-potential Fermi SG preserves equilibrium and edge orientation",
+          "[carrier_statistics][sg]")
+{
+    constexpr Real vt = 0.02585;
+    constexpr Real left = 4e21;
+    constexpr Real right = 9e24;
+    constexpr Real phi = 0.003;
+    constexpr auto effective = FermiSgFormulation::EffectivePotential;
+    auto electron = [=](Real n0, Real n1, Real phi0, Real phi1) {
+        return sgElectronFermiDiracContinuityFlux(
+            n0, n1, -4.0, 3.0, 0.2, phi0, phi1, vt, 1.0, effective);
+    };
+    auto hole = [=](Real p0, Real p1, Real phi0, Real phi1) {
+        return sgHoleFermiDiracContinuityFlux(
+            p0, p1, -4.0, 3.0, 0.2, phi0, phi1, vt, 1.0, effective);
+    };
+    auto bernoulliReference = [](Real x) { return x / std::expm1(x); };
+    const Real argument = std::log(right / left) + phi / vt;
+    const Real reference = bernoulliReference(-argument) * left - bernoulliReference(argument) * right;
+    const Real flux = electron(left, right, 0.0, phi);
+    REQUIRE(electron(left, right, phi, phi) == 0.0);
+    REQUIRE(hole(left, right, phi, phi) == 0.0);
+    REQUIRE(flux == Approx(reference).epsilon(1e-12));
+    REQUIRE(electron(right, left, phi, 0.0) == Approx(-flux).epsilon(1e-12));
+    REQUIRE(hole(left, right, phi, 0.0) == Approx(flux).epsilon(1e-12));
+    const Real tiny = electron(left, right, 0.0, 1e-20);
+    REQUIRE(tiny > 0.0);
+    REQUIRE(tiny == Approx(bernoulliReference(std::log(right / left)) * right * 1e-20 / vt)
+                       .epsilon(1e-12));
+}

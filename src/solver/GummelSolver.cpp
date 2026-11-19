@@ -124,6 +124,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.temperature_K = json.value("temperature_K", cfg.temperature_K);
     if (json.contains("carrier_statistics")) {
         const auto& statistics = json.at("carrier_statistics");
+        if (statistics.is_object() &&
+            statistics.value("sg_formulation", "generalized_einstein") != "generalized_einstein")
+            throw std::invalid_argument("Gummel supports only the default SG formulation.");
         if (statistics.is_string())
             cfg.carrierStatistics.model = statistics.get<std::string>();
         else if (statistics.is_object())

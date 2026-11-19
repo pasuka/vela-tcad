@@ -361,3 +361,37 @@ TEST_CASE("Independent SRH area preserves Poisson and uses one residual Jacobian
     REQUIRE_THROWS(CoupledDDAssembler(mesh,db,doping,constants::Vt_300,cfg,rec,{}, {},{}, {},invalid));
     REQUIRE_THROWS(newtonConfigFromJson(nlohmann::json{{"region_resolved_interface_assembly",{{"srh_signed_transport_volume_fraction",1.01}}}}));
 }
+
+TEST_CASE("Element Masetti averages vertex mobility over the cell box",
+          "[element_box_transport]")
+{
+    auto mesh = surfaceMesh();
+    MaterialDatabase database;
+    const auto materials = detail::buildCellMaterials(mesh, database, 300.0);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    DopingModel doping(mesh.numNodes());
+    for (Index node = 0; node < mesh.numNodes(); ++node)
+        doping.setNodeDoping(node, node == 2 ? 8e24 : 1e22, 0.0);
+    const auto config = mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field_lombardi"}, {"edge_averaging", "element_box_masetti"},
+        {"doping_concentration_basis", "total_impurity"}});
+    detail::validateElementBoxMobilityContext(mesh, config, scaling().regionResolvedInterfaceAssembly);
+    const auto mobility = makeMobilityModel(config);
+    for (Index edge = 0; edge < mesh.numEdges(); ++edge) {
+        const auto& ends = mesh.getEdge(edge);
+        if (ends.n0 != 0 || ends.n1 != 1)
+            continue;
+        const auto measures = detail::cellBoxNodeMeasures(mesh, 0);
+        const Real absent = std::numeric_limits<Real>::quiet_NaN();
+        const Real low = mobility->electronMobility(materials[0], 1e22, 0., 0., 0., absent, absent);
+        const Real high = mobility->electronMobility(materials[0], 8e24, 0., 0., 0., absent, absent);
+        const Real expected = ((measures[0] + measures[1]) * low + measures[2] * high) /
+                              (measures[0] + measures[1] + measures[2]);
+        REQUIRE(detail::edgeMobility(edgeCells, mesh, doping, *mobility, materials,
+                    edge, CarrierType::Electron, 0.0, &config) ==
+                Catch::Approx(expected).epsilon(1e-13));
+        REQUIRE(expected < low);
+        return;
+    }
+    FAIL("Expected the Si/oxide interface edge");
+}

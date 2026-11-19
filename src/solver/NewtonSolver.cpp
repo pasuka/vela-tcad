@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <optional>
@@ -1840,9 +1841,14 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         const auto& statistics = json.at("carrier_statistics");
         if (statistics.is_string())
             cfg.carrierStatistics.model = statistics.get<std::string>();
-        else if (statistics.is_object())
+        else if (statistics.is_object()) {
             cfg.carrierStatistics.model = statistics.value("model", cfg.carrierStatistics.model);
-        else
+            const auto formulation = statistics.value("sg_formulation", "generalized_einstein");
+            if (formulation == "effective_potential")
+                cfg.carrierStatistics.sgFormulation = FermiSgFormulation::EffectivePotential;
+            else if (formulation != "generalized_einstein")
+                throw std::invalid_argument("Unknown carrier_statistics.sg_formulation: " + formulation);
+        } else
             throw std::invalid_argument(
                 "newtonConfigFromJson: carrier_statistics must be a string or object.");
     }
@@ -6669,14 +6675,47 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
 
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+
+    // A nearby ohmic contact across an insulator does not set the carrier
+    // reference for this semiconductor. In particular, the polysilicon
+    // gate must not seed a 1 V electron quasi-Fermi potential in the channel.
+    std::vector<std::vector<Index>> adjacency(N);
+    const auto& edgeCells = detail::buildEdgeCellMap(mesh_);
+    for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
+        const auto& cells = edgeCells[edgeId];
+        const bool conducts = std::any_of(cells.begin(), cells.end(), [&](Index cellId) {
+            const auto& region = mesh_.getRegion(mesh_.getCell(cellId).region_id);
+            return detail::isTransportMaterial(matdb_.getMaterial(region.material, cfg_.temperature_K));
+        });
+        if (conducts) {
+            const auto& edge = mesh_.getEdge(edgeId);
+            adjacency[edge.n0].push_back(edge.n1);
+            adjacency[edge.n1].push_back(edge.n0);
+        }
+    }
+    const auto noComponent = static_cast<Index>(N);
+    std::vector<Index> component(N, noComponent);
+    for (Index root = 0; root < noComponent; ++root) {
+        if (component[root] != noComponent || adjacency[root].empty())
+            continue;
+        std::vector<Index> pending{root};
+        component[root] = root;
+        for (std::size_t i = 0; i < pending.size(); ++i) {
+            for (Index neighbor : adjacency[pending[i]]) {
+                if (component[neighbor] == noComponent) {
+                    component[neighbor] = root;
+                    pending.push_back(neighbor);
+                }
+            }
+        }
+    }
     struct ContactAnchor {
         Real x = 0.0;
         Real y = 0.0;
         Real bias = 0.0;
         Real meanNetDoping = 0.0;
     };
-    std::vector<ContactAnchor> electronAnchors;
-    std::vector<ContactAnchor> holeAnchors;
+    std::vector<std::vector<ContactAnchor>> componentAnchors(N);
     for (const Contact& contact : mesh_.contacts()) {
         const auto biasIt = contactBiases_.find(contact.name);
         if (biasIt == contactBiases_.end() || contact.node_ids.empty())
@@ -6686,32 +6725,45 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
             specIt->second.type == ContactType::MetalGate) {
             continue;
         }
-        ContactAnchor anchor;
+        std::map<Index, std::pair<ContactAnchor, std::size_t>> anchors;
         for (Index node : contact.node_ids) {
+            if (component[node] == noComponent)
+                continue;
+            auto& [anchor, count] = anchors[component[node]];
             const Node& geometry = mesh_.getNode(node);
             anchor.x += geometry.x;
             anchor.y += geometry.y;
             anchor.meanNetDoping += doping_.netDoping(node);
+            ++count;
         }
-        const Real inverseCount = 1.0 / static_cast<Real>(contact.node_ids.size());
-        anchor.x *= inverseCount;
-        anchor.y *= inverseCount;
-        anchor.meanNetDoping *= inverseCount;
-        anchor.bias = biasIt->second;
-        if (anchor.meanNetDoping > 0.0)
-            electronAnchors.push_back(anchor);
-        if (anchor.meanNetDoping < 0.0)
-            holeAnchors.push_back(anchor);
+        for (auto& [owner, entry] : anchors) {
+            auto& [anchor, count] = entry;
+            const Real inverseCount = 1.0 / static_cast<Real>(count);
+            anchor.x *= inverseCount;
+            anchor.y *= inverseCount;
+            anchor.meanNetDoping *= inverseCount;
+            anchor.bias = biasIt->second;
+            componentAnchors[owner].push_back(anchor);
+        }
     }
     const auto nearestBias = [&](Index node,
-                                 const std::vector<ContactAnchor>& anchors,
+                                 bool electron,
                                  Real fallback) {
+        if (component[node] == noComponent)
+            return fallback;
+        const auto& anchors = componentAnchors[component[node]];
         if (anchors.empty())
             return fallback;
+        if (std::all_of(anchors.begin(), anchors.end(), [&](const ContactAnchor& anchor) {
+                return anchor.bias == anchors.front().bias;
+            }))
+            return anchors.front().bias;
         const Node& geometry = mesh_.getNode(node);
         Real bestDistance = std::numeric_limits<Real>::infinity();
         Real bestBias = fallback;
         for (const ContactAnchor& anchor : anchors) {
+            if (electron ? anchor.meanNetDoping <= 0.0 : anchor.meanNetDoping >= 0.0)
+                continue;
             const Real dx = geometry.x - anchor.x;
             const Real dy = geometry.y - anchor.y;
             const Real distance = dx * dx + dy * dy;
@@ -6728,8 +6780,8 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     VectorXd phip = initial.phip;
     for (int i = 0; i < N; ++i) {
         const Index node = static_cast<Index>(i);
-        phin(i) = nearestBias(node, electronAnchors, initial.phin(i));
-        phip(i) = nearestBias(node, holeAnchors, initial.phip(i));
+        phin(i) = nearestBias(node, true, initial.phin(i));
+        phip(i) = nearestBias(node, false, initial.phip(i));
     }
     for (const auto& [node, value] : bcs.psi)
         psi(static_cast<int>(node)) = value * potentialScale;

@@ -389,7 +389,7 @@ def _canonicalise_model(model: dict, scope: PhysicsScope, ctx: ParseContext, lin
                         vela += "; solver.srh_doping_dependence=true"
                     elif o in ("tempdependence", "tempdep"):
                         params["temperature_dependence"] = True
-                        vela += "; solver.srh_temperature_dependence=true"
+                        vela += "; solver.srh_doping_dependence.temperature_dependence=true"
                     elif o in ("electricfield", "tunneling", "hurkx", "nonlocalpath", "expdep"):
                         ok = False
                         _add_effective(scope, "Recombination.SRH", {"option": option["name"]}, "unsupported", None, "E106")

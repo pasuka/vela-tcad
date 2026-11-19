@@ -704,8 +704,10 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.model = value.value("model", config.model);
     config.edgeAveraging = value.value("edge_averaging", "legacy");
     if (config.edgeAveraging != "legacy" && config.edgeAveraging != "element_box" &&
-        config.edgeAveraging != "element_box_phumob")
-        throw std::invalid_argument("mobility.edge_averaging must be legacy, element_box or element_box_phumob.");
+        config.edgeAveraging != "element_box_phumob" && config.edgeAveraging != "element_box_masetti")
+        throw std::invalid_argument("Unknown mobility.edge_averaging: " + config.edgeAveraging);
+    if (config.edgeAveraging == "element_box_masetti" && config.model != "masetti_field_lombardi")
+        throw std::invalid_argument("element_box_masetti requires masetti_field_lombardi.");
     if (config.edgeAveraging == "element_box" && config.model != "masetti" && config.model != "constant")
         throw std::invalid_argument("element_box mobility supports constant and Masetti without field or carrier dependence.");
     if (config.edgeAveraging == "element_box_phumob" && config.model != "phumob" && config.model != "phumob_lombardi" && config.model != "phumob_field_lombardi")

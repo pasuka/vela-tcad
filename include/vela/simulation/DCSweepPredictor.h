@@ -197,7 +197,8 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
                                              Real                       previousBias,
                                              Real                       currentBias,
                                              Real                       targetBias,
-                                             int                        retryCount = 0)
+                                             int                        retryCount = 0,
+                                             Real                       populationLowDensityLimit = 0.0)
 {
     DDSolution predicted = current;
     if (config.mode == "none" || config.mode == "constant" ||
@@ -260,7 +261,8 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
             return predicted;
         }
         try {
-            const VectorXd values = predictPopulation(pack(*previous), pack(current), ratio);
+            const VectorXd values = predictPopulation(
+                pack(*previous), pack(current), ratio, populationLowDensityLimit);
             if (predictorUsesField(fields, "psi")) {
                 predicted.psi = values.head(count);
                 predicted.populationPsi.resize(0);

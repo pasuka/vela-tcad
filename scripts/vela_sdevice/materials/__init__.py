@@ -680,10 +680,11 @@ def emit_materials(par_path: Path, *, active_models: Sequence[str], temperature_
         if role != ROLE_DIELECTRIC:
             for model, section in MODEL_SECTIONS.items():
                 if model in model_set:
-                    if section not in merged:
+                    if section in merged:
+                        relevant_sections.add(section)
+                    elif role == ROLE_TRANSPORT:
                         raise MaterialsError("E404", path=f"{vela_name}.{section}", model=model,
                                              status="missing_section")
-                    relevant_sections.add(section)
         for section, params in merged.items():
             section_values = {p.raw_name: p.values for p in params.values()}
             numeric: Dict[str, Any] = {}

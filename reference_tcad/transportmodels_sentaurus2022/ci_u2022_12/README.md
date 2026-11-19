@@ -1,0 +1,71 @@
+# TransportModels DD Id–Vd
+
+`reference_u2022_transportmodels_idvd` runs `pp12_des.cmd` through the built
+`sd-sim` with the Vela `sentaurus_u2022_12` constants profile and single-threaded
+oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the absolute path of the MKL runtime.
+
+```sh
+cmake -S . -B build-u2022 -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DVELA_PHYSICAL_CONSTANTS_PROFILE=sentaurus_u2022_12 \
+  -DVELA_ENABLE_MKL_PARDISO=ON -DVELA_ENABLE_TRANSPORTMODELS_IDVD_CI=ON
+cmake --build build-u2022 --target sd-sim vela_example_runner
+ctest --test-dir build-u2022 -R '^reference_u2022_transportmodels_idvd$' --no-tests=error --output-on-failure
+```
+
+The fixture stages GRD/DAT from the archived 3,315 vertices and 6,456 triangles
+in `../vela/mesh.json` and the separately exported donor and acceptor
+concentrations in `../vela/doping.csv`. The [artifact manifest](../artifact_manifest.json)
+identifies the original reflected `n1_msh.tdr`. The test uses the tracked neutral
+mesh and does not require a TDR reader or a Sentaurus installation.
+
+The [archived CMD](../source/pp12_des.cmd) supplies the model options and
+`Solve` sequence. The test deck uses the GRD grid path, explicit isothermal
+300 K, and final potential output. It omits unused thermal boundaries and a
+file deletion command. The [archived silicon parameter file](../source/pp12_des.par)
+is staged with the PolySi parameters extracted from `sdevice -P:PolySilicon`
+in Sentaurus T-2022.03-SP2. The [fixture manifest](manifest.json) pins both the
+original export and the staged parameter excerpt. At 300 K the imported
+coefficients give Nc = 2.858252e19 cm⁻³, Nv = 3.104629e19 cm⁻³ and an intrinsic
+density of 1.463881e10 cm⁻³ before local doping-dependent narrowing. The
+sidecar requests unit-scaled electrostatic potential and carrier densities,
+with Newton backtracking.
+
+At Vg = 1 V, the deck initializes with up to 100 Poisson iterations followed
+by up to 20 coupled iterations. The drain sweep from 0 to 2 V uses
+normalized time steps of 0.001, 0.00001 and 1 for initial, minimum and maximum,
+respectively. Increment and Decrement default to 2. Extrapolate is enabled.
+Vela retains the preceding concentration at nodes below 1e-50 cm⁻³ to
+prevent extrapolation near the numerical positivity floor. A local Newton
+trial that would turn a concentration nonpositive retains half of its
+preceding positive value.
+The next step restores the nominal proposal after a successful output-only
+clip, with 21 requested output biases from 0 to 2 V in 0.1 V increments.
+
+`sentaurus_reference.csv` is the DD Id–Vd subset of the native currents
+recorded in the [historical comparison](../../../docs/validation/transportmodels_dd_dg_srh_corrected_cold_regression_2026-08-23.json).
+Its source is Sentaurus T-2022.03-SP2 `IdVds_n12_des.plt`. The source
+artifact SHA-256 is recorded in the archive manifest. Bias is in volts and
+current is in A/µm.
+
+The test compares the requested biases directly and applies the existing
+TransportModels contract of 5% maximum relative drain-current error over
+0.1–2 V and 3% at 2 V. It records the near-zero 0 V current and four-terminal
+current sum for inspection. The results appear in `result.json` and
+`comparison.csv` under the run's CTest report directory.
+
+This is an opt-in qualification test. With the previous PolySilicon parameter
+fit, C560 Linux and T470p Windows Release runs passed the 0.1, 0.2 and 0.3 V
+current comparisons with relative errors of 1.10%, 1.74% and 2.35%. Those runs
+reached the minimum-step limit near 0.30–0.32 V during coupled backtracking.
+In a Windows Release comparison on the same mesh, the native coefficients
+reduced those three errors to 0.179%, 0.093% and 0.301%, respectively. The
+coupled sweep still reduced its step below the minimum near 0.30 V, leaving
+the 2 V endpoint unqualified.
+
+With the pinned original mesh and current sidecar, the Release qualification
+completed all 21 points. The sidecar selects cell-material permittivity,
+Delaunay transfer, signed Poisson charge support, and element-box transport.
+It freezes high-field mobility feedback in the Jacobian. The vertex-sampled
+Masetti path and effective-potential Fermi–Dirac SG gave 0.034% maximum drain
+current error, including the 2 V endpoint, with a maximum terminal current
+sum magnitude of 9.10e-13 A/µm.

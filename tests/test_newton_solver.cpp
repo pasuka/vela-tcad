@@ -29,6 +29,7 @@
 #include "vela/solver/detail/ContinuityTermCache.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -649,6 +650,49 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
         {"p_region", 0.0, 1.0e21},
     };
     return DopingModel::fromMeshAndRegions(mesh, specs);
+}
+
+TEST_CASE("Poisson initialization keeps carrier references within each semiconductor",
+          "[newton][poisson_initialization]")
+{
+    DeviceMesh mesh;
+    const std::array<Real, 4> x{0.0, 1.0e-6, 1.02e-6, 1.12e-6};
+    for (Index i = 0; i < x.size(); ++i) {
+        mesh.addNode(Node{2 * i, x[i], 0.0});
+        mesh.addNode(Node{2 * i + 1, x[i], 0.1e-6});
+    }
+    for (Index i = 0; i + 1 < x.size(); ++i) {
+        const Index a = 2 * i;
+        mesh.addCell(Cell{a, CellType::Tri3, i, {a, a + 2, a + 3}});
+        mesh.addCell(Cell{a + 1, CellType::Tri3, i, {a, a + 3, a + 1}});
+    }
+    mesh.addRegion(Region{0, "substrate", "Si", {0, 1}});
+    mesh.addRegion(Region{1, "oxide", "SiO2", {2, 3}});
+    mesh.addRegion(Region{2, "gate", "Si", {4, 5}});
+    mesh.addContact(Contact{0, "source", 0, {0, 1}, {}});
+    mesh.addContact(Contact{1, "gate", 2, {6, 7}, {}});
+    mesh.buildEdges();
+
+    const MaterialDatabase materials;
+    const auto doping = DopingModel::fromMeshAndRegions(
+        mesh, {{"substrate", 1.0e22, 0.0}, {"gate", 1.0e22, 0.0}});
+    NewtonConfig config;
+    config.maxIter = 100;
+    const NewtonSolver solver(mesh, materials, doping,
+                             {{"source", 0.0}, {"gate", 1.0}}, config);
+    const auto initial = solver.buildPoissonBlockInitialization().coldInitial;
+    const auto poisson = solver.solvePoissonOnly(initial);
+
+    REQUIRE(poisson.converged);
+    // Both interface nodes are much closer to the gate contact than the source.
+    for (int node : {2, 3}) {
+        CHECK(poisson.solution.phin(node) == Catch::Approx(0.0).margin(1e-14));
+        CHECK(poisson.solution.phip(node) == Catch::Approx(0.0).margin(1e-14));
+    }
+    for (int node : {4, 5}) {
+        CHECK(poisson.solution.phin(node) == Catch::Approx(1.0));
+        CHECK(poisson.solution.phip(node) == Catch::Approx(1.0));
+    }
 }
 
 TEST_CASE("Compensated population Newton retains forward current conservation",

@@ -7,10 +7,16 @@
 
 namespace vela {
 
+enum class FermiSgFormulation : std::uint8_t {
+    GeneralizedEinstein,
+    EffectivePotential,
+};
+
 struct CarrierStatisticsConfig {
     /// boltzmann, fermi_dirac (defining integral), or fermi_dirac_joyce_dixon.
     /// Boltzmann remains the compatibility default.
     std::string model = "boltzmann";
+    FermiSgFormulation sgFormulation = FermiSgFormulation::GeneralizedEinstein;
 };
 
 /**

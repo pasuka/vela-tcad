@@ -3,6 +3,7 @@
 #include "vela/core/ArithmeticPrecision.h"
 #include "vela/core/Types.h"
 #include "vela/numerics/SplitCoordinate.h"
+#include "vela/physics/CarrierStatistics.h"
 
 namespace vela {
 
@@ -311,7 +312,8 @@ Real sgGeneralizedEinsteinFactor(
 
 Real sgElectronFermiDiracContinuityFlux(
     Real n0, Real n1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 
 /// Fermi-Dirac electron flux when the transported density has an additional
 /// multiplicative quantum factor. The generalized Einstein factor is formed
@@ -320,24 +322,28 @@ Real sgElectronFermiDiracQuantumContinuityFlux(
     Real qmDensity0, Real qmDensity1,
     Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 
 /// Hole counterpart of sgElectronFermiDiracContinuityFlux.
 Real sgHoleFermiDiracContinuityFlux(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef);
+    Real quasiFermi0, Real quasiFermi1, Real Vt, Real coef,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 
 /// Extended-precision references for diagnostics of sub-ULP quasi-Fermi
 /// drops.  The drop is supplied directly so callers can form it from
 /// increment/reference components without first reconstructing an absolute
 /// quasi-Fermi potential in double precision.
 vela::ArithmeticReal sgElectronFermiDiracQuantumContinuityFluxLongDouble(
-    Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
+    Real qmDensity0, Real qmDensity1, Real fermiDensity0, Real fermiDensity1,
     Real eta0, Real eta1, Real driftPotential,
-    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef);
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 vela::ArithmeticReal sgHoleFermiDiracContinuityFluxLongDouble(
     Real p0, Real p1, Real eta0, Real eta1, Real driftPotential,
-    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef);
+    vela::ArithmeticReal quasiFermiDrop, Real Vt, Real coef,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.

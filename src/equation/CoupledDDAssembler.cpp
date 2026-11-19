@@ -540,6 +540,11 @@ CoupledDDAssembler::CoupledDDAssembler(
     , scaling_(scaling)
     , carrierDiagonalFloor_(carrierDiagonalFloor)
 {
+    if (carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential &&
+        (carrierStatistics_.model != "fermi_dirac" ||
+         scaling_.coupledOperator != "legacy" || impactIonizationEnabled_))
+        throw std::invalid_argument(
+            "Effective-potential SG requires integral Fermi-Dirac statistics, the standard DD operator, and no impact ionization.");
     detail::validateElementBoxMobilityContext(mesh_,mobilityConfig_,scaling_.regionResolvedInterfaceAssembly);
     if (scaling_.stateVariables != "potential_quasi_fermi" && scaling_.stateVariables != "potential_density")
         throw std::invalid_argument("unknown coupled state_variables");
@@ -2691,7 +2696,7 @@ VectorXd CoupledDDAssembler::residualImpl(
                     Nc_[idxI] * fermiDiracHalf(etaI, carrierStatisticsModel_),
                     Nc_[idxJ] * fermiDiracHalf(etaJ, carrierStatisticsModel_),
                     etaI, etaJ, driftPotential,
-                    phin_i, phin_j, Vt_, coef);
+                    phin_i, phin_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -2730,7 +2735,7 @@ VectorXd CoupledDDAssembler::residualImpl(
                 const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, driftPotential,
-                    phip_i, phip_j, Vt_, coef);
+                    phip_i, phip_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -3349,7 +3354,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                     n(i), n(j),
                     Nc_[idxI] * fermiDiracHalf(etaI, carrierStatisticsModel_),
                     Nc_[idxJ] * fermiDiracHalf(etaJ, carrierStatisticsModel_),
-                    etaI, etaJ, drift, phin_i, phin_j, Vt_, coef);
+                    etaI, etaJ, drift, phin_i, phin_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3385,7 +3390,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                     + edgeKernel.holeLogNiNv1;
                 const Real drift = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
-                    p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef);
+                    p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -3731,6 +3736,13 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         } else if (bgnEnabled_) {
             electronDriftPotential += Vt_ * std::log(ni_[idxI] / ni_[idxJ]);
         }
+        if (usesFermiDirac_ &&
+            carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential) {
+            electronGeneralizedEinsteinFactor = 1.0;
+            if (n(i) > 0.0 && n(j) > 0.0)
+                electronDriftPotential =
+                    Vt_ * (std::log(n(j)) - std::log(n(i))) + phin_j - phin_i;
+        }
         const Real electronBernoulliArgument = electronDriftPotential /
             (Vt_ * electronGeneralizedEinsteinFactor);
         const Real electronQuasiFermiArgument = (phin_j - phin_i) /
@@ -3747,7 +3759,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     n(i), n(j),
                     electronFermiDensityI, electronFermiDensityJ,
                     electronEtaI, electronEtaJ, electronDriftPotential,
-                    phin_i, phin_j, Vt_, coef);
+                    phin_i, phin_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 nFlux = sgBoltzmannPopulationContinuityFlux(
                     n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3780,7 +3792,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                             electronFermiDensityI, electronFermiDensityJ,
                             electronEtaI, electronEtaJ,
                             electronDriftPotential,
-                            phin_i, phin_j, Vt_, unitCoef);
+                            phin_i, phin_j, Vt_, unitCoef, carrierStatistics_.sgFormulation);
                 } else if (usesLegacyPopulationState()) {
                     nFluxPerInternalCouple = sgBoltzmannPopulationContinuityFlux(
                         n(i), n(j), ni_[idxI], ni_[idxJ],
@@ -3808,7 +3820,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     (ni_[idxI] / Nv_[idxI]) / (ni_[idxJ] / Nv_[idxJ]));
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, drift,
-                    phip_i, phip_j, Vt_, coef);
+                    phip_i, phip_j, Vt_, coef, carrierStatistics_.sgFormulation);
             } else if (usesLegacyPopulationState()) {
                 pFlux = sgBoltzmannPopulationContinuityFlux(
                     p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -3837,7 +3849,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     pFluxPerInternalCouple =
                         sgHoleFermiDiracContinuityFlux(
                             p(i), p(j), etaI, etaJ, drift,
-                            phip_i, phip_j, Vt_, unitCoef);
+                            phip_i, phip_j, Vt_, unitCoef, carrierStatistics_.sgFormulation);
                 } else if (usesLegacyPopulationState()) {
                     pFluxPerInternalCouple = sgBoltzmannPopulationContinuityFlux(
                         p(i), p(j), ni_[idxI], ni_[idxJ],
@@ -5447,7 +5459,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 psiB - psiA + edge.electronDriftOffset;
             return sgElectronFermiDiracContinuityFlux(
                 nA, nB, etaA, etaB, driftPotential,
-                phinA, phinB, Vt_, coefficient);
+                phinA, phinB, Vt_, coefficient, carrierStatistics_.sgFormulation);
         }
         return sgElectronBoltzmannContinuityFlux(
             ni_[a], ni_[b], psiA, psiB, phinA, phinB, Vt_, coefficient,
@@ -5501,7 +5513,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 psiB - psiA + edge.holeDriftOffset;
             return sgHoleFermiDiracContinuityFlux(
                 pA, pB, etaA, etaB, driftPotential,
-                phipA, phipB, Vt_, coefficient);
+                phipA, phipB, Vt_, coefficient, carrierStatistics_.sgFormulation);
         }
         return sgHoleBoltzmannContinuityFlux(
             ni_[a], ni_[b], psiA, psiB, phipA, phipB, Vt_, coefficient,
@@ -6267,7 +6279,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             return sgElectronFermiDiracQuantumContinuityFlux(
                 left.density, right.density, left.fermiDensity, right.fermiDensity,
                 left.eta, right.eta, driftPotential,
-                phin_i, phin_j, Vt_, coef);
+                phin_i, phin_j, Vt_, coef, carrierStatistics_.sgFormulation);
         }
         return sgElectronBoltzmannContinuityFlux(
             ni_[idxI], ni_[idxJ],
@@ -6374,7 +6386,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
             return sgHoleFermiDiracContinuityFlux(
                 left.density, right.density, left.eta, right.eta, driftPotential,
-                phip_i, phip_j, Vt_, coef);
+                phip_i, phip_j, Vt_, coef, carrierStatistics_.sgFormulation);
         }
         return sgHoleBoltzmannContinuityFlux(
             ni_[idxI], ni_[idxJ],

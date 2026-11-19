@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the gate, Schottky IV and BJT M1 numerical regressions through sd-sim."""
+"""Run the device reference numerical regressions through sd-sim."""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ import time
 from check_sdevice_gate_contact_mapping import flatband_from_samples, read_vtu_potential
 from compare_genius_bjt_sentaurus_vela import compare_model
 from run_schottky_reference_workflow import audit_kcl, audit_stage_b, compare_curves, read_csv
+from transportmodels_idvd_fixture import stage_idvd_inputs
+from vela_sdevice.plt import read_plt_document
 
 
 REFERENCE_ROOT = Path(__file__).resolve().parents[1] / "reference_tcad"
@@ -26,6 +28,7 @@ CASES = {
     "schottky_iv": "schottky_charon_sentaurus2018",
     "bjt_m1": "genius_bjt_sentaurus2022",
     "gate_contacts": "gate_reference",
+    "transportmodels_idvd": "transportmodels_sentaurus2022",
 }
 
 
@@ -181,6 +184,80 @@ def bjt_gates(fixture, run, stage, report):
     return summary["operational_pass"] and summary["numerical_parity_gate"]["pass"]
 
 
+def transportmodels_idvd_gates(launcher, fixture, output, env, report):
+    work = output / "inputs"
+    stage_idvd_inputs(fixture, work)
+    run, plan = run_sdevice(launcher, work, "pp12_des", env, report, final_only=True)
+    equilibrium, sweep_stage = plan
+    biases = {"gate": 1.0, "drain": 0.0, "source": 0.0, "substrate": 0.0}
+    if (equilibrium["kind"] != "equilibrium"
+            or equilibrium["electrode_voltages_start_V"] != biases
+            or sweep_stage["electrode_voltages_goal_V"] != {**biases, "drain": 2.0}
+            or sweep_stage["sweep"]["contact"] != "drain"
+            or sweep_stage["input_state"] != equilibrium["output_state"]):
+        raise ValueError("Unexpected TransportModels equilibrium or sweep")
+    for stage in plan:
+        solver = read_json(run / stage["deck"])["solver"]
+        expected = {"state_variables": "potential_density", "primary_variable_coordinates": "unit",
+                    "max_iter": 20, "temperature_K": 300.0}
+        if any(solver.get(key) != value for key, value in expected.items()):
+            raise ValueError(f"Unexpected TransportModels solver settings in {stage['deck']}")
+    poisson = read_json(run / "stage00_poisson_initialization.json")
+    if poisson["max_iter"] != 100 or not poisson["converged"]:
+        raise ValueError("TransportModels Poisson initialization did not match the CMD budget")
+    sweep = read_json(run / sweep_stage["deck"])["sweep"]
+    controls = {
+        "initial_step": 0.002, "min_step": 0.00002, "max_step": 2.0,
+        "growth_factor": 2.0, "shrink_factor": 0.5,
+        "step_growth_mode": "newton_iterations", "stop_below_minimum_step": True,
+        "preserve_step_after_output_clip": True,
+    }
+    if (any(sweep.get(key) != value for key, value in controls.items())
+            or sweep["continuation"]["predictor"]["mode"] != "linear"):
+        raise ValueError("Unexpected TransportModels Quasistationary controls")
+    report["sweep_controls"] = {**controls, "predictor": "linear"}
+
+    contacts, samples = read_plt_document(
+        (work / sweep_stage["current_file"]).read_text(encoding="utf-8"))
+    reference = read_csv(fixture / "sentaurus_reference.csv")
+    targets = [point / 10 for point in range(21)]
+    if (set(contacts) != biases.keys() or len(samples) != len(targets)
+            or [float(row["bias_V"]) for row in reference] != targets):
+        raise ValueError("Expected 21 measured TransportModels CurrentPlot points and all four contacts")
+
+    comparison = []
+    for bias, sample, oracle in zip(targets, samples, reference):
+        expected_voltages = {**biases, "drain": bias}
+        if any(not math.isclose(sample[name]["outer_voltage_V"], voltage, rel_tol=0, abs_tol=1e-12)
+               for name, voltage in expected_voltages.items()):
+            raise ValueError(f"Incorrect electrode voltage at target Vd={bias:g} V")
+        currents = {name: sample[name]["total_current_A_per_um"] for name in contacts}
+        native = float(oracle["drain_A_per_um"])
+        measured = currents["drain"]
+        comparison.append({
+            "bias_V": bias, "vela_A_per_um": measured, "sentaurus_A_per_um": native,
+            "relative_error": abs(measured - native) / abs(native) if bias > 0 else None,
+            "kcl_residual_A_per_um": math.fsum(currents.values()),
+        })
+    with (output / "comparison.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(comparison[0]))
+        writer.writeheader()
+        writer.writerows(comparison)
+    contract = read_json(fixture.parent / "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json")
+    limits = contract["acceptance"]
+    max_error = max(row["relative_error"] for row in comparison[1:])
+    end_error = comparison[-1]["relative_error"]
+    report["comparison"] = {
+        "points": len(comparison),
+        "max_relative_error": max_error, "endpoint_relative_error": end_error,
+        "zero_bias_drain_A_per_um": comparison[0]["vela_A_per_um"],
+        "max_abs_kcl_residual_A_per_um": max(abs(row["kcl_residual_A_per_um"]) for row in comparison),
+    }
+    print(f"DD Id–Vd max error: {max_error:.3%}, at 2 V: {end_error:.3%}", flush=True)
+    return (max_error <= limits["idvd_max_absolute_relative_error"]
+            and end_error <= limits["idvd_2V_max_absolute_relative_error"])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("case", choices=CASES)
@@ -205,6 +282,8 @@ def main():
         verify_inputs(fixture)
         if args.case == "gate_contacts":
             passed = gate_cases(launcher, fixture, output, env, report)
+        elif args.case == "transportmodels_idvd":
+            passed = transportmodels_idvd_gates(launcher, fixture, output, env, report)
         else:
             schottky = args.case == "schottky_iv"
             stem = "schottky_n_des" if schottky else "bjt_m1_des"

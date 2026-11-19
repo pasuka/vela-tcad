@@ -627,16 +627,22 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                     fermiDensityI, fermiDensityJ, etaI, etaJ);
                 electronGeneralizedArgument = driftPotential /
                     (thermalVoltage_ * electronGeneralizedFactor);
+                if (carrierStatistics_.sgFormulation == FermiSgFormulation::EffectivePotential) {
+                    electronGeneralizedFactor = 1.0;
+                    if (n_i > 0.0 && n_j > 0.0)
+                        electronGeneralizedArgument = std::log(n_j) - std::log(n_i) +
+                            electronQfDrop / thermalVoltage_;
+                }
                 electronContinuityFlux01 =
                     sgElectronFermiDiracQuantumContinuityFlux(
                     n_i, n_j, fermiDensityI, fermiDensityJ,
                     etaI, etaJ, driftPotential,
-                    0.0, electronQfDrop, thermalVoltage_, coef);
+                    0.0, electronQfDrop, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
                 electronContinuityFluxLongDouble01 =
                     sgElectronFermiDiracQuantumContinuityFluxLongDouble(
-                        n_j, fermiDensityI, fermiDensityJ,
+                        n_i, n_j, fermiDensityI, fermiDensityJ,
                         etaI, etaJ, driftPotential,
-                        electronQfDropLong, thermalVoltage_, coef);
+                        electronQfDropLong, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
             } else if (solution.stateVariables == "potential_density") {
                 electronContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     n_i, n_j, ni_i, ni_j,
@@ -682,11 +688,11 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 holeContinuityFlux01 = sgHoleFermiDiracContinuityFlux(
                     p_i, p_j, etaI, etaJ, driftPotential,
                     0.0, holeQfDropForFlux,
-                    thermalVoltage_, coef);
+                    thermalVoltage_, coef, carrierStatistics_.sgFormulation);
                 holeContinuityFluxLongDouble01 =
                     sgHoleFermiDiracContinuityFluxLongDouble(
                         p_i, p_j, etaI, etaJ, driftPotential,
-                        holeQfDropForFluxLong, thermalVoltage_, coef);
+                        holeQfDropForFluxLong, thermalVoltage_, coef, carrierStatistics_.sgFormulation);
             } else if (solution.stateVariables == "potential_density" && !holeQfDropOverrideApplied) {
                 holeContinuityFlux01 = sgBoltzmannPopulationContinuityFlux(
                     p_i, p_j, ni_i, ni_j,

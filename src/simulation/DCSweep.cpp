@@ -957,7 +957,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                         (effectiveNi[edge.n0] / Nc[edge.n0]));
                 return sgElectronFermiDiracContinuityFlux(
                     sol.n(i), sol.n(j), etaI, etaJ, driftPotential,
-                    sol.phin(i), sol.phin(j), Vt, coef);
+                    sol.phin(i), sol.phin(j), Vt, coef, carrierStatistics.sgFormulation);
             }
             return sgElectronBoltzmannContinuityFlux(
                 effectiveNi[edge.n0],
@@ -984,7 +984,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                     (effectiveNi[edge.n1] / Nv[edge.n1]));
             return sgHoleFermiDiracContinuityFlux(
                 sol.p(i), sol.p(j), etaI, etaJ, driftPotential,
-                sol.phip(i), sol.phip(j), Vt, coef);
+                sol.phip(i), sol.phip(j), Vt, coef, carrierStatistics.sgFormulation);
         }
         return sgHoleBoltzmannContinuityFlux(
             effectiveNi[edge.n0],
@@ -5285,6 +5285,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         attempt.branchAcceptanceReason.clear();
     };
 
+    const Real predictorLowDensityLimit = sweep.scaling.unitSystem()
+        .m3ToInternalConcentration(newton.populationPredictorLowDensity_cm3 * 1e6);
     auto solvePointWithContinuation = [&](Real voltage,
                                           const DDSolution* initial,
                                           bool allowContactCurrentQfFloorCapture,
@@ -5305,7 +5307,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             predictorPreviousBias,
             currentSolutionBias,
             voltage,
-            retryCount);
+            retryCount,
+            predictorLowDensityLimit);
         SolvePointAttempt attempt = solvePoint(voltage, &predicted, false);
         if (sweep.diagnostics.contactCurrentQfFloor.enabled &&
             allowContactCurrentQfFloorCapture) {
@@ -8193,7 +8196,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         evaluationState,
                         previousEvaluationVoltage,
                         evaluationStateVoltage,
-                        candidateVoltage);
+                        candidateVoltage,
+                        0,
+                        predictorLowDensityLimit);
                     initial = &predictedState;
                     usedStatePredictor = true;
                 }

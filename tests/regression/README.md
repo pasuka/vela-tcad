@@ -89,7 +89,8 @@ ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
 
 `sdevice_e2e_gates` runs five Schottky and BVmethods deck checks from
 [pinned TDX GRD/DAT fixtures](../../reference_tcad/sdevice_check_only/manifest.json).
-It also checks that the unsupported TransportModels deck is rejected.
+It also checks rejection of the original TransportModels deck with thermal
+boundaries. The isothermal DD Id–Vd adaptation has a separate numerical test.
 The test uses `vela device --check` and requires no external reference directory.
 
 `simplemos_evidence_archive` checks the selected historical evidence, archive
@@ -150,10 +151,10 @@ bracket. The switched run checks the 6 V handoff, current tracking, KCL and
 current-interpolated BV. Reports use separate subdirectories for the three
 methods.
 
-## Schottky and BJT U-2022.12 numerical regression
+## SDevice numerical reference regressions
 
 Enable `VELA_ENABLE_REFERENCE_U2022_CI` to register `reference_u2022_gate_contacts`,
-`reference_u2022_schottky_iv`, and `reference_u2022_bjt_m1`. All three run their
+`reference_u2022_schottky_iv`, and `reference_u2022_bjt_m1`. They run their
 CMDs through the built `sd-sim` with the U-2022.12 constants profile. CI enables
 them in the full suite and exposes `suite=reference-u2022` for a manual run.
 
@@ -181,7 +182,14 @@ Its numerical regression uses EFT for the linear defect checks and records
 the requested collector points in CSV. `sd-sim` publishes only the final
 collector field, with intermediate runner artifacts in the report directory.
 
-BJT uses single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
+Enable `VELA_ENABLE_TRANSPORTMODELS_IDVD_CI` to register the TransportModels
+qualification test while the full-sweep solver is being validated. It compares
+the isothermal DD Id–Vd sweep at Vg = 1 V against 21 archived T-2022.03-SP2
+output points. See the
+[TransportModels fixture](../../reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/README.md)
+for the input provenance, step controls and current acceptance criteria.
+
+BJT and TransportModels use single-threaded oneMKL PARDISO. Set `VELA_MKL_RT_LIBRARY` to the
 absolute path of the installed MKL runtime. Schottky uses UMFPACK when
 available and Eigen SparseLU otherwise, as does Gate. Configure and run the opt-in group
 with a Release build:

@@ -5138,6 +5138,21 @@ TEST_CASE("DCSweep predictor: extrapolates selected coupled variables",
         REQUIRE(predicted.n.isApprox(current.n));
         REQUIRE(predicted.p.isApprox(current.p));
     }
+
+    SECTION("population prediction uses the configured low-density cutoff")
+    {
+        SweepPredictorConfig config;
+        config.mode = "linear";
+        previous.stateVariables = current.stateVariables = "potential_density";
+        previous.n(0) = 1e20;
+        current.n(0) = 1e-80;
+        const auto predicted = detail::predictDCSweepInitialState(
+            config, &previous, current, 0.0, 0.1, 0.2, 0, 1.0);
+        CHECK(predicted.psi.isApprox(2.0 * current.psi - previous.psi));
+        CHECK(predicted.n(0) == current.n(0));
+        CHECK(predicted.n(1) == Catch::Approx(900.0));
+        CHECK(predicted.p(0) == Catch::Approx(800.0));
+    }
 }
 
 TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",

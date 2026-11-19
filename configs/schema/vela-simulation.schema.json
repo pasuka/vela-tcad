@@ -90,6 +90,18 @@
     },
     "solver": {
       "additionalProperties": true,
+      "properties": {
+        "carrier_statistics": {
+          "properties": {
+            "sg_formulation": {"enum": ["generalized_einstein", "effective_potential"]}
+          }
+        },
+        "mobility": {
+          "properties": {
+            "edge_averaging": {"enum": ["legacy", "element_box", "element_box_phumob", "element_box_masetti"]}
+          }
+        }
+      },
       "allOf": [
         {"anyOf": [
           {"not": {"anyOf": [{"required": ["state_variables"], "properties": {"state_variables": {"const": "potential_density"}}}, {"not": {"required": ["state_variables"]}, "required": ["coupled_operator"], "properties": {"coupled_operator": {"const": "bvmethods_tri3_qf"}}}]}},
@@ -283,6 +295,23 @@
                 "total_impurity",
                 "net_doping"
               ]
+            },
+            "temperature_dependence": {
+              "type": "boolean"
+            },
+            "temperature_K": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "reference_temperature_K": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "electron_temperature_exponent": {
+              "type": "number"
+            },
+            "hole_temperature_exponent": {
+              "type": "number"
             },
             "electron": {
               "$ref": "#/$defs/srhLifetime"

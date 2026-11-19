@@ -1,0 +1,39 @@
+* PolySi defaults exported by Sentaurus Device T-2022.03-SP2 (0.7745337).
+* Source: sdevice -P:PolySilicon. See manifest.json for the source checksum.
+Material = "PolySi" {
+  Epsilon {
+    epsilon = 11.7
+  }
+  Bandgap {
+    Chi0 = 4.05
+    Bgn2Chi = 0.5
+    Eg0 = 1.16964
+    dEg0(OldSlotboom) = -1.5950e-02
+    alpha = 4.7300e-04
+    beta = 6.3600e+02
+    Tpar = 0
+  }
+  eDOSMass {
+    Formula = 1
+    a = 0.1905
+    ml = 0.9163
+    mm = 0
+  }
+  hDOSMass {
+    Formula = 1
+    a = 0.443587
+    b = 0.003609528
+    c = 0.0001173515
+    d = 1.263218e-06
+    e = 3.025581e-09
+    f = 0.004683382
+    g = 0.0002286895
+    h = 7.469271e-07
+    i = 1.727481e-09
+    mm = 0
+  }
+  ConstantMobility {
+    mumax = 1417, 470.5
+    Exponent = 2.5, 2.2
+  }
+}

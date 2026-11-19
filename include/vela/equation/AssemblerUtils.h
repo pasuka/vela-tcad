@@ -328,7 +328,9 @@ inline void validateElementBoxMobilityContext(const DeviceMesh& mesh,
     if(mobility.edgeAveraging=="legacy") return;
     const bool modelSupported =
         (mobility.edgeAveraging=="element_box" && (mobility.model=="constant" || mobility.model=="masetti")) ||
-        (mobility.edgeAveraging=="element_box_phumob" && mobility.model=="phumob") || usesElementDistanceLombardi(mobility);
+        (mobility.edgeAveraging=="element_box_phumob" && mobility.model=="phumob") ||
+        (mobility.edgeAveraging=="element_box_masetti" && mobility.model=="masetti_field_lombardi") ||
+        usesElementDistanceLombardi(mobility);
     if(!modelSupported ||
        mobility.dopingConcentrationBasis!="total_impurity" ||
        assembly.transportEdgeGeometry!="element_box" ||
@@ -1841,7 +1843,10 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
     }
 
+    const bool vertexMasetti = mobilityConfig != nullptr &&
+        mobilityConfig->edgeAveraging == "element_box_masetti";
     Real sum = 0.0;
+    Real boxWeight = 0.0;
     Index contributingCells = 0;
     for (Index c : cells) {
         const Material& material = cellMaterials.at(static_cast<std::size_t>(c));
@@ -1887,6 +1892,28 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                 ? mobilityConfig->surface.cellDistances[c]
                 : estimateSurfaceDistance(mesh, edgeId, c))
             : std::numeric_limits<Real>::quiet_NaN();
+        if (vertexMasetti) {
+            const Real edgeWeight = cellBoxEdgeCoefficient(mesh, c, edgeId);
+            if (edgeWeight == 0.0)
+                continue;
+            const auto measures = cellBoxNodeMeasures(mesh, c);
+            const Real volume = measures[0] + measures[1] + measures[2];
+            if (!(volume > 0.0))
+                throw std::invalid_argument("Masetti cell box volume must be positive.");
+            Real cellMobility = 0.0;
+            for (std::size_t k = 0; k < measures.size(); ++k) {
+                const Real impurity = doping.totalImpurity(mesh.getCell(c).node_ids[k]);
+                const Real vertexMobility = carrier == CarrierType::Electron
+                    ? mobility.electronMobility(material, impurity, 0.0, 0.0,
+                        electricField, surfaceNormalField, surfaceDistance)
+                    : mobility.holeMobility(material, impurity, 0.0, 0.0,
+                        electricField, surfaceNormalField, surfaceDistance);
+                cellMobility += measures[k] * vertexMobility;
+            }
+            sum += edgeWeight * (cellMobility / volume);
+            boxWeight += edgeWeight;
+            continue;
+        }
         const Real mobilityDoping = edgeMobilityDopingConcentration(
             mesh, doping, edge, c, mobilityConfig);
         const Real donors = 0.5 * (
@@ -1922,6 +1949,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         sum += modelMobility;
         ++contributingCells;
     }
+    if (vertexMasetti)
+        return boxWeight > 0.0 ? sum / boxWeight : 0.0;
     if (contributingCells == 0)
         return 0.0;
     return sum / static_cast<Real>(contributingCells);

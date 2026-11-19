@@ -1,0 +1,20 @@
+{
+  "files_sha256_lf": {
+    "pp12_des.cmd": "81ba472804cb730bdd87a814139122c604e932e9886f7d247479d109bebcd133",
+    "pp12_des.vela.json": "9f34f4efa6be22c98f47fbd21c269124a199903ea404768e259e6f197e8e4051",
+    "polysilicon.par": "a1709fdbea4a2029a92f51d6d0bae8fab89350d9daa76fd0b23ebbfb30fdeeb9",
+    "sentaurus_reference.csv": "3bf1217033251b25e24cd78a9c483c02e0d03ca1116760688da882b5a723526e",
+    "../source/pp12_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "../vela/mesh.json": "53eeb68c75082d254f2c12a668ac8c50e803baa4c831aa189b75ebc8c6079f61",
+    "../vela/doping.csv": "e5641169e6145eb34eb2d9329d14f6fd6a94fdf263c54bedbff46d48d649a3fe",
+    "../vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json": "0513b486661fb7ae788f108782d79a5ded75e3f3c7f55216c51eaf0eec14cbec",
+    "../source/pp12_des.cmd": "0967787ab0780e04a3eeb6b1b1a719bc8cfa09ad2490b500d8b5aa63c2be7586"
+  },
+  "polysilicon_parameter_source": {
+    "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
+    "export_command": "sdevice -P:PolySilicon",
+    "source_file": "models.par",
+    "material": "PolySi",
+    "source_sha256": "7fedee3835cf715cc8c5a9db1ecf15368bbc4251f44983ddbca8de1ac33d3d55"
+  }
+}
