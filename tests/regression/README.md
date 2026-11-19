@@ -90,7 +90,7 @@ ctest --test-dir build-pn2d --output-on-failure --no-tests=error -L '^pn2d-ci$'
 `sdevice_e2e_gates` runs five Schottky and BVmethods deck checks from
 [pinned TDX GRD/DAT fixtures](../../reference_tcad/sdevice_check_only/manifest.json).
 It also checks rejection of the original TransportModels deck with thermal
-boundaries. The isothermal DD Id–Vd adaptation has a separate numerical test.
+boundaries. The isothermal DD Id-Vd adaptation has a separate numerical test.
 The test uses `vela device --check` and requires no external reference directory.
 
 `simplemos_evidence_archive` checks the selected historical evidence, archive
@@ -184,7 +184,7 @@ collector field, with intermediate runner artifacts in the report directory.
 
 Enable `VELA_ENABLE_TRANSPORTMODELS_IDVD_CI` to register the TransportModels
 qualification test while the full-sweep solver is being validated. It compares
-the isothermal DD Id–Vd sweep at Vg = 1 V against 21 archived T-2022.03-SP2
+the isothermal DD Id-Vd sweep at Vg = 1 V against 21 archived T-2022.03-SP2
 output points. See the
 [TransportModels fixture](../../reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/README.md)
 for the input provenance, step controls and current acceptance criteria.

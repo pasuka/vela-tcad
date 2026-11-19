@@ -173,9 +173,9 @@ struct MobilityModelConfig {
     /// ``constant_field`` uses the material low-field mobility and applies
     /// only the configured high-field saturation limiter.
     std::string model = "constant";
-    // element_box is qualified for state-independent constant/Masetti only.
-    // element_box_phumob is an explicit, restricted carrier-dependent candidate.
-    std::string edgeAveraging = "legacy";
+    // Automatic sampling evaluates nodal Masetti before averaging.
+    // Explicit element-box policies also select the cell and edge quadrature.
+    std::string edgeAveraging = "auto";
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
     /// ``edge_projection`` preserves the historical edge-aligned difference;
@@ -371,6 +371,7 @@ MobilityModelConfig mobilityModelConfig(std::string modelName);
 MobilityModelConfig mobilityModelConfigFromJson(
     const nlohmann::json& value,
     UnitScalingConfig scaling = {});
+bool usesVertexSampledMasetti(const MobilityModelConfig& config);
 bool isSurfaceMobilityModel(const MobilityModelConfig& config);
 bool isPhuMobModel(const MobilityModelConfig& config);
 bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,

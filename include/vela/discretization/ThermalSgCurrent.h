@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/SiliconThermalPhysics.h"
 namespace vela {
 struct ThermalSgCurrent {
@@ -9,10 +10,12 @@ struct ThermalSgCurrent {
 };
 /// Experimental nonisothermal generalized SG conductance. Uses the arithmetic
 /// edge temperature and DOS-normalized Fermi secant, with flat QF preserved.
-/// At uniform T/Nc/Nv it recovers the existing generalized SG formula.
+/// At uniform T/Nc/Nv either explicit closure recovers its isothermal
+/// counterpart. Existing thermal callers retain generalized Einstein.
 /// Positive current points node0 -> node1; geometricWeight is dual-length/edge-length.
 /// This API alone does not qualify nonisothermal LDMOS transport.
 ThermalSgCurrent thermalSgCurrent(const SiliconThermalState& a,const SiliconThermalResult& pa,
     const SiliconThermalState& b,const SiliconThermalResult& pb,
-    Real mobility_m2_per_Vs,Real geometricWeight,bool electron);
+    Real mobility_m2_per_Vs, Real geometricWeight, bool electron,
+    FermiSgFormulation formulation = FermiSgFormulation::GeneralizedEinstein);
 } // namespace vela

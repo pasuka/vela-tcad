@@ -702,9 +702,10 @@ MobilityModelConfig mobilityModelConfigFromJson(
     MobilityModelConfig config;
     convertMobilityDefaultsToInternal(config, scaling);
     config.model = value.value("model", config.model);
-    config.edgeAveraging = value.value("edge_averaging", "legacy");
-    if (config.edgeAveraging != "legacy" && config.edgeAveraging != "element_box" &&
-        config.edgeAveraging != "element_box_phumob" && config.edgeAveraging != "element_box_masetti")
+    config.edgeAveraging = value.value("edge_averaging", config.edgeAveraging);
+    if (config.edgeAveraging != "auto" && config.edgeAveraging != "legacy" &&
+        config.edgeAveraging != "element_box" && config.edgeAveraging != "element_box_phumob" &&
+        config.edgeAveraging != "element_box_masetti")
         throw std::invalid_argument("Unknown mobility.edge_averaging: " + config.edgeAveraging);
     if (config.edgeAveraging == "element_box_masetti" && config.model != "masetti_field_lombardi")
         throw std::invalid_argument("element_box_masetti requires masetti_field_lombardi.");
@@ -808,6 +809,14 @@ MobilityModelConfig mobilityModelConfigFromJson(
     if(elementSurface && (!config.surface.surfaceRegion.empty() || !config.surface.surfaceInterface.empty()))
         throw std::invalid_argument("Element-distance Lombardi currently qualifies the default semiconductor-insulator interface selector only");
     return config;
+}
+
+bool usesVertexSampledMasetti(const MobilityModelConfig& config)
+{
+    return isMasettiModel(config.model) &&
+        (config.edgeAveraging == "element_box_masetti" ||
+         (config.edgeAveraging == "auto" &&
+          config.dopingConcentrationBasis != "cell_reconstructed_total_impurity"));
 }
 
 bool isSurfaceMobilityModel(const MobilityModelConfig& config)

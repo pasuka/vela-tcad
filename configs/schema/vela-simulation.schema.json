@@ -93,12 +93,12 @@
       "properties": {
         "carrier_statistics": {
           "properties": {
-            "sg_formulation": {"enum": ["generalized_einstein", "effective_potential"]}
+            "sg_formulation": {"enum": ["auto", "generalized_einstein", "effective_potential"]}
           }
         },
         "mobility": {
           "properties": {
-            "edge_averaging": {"enum": ["legacy", "element_box", "element_box_phumob", "element_box_masetti"]}
+            "edge_averaging": {"enum": ["auto", "legacy", "element_box", "element_box_phumob", "element_box_masetti"]}
           }
         }
       },

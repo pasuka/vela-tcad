@@ -10,6 +10,7 @@ namespace vela {
 enum class FermiSgFormulation : std::uint8_t {
     GeneralizedEinstein,
     EffectivePotential,
+    Automatic,
 };
 
 struct CarrierStatisticsConfig {

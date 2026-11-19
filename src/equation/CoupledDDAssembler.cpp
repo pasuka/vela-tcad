@@ -644,6 +644,7 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
     const bool cacheMobility = !surfaceMobilityEnabled_ &&
         !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob";
     const bool cacheIntrinsicDrift = bgnEnabled_ && usesLegacyPopulationState();
+    const bool vertexMasetti = usesVertexSampledMasetti(mobilityConfig_);
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -722,29 +723,25 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
 
             if (!cacheMobility)
                 continue;
-            Real mobilityDoping =
-                0.5 * (doping_.netDoping(edge.n0) +
-                       doping_.netDoping(edge.n1));
-            if (mobilityDopingBasis_ == MobilityDopingBasis::TotalImpurity) {
-                mobilityDoping =
-                    0.5 * (doping_.totalImpurity(edge.n0) +
-                           doping_.totalImpurity(edge.n1));
-            } else if (mobilityDopingBasis_ ==
-                       MobilityDopingBasis::CellReconstructedTotalImpurity) {
-                mobilityDoping = detail::cellAverageTotalImpurity(
-                    mesh_, doping_, cellId);
-            }
-            if (material.mun > 0.0) {
-                const Real lowField = mobility_->electronMobility(
-                    material, mobilityDoping, 0.0, 0.0, 0.0);
-                if (lowField > 0.0)
-                    kernel.electronLowFieldMobilities.push_back(lowField);
-            }
-            if (material.mup > 0.0) {
-                const Real lowField = mobility_->holeMobility(
-                    material, mobilityDoping, 0.0, 0.0, 0.0);
-                if (lowField > 0.0)
-                    kernel.holeLowFieldMobilities.push_back(lowField);
+            const auto appendLowField = [&](Real doping) {
+                if (material.mun > 0.0) {
+                    const Real lowField = mobility_->electronMobility(material, doping, 0.0, 0.0, 0.0);
+                    if (lowField > 0.0)
+                        kernel.electronLowFieldMobilities.push_back(lowField);
+                }
+                if (material.mup > 0.0) {
+                    const Real lowField = mobility_->holeMobility(material, doping, 0.0, 0.0, 0.0);
+                    if (lowField > 0.0)
+                        kernel.holeLowFieldMobilities.push_back(lowField);
+                }
+            };
+            if (vertexMasetti && cell.type == CellType::Tri3) {
+                for (Index node : cell.node_ids)
+                    appendLowField(detail::nodeMobilityDopingConcentration(
+                        mesh_, doping_, node, cellId, &mobilityConfig_));
+            } else {
+                appendLowField(detail::edgeMobilityDopingConcentration(
+                    mesh_, doping_, edge, cellId, &mobilityConfig_));
             }
         }
         if (vectorQfMobilityEnabled_) {
@@ -1792,7 +1789,7 @@ CoupledDDPhysicalDiagnostics CoupledDDAssembler::compensatedPopulationDiagnostic
         low.size() != 3 * count || !low.allFinite() || !bcs.thermionic.empty() ||
         (!bcs.psi.empty() && (bcs.ohmicPopulation.size() != bcs.psi.size() ||
                              bcs.ohmicBias.size() != bcs.psi.size())) ||
-        mobilityConfig_.edgeAveraging != "legacy" ||
+        (mobilityConfig_.edgeAveraging != "legacy" && mobilityConfig_.edgeAveraging != "auto") ||
         mobilityConfig_.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
         !supportedMobility ||
         mobilityConfig_.contactElectricFieldFallback ||
@@ -4921,7 +4918,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const VectorXd p = holeDensity(state);
     const bool directPopulationTransport = usesLegacyPopulationState() && !usesFermiDirac_ &&
         (mobilityConfig_.model == "masetti" || mobilityConfig_.model == "masetti_field") &&
-        mobilityConfig_.edgeAveraging == "legacy" &&
+        (mobilityConfig_.edgeAveraging == "legacy" || mobilityConfig_.edgeAveraging == "auto") &&
         mobilityConfig_.carrierCurrentDiscretization == "scharfetter_gummel_edge" &&
         !mobilityConfig_.contactElectricFieldFallback && !carrierDiagonalFloor_.enabled;
     experimental::AssemblyPopulationCaptureScope::record(x, n, p);
@@ -5095,7 +5092,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         transportMobilityDerivativeEnabled_;
     const bool elementBoxPhuMob = mobilityConfig_.edgeAveraging == "element_box_phumob";
     const bool stablePhuMobDerivative = (mobilityConfig_.model == "phumob" || usesElementDistanceLombardi(mobilityConfig_)) &&
-        (mobilityConfig_.edgeAveraging == "legacy" || elementBoxPhuMob) && !usesFermiDirac_;
+        (mobilityConfig_.edgeAveraging == "legacy" || mobilityConfig_.edgeAveraging == "auto" || elementBoxPhuMob) && !usesFermiDirac_;
     // The plain PhuMob branch adds stable carrier chain terms separately.
     // Restrict the remaining BGN precision repair to state-independent mobility.
     // Field/surface models with deliberately disabled chain derivatives keep

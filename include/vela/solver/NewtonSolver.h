@@ -257,7 +257,8 @@ struct NewtonConfig {
     PopulationUpdateConfig populationUpdate;
     Real populationMinimumDensity_cm3 = -1.; ///< Internal default sentinel; resolves to 1e-100 for population, zero for QF.
     Real populationPredictorLowDensity_cm3 = 0.;
-    CarrierStatisticsConfig carrierStatistics{}; ///< Boltzmann or Fermi-Dirac density/contact/transport statistics.
+    /// Density/contact statistics and the default classical Fermi SG selection.
+    CarrierStatisticsConfig carrierStatistics{"boltzmann", FermiSgFormulation::Automatic};
     DensityGradientQuantumPotentialConfig electronQuantumPotential{};
     ///< Optional Sentaurus eQuantumPotential outer iteration.
 };

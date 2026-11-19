@@ -325,11 +325,12 @@ inline std::array<Real,3> cellBoxNodeMeasures(const DeviceMesh& mesh,Index cellI
 inline void validateElementBoxMobilityContext(const DeviceMesh& mesh,
     const MobilityModelConfig& mobility,const RegionResolvedInterfaceAssemblyConfig& assembly)
 {
-    if(mobility.edgeAveraging=="legacy") return;
+    if (mobility.edgeAveraging == "legacy" || mobility.edgeAveraging == "auto")
+        return;
     const bool modelSupported =
         (mobility.edgeAveraging=="element_box" && (mobility.model=="constant" || mobility.model=="masetti")) ||
         (mobility.edgeAveraging=="element_box_phumob" && mobility.model=="phumob") ||
-        (mobility.edgeAveraging=="element_box_masetti" && mobility.model=="masetti_field_lombardi") ||
+        (mobility.edgeAveraging == "element_box_masetti" && mobility.model == "masetti_field_lombardi") ||
         usesElementDistanceLombardi(mobility);
     if(!modelSupported ||
        mobility.dopingConcentrationBasis!="total_impurity" ||
@@ -1843,8 +1844,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
     }
 
-    const bool vertexMasetti = mobilityConfig != nullptr &&
-        mobilityConfig->edgeAveraging == "element_box_masetti";
+    const bool vertexMasetti = mobilityConfig && usesVertexSampledMasetti(*mobilityConfig);
+    const bool boxMasetti = vertexMasetti && mobilityConfig->edgeAveraging == "element_box_masetti";
     Real sum = 0.0;
     Real boxWeight = 0.0;
     Index contributingCells = 0;
@@ -1892,26 +1893,35 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                 ? mobilityConfig->surface.cellDistances[c]
                 : estimateSurfaceDistance(mesh, edgeId, c))
             : std::numeric_limits<Real>::quiet_NaN();
-        if (vertexMasetti) {
-            const Real edgeWeight = cellBoxEdgeCoefficient(mesh, c, edgeId);
+        const auto& cell = mesh.getCell(c);
+        if (vertexMasetti && cell.type == CellType::Tri3) {
+            const Real edgeWeight = boxMasetti ? cellBoxEdgeCoefficient(mesh, c, edgeId) : 1.0;
             if (edgeWeight == 0.0)
                 continue;
-            const auto measures = cellBoxNodeMeasures(mesh, c);
+            const auto measures = boxMasetti ? cellBoxNodeMeasures(mesh, c) : std::array<Real, 3>{1.0, 1.0, 1.0};
             const Real volume = measures[0] + measures[1] + measures[2];
-            if (!(volume > 0.0))
-                throw std::invalid_argument("Masetti cell box volume must be positive.");
+            if (cell.node_ids.size() != measures.size() || !(volume > 0.0))
+                throw std::invalid_argument("Vertex Masetti requires a Tri3 cell with positive averaging measure.");
             Real cellMobility = 0.0;
             for (std::size_t k = 0; k < measures.size(); ++k) {
-                const Real impurity = doping.totalImpurity(mesh.getCell(c).node_ids[k]);
+                const Real impurity = nodeMobilityDopingConcentration(mesh, doping, cell.node_ids[k], c, mobilityConfig);
                 const Real vertexMobility = carrier == CarrierType::Electron
                     ? mobility.electronMobility(material, impurity, 0.0, 0.0,
                         electricField, surfaceNormalField, surfaceDistance)
                     : mobility.holeMobility(material, impurity, 0.0, 0.0,
                         electricField, surfaceNormalField, surfaceDistance);
-                cellMobility += measures[k] * vertexMobility;
+                if (boxMasetti)
+                    cellMobility += measures[k] * vertexMobility;
+                else if (vertexMobility > 0.0) {
+                    // Same order as the cached scalar kernel and field derivative.
+                    sum += vertexMobility;
+                    ++contributingCells;
+                }
             }
-            sum += edgeWeight * (cellMobility / volume);
-            boxWeight += edgeWeight;
+            if (boxMasetti) {
+                sum += edgeWeight * (cellMobility / volume);
+                boxWeight += edgeWeight;
+            }
             continue;
         }
         const Real mobilityDoping = edgeMobilityDopingConcentration(
@@ -1949,7 +1959,7 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         sum += modelMobility;
         ++contributingCells;
     }
-    if (vertexMasetti)
+    if (boxMasetti)
         return boxWeight > 0.0 ? sum / boxWeight : 0.0;
     if (contributingCells == 0)
         return 0.0;

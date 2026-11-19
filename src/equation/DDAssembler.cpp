@@ -169,7 +169,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
 {
     (void)usesFermiDirac(carrierStatistics_);
-    if (mobilityConfig_.edgeAveraging != "legacy" || scaling_.regionResolvedInterfaceAssembly.transportEdgeGeometry != "inherit")
+    if ((mobilityConfig_.edgeAveraging != "legacy" && mobilityConfig_.edgeAveraging != "auto") ||
+        scaling_.regionResolvedInterfaceAssembly.transportEdgeGeometry != "inherit")
         throw std::invalid_argument("DDAssembler: element box carrier transport requires CoupledDDAssembler (Newton).");
     if (scaling_.regionResolvedInterfaceAssembly.srhSignedTransportVolumeFraction != 0.0 ||
         scaling_.regionResolvedInterfaceAssembly.poissonChargeNodeVolume != "inherit" ||

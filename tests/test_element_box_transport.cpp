@@ -395,3 +395,38 @@ TEST_CASE("Element Masetti averages vertex mobility over the cell box",
     }
     FAIL("Expected the Si/oxide interface edge");
 }
+
+TEST_CASE("Default Masetti averages nodal mobility with legacy edge geometry",
+          "[element_box_transport]")
+{
+    auto mesh = pairMesh(0.9, true);
+    mesh.buildBoxGeometry();
+    MaterialDatabase database;
+    const auto materials = detail::buildCellMaterials(mesh, database, 300.0);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    DopingModel doping(mesh.numNodes());
+    doping.setNodeDoping(0, 1e22, 0.0);
+    doping.setNodeDoping(1, 1e22, 0.0);
+    doping.setNodeDoping(2, 8e24, 0.0);
+    auto config = mobilityModelConfigFromJson("masetti_field");
+    REQUIRE(usesVertexSampledMasetti(config));
+    const auto mobility = makeMobilityModel(config);
+    constexpr Real field = 6e5;
+    const auto evaluate = [&](const MobilityModelConfig& policy) {
+        return detail::edgeMobility(edgeCells, mesh, doping, *mobility, materials,
+            0, CarrierType::Electron, field, &policy);
+    };
+    const Real low = mobility->electronMobility(materials[0], 1e22, 0.0, 0.0, field);
+    const Real high = mobility->electronMobility(materials[0], 8e24, 0.0, 0.0, field);
+    REQUIRE(evaluate(config) == Catch::Approx((2.0 * low + high) / 3.0).epsilon(1e-13));
+
+    config.edgeAveraging = "legacy";
+    const auto& edge = mesh.getEdge(0);
+    const Real midpoint = (doping.netDoping(edge.n0) + doping.netDoping(edge.n1)) / 2.0;
+    REQUIRE(evaluate(config) == Catch::Approx(
+        mobility->electronMobility(materials[0], midpoint, 0.0, 0.0, field)));
+
+    config.edgeAveraging = "auto";
+    config.dopingConcentrationBasis = "cell_reconstructed_total_impurity";
+    REQUIRE_FALSE(usesVertexSampledMasetti(config));
+}

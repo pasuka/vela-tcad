@@ -27,19 +27,25 @@ D einsteinLimit(const D&eta){Real f=fermiDiracHalf(eta.v),df=fermiDiracHalfDeriv
 }
 }
 ThermalSgCurrent thermalSgCurrent(const SiliconThermalState&a,const SiliconThermalResult&pa,
-    const SiliconThermalState&b,const SiliconThermalResult&pb,Real mu,Real weight,bool electron){
+    const SiliconThermalState&b,const SiliconThermalResult&pb,Real mu,Real weight,bool electron,
+    FermiSgFormulation formulation){
     if(!std::isfinite(mu)||mu<=0.||!std::isfinite(weight)||weight<0.)throw std::invalid_argument("Invalid thermal SG mobility/weight");
     if(weight==0.)return {};
     const D ta=variable(a.temperature_K,3),tb=variable(b.temperature_K,7),vt=D(constants::kb/constants::q)*(ta+tb)/D(2.);
     const D qa=variable(electron?a.electronQf_V:a.holeQf_V,electron?1:2),qb=variable(electron?b.electronQf_V:b.holeQf_V,electron?5:6);
     const D n0=quantity(electron?pa.electrons_m3:pa.holes_m3,0),n1=quantity(electron?pb.electrons_m3:pb.holes_m3,4);
-    const D dos0=quantity(electron?pa.Nc_m3:pa.Nv_m3,0),dos1=quantity(electron?pb.Nc_m3:pb.Nv_m3,4);
     if(!(ta.v>=50.)||!(tb.v>=50.)||!(n0.v>0.)||!(n1.v>0.))throw std::invalid_argument("Invalid thermal SG temperature/density");
-    const D eta0=quantity(electron?pa.electronEta:pa.holeEta,0);
-    const D eta1=quantity(electron?pb.electronEta:pb.holeEta,4);
-    const D logF=(log(n1)-log(dos1))-(log(n0)-log(dos0));
-    D g=std::abs(logF.v)>1e-8?(eta1-eta0)/logF:einsteinLimit((eta0+eta1)/D(2.));
-    if(!(g.v>0.)||!std::isfinite(g.v))g=einsteinLimit((eta0+eta1)/D(2.));
+    D g(1.0);
+    if (formulation != FermiSgFormulation::EffectivePotential) {
+        const D dos0 = quantity(electron ? pa.Nc_m3 : pa.Nv_m3, 0);
+        const D dos1 = quantity(electron ? pb.Nc_m3 : pb.Nv_m3, 4);
+        const D eta0 = quantity(electron ? pa.electronEta : pa.holeEta, 0);
+        const D eta1 = quantity(electron ? pb.electronEta : pb.holeEta, 4);
+        const D logF = (log(n1) - log(dos1)) - (log(n0) - log(dos0));
+        g = std::abs(logF.v) > 1e-8 ? (eta1 - eta0) / logF : einsteinLimit((eta0 + eta1) / D(2.0));
+        if (!(g.v > 0.0) || !std::isfinite(g.v))
+            g = einsteinLimit((eta0 + eta1) / D(2.0));
+    }
     const D qfDifference=D(electron?b.electronQfReference_V-a.electronQfReference_V:b.holeQfReference_V-a.holeQfReference_V)+qb-qa;
     const D y=D(electron?1.:-1.)*qfDifference/(vt*g),arg=log(n1)-log(n0)+y;
     D current;

@@ -340,3 +340,37 @@ TEST_CASE("Thermal SG preserves QF increments below the absolute potential spaci
         CHECK(pa.holes_m3.value==Catch::Approx(ps.holes_m3.value).epsilon(1e-12));
     }
 }
+
+TEST_CASE("Both thermal Fermi SG closures recover their degenerate isothermal limit",
+          "[thermal][sg]")
+{
+    const SiliconThermalPhysics model;
+    constexpr double vt = constants::Vt_300;
+    constexpr double mobility = 0.04;
+    constexpr double geom = 0.8;
+    constexpr double drop = 0.012;
+    for (bool electron : {true, false}) {
+        const double sign = electron ? 1.0 : -1.0;
+        const SiliconThermalState a{sign * 0.59, 0.0, 0.0};
+        const SiliconThermalState b{sign * 0.68, drop, drop};
+        const auto pa = model.evaluate(a);
+        const auto pb = model.evaluate(b);
+        const auto& da = electron ? pa.electrons_m3 : pa.holes_m3;
+        const auto& db = electron ? pb.electrons_m3 : pb.holes_m3;
+        const double eta0 = (electron ? pa.electronEta : pa.holeEta).value;
+        const double eta1 = (electron ? pb.electronEta : pb.holeEta).value;
+        const double drift = sign * vt * (eta1 - eta0) + drop;
+        const double coefficient = -sign * constants::q * mobility * geom * vt;
+        REQUIRE(eta0 > 0.0);
+        for (auto formulation : {FermiSgFormulation::GeneralizedEinstein,
+                                 FermiSgFormulation::EffectivePotential}) {
+            const auto thermal = thermalSgCurrent(a, pa, b, pb, mobility, geom, electron, formulation);
+            const double iso = electron
+                ? sgElectronFermiDiracContinuityFlux(da.value, db.value, eta0, eta1,
+                    drift, 0.0, drop, vt, coefficient, formulation)
+                : sgHoleFermiDiracContinuityFlux(da.value, db.value, eta0, eta1,
+                    drift, 0.0, drop, vt, coefficient, formulation);
+            REQUIRE(iso == Catch::Approx(thermal.current_A_per_m).epsilon(2e-13));
+        }
+    }
+}

@@ -7296,3 +7296,15 @@ TEST_CASE("Actual scatter audit reconstructs J and preserves Newton state", "[ne
         REQUIRE(contributions==expectedContributions);REQUIRE(caches==expectedCaches);
     }
 }
+
+TEST_CASE("Classical Newton resolves the Fermi SG default and explicit rollback",
+          "[newton][carrier_statistics]")
+{
+    const auto automatic = newtonConfigFromJson({{"carrier_statistics", "fermi_dirac"}});
+    REQUIRE(automatic.carrierStatistics.sgFormulation == FermiSgFormulation::EffectivePotential);
+    const auto legacy = newtonConfigFromJson({
+        {"carrier_statistics", {{"model", "fermi_dirac"}, {"sg_formulation", "generalized_einstein"}}}});
+    REQUIRE(legacy.carrierStatistics.sgFormulation == FermiSgFormulation::GeneralizedEinstein);
+    const auto boltzmann = newtonConfigFromJson(nlohmann::json::object());
+    REQUIRE(boltzmann.carrierStatistics.sgFormulation == FermiSgFormulation::GeneralizedEinstein);
+}

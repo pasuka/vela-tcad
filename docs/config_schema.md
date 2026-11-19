@@ -118,18 +118,26 @@ Explicit element-box transport and the restricted PhuMob candidate:
   `inherit` (default) or `element_box`. The latter sums only transport-cell
   local coefficients times edge length. It rejects combination with the old
   `transport_edge_coupling` flag or explicit edge ratios.
-- `solver.mobility.edge_averaging`: `legacy` (default), `element_box`, or
-  the explicit experimental `element_box_phumob` candidate.
-  The new option requires `model: constant` or `masetti`,
+- `solver.mobility.edge_averaging`: `auto` (default), `legacy`, `element_box`,
+  `element_box_masetti`, or `element_box_phumob`.
+  For Masetti models on Tri3 cells with a nodal doping basis, `auto` evaluates
+  mobility at each cell vertex and averages the samples over the transport
+  triangles adjacent to the edge. The same local field is used at each vertex.
+  The `cell_reconstructed_total_impurity` basis keeps its explicit cell
+  reconstruction. Set `legacy` to reproduce the historical mobility evaluation.
+  The `element_box` option requires `model: constant` or `masetti`,
   `doping_concentration_basis: total_impurity`, `element_box` transport and
   `cell_material` geometry. It first averages each node's model mobility with
   `M(T,i)=sum_j(g(T,ij)*length(ij)^2)/4`, divided by the actual sum of these
   measures. Edge mobility is `sum_T(g(T,e)*mu_T)/sum_T(g(T,e))` over transport
   cells. Zero transport geometry yields zero mobility. Field-dependent,
   surface and carrier-dependent models are rejected for this averaging mode.
+  The explicit `element_box_masetti` mode uses the same box weights for
+  `masetti_field_lombardi` with total impurity, preserving the local field and
+  surface model at each sampled vertex.
 
-These two carrier controls currently require coupled Newton; Gummel's carrier
-assembler rejects them. Coupled residuals, analytic Jacobian, conservative
+The explicit element-box carrier controls currently require coupled Newton.
+Gummel's carrier assembler rejects them. Coupled residuals, analytic Jacobian, conservative
 port extraction and edge mobility probes share the new constitutive function.
 For the supported doping-only models, mobility has no state derivatives.
 This does not change SRH quadrature or Poisson charge volumes. The existing
@@ -1861,6 +1869,15 @@ The coupled Newton drift-diffusion solver accepts either form below:
 ```json
 "carrier_statistics": { "model": "fermi_dirac" }
 ```
+
+In classical isothermal Newton with integral Fermi–Dirac statistics, the
+automatic SG selection is `effective_potential` when impact ionization and
+the quantum potential are disabled. Set
+`carrier_statistics.sg_formulation: generalized_einstein` to retain the
+historical flux. The dedicated Tri3 operator keeps its own formulation.
+The thermal driver retains its generalized-Einstein formulation, and the
+thermal kernel can also evaluate the effective-potential isothermal limit
+when that closure is selected explicitly.
 
 Supported values are `boltzmann` (the compatibility default),
 `fermi_dirac`, and the explicitly restricted `fermi_dirac_joyce_dixon`.

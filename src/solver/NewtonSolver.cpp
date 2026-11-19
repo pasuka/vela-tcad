@@ -1596,6 +1596,19 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     return result;
 }
 namespace {
+void resolveFermiSgDefault(NewtonConfig& config)
+{
+    auto& statistics = config.carrierStatistics;
+    if (statistics.sgFormulation != FermiSgFormulation::Automatic)
+        return;
+    const bool classicalFermi = statistics.model == "fermi_dirac" &&
+        config.coupledOperator == "legacy" && config.impactIonization.model == "none" &&
+        !config.electronQuantumPotential.enabled;
+    statistics.sgFormulation = classicalFermi
+        ? FermiSgFormulation::EffectivePotential
+        : FermiSgFormulation::GeneralizedEinstein;
+}
+
 // One coordinate policy for JSON, direct C++ construction and CMD execution.
 // Positive populations and equation gates are not QF trust-region controls.
 void resolvePopulationDefaults(NewtonConfig& c) {
@@ -1843,10 +1856,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.carrierStatistics.model = statistics.get<std::string>();
         else if (statistics.is_object()) {
             cfg.carrierStatistics.model = statistics.value("model", cfg.carrierStatistics.model);
-            const auto formulation = statistics.value("sg_formulation", "generalized_einstein");
+            const auto formulation = statistics.value("sg_formulation", "auto");
             if (formulation == "effective_potential")
                 cfg.carrierStatistics.sgFormulation = FermiSgFormulation::EffectivePotential;
-            else if (formulation != "generalized_einstein")
+            else if (formulation == "generalized_einstein")
+                cfg.carrierStatistics.sgFormulation = FermiSgFormulation::GeneralizedEinstein;
+            else if (formulation != "auto")
                 throw std::invalid_argument("Unknown carrier_statistics.sg_formulation: " + formulation);
         } else
             throw std::invalid_argument(
@@ -2995,6 +3010,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument("Joyce-Dixon Newton dispatch requires bvmethods_tri3_qf");
     }
 
+    resolveFermiSgDefault(cfg);
     validatePopulationNumerics(cfg);
     validateNumericalPrecisionOptions(cfg);
     return cfg;
@@ -3019,6 +3035,7 @@ NewtonSolver::NewtonSolver(
     , sheetCharges_(std::move(sheetCharges))
 {
     resolvePopulationDefaults(cfg_);
+    resolveFermiSgDefault(cfg_);
     validateNumericalPrecisionOptions(cfg_);
     if((cfg_.populationSgCurrent!="quasi_fermi" && cfg_.populationSgCurrent!="band_population") ||
        (cfg_.populationSgCurrent!="quasi_fermi" && cfg_.stateVariables!="potential_density"))
@@ -3809,23 +3826,25 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 if(previous[k]==current[k])next[k]=current[k];
             (void)assembler->unpack(next);return next;
         };
-        system.jacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
-            return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns);
-        };
-        system.bootstrapJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
-            return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns,true);
-        };
-        system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
-        system.postProtectionDerivativeRecovery=cfg_.populationDerivativeRecovery=="after_protection";
-        system.protectedJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
-            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
-        };
-        system.protectedJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns) {
-            return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),&columns);
-        };
-        system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
-            return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
-        };
+        if (assembler->usesBvMethodsOperator()) {
+            system.jacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
+                return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns);
+            };
+            system.bootstrapJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns){
+                return assembler->populationJacobianInColumns(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),columns,true);
+            };
+            system.automaticDerivativeRecovery=cfg_.populationDerivativeRecovery=="automatic";
+            system.postProtectionDerivativeRecovery=cfg_.populationDerivativeRecovery=="after_protection";
+            system.protectedJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+                return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+            };
+            system.protectedJacobianInColumns=[self,assembler,biasesAt](const VectorXd& x,Real v,const VectorXd& columns) {
+                return assembler->populationProtectedJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)),&columns);
+            };
+            system.bootstrapJacobian=[self,assembler,biasesAt](const VectorXd& x,Real v) {
+                return assembler->populationBootstrapJacobian(x,self->buildBoundaryConditions(*assembler,biasesAt(v)));
+            };
+        }
         const double vt=thermalVoltage(cfg_.temperature_K);
         system.columnScales=[assembler,nodeCount,potentialScale,vt](const ArclengthState& state) {
             (void)assembler->unpack(state.x);VectorXd scale=VectorXd::Ones(3*nodeCount+1);
