@@ -27,15 +27,17 @@ class Field:
     metadata: dict
 
 
-def read_curve(path):
+def read_curve(path, voltage="inner"):
     _, rows = read_plt_document(path.read_text(encoding="utf-8"))
-    return [(row["Anode"]["outer_voltage_V"], row["Anode"]["total_current_A_per_um"])
+    column = f"{voltage}_voltage_V"
+    return [(row["Anode"].get(column), row["Anode"]["total_current_A_per_um"])
             for row in rows]
 
 
-def read_stage_curves(work, stages):
+def read_stage_curves(work, stages, voltage="inner"):
     """Keep separate swept terminals and bias axes for multistage decks."""
     curves = []
+    column = f"{voltage}_voltage_V"
     for index, stage in enumerate(stages, 1):
         if "csv" not in stage:
             continue
@@ -44,16 +46,34 @@ def read_stage_curves(work, stages):
             continue
         sweep = stage.get("sweep") or {}
         terminal = sweep.get("contact") or rows[0]["current_contact"]
+        # Equilibrium rows can omit voltage columns because the contacts are fixed.
+        fixed_voltage = None
+        if stage.get("kind") == "equilibrium" and not sweep:
+            fixed_voltage = (stage.get("electrode_voltages_goal_V") or {}).get(terminal)
         points = []
         for row in rows:
             current = row.get(f"contact_{terminal}_total_A_per_um")
             if not current and row["current_contact"] == terminal:
                 current = row.get("current_total_A_per_um")
             if current:
-                points.append((float(row.get("outer_voltage_V") or row["bias_V"]), float(current)))
+                value = row.get(column)
+                if value in (None, ""):
+                    value = row.get("bias_V") if voltage == "outer" else fixed_voltage
+                points.append((float(value) if value not in (None, "") else None, float(current)))
         if points:
             curves.append((index, terminal, points))
     return curves
+
+
+def display_coordinates(points, quarter_turns):
+    x, y = points[:, :2].T
+    if quarter_turns == 0:
+        return x, y
+    if quarter_turns == 1:
+        return -y, x
+    if quarter_turns == 2:
+        return -x, -y
+    return y, -x
 
 
 def _array(parent, name=None, dtype=float):

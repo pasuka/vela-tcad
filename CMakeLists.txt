@@ -852,6 +852,36 @@ install(FILES docs/sentaurus_sdevice_workflow.md docs/sdevice_packaging.md
     DESTINATION share/vela/docs COMPONENT SDeviceRuntime)
 install(FILES LICENSE DESTINATION . COMPONENT SDeviceRuntime)
 
+# Explicit Windows desktop distribution target, enabled by supplying the two
+# packaging dependencies. The normal solver build does not use Nuitka or MKL.
+set(VELA_SDS_NUITKA_PYTHON "" CACHE FILEPATH "Windows x64 CPython 3.12 with Nuitka and Matplotlib")
+set(VELA_SDS_MKL_ROOT "" CACHE PATH "oneMKL 2026.1 installation for the Windows SDS package")
+if(VELA_SDS_NUITKA_PYTHON OR VELA_SDS_MKL_ROOT)
+    if(NOT WIN32 OR NOT MINGW OR CMAKE_CONFIGURATION_TYPES
+            OR NOT CMAKE_BUILD_TYPE STREQUAL "Release"
+            OR NOT TARGET vela_example_runner_extended80 OR NOT TARGET sentaurus_import)
+        message(FATAL_ERROR "SDS packaging requires the Windows UCRT64 Release build with HDF5 and extended80.")
+    endif()
+    if(NOT EXISTS "${VELA_SDS_NUITKA_PYTHON}" OR IS_DIRECTORY "${VELA_SDS_NUITKA_PYTHON}")
+        message(FATAL_ERROR "Set VELA_SDS_NUITKA_PYTHON to a Windows x64 CPython 3.12 executable with Nuitka and Matplotlib.")
+    endif()
+    if(NOT EXISTS "${VELA_SDS_MKL_ROOT}/bin/mkl_rt.3.dll")
+        message(FATAL_ERROR "Set VELA_SDS_MKL_ROOT to the Windows oneMKL 2026.1 installation directory.")
+    endif()
+    add_custom_target(sds_package
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/package_vela_workbench.py"
+                --build-dir "${CMAKE_CURRENT_BINARY_DIR}"
+                --toolchain-bin "${VELA_MINGW_RUNTIME_DIR}"
+                --mkl "${VELA_SDS_MKL_ROOT}"
+                --nuitka-python "${VELA_SDS_NUITKA_PYTHON}"
+                --output "${CMAKE_CURRENT_BINARY_DIR}/sds-package"
+                --replace-existing
+        DEPENDS sd-sim vela vela_example_runner vela_example_runner_extended80 sentaurus_import
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Building the SDS Windows x64 distribution"
+        USES_TERMINAL VERBATIM)
+endif()
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------

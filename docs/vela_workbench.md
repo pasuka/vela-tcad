@@ -3,12 +3,16 @@
 工作台通过 `sd-sim.exe` 运行只读算例库。25 个可运行输入对应 23 项 CTest，
 包括 PN2D 零偏、正向 I–V、反向 BV 和 16 个变体，以及三个栅极算例、肖特基、
 BJT M1 和 BVMethods。栅极的三个输入分别显示在列表中。
-界面默认使用英文，窗口右上角的「中文」和「English」可随时切换。切换后会保存显示语言。
-用 Ctrl 或 Shift 多选算例，点击「Run Selected」开始串行批跑。
+界面默认使用英文，可通过「设置」菜单或工具栏的语言图标切换。应用会保存显示语言。
+「文件」「仿真」「设置」菜单下方的图标工具栏提供相同操作，悬停可查看说明。
+用 Ctrl 或 Shift 多选算例，从「仿真」菜单或工具栏选择「运行选中」开始串行批跑。
 「Stop Queue」取消等待中的算例，当前求解结束后可以关闭窗口。
 单跑时进度条以动画表示求解仍在进行。批跑时进度条按已处理的算例计数，
 状态栏从运行日志显示当前阶段和最后接受的偏压。
 点击算例可查看曲线、三角网格、末态场量、日志及只读的 Sentaurus 原始脚本。
+所有算例的曲线默认以端子内压为横轴，曲线页可切换到外压。旧结果缺少内压时，
+页面会提示可选用外压。网格页支持顺时针或逆时针旋转 90° 和复位，同一次运行的
+末态云图跟随旋转，坐标轴以 x′、y′ 标记旋转后的方向。
 查看已有结果时，先选择对应算例，再点击「打开已有运行」并选择运行目录。
 工作台核对算例输入哈希，随后读取已保存的结果。首次打开有结果的图形页时，
 工作台才加载绘图库，Matplotlib 缓存存放于 `%LOCALAPPDATA%/VelaTCAD/matplotlib`。
@@ -17,8 +21,8 @@ BJT M1 和 BVMethods。栅极的三个输入分别显示在列表中。
 
 ## 用户配置
 
-首次启动会创建 `%LOCALAPPDATA%/VelaTCAD/sds-settings.json`。点击右上角的
-「设置」可打开此文件。修改后保存并重启工作台。也可用
+首次启动会创建 `%LOCALAPPDATA%/VelaTCAD/sds-settings.json`。从「设置」菜单选择
+「打开配置文件」可编辑此文件。修改后保存并重启工作台。也可用
 `SDS.exe --config "<配置文件的绝对路径>"` 读取另一份配置。
 
 ```json
@@ -96,9 +100,13 @@ Nuitka 首次构建时会下载 Zig 工具链。设置 `$nuitkaPython` 为此
 解释器路径，设置 `$mklRoot` 为本机 oneMKL 2026.1 安装目录。
 
 ```powershell
-cmake --build --preset windows-ucrt64-release --target sd-sim vela vela_example_runner vela_example_runner_extended80 sentaurus_import
-python scripts/package_vela_workbench.py --build-dir build-release --mkl "$mklRoot" --nuitka-python "$nuitkaPython" --output build/sds-native-release
+cmake --preset windows-ucrt64-release "-DVELA_SDS_NUITKA_PYTHON=$nuitkaPython" "-DVELA_SDS_MKL_ROOT=$mklRoot"
+cmake --build --preset windows-ucrt64-release --target sds_package
 ```
+
+配置时提供这两个路径即可启用 `sds_package`。该目标按需执行，并先构建
+求解器和导入工具。产物为 `build-release/sds-package/SDS-windows-x64.zip`
+和同目录下的 `SDS/SDS.exe`。再次执行时，通过检查的新包会替换该目录中的旧包。
 
 解压整个 `SDS-windows-x64.zip` 后，双击其中的 `SDS.exe`。目录包带有
 已编译的 GUI 和 SDevice 前端、Tk、绘图库、`sd-sim`、只读算例库和

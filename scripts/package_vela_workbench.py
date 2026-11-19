@@ -113,10 +113,10 @@ def copy_pe_imports(paths, destination, search, objdump):
             binaries.append(output)
 
 
-def copy_dll_dependencies(runtime, prefix):
+def copy_dll_dependencies(runtime, toolchain_bin):
     binaries = runtime / "bin"
     engines = (path for path in binaries.iterdir() if path.suffix.lower() in {".exe", ".dll"})
-    copy_pe_imports(engines, binaries, (prefix / "bin",), prefix / "bin/objdump.exe")
+    copy_pe_imports(engines, binaries, (toolchain_bin,), toolchain_bin / "objdump.exe")
 
 
 def stage_build_runtime(build, runtime):
@@ -140,7 +140,6 @@ def stage_build_runtime(build, runtime):
 
 
 def build_package(args, package, scratch):
-    prefix = Path(sys.base_prefix).resolve()
     runtime = package / "vela"
     if args.build_dir:
         stage_build_runtime(args.build_dir, runtime)
@@ -162,10 +161,10 @@ def build_package(args, package, scratch):
 
     compile_frontends(args.nuitka_python, source_archive, package, scratch)
     prepare_cases(package / "cases")
-    subprocess.run([prefix / "bin/g++.exe", "-std=c++20", "-O2", "-static", "-mwindows",
+    subprocess.run([args.toolchain_bin / "g++.exe", "-std=c++20", "-O2", "-static", "-mwindows",
                     "-municode", SCRIPTS / "vela_workbench_launcher.cpp", "-o", package / "SDS.exe"],
                    check=True)
-    copy_dll_dependencies(runtime, prefix)
+    copy_dll_dependencies(runtime, args.toolchain_bin)
     copy_python_licenses(args.nuitka_python, package / "licenses")
     env = dict(os.environ)
     # Verify that a runtime supplied via --runtime uses the compiled frontend.
@@ -175,7 +174,7 @@ def build_package(args, package, scratch):
         "Semiconductor Device Simulator\n\n"
         "Extract the entire ZIP, then double-click SDS.exe. The application uses the bundled\n"
         "reference inputs and writes runs under %LOCALAPPDATA%\\VelaTCAD\\runs.\n"
-        "Click the Chinese-language switch in the toolbar to switch languages.\n",
+        "Use the language icon or the Settings menu to switch languages.\n",
         encoding="utf-8",
     )
     with (runtime / "sd-sim.exe").open("rb") as stream:
@@ -188,6 +187,42 @@ def build_package(args, package, scratch):
     ) + "\n", encoding="utf-8")
 
 
+def check_output(output, replace_existing):
+    if not output.exists() and not output.is_symlink():
+        return
+    if not replace_existing:
+        raise ValueError(f"Output directory already exists: {output}")
+    if (output.resolve() != output or not output.is_dir()
+            or {path.name for path in output.iterdir()} != {"SDS", "SDS-windows-x64.zip"}
+            or not (output / "SDS/PACKAGE.json").is_file()
+            or not (output / "SDS-windows-x64.zip").is_file()):
+        raise ValueError(f"Output is not a packaged SDS release: {output}")
+
+
+def publish_release(staging, output, replace_existing):
+    if not replace_existing:
+        staging.rename(output)
+        return
+    backup_dir = output.with_name(f".{output.name}-previous")
+    backup_dir.mkdir()
+    previous = backup_dir / output.name
+    try:
+        check_output(output, replace_existing)
+        if output.exists():
+            output.rename(previous)
+        try:
+            staging.rename(output)
+        except OSError:
+            if previous.exists():
+                previous.rename(output)
+            raise
+        if previous.exists():
+            shutil.rmtree(previous)
+    finally:
+        if not previous.exists():
+            backup_dir.rmdir()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -196,15 +231,21 @@ def main():
     parser.add_argument("--mkl", type=Path, required=True, help="oneMKL 2026.1 installation root")
     parser.add_argument("--nuitka-python", type=Path, required=True,
                         help="Windows x64 CPython 3.12 with Nuitka and Matplotlib installed")
-    parser.add_argument("--output", type=Path, required=True, help="New directory for SDS and its ZIP")
+    parser.add_argument("--toolchain-bin", type=Path, default=Path(sys.base_prefix) / "bin",
+                        help="MSYS2 UCRT64 directory containing g++, objdump and runtime DLLs")
+    parser.add_argument("--output", type=Path, required=True, help="Directory for SDS and its ZIP")
+    parser.add_argument("--replace-existing", action="store_true",
+                        help="Replace a previous SDS release after the new one passes archive checks")
     args = parser.parse_args()
-    for name in ("build_dir", "runtime", "mkl", "nuitka_python"):
+    for name in ("build_dir", "runtime", "mkl", "nuitka_python", "toolchain_bin"):
         value = getattr(args, name)
         if value:
             setattr(args, name, value.resolve())
-    output = args.output.resolve()
-    if output.exists():
-        parser.error(f"Output directory already exists: {output}")
+    output = args.output.parent.resolve() / args.output.name
+    try:
+        check_output(output, args.replace_existing)
+    except ValueError as error:
+        parser.error(str(error))
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="sds-", dir=output.parent) as directory:
         staging = Path(directory) / "release"
@@ -218,7 +259,7 @@ def main():
                     archive.write(path, path.relative_to(staging))
         with zipfile.ZipFile(staging / "SDS-windows-x64.zip") as archive:
             check_archive(archive)
-        staging.rename(output)
+        publish_release(staging, output, args.replace_existing)
     print(output / "SDS-windows-x64.zip")
 
 
