@@ -14,7 +14,12 @@
     "sentaurus_idvg_reference.csv": "17dcacc5a4ddb565f9062066441420e68c851bd03f13776f81e963486f9eb9c0",
     "../source/pp6_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
     "../source/pp6_des.cmd": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
-    "pp6_deep_off.vela.json": "0ceb376ea9b8ca722288aebe0b990c38820c5cef1a0844ea7e761710cc431bd1"
+    "pp6_deep_off.vela.json": "0ceb376ea9b8ca722288aebe0b990c38820c5cef1a0844ea7e761710cc431bd1",
+    "pp13_des.cmd": "3d00bbb3f5d96a71d3ec2a173a035bdc8fc1be86dbd9f8c8101921efc70db056",
+    "pp13_des.vela.json": "b179e01a2fe5d2d1ac87c1fbd09b47fb3ff7a150d5ec9476190d229229d2eb12",
+    "sentaurus_dg_idvd_reference.csv": "b0cdce701452a246202bc824b566ae62c9a346344543b2a3f43a941a894ad587",
+    "../source/pp13_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "../source/pp13_des.cmd": "b5c06cc6a3b0ae2c71e869253936758b094657efe85baf3371996748b48e9bf1"
   },
   "polysilicon_parameter_source": {
     "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
@@ -27,6 +32,12 @@
     "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
     "source_file": "IdVgs_n6_des.plt",
     "source_sha256": "8572711930493c59082d0ed902555492cc4e14aa85740025dc9b8d6aa31edab9",
+    "extracted_from": "docs/validation/transportmodels_dd_dg_srh_corrected_cold_regression_2026-08-23.json"
+  },
+  "dg_idvd_curve_source": {
+    "sentaurus_release": "T-2022.03-SP2 (0.7745337)",
+    "source_file": "IdVds_n13_des.plt",
+    "source_sha256": "dcf5ff67035fba6609f34366abc91248c1476a36550fc3d88b93c02c03d6eee5",
     "extracted_from": "docs/validation/transportmodels_dd_dg_srh_corrected_cold_regression_2026-08-23.json"
   }
 }

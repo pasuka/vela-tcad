@@ -1,4 +1,4 @@
-# TransportModels DD regressions
+# TransportModels DD and DG regressions
 
 ## Id–Vd
 
@@ -107,3 +107,32 @@ relative error in the on region. The three deep-off points also require
 `Id / abs(sum(Iterminal)) >= 10`. The test reads the four terminal currents
 and requested biases directly from the published PLT and writes the
 per-bias comparison and failed bias list under `reference-u2022-reports`.
+
+## DG Id–Vd
+
+Enable `VELA_ENABLE_TRANSPORTMODELS_DG_IDVD_CI=ON` to register
+`reference_u2022_transportmodels_dg_idvd`. Use the same Release,
+physical-constants and oneMKL settings as DD Id–Vd, with HDF5 state
+support and Python h5py. The test stages the original `pp13_des.par`
+and the shared PolySi excerpt on the same frozen grid.
+
+The standalone CMD keeps `eQuantumPotential` in Physics and in the Solve
+statements. The sidecar controls the existing outer DG solver and selects
+the `sentaurus_box` discretization from the DD/DG contract. Vela initializes
+at `Vg=1 V, Vd=0 V` with nonlinear classical Poisson (the CMD's 100-iteration
+budget), then closes the coupled equilibrium with self-consistent DG before
+sweeping the drain from 0 V to 2 V. The transport block solves potential
+and contact-basin quasi-Fermi potentials. Vela allows 80 Newton updates
+per frozen-quantum transport solve with relative residual tolerance 1e-7.
+The drain step bounds, extrapolation setting, and 21 requested
+CurrentPlot voltages come from the CMD.
+
+The fixture pins the DG drain current from Sentaurus T-2022.03-SP2
+`IdVds_n13_des.plt`, as recorded in the historical comparison linked
+above. It applies the existing 5% maximum relative current error over
+0.1–2 V and 3% at 2 V. The report includes the zero-bias current and
+four-terminal current sum. It also requires self-consistent DG convergence
+at every accepted point and checks finite, nonzero nodal electron quantum
+potentials in the 0 V and 2 V HDF5 states, including a response to the drain
+bias. The field gate checks Vela's self-consistent DG state and its bias
+response. The Sentaurus comparison uses terminal current.

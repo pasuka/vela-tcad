@@ -59,6 +59,19 @@
           "properties": {
             "sg_formulation": {"enum": ["auto", "generalized_einstein", "effective_potential"]}
           }
+        },
+        "electron_quantum_potential": {
+          "type": "object",
+          "description": "Density-gradient discretization and inner/outer iteration controls. Requires eQuantumPotential in CMD Physics.",
+          "additionalProperties": false,
+          "properties": {
+            "include_insulators": {"type": "boolean"},
+            "global_discretization": {"const": "sentaurus_box"},
+            "coefficient_mass_ratio": {"type": "number", "exclusiveMinimum": 0},
+            "outer_absolute_tolerance_V": {"type": "number", "exclusiveMinimum": 0},
+            "outer_max_iterations": {"type": "integer", "minimum": 1},
+            "max_iterations": {"type": "integer", "minimum": 1}
+          }
         }
       },
       "not": {
@@ -67,7 +80,6 @@
           {"required": ["impact_ionization"]},
           {"required": ["band_to_band"]},
           {"required": ["bandgap_narrowing"]},
-          {"required": ["electron_quantum_potential"]},
           {"required": ["temperature_K"]}
         ]
       }

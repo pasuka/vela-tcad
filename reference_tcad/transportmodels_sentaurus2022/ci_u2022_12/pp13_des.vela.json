@@ -1,0 +1,64 @@
+{
+  "schema": "vela.sdevice_sidecar.v1",
+  "sentaurus_step_control": true,
+  "high_field_gradient_discretization": "transport_cell_vector",
+  "solver": {
+    "method": "newton",
+    "warm_start": true,
+    "line_search": true,
+    "state_variables": "potential_quasi_fermi",
+    "quasi_fermi_reference": "contact_basin",
+    "quasi_fermi_update_limit_V": 0.025,
+    "continuity_row_scaling": {
+      "enabled": false
+    },
+    "srh_density_coupling": "sentaurus_default",
+    "region_resolved_interface_assembly": {
+      "poisson_charge_node_volume": "signed_transport",
+      "transport_edge_geometry": "element_box"
+    },
+    "mobility": {
+      "jacobian_field_derivatives": false,
+      "edge_averaging": "element_box_masetti"
+    },
+    "carrier_statistics": {
+      "sg_formulation": "generalized_einstein"
+    },
+    "abstol": 1e-12,
+    "carrier_row_convergence": {
+      "mode": "report"
+    },
+    "global_continuity_closure": {
+      "mode": "report"
+    },
+    "electron_quantum_potential": {
+      "include_insulators": true,
+      "global_discretization": "sentaurus_box",
+      "coefficient_mass_ratio": 1.0906506732296395,
+      "outer_absolute_tolerance_V": 0.01,
+      "outer_max_iterations": 80,
+      "max_iterations": 60
+    },
+    "max_iter": 80,
+    "reltol": 1e-07
+  },
+  "sweep": {
+    "diagnostics": {
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": [
+          "source",
+          "drain",
+          "gate",
+          "substrate"
+        ]
+      }
+    }
+  },
+  "mesh_geometry": {
+    "node_volume_policy": "barycentric",
+    "require_non_obtuse": false,
+    "poisson_permittivity_policy": "cell_material",
+    "cell_box_policy": "delaunay_transfer"
+  }
+}

@@ -342,6 +342,27 @@ class DeckEmitterTests(unittest.TestCase):
                     {"solver": {"max_iter": 0}}, {"apply_to": [9]}):
             self.assert_error("E409", emit, self.ir, sidecar={"schema": "vela.sdevice_sidecar.v1", **bad})
 
+    def test_density_gradient_controls_require_cmd_activation_and_keep_poisson_budget(self):
+        path = REPO / "reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/pp13_des.cmd"
+        ir = parse_cmd_text(path.read_text(encoding="utf-8"), path_name=path.name)
+        sidecar = json.loads(path.with_suffix(".vela.json").read_text(encoding="utf-8"))
+        result = emit(ir, sidecar=sidecar)
+        quantum = sidecar["solver"]["electron_quantum_potential"]
+        for before, after in zip(emit(ir).decks, result.decks, strict=True):
+            self.assertTrue(before["solver"]["electron_quantum_potential"]["enabled"])
+            self.assertEqual(after["solver"]["electron_quantum_potential"],
+                             {**before["solver"]["electron_quantum_potential"], **quantum})
+        self.assertEqual(result.decks[0]["sweep"]["initialization"],
+                         {"mode": "poisson_block", "poisson_max_iter": 100})
+        self.assertEqual(result.decks[0]["solver"]["max_iter"], sidecar["solver"]["max_iter"])
+        self.assertEqual(result.decks[1]["sweep"]["initial_state_file"],
+                         result.stage_plan["stages"][0]["output_state"])
+        self.assert_error("E409", emit, self.ir, sidecar=sidecar)
+        for forbidden in ({"enabled": False}, {"gamma": 8.0}):
+            invalid = deepcopy(sidecar)
+            invalid["solver"]["electron_quantum_potential"].update(forbidden)
+            self.assert_error("E409", emit, ir, sidecar=invalid)
+
     def test_mixed_voronoi_accepts_right_angles_and_rejects_obtuse_mesh(self):
         sidecar = {"schema": "vela.sdevice_sidecar.v1", "mesh_geometry": {"node_volume_policy": "mixed_voronoi"}}
         mesh = qualification(self.ir)

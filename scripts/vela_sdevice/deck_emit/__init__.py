@@ -438,6 +438,9 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             raise DeckEmitError("E409", file="sidecar", detail="physical parameters and arithmetic precision belong to the cmd/par")
     decisions = []
     solver = _physics(ir, report, decisions)
+    dg_controls = (sidecar or {}).get("solver", {}).get("electron_quantum_potential")
+    if dg_controls is not None and not solver.get("electron_quantum_potential", {}).get("enabled", False):
+        raise DeckEmitError("E409", file="sidecar", detail="density-gradient controls require CMD Physics eQuantumPotential")
     if "arithmetic_precision" in ir["math"]:
         solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
     contacts, electrodes = _contacts(ir, mesh, report, decisions)
@@ -512,6 +515,7 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             _decision(decisions, "Save", prefix, "sweep.write_state_file", state, "HDF5 snapshot", "W205")
             continue
         index = len(decks)
+        use_sidecar = sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"])
         if index in rebases and kind != "load":
             if set(rebases[index]) - set(voltages):
                 raise DeckEmitError("E407", detail="rebase contains an unknown electrode")
@@ -602,15 +606,26 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             _decision(decisions, "Extrapolate", extrapolate,
                       "sweep.continuation.predictor.mode", predictor,
                       "Use the Quasistationary setting when present, otherwise inherit Math", stage=index)
+        # The coupled outer DG solver can warm-start from nonlinear classical
+        # Poisson. This retains the initialization budget of a preceding
+        # Poisson/eQuantumPotential statement in an explicitly configured DG run.
+        poisson_equations = [["Poisson"]]
+        if use_sidecar and dg_controls and method != "poisson_only":
+            poisson_equations.append(["Poisson", "eQuantumPotential"])
+        poisson_stages = [s for s in group if s["equations"] in poisson_equations]
         if input_state:
             sweep["initial_state_file"] = input_state
-        elif method != "poisson_only" and any(s["equations"] == ["Poisson"] for s in group):
+        elif method != "poisson_only" and poisson_stages:
             # Preserve the original nonlinear Poisson budget when coalescing
             # equilibrium statements. A single block update is not a solve.
             poisson_budget = sum(s["iterations"] or math_cfg["iterations"] or 100
-                                 for s in group if s["equations"] == ["Poisson"])
+                                 for s in poisson_stages)
             sweep["initialization"] = {"mode": "poisson_block",
                                        "poisson_max_iter": poisson_budget}
+            if any("eQuantumPotential" in s["equations"] for s in poisson_stages):
+                _decision(decisions, "Poisson eQuantumPotential", poisson_budget,
+                          "sweep.initialization.poisson_max_iter", poisson_budget,
+                          "Classical Poisson warm start followed by self-consistent outer DG", "W207", index)
             # The preceding nonlinear Poisson solve supplies a converged
             # state. Preserve it for Coupled instead of re-running Gummel.
             deck["solver"].update(method="newton", warm_start=True)
@@ -700,7 +715,6 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
                       "Evaluate impact ionization without adding an avalanche source to the continuity equations",
                       stage=index)
         deck["sweep"] = sweep
-        use_sidecar = sidecar is not None and (not sidecar.get("apply_to") or index in sidecar["apply_to"])
         if use_sidecar:
             overrides = {k: deepcopy(v) for k, v in sidecar.items() if k not in ("schema", "description", "apply_to", "avalanche_current_support_profile", "high_field_gradient_discretization", "bvmethods_operator_profile", "sentaurus_step_control")}
             if "external_circuit" not in sweep and "sweep" in overrides:

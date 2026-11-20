@@ -29,6 +29,7 @@ CASES = {
     "bjt_m1": "genius_bjt_sentaurus2022",
     "gate_contacts": "gate_reference",
     "transportmodels_idvd": "transportmodels_sentaurus2022",
+    "transportmodels_dg_idvd": "transportmodels_sentaurus2022",
     "transportmodels_idvg": "transportmodels_sentaurus2022",
 }
 
@@ -185,10 +186,12 @@ def bjt_gates(fixture, run, stage, report):
     return summary["operational_pass"] and summary["numerical_parity_gate"]["pass"]
 
 
-def transportmodels_idvd_gates(launcher, fixture, output, env, report):
+def transportmodels_idvd_gates(launcher, fixture, output, env, report, *, density_gradient=False):
     work = output / "inputs"
-    stage_transportmodels_inputs(fixture, work, "pp12_des")
-    run, plan = run_sdevice(launcher, work, "pp12_des", env, report, final_only=True)
+    stem = "pp13_des" if density_gradient else "pp12_des"
+    stage_transportmodels_inputs(fixture, work, stem)
+    run, plan = run_sdevice(launcher, work, stem, env, report, final_only=True)
+    contract = read_json(fixture.parent / "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json")
     equilibrium, sweep_stage = plan
     biases = {"gate": 1.0, "drain": 0.0, "source": 0.0, "substrate": 0.0}
     if (equilibrium["kind"] != "equilibrium"
@@ -197,12 +200,20 @@ def transportmodels_idvd_gates(launcher, fixture, output, env, report):
             or sweep_stage["sweep"]["contact"] != "drain"
             or sweep_stage["input_state"] != equilibrium["output_state"]):
         raise ValueError("Unexpected TransportModels equilibrium or sweep")
+    coordinates = ({"state_variables": "potential_quasi_fermi", "quasi_fermi_reference": "contact_basin"}
+                   if density_gradient else {"state_variables": "potential_density", "primary_variable_coordinates": "unit"})
+    max_iter = read_json(fixture / f"{stem}.vela.json")["solver"].get("max_iter", 20)
     for stage in plan:
         solver = read_json(run / stage["deck"])["solver"]
-        expected = {"state_variables": "potential_density", "primary_variable_coordinates": "unit",
-                    "max_iter": 20, "temperature_K": 300.0}
+        expected = {**coordinates, "max_iter": max_iter, "temperature_K": 300.0}
         if any(solver.get(key) != value for key, value in expected.items()):
             raise ValueError(f"Unexpected TransportModels solver settings in {stage['deck']}")
+        if density_gradient:
+            quantum = solver.get("electron_quantum_potential", {})
+            required = ("enabled", "include_insulators", "global_discretization", "coefficient_mass_ratio",
+                        "outer_absolute_tolerance_V", "outer_max_iterations", "max_iterations")
+            if any(quantum.get(key) != contract["dg_quantum_contract"][key] for key in required):
+                raise ValueError(f"Unexpected density-gradient settings in {stage['deck']}")
     poisson = read_json(run / "stage00_poisson_initialization.json")
     if poisson["max_iter"] != 100 or not poisson["converged"]:
         raise ValueError("TransportModels Poisson initialization did not match the CMD budget")
@@ -220,8 +231,9 @@ def transportmodels_idvd_gates(launcher, fixture, output, env, report):
 
     contacts, samples = read_plt_document(
         (work / sweep_stage["current_file"]).read_text(encoding="utf-8"))
-    reference = read_csv(fixture / "sentaurus_reference.csv")
-    targets = [point / 10 for point in range(21)]
+    reference_name = "sentaurus_dg_idvd_reference.csv" if density_gradient else "sentaurus_reference.csv"
+    reference = read_csv(fixture / reference_name)
+    targets = contract["bias_contract"]["idvd"]["drain_bias_V"]
     if (set(contacts) != biases.keys() or len(samples) != len(targets)
             or [float(row["bias_V"]) for row in reference] != targets):
         raise ValueError("Expected 21 measured TransportModels CurrentPlot points and all four contacts")
@@ -244,7 +256,6 @@ def transportmodels_idvd_gates(launcher, fixture, output, env, report):
         writer = csv.DictWriter(handle, fieldnames=list(comparison[0]))
         writer.writeheader()
         writer.writerows(comparison)
-    contract = read_json(fixture.parent / "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json")
     limits = contract["acceptance"]
     max_error = max(row["relative_error"] for row in comparison[1:])
     end_error = comparison[-1]["relative_error"]
@@ -254,9 +265,40 @@ def transportmodels_idvd_gates(launcher, fixture, output, env, report):
         "zero_bias_drain_A_per_um": comparison[0]["vela_A_per_um"],
         "max_abs_kcl_residual_A_per_um": max(abs(row["kcl_residual_A_per_um"]) for row in comparison),
     }
-    print(f"DD Id閳ユ彜d max error: {max_error:.3%}, at 2 V: {end_error:.3%}", flush=True)
+    if density_gradient:
+        qualify_density_gradient(run, plan, report)
+    branch = "DG" if density_gradient else "DD"
+    print(f"{branch} Id-Vd max error: {max_error:.3%}, at 2 V: {end_error:.3%}", flush=True)
     return (max_error <= limits["idvd_max_absolute_relative_error"]
             and end_error <= limits["idvd_2V_max_absolute_relative_error"])
+
+
+def qualify_density_gradient(run, plan, report):
+    from state_archive import inspect
+
+    node_count = len(read_json(run / "mesh.json")["nodes"])
+    potentials = []
+    report["electron_quantum_potential"] = []
+    for stage in plan:
+        points = [row for row in read_csv(run / stage["csv"]) if row["converged"] == "1"]
+        if not points or any(not row["newton_convergence_reason"].endswith("+electron_density_gradient")
+                            for row in points):
+            raise ValueError("Expected self-consistent density-gradient convergence at every accepted point")
+        fields, metadata = inspect(run / stage["output_state"])
+        values = fields.get("electron_quantum_potential_V")
+        bias = stage["electrode_voltages_goal_V"]["drain"]
+        if (values is None or len(values) != node_count or not all(math.isfinite(v) for v in values)
+                or not any(values) or not math.isclose(metadata["bias_V"], bias, abs_tol=1e-12)):
+            raise ValueError(f"Missing or inconsistent quantum state at Vd={bias:g} V")
+        potentials.append(values)
+        report["electron_quantum_potential"].append({
+            "drain_bias_V": bias, "nodes": node_count, "accepted_dg_points": len(points),
+            "minimum_V": float(min(values)), "maximum_V": float(max(values)),
+        })
+    change = max(abs(a - b) for a, b in zip(*potentials, strict=True))
+    if change <= 0:
+        raise ValueError("The electron quantum potential did not respond to the applied drain bias")
+    report["max_quantum_potential_change_V"] = float(change)
 
 
 def transportmodels_idvg_samples(launcher, fixture, work, env, report, bias_contract, *, deep_off=False):
@@ -407,8 +449,9 @@ def main():
         verify_inputs(fixture)
         if args.case == "gate_contacts":
             passed = gate_cases(launcher, fixture, output, env, report)
-        elif args.case == "transportmodels_idvd":
-            passed = transportmodels_idvd_gates(launcher, fixture, output, env, report)
+        elif args.case in ("transportmodels_idvd", "transportmodels_dg_idvd"):
+            passed = transportmodels_idvd_gates(
+                launcher, fixture, output, env, report, density_gradient=args.case == "transportmodels_dg_idvd")
         elif args.case == "transportmodels_idvg":
             passed = transportmodels_idvg_gates(launcher, fixture, output, env, report)
         else:
