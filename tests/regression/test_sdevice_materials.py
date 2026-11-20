@@ -239,6 +239,17 @@ class NativeDosMassRegressionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             mat.electron_dos_mass(.1905,.9163,0.,1.17,1.12,bandgap_offset_eV=-1.12)
 
+    def test_dg_affinity_uses_temperature_at_fixed_bgn_reference(self):
+        defaults = mat.default_models_par_path()
+        for temperature in (250., 300., 350.):
+            result = mat.emit_materials(defaults, active_models=["eQuantumPotential", "OldSlotboom"],
+                                        temperature_K=temperature, mesh_materials=["Si"])
+            silicon = _material(result, "Si")
+            expected = 4.05 + 0.5 * 4.73e-4 * temperature**2 / (636.0 + temperature)
+            self.assertAlmostEqual(silicon["electron_quantum_affinity_eV"], expected, places=13)
+            self.assertEqual(silicon["electron_affinity_eV"], 4.05)
+            self.assertEqual([], sv.collect_errors(SCHEMA, result.materials))
+
 
 class DefaultLibraryTest(unittest.TestCase):
     """Acceptance 2: ``share/vela/materials/models.par`` (``vela device -P``).

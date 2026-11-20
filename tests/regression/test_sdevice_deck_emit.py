@@ -346,8 +346,11 @@ class DeckEmitterTests(unittest.TestCase):
         path = REPO / "reference_tcad/transportmodels_sentaurus2022/ci_u2022_12/pp13_des.cmd"
         ir = parse_cmd_text(path.read_text(encoding="utf-8"), path_name=path.name)
         sidecar = json.loads(path.with_suffix(".vela.json").read_text(encoding="utf-8"))
-        result = emit(ir, sidecar=sidecar)
         quantum = sidecar["solver"]["electron_quantum_potential"]
+        quantum.update(sentaurus_interface_insulator_half_jump_offset=0.02,
+                       sentaurus_interface_insulator_at_silicon_reaction_weight=2.6,
+                       sentaurus_interface_insulator_at_polysilicon_reaction_weight=2.6)
+        result = emit(ir, sidecar=sidecar)
         for before, after in zip(emit(ir).decks, result.decks, strict=True):
             self.assertTrue(before["solver"]["electron_quantum_potential"]["enabled"])
             self.assertEqual(after["solver"]["electron_quantum_potential"],
@@ -358,7 +361,8 @@ class DeckEmitterTests(unittest.TestCase):
         self.assertEqual(result.decks[1]["sweep"]["initial_state_file"],
                          result.stage_plan["stages"][0]["output_state"])
         self.assert_error("E409", emit, self.ir, sidecar=sidecar)
-        for forbidden in ({"enabled": False}, {"gamma": 8.0}):
+        for forbidden in ({"enabled": False}, {"gamma": 8.0}, {"include_insulators": False},
+                          {"sentaurus_interface_insulator_at_silicon_reaction_weight": 0.0}):
             invalid = deepcopy(sidecar)
             invalid["solver"]["electron_quantum_potential"].update(forbidden)
             self.assert_error("E409", emit, ir, sidecar=invalid)

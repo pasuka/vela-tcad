@@ -681,6 +681,7 @@ private:
         const VectorXd& suppliedElectronDensity, const VectorXd& suppliedHoleDensity,
         const CoupledDDFeedbackStateSubstitution* substitution) const;
     bool usesSentaurusDefaultSrhDensityCoupling() const;
+    Real srhElectronBandEdgeShiftAt(Index node) const;
     Real electronSrhDensityAt(Index node,
                               Real psiRelative_V,
                               Real phinIncrement_V) const;

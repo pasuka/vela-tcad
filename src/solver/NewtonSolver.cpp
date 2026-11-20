@@ -2660,10 +2660,18 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
     if (cfg.srhDopingDependence.densityCoupling != "quantum" &&
-        cfg.srhDopingDependence.densityCoupling != "sentaurus_default") {
+        cfg.srhDopingDependence.densityCoupling != "sentaurus_default" &&
+        !cfg.srhDopingDependence.usesQuantumBandEdge()) {
         throw std::invalid_argument(
-            "newtonConfigFromJson: srh_density_coupling must be 'quantum' or "
-            "'sentaurus_default'.");
+            "newtonConfigFromJson: srh_density_coupling must be 'quantum', "
+            "'sentaurus_default', or 'quantum_band_edge'.");
+    }
+    if (cfg.srhDopingDependence.usesQuantumBandEdge() &&
+        (!cfg.electronQuantumPotential.enabled ||
+         cfg.electronQuantumPotential.transportCoupling != "direct_band_edge")) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: quantum_band_edge SRH requires enabled "
+            "electron quantum potential with direct_band_edge transport coupling.");
     }
     if (cfg.augerExcessProduct != "generalized_fermi" &&
         cfg.augerExcessProduct != "classical_np") {
@@ -7005,14 +7013,19 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         std::vector<Real> cellDosMassDrive_V(
             static_cast<std::size_t>(mesh_.numCells()), 0.0);
         std::unordered_map<Index, Real> quantumDirichlet;
+        const bool useSentaurusBox =
+            cfg_.electronQuantumPotential.includeInsulators &&
+            cfg_.electronQuantumPotential.globalDiscretization == "sentaurus_box";
         for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
             const Cell& cell = mesh_.getCell(cellId);
             const Region& region = mesh_.getRegion(cell.region_id);
             const Material material = matdb_.getMaterial(region.material);
             const bool transport = material.ni > 0.0 && material.mun > 0.0;
             cellTransport[cellId] = transport;
-            cellElectronAffinity_eV[cellId] =
-                material.electron_affinity_eV.value_or(0.0);
+            const Real affinity = material.electron_affinity_eV.value_or(0.0);
+            cellElectronAffinity_eV[cellId] = useSentaurusBox
+                ? material.electron_quantum_affinity_eV.value_or(affinity)
+                : affinity;
             const bool active = transport ||
                 cfg_.electronQuantumPotential.includeInsulators;
             if (!active)
@@ -7050,8 +7063,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                 if (!nodeOwned[node] || (transport && !nodeTransportOwned[node])) {
                     materialCoefficient(static_cast<int>(node)) = coefficient;
                     materialBandDrive(static_cast<int>(node)) =
-                        material.electron_affinity_eV.value_or(0.0) +
-                        dosMassDrive;
+                        cellElectronAffinity_eV[cellId] + dosMassDrive;
                     nodeOwned[node] = true;
                     nodeTransportOwned[node] = transport;
                 }

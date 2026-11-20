@@ -17,6 +17,7 @@ import tempfile
 import time
 
 from check_sdevice_gate_contact_mapping import flatband_from_samples, read_vtu_potential
+from close_singledevice_validation import branch_metrics, load_comparison
 from compare_genius_bjt_sentaurus_vela import compare_model
 from run_schottky_reference_workflow import audit_kcl, audit_stage_b, compare_curves, read_csv
 from transportmodels_idvd_fixture import stage_transportmodels_inputs
@@ -31,6 +32,7 @@ CASES = {
     "transportmodels_idvd": "transportmodels_sentaurus2022",
     "transportmodels_dg_idvd": "transportmodels_sentaurus2022",
     "transportmodels_idvg": "transportmodels_sentaurus2022",
+    "singledevice_idvg_linear": "singledevice_sentaurus2018",
 }
 
 
@@ -286,18 +288,20 @@ def qualify_density_gradient(run, plan, report):
             raise ValueError("Expected self-consistent density-gradient convergence at every accepted point")
         fields, metadata = inspect(run / stage["output_state"])
         values = fields.get("electron_quantum_potential_V")
-        bias = stage["electrode_voltages_goal_V"]["drain"]
+        contact = stage.get("sweep", {}).get("contact", "drain")
+        bias = (stage["electrode_voltages_goal_V"][contact] if "sweep" in stage
+                else float(points[-1]["bias_V"]))
         if (values is None or len(values) != node_count or not all(math.isfinite(v) for v in values)
                 or not any(values) or not math.isclose(metadata["bias_V"], bias, abs_tol=1e-12)):
-            raise ValueError(f"Missing or inconsistent quantum state at Vd={bias:g} V")
+            raise ValueError(f"Missing or inconsistent quantum state at {contact}={bias:g} V")
         potentials.append(values)
         report["electron_quantum_potential"].append({
-            "drain_bias_V": bias, "nodes": node_count, "accepted_dg_points": len(points),
+            f"{contact}_bias_V": bias, "nodes": node_count, "accepted_dg_points": len(points),
             "minimum_V": float(min(values)), "maximum_V": float(max(values)),
         })
-    change = max(abs(a - b) for a, b in zip(*potentials, strict=True))
+    change = max(abs(a - b) for a, b in zip(potentials[0], potentials[-1], strict=True))
     if change <= 0:
-        raise ValueError("The electron quantum potential did not respond to the applied drain bias")
+        raise ValueError("The electron quantum potential did not respond to the applied bias")
     report["max_quantum_potential_change_V"] = float(change)
 
 
@@ -425,6 +429,109 @@ def transportmodels_idvg_gates(launcher, fixture, output, env, report):
     return not report["comparison"]["failed_biases_V"]
 
 
+def singledevice_idvg_gates(launcher, fixture, output, env, report):
+    stem = "singledevice_idvg"
+    inputs = output / "inputs"
+    stage_inputs(fixture, inputs, stem, [fixture / f"device.{ext}" for ext in ("grd", "dat")])
+    shutil.copyfile(fixture.parent.parent / "transportmodels_sentaurus2022/ci_u2022_12/polysilicon.par",
+                    inputs / "polysilicon.par")
+    run, plan = run_sdevice(launcher, inputs, stem, env, report, final_only=True)
+
+    manifest = read_json(fixture / "manifest.json")
+    mesh = read_json(run / "mesh.json")
+    inventory = {"nodes": len(mesh["nodes"]), "triangles": len(mesh["triangles"])}
+    if inventory != manifest["mesh"]["inventory"]:
+        raise ValueError(f"Unexpected SingleDevice mesh inventory: {inventory}")
+    report["mesh"] = manifest["mesh"]
+
+    equilibrium, drain, gate = plan
+    initial = dict(source=0.0, drain=0.0, gate=-0.5, substrate=0.0)
+    prebiased = {**initial, "drain": 0.1}
+    endpoint = {**prebiased, "gate": 2.2}
+    if (equilibrium["kind"] != "equilibrium" or equilibrium["input_state"] is not None
+            or equilibrium["electrode_voltages_goal_V"] != initial
+            or equilibrium["output_state"] != "singledevice_init_des.h5"):
+        raise ValueError("Expected a cold SingleDevice equilibrium saved at Vgs=-0.5 V and Vds=0 V")
+    for stage, preceding, contact, start, goal, initial_step, min_step, max_step, growth in (
+        (drain, equilibrium, "drain", initial, prebiased, 0.001, 1e-6, 0.01, 2.0),
+        (gate, drain, "gate", prebiased, endpoint, 0.0027, 2.7e-5, 0.27, 1.3),
+    ):
+        if (stage["kind"] != "sweep" or stage["sweep"]["contact"] != contact
+                or stage["input_state"] != preceding["output_state"]
+                or stage["electrode_voltages_start_V"] != start
+                or stage["electrode_voltages_goal_V"] != goal):
+            raise ValueError(f"Unexpected SingleDevice {contact} sweep or restart state")
+        sweep = read_json(run / stage["deck"])["sweep"]
+        numeric = dict(initial_step=initial_step, min_step=min_step, max_step=max_step,
+                       growth_factor=growth, shrink_factor=0.5)
+        controls = dict(step_growth_mode="newton_iterations", stop_below_minimum_step=True,
+                        preserve_step_after_output_clip=True)
+        if (any(not math.isclose(sweep[name], value, rel_tol=1e-12) for name, value in numeric.items())
+                or any(sweep.get(name) != value for name, value in controls.items())
+                or sweep["continuation"]["predictor"]["mode"] != "linear"):
+            raise ValueError(f"Unexpected SingleDevice Quasistationary controls in {stage['deck']}")
+    poisson = read_json(run / "stage00_poisson_initialization.json")
+    if poisson["max_iter"] != 100 or not poisson["converged"]:
+        raise ValueError("SingleDevice Poisson initialization did not match the CMD budget")
+    for stage in plan:
+        solver = read_json(run / stage["deck"])["solver"]
+        if (solver["state_variables"] != "potential_quasi_fermi"
+                or solver["temperature_K"] != 300
+                or not solver["electron_quantum_potential"]["enabled"]):
+            raise ValueError(f"Unexpected SingleDevice solver settings in {stage['deck']}")
+    qualify_density_gradient(run, plan, report)
+
+    reference = read_json(fixture.parent / "singledevice_sentaurus2018_reference.json")
+    linear = next(branch for branch in reference["simulations"] if branch["name"] == "idvg_lin")
+    oracle = read_csv(fixture.parent / linear["reference_csv"])
+    contacts, samples = read_plt_document((inputs / gate["current_file"]).read_text(encoding="utf-8"))
+    if set(contacts) != initial.keys() or len(samples) != len(oracle) or len(oracle) != linear["point_count"]:
+        raise ValueError("Expected 21 SingleDevice CurrentPlot biases and all four contacts")
+
+    comparison = []
+    for sample, expected in zip(samples, oracle, strict=True):
+        bias = float(expected["bias_V"])
+        if any(not math.isclose(sample[name]["outer_voltage_V"], voltage, rel_tol=0, abs_tol=1e-12)
+               for name, voltage in {**prebiased, "gate": bias}.items()):
+            raise ValueError(f"Incorrect electrode voltage at target Vgs={bias:g} V")
+        currents = [sample[name]["total_current_A_per_um"] for name in contacts]
+        current = sample["drain"]["total_current_A_per_um"]
+        if not all(map(math.isfinite, currents)) or current <= 0.0:
+            raise ValueError(f"Invalid terminal currents at Vgs={bias:g} V")
+        residual = abs(math.fsum(currents))
+        comparison.append({
+            "gate_voltage_V": bias, "sentaurus_current_A_per_um": float(expected["current_total"]),
+            "vela_current_A_per_um": current, "abs_kcl_residual_A_per_um": residual,
+            "relative_kcl_residual": residual / current,
+        })
+    path = output / "comparison.csv"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(comparison[0]))
+        writer.writeheader()
+        writer.writerows(comparison)
+
+    curve = branch_metrics(load_comparison(path), reference["low_current_acceptance"])
+    limits = reference["acceptance"]
+    checkpoints = (comparison[0], comparison[6], comparison[-1])
+    checks = {
+        "pointwise": curve["status"] == "pass",
+        "trend": curve["trend_match"],
+        "median_log_error": curve["median_abs_log_error_dex"] <= limits["median_log10_current_error_max_dex"],
+        "p95_log_error": curve["p95_abs_log_error_dex"] <= limits["p95_log10_current_error_max_dex"],
+        "ion": curve["ion"]["relative_error"] <= limits["ion_relative_error_max"],
+        "threshold": abs(curve["threshold"]["delta_V"]) <= limits["threshold_voltage_error_max_V"],
+        "subthreshold_swing": curve["subthreshold_swing"]["relative_error"]
+        <= limits["subthreshold_swing_relative_error_max"],
+        "terminal_balance": all(row["abs_kcl_residual_A_per_um"] <= 1e-14
+                                or row["relative_kcl_residual"] <= 0.01 for row in checkpoints),
+    }
+    report.update(curve=curve, acceptance=checks, terminal_balance_checkpoints=checkpoints,
+                  reference_version=reference["sentaurus_version"])
+    print(f"Linear DG Id-Vg at Vds=0.1 V: {len(samples)} output points, "
+          f"Ion error {curve['ion']['relative_error']:.3%}", flush=True)
+    return all(checks.values())
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("case", choices=CASES)
@@ -454,6 +561,8 @@ def main():
                 launcher, fixture, output, env, report, density_gradient=args.case == "transportmodels_dg_idvd")
         elif args.case == "transportmodels_idvg":
             passed = transportmodels_idvg_gates(launcher, fixture, output, env, report)
+        elif args.case == "singledevice_idvg_linear":
+            passed = singledevice_idvg_gates(launcher, fixture, output, env, report)
         else:
             schottky = args.case == "schottky_iv"
             stem = "schottky_n_des" if schottky else "bjt_m1_des"

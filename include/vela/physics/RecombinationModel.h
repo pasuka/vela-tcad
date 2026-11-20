@@ -53,11 +53,13 @@ struct SRHDopingDependenceConfig {
     Real referenceTemperature_K = 300.0;
     Real electronTemperatureExponent = 0.0;
     Real holeTemperatureExponent = 0.0;
-    /// Electron density used by SRH under density-gradient quantum correction:
-    /// ``quantum`` preserves the legacy Vela behavior; ``sentaurus_default``
-    /// evaluates the SRH denominator and generalized Fermi factors with the
-    /// classical density while transport and Poisson retain the quantum density.
+    /// SRH density and mass-action treatment under density-gradient correction.
+    /// "quantum" uses the transport density. "sentaurus_default" uses the
+    /// classical electron density. "quantum_band_edge" includes the frozen
+    /// DG shift in the equilibrium product and electron emission term.
     std::string densityCoupling = "quantum";
+
+    bool usesQuantumBandEdge() const { return densityCoupling == "quantum_band_edge"; }
 };
 
 struct AugerDensityDependenceConfig {

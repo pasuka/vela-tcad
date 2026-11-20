@@ -1588,6 +1588,12 @@ bool CoupledDDAssembler::usesSentaurusDefaultSrhDensityCoupling() const
         "sentaurus_default";
 }
 
+Real CoupledDDAssembler::srhElectronBandEdgeShiftAt(Index node) const
+{
+    return recombinationConfig_.srhDopingDependence.usesQuantumBandEdge()
+        ? electronQuantumPotential_V_(static_cast<int>(node)) : 0.0;
+}
+
 Real CoupledDDAssembler::electronSrhDensityAt(
     Index node,
     Real psiRelative_V,
@@ -1632,7 +1638,8 @@ Real CoupledDDAssembler::nodeRecombinationRate(
         if (srhState == nullptr) {
             computedSrh = generalizedSrhCarrierState(
                 electronSrhDensity, holeDensity, ni, Nc_[node], Nv_[node],
-                quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+                quasiFermiSplitting_V, Vt_, carrierStatisticsModel_,
+                srhElectronBandEdgeShiftAt(node));
             srhState = &computedSrh;
         }
         const GeneralizedSrhCarrierState& state = *srhState;
@@ -1649,7 +1656,7 @@ Real CoupledDDAssembler::nodeRecombinationRate(
             if (augerState == nullptr) {
                 // The other inputs are identical within this node evaluation.
                 // Keep distinct SRH/transport densities for quantum coupling.
-                if (srhState != nullptr &&
+                if (srhState != nullptr && srhElectronBandEdgeShiftAt(node) == 0.0 &&
                     std::bit_cast<std::uint64_t>(electronTransportDensity) ==
                         std::bit_cast<std::uint64_t>(electronSrhDensity)) {
                     augerState = srhState;
@@ -7704,12 +7711,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 recombination_.srhDopingConcentration(
                     doping_.donors(i), doping_.acceptors(i));
 
+            const Real srhShift_V = srhElectronBandEdgeShiftAt(i);
             const GeneralizedSrhCarrierState srhState =
                 generalizedSrhCarrierState(
                     nSrh, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,
-                    carrierStatisticsModel_);
+                    carrierStatisticsModel_, srhShift_V);
             const GeneralizedSrhCarrierState augerState =
-                std::bit_cast<std::uint64_t>(nSrh) ==
+                srhShift_V == 0.0 && std::bit_cast<std::uint64_t>(nSrh) ==
                     std::bit_cast<std::uint64_t>(n(ii))
                 ? srhState : generalizedSrhCarrierState(
                     n(ii), p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,

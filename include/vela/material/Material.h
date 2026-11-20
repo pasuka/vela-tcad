@@ -25,6 +25,8 @@ struct Material {
     /// Optional Sentaurus potential-based density-gradient parameters. When
     /// absent, solver-level controls provide the backward-compatible values.
     std::optional<Real> electron_quantum_gamma;
+    /// Temperature-adjusted affinity before the local bandgap-narrowing shift.
+    std::optional<Real> electron_quantum_affinity_eV;
     std::optional<Real> electron_quantum_dos_mass_ratio;
     /// Independent mass for the Eq. 231 gradient coefficient.  If absent,
     /// the DOS mass preserves the legacy shared-mass behavior.

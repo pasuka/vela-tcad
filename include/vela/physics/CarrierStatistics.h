@@ -183,12 +183,15 @@ Real equilibriumCarrierProduct(
 GeneralizedSrhCarrierState generalizedSrhCarrierState(
     Real n, Real p, Real ni, Real Nc, Real Nv,
     Real quasiFermiSplitting_V, Real Vt,
-    const CarrierStatisticsConfig& config);
+    const CarrierStatisticsConfig& config,
+    Real electronBandEdgeShift_V = 0.0);
 
+/// The optional frozen DG shift contributes exp(-shift/VT) to gamma_n.
 GeneralizedSrhCarrierState generalizedSrhCarrierState(
     Real n, Real p, Real ni, Real Nc, Real Nv,
     Real quasiFermiSplitting_V, Real Vt,
-    CarrierStatisticsModel model);
+    CarrierStatisticsModel model,
+    Real electronBandEdgeShift_V = 0.0);
 
 /// Temperature-adjusted intrinsic density for a material using temperature_K.
 double intrinsicDensity(const Material& material, double temperature_K);

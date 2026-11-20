@@ -60,14 +60,18 @@
             "sg_formulation": {"enum": ["auto", "generalized_einstein", "effective_potential"]}
           }
         },
+        "srh_density_coupling": {"enum": ["quantum", "sentaurus_default", "quantum_band_edge"]},
         "electron_quantum_potential": {
           "type": "object",
-          "description": "Density-gradient discretization and inner/outer iteration controls. Requires eQuantumPotential in CMD Physics.",
+          "description": "Density-gradient discretization, interface traces and iteration controls. Requires eQuantumPotential in CMD Physics.",
           "additionalProperties": false,
           "properties": {
             "include_insulators": {"type": "boolean"},
             "global_discretization": {"const": "sentaurus_box"},
             "coefficient_mass_ratio": {"type": "number", "exclusiveMinimum": 0},
+            "sentaurus_interface_insulator_half_jump_offset": {"type": "number"},
+            "sentaurus_interface_insulator_at_silicon_reaction_weight": {"type": "number", "exclusiveMinimum": 0},
+            "sentaurus_interface_insulator_at_polysilicon_reaction_weight": {"type": "number", "exclusiveMinimum": 0},
             "outer_absolute_tolerance_V": {"type": "number", "exclusiveMinimum": 0},
             "outer_max_iterations": {"type": "integer", "minimum": 1},
             "max_iterations": {"type": "integer", "minimum": 1}

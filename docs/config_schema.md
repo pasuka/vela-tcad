@@ -1615,6 +1615,11 @@ Notes:
   mass for backward compatibility. Eq. 231 evaluates its OldSlotboom band
   drive from total impurity only; this does not change the generic DD/BGN
   model used by the transport equations.
+  For the explicit-insulator `sentaurus_box` operator,
+  `electron_quantum_affinity_eV` can supply the temperature-adjusted
+  affinity before local bandgap narrowing. The fallback is the material's
+  `electron_affinity_eV`. The SDevice importer derives this semiconductor
+  value as `Chi0 + (Eg(Tpar) - Eg(T))/2` using the imported Varshni law.
 - `contact_boundary_reconstruction` controls only Ohmic-contact boundary
   quasi-Fermi/carrier reconstruction in the Newton path. Accepted values are
   `dominant_signed_contact_mean` (default, current behavior) and
@@ -2549,20 +2554,18 @@ Example matching the BVmethods `models.par` values at 300 K:
 system (`1e22 m^-3` in `legacy_si`, `1e16 cm^-3` in `unit_scaling`). Omitting
 this block preserves the legacy uniform `taun` and `taup` behavior.
 
-For density-gradient runs, `solver.srh_density_coupling` selects the electron
-density used only by the SRH denominator and generalized Fermi factors:
+`solver.srh_density_coupling` selects the SRH treatment in density-gradient runs.
 
-```json
-"srh_density_coupling": "sentaurus_default"
-```
-
-`quantum` (the default) preserves the legacy Vela behavior and uses the
-quantum-corrected transport density. `sentaurus_default` follows the Sentaurus
-default density-gradient SRH convention: SRH uses the classical electron
-density obtained without the electron quantum potential, while Poisson,
-transport, contact current, and Auger recombination continue to use the
-quantum-corrected density. Both modes use an analytic generalized Fermi-SRH
-Jacobian.
+- `quantum` (default) uses the quantum-corrected transport carrier density
+  with the legacy SRH mass-action product.
+- `sentaurus_default` preserves the historical classical electron density
+  in the SRH calculation.
+- `quantum_band_edge` uses the transport electron density and multiplies
+  the electron Fermi factor by `exp(-Lambda_n/Vt)` in both the equilibrium
+  product and the electron emission term. This requires enabled electron DG
+  with `direct_band_edge` transport coupling. The electron DG potential
+  is fixed during each coupled Newton solve, and the analytic carrier
+  Jacobian follows the resulting SRH rate.
 
 With `scaling.mode: "unit_scaling"`, Caughey-Thomas and Masetti mobility
 values are read as `cm^2/(V s)`, reference dopings as `cm^-3`, saturation

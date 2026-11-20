@@ -83,10 +83,11 @@ RecombinationModel::RecombinationModel(RecombinationModelConfig config)
     , bandToBand_(config_.bandToBand)
 {
     if (config_.srhDopingDependence.densityCoupling != "quantum" &&
-        config_.srhDopingDependence.densityCoupling != "sentaurus_default") {
+        config_.srhDopingDependence.densityCoupling != "sentaurus_default" &&
+        !config_.srhDopingDependence.usesQuantumBandEdge()) {
         throw std::invalid_argument(
-            "RecombinationModel: SRH density coupling must be 'quantum' or "
-            "'sentaurus_default'.");
+            "RecombinationModel: SRH density coupling must be 'quantum', "
+            "'sentaurus_default', or 'quantum_band_edge'.");
     }
     if (config_.augerExcessProduct != "generalized_fermi" &&
         config_.augerExcessProduct != "classical_np") {

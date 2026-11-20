@@ -460,14 +460,15 @@ Real fermiLogDegeneracyFactor(Real density, Real densityOfStates, CarrierStatist
 GeneralizedSrhCarrierState generalizedSrhCarrierState(
     Real n, Real p, Real ni, Real Nc, Real Nv,
     Real quasiFermiSplitting_V, Real Vt,
-    CarrierStatisticsModel model)
+    CarrierStatisticsModel model, Real electronBandEdgeShift_V)
 {
     if (!(Vt > 0.0) || !std::isfinite(Vt))
         throw std::invalid_argument(
             "generalizedSrhCarrierState: Vt must be finite and positive.");
 
     GeneralizedSrhCarrierState state;
-    const Real logN=usesFermiDirac(model)?fermiLogDegeneracyFactor(n,Nc,model):0.;
+    const Real logN = (usesFermiDirac(model)
+        ? fermiLogDegeneracyFactor(n, Nc, model) : 0.0) - electronBandEdgeShift_V / Vt;
     const Real logP=usesFermiDirac(model)?fermiLogDegeneracyFactor(p,Nv,model):0.;
     state.electronDegeneracy=std::exp(logN);
     state.holeDegeneracy=std::exp(logP);
@@ -512,11 +513,11 @@ Real generalizedSrhExcessDirectionalDerivative(
 GeneralizedSrhCarrierState generalizedSrhCarrierState(
     Real n, Real p, Real ni, Real Nc, Real Nv,
     Real quasiFermiSplitting_V, Real Vt,
-    const CarrierStatisticsConfig& config)
+    const CarrierStatisticsConfig& config, Real electronBandEdgeShift_V)
 {
     return generalizedSrhCarrierState(
         n, p, ni, Nc, Nv, quasiFermiSplitting_V, Vt,
-        carrierStatisticsModel(config));
+        carrierStatisticsModel(config), electronBandEdgeShift_V);
 }
 
 

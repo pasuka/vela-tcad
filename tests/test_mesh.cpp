@@ -290,10 +290,11 @@ TEST_CASE("MaterialDatabase reads material-specific electron quantum parameters"
 {
     const auto path = writeMaterialUnitFixture(
         "material_quantum_parameters",
-        R"json({"materials":[{"name":"Si","electron_quantum_gamma":4.5,"electron_quantum_dos_mass_ratio":1.07,"electron_quantum_coefficient_mass_ratio":1.09}]})json");
+        R"json({"materials":[{"name":"Si","electron_quantum_gamma":4.5,"electron_quantum_affinity_eV":4.07274,"electron_quantum_dos_mass_ratio":1.07,"electron_quantum_coefficient_mass_ratio":1.09}]})json");
     MaterialDatabase db(path.path.string());
     const Material& silicon = db.getMaterial("Si");
     REQUIRE(silicon.electron_quantum_gamma == Catch::Approx(4.5));
+    REQUIRE(silicon.electron_quantum_affinity_eV == Catch::Approx(4.07274));
     REQUIRE(silicon.electron_quantum_dos_mass_ratio == Catch::Approx(1.07));
     REQUIRE(silicon.electron_quantum_coefficient_mass_ratio ==
             Catch::Approx(1.09));
@@ -321,6 +322,7 @@ TEST_CASE("MaterialDatabase reads strict Templates LDMOS material units",
     "conduction_band_density_of_states_cm3":2.8e19,
     "valence_band_density_of_states_cm3":1.04e19,
     "electron_quantum_gamma":4.5,
+    "electron_quantum_affinity_eV":4.07274,
     "electron_quantum_dos_mass_ratio":1.07,
     "electron_quantum_coefficient_mass_ratio":1.09,
     "thermal_conductivity_W_per_m_K":148,
@@ -337,6 +339,7 @@ TEST_CASE("MaterialDatabase reads strict Templates LDMOS material units",
     REQUIRE(legacySi.mun == Catch::Approx(0.135));
     REQUIRE(legacySi.mup == Catch::Approx(0.048));
     REQUIRE(*legacySi.Nc_m3 == Catch::Approx(2.8e25));
+    REQUIRE(legacySi.electron_quantum_affinity_eV == Catch::Approx(4.07274));
     REQUIRE(*legacySi.thermal_conductivity_W_per_m_K == Catch::Approx(148.0));
     REQUIRE(*legacySi.specific_heat_J_per_kg_K == Catch::Approx(705.0));
     REQUIRE(*legacySi.mass_density_kg_per_m3 == Catch::Approx(2329.0));

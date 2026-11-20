@@ -438,9 +438,17 @@ def _emit(ir: dict, mesh: dict, report: dict, work_dir: str, cmd_name: str, sha:
             raise DeckEmitError("E409", file="sidecar", detail="physical parameters and arithmetic precision belong to the cmd/par")
     decisions = []
     solver = _physics(ir, report, decisions)
-    dg_controls = (sidecar or {}).get("solver", {}).get("electron_quantum_potential")
+    solver_overrides = (sidecar or {}).get("solver", {})
+    dg_controls = solver_overrides.get("electron_quantum_potential")
+    srh_quantum_band_edge = solver_overrides.get("srh_density_coupling") == "quantum_band_edge"
+    if srh_quantum_band_edge and not solver.get("electron_quantum_potential", {}).get("enabled", False):
+        raise DeckEmitError("E409", file="sidecar", detail="quantum_band_edge SRH requires CMD Physics eQuantumPotential")
     if dg_controls is not None and not solver.get("electron_quantum_potential", {}).get("enabled", False):
         raise DeckEmitError("E409", file="sidecar", detail="density-gradient controls require CMD Physics eQuantumPotential")
+    if (dg_controls and any(key.startswith("sentaurus_interface_") for key in dg_controls)
+            and (dg_controls.get("global_discretization") != "sentaurus_box"
+                 or not dg_controls.get("include_insulators"))):
+        raise DeckEmitError("E409", file="sidecar", detail="DG interface traces require sentaurus_box with include_insulators=true")
     if "arithmetic_precision" in ir["math"]:
         solver["arithmetic_precision"] = ir["math"]["arithmetic_precision"]
     contacts, electrodes = _contacts(ir, mesh, report, decisions)

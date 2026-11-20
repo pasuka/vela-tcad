@@ -3085,7 +3085,7 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on s
     REQUIRE(rel < 5.0e-5);
 }
 
-TEST_CASE("CoupledDDAssembler: Sentaurus-default Fermi SRH source has analytic DG Jacobian",
+TEST_CASE("CoupledDDAssembler: Fermi SRH coupling modes have analytic DG Jacobians",
           "[newton][coupled][density_gradient][srh][fermi][jacobian]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -3098,9 +3098,9 @@ TEST_CASE("CoupledDDAssembler: Sentaurus-default Fermi SRH source has analytic D
 
     RecombinationModelConfig srh =
         recombinationModelConfig({"srh"}, 1.1e-7, 2.3e-7);
-    srh.srhDopingDependence.densityCoupling = "sentaurus_default";
+    const auto coupling = GENERATE("sentaurus_default", "quantum_band_edge");
+    srh.srhDopingDependence.densityCoupling = coupling;
     RecombinationModelConfig none = recombinationModelConfig({"none"});
-    none.srhDopingDependence.densityCoupling = "sentaurus_default";
     CoupledDDAssembler withSrh(
         mesh, matdb, doping, constants::Vt_300, {}, srh, {}, {}, {}, {}, {}, {},
         statistics, quantum);
@@ -3155,7 +3155,7 @@ TEST_CASE("CoupledDDAssembler: shared recombination states preserve additive sou
     const DopingModel doping = makePNDoping(mesh);
     const int N = static_cast<int>(mesh.numNodes());
     const CarrierStatisticsConfig statistics{"fermi_dirac"};
-    for (const std::string coupling : {"sentaurus_default", "quantum"}) {
+    for (const std::string coupling : {"sentaurus_default", "quantum", "quantum_band_edge"}) {
     for (const std::string excess : {"generalized_fermi", "classical_np"}) {
     for (const bool generation : {false, true}) {
     for (const Real quantumShift : {0.0, 0.03}) {

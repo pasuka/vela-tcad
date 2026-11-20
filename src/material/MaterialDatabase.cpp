@@ -117,7 +117,8 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
          "bandgap_eV", "electron_affinity_eV",
          "conduction_band_density_of_states_cm3",
          "valence_band_density_of_states_cm3", "temperature_K",
-         "electron_quantum_gamma", "electron_quantum_dos_mass_ratio",
+         "electron_quantum_gamma", "electron_quantum_affinity_eV",
+         "electron_quantum_dos_mass_ratio",
          "electron_quantum_coefficient_mass_ratio",
          "thermal_conductivity_W_per_m_K", "specific_heat_J_per_kg_K",
          "mass_density_kg_per_m3", "provenance"},
@@ -177,6 +178,9 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
     if (j.contains("electron_quantum_gamma"))
         mat.electron_quantum_gamma = finiteInRange(
             j, "electron_quantum_gamma", 0.0, 1.0e6, context);
+    if (j.contains("electron_quantum_affinity_eV"))
+        mat.electron_quantum_affinity_eV = finiteInRange(
+            j, "electron_quantum_affinity_eV", 0.0, 100.0, context);
     if (j.contains("electron_quantum_dos_mass_ratio"))
         mat.electron_quantum_dos_mass_ratio = finiteInRange(
             j, "electron_quantum_dos_mass_ratio", 1.0e-12, 1.0e6, context);
@@ -213,6 +217,7 @@ Material materialFromJson(const nlohmann::json& j,
         j, "Nv_m3", mat.Nv_m3, &UnitScalingConfig::concentrationToInternal, scaling);
     setOptionalReal(j, "temperature_K", mat.temperature_K);
     setOptionalReal(j, "electron_quantum_gamma", mat.electron_quantum_gamma);
+    setOptionalReal(j, "electron_quantum_affinity_eV", mat.electron_quantum_affinity_eV);
     setOptionalReal(
         j, "electron_quantum_dos_mass_ratio",
         mat.electron_quantum_dos_mass_ratio);

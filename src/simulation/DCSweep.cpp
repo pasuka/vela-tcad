@@ -551,6 +551,14 @@ Real terminalCurrentConsistencyRatio(const ContactCurrentResult& current)
     return std::abs(current.totalCurrent) / componentMagnitude;
 }
 
+Real srhQuantumShiftAt(
+    const SRHDopingDependenceConfig& config, const DDSolution& solution, int row)
+{
+    return config.usesQuantumBandEdge() &&
+            solution.electronQuantumPotential.size() == solution.n.size()
+        ? solution.electronQuantumPotential(row) : 0.0;
+}
+
 SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
     const DeviceMesh& mesh,
     const MaterialDatabase& matdb,
@@ -598,8 +606,8 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
         if (recombination.srhEnabled()) {
             const GeneralizedSrhCarrierState srhState =
                 generalizedSrhCarrierState(
-                    nSrh, p, ni, Nc[i], Nv[i], dPhi, Vt,
-                    carrierStatistics);
+                    nSrh, p, ni, Nc[i], Nv[i], dPhi, Vt, carrierStatistics,
+                    srhQuantumShiftAt(recombinationCfg.srhDopingDependence, sol, row));
             rate += recombination.srhRateGeneralizedFromExcessProduct(
                 srhState.excessProduct, nSrh, p, ni, ni,
                 srhState.electronDegeneracy, srhState.holeDegeneracy,
@@ -680,8 +688,8 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
                 Vt, carrierStatistics)
             : sol.n(row);
         const GeneralizedSrhCarrierState srhState = generalizedSrhCarrierState(
-            nSrh, sol.p(row), ni, Nc[node], Nv[node],
-            dPhi, Vt, carrierStatistics);
+            nSrh, sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt, carrierStatistics,
+            srhQuantumShiftAt(recombinationCfg.srhDopingDependence, sol, row));
         return recombination.srhRateGeneralizedFromExcessProduct(
             srhState.excessProduct, nSrh, sol.p(row), ni, ni,
             srhState.electronDegeneracy, srhState.holeDegeneracy,
@@ -1030,8 +1038,8 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         if (recombination.srhEnabled()) {
             const GeneralizedSrhCarrierState srhState =
                 generalizedSrhCarrierState(
-                    nSrh, sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt,
-                    carrierStatistics);
+                    nSrh, sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt, carrierStatistics,
+                    srhQuantumShiftAt(recombinationCfg.srhDopingDependence, sol, row));
             rate += recombination.srhRateGeneralizedFromExcessProduct(
                 srhState.excessProduct, nSrh, sol.p(row), ni, ni,
                 srhState.electronDegeneracy, srhState.holeDegeneracy,

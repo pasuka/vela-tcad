@@ -838,8 +838,15 @@ def _emit_material_entry(vela_name: str, role: str, sections: Dict[str, Dict[str
     derivation = values.pop("derivation")
     entry.update(values)
     quantum = sections.get("QuantumPotentialParameters", {}).get("gamma")
-    if quantum and "eQuantumPotential" in model_set:
-        entry["electron_quantum_gamma"] = float(quantum[0])
+    if "eQuantumPotential" in model_set:
+        if quantum:
+            entry["electron_quantum_gamma"] = float(quantum[0])
+        # The all-material quantum equation needs the temperature-dependent
+        # conduction-band reference. Its assembly adds local BGN separately.
+        gap_at_tpar = sections["Bandgap"]["Eg0"][0]
+        entry["electron_quantum_affinity_eV"] = (
+            entry["electron_affinity_eV"] + 0.5 * (gap_at_tpar - entry["bandgap_eV"])
+        )
     entry["provenance"] = (provenance + "; Epsilon/Bandgap/eDOSMass Formula 1/hDOSMass Formula 1"
                            + ("/ConstantMobility" if "electron_mobility_cm2_per_V_s" in entry else "")
                            + f"; {derivation['law']}"

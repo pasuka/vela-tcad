@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
@@ -360,6 +361,25 @@ TEST_CASE("Generalized SRH state resolves deep-depletion generation",
     REQUIRE(std::isfinite(state.excessProduct));
     REQUIRE(state.excessProduct < 0.0);
     REQUIRE(state.excessProduct == Approx(-ni * ni).epsilon(1.0e-14));
+}
+
+TEST_CASE("SRH quantum band shift preserves detailed balance",
+          "[carrier_statistics][srh][density_gradient]")
+{
+    const Real thermalVoltage = constants::Vt_300;
+    const Real intrinsicDensity = 1.5e16;
+    const Real shift = GENERATE(-0.026, 0.0, 0.052);
+    const Real split = GENERATE(0.0, -0.025, 0.01);
+    const auto state = generalizedSrhCarrierState(
+        1e15, 1e17, intrinsicDensity, 2.8e25, 1.04e25,
+        split, thermalVoltage, CarrierStatisticsConfig{"boltzmann"}, shift);
+    const Real quantumFactor = std::exp(-shift / thermalVoltage);
+    REQUIRE(state.electronDegeneracy == Approx(quantumFactor).epsilon(1e-14));
+    REQUIRE(state.holeDegeneracy == 1.0);
+    REQUIRE(state.equilibriumProduct ==
+            Approx(quantumFactor * intrinsicDensity * intrinsicDensity).epsilon(1e-14));
+    REQUIRE(state.excessProduct ==
+            Approx(state.equilibriumProduct * std::expm1(split / thermalVoltage)).epsilon(1e-14));
 }
 
 TEST_CASE("Generalized Fermi SRH factors reproduce the carrier product identity",

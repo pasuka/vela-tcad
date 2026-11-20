@@ -44,6 +44,7 @@
           "valence_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
           "temperature_K": {"type": "number", "minimum": 1.0, "maximum": 1e5},
           "electron_quantum_gamma": {"type": "number", "minimum": 0.0, "maximum": 1e6},
+          "electron_quantum_affinity_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
           "electron_quantum_dos_mass_ratio": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
           "electron_quantum_coefficient_mass_ratio": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
           "thermal_conductivity_W_per_m_K": {"type": "number", "minimum": 0.0, "maximum": 1e7},
