@@ -1,5 +1,6 @@
 {
   "schema": "vela.sdevice_sidecar.v1",
+  "apply_to": [0, 1, 2, 4, 5],
   "sentaurus_step_control": true,
   "high_field_gradient_discretization": "transport_cell_vector",
   "solver": {

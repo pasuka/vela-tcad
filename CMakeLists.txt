@@ -2052,7 +2052,7 @@ option(VELA_ENABLE_REFERENCE_U2022_CI "Register the U-2022.12 sd-sim reference r
 option(VELA_ENABLE_TRANSPORTMODELS_IDVD_CI "Register the TransportModels DD Id-Vd sd-sim qualification test" OFF)
 option(VELA_ENABLE_TRANSPORTMODELS_IDVG_CI "Register the TransportModels DD Id-Vg sd-sim qualification test" OFF)
 option(VELA_ENABLE_TRANSPORTMODELS_DG_IDVD_CI "Register the TransportModels DG Id-Vd sd-sim qualification test" OFF)
-option(VELA_ENABLE_SINGLEDEVICE_IDVG_CI "Register the SingleDevice linear DG Id-Vg sd-sim qualification test" OFF)
+option(VELA_ENABLE_SINGLEDEVICE_IDVG_CI "Register the SingleDevice linear and saturation DG Id-Vg sd-sim qualification test" OFF)
 set(_reference_u2022_cases)
 if(VELA_ENABLE_REFERENCE_U2022_CI)
     list(APPEND _reference_u2022_cases gate_contacts schottky_iv bjt_m1)
@@ -2087,7 +2087,12 @@ if(_reference_u2022_cases)
                 ${_case} --launcher $<TARGET_FILE:sd-sim>
                 --output ${CMAKE_CURRENT_BINARY_DIR}/reference-u2022-reports
                 --linear-solver ${_reference_u2022_solver})
-        set_tests_properties(reference_u2022_${_case} PROPERTIES LABELS "reference;reference-u2022" TIMEOUT 2400)
+        set(_reference_u2022_timeout 2400)
+        if(_case STREQUAL "transportmodels_dg_idvd" OR _case STREQUAL "singledevice_idvg_linear")
+            set(_reference_u2022_timeout 3600)
+        endif()
+        set_tests_properties(reference_u2022_${_case} PROPERTIES
+            LABELS "reference;reference-u2022" TIMEOUT ${_reference_u2022_timeout})
         vela_set_windows_msys2_test_path(reference_u2022_${_case})
     endforeach()
 endif()

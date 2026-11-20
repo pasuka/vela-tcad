@@ -1,5 +1,5 @@
 {
-  "schema": "vela.reference.singledevice_linear.v1",
+  "schema": "vela.reference.singledevice_idvg.v1",
   "mesh": {
     "generator": "Sentaurus Structure Editor and TDX U-2022.12",
     "source": "../source/singledevice_sde.cmd",
@@ -13,10 +13,11 @@
     "device.grd": "9d5b550fc5bc51c487cd4dc54e4d5ea8c3fc5210ee275791c1b11db69bfbdb1a",
     "device.dat": "c9536b305f186d17ccb3f347728cef7c31cb31ff5219709f68e0e0f8142ee851",
     "models.par": "33aa8c84e4f011a8f907a72270632f6e2cf3f3ce07cb139cba23b515687ec0b4",
-    "singledevice_idvg.cmd": "0747fec3ca87fd1f8a1b9872e8a935e238583bbe236c8e7ce115f5ac09a3740b",
-    "singledevice_idvg.vela.json": "4f061d42f5ee1bcb98e2d0d23b74d18bcf1a4e3fb613b585bca8924bbeb6b9b1",
+    "singledevice_idvg.cmd": "26d2452d5482ddd839139ee04d91973e3efd9c65dd0245df20c6a78f79afb9d4",
+    "singledevice_idvg.vela.json": "1582942d0af79fd719efb17a63515aa52bc5b2ea1a996147c0b90f1b65f447cb",
     "../singledevice_idvg_lin_reference.csv": "88a7f48a6078ea8ba2a729eb8952b82bb58ede2116f8fe13a99c0c992e2939fd",
     "../singledevice_sentaurus2018_reference.json": "073dbeb62cf7135bd5e812eff5fe4a7f58eec9cf75c7ac969d8a00e47099c976",
-    "../../transportmodels_sentaurus2022/ci_u2022_12/polysilicon.par": "a1709fdbea4a2029a92f51d6d0bae8fab89350d9daa76fd0b23ebbfb30fdeeb9"
+    "../../transportmodels_sentaurus2022/ci_u2022_12/polysilicon.par": "a1709fdbea4a2029a92f51d6d0bae8fab89350d9daa76fd0b23ebbfb30fdeeb9",
+    "../singledevice_idvg_sat_reference.csv": "1a764309b42a6b13c7d6e16c99950678914db28f3a77fc60ac054fa67d9197ec"
   }
 }

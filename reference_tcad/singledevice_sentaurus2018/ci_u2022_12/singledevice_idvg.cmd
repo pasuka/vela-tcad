@@ -1,4 +1,4 @@
-* Linear branch of the SingleDevice SDevice deck.
+* Linear and saturation branches of the SingleDevice SDevice deck.
 File {
   Grid = "device.grd"
   Parameter = "models.par"
@@ -42,6 +42,20 @@ Solve {
     Goal { Name="drain" Voltage=0.1 }
   ) { Coupled { Poisson Electron Hole eQuantumPotential } }
   NewCurrentPrefix="IdVgsLin_"
+  Quasistationary(
+    InitialStep=1e-3 Increment=1.3 Decrement=2 MinStep=1e-5 MaxStep=0.1
+    Goal { Name="gate" Voltage=2.2 }
+  ) {
+    Coupled { Poisson Electron Hole eQuantumPotential }
+    CurrentPlot(Time=(Range=(0 1) Intervals=20))
+  }
+  NewCurrentPrefix=""
+  Load(FilePrefix="singledevice_init")
+  Quasistationary(
+    InitialStep=0.01 MinStep=1e-5 MaxStep=0.1
+    Goal { Name="drain" Voltage=1.1 }
+  ) { Coupled { Poisson Electron Hole eQuantumPotential } }
+  NewCurrentPrefix="IdVgsSat_"
   Quasistationary(
     InitialStep=1e-3 Increment=1.3 Decrement=2 MinStep=1e-5 MaxStep=0.1
     Goal { Name="gate" Voltage=2.2 }
