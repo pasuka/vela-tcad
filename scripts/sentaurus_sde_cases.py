@@ -71,11 +71,15 @@ def mesh_with_edges(output: Path, *, bundle: dict | None = None) -> dict:
     mesh = json.loads((output / "mesh.json").read_text())
     if bundle is None:
         bundle = json.loads((output / "mesh_field_bundle.json").read_text())
+    _add_contact_edges(mesh, bundle)
+    return mesh
+
+
+def _add_contact_edges(mesh: dict, bundle: dict) -> None:
     tags = {c["name"]: c["physical_tag"] for c in bundle["contacts"]}
     for contact in mesh["contacts"]:
         contact["edge_node_ids"] = [line["node_ids"] for line in bundle["lines"]
             if line["kind"] == "contact" and tags[contact["name"]] in line["physical_curve_tags"]]
-    return mesh
 
 
 def contacts(mesh: dict) -> dict:
@@ -85,7 +89,7 @@ def contacts(mesh: dict) -> dict:
 
 
 def compare_native(original: Path, imported: Path, *, bundle: dict | None = None,
-                   mesh: dict | None = None) -> None:
+                   mesh: dict | None = None, expected_fields: dict | None = None) -> None:
     if bundle is None:
         bundle = json.loads((original / "mesh_field_bundle.json").read_text())
     a = mesh if mesh is not None else mesh_with_edges(original, bundle=bundle)
@@ -113,7 +117,7 @@ def compare_native(original: Path, imported: Path, *, bundle: dict | None = None
         require(expected == Counter(tuple(sorted(pair)) for pair in actual["edge_node_ids"]),
                 "native interface edges mismatch")
     require(contacts(a) == contacts(b), "native contact edges/nodes mismatch")
-    fields_a = read_doping_csv(original / "doping.csv")
+    fields_a = read_doping_csv(original / "doping.csv") if expected_fields is None else expected_fields
     with (imported / "doping.csv").open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     require([int(r["node_id"]) for r in rows] == [n["id"] for n in a["nodes"]],
@@ -199,20 +203,21 @@ def check_contract(output: Path, contract: dict, *, bundle: dict | None = None,
         curved_report=check(bundle)
         require(curved_report['status']=='passed',f'curved device contract failed: {curved_report}')
         # Read the authored half through the native consumer on every repeat.
-        import shutil
-        from sentaurus_mesh_exporters import bundle_to_vela_mesh, write_doping_csv
+        from sentaurus_mesh_exporters import bundle_to_vela_mesh
         half=json.loads((output/'half_mesh_field_bundle.json').read_text())
         count=len(half['nodes'])
         require(all(a['x']==b['x'] and abs(a['y']-b['y'])<=1e-8 for a,b in zip(half['nodes'],bundle['nodes'][:count])),
                 'full device does not retain authored half nodes')
+        half_mesh = bundle_to_vela_mesh(half)
+        _add_contact_edges(half_mesh, half)
+        expected_fields = {
+            name: [float(half['fields'][name]['values'][node['vela_id']]) for node in half['nodes']]
+            for name in ('DonorConcentration', 'AcceptorConcentration', 'DopingConcentration')
+        }
         with tempfile.TemporaryDirectory(prefix='mos-half-native-') as temp:
-            stage=Path(temp)/'half';stage.mkdir()
-            (stage/'mesh_field_bundle.json').write_text(json.dumps(half))
-            (stage/'mesh.json').write_text(json.dumps(bundle_to_vela_mesh(half)))
-            write_doping_csv(stage/'doping.csv',half)
-            for extension in ('grd','dat'):shutil.copy2(output/('half_device.'+extension),stage/('device.'+extension))
-            import_grid(stage/'device.grd',Path(temp)/'native')
-            compare_native(stage,Path(temp)/'native')
+            imported = Path(temp)
+            import_grid(output / 'half_device.grd', imported)
+            compare_native(output, imported, bundle=half, mesh=half_mesh, expected_fields=expected_fields)
         curved_report['half_native_import']='passed'
     for node in mesh["nodes"] if bjt_report is None and curved_report is None else []:
         x, y = node["x"], node["y"]

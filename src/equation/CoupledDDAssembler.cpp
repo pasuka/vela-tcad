@@ -645,6 +645,13 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
         !isPhuMobModel(mobilityConfig_) && mobilityConfig_.model != "ialmob";
     const bool cacheIntrinsicDrift = bgnEnabled_ && usesLegacyPopulationState();
     const bool vertexMasetti = usesVertexSampledMasetti(mobilityConfig_);
+    using LowFieldMobilities = std::array<Real, 2>;
+    struct CellVertexMobilities {
+        std::array<LowFieldMobilities, 3> values{};
+        bool evaluated = false;
+    };
+    std::vector<CellVertexMobilities> cellVertexMobilities(
+        cacheMobility && vertexMasetti ? mesh_.numCells() : 0);
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -713,35 +720,43 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
             const Cell& cell = mesh_.getCell(cellId);
             const Material& material =
                 cellMaterials_.at(static_cast<std::size_t>(cellId));
-            if (detail::isTransportMaterial(material))
+            if (detail::isTransportMaterial(material)) {
                 kernel.activeTransport = true;
-            if (detail::isTransportMaterial(material) &&
-                detail::cellTouchesContact(cell, contactNodes_))
-                kernel.touchesTransportContact = true;
+                if (detail::cellTouchesContact(cell, contactNodes_))
+                    kernel.touchesTransportContact = true;
+            }
             for (Index node : cell.node_ids)
                 appendStencilNode(node);
 
             if (!cacheMobility)
                 continue;
-            const auto appendLowField = [&](Real doping) {
-                if (material.mun > 0.0) {
-                    const Real lowField = mobility_->electronMobility(material, doping, 0.0, 0.0, 0.0);
-                    if (lowField > 0.0)
-                        kernel.electronLowFieldMobilities.push_back(lowField);
-                }
-                if (material.mup > 0.0) {
-                    const Real lowField = mobility_->holeMobility(material, doping, 0.0, 0.0, 0.0);
-                    if (lowField > 0.0)
-                        kernel.holeLowFieldMobilities.push_back(lowField);
-                }
+            const auto evaluateLowField = [&](Real doping) -> LowFieldMobilities {
+                return {
+                    material.mun > 0.0 ? mobility_->electronMobility(material, doping, 0.0, 0.0, 0.0) : 0.0,
+                    material.mup > 0.0 ? mobility_->holeMobility(material, doping, 0.0, 0.0, 0.0) : 0.0,
+                };
+            };
+            const auto appendLowField = [&](const LowFieldMobilities& values) {
+                if (values[0] > 0.0)
+                    kernel.electronLowFieldMobilities.push_back(values[0]);
+                if (values[1] > 0.0)
+                    kernel.holeLowFieldMobilities.push_back(values[1]);
             };
             if (vertexMasetti && cell.type == CellType::Tri3) {
-                for (Index node : cell.node_ids)
-                    appendLowField(detail::nodeMobilityDopingConcentration(
-                        mesh_, doping_, node, cellId, &mobilityConfig_));
+                // All three edges of a cell use the same vertex samples.
+                auto& cached = cellVertexMobilities[cellId];
+                if (!cached.evaluated) {
+                    for (std::size_t k = 0; k < cached.values.size(); ++k) {
+                        cached.values[k] = evaluateLowField(detail::nodeMobilityDopingConcentration(
+                            mesh_, doping_, cell.node_ids[k], cellId, &mobilityConfig_));
+                    }
+                    cached.evaluated = true;
+                }
+                for (const auto& values : cached.values)
+                    appendLowField(values);
             } else {
-                appendLowField(detail::edgeMobilityDopingConcentration(
-                    mesh_, doping_, edge, cellId, &mobilityConfig_));
+                appendLowField(evaluateLowField(detail::edgeMobilityDopingConcentration(
+                    mesh_, doping_, edge, cellId, &mobilityConfig_)));
             }
         }
         if (vectorQfMobilityEnabled_) {
@@ -6179,6 +6194,25 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         return value;
     };
 
+    VectorXd surfaceTrialPotential = surfaceMobilityEnabled_ ? psi : VectorXd{};
+    const auto withSurfaceTrial = [&](int i, int j, Real psiI, Real psiJ,
+                                      Index extraNode, Real extraPsi,
+                                      const auto& evaluate) {
+        if (!surfaceMobilityEnabled_)
+            return evaluate(psi);
+        surfaceTrialPotential(i) = psiI;
+        surfaceTrialPotential(j) = psiJ;
+        const bool hasExtraNode = extraNode < mesh_.numNodes();
+        if (hasExtraNode)
+            surfaceTrialPotential(extraNode) = extraPsi;
+        const Real value = evaluate(surfaceTrialPotential);
+        surfaceTrialPotential(i) = psi(i);
+        surfaceTrialPotential(j) = psi(j);
+        if (hasExtraNode)
+            surfaceTrialPotential(extraNode) = psi(extraNode);
+        return value;
+    };
+
     auto edgeElectronTransportFlux =
         [&](Index e, int i, int j, Real h,
             Real psi_i, Real psi_j, Real phin_i, Real phin_j,
@@ -6225,18 +6259,6 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     return node == idxI ? psi_i : (node == idxJ ? psi_j :
                         (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
                 }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
-        VectorXd psiForSurface;
-        const VectorXd* psiForMobility = &psi;
-        if (surfaceMobilityEnabled_) {
-            psiForSurface = psi;
-            psiForSurface(i) = psi_i;
-            psiForSurface(j) = psi_j;
-            if (surfacePsiNode < mesh_.numNodes()) {
-                psiForSurface(static_cast<int>(surfacePsiNode)) =
-                    surfacePsiValue;
-            }
-            psiForMobility = &psiForSurface;
-        }
         const Real electronDensityI = electronDensityAt(
             idxI, psi_i - electronReferenceI, phin_i);
         const Real electronDensityJ = electronDensityAt(
@@ -6250,10 +6272,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real mun = fixedMobility >= 0.0 &&
                 !isPhuMobModel(mobilityConfig_)
             ? fixedMobility
-            : cachedEdgeMobility(
-                e, CarrierType::Electron, electronMobilityField,
-                psiForMobility, electronDensityI, electronDensityJ,
-                holeDensityI, holeDensityJ);
+            : withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
+                [&](const VectorXd& trial) {
+                    return cachedEdgeMobility(e, CarrierType::Electron, electronMobilityField,
+                        &trial, electronDensityI, electronDensityJ, holeDensityI, holeDensityJ);
+                });
         if (mun <= 0.0)
             return 0.0;
         const Real coef = mun * Vt_ * fieldFactor * couple_e / h;
@@ -6334,18 +6357,6 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     return node == idxI ? psi_i : (node == idxJ ? psi_j :
                         (node == surfacePsiNode ? surfacePsiValue : psi(static_cast<int>(node))));
                 }, fieldFactor, rawMobilityField, nullptr, &contactNodes);
-        VectorXd psiForSurface;
-        const VectorXd* psiForMobility = &psi;
-        if (surfaceMobilityEnabled_) {
-            psiForSurface = psi;
-            psiForSurface(i) = psi_i;
-            psiForSurface(j) = psi_j;
-            if (surfacePsiNode < mesh_.numNodes()) {
-                psiForSurface(static_cast<int>(surfacePsiNode)) =
-                    surfacePsiValue;
-            }
-            psiForMobility = &psiForSurface;
-        }
         const Real electronReferenceI = electronQuasiFermiReferenceAt(idxI);
         const Real electronReferenceJ = electronQuasiFermiReferenceAt(idxJ);
         const Real electronDensityI = electronDensityAt(
@@ -6361,10 +6372,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real mup = fixedMobility >= 0.0 &&
                 !isPhuMobModel(mobilityConfig_)
             ? fixedMobility
-            : cachedEdgeMobility(
-                e, CarrierType::Hole, holeMobilityField, psiForMobility,
-                electronDensityI, electronDensityJ,
-                holeDensityI, holeDensityJ);
+            : withSurfaceTrial(i, j, psi_i, psi_j, surfacePsiNode, surfacePsiValue,
+                [&](const VectorXd& trial) {
+                    return cachedEdgeMobility(e, CarrierType::Hole, holeMobilityField,
+                        &trial, electronDensityI, electronDensityJ, holeDensityI, holeDensityJ);
+                });
         if (mup <= 0.0)
             return 0.0;
         const Real coef = mup * Vt_ * fieldFactor * couple_e / h;
